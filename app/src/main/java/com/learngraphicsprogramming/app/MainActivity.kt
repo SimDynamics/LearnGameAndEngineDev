@@ -50,6 +50,19 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        binding.buttonCppPrototype.setOnClickListener {
+
+            val intent =
+                Intent(
+                    this,
+                    CppPrototypeActivity::class.java
+                )
+
+            startActivity(
+                intent
+            )
+        }
+
         /*
          * Solo restauramos la navegación cuando
          * MainActivity acaba de crearse.

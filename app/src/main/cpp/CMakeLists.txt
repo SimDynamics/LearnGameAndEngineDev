@@ -1,37 +1,49 @@
-# For more information about using CMake with Android Studio, read the
-# documentation: https://d.android.com/studio/projects/add-native-code.html.
-# For more examples on how to use CMake, see https://github.com/android/ndk-samples.
-
-# Sets the minimum CMake version required for this project.
 cmake_minimum_required(VERSION 3.22.1)
 
-# Declares the project name. The project name can be accessed via ${ PROJECT_NAME},
-# Since this is the top level CMakeLists.txt, the project name is also accessible
-# with ${CMAKE_PROJECT_NAME} (both CMake variables are in-sync within the top level
-# build script scope).
 project("app")
 
-# Creates and names a library, sets it as either STATIC
-# or SHARED, and provides the relative paths to its source code.
-# You can define multiple libraries, and CMake builds them for you.
-# Gradle automatically packages shared libraries with your APK.
-#
-# In this top level CMakeLists.txt, ${CMAKE_PROJECT_NAME} is used to define
-# the target library name; in the sub-module's CMakeLists.txt, ${PROJECT_NAME}
-# is preferred for the same purpose.
-#
-# In order to load a library into your app from Java/Kotlin, you must call
-# System.loadLibrary() and pass the name of the library defined here;
-# for GameActivity/NativeActivity derived applications, the same library name must be
-# used in the AndroidManifest.xml file.
-add_library(${CMAKE_PROJECT_NAME} SHARED
-        # List C/C++ source files with relative paths to this CMakeLists.txt.
-        native-lib.cpp)
+# The compiler prototype currently ships an Android ARM64 Clang toolchain.
+if (NOT ANDROID_ABI STREQUAL "arm64-v8a")
+    message(FATAL_ERROR "The C++/WASM prototype currently supports arm64-v8a only")
+endif ()
 
-# Specifies libraries CMake should link to your target library. You
-# can link libraries from various origins, such as libraries defined in this
-# build script, prebuilt third-party libraries, or Android system libraries.
+set(WAMR_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/wasm-micro-runtime")
+set(WAMR_BUILD_PLATFORM "android")
+set(WAMR_BUILD_TARGET "AARCH64")
+set(WAMR_BUILD_INTERP 1)
+set(WAMR_BUILD_FAST_INTERP 1)
+set(WAMR_BUILD_AOT 0)
+set(WAMR_BUILD_JIT 0)
+set(WAMR_BUILD_FAST_JIT 0)
+set(WAMR_BUILD_LIBC_BUILTIN 0)
+set(WAMR_BUILD_LIBC_WASI 1)
+set(WAMR_BUILD_MULTI_MODULE 0)
+set(WAMR_BUILD_LIB_PTHREAD 0)
+set(WAMR_BUILD_LIB_WASI_THREADS 0)
+set(WAMR_BUILD_SIMD 0)
+set(WAMR_BUILD_REF_TYPES 1)
+# Android apps share process signal handlers with ART and other native libraries.
+# Software bounds checks avoid installing WAMR's process-wide SIGSEGV handler.
+set(WAMR_DISABLE_HW_BOUND_CHECK 1)
+
+include("${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake")
+
+add_library(wamr_runtime STATIC ${WAMR_RUNTIME_LIB_SOURCE})
+
+add_library(${CMAKE_PROJECT_NAME} SHARED
+        native-lib.cpp
+        wasi-runtime-jni.cpp)
+
+add_executable(lgp_wasm_ld wasm-lld-wrapper.cpp)
+set_target_properties(lgp_wasm_ld PROPERTIES
+        OUTPUT_NAME "liblgp_wasm_ld"
+        SUFFIX ".so")
+target_link_libraries(lgp_wasm_ld dl)
+
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+        "${WAMR_ROOT_DIR}/core/iwasm/include")
+
 target_link_libraries(${CMAKE_PROJECT_NAME}
-        # List libraries link to the target library
+        wamr_runtime
         android
         log)
