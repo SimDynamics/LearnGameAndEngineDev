@@ -25,8 +25,15 @@ internal class CppCompiler(private val context: Context) {
         check(clang.isFile) { "No se encontró el ejecutable local de Clang." }
         check(lldCore.isFile) { "No se encontró el enlazador local de LLVM." }
 
-        if (linker.exists()) linker.delete()
-        Os.symlink(File(nativeDirectory, "liblgp_wasm_ld.so").absolutePath, linker.absolutePath)
+        linker.delete()
+
+        Os.symlink(
+            File(
+                nativeDirectory,
+                "liblgp_wasm_ld.so"
+            ).absolutePath,
+            linker.absolutePath
+        )
 
         val sysroot = File(runtimeDirectory, "sysroot")
         val resourceDirectory = File(runtimeDirectory, "resource")
