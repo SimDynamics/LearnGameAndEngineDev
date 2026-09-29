@@ -31,6 +31,10 @@ import android.widget.ImageButton
 import androidx.activity.result.contract.ActivityResultContracts
 import android.text.Editable
 import android.text.TextWatcher
+import com.learngraphicsprogramming.app.runtime.CppExecutionEngine
+import android.view.ViewTreeObserver
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class LessonActivity : AppCompatActivity() {
 
@@ -114,6 +118,19 @@ class LessonActivity : AppCompatActivity() {
     private lateinit var lessonContent: LinearLayout
     private lateinit var lessonScroll: ScrollView
 
+    private lateinit var programmingKeyboardBar:
+            HorizontalScrollView
+
+    private lateinit var programmingKeyboardBarContent:
+            LinearLayout
+
+    private var activeCodeInput:
+            EditText? =
+        null
+
+    private var keyboardVisible =
+        false
+
     private var lessonNumber = 1
 
     private var currentPage = 0
@@ -180,6 +197,18 @@ class LessonActivity : AppCompatActivity() {
 
         lessonScroll =
             findViewById(R.id.lessonScroll)
+
+        programmingKeyboardBar =
+            findViewById(
+                R.id.programmingKeyboardBar
+            )
+
+        programmingKeyboardBarContent =
+            findViewById(
+                R.id.programmingKeyboardBarContent
+            )
+
+        setupProgrammingKeyboardBar()
 
         buttonSwipeToggle =
             findViewById(
@@ -278,6 +307,13 @@ class LessonActivity : AppCompatActivity() {
         )
 
         if (
+            ::programmingKeyboardBarContent.isInitialized
+        ) {
+
+            rebuildProgrammingKeyboardBar()
+        }
+
+        if (
             ::currentLessonId.isInitialized
         ) {
 
@@ -286,6 +322,289 @@ class LessonActivity : AppCompatActivity() {
                 currentLessonId
             )
         }
+    }
+
+    private fun setupProgrammingKeyboardBar() {
+
+        rebuildProgrammingKeyboardBar()
+
+        protectProgrammingInteractionFromPageSwipe(
+            programmingKeyboardBar
+        )
+
+        val root =
+            findViewById<View>(
+                android.R.id.content
+            )
+
+        /*
+         * Detectamos qué EditText tiene el foco.
+         */
+        root.viewTreeObserver
+            .addOnGlobalFocusChangeListener { _, newFocus ->
+
+                activeCodeInput =
+                    (newFocus as? EditText)
+                        ?.takeIf {
+
+                            it.tag ==
+                                    CODE_INPUT_TAG
+                        }
+
+                updateProgrammingKeyboardBarVisibility()
+            }
+
+        /*
+         * Comprobamos el estado real del teclado
+         * cada vez que cambia el layout.
+         *
+         * Esto funciona mejor en algunos teléfonos
+         * que depender solamente del listener
+         * de WindowInsets.
+         */
+        root.viewTreeObserver
+            .addOnGlobalLayoutListener {
+
+                val insets =
+                    ViewCompat.getRootWindowInsets(
+                        root
+                    )
+
+                keyboardVisible =
+                    insets?.isVisible(
+                        WindowInsetsCompat.Type.ime()
+                    ) == true
+
+                updateProgrammingKeyboardBarVisibility()
+            }
+
+        root.post {
+
+            val insets =
+                ViewCompat.getRootWindowInsets(
+                    root
+                )
+
+            keyboardVisible =
+                insets?.isVisible(
+                    WindowInsetsCompat.Type.ime()
+                ) == true
+
+            updateProgrammingKeyboardBarVisibility()
+        }
+    }
+
+    private fun rebuildProgrammingKeyboardBar() {
+
+        programmingKeyboardBarContent
+            .removeAllViews()
+
+        /*
+         * TAB siempre es fijo.
+         */
+        addProgrammingShortcutButton(
+            label = "TAB",
+            insertedText =
+                KeyboardShortcutSettingsRepository
+                    .getTabText()
+        )
+
+        /*
+         * Después vienen los atajos
+         * configurables del usuario.
+         */
+        val shortcuts =
+            KeyboardShortcutSettingsRepository
+                .getShortcuts(
+                    this
+                )
+
+        for (
+        shortcut in shortcuts
+        ) {
+
+            addProgrammingShortcutButton(
+                label = shortcut,
+                insertedText = shortcut
+            )
+        }
+    }
+
+    private fun addProgrammingShortcutButton(
+        label: String,
+        insertedText: String
+    ) {
+
+        val button =
+            TextView(this)
+
+        button.text =
+            label
+
+        button.typeface =
+            Typeface.MONOSPACE
+
+        button.textSize =
+            16f
+
+        button.gravity =
+            Gravity.CENTER
+
+        button.setTextColor(
+            Color.WHITE
+        )
+
+        button.minWidth =
+            if (
+                label == "TAB"
+            ) {
+                dp(56)
+            } else {
+                dp(40)
+            }
+
+        button.minimumHeight =
+            dp(40)
+
+        button.setPadding(
+            dp(10),
+            dp(6),
+            dp(10),
+            dp(6)
+        )
+
+        /*
+         * No roba el foco al EditText.
+         */
+        button.isFocusable =
+            false
+
+        button.isFocusableInTouchMode =
+            false
+
+        button.isClickable =
+            true
+
+        protectProgrammingInteractionFromPageSwipe(
+            button
+        )
+
+        val background =
+            GradientDrawable()
+
+        background.setColor(
+            Color.rgb(
+                37,
+                40,
+                46
+            )
+        )
+
+        background.cornerRadius =
+            dp(8).toFloat()
+
+        background.setStroke(
+            dp(1),
+            AppearanceSettingsRepository
+                .getAccentColor(
+                    this
+                )
+        )
+
+        button.background =
+            background
+
+        val params =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                dp(40)
+            )
+
+        params.setMargins(
+            dp(3),
+            0,
+            dp(3),
+            0
+        )
+
+        button.layoutParams =
+            params
+
+        button.setOnClickListener {
+
+            insertProgrammingShortcut(
+                insertedText
+            )
+        }
+
+        programmingKeyboardBarContent.addView(
+            button
+        )
+    }
+
+    private fun insertProgrammingShortcut(
+        text: String
+    ) {
+
+        val input =
+            activeCodeInput
+                ?: return
+
+        val editable =
+            input.text
+
+        val selectionStart =
+            input.selectionStart
+                .coerceAtLeast(
+                    0
+                )
+
+        val selectionEnd =
+            input.selectionEnd
+                .coerceAtLeast(
+                    0
+                )
+
+        val start =
+            minOf(
+                selectionStart,
+                selectionEnd
+            )
+
+        val end =
+            maxOf(
+                selectionStart,
+                selectionEnd
+            )
+
+        editable.replace(
+            start,
+            end,
+            text
+        )
+
+        input.setSelection(
+            start +
+                    text.length
+        )
+    }
+
+    private fun updateProgrammingKeyboardBarVisibility() {
+
+        val shouldShow =
+            keyboardVisible &&
+                    activeCodeInput
+                        ?.hasFocus() ==
+                    true
+
+        programmingKeyboardBar.visibility =
+            if (
+                shouldShow
+            ) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
     }
 
     private fun setPuzzleWrapMode(
@@ -417,6 +736,707 @@ class LessonActivity : AppCompatActivity() {
                 "Ajuste de línea desactivado"
 
             codeLines.requestLayout()
+        }
+    }
+
+    private fun enableCppAutoClose(
+        input: EditText
+    ) {
+
+        /*
+         * Desactiva autocorrección, sugerencias y
+         * espaciado inteligente del teclado.
+         *
+         * Esto es especialmente importante para
+         * símbolos de programación.
+         */
+        val isMultiline =
+            input.maxLines != 1
+
+        input.inputType =
+            android.text.InputType.TYPE_CLASS_TEXT or
+                    android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or
+                    android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
+                    if (isMultiline) {
+                        android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                    } else {
+                        0
+                    }
+
+        var internalChange =
+            false
+
+        var changeStart =
+            0
+
+        var removedCount =
+            0
+
+        var addedCount =
+            0
+
+        var previousText =
+            ""
+
+        /*
+         * Algunos teclados insertan automáticamente
+         * un espacio justo después de escribir
+         * determinados signos.
+         *
+         * Esta protección vive solamente durante
+         * el mismo ciclo de entrada del teclado.
+         */
+        var suppressAutoSpaceAfterSkip =
+            false
+
+        var suppressAutoSpacePosition =
+            -1
+
+        input.addTextChangedListener(
+            object : TextWatcher {
+
+                override fun beforeTextChanged(
+                    text: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {
+
+                    if (internalChange) {
+                        return
+                    }
+
+                    previousText =
+                        text?.toString()
+                            .orEmpty()
+
+                    changeStart =
+                        start
+
+                    removedCount =
+                        count
+
+                    addedCount =
+                        after
+                }
+
+                override fun onTextChanged(
+                    text: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int
+                ) {
+                }
+
+                override fun afterTextChanged(
+                    editable: Editable?
+                ) {
+
+                    if (
+                        internalChange ||
+                        editable == null
+                    ) {
+                        return
+                    }
+
+                    /*
+ * El teclado puede hacer esto:
+ *
+ * 1. escribir ")"
+ * 2. nosotros saltamos sobre ")"
+ * 3. el teclado inserta " " automáticamente
+ *
+ * Si ese espacio pertenece todavía al mismo
+ * ciclo de entrada, lo eliminamos.
+ */
+                    if (
+                        suppressAutoSpaceAfterSkip &&
+                        removedCount == 0 &&
+                        addedCount > 0 &&
+                        changeStart ==
+                        suppressAutoSpacePosition &&
+                        changeStart + addedCount <=
+                        editable.length
+                    ) {
+
+                        val insertedText =
+                            editable.subSequence(
+                                changeStart,
+                                changeStart + addedCount
+                            )
+                                .toString()
+
+                        val onlyWhitespace =
+                            insertedText.all {
+                                it == ' ' ||
+                                        it == '\t'
+                            }
+
+                        if (onlyWhitespace) {
+
+                            internalChange =
+                                true
+
+                            editable.delete(
+                                changeStart,
+                                changeStart + addedCount
+                            )
+
+                            input.setSelection(
+                                changeStart.coerceAtMost(
+                                    editable.length
+                                )
+                            )
+
+                            internalChange =
+                                false
+
+                            suppressAutoSpaceAfterSkip =
+                                false
+
+                            suppressAutoSpacePosition =
+                                -1
+
+                            return
+                        }
+                    }
+
+                    /*
+                     * BORRADO DEL PAR VACÍO
+                     *
+                     * (|)
+                     *
+                     * borrar "(" elimina también ")".
+                     */
+                    if (
+                        removedCount == 1 &&
+                        addedCount == 0 &&
+                        changeStart in previousText.indices
+                    ) {
+
+                        val deletedCharacter =
+                            previousText[
+                                changeStart
+                            ]
+
+                        val expectedClosing =
+                            when (
+                                deletedCharacter
+                            ) {
+
+                                '(' -> ')'
+                                '{' -> '}'
+                                '[' -> ']'
+                                '"' -> '"'
+                                '\'' -> '\''
+
+                                else -> null
+                            }
+
+                        if (
+                            expectedClosing != null &&
+                            changeStart <
+                            editable.length &&
+                            editable[
+                                changeStart
+                            ] == expectedClosing
+                        ) {
+
+                            internalChange =
+                                true
+
+                            editable.delete(
+                                changeStart,
+                                changeStart + 1
+                            )
+
+                            input.setSelection(
+                                changeStart.coerceAtMost(
+                                    editable.length
+                                )
+                            )
+
+                            internalChange =
+                                false
+                        }
+
+                        return
+                    }
+
+                    /*
+ * Algunos teclados Android pueden insertar
+ * un cierre junto con un espacio:
+ *
+ * ") "
+ *
+ * Si delante ya existe ese mismo cierre,
+ * eliminamos TODO lo que acaba de insertar
+ * el teclado y simplemente avanzamos sobre
+ * el cierre existente.
+ */
+                    if (
+                        removedCount == 0 &&
+                        addedCount >= 1 &&
+                        changeStart >= 0 &&
+                        changeStart + addedCount <= editable.length
+                    ) {
+
+                        val insertedText =
+                            editable.subSequence(
+                                changeStart,
+                                changeStart + addedCount
+                            )
+                                .toString()
+
+                        val firstInsertedCharacter =
+                            insertedText
+                                .firstOrNull()
+
+                        val isClosingCharacter =
+                            firstInsertedCharacter == ')' ||
+                                    firstInsertedCharacter == '}' ||
+                                    firstInsertedCharacter == ']' ||
+                                    firstInsertedCharacter == '"' ||
+                                    firstInsertedCharacter == '\''
+
+                        val remainingInsertedTextIsWhitespace =
+                            insertedText
+                                .drop(1)
+                                .all {
+                                    it.isWhitespace()
+                                }
+
+                        val existingClosingPosition =
+                            changeStart +
+                                    addedCount
+
+                        if (
+                            isClosingCharacter &&
+                            remainingInsertedTextIsWhitespace &&
+                            existingClosingPosition <
+                            editable.length &&
+                            editable[
+                                existingClosingPosition
+                            ] == firstInsertedCharacter
+                        ) {
+
+                            internalChange =
+                                true
+
+                            android.view.inputmethod
+                                .BaseInputConnection
+                                .removeComposingSpans(
+                                    editable
+                                )
+
+                            /*
+                             * Eliminamos tanto el cierre recién
+                             * escrito como cualquier espacio
+                             * añadido por el teclado.
+                             */
+                            editable.delete(
+                                changeStart,
+                                changeStart + addedCount
+                            )
+
+                            /*
+                             * El cierre original ahora vuelve
+                             * a estar en changeStart.
+                             */
+                            val cursorAfterClosing =
+                                (
+                                        changeStart + 1
+                                        ).coerceAtMost(
+                                        editable.length
+                                    )
+
+                            input.setSelection(
+                                cursorAfterClosing
+                            )
+
+                            /*
+                             * Si el teclado solamente introdujo
+                             * el cierre, existe la posibilidad de
+                             * que inmediatamente después intente
+                             * agregar un espacio automático.
+                             *
+                             * Lo bloqueamos únicamente durante
+                             * este mismo ciclo del Looper.
+                             *
+                             * Un espacio que el usuario pulse
+                             * posteriormente sí será permitido.
+                             */
+                            if (
+                                addedCount == 1
+                            ) {
+
+                                suppressAutoSpaceAfterSkip =
+                                    true
+
+                                suppressAutoSpacePosition =
+                                    cursorAfterClosing
+
+                                input.post {
+
+                                    suppressAutoSpaceAfterSkip =
+                                        false
+
+                                    suppressAutoSpacePosition =
+                                        -1
+                                }
+
+                            } else {
+
+                                /*
+                                 * Si ") " llegó completo en la misma
+                                 * modificación, ya fue eliminado arriba.
+                                 */
+                                suppressAutoSpaceAfterSkip =
+                                    false
+
+                                suppressAutoSpacePosition =
+                                    -1
+                            }
+
+                            internalChange =
+                                false
+
+                            return
+                        }
+                    }
+
+                    /*
+                     * Desde aquí, el resto de la lógica
+                     * corresponde a una sola tecla escrita.
+                     */
+                    if (
+                        removedCount != 0 ||
+                        addedCount != 1 ||
+                        changeStart !in editable.indices
+                    ) {
+
+                        return
+                    }
+
+                    val typedCharacter =
+                        editable[
+                            changeStart
+                        ]
+
+                    /*
+                     * ENTER:
+                     *
+                     * conserva la sangría actual.
+                     *
+                     * Si la línea termina en "{",
+                     * agrega cuatro espacios.
+                     */
+                    if (
+                        typedCharacter == '\n' &&
+                        isMultiline
+                    ) {
+
+                        val previousLineStart =
+                            previousText
+                                .lastIndexOf(
+                                    '\n',
+                                    (
+                                            changeStart - 1
+                                            ).coerceAtLeast(
+                                            0
+                                        )
+                                ) + 1
+
+                        val previousLine =
+                            previousText.substring(
+                                previousLineStart,
+                                changeStart.coerceAtMost(
+                                    previousText.length
+                                )
+                            )
+
+                        val baseIndent =
+                            previousLine
+                                .takeWhile {
+                                    it == ' ' ||
+                                            it == '\t'
+                                }
+
+                        val trimmedPreviousLine =
+                            previousLine
+                                .trimEnd()
+
+                        val opensBlock =
+                            trimmedPreviousLine
+                                .endsWith(
+                                    "{"
+                                )
+
+                        val childIndent =
+                            if (opensBlock) {
+
+                                baseIndent +
+                                        "    "
+
+                            } else {
+
+                                baseIndent
+                            }
+
+                        /*
+                         * Caso especial:
+                         *
+                         * {
+                         *     |
+                         * }
+                         *
+                         * Si Enter se pulsa entre un par
+                         * {}, dejamos automáticamente la
+                         * llave de cierre en su propia línea.
+                         */
+                        val closingBraceImmediatelyAfter =
+                            changeStart + 1 <
+                                    editable.length &&
+                                    editable[
+                                        changeStart + 1
+                                    ] == '}'
+
+                        internalChange =
+                            true
+
+                        if (
+                            opensBlock &&
+                            closingBraceImmediatelyAfter
+                        ) {
+
+                            editable.insert(
+                                changeStart + 1,
+                                childIndent +
+                                        "\n" +
+                                        baseIndent
+                            )
+
+                            input.setSelection(
+                                changeStart +
+                                        1 +
+                                        childIndent.length
+                            )
+
+                        } else {
+
+                            editable.insert(
+                                changeStart + 1,
+                                childIndent
+                            )
+
+                            input.setSelection(
+                                changeStart +
+                                        1 +
+                                        childIndent.length
+                            )
+                        }
+
+                        internalChange =
+                            false
+
+                        return
+                    }
+
+                    /*
+                     * Una comilla escapada:
+                     *
+                     * \"
+                     *
+                     * no genera un cierre automático.
+                     */
+                    if (
+                        (
+                                typedCharacter == '"' ||
+                                        typedCharacter == '\''
+                                ) &&
+                        changeStart > 0 &&
+                        editable[
+                            changeStart - 1
+                        ] == '\\'
+                    ) {
+
+                        return
+                    }
+
+                    /*
+                     * Si escribimos } al principio lógico
+                     * de una línea indentada, reducimos
+                     * automáticamente un nivel.
+                     *
+                     * Ejemplo:
+                     *
+                     *     |
+                     *
+                     * escribir "}" produce:
+                     *
+                     * }
+                     */
+                    if (
+                        typedCharacter == '}' &&
+                        isMultiline
+                    ) {
+
+                        val lineStart =
+                            editable
+                                .lastIndexOf(
+                                    '\n',
+                                    (
+                                            changeStart - 1
+                                            ).coerceAtLeast(
+                                            0
+                                        )
+                                ) + 1
+
+                        val textBeforeBrace =
+                            editable.substring(
+                                lineStart,
+                                changeStart
+                            )
+
+                        val onlyWhitespaceBefore =
+                            textBeforeBrace.all {
+                                it == ' ' ||
+                                        it == '\t'
+                            }
+
+                        if (
+                            onlyWhitespaceBefore &&
+                            textBeforeBrace.isNotEmpty()
+                        ) {
+
+                            var charactersToRemove =
+                                0
+
+                            var position =
+                                changeStart - 1
+
+                            while (
+                                position >= lineStart &&
+                                charactersToRemove < 4 &&
+                                editable[
+                                    position
+                                ] == ' '
+                            ) {
+
+                                charactersToRemove++
+                                position--
+                            }
+
+                            if (
+                                charactersToRemove > 0
+                            ) {
+
+                                internalChange =
+                                    true
+
+                                editable.delete(
+                                    changeStart -
+                                            charactersToRemove,
+                                    changeStart
+                                )
+
+                                val newBracePosition =
+                                    changeStart -
+                                            charactersToRemove
+
+                                input.setSelection(
+                                    (
+                                            newBracePosition + 1
+                                            ).coerceAtMost(
+                                            editable.length
+                                        )
+                                )
+
+                                internalChange =
+                                    false
+
+                                return
+                            }
+                        }
+                    }
+
+                    /*
+                     * AUTOCIERRE
+                     */
+                    val closingCharacter =
+                        when (
+                            typedCharacter
+                        ) {
+
+                            '(' -> ')'
+                            '{' -> '}'
+                            '[' -> ']'
+                            '"' -> '"'
+                            '\'' -> '\''
+
+                            else -> null
+                        }
+
+                    if (
+                        closingCharacter ==
+                        null
+                    ) {
+
+                        return
+                    }
+
+                    internalChange =
+                        true
+
+                    editable.insert(
+                        changeStart + 1,
+                        closingCharacter
+                            .toString()
+                    )
+
+                    input.setSelection(
+                        changeStart + 1
+                    )
+
+                    internalChange =
+                        false
+                }
+            }
+        )
+    }
+
+    private fun protectProgrammingInteractionFromPageSwipe(
+        view: View
+    ) {
+
+        view.setOnTouchListener { _, event ->
+
+            if (
+                event.actionMasked ==
+                MotionEvent.ACTION_DOWN
+            ) {
+
+                /*
+                 * Este gesto pertenece a una zona
+                 * interactiva de programación.
+                 *
+                 * No debe interpretarse como
+                 * navegación entre páginas.
+                 */
+                ignoreCurrentSwipe =
+                    true
+            }
+
+            /*
+             * false permite que la vista siga
+             * procesando normalmente el toque:
+             *
+             * - mover el cursor
+             * - seleccionar texto
+             * - pulsar botones
+             * - desplazar horizontalmente
+             */
+            false
         }
     }
 
@@ -1417,6 +2437,17 @@ class LessonActivity : AppCompatActivity() {
         val input =
             EditText(this)
 
+        input.tag =
+            CODE_INPUT_TAG
+
+        enableCppAutoClose(
+            input
+        )
+
+        protectProgrammingInteractionFromPageSwipe(
+            input
+        )
+
         input.hint =
             "Escribe el código faltante"
 
@@ -1471,6 +2502,10 @@ class LessonActivity : AppCompatActivity() {
 
         button.isAllCaps =
             false
+
+        button.isEnabled =
+            savedAnswer.isNotEmpty() &&
+                    !savedCorrect
 
         lessonContent.addView(
             button
@@ -1576,6 +2611,10 @@ class LessonActivity : AppCompatActivity() {
                 ) {
 
                     updateResetButton()
+
+                    button.isEnabled =
+                        input.text.isNotEmpty() &&
+                                !answeredCorrectly
                 }
             }
         )
@@ -2102,6 +3141,12 @@ class LessonActivity : AppCompatActivity() {
         button.isAllCaps =
             false
 
+        button.isEnabled =
+            input.text
+                .toString()
+                .isNotBlank() &&
+                    !savedCorrect
+
         lessonContent.addView(
             button
         )
@@ -2203,6 +3248,12 @@ class LessonActivity : AppCompatActivity() {
                 ) {
 
                     updateResetButton()
+
+                    button.isEnabled =
+                        input.text
+                            .toString()
+                            .isNotBlank() &&
+                                !answeredCorrectly
                 }
             }
         )
@@ -2287,7 +3338,7 @@ class LessonActivity : AppCompatActivity() {
             )
 
             button.isEnabled =
-                true
+                false
 
             button.text =
                 "Comprobar"
@@ -2656,6 +3707,133 @@ class LessonActivity : AppCompatActivity() {
         )
 
 
+        val fragments =
+            block.getJSONArray(
+                "fragments"
+            )
+
+        val correctOrder =
+            block.getJSONArray(
+                "correctOrder"
+            )
+
+        var puzzleStarted =
+            savedOrder != null &&
+                    (
+                            0 until
+                                    savedOrder.length()
+                            ).any { index ->
+
+                            savedOrder.optInt(
+                                index,
+                                index
+                            ) != index
+                        }
+
+        val checkButton =
+            Button(this)
+
+        checkButton.text =
+            "Comprobar"
+
+        checkButton.isAllCaps =
+            false
+
+        checkButton.isEnabled =
+            puzzleStarted &&
+                    !savedCorrect
+
+        /*
+         * CUERPO COMPLETO DEL EDITOR.
+         */
+        val codeBody =
+            LinearLayout(this)
+
+        codeBody.orientation =
+            LinearLayout.HORIZONTAL
+
+        /*
+         * COLUMNA DE NÚMEROS.
+         */
+        val lineNumberColumn =
+            LinearLayout(this)
+
+        lineNumberColumn.orientation =
+            LinearLayout.VERTICAL
+
+        lineNumberColumn.setBackgroundColor(
+            Color.rgb(
+                24,
+                26,
+                31
+            )
+        )
+
+        lineNumberColumn.layoutParams =
+            LinearLayout.LayoutParams(
+                dp(18),
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+        val lineNumberViews =
+            mutableListOf<TextView>()
+
+        for (
+        i in 0 until fragments.length()
+        ) {
+
+            val number =
+                TextView(this)
+
+            number.text =
+                "${i + 1}"
+
+            number.typeface =
+                Typeface.MONOSPACE
+
+            number.textSize =
+                16f
+
+            number.includeFontPadding =
+                false
+
+            number.gravity =
+                Gravity.CENTER_VERTICAL or
+                        Gravity.END
+
+            number.setTextColor(
+                Color.rgb(
+                    111,
+                    119,
+                    130
+                )
+            )
+
+            number.setPadding(
+                0,
+                0,
+                dp(3),
+                0
+            )
+
+            number.layoutParams =
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+
+            lineNumberViews.add(
+                number
+            )
+
+            lineNumberColumn.addView(
+                number
+            )
+        }
+
+        /*
+         * SCROLL HORIZONTAL DEL CÓDIGO.
+         */
         val horizontalScroll =
             HorizontalScrollView(this)
 
@@ -2668,24 +3846,20 @@ class LessonActivity : AppCompatActivity() {
         horizontalScroll.isFillViewport =
             true
 
+        horizontalScroll.layoutParams =
+            LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+
         protectHorizontalScrollFromPageSwipe(
             horizontalScroll
         )
 
-        codeCard.addView(
-            horizontalScroll
-        )
-
-        lessonContent.addView(
-            codeCard
-        )
-
-        val fragments =
-            block.getJSONArray("fragments")
-
-        val correctOrder =
-            block.getJSONArray("correctOrder")
-
+        /*
+         * FILAS REORDENABLES.
+         */
         val orderContainer =
             LinearLayout(this)
 
@@ -2694,6 +3868,26 @@ class LessonActivity : AppCompatActivity() {
 
         horizontalScroll.addView(
             orderContainer
+        )
+
+        codeBody.addView(
+            lineNumberColumn
+        )
+
+        codeBody.addView(
+            horizontalScroll
+        )
+
+        codeCard.addView(
+            codeBody
+        )
+
+        lessonContent.addView(
+            codeCard
+        )
+
+        makeCodeCardFullWidth(
+            codeCard
         )
 
         fun saveOrderState(
@@ -2976,6 +4170,12 @@ class LessonActivity : AppCompatActivity() {
 
                     nextTapPosition++
 
+                    puzzleStarted =
+                        true
+
+                    checkButton.isEnabled =
+                        true
+
                     saveOrderState()
                 }
             }
@@ -3035,6 +4235,12 @@ class LessonActivity : AppCompatActivity() {
                                 newIndex
                             )
 
+                            puzzleStarted =
+                                true
+
+                            checkButton.isEnabled =
+                                true
+
                             saveOrderState()
                         }
 
@@ -3057,6 +4263,57 @@ class LessonActivity : AppCompatActivity() {
                 row
             )
         }
+
+        fun syncOrderLineNumbers() {
+
+            orderContainer.post {
+
+                val amount =
+                    minOf(
+                        lineNumberViews.size,
+                        orderContainer.childCount
+                    )
+
+                for (
+                i in 0 until amount
+                ) {
+
+                    val row =
+                        orderContainer.getChildAt(
+                            i
+                        )
+
+                    val rowParams =
+                        row.layoutParams
+                                as? ViewGroup.MarginLayoutParams
+
+                    val totalHeight =
+                        row.height +
+                                (
+                                        rowParams?.topMargin
+                                            ?: 0
+                                        ) +
+                                (
+                                        rowParams?.bottomMargin
+                                            ?: 0
+                                        )
+
+                    val number =
+                        lineNumberViews[i]
+
+                    val numberParams =
+                        number.layoutParams
+
+                    numberParams.height =
+                        totalHeight
+
+                    number.layoutParams =
+                        numberParams
+                }
+            }
+        }
+
+        syncOrderLineNumbers()
 
         if (
             savedOrder != null &&
@@ -3105,6 +4362,8 @@ class LessonActivity : AppCompatActivity() {
                 }
             }
         }
+
+        syncOrderLineNumbers()
 
         copyButton.setOnClickListener {
 
@@ -3191,15 +4450,6 @@ class LessonActivity : AppCompatActivity() {
 
             renderCurrentPage()
         }
-
-        val checkButton =
-            Button(this)
-
-        checkButton.text =
-            "Comprobar"
-
-        checkButton.isAllCaps =
-            false
 
         val checkParams =
             LinearLayout.LayoutParams(
@@ -3376,6 +4626,706 @@ class LessonActivity : AppCompatActivity() {
                     )
                 )
             }
+        }
+    }
+
+    private fun addCppCompiler(
+        block: JSONObject
+    ) {
+
+        val initialCode =
+            block.optString(
+                "initialCode",
+                ""
+            )
+
+        /*
+         * TARJETA DEL EDITOR.
+         */
+        val codeCard =
+            LinearLayout(this)
+
+        codeCard.orientation =
+            LinearLayout.VERTICAL
+
+        val cardBackground =
+            GradientDrawable()
+
+        cardBackground.setColor(
+            Color.rgb(
+                28,
+                31,
+                36
+            )
+        )
+
+        cardBackground.cornerRadius =
+            dp(12).toFloat()
+
+        codeCard.background =
+            cardBackground
+
+        codeCard.clipToOutline =
+            true
+
+        /*
+         * CABECERA.
+         */
+        val header =
+            LinearLayout(this)
+
+        header.orientation =
+            LinearLayout.HORIZONTAL
+
+        header.gravity =
+            Gravity.CENTER_VERTICAL
+
+        header.setPadding(
+            dp(14),
+            dp(8),
+            dp(8),
+            dp(8)
+        )
+
+        header.setBackgroundColor(
+            Color.rgb(
+                37,
+                40,
+                46
+            )
+        )
+
+        val languageLabel =
+            TextView(this)
+
+        languageLabel.text =
+            "</>  C++"
+
+        languageLabel.setTextColor(
+            Color.rgb(
+                225,
+                228,
+                235
+            )
+        )
+
+        languageLabel.setTypeface(
+            null,
+            Typeface.BOLD
+        )
+
+        languageLabel.textSize =
+            15f
+
+        /*
+         * REINICIAR.
+         */
+        val resetButton =
+            TextView(this)
+
+        resetButton.gravity =
+            Gravity.CENTER
+
+        resetButton.setPadding(
+            dp(10),
+            dp(8),
+            dp(10),
+            dp(8)
+        )
+
+        resetButton.setCompoundDrawablesWithIntrinsicBounds(
+            R.drawable.ic_code_reset,
+            0,
+            0,
+            0
+        )
+
+        resetButton.contentDescription =
+            "Reiniciar código"
+
+        resetButton.isClickable =
+            true
+
+        val spacer =
+            View(this)
+
+        spacer.layoutParams =
+            LinearLayout.LayoutParams(
+                0,
+                1,
+                1f
+            )
+
+        /*
+         * AJUSTE DE LÍNEA.
+         */
+        val wrapButton =
+            TextView(this)
+
+        wrapButton.gravity =
+            Gravity.CENTER
+
+        wrapButton.setPadding(
+            dp(10),
+            dp(8),
+            dp(10),
+            dp(8)
+        )
+
+        wrapButton.setCompoundDrawablesWithIntrinsicBounds(
+            R.drawable.ic_code_wrap_off,
+            0,
+            0,
+            0
+        )
+
+        wrapButton.contentDescription =
+            "Ajuste de línea desactivado"
+
+        wrapButton.isClickable =
+            true
+
+        /*
+         * COPIAR.
+         */
+        val copyButton =
+            TextView(this)
+
+        copyButton.gravity =
+            Gravity.CENTER
+
+        copyButton.setPadding(
+            dp(10),
+            dp(8),
+            dp(10),
+            dp(8)
+        )
+
+        copyButton.setCompoundDrawablesWithIntrinsicBounds(
+            R.drawable.ic_code_copy,
+            0,
+            0,
+            0
+        )
+
+        copyButton.contentDescription =
+            "Copiar código"
+
+        copyButton.isClickable =
+            true
+
+        header.addView(
+            languageLabel
+        )
+
+        header.addView(
+            resetButton
+        )
+
+        header.addView(
+            spacer
+        )
+
+        header.addView(
+            wrapButton
+        )
+
+        header.addView(
+            copyButton
+        )
+
+        codeCard.addView(
+            header
+        )
+
+        /*
+         * CUERPO DEL EDITOR.
+         */
+        val editorBody =
+            LinearLayout(this)
+
+        editorBody.orientation =
+            LinearLayout.HORIZONTAL
+
+        editorBody.setBackgroundColor(
+            Color.rgb(
+                28,
+                31,
+                36
+            )
+        )
+
+        /*
+         * NÚMEROS.
+         */
+        val lineNumbers =
+            TextView(this)
+
+        lineNumbers.typeface =
+            Typeface.MONOSPACE
+
+        lineNumbers.textSize =
+            14f
+
+        lineNumbers.includeFontPadding =
+            false
+
+        lineNumbers.gravity =
+            Gravity.TOP or
+                    Gravity.END
+
+        lineNumbers.setTextColor(
+            Color.rgb(
+                111,
+                119,
+                130
+            )
+        )
+
+        lineNumbers.setBackgroundColor(
+            Color.rgb(
+                24,
+                26,
+                31
+            )
+        )
+
+        lineNumbers.setPadding(
+            0,
+            dp(16),
+            dp(3),
+            dp(16)
+        )
+
+        lineNumbers.layoutParams =
+            LinearLayout.LayoutParams(
+                dp(18),
+                LinearLayout.LayoutParams.MATCH_PARENT
+            )
+
+        /*
+         * EDITOR REAL.
+         */
+        val sourceCode =
+            EditText(this)
+
+        sourceCode.tag =
+            CODE_INPUT_TAG
+
+        enableCppAutoClose(
+            sourceCode
+        )
+
+        protectProgrammingInteractionFromPageSwipe(
+            sourceCode
+        )
+
+        sourceCode.typeface =
+            Typeface.MONOSPACE
+
+        sourceCode.textSize =
+            14f
+
+        sourceCode.includeFontPadding =
+            false
+
+        sourceCode.gravity =
+            Gravity.TOP or
+                    Gravity.START
+
+        sourceCode.setTextColor(
+            Color.rgb(
+                230,
+                237,
+                243
+            )
+        )
+
+        sourceCode.setBackgroundColor(
+            Color.TRANSPARENT
+        )
+
+        sourceCode.inputType =
+            android.text.InputType.TYPE_CLASS_TEXT or
+                    android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                    android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+
+        sourceCode.setPadding(
+            dp(10),
+            dp(16),
+            dp(16),
+            dp(16)
+        )
+
+        sourceCode.minHeight =
+            dp(220)
+
+        sourceCode.setHorizontallyScrolling(
+            true
+        )
+
+        sourceCode.layoutParams =
+            LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+
+        sourceCode.setText(
+            initialCode
+        )
+
+        editorBody.addView(
+            lineNumbers
+        )
+
+        editorBody.addView(
+            sourceCode
+        )
+
+        codeCard.addView(
+            editorBody
+        )
+
+        lessonContent.addView(
+            codeCard
+        )
+
+        makeCodeCardFullWidth(
+            codeCard
+        )
+
+        /*
+         * NÚMEROS DE LÍNEA.
+         */
+        fun updateLineNumbers() {
+
+            val amount =
+                sourceCode.text.count {
+                    it == '\n'
+                } + 1
+
+            lineNumbers.text =
+                (1..amount)
+                    .joinToString(
+                        "\n"
+                    )
+        }
+
+        updateLineNumbers()
+
+        sourceCode.addTextChangedListener(
+            object : TextWatcher {
+
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {
+                }
+
+                override fun onTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int
+                ) {
+
+                    updateLineNumbers()
+                }
+
+                override fun afterTextChanged(
+                    s: Editable?
+                ) {
+                }
+            }
+        )
+
+        /*
+         * BOTÓN COMPILAR.
+         */
+        val runButton =
+            Button(this)
+
+        runButton.text =
+            "Compilar y ejecutar"
+
+        runButton.isAllCaps =
+            false
+
+        runButton.isEnabled =
+            true
+
+        val runParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+        runParams.setMargins(
+            0,
+            dp(20),
+            0,
+            0
+        )
+
+        runButton.layoutParams =
+            runParams
+
+        lessonContent.addView(
+            runButton
+        )
+
+        /*
+         * ESTADO.
+         */
+        val statusText =
+            TextView(this)
+
+        statusText.text =
+            "Listo para ejecutar."
+
+        statusText.textSize =
+            15f
+
+        statusText.setTextColor(
+            Color.rgb(
+                174,
+                180,
+                190
+            )
+        )
+
+        statusText.setPadding(
+            0,
+            dp(20),
+            0,
+            dp(10)
+        )
+
+        lessonContent.addView(
+            statusText
+        )
+
+        /*
+         * CONSOLA.
+         */
+        val outputText =
+            TextView(this)
+
+        outputText.typeface =
+            Typeface.MONOSPACE
+
+        outputText.textSize =
+            15f
+
+        outputText.setTextColor(
+            Color.rgb(
+                121,
+                226,
+                157
+            )
+        )
+
+        outputText.setBackgroundColor(
+            Color.rgb(
+                5,
+                6,
+                7
+            )
+        )
+
+        outputText.setPadding(
+            dp(16),
+            dp(16),
+            dp(16),
+            dp(16)
+        )
+
+        outputText.minHeight =
+            dp(120)
+
+        outputText.setTextIsSelectable(
+            true
+        )
+
+        lessonContent.addView(
+            outputText
+        )
+
+        /*
+         * REINICIAR.
+         */
+        resetButton.setOnClickListener {
+
+            sourceCode.setText(
+                initialCode
+            )
+
+            val cursorPosition =
+                initialCode.indexOf(
+                    "\n    \n"
+                )
+
+            if (
+                cursorPosition >= 0
+            ) {
+
+                sourceCode.setSelection(
+                    cursorPosition + 5
+                )
+            }
+
+            statusText.text =
+                "Listo para ejecutar."
+
+            outputText.text =
+                ""
+
+            updateLineNumbers()
+        }
+
+        /*
+         * AJUSTE DE LÍNEA.
+         */
+        var wrapEnabled =
+            false
+
+        wrapButton.setOnClickListener {
+
+            wrapEnabled =
+                !wrapEnabled
+
+            sourceCode.setHorizontallyScrolling(
+                !wrapEnabled
+            )
+
+            wrapButton.setCompoundDrawablesWithIntrinsicBounds(
+                if (
+                    wrapEnabled
+                ) {
+                    R.drawable.ic_code_wrap_on
+                } else {
+                    R.drawable.ic_code_wrap_off
+                },
+                0,
+                0,
+                0
+            )
+
+            wrapButton.contentDescription =
+                if (
+                    wrapEnabled
+                ) {
+                    "Ajuste de línea activado"
+                } else {
+                    "Ajuste de línea desactivado"
+                }
+        }
+
+        /*
+         * COPIAR.
+         */
+        copyButton.setOnClickListener {
+
+            copyCodeToClipboard(
+                sourceCode.text.toString()
+            )
+        }
+
+        /*
+         * COMPILAR Y EJECUTAR.
+         */
+        runButton.setOnClickListener {
+
+            val source =
+                sourceCode.text.toString()
+
+            runButton.isEnabled =
+                false
+
+            statusText.text =
+                "Compilando y ejecutando..."
+
+            outputText.text =
+                ""
+
+            Thread {
+
+                val result =
+                    runCatching {
+
+                        CppExecutionEngine(
+                            this
+                        ).compileAndRun(
+                            source
+                        )
+                    }
+
+                runOnUiThread {
+
+                    runButton.isEnabled =
+                        true
+
+                    result.onSuccess { engineResult ->
+
+                        val compilation =
+                            engineResult.compilation
+
+                        val execution =
+                            engineResult.execution
+
+                        statusText.text =
+                            if (
+                                execution == null
+                            ) {
+
+                                "La compilación falló " +
+                                        "(código ${compilation.exitCode})."
+
+                            } else {
+
+                                "Ejecución terminada " +
+                                        "(código ${execution.exitCode})."
+                            }
+
+                        outputText.text =
+                            buildString {
+
+                                append(
+                                    compilation.stdout
+                                )
+
+                                append(
+                                    compilation.stderr
+                                )
+
+                                if (
+                                    execution != null
+                                ) {
+
+                                    append(
+                                        execution.stdout
+                                    )
+
+                                    append(
+                                        execution.stderr
+                                    )
+                                }
+                            }.trimEnd()
+                    }
+
+                    result.onFailure { error ->
+
+                        statusText.text =
+                            "No se pudo ejecutar."
+
+                        outputText.text =
+                            error.stackTraceToString()
+                    }
+                }
+            }.start()
         }
     }
 
@@ -4368,6 +6318,13 @@ class LessonActivity : AppCompatActivity() {
                         i
                     )
                 }
+
+                "cpp_compiler" -> {
+
+                    addCppCompiler(
+                        block
+                    )
+                }
             }
         }
 
@@ -5086,6 +7043,38 @@ class LessonActivity : AppCompatActivity() {
         horizontalScroll.isScrollbarFadingEnabled =
             false
 
+        val codeBody =
+            LinearLayout(this)
+
+        codeBody.orientation =
+            LinearLayout.HORIZONTAL
+
+        /*
+         * COLUMNA DE NÚMEROS.
+         */
+        val lineNumberColumn =
+            LinearLayout(this)
+
+        lineNumberColumn.orientation =
+            LinearLayout.VERTICAL
+
+        lineNumberColumn.setBackgroundColor(
+            Color.rgb(
+                24,
+                26,
+                31
+            )
+        )
+
+        lineNumberColumn.layoutParams =
+            LinearLayout.LayoutParams(
+                dp(18),
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+        /*
+         * CÓDIGO INTERACTIVO.
+         */
         val codeLines =
             LinearLayout(this)
 
@@ -5096,18 +7085,33 @@ class LessonActivity : AppCompatActivity() {
             LinearLayout.VERTICAL
 
         codeLines.setPadding(
-            0,
+            dp(10),
             0,
             0,
             0
         )
 
+        horizontalScroll.layoutParams =
+            LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+
         horizontalScroll.addView(
             codeLines
         )
 
-        codeCard.addView(
+        codeBody.addView(
+            lineNumberColumn
+        )
+
+        codeBody.addView(
             horizontalScroll
+        )
+
+        codeCard.addView(
+            codeBody
         )
 
         val cardParams =
@@ -5160,6 +7164,37 @@ class LessonActivity : AppCompatActivity() {
 
         val slots =
             mutableListOf<FrameLayout>()
+
+        /*
+         * BOTÓN COMPROBAR.
+         *
+         * Se crea aquí para que toda la lógica del puzzle
+         * pueda activarlo o desactivarlo en cuanto el usuario
+         * coloque o retire un bloque.
+         */
+        val checkButton =
+            Button(this)
+
+        checkButton.text =
+            "Comprobar"
+
+        checkButton.isAllCaps =
+            false
+
+        checkButton.isEnabled =
+            false
+
+        fun updateDragCheckButton() {
+
+            val hasAnyBlock =
+                slots.any {
+                    it.childCount > 0
+                }
+
+            checkButton.isEnabled =
+                hasAnyBlock &&
+                        !answeredCorrectly
+        }
 
         fun saveDragState(
             correct: Boolean =
@@ -5221,13 +7256,74 @@ class LessonActivity : AppCompatActivity() {
         val lines =
             template.split("\n")
 
+        val lineNumberViews =
+            mutableListOf<TextView>()
+
+        for (
+        lineIndex in lines.indices
+        ) {
+
+            val number =
+                TextView(this)
+
+            number.text =
+                "${lineIndex + 1}"
+
+            number.typeface =
+                Typeface.MONOSPACE
+
+            number.textSize =
+                16f
+
+            number.includeFontPadding =
+                false
+
+            number.gravity =
+                Gravity.CENTER_VERTICAL or
+                        Gravity.END
+
+            number.setTextColor(
+                Color.rgb(
+                    111,
+                    119,
+                    130
+                )
+            )
+
+            number.setPadding(
+                0,
+                0,
+                dp(3),
+                0
+            )
+
+            number.layoutParams =
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+
+            lineNumberViews.add(
+                number
+            )
+
+            lineNumberColumn.addView(
+                number
+            )
+        }
+
         /*
          * CONSTRUCCIÓN DE CADA LÍNEA.
          * Los espacios iniciales se conservan,
          * por lo que también se conserva la sangría.
          */
 
-        for (line in lines) {
+        for (
+        lineIndex in lines.indices
+        ) {
+
+            val line =
+                lines[lineIndex]
 
             val row =
                 CodeFlowLayout(this)
@@ -5396,6 +7492,44 @@ class LessonActivity : AppCompatActivity() {
             codeLines.addView(
                 row
             )
+
+            val numberView =
+                lineNumberViews[
+                    lineIndex
+                ]
+
+            row.addOnLayoutChangeListener {
+                    _,
+                    _,
+                    _,
+                    _,
+                    _,
+                    _,
+                    _,
+                    _,
+                    _ ->
+
+                if (
+                    row.height <= 0
+                ) {
+                    return@addOnLayoutChangeListener
+                }
+
+                val params =
+                    numberView.layoutParams
+
+                if (
+                    params.height !=
+                    row.height
+                ) {
+
+                    params.height =
+                        row.height
+
+                    numberView.layoutParams =
+                        params
+                }
+            }
         }
 
         var expandedDragSlot: FrameLayout? =
@@ -5698,6 +7832,8 @@ class LessonActivity : AppCompatActivity() {
 
                             saveDragState()
 
+                            updateDragCheckButton()
+
                             destination.post {
 
                                 compactDragSlot(
@@ -5858,6 +7994,8 @@ class LessonActivity : AppCompatActivity() {
                             {
 
                                 saveDragState()
+
+                                updateDragCheckButton()
                             },
                             350L
                         )
@@ -5880,6 +8018,8 @@ class LessonActivity : AppCompatActivity() {
                         {
 
                             saveDragState()
+
+                            updateDragCheckButton()
                         },
                         350L
                     )
@@ -5968,6 +8108,8 @@ class LessonActivity : AppCompatActivity() {
                         )
 
                         saveDragState()
+
+                        updateDragCheckButton()
                     }
 
                     true
@@ -6009,14 +8151,11 @@ class LessonActivity : AppCompatActivity() {
          * COMPROBAR
          */
 
-        val checkButton =
-            Button(this)
-
-        checkButton.text =
-            "Comprobar"
-
-        checkButton.isAllCaps =
-            false
+        /*
+         * Si restauramos una página parcialmente resuelta,
+         * el botón debe recuperar inmediatamente su estado.
+         */
+        updateDragCheckButton()
 
         lessonContent.addView(
             checkButton
@@ -6256,6 +8395,7 @@ class LessonActivity : AppCompatActivity() {
             }
         }
     }
+
     private fun addLessonTitle(
         text: String
     ) {
@@ -6360,6 +8500,40 @@ class LessonActivity : AppCompatActivity() {
         lessonContent.addView(
             view
         )
+    }
+
+    private fun makeCodeCardFullWidth(
+        card: View
+    ) {
+
+        lessonContent.clipToPadding =
+            false
+
+        lessonContent.clipChildren =
+            false
+
+        lessonScroll.clipToPadding =
+            false
+
+        lessonScroll.clipChildren =
+            false
+
+        card.post {
+
+            val params =
+                card.layoutParams
+                        as? LinearLayout.LayoutParams
+                    ?: return@post
+
+            params.width =
+                lessonContent.width
+
+            card.layoutParams =
+                params
+
+            card.translationX =
+                -lessonContent.paddingLeft.toFloat()
+        }
     }
 
     private fun addCode(
@@ -6642,6 +8816,74 @@ class LessonActivity : AppCompatActivity() {
             dp(4)
         )
 
+        val codeBody =
+            LinearLayout(this)
+
+        codeBody.orientation =
+            LinearLayout.HORIZONTAL
+
+        /*
+         * NÚMEROS DE LÍNEA.
+         */
+        val lineNumbers =
+            TextView(this)
+
+        val lineCount =
+            code.count {
+                it == '\n'
+            } + 1
+
+        lineNumbers.text =
+            (1..lineCount)
+                .joinToString(
+                    "\n"
+                )
+
+        lineNumbers.typeface =
+            Typeface.MONOSPACE
+
+        lineNumbers.textSize =
+            16f
+
+        lineNumbers.includeFontPadding =
+            false
+
+        lineNumbers.gravity =
+            Gravity.TOP or
+                    Gravity.END
+
+        lineNumbers.setTextColor(
+            Color.rgb(
+                111,
+                119,
+                130
+            )
+        )
+
+        lineNumbers.setBackgroundColor(
+            Color.rgb(
+                24,
+                26,
+                31
+            )
+        )
+
+        lineNumbers.setPadding(
+            0,
+            dp(18),
+            dp(3),
+            dp(18)
+        )
+
+        lineNumbers.layoutParams =
+            LinearLayout.LayoutParams(
+                dp(18),
+                LinearLayout.LayoutParams.MATCH_PARENT
+            )
+
+        /*
+         * CÓDIGO.
+         */
         val codeView =
             TextView(this)
 
@@ -6662,12 +8904,15 @@ class LessonActivity : AppCompatActivity() {
         codeView.textSize =
             16f
 
+        codeView.includeFontPadding =
+            false
+
         codeView.setTextIsSelectable(
             true
         )
 
         codeView.setPadding(
-            dp(18),
+            dp(10),
             dp(18),
             dp(18),
             dp(18)
@@ -6688,11 +8933,30 @@ class LessonActivity : AppCompatActivity() {
             codeParams
         )
 
-        card.addView(
+        codeScroll.layoutParams =
+            LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+
+        codeBody.addView(
+            lineNumbers
+        )
+
+        codeBody.addView(
             codeScroll
         )
 
+        card.addView(
+            codeBody
+        )
+
         lessonContent.addView(
+            card
+        )
+
+        makeCodeCardFullWidth(
             card
         )
 
@@ -7143,6 +9407,10 @@ class LessonActivity : AppCompatActivity() {
         button.isAllCaps =
             false
 
+        button.isEnabled =
+            radioGroup.checkedRadioButtonId != -1 &&
+                    !savedCorrect
+
         lessonContent.addView(
             button
         )
@@ -7229,7 +9497,13 @@ class LessonActivity : AppCompatActivity() {
         }
 
         radioGroup.setOnCheckedChangeListener { _, _ ->
+
+            button.isEnabled =
+                radioGroup.checkedRadioButtonId != -1 &&
+                        !answeredCorrectly
+
             updateResetButton()
+
             saveCurrentSelectionState()
         }
 
@@ -7376,7 +9650,7 @@ class LessonActivity : AppCompatActivity() {
             }
 
             button.isEnabled =
-                true
+                false
 
             button.text =
                 "Comprobar"
@@ -7843,6 +10117,45 @@ class LessonActivity : AppCompatActivity() {
             horizontalScroll
         )
 
+        val codeBody =
+            LinearLayout(this)
+
+        codeBody.orientation =
+            LinearLayout.HORIZONTAL
+
+        /*
+         * Columna estrecha de números.
+         */
+        val lineNumberColumn =
+            LinearLayout(this)
+
+        lineNumberColumn.orientation =
+            LinearLayout.VERTICAL
+
+        lineNumberColumn.setBackgroundColor(
+            Color.rgb(
+                24,
+                26,
+                31
+            )
+        )
+
+        lineNumberColumn.setPadding(
+            0,
+            dp(12),
+            0,
+            dp(12)
+        )
+
+        lineNumberColumn.layoutParams =
+            LinearLayout.LayoutParams(
+                dp(18),
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+        /*
+         * Contenido real del código.
+         */
         val codeLines =
             LinearLayout(this)
 
@@ -7853,21 +10166,40 @@ class LessonActivity : AppCompatActivity() {
             LinearLayout.VERTICAL
 
         codeLines.setPadding(
-            dp(18),
-            dp(16),
+            dp(10),
+            dp(12),
             dp(60),
-            dp(16)
+            dp(12)
         )
+
+        horizontalScroll.layoutParams =
+            LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
 
         horizontalScroll.addView(
             codeLines
         )
 
-        codeCard.addView(
+        codeBody.addView(
+            lineNumberColumn
+        )
+
+        codeBody.addView(
             horizontalScroll
         )
 
+        codeCard.addView(
+            codeBody
+        )
+
         lessonContent.addView(
+            codeCard
+        )
+
+        makeCodeCardFullWidth(
             codeCard
         )
 
@@ -7896,6 +10228,62 @@ class LessonActivity : AppCompatActivity() {
         val lines =
             template.split("\n")
 
+        val lineNumberViews =
+            mutableListOf<TextView>()
+
+        for (
+        lineIndex in lines.indices
+        ) {
+
+            val lineNumber =
+                TextView(this)
+
+            lineNumber.text =
+                "${lineIndex + 1}"
+
+            lineNumber.typeface =
+                Typeface.MONOSPACE
+
+            lineNumber.textSize =
+                16f
+
+            lineNumber.includeFontPadding =
+                false
+
+            lineNumber.gravity =
+                Gravity.CENTER_VERTICAL or
+                        Gravity.END
+
+            lineNumber.setTextColor(
+                Color.rgb(
+                    111,
+                    119,
+                    130
+                )
+            )
+
+            lineNumber.setPadding(
+                0,
+                0,
+                dp(3),
+                0
+            )
+
+            lineNumber.layoutParams =
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+
+            lineNumberViews.add(
+                lineNumber
+            )
+
+            lineNumberColumn.addView(
+                lineNumber
+            )
+        }
+
         var inputIndex =
             0
 
@@ -7910,7 +10298,7 @@ class LessonActivity : AppCompatActivity() {
                 false
 
             row.minimumHeight =
-                dp(46)
+                0
 
             flowRows.add(
                 row
@@ -7984,6 +10372,17 @@ class LessonActivity : AppCompatActivity() {
                 val input =
                     EditText(this)
 
+                input.tag =
+                    CODE_INPUT_TAG
+
+                enableCppAutoClose(
+                    input
+                )
+
+                protectProgrammingInteractionFromPageSwipe(
+                    input
+                )
+
                 input.setSingleLine(
                     true
                 )
@@ -8014,16 +10413,16 @@ class LessonActivity : AppCompatActivity() {
 
                 input.setPadding(
                     dp(8),
-                    dp(3),
+                    0,
                     dp(8),
-                    dp(3)
+                    0
                 )
 
                 input.minWidth =
-                    dp(60)
+                    dp(56)
 
                 input.minimumHeight =
-                    dp(40)
+                    0
 
                 val inputBackground =
                     GradientDrawable()
@@ -8054,14 +10453,14 @@ class LessonActivity : AppCompatActivity() {
                 val inputParams =
                     LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
-                        dp(42)
+                        dp(28)
                     )
 
                 inputParams.setMargins(
                     dp(3),
-                    dp(2),
+                    0,
                     dp(3),
-                    dp(2)
+                    0
                 )
 
                 input.layoutParams =
@@ -8153,6 +10552,28 @@ class LessonActivity : AppCompatActivity() {
                 }
         }
 
+        /*
+         * BOTÓN COMPROBAR.
+         *
+         * Se crea antes de los TextWatcher
+         * porque éstos necesitan activarlo
+         * inmediatamente al empezar a escribir.
+         */
+        val checkButton =
+            Button(this)
+
+        checkButton.text =
+            "Comprobar"
+
+        checkButton.isAllCaps =
+            false
+
+        checkButton.isEnabled =
+            inputs.any {
+                it.text.isNotEmpty()
+            } &&
+                    !savedCorrect
+
 
         for (
         input in inputs
@@ -8182,6 +10603,12 @@ class LessonActivity : AppCompatActivity() {
                     ) {
 
                         updateResetButton()
+
+                        checkButton.isEnabled =
+                            inputs.any {
+                                it.text.isNotEmpty()
+                            } &&
+                                    !answeredCorrectly
                     }
                 }
             )
@@ -8189,6 +10616,45 @@ class LessonActivity : AppCompatActivity() {
 
 
         updateResetButton()
+
+        fun syncLineNumberHeights() {
+
+            codeLines.post {
+
+                for (
+                index in lineNumberViews.indices
+                ) {
+
+                    if (
+                        index >=
+                        codeLines.childCount
+                    ) {
+                        continue
+                    }
+
+                    val codeRow =
+                        codeLines.getChildAt(
+                            index
+                        )
+
+                    val numberView =
+                        lineNumberViews[
+                            index
+                        ]
+
+                    val params =
+                        numberView.layoutParams
+
+                    params.height =
+                        codeRow.height
+
+                    numberView.layoutParams =
+                        params
+                }
+            }
+        }
+
+        syncLineNumberHeights()
 
         var wrapEnabled =
             false
@@ -8205,20 +10671,19 @@ class LessonActivity : AppCompatActivity() {
                 flowRows,
                 wrapButton
             )
+
+            codeLines.postDelayed(
+                {
+
+                    syncLineNumberHeights()
+                },
+                80L
+            )
         }
 
         /*
-         * BOTÓN COMPROBAR
-         */
-
-        val checkButton =
-            Button(this)
-
-        checkButton.text =
-            "Comprobar"
-
-        checkButton.isAllCaps =
-            false
+ * BOTÓN COMPROBAR
+ */
 
         lessonContent.addView(
             checkButton
@@ -8703,5 +11168,10 @@ class LessonActivity : AppCompatActivity() {
         )
 
         return view
+    }
+    private companion object {
+
+        const val CODE_INPUT_TAG =
+            "cpp_code_input"
     }
 }

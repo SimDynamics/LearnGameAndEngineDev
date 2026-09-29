@@ -1,6 +1,15 @@
 package com.learngraphicsprogramming.app
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.learngraphicsprogramming.app.databinding.ActivityCppPrototypeBinding
 import com.learngraphicsprogramming.app.runtime.CppExecutionEngine
@@ -8,10 +17,14 @@ import java.util.concurrent.Executors
 
 class CppPrototypeActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityCppPrototypeBinding
+    private lateinit var binding:
+            ActivityCppPrototypeBinding
 
     private val worker =
         Executors.newSingleThreadExecutor()
+
+    private var lineWrapEnabled =
+        false
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -30,13 +43,15 @@ class CppPrototypeActivity : AppCompatActivity() {
             binding.root
         )
 
+        styleCodeCard()
+
+        makeCodeCardFullWidth()
+
         if (
             savedInstanceState == null
         ) {
 
-            binding.sourceCode.setText(
-                SAMPLE_SOURCE
-            )
+            resetEditor()
 
         } else {
 
@@ -60,12 +75,229 @@ class CppPrototypeActivity : AppCompatActivity() {
                     STATE_OUTPUT
                 )
                     .orEmpty()
+
+            lineWrapEnabled =
+                savedInstanceState.getBoolean(
+                    STATE_WRAP,
+                    false
+                )
+        }
+
+        binding.sourceCode.addTextChangedListener(
+            object : TextWatcher {
+
+                override fun beforeTextChanged(
+                    text: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {
+                }
+
+                override fun onTextChanged(
+                    text: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int
+                ) {
+
+                    updateLineNumbers()
+                }
+
+                override fun afterTextChanged(
+                    text: Editable?
+                ) {
+                }
+            }
+        )
+
+        updateLineNumbers()
+
+        updateWrapMode()
+
+        binding.resetCodeButton.setOnClickListener {
+
+            resetEditor()
+        }
+
+        binding.alignCodeButton.setOnClickListener {
+
+            lineWrapEnabled =
+                !lineWrapEnabled
+
+            updateWrapMode()
+        }
+
+        binding.copyCodeButton.setOnClickListener {
+
+            copySourceCode()
         }
 
         binding.runButton.setOnClickListener {
 
             runPrototype()
         }
+    }
+
+    private fun styleCodeCard() {
+
+        val background =
+            GradientDrawable()
+
+        background.setColor(
+            Color.rgb(
+                28,
+                31,
+                36
+            )
+        )
+
+        background.cornerRadius =
+            dp(12).toFloat()
+
+        binding.codeCard.background =
+            background
+
+        binding.codeCard.clipToOutline =
+            true
+    }
+
+    private fun makeCodeCardFullWidth() {
+
+        binding.codeCard.post {
+
+            val parent =
+                binding.codeCard.parent
+                        as? ViewGroup
+                    ?: return@post
+
+            val params =
+                binding.codeCard.layoutParams
+
+            params.width =
+                parent.width
+
+            binding.codeCard.layoutParams =
+                params
+
+            binding.codeCard.translationX =
+                -parent.paddingLeft.toFloat()
+        }
+    }
+
+    private fun resetEditor() {
+
+        binding.sourceCode.setText(
+            SAMPLE_SOURCE
+        )
+
+        /*
+         * Colocamos el cursor dentro de main,
+         * justo después de los cuatro espacios.
+         */
+        val cursorPosition =
+            SAMPLE_SOURCE.indexOf(
+                FOUR_SPACE_LINE
+            ) + 4
+
+        if (
+            cursorPosition >= 4
+        ) {
+
+            binding.sourceCode.setSelection(
+                cursorPosition
+            )
+        }
+
+        binding.statusText.setText(
+            R.string.cpp_runtime_ready
+        )
+
+        binding.outputText.text =
+            ""
+
+        lineWrapEnabled =
+            false
+
+        updateWrapMode()
+
+        updateLineNumbers()
+    }
+
+    private fun updateWrapMode() {
+
+        if (
+            lineWrapEnabled
+        ) {
+
+            binding.sourceCode.setHorizontallyScrolling(
+                false
+            )
+
+            binding.alignCodeButton
+                .setCompoundDrawablesWithIntrinsicBounds(
+                    R.drawable.ic_code_wrap_on,
+                    0,
+                    0,
+                    0
+                )
+
+            binding.alignCodeButton.contentDescription =
+                "Ajuste de línea activado"
+
+        } else {
+
+            binding.sourceCode.setHorizontallyScrolling(
+                true
+            )
+
+            binding.alignCodeButton
+                .setCompoundDrawablesWithIntrinsicBounds(
+                    R.drawable.ic_code_wrap_off,
+                    0,
+                    0,
+                    0
+                )
+
+            binding.alignCodeButton.contentDescription =
+                "Ajuste de línea desactivado"
+        }
+    }
+
+    private fun copySourceCode() {
+
+        val clipboard =
+            getSystemService(
+                Context.CLIPBOARD_SERVICE
+            ) as ClipboardManager
+
+        clipboard.setPrimaryClip(
+            ClipData.newPlainText(
+                "Código C++",
+                binding.sourceCode.text.toString()
+            )
+        )
+
+        Toast.makeText(
+            this,
+            R.string.code_copied,
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun updateLineNumbers() {
+
+        val lineCount =
+            binding.sourceCode.text
+                .count {
+                    it == '\n'
+                } + 1
+
+        binding.lineNumbers.text =
+            (1..lineCount)
+                .joinToString(
+                    "\n"
+                )
     }
 
     private fun runPrototype() {
@@ -184,6 +416,11 @@ class CppPrototypeActivity : AppCompatActivity() {
             binding.outputText.text.toString()
         )
 
+        outState.putBoolean(
+            STATE_WRAP,
+            lineWrapEnabled
+        )
+
         super.onSaveInstanceState(
             outState
         )
@@ -194,6 +431,16 @@ class CppPrototypeActivity : AppCompatActivity() {
         worker.shutdownNow()
 
         super.onDestroy()
+    }
+
+    private fun dp(
+        value: Int
+    ): Int {
+
+        return (
+                value *
+                        resources.displayMetrics.density
+                ).toInt()
     }
 
     private companion object {
@@ -207,13 +454,20 @@ class CppPrototypeActivity : AppCompatActivity() {
         const val STATE_OUTPUT =
             "cpp_prototype_output"
 
+        const val STATE_WRAP =
+            "cpp_prototype_wrap"
+
+        const val FOUR_SPACE_LINE =
+            "\n    \n"
+
         const val SAMPLE_SOURCE =
             """#include <iostream>
 
+using namespace std;
+
 int main()
 {
-    std::cout << "Hola desde C++" << std::endl;
-}
-"""
+    
+}"""
     }
 }

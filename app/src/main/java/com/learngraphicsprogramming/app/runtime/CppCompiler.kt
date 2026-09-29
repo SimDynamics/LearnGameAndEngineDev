@@ -46,6 +46,13 @@ internal class CppCompiler(private val context: Context) {
             "-isystem",
             File(sysroot, "include/wasm32-wasip1/c++/v1").absolutePath,
             "-std=c++20",
+
+            /*
+             * Diagnósticos compactos para aprendizaje.
+             */
+            "-ferror-limit=1",
+            "-fshow-overloads=best",
+
             "-static",
             "-O0",
             "-g0",
@@ -71,10 +78,36 @@ internal class CppCompiler(private val context: Context) {
         val stderr = readers.submit<String> { process.errorStream.bufferedReader().use { it.readText() } }
         val finished = process.waitFor(COMPILER_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         if (!finished) process.destroyForcibly()
-        val compilerStdout = stdout.get(5, TimeUnit.SECONDS)
-        val compilerStderr = stderr.get(5, TimeUnit.SECONDS)
+        val compilerStdout =
+            cleanCompilerOutput(
+                stdout.get(
+                    5,
+                    TimeUnit.SECONDS
+                ),
+                workspace,
+                sourceFile,
+                runtimeDirectory
+            )
+
+        val compilerStderr =
+            cleanCompilerOutput(
+                stderr.get(
+                    5,
+                    TimeUnit.SECONDS
+                ),
+                workspace,
+                sourceFile,
+                runtimeDirectory
+            )
+
         readers.shutdownNow()
-        val exitCode = if (finished) process.exitValue() else TIMEOUT_EXIT_CODE
+
+        val exitCode =
+            if (finished) {
+                process.exitValue()
+            } else {
+                TIMEOUT_EXIT_CODE
+            }
 
         return CppCompilationResult(
             exitCode = exitCode,
@@ -84,6 +117,223 @@ internal class CppCompiler(private val context: Context) {
             workspace = workspace,
             durationMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt)
         )
+    }
+
+    private fun cleanCompilerOutput(
+        text: String,
+        workspace: File,
+        sourceFile: File,
+        runtimeDirectory: File
+    ): String {
+
+        if (
+            text.isEmpty()
+        ) {
+            return ""
+        }
+
+        var cleaned =
+            text
+
+        /*
+         * Archivo escrito por el usuario.
+         */
+        cleaned =
+            cleaned.replace(
+                sourceFile.absolutePath,
+                "main.cpp"
+            )
+
+        /*
+         * Archivos temporales de compilación.
+         */
+        cleaned =
+            cleaned.replace(
+                workspace.absolutePath +
+                        File.separator,
+                ""
+            )
+
+        /*
+         * Cabeceras de la biblioteca estándar C++.
+         */
+        val cppIncludeDirectory =
+            File(
+                runtimeDirectory,
+                "sysroot/include/wasm32-wasip1/c++/v1"
+            )
+
+        val cppHeaderRegex =
+            Regex(
+                Regex.escape(
+                    cppIncludeDirectory.absolutePath +
+                            File.separator
+                ) +
+                        """([^:\r\n]+)"""
+            )
+
+        cleaned =
+            cleaned.replace(
+                cppHeaderRegex
+            ) { match ->
+
+                "<${match.groupValues[1]}>"
+            }
+
+        /*
+         * Cabeceras generales del sysroot WASI.
+         */
+        val sysrootIncludeDirectory =
+            File(
+                runtimeDirectory,
+                "sysroot/include"
+            )
+
+        val sysrootHeaderRegex =
+            Regex(
+                Regex.escape(
+                    sysrootIncludeDirectory.absolutePath +
+                            File.separator
+                ) +
+                        """([^:\r\n]+)"""
+            )
+
+        cleaned =
+            cleaned.replace(
+                sysrootHeaderRegex
+            ) { match ->
+
+                "<${match.groupValues[1]}>"
+            }
+
+        /*
+         * Clang puede generar decenas de notas
+         * internas al buscar sobrecargas.
+         *
+         * Conservamos solamente notas que sí
+         * ayudan directamente al estudiante.
+         */
+        val diagnosticRegex =
+            Regex(
+                """^.+?:\d+:\d+:\s+(error|warning|note):\s+.*$"""
+            )
+
+        val summaryRegex =
+            Regex(
+                """^\d+\s+(error|errors|warning|warnings)\s+generated\.$"""
+            )
+
+        val usefulNoteRegex =
+            Regex(
+                """note:.*(declared here|previous definition is here|expanded from macro)""",
+                RegexOption.IGNORE_CASE
+            )
+
+        val outputLines =
+            mutableListOf<String>()
+
+        var skippingNoteContext =
+            false
+
+        for (
+        line in cleaned.lines()
+        ) {
+
+            val diagnosticMatch =
+                diagnosticRegex.matches(
+                    line
+                )
+
+            /*
+             * Comienza un nuevo diagnóstico.
+             */
+            if (
+                diagnosticMatch
+            ) {
+
+                val isNote =
+                    line.contains(
+                        ": note:"
+                    )
+
+                if (
+                    isNote &&
+                    !usefulNoteRegex.containsMatchIn(
+                        line
+                    )
+                ) {
+
+                    /*
+                     * Nota interna de Clang/libc++.
+                     *
+                     * También omitiremos las líneas
+                     * de código y carets pertenecientes
+                     * a esta nota.
+                     */
+                    skippingNoteContext =
+                        true
+
+                    continue
+                }
+
+                skippingNoteContext =
+                    false
+
+                outputLines.add(
+                    line
+                )
+
+                continue
+            }
+
+            /*
+             * No debemos perder:
+             *
+             * 1 error generated.
+             */
+            if (
+                summaryRegex.matches(
+                    line.trim()
+                )
+            ) {
+
+                skippingNoteContext =
+                    false
+
+                outputLines.add(
+                    line
+                )
+
+                continue
+            }
+
+            /*
+             * Líneas pertenecientes a una nota
+             * interna que hemos decidido ocultar.
+             */
+            if (
+                skippingNoteContext
+            ) {
+
+                continue
+            }
+
+            outputLines.add(
+                line
+            )
+        }
+
+        return outputLines
+            .joinToString(
+                "\n"
+            )
+            .replace(
+                Regex(
+                    """\n{3,}"""
+                ),
+                "\n\n"
+            )
+            .trimEnd()
     }
 
     private fun prepareRuntime(): File {
