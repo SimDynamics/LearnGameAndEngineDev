@@ -266,6 +266,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         openLesson(
+            courseId,
             lessonInfo.lesson,
             lessonInfo.totalLessons
         )
@@ -363,6 +364,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openLesson(
+        courseId: String,
         lesson: JSONObject,
         totalLessons: Int
     ) {
@@ -372,6 +374,11 @@ class MainActivity : AppCompatActivity() {
                 this,
                 LessonActivity::class.java
             )
+
+        intent.putExtra(
+            "courseId",
+            courseId
+        )
 
         intent.putExtra(
             "lessonId",

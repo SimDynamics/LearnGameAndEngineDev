@@ -144,6 +144,11 @@ class UnitActivity : AppCompatActivity() {
                     )
 
                 intent.putExtra(
+                    "courseId",
+                    courseId
+                )
+
+                intent.putExtra(
                     "lessonId",
                     lesson.id
                 )

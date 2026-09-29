@@ -35,6 +35,8 @@ import com.learngraphicsprogramming.app.runtime.CppExecutionEngine
 import android.view.ViewTreeObserver
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import android.util.TypedValue
+import android.widget.SeekBar
 
 class LessonActivity : AppCompatActivity() {
 
@@ -49,43 +51,53 @@ class LessonActivity : AppCompatActivity() {
                 ::currentLessonId.isInitialized
             ) {
 
-                /*
-                 * ProgressRepository ya eliminó
-                 * todo el progreso persistente.
-                 *
-                 * Ahora eliminamos también
-                 * el estado que LessonActivity
-                 * conserva actualmente en memoria.
-                 */
+                val courseSettingsChanged =
+                    result.data
+                        ?.getBooleanExtra(
+                            "courseSettingsChanged",
+                            false
+                        ) == true
 
-                pageViewCache.clear()
+                if (
+                    courseSettingsChanged
+                ) {
 
-                pageRequiredExercises.clear()
+                    /*
+                     * Se cambiaron ajustes del curso.
+                     *
+                     * Conservamos exactamente las Views
+                     * y el estado actual de la lección.
+                     */
+                    refreshLessonContentTextScale()
 
-                pageCompletedExercises.clear()
+                } else {
 
-                currentPage =
-                    0
+                    /*
+                     * RESULT_OK sin courseSettingsChanged
+                     * corresponde a Reiniciar lección.
+                     */
+                    pageViewCache.clear()
 
-                requiredExercises =
-                    0
+                    pageRequiredExercises.clear()
 
-                completedExercises =
-                    0
+                    pageCompletedExercises.clear()
 
-                ignoreCurrentSwipe =
-                    false
+                    currentPage =
+                        0
 
-                /*
-                 * Volvemos a cargar la lección.
-                 *
-                 * Como su página guardada ya fue
-                 * eliminada, loadLesson recuperará
-                 * automáticamente la página 1.
-                 */
-                loadLesson(
-                    currentLessonId
-                )
+                    requiredExercises =
+                        0
+
+                    completedExercises =
+                        0
+
+                    ignoreCurrentSwipe =
+                        false
+
+                    loadLesson(
+                        currentLessonId
+                    )
+                }
             }
         }
 
@@ -135,6 +147,11 @@ class LessonActivity : AppCompatActivity() {
 
     private var currentPage = 0
     private var totalPages = 1
+
+    private lateinit var currentCourseId: String
+
+    private var appliedContentTextScale =
+        LessonTextSizeSettingsRepository.DEFAULT_SCALE
 
     private lateinit var currentLessonId: String
 
@@ -245,8 +262,29 @@ class LessonActivity : AppCompatActivity() {
             updateSwipeToggle()
         }
 
+        currentCourseId =
+            intent.getStringExtra(
+                "courseId"
+            ) ?: return
+
         currentLessonId =
-            intent.getStringExtra("lessonId") ?: return
+            intent.getStringExtra(
+                "lessonId"
+            ) ?: return
+
+        appliedContentTextScale =
+            LessonTextSizeSettingsRepository
+                .getEffectiveScale(
+                    this,
+                    currentCourseId
+                )
+
+        appliedContentTextScale =
+            LessonTextSizeSettingsRepository
+                .getEffectiveScale(
+                    this,
+                    currentCourseId
+                )
 
         lessonNumber =
             intent.getIntExtra(
@@ -274,6 +312,11 @@ class LessonActivity : AppCompatActivity() {
                     this,
                     LessonOptionsActivity::class.java
                 )
+
+            intent.putExtra(
+                "courseId",
+                currentCourseId
+            )
 
             intent.putExtra(
                 "lessonId",
@@ -1405,6 +1448,348 @@ class LessonActivity : AppCompatActivity() {
         )
     }
 
+    private fun editorHasHorizontalOverflow(
+        editor: EditText
+    ): Boolean {
+
+        val layout =
+            editor.layout
+                ?: return false
+
+        val availableWidth =
+            (
+                    editor.width -
+                            editor.totalPaddingLeft -
+                            editor.totalPaddingRight
+                    ).coerceAtLeast(
+                    1
+                )
+
+        var widestLine =
+            0f
+
+        for (
+        line in 0 until
+                layout.lineCount
+        ) {
+
+            widestLine =
+                maxOf(
+                    widestLine,
+                    layout.getLineWidth(
+                        line
+                    )
+                )
+        }
+
+        return widestLine >
+                availableWidth
+    }
+
+    private fun isTouchOnEditorText(
+        editor: EditText,
+        touchX: Float,
+        touchY: Float
+    ): Boolean {
+
+        val layout =
+            editor.layout
+                ?: return false
+
+        /*
+         * Convertimos la posición tocada
+         * a coordenadas internas del texto.
+         */
+        val textX =
+            touchX +
+                    editor.scrollX -
+                    editor.totalPaddingLeft
+
+        val textY =
+            touchY +
+                    editor.scrollY -
+                    editor.totalPaddingTop
+
+        /*
+         * Si tocamos por encima, debajo
+         * o fuera del área vertical ocupada
+         * por texto, estamos en espacio vacío.
+         */
+        if (
+            textY < 0f ||
+            textY >
+            layout.height
+        ) {
+
+            return false
+        }
+
+        val line =
+            layout.getLineForVertical(
+                textY.toInt()
+            )
+
+        val lineLeft =
+            minOf(
+                layout.getLineLeft(
+                    line
+                ),
+                layout.getLineRight(
+                    line
+                )
+            )
+
+        val lineRight =
+            maxOf(
+                layout.getLineLeft(
+                    line
+                ),
+                layout.getLineRight(
+                    line
+                )
+            )
+
+        /*
+         * Solo consideramos "texto" la zona
+         * horizontal realmente ocupada
+         * por esa línea.
+         */
+        return textX >=
+                lineLeft &&
+                textX <=
+                lineRight
+    }
+
+    private fun protectHorizontalEditorFromPageSwipe(
+        editor: EditText
+    ) {
+
+        var draggingEmptyArea =
+            false
+
+        var dragStartX =
+            0f
+
+        var initialScrollX =
+            0
+
+        editor.setOnTouchListener { _, event ->
+
+            when (
+                event.actionMasked
+            ) {
+
+                MotionEvent.ACTION_DOWN -> {
+
+                    val touchedText =
+                        isTouchOnEditorText(
+                            editor,
+                            event.x,
+                            event.y
+                        )
+
+                    /*
+                     * REGLA 1:
+                     *
+                     * Si el gesto comienza sobre texto,
+                     * siempre pertenece al editor.
+                     *
+                     * Esto se aplica tanto con wrap ON
+                     * como con wrap OFF.
+                     *
+                     * Así podemos:
+                     *
+                     * - colocar el cursor
+                     * - moverlo
+                     * - seleccionar texto
+                     * - arrastrar sobre otra zona escrita
+                     *
+                     * sin cambiar accidentalmente
+                     * de página.
+                     */
+                    if (
+                        touchedText
+                    ) {
+
+                        ignoreCurrentSwipe =
+                            true
+
+                        draggingEmptyArea =
+                            false
+
+                        /*
+                         * false deja que el EditText
+                         * procese normalmente el gesto.
+                         */
+                        return@setOnTouchListener false
+                    }
+
+                    val horizontalScrollActive =
+                        editorHasHorizontalOverflow(
+                            editor
+                        )
+
+                    /*
+                     * REGLA 2:
+                     *
+                     * Tocamos espacio vacío y además
+                     * existe desplazamiento horizontal.
+                     *
+                     * El gesto mueve el código.
+                     */
+                    if (
+                        horizontalScrollActive
+                    ) {
+
+                        ignoreCurrentSwipe =
+                            true
+
+                        draggingEmptyArea =
+                            true
+
+                        dragStartX =
+                            event.x
+
+                        initialScrollX =
+                            editor.scrollX
+
+                        editor.parent
+                            ?.requestDisallowInterceptTouchEvent(
+                                true
+                            )
+
+                        return@setOnTouchListener true
+                    }
+
+                    /*
+                     * REGLA 3:
+                     *
+                     * Espacio vacío sin desplazamiento
+                     * horizontal disponible.
+                     *
+                     * Aquí sí permitimos que el gesto
+                     * pueda convertirse en navegación
+                     * entre páginas.
+                     */
+                    draggingEmptyArea =
+                        false
+
+                    false
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+
+                    if (
+                        !draggingEmptyArea
+                    ) {
+
+                        false
+
+                    } else {
+
+                        val layout =
+                            editor.layout
+
+                        if (
+                            layout == null
+                        ) {
+
+                            true
+
+                        } else {
+
+                            val availableWidth =
+                                (
+                                        editor.width -
+                                                editor.totalPaddingLeft -
+                                                editor.totalPaddingRight
+                                        ).coerceAtLeast(
+                                        1
+                                    )
+
+                            var widestLine =
+                                0f
+
+                            for (
+                            line in 0 until
+                                    layout.lineCount
+                            ) {
+
+                                widestLine =
+                                    maxOf(
+                                        widestLine,
+                                        layout.getLineWidth(
+                                            line
+                                        )
+                                    )
+                            }
+
+                            val maximumScroll =
+                                (
+                                        widestLine -
+                                                availableWidth
+                                        )
+                                    .toInt()
+                                    .coerceAtLeast(
+                                        0
+                                    )
+
+                            val movement =
+                                dragStartX -
+                                        event.x
+
+                            val newScrollX =
+                                (
+                                        initialScrollX +
+                                                movement
+                                        )
+                                    .toInt()
+                                    .coerceIn(
+                                        0,
+                                        maximumScroll
+                                    )
+
+                            editor.scrollTo(
+                                newScrollX,
+                                editor.scrollY
+                            )
+
+                            true
+                        }
+                    }
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+
+                    if (
+                        draggingEmptyArea
+                    ) {
+
+                        editor.parent
+                            ?.requestDisallowInterceptTouchEvent(
+                                false
+                            )
+
+                        draggingEmptyArea =
+                            false
+
+                        true
+
+                    } else {
+
+                        false
+                    }
+                }
+
+                else -> {
+
+                    draggingEmptyArea
+                }
+            }
+        }
+    }
+
     private fun protectProgrammingInteractionFromPageSwipe(
         view: View
     ) {
@@ -1438,6 +1823,100 @@ class LessonActivity : AppCompatActivity() {
              */
             false
         }
+    }
+
+    private fun isTouchInsideActiveHorizontalScroll(
+        view: View,
+        rawX: Float,
+        rawY: Float
+    ): Boolean {
+
+        if (
+            view.visibility !=
+            View.VISIBLE
+        ) {
+            return false
+        }
+
+        if (
+            view is HorizontalScrollView
+        ) {
+
+            val location =
+                IntArray(2)
+
+            view.getLocationOnScreen(
+                location
+            )
+
+            val left =
+                location[0].toFloat()
+
+            val top =
+                location[1].toFloat()
+
+            val right =
+                left +
+                        view.width
+
+            val bottom =
+                top +
+                        view.height
+
+            val touchInside =
+                rawX >= left &&
+                        rawX <= right &&
+                        rawY >= top &&
+                        rawY <= bottom
+
+            val canScrollHorizontally =
+                view.isHorizontalScrollBarEnabled &&
+                        (
+                                view.canScrollHorizontally(-1) ||
+                                        view.canScrollHorizontally(1)
+                                )
+
+            val alwaysProtectFromPageSwipe =
+                view.tag ==
+                        "order_code_swipe_protected"
+
+            if (
+                touchInside &&
+                (
+                        canScrollHorizontally ||
+                                alwaysProtectFromPageSwipe
+                        )
+            ) {
+
+                return true
+            }
+        }
+
+        if (
+            view is ViewGroup
+        ) {
+
+            for (
+            index in 0 until
+                    view.childCount
+            ) {
+
+                if (
+                    isTouchInsideActiveHorizontalScroll(
+                        view.getChildAt(
+                            index
+                        ),
+                        rawX,
+                        rawY
+                    )
+                ) {
+
+                    return true
+                }
+            }
+        }
+
+        return false
     }
 
     private fun protectHorizontalScrollFromPageSwipe(
@@ -3959,9 +4438,9 @@ class LessonActivity : AppCompatActivity() {
 
             row.setPadding(
                 dp(16),
-                dp(14),
+                dp(8),
                 dp(16),
-                dp(14)
+                dp(8)
             )
 
             val background =
@@ -3990,9 +4469,9 @@ class LessonActivity : AppCompatActivity() {
 
             params.setMargins(
                 0,
-                dp(4),
+                dp(2),
                 0,
-                dp(4)
+                dp(2)
             )
 
             row.layoutParams =
@@ -4865,7 +5344,7 @@ class LessonActivity : AppCompatActivity() {
             Typeface.MONOSPACE
 
         lineNumbers.textSize =
-            14f
+            16f
 
         lineNumbers.includeFontPadding =
             false
@@ -4916,7 +5395,7 @@ class LessonActivity : AppCompatActivity() {
             sourceCode
         )
 
-        protectProgrammingInteractionFromPageSwipe(
+        protectHorizontalEditorFromPageSwipe(
             sourceCode
         )
 
@@ -4924,7 +5403,7 @@ class LessonActivity : AppCompatActivity() {
             Typeface.MONOSPACE
 
         sourceCode.textSize =
-            14f
+            16f
 
         sourceCode.includeFontPadding =
             false
@@ -4964,6 +5443,17 @@ class LessonActivity : AppCompatActivity() {
             true
         )
 
+        /*
+         * No utilizamos la scrollbar nativa
+         * del EditText.
+         *
+         * En algunos dispositivos Android
+         * su Drawable interno puede ser nulo
+         * y provocar un crash al dibujarse.
+         */
+        sourceCode.isHorizontalScrollBarEnabled =
+            false
+
         sourceCode.layoutParams =
             LinearLayout.LayoutParams(
                 0,
@@ -4987,6 +5477,39 @@ class LessonActivity : AppCompatActivity() {
             editorBody
         )
 
+        /*
+         * BARRA HORIZONTAL DEL EDITOR.
+         *
+         * Es independiente de la scrollbar
+         * nativa del EditText.
+         */
+        val editorHorizontalBar =
+            SeekBar(this)
+
+        editorHorizontalBar.visibility =
+            View.GONE
+
+        editorHorizontalBar.setSplitTrack(
+            false
+        )
+
+        editorHorizontalBar.setPadding(
+            dp(18),
+            0,
+            dp(18),
+            0
+        )
+
+        editorHorizontalBar.layoutParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(28)
+            )
+
+        codeCard.addView(
+            editorHorizontalBar
+        )
+
         lessonContent.addView(
             codeCard
         )
@@ -4994,6 +5517,189 @@ class LessonActivity : AppCompatActivity() {
         makeCodeCardFullWidth(
             codeCard
         )
+
+        fun updateEditorHorizontalBar() {
+
+            val layout =
+                sourceCode.layout
+
+            if (
+                layout == null ||
+                sourceCode.width <= 0
+            ) {
+
+                editorHorizontalBar.visibility =
+                    View.GONE
+
+                return
+            }
+
+            val availableWidth =
+                (
+                        sourceCode.width -
+                                sourceCode.totalPaddingLeft -
+                                sourceCode.totalPaddingRight
+                        ).coerceAtLeast(
+                        1
+                    )
+
+            var widestLine =
+                0f
+
+            for (
+            line in 0 until
+                    layout.lineCount
+            ) {
+
+                widestLine =
+                    maxOf(
+                        widestLine,
+                        layout.getLineWidth(
+                            line
+                        )
+                    )
+            }
+
+            val maximumScroll =
+                (
+                        widestLine -
+                                availableWidth
+                        )
+                    .toInt()
+                    .coerceAtLeast(
+                        0
+                    )
+
+            if (
+                maximumScroll <= 0
+            ) {
+
+                editorHorizontalBar.visibility =
+                    View.GONE
+
+                editorHorizontalBar.progress =
+                    0
+
+                /*
+                 * Si activamos wrap o el texto
+                 * vuelve a caber, regresamos
+                 * al inicio horizontal.
+                 */
+                if (
+                    sourceCode.scrollX != 0
+                ) {
+
+                    sourceCode.scrollTo(
+                        0,
+                        sourceCode.scrollY
+                    )
+                }
+
+                return
+            }
+
+            editorHorizontalBar.visibility =
+                View.VISIBLE
+
+            editorHorizontalBar.max =
+                maximumScroll.coerceAtLeast(
+                    1
+                )
+
+            editorHorizontalBar.progress =
+                sourceCode.scrollX.coerceIn(
+                    0,
+                    maximumScroll
+                )
+        }
+
+        editorHorizontalBar
+            .setOnSeekBarChangeListener(
+                object :
+                    SeekBar.OnSeekBarChangeListener {
+
+                    override fun onProgressChanged(
+                        seekBar: SeekBar?,
+                        progress: Int,
+                        fromUser: Boolean
+                    ) {
+
+                        if (
+                            fromUser
+                        ) {
+
+                            sourceCode.scrollTo(
+                                progress,
+                                sourceCode.scrollY
+                            )
+                        }
+                    }
+
+                    override fun onStartTrackingTouch(
+                        seekBar: SeekBar?
+                    ) {
+                    }
+
+                    override fun onStopTrackingTouch(
+                        seekBar: SeekBar?
+                    ) {
+                    }
+                }
+            )
+
+        editorHorizontalBar.setOnTouchListener {
+                _,
+                _ ->
+
+            /*
+             * Con el teclado abierto editamos código.
+             * La barra queda visible como referencia,
+             * pero no responde al arrastre.
+             *
+             * Con el teclado cerrado sí puede
+             * utilizarse directamente.
+             */
+            keyboardVisible
+        }
+
+        sourceCode.setOnScrollChangeListener {
+                _,
+                scrollX,
+                _,
+                _,
+                _ ->
+
+            if (
+                editorHorizontalBar.visibility ==
+                View.VISIBLE
+            ) {
+
+                editorHorizontalBar.progress =
+                    scrollX.coerceIn(
+                        0,
+                        editorHorizontalBar.max
+                    )
+            }
+        }
+
+        sourceCode.addOnLayoutChangeListener {
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _ ->
+
+            updateEditorHorizontalBar()
+        }
+
+        sourceCode.post {
+
+            updateEditorHorizontalBar()
+        }
 
         /*
          * NÚMEROS DE LÍNEA.
@@ -5033,6 +5739,11 @@ class LessonActivity : AppCompatActivity() {
                 ) {
 
                     updateLineNumbers()
+
+                    sourceCode.post {
+
+                        updateEditorHorizontalBar()
+                    }
                 }
 
                 override fun afterTextChanged(
@@ -5201,6 +5912,20 @@ class LessonActivity : AppCompatActivity() {
                 !wrapEnabled
             )
 
+            if (
+                wrapEnabled
+            ) {
+
+                /*
+                 * Al activar ajuste de línea volvemos
+                 * al inicio horizontal.
+                 */
+                sourceCode.scrollTo(
+                    0,
+                    sourceCode.scrollY
+                )
+            }
+
             wrapButton.setCompoundDrawablesWithIntrinsicBounds(
                 if (
                     wrapEnabled
@@ -5222,6 +5947,11 @@ class LessonActivity : AppCompatActivity() {
                 } else {
                     "Ajuste de línea desactivado"
                 }
+
+            sourceCode.post {
+
+                updateEditorHorizontalBar()
+            }
         }
 
         /*
@@ -5347,10 +6077,33 @@ class LessonActivity : AppCompatActivity() {
 
             MotionEvent.ACTION_DOWN -> {
 
-                ignoreCurrentSwipe = false
+                /*
+                 * Antes de que cualquier hijo procese
+                 * el gesto comprobamos si comenzó dentro
+                 * de una zona que realmente puede
+                 * desplazarse horizontalmente.
+                 *
+                 * Si es así, ese gesto pertenece al
+                 * código/puzzle y nunca debe convertirse
+                 * en navegación entre páginas.
+                 */
+                val root =
+                    findViewById<View>(
+                        android.R.id.content
+                    )
 
-                touchStartX = event.x
-                touchStartY = event.y
+                ignoreCurrentSwipe =
+                    isTouchInsideActiveHorizontalScroll(
+                        root,
+                        event.rawX,
+                        event.rawY
+                    )
+
+                touchStartX =
+                    event.x
+
+                touchStartY =
+                    event.y
             }
 
             MotionEvent.ACTION_UP -> {
@@ -6020,6 +6773,213 @@ class LessonActivity : AppCompatActivity() {
         }
     }
 
+    private fun applyLessonContentTextScale(
+        root: View
+    ) {
+
+        if (
+            !::currentCourseId.isInitialized
+        ) {
+            return
+        }
+
+        val scale =
+            LessonTextSizeSettingsRepository
+                .getEffectiveScale(
+                    this,
+                    currentCourseId
+                )
+
+        /*
+         * 100 % significa utilizar exactamente
+         * los tamaños definidos actualmente
+         * por cada elemento.
+         */
+        if (
+            scale ==
+            LessonTextSizeSettingsRepository.DEFAULT_SCALE
+        ) {
+            return
+        }
+
+        fun scaleView(
+            view: View
+        ) {
+
+            /*
+             * Button y EditText también heredan
+             * de TextView, por lo que quedan
+             * incluidos automáticamente.
+             */
+            if (
+                view is TextView
+            ) {
+
+                val scaledPixels =
+                    view.textSize *
+                            scale /
+                            100f
+
+                view.setTextSize(
+                    TypedValue.COMPLEX_UNIT_PX,
+                    scaledPixels
+                )
+            }
+
+            /*
+             * Recorremos también todos los hijos:
+             *
+             * - bloques de código
+             * - puzzles
+             * - RadioButtons
+             * - EditText
+             * - compilador
+             * - consola
+             * - números de línea
+             * - resultados
+             */
+            if (
+                view is ViewGroup
+            ) {
+
+                for (
+                index in 0 until
+                        view.childCount
+                ) {
+
+                    scaleView(
+                        view.getChildAt(
+                            index
+                        )
+                    )
+                }
+            }
+        }
+
+        scaleView(
+            root
+        )
+    }
+
+    private fun refreshLessonContentTextScale() {
+
+        if (
+            !::currentCourseId.isInitialized
+        ) {
+            return
+        }
+
+        val newScale =
+            LessonTextSizeSettingsRepository
+                .getEffectiveScale(
+                    this,
+                    currentCourseId
+                )
+
+        val oldScale =
+            appliedContentTextScale
+
+        if (
+            newScale ==
+            oldScale
+        ) {
+            return
+        }
+
+        val ratio =
+            newScale.toFloat() /
+                    oldScale.toFloat()
+
+        fun rescaleView(
+            view: View
+        ) {
+
+            if (
+                view is TextView
+            ) {
+
+                view.setTextSize(
+                    TypedValue.COMPLEX_UNIT_PX,
+                    view.textSize *
+                            ratio
+                )
+
+                /*
+                 * Algunos números de línea tienen
+                 * una altura calculada explícitamente
+                 * a partir de su fila.
+                 *
+                 * También ajustamos esa altura para
+                 * conservar la alineación.
+                 */
+                val params =
+                    view.layoutParams
+
+                if (
+                    params != null &&
+                    params.height > 0
+                ) {
+
+                    params.height =
+                        (
+                                params.height *
+                                        ratio
+                                )
+                            .toInt()
+                            .coerceAtLeast(
+                                1
+                            )
+
+                    view.layoutParams =
+                        params
+                }
+            }
+
+            if (
+                view is ViewGroup
+            ) {
+
+                for (
+                index in 0 until
+                        view.childCount
+                ) {
+
+                    rescaleView(
+                        view.getChildAt(
+                            index
+                        )
+                    )
+                }
+            }
+        }
+
+        /*
+         * Actualizamos todas las páginas ya
+         * construidas en memoria.
+         *
+         * No reconstruimos los ejercicios,
+         * por lo que se conserva código escrito,
+         * selección, bloques, etc.
+         */
+        pageViewCache.values
+            .forEach { pageViews ->
+
+                pageViews.forEach { view ->
+
+                    rescaleView(
+                        view
+                    )
+                }
+            }
+
+        appliedContentTextScale =
+            newScale
+
+        lessonContent.requestLayout()
+
+        lessonContent.invalidate()
+    }
+
     private fun loadLesson(
         lessonId: String
     ) {
@@ -6327,6 +7287,19 @@ class LessonActivity : AppCompatActivity() {
                 }
             }
         }
+
+        /*
+         * Aplicamos el tamaño efectivo de texto
+         * únicamente después de haber construido
+         * completamente una página nueva.
+         *
+         * Las páginas recuperadas desde caché
+         * salen antes de este punto, por lo que
+         * nunca se escalan dos veces.
+         */
+        applyLessonContentTextScale(
+            lessonContent
+        )
 
         /*
          * Guardamos cuántos ejercicios
@@ -10103,6 +11076,9 @@ class LessonActivity : AppCompatActivity() {
 
         val horizontalScroll =
             HorizontalScrollView(this)
+
+        horizontalScroll.tag =
+            "order_code_swipe_protected"
 
         horizontalScroll.isHorizontalScrollBarEnabled =
             true

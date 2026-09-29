@@ -61,6 +61,21 @@ class OptionsActivity : AppCompatActivity() {
                 R.id.buttonResetProgrammingRoute
             )
 
+        val textGlobalTextSize =
+            findViewById<TextView>(
+                R.id.textGlobalTextSize
+            )
+
+        val seekGlobalTextSize =
+            findViewById<SeekBar>(
+                R.id.seekGlobalTextSize
+            )
+
+        val textGlobalTextSizePreview =
+            findViewById<TextView>(
+                R.id.textGlobalTextSizePreview
+            )
+
         val textAccentRed =
             findViewById<TextView>(
                 R.id.textAccentRed
@@ -116,6 +131,12 @@ class OptionsActivity : AppCompatActivity() {
                     this
                 )
 
+        val originalGlobalTextScale =
+            LessonTextSizeSettingsRepository
+                .getGlobalScale(
+                    this
+                )
+
         val originalAccent =
             AppearanceSettingsRepository
                 .getAccentRgb(
@@ -165,6 +186,10 @@ class OptionsActivity : AppCompatActivity() {
         switchSwipeFinish.isChecked =
             originalSwipeFinish
 
+        seekGlobalTextSize.progress =
+            originalGlobalTextScale -
+                    LessonTextSizeSettingsRepository.MIN_SCALE
+
         seekAccentRed.progress =
             originalAccentRed
 
@@ -197,6 +222,12 @@ class OptionsActivity : AppCompatActivity() {
                         switchSwipeFinish.isChecked !=
                         originalSwipeFinish
 
+            val textSizeHasChanges =
+                (
+                        seekGlobalTextSize.progress +
+                                LessonTextSizeSettingsRepository.MIN_SCALE
+                        ) != originalGlobalTextScale
+
             val appearanceHasChanges =
                 seekAccentRed.progress !=
                         originalAccentRed ||
@@ -209,7 +240,8 @@ class OptionsActivity : AppCompatActivity() {
 
             val hasChanges =
                 flowHasChanges ||
-                        appearanceHasChanges
+                        appearanceHasChanges ||
+                        textSizeHasChanges
 
             buttonSave.isEnabled =
                 hasChanges
@@ -220,6 +252,23 @@ class OptionsActivity : AppCompatActivity() {
                 } else {
                     0.35f
                 }
+        }
+
+        fun updateGlobalTextSizePreview() {
+
+            val scale =
+                seekGlobalTextSize.progress +
+                        LessonTextSizeSettingsRepository.MIN_SCALE
+
+            textGlobalTextSize.text =
+                "Tamaño del contenido · $scale %"
+
+            textGlobalTextSizePreview.textSize =
+                LessonTextSizeSettingsRepository
+                    .scaleTextSize(
+                        17f,
+                        scale
+                    )
         }
 
         fun updateAccentPreview() {
@@ -280,8 +329,9 @@ class OptionsActivity : AppCompatActivity() {
         }
 
         /*
-         * Al entrar no existe nada pendiente.
-         */
+ * Al entrar no existe nada pendiente.
+ */
+        updateGlobalTextSizePreview()
         updateAccentPreview()
         updateSaveButtonState()
 
@@ -317,6 +367,33 @@ class OptionsActivity : AppCompatActivity() {
 
                 updateSaveButtonState()
             }
+
+        seekGlobalTextSize
+            .setOnSeekBarChangeListener(
+                object :
+                    SeekBar.OnSeekBarChangeListener {
+
+                    override fun onProgressChanged(
+                        seekBar: SeekBar?,
+                        progress: Int,
+                        fromUser: Boolean
+                    ) {
+
+                        updateGlobalTextSizePreview()
+                        updateSaveButtonState()
+                    }
+
+                    override fun onStartTrackingTouch(
+                        seekBar: SeekBar?
+                    ) {
+                    }
+
+                    override fun onStopTrackingTouch(
+                        seekBar: SeekBar?
+                    ) {
+                    }
+                }
+            )
 
         val accentSeekListener =
             object :
@@ -441,6 +518,13 @@ class OptionsActivity : AppCompatActivity() {
                 .saveGlobalSettings(
                     this,
                     newSettings
+                )
+
+            LessonTextSizeSettingsRepository
+                .saveGlobalScale(
+                    this,
+                    seekGlobalTextSize.progress +
+                            LessonTextSizeSettingsRepository.MIN_SCALE
                 )
 
             AppearanceSettingsRepository

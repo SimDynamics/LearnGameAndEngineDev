@@ -9,9 +9,12 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.SeekBar
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import android.content.Intent
 
 class LessonOptionsActivity : AppCompatActivity() {
 
@@ -27,6 +30,11 @@ class LessonOptionsActivity : AppCompatActivity() {
             R.layout.activity_lesson_options
         )
 
+        val courseId =
+            intent.getStringExtra(
+                "courseId"
+            ) ?: return
+
         val lessonId =
             intent.getStringExtra(
                 "lessonId"
@@ -38,6 +46,9 @@ class LessonOptionsActivity : AppCompatActivity() {
                 1
             )
 
+        /*
+         * VISTAS GENERALES.
+         */
         val buttonBack =
             findViewById<Button>(
                 R.id.buttonBack
@@ -48,16 +59,53 @@ class LessonOptionsActivity : AppCompatActivity() {
                 R.id.textLessonNumber
             )
 
+        /*
+         * TAMAÑO DEL CURSO.
+         */
+        val switchUseGlobalTextSize =
+            findViewById<Switch>(
+                R.id.switchUseGlobalTextSize
+            )
+
+        val textLessonTextSize =
+            findViewById<TextView>(
+                R.id.textLessonTextSize
+            )
+
+        val seekLessonTextSize =
+            findViewById<SeekBar>(
+                R.id.seekLessonTextSize
+            )
+
+        val textLessonTextSizePreview =
+            findViewById<TextView>(
+                R.id.textLessonTextSizePreview
+            )
+
+        val buttonSaveCourseSettings =
+            findViewById<Button>(
+                R.id.buttonSaveCourseSettings
+            )
+
+        /*
+         * PROGRAMACIÓN.
+         */
         val buttonEditProgrammingShortcuts =
             findViewById<Button>(
                 R.id.buttonEditProgrammingShortcuts
             )
 
+        /*
+         * PROGRESO.
+         */
         val buttonResetLesson =
             findViewById<Button>(
                 R.id.buttonResetLesson
             )
 
+        /*
+         * CABECERA.
+         */
         textLessonNumber.text =
             "Lección $lessonNumber"
 
@@ -68,17 +116,298 @@ class LessonOptionsActivity : AppCompatActivity() {
                 )
         )
 
+        /*
+         * VALORES GUARDADOS.
+         */
+        val globalTextScale =
+            LessonTextSizeSettingsRepository
+                .getGlobalScale(
+                    this
+                )
+
+        val savedUseGlobal =
+            LessonTextSizeSettingsRepository
+                .usesGlobalScale(
+                    this,
+                    courseId
+                )
+
+        val savedCourseScale =
+            LessonTextSizeSettingsRepository
+                .getCourseScale(
+                    this,
+                    courseId
+                )
+
+        /*
+         * VALORES TEMPORALES.
+         *
+         * Estos cambian mientras el usuario
+         * utiliza la pantalla, pero todavía
+         * NO modifican el curso.
+         */
+        var pendingUseGlobal =
+            savedUseGlobal
+
+        var pendingCourseScale =
+            savedCourseScale
+
+        fun updateSaveButtonState() {
+
+            val hasChanges =
+                pendingUseGlobal !=
+                        savedUseGlobal ||
+                        (
+                                !pendingUseGlobal &&
+                                        pendingCourseScale !=
+                                        savedCourseScale
+                                )
+
+            buttonSaveCourseSettings.isEnabled =
+                hasChanges
+
+            buttonSaveCourseSettings.alpha =
+                if (
+                    hasChanges
+                ) {
+                    1f
+                } else {
+                    0.35f
+                }
+        }
+
+        /*
+         * VISTA PREVIA.
+         */
+        fun updateCourseTextSizePreview() {
+
+            val visibleScale =
+                if (
+                    pendingUseGlobal
+                ) {
+
+                    globalTextScale
+
+                } else {
+
+                    pendingCourseScale
+                }
+
+            textLessonTextSize.text =
+                if (
+                    pendingUseGlobal
+                ) {
+
+                    "Tamaño del curso · $visibleScale % · Global"
+
+                } else {
+
+                    "Tamaño del curso · $visibleScale %"
+                }
+
+            textLessonTextSizePreview.textSize =
+                LessonTextSizeSettingsRepository
+                    .scaleTextSize(
+                        17f,
+                        visibleScale
+                    )
+        }
+
+        /*
+         * ESTADO VISUAL DEL SLIDER.
+         */
+        fun updateCourseTextSizeControls() {
+
+            seekLessonTextSize.isEnabled =
+                !pendingUseGlobal
+
+            seekLessonTextSize.alpha =
+                if (
+                    pendingUseGlobal
+                ) {
+                    0.35f
+                } else {
+                    1f
+                }
+
+            textLessonTextSize.alpha =
+                if (
+                    pendingUseGlobal
+                ) {
+                    0.7f
+                } else {
+                    1f
+                }
+
+            updateCourseTextSizePreview()
+        }
+
+        /*
+         * ESTADO INICIAL.
+         */
+        switchUseGlobalTextSize.isChecked =
+            savedUseGlobal
+
+        seekLessonTextSize.progress =
+            (
+                    if (
+                        savedUseGlobal
+                    ) {
+                        globalTextScale
+                    } else {
+                        savedCourseScale
+                    }
+                    ) -
+                    LessonTextSizeSettingsRepository.MIN_SCALE
+
+        updateCourseTextSizeControls()
+
+        /*
+         * USAR TAMAÑO GLOBAL.
+         *
+         * Aquí SOLO modificamos el valor
+         * temporal.
+         */
+        switchUseGlobalTextSize
+            .setOnCheckedChangeListener {
+                    _,
+                    isChecked ->
+
+                pendingUseGlobal =
+                    isChecked
+
+                seekLessonTextSize.progress =
+                    (
+                            if (
+                                pendingUseGlobal
+                            ) {
+                                globalTextScale
+                            } else {
+                                pendingCourseScale
+                            }
+                            ) -
+                            LessonTextSizeSettingsRepository.MIN_SCALE
+
+                updateCourseTextSizeControls()
+                updateSaveButtonState()
+            }
+
+        /*
+         * TAMAÑO PERSONALIZADO DEL CURSO.
+         *
+         * Mientras se arrastra, únicamente
+         * cambia la vista previa.
+         */
+        seekLessonTextSize
+            .setOnSeekBarChangeListener(
+                object :
+                    SeekBar.OnSeekBarChangeListener {
+
+                    override fun onProgressChanged(
+                        seekBar: SeekBar?,
+                        progress: Int,
+                        fromUser: Boolean
+                    ) {
+
+                        if (
+                            fromUser &&
+                            !pendingUseGlobal
+                        ) {
+
+                            pendingCourseScale =
+                                progress +
+                                        LessonTextSizeSettingsRepository.MIN_SCALE
+                        }
+
+                        updateCourseTextSizePreview()
+                        updateSaveButtonState()
+                    }
+
+                    override fun onStartTrackingTouch(
+                        seekBar: SeekBar?
+                    ) {
+                    }
+
+                    override fun onStopTrackingTouch(
+                        seekBar: SeekBar?
+                    ) {
+                    }
+                }
+            )
+
+        /*
+         * GUARDAR AJUSTES DEL CURSO.
+         *
+         * Solo aquí escribimos realmente
+         * los valores persistentes.
+         */
+        buttonSaveCourseSettings
+            .setOnClickListener {
+
+                LessonTextSizeSettingsRepository
+                    .saveUsesGlobalScale(
+                        this,
+                        courseId,
+                        pendingUseGlobal
+                    )
+
+                if (
+                    !pendingUseGlobal
+                ) {
+
+                    LessonTextSizeSettingsRepository
+                        .saveCourseScale(
+                            this,
+                            courseId,
+                            pendingCourseScale
+                        )
+                }
+
+                Toast.makeText(
+                    this,
+                    "Ajustes del curso guardados",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                val resultIntent =
+                    Intent()
+
+                resultIntent.putExtra(
+                    "courseSettingsChanged",
+                    true
+                )
+
+                setResult(
+                    RESULT_OK,
+                    resultIntent
+                )
+
+                finish()
+            }
+
+        /*
+         * ATRÁS.
+         *
+         * Si hubo modificaciones pero no
+         * se pulsó Guardar, se descartan.
+         */
         buttonBack.setOnClickListener {
 
             finish()
         }
 
+        /*
+         * ATAJOS DE PROGRAMACIÓN.
+         */
         buttonEditProgrammingShortcuts
             .setOnClickListener {
 
                 showProgrammingShortcutEditor()
             }
 
+        /*
+         * REINICIAR SOLO ESTA LECCIÓN.
+         */
         buttonResetLesson.setOnClickListener {
 
             AlertDialog.Builder(
