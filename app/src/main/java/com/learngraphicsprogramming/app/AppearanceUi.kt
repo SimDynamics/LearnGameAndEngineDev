@@ -14,6 +14,16 @@ import android.widget.Switch
 
 object AppearanceUi {
 
+    /*
+     * APARIENCIA GLOBAL.
+     *
+     * Se conserva para:
+     *
+     * - menú principal de rutas
+     * - Opciones globales
+     * - cualquier pantalla que todavía
+     *   no pertenezca a una ruta concreta
+     */
     fun apply(
         activity: Activity
     ) {
@@ -23,6 +33,50 @@ object AppearanceUi {
                 .getAccentColor(
                     activity
                 )
+
+        applyWithAccentColor(
+            activity,
+            accentColor
+        )
+    }
+
+    /*
+     * APARIENCIA DE UNA RUTA.
+     *
+     * Esta será utilizada dentro de:
+     *
+     * - Programación
+     * - Matemáticas y Física
+     *
+     * Cada ruta puede conservar un color
+     * diferente del global.
+     */
+    fun applyRoute(
+        activity: Activity,
+        routeId: String
+    ) {
+
+        val accentColor =
+            AppearanceSettingsRepository
+                .getRouteAccentColor(
+                    activity,
+                    routeId
+                )
+
+        applyWithAccentColor(
+            activity,
+            accentColor
+        )
+    }
+
+    /*
+     * APLICA UN COLOR CONCRETO
+     * A TODA LA ACTIVITY.
+     */
+    private fun applyWithAccentColor(
+        activity: Activity,
+        accentColor: Int
+    ) {
 
         /*
          * Barra superior del sistema.
@@ -63,12 +117,18 @@ object AppearanceUi {
                 android.R.id.content
             )
 
-        applyToViewTree(
-            activity,
-            root
+        applyToViewTreeWithAccent(
+            root,
+            accentColor
         )
     }
 
+    /*
+     * APLICACIÓN GLOBAL A UNA VIEW.
+     *
+     * Conservamos esta función porque ya
+     * puede ser utilizada por código existente.
+     */
     fun applyToViewTree(
         context: Context,
         view: View
@@ -79,6 +139,46 @@ object AppearanceUi {
                 .getAccentColor(
                     context
                 )
+
+        applyToViewTreeWithAccent(
+            view,
+            accentColor
+        )
+    }
+
+    /*
+     * APLICACIÓN DE UNA RUTA
+     * A UNA VIEW CONCRETA.
+     */
+    fun applyRouteToViewTree(
+        context: Context,
+        view: View,
+        routeId: String
+    ) {
+
+        val accentColor =
+            AppearanceSettingsRepository
+                .getRouteAccentColor(
+                    context,
+                    routeId
+                )
+
+        applyToViewTreeWithAccent(
+            view,
+            accentColor
+        )
+    }
+
+    /*
+     * MOTOR COMÚN.
+     *
+     * Ya no necesita saber si el color
+     * viene del ajuste global o de una ruta.
+     */
+    private fun applyToViewTreeWithAccent(
+        view: View,
+        accentColor: Int
+    ) {
 
         when (
             view
@@ -143,11 +243,11 @@ object AppearanceUi {
                     view.childCount
             ) {
 
-                applyToViewTree(
-                    context,
+                applyToViewTreeWithAccent(
                     view.getChildAt(
                         index
-                    )
+                    ),
+                    accentColor
                 )
             }
         }

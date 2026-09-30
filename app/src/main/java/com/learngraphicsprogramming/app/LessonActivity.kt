@@ -715,26 +715,54 @@ class LessonActivity : AppCompatActivity() {
              */
             horizontalScroll.post {
 
+                /*
+                 * Ancho TOTAL visible del editor.
+                 */
+                val viewportWidth =
+                    horizontalScroll.width
+                        .coerceAtLeast(
+                            1
+                        )
+
+                /*
+                 * Ancho REAL disponible para las filas.
+                 *
+                 * codeLines ocupa todo el viewport,
+                 * pero sus filas viven dentro de su padding.
+                 */
                 val availableWidth =
                     (
-                            horizontalScroll.width -
+                            viewportWidth -
                                     codeLines.paddingLeft -
                                     codeLines.paddingRight
                             ).coerceAtLeast(
                             1
                         )
 
+                /*
+                 * codeLines debe ocupar el viewport completo.
+                 *
+                 * No usamos availableWidth aquí porque
+                 * eso volvería a descontar su padding.
+                 */
                 val codeParams =
                     codeLines.layoutParams
 
                 codeParams.width =
-                    availableWidth
+                    viewportWidth
 
                 codeLines.layoutParams =
                     codeParams
 
-                for (row in flowRows) {
+                for (
+                row in flowRows
+                ) {
 
+                    /*
+                     * CodeFlowLayout recibe exactamente
+                     * el mismo ancho interior que realmente
+                     * tiene dentro de codeLines.
+                     */
                     row.wrapWidthPx =
                         availableWidth
 
@@ -8304,7 +8332,7 @@ class LessonActivity : AppCompatActivity() {
                 false
 
             number.gravity =
-                Gravity.CENTER_VERTICAL or
+                Gravity.TOP or
                         Gravity.END
 
             number.setTextColor(
@@ -8934,6 +8962,60 @@ class LessonActivity : AppCompatActivity() {
         var wrapEnabled =
             false
 
+        /*
+         * El ancho de horizontalScroll puede cambiar
+         * durante la construcción inicial de la página.
+         *
+         * Si el ajuste de línea ya está activado,
+         * recalculamos su ancho cuando el viewport
+         * alcanza un tamaño diferente.
+         *
+         * Así el ajuste restaurado/global y el botón
+         * manual utilizan exactamente la misma medida.
+         */
+        horizontalScroll.addOnLayoutChangeListener {
+                _,
+                left,
+                _,
+                right,
+                _,
+                oldLeft,
+                _,
+                oldRight,
+                _ ->
+
+            val newWidth =
+                right -
+                        left
+
+            val oldWidth =
+                oldRight -
+                        oldLeft
+
+            if (
+                wrapEnabled &&
+                newWidth > 0 &&
+                newWidth != oldWidth
+            ) {
+
+                horizontalScroll.post {
+
+                    if (
+                        wrapEnabled
+                    ) {
+
+                        setPuzzleWrapMode(
+                            true,
+                            horizontalScroll,
+                            codeLines,
+                            flowRows,
+                            wrapButton
+                        )
+                    }
+                }
+            }
+        }
+
         registerCourseWrapController { enabled ->
 
             wrapEnabled =
@@ -9069,6 +9151,10 @@ class LessonActivity : AppCompatActivity() {
                     slots.size
                 )
 
+            /*
+             * Primero restauramos únicamente
+             * la posición lógica de cada bloque.
+             */
             for (
             slotIndex in 0 until
                     amount
@@ -9099,24 +9185,70 @@ class LessonActivity : AppCompatActivity() {
                             token,
                             slots[slotIndex]
                         )
+                    }
+                }
+            }
 
-                        slots[slotIndex].post {
+            /*
+             * moveCodeToken() realiza parte de su
+             * ajuste mediante post.
+             *
+             * Además, al abrir nuevamente la aplicación,
+             * el tamaño de texto y el ajuste de línea
+             * todavía están terminando su primera
+             * reconstrucción.
+             *
+             * Esperamos dos ciclos de la interfaz para
+             * que todo eso termine y DESPUÉS dejamos
+             * los bloques exactamente compactos.
+             */
+            codeLines.post {
 
-                            /*
-                             * Al restaurar una respuesta guardada,
-                             * el tamaño de texto del curso ya fue
-                             * aplicado cuando se ejecuta este post.
-                             *
-                             * Recalculamos el tamaño compacto real
-                             * del bloque con la fuente ya escalada.
-                             */
+                codeLines.post {
+
+                    for (
+                    slot in slots
+                    ) {
+
+                        val token =
+                            if (
+                                slot.childCount > 0
+                            ) {
+
+                                slot.getChildAt(0)
+                                        as? TextView
+
+                            } else {
+
+                                null
+                            }
+
+                        if (
+                            token != null
+                        ) {
+
+                            token.setPadding(
+                                0,
+                                0,
+                                0,
+                                0
+                            )
+
+                            token.minimumWidth =
+                                0
+
+                            token.minimumHeight =
+                                0
+
                             val compactWidth =
                                 kotlin.math.ceil(
                                     token.paint.measureText(
                                         token.text.toString()
                                     ).toDouble()
                                 ).toInt()
-                                    .coerceAtLeast(1)
+                                    .coerceAtLeast(
+                                        1
+                                    )
 
                             val metrics =
                                 token.paint.fontMetricsInt
@@ -9125,7 +9257,9 @@ class LessonActivity : AppCompatActivity() {
                                 (
                                         metrics.bottom -
                                                 metrics.top
-                                        ).coerceAtLeast(1)
+                                        ).coerceAtLeast(
+                                        1
+                                    )
 
                             token.layoutParams =
                                 FrameLayout.LayoutParams(
@@ -9140,10 +9274,25 @@ class LessonActivity : AppCompatActivity() {
                             token.requestLayout()
 
                             compactDragSlot(
-                                slots[slotIndex]
+                                slot
                             )
+
+                            slot.requestLayout()
                         }
                     }
+
+                    for (
+                    row in flowRows
+                    ) {
+
+                        row.requestLayout()
+                    }
+
+                    codeLines.requestLayout()
+
+                    horizontalScroll.requestLayout()
+
+                    codeCard.requestLayout()
                 }
             }
         }

@@ -163,8 +163,9 @@ class CourseActivity : AppCompatActivity() {
 
         super.onResume()
 
-        AppearanceUi.apply(
-            this
+        AppearanceUi.applyRoute(
+            this,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING
         )
 
         val courseId =

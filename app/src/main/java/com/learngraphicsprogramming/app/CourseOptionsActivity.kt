@@ -118,6 +118,21 @@ class CourseOptionsActivity : AppCompatActivity() {
                     courseId
                 )
 
+        val originalUseGlobal =
+            !hasOverride
+
+        val originalBetweenLessons =
+            settings.automaticBetweenLessons
+
+        val originalBetweenUnits =
+            settings.automaticBetweenUnits
+
+        val originalBetweenCourses =
+            settings.automaticBetweenCourses
+
+        val originalSwipeFinish =
+            settings.swipeCanFinishLesson
+
         switchBetweenLessons.isChecked =
             settings.automaticBetweenLessons
 
@@ -167,7 +182,45 @@ class CourseOptionsActivity : AppCompatActivity() {
                 alpha
         }
 
+        fun updateSaveButtonState() {
+
+            val useGlobalHasChanges =
+                switchUseGlobal.isChecked !=
+                        originalUseGlobal
+
+            val courseSettingsHaveChanges =
+                !switchUseGlobal.isChecked &&
+                        (
+                                switchBetweenLessons.isChecked !=
+                                        originalBetweenLessons ||
+
+                                        switchBetweenUnits.isChecked !=
+                                        originalBetweenUnits ||
+
+                                        switchBetweenCourses.isChecked !=
+                                        originalBetweenCourses ||
+
+                                        switchSwipeFinish.isChecked !=
+                                        originalSwipeFinish
+                                )
+
+            val hasChanges =
+                useGlobalHasChanges ||
+                        courseSettingsHaveChanges
+
+            buttonSave.isEnabled =
+                hasChanges
+
+            buttonSave.alpha =
+                if (hasChanges) {
+                    1f
+                } else {
+                    0.35f
+                }
+        }
+
         updateEnabledState()
+        updateSaveButtonState()
 
         switchUseGlobal.setOnCheckedChangeListener { _, useGlobal ->
 
@@ -193,7 +246,32 @@ class CourseOptionsActivity : AppCompatActivity() {
             }
 
             updateEnabledState()
+            updateSaveButtonState()
         }
+
+        switchBetweenLessons
+            .setOnCheckedChangeListener { _, _ ->
+
+                updateSaveButtonState()
+            }
+
+        switchBetweenUnits
+            .setOnCheckedChangeListener { _, _ ->
+
+                updateSaveButtonState()
+            }
+
+        switchBetweenCourses
+            .setOnCheckedChangeListener { _, _ ->
+
+                updateSaveButtonState()
+            }
+
+        switchSwipeFinish
+            .setOnCheckedChangeListener { _, _ ->
+
+                updateSaveButtonState()
+            }
 
         buttonBack.setOnClickListener {
 
@@ -239,6 +317,13 @@ class CourseOptionsActivity : AppCompatActivity() {
         }
 
         buttonSave.setOnClickListener {
+
+            if (
+                !buttonSave.isEnabled
+            ) {
+
+                return@setOnClickListener
+            }
 
             if (
                 switchUseGlobal.isChecked
