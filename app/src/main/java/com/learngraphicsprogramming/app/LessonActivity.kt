@@ -348,8 +348,9 @@ class LessonActivity : AppCompatActivity() {
 
         super.onResume()
 
-        AppearanceUi.apply(
-            this
+        AppearanceUi.applyRoute(
+            this,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING
         )
 
         if (
@@ -552,8 +553,9 @@ class LessonActivity : AppCompatActivity() {
         background.setStroke(
             dp(1),
             AppearanceSettingsRepository
-                .getAccentColor(
-                    this
+                .getRouteAccentColor(
+                    this,
+                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
                 )
         )
 
@@ -2593,8 +2595,9 @@ class LessonActivity : AppCompatActivity() {
 
             val accentColor =
                 AppearanceSettingsRepository
-                    .getAccentColor(
-                        this
+                    .getRouteAccentColor(
+                        this,
+                        AppearanceSettingsRepository.ROUTE_PROGRAMMING
                     )
 
             background.setColor(
@@ -7226,8 +7229,9 @@ class LessonActivity : AppCompatActivity() {
                 )
             }
 
-            AppearanceUi.apply(
-                this
+            AppearanceUi.applyRoute(
+                this,
+                AppearanceSettingsRepository.ROUTE_PROGRAMMING
             )
 
             return
@@ -7424,8 +7428,9 @@ class LessonActivity : AppCompatActivity() {
             )
         }
 
-        AppearanceUi.apply(
-            this
+        AppearanceUi.applyRoute(
+            this,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING
         )
     }
 
@@ -7490,6 +7495,10 @@ class LessonActivity : AppCompatActivity() {
 
         background.setStroke(
             dp(1),
+            /*
+            Ese pertenece específicamente a los bloques del puzzle. Lo dejamos para el punto:
+            10. Aplicar colores también a consolas/puzzles
+             */
             AppearanceSettingsRepository
                 .getAccentColor(
                     this

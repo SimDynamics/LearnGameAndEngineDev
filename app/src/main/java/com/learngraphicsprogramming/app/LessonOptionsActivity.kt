@@ -116,8 +116,9 @@ class LessonOptionsActivity : AppCompatActivity() {
 
         textLessonNumber.setTextColor(
             AppearanceSettingsRepository
-                .getAccentTextColor(
-                    this
+                .getRouteAccentTextColor(
+                    this,
+                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
                 )
         )
 
@@ -745,8 +746,9 @@ class LessonOptionsActivity : AppCompatActivity() {
 
         super.onResume()
 
-        AppearanceUi.apply(
-            this
+        AppearanceUi.applyRoute(
+            this,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING
         )
     }
 

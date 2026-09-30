@@ -67,8 +67,9 @@ class UnitOptionsActivity : AppCompatActivity() {
 
         textUnitNumber.setTextColor(
             AppearanceSettingsRepository
-                .getAccentTextColor(
-                    this
+                .getRouteAccentTextColor(
+                    this,
+                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
                 )
         )
 
@@ -123,8 +124,9 @@ class UnitOptionsActivity : AppCompatActivity() {
 
         super.onResume()
 
-        AppearanceUi.apply(
-            this
+        AppearanceUi.applyRoute(
+            this,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING
         )
     }
 }

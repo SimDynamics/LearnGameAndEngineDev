@@ -81,14 +81,16 @@ class LessonAdapter(
 
         val accentColor =
             AppearanceSettingsRepository
-                .getAccentColor(
-                    context
+                .getRouteAccentColor(
+                    context,
+                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
                 )
 
         val accentTextColor =
             AppearanceSettingsRepository
-                .getAccentTextColor(
-                    context
+                .getRouteAccentTextColor(
+                    context,
+                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
                 )
 
         holder.textLessonNumber.text =

@@ -74,8 +74,9 @@ class UnitActivity : AppCompatActivity() {
 
         textUnitNumber.setTextColor(
             AppearanceSettingsRepository
-                .getAccentTextColor(
-                    this
+                .getRouteAccentTextColor(
+                    this,
+                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
                 )
         )
 
@@ -173,8 +174,9 @@ class UnitActivity : AppCompatActivity() {
 
         super.onResume()
 
-        AppearanceUi.apply(
-            this
+        AppearanceUi.applyRoute(
+            this,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING
         )
 
         val courseId =

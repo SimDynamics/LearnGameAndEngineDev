@@ -64,8 +64,9 @@ class CourseActivity : AppCompatActivity() {
 
         textCourseNumber.setTextColor(
             AppearanceSettingsRepository
-                .getAccentTextColor(
-                    this
+                .getRouteAccentTextColor(
+                    this,
+                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
                 )
         )
 
