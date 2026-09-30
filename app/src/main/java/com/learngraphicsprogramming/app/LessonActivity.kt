@@ -130,6 +130,13 @@ class LessonActivity : AppCompatActivity() {
         mutableListOf<(Boolean) -> Unit>()
 
     private var ignoreCurrentSwipe = false
+
+    /*
+ * Mientras el compilador está en fullscreen,
+ * los gestos jamás navegan entre páginas.
+ */
+    private var compilerFullscreenActive =
+        false
     private lateinit var lessonContent: LinearLayout
     private lateinit var lessonScroll: ScrollView
 
@@ -412,6 +419,13 @@ class LessonActivity : AppCompatActivity() {
         root.viewTreeObserver
             .addOnGlobalLayoutListener {
 
+                /*
+                 * Guardamos el estado ANTERIOR
+                 * antes de consultar nuevamente el IME.
+                 */
+                val keyboardWasVisible =
+                    keyboardVisible
+
                 val insets =
                     ViewCompat.getRootWindowInsets(
                         root
@@ -639,11 +653,21 @@ class LessonActivity : AppCompatActivity() {
 
     private fun updateProgrammingKeyboardBarVisibility() {
 
+        /*
+         * En fullscreen + horizontal + teclado
+         * usamos toda la altura posible para código.
+         */
+        val compactLandscapeCompiler =
+            compilerFullscreenActive &&
+                    resources.configuration.orientation ==
+                    android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
         val shouldShow =
             keyboardVisible &&
                     activeCodeInput
                         ?.hasFocus() ==
-                    true
+                    true &&
+                    !compactLandscapeCompiler
 
         programmingKeyboardBar.visibility =
             if (
@@ -1327,11 +1351,39 @@ class LessonActivity : AppCompatActivity() {
                                         baseIndent
                             )
 
-                            input.setSelection(
+                            val newCursorPosition =
                                 changeStart +
                                         1 +
                                         childIndent.length
+
+                            input.setSelection(
+                                newCursorPosition
                             )
+
+                            /*
+                             * SwiftKey/Android puede reajustar la selección
+                             * durante el mismo ciclo del IME.
+                             *
+                             * La reafirmamos después de que termine
+                             * esa actualización para que el cursor quede
+                             * realmente en la nueva línea.
+                             */
+                            input.post {
+
+                                val safePosition =
+                                    newCursorPosition.coerceIn(
+                                        0,
+                                        input.text?.length ?: 0
+                                    )
+
+                                input.setSelection(
+                                    safePosition
+                                )
+
+                                input.bringPointIntoView(
+                                    safePosition
+                                )
+                            }
 
                         } else {
 
@@ -1340,11 +1392,31 @@ class LessonActivity : AppCompatActivity() {
                                 childIndent
                             )
 
-                            input.setSelection(
+                            val newCursorPosition =
                                 changeStart +
                                         1 +
                                         childIndent.length
+
+                            input.setSelection(
+                                newCursorPosition
                             )
+
+                            input.post {
+
+                                val safePosition =
+                                    newCursorPosition.coerceIn(
+                                        0,
+                                        input.text?.length ?: 0
+                                    )
+
+                                input.setSelection(
+                                    safePosition
+                                )
+
+                                input.bringPointIntoView(
+                                    safePosition
+                                )
+                            }
                         }
 
                         internalChange =
@@ -1632,16 +1704,24 @@ class LessonActivity : AppCompatActivity() {
         editor: EditText
     ) {
 
-        var draggingEmptyArea =
-            false
+        var downX =
+            0f
 
-        var dragStartX =
+        var downY =
             0f
 
         var initialScrollX =
             0
 
-        editor.setOnTouchListener { _, event ->
+        var horizontalDrag =
+            false
+
+        var verticalDrag =
+            false
+
+        editor.setOnTouchListener {
+                _,
+                event ->
 
             when (
                 event.actionMasked
@@ -1649,122 +1729,114 @@ class LessonActivity : AppCompatActivity() {
 
                 MotionEvent.ACTION_DOWN -> {
 
-                    val touchedText =
-                        isTouchOnEditorText(
-                            editor,
-                            event.x,
-                            event.y
-                        )
-
                     /*
-                     * REGLA 1:
+                     * Desde el instante en que el gesto
+                     * comienza dentro del editor deja de
+                     * pertenecer a la navegación de páginas.
                      *
-                     * Si el gesto comienza sobre texto,
-                     * siempre pertenece al editor.
+                     * Esto incluye:
                      *
-                     * Esto se aplica tanto con wrap ON
-                     * como con wrap OFF.
-                     *
-                     * Así podemos:
-                     *
-                     * - colocar el cursor
-                     * - moverlo
-                     * - seleccionar texto
-                     * - arrastrar sobre otra zona escrita
-                     *
-                     * sin cambiar accidentalmente
-                     * de página.
+                     * - tocar código
+                     * - tocar una línea vacía
+                     * - tocar debajo del código
+                     * - arrastrar desde cualquier zona
                      */
-                    if (
-                        touchedText
-                    ) {
+                    ignoreCurrentSwipe =
+                        true
 
-                        ignoreCurrentSwipe =
-                            true
+                    downX =
+                        event.x
 
-                        draggingEmptyArea =
-                            false
+                    downY =
+                        event.y
 
-                        /*
-                         * false deja que el EditText
-                         * procese normalmente el gesto.
-                         */
-                        return@setOnTouchListener false
-                    }
+                    initialScrollX =
+                        editor.scrollX
 
-                    val horizontalScrollActive =
-                        editorHasHorizontalOverflow(
-                            editor
-                        )
-
-                    /*
-                     * REGLA 2:
-                     *
-                     * Tocamos espacio vacío y además
-                     * existe desplazamiento horizontal.
-                     *
-                     * El gesto mueve el código.
-                     */
-                    if (
-                        horizontalScrollActive
-                    ) {
-
-                        ignoreCurrentSwipe =
-                            true
-
-                        draggingEmptyArea =
-                            true
-
-                        dragStartX =
-                            event.x
-
-                        initialScrollX =
-                            editor.scrollX
-
-                        editor.parent
-                            ?.requestDisallowInterceptTouchEvent(
-                                true
-                            )
-
-                        return@setOnTouchListener true
-                    }
-
-                    /*
-                     * REGLA 3:
-                     *
-                     * Espacio vacío sin desplazamiento
-                     * horizontal disponible.
-                     *
-                     * Aquí sí permitimos que el gesto
-                     * pueda convertirse en navegación
-                     * entre páginas.
-                     */
-                    draggingEmptyArea =
+                    horizontalDrag =
                         false
 
+                    verticalDrag =
+                        false
+
+                    /*
+                     * false permite al EditText seguir
+                     * procesando cursor, selección,
+                     * teclado y desplazamiento vertical.
+                     */
                     false
                 }
 
                 MotionEvent.ACTION_MOVE -> {
 
+                    ignoreCurrentSwipe =
+                        true
+
+                    val movementX =
+                        event.x -
+                                downX
+
+                    val movementY =
+                        event.y -
+                                downY
+
+                    /*
+                     * Esperamos a que exista una dirección
+                     * suficientemente clara antes de decidir
+                     * qué tipo de desplazamiento hacemos.
+                     */
                     if (
-                        !draggingEmptyArea
+                        !horizontalDrag &&
+                        !verticalDrag
                     ) {
 
-                        false
+                        if (
+                            kotlin.math.abs(
+                                movementX
+                            ) >
+                            kotlin.math.abs(
+                                movementY
+                            ) +
+                            dp(4)
+                        ) {
 
-                    } else {
+                            horizontalDrag =
+                                true
+
+                        } else if (
+                            kotlin.math.abs(
+                                movementY
+                            ) >
+                            kotlin.math.abs(
+                                movementX
+                            ) +
+                            dp(4)
+                        ) {
+
+                            verticalDrag =
+                                true
+                        }
+                    }
+
+                    if (
+                        horizontalDrag
+                    ) {
+
+                        /*
+                         * El gesto horizontal pertenece
+                         * exclusivamente al editor.
+                         */
+                        editor.parent
+                            ?.requestDisallowInterceptTouchEvent(
+                                true
+                            )
 
                         val layout =
                             editor.layout
 
                         if (
-                            layout == null
+                            layout != null
                         ) {
-
-                            true
-
-                        } else {
 
                             val availableWidth =
                                 (
@@ -1802,14 +1874,16 @@ class LessonActivity : AppCompatActivity() {
                                         0
                                     )
 
-                            val movement =
-                                dragStartX -
-                                        event.x
-
+                            /*
+                             * Funciona como nuestra barra
+                             * horizontal aunque el dedo esté
+                             * sobre una zona donde no hay texto.
+                             */
                             val newScrollX =
                                 (
                                         initialScrollX +
-                                                movement
+                                                downX -
+                                                event.x
                                         )
                                     .toInt()
                                     .coerceIn(
@@ -1821,38 +1895,60 @@ class LessonActivity : AppCompatActivity() {
                                 newScrollX,
                                 editor.scrollY
                             )
-
-                            true
                         }
+
+                        true
+
+                    } else {
+
+                        /*
+                         * En vertical dejamos que el propio
+                         * EditText realice su scroll.
+                         *
+                         * El padre no debe convertir el gesto
+                         * en navegación.
+                         */
+                        if (
+                            verticalDrag
+                        ) {
+
+                            editor.parent
+                                ?.requestDisallowInterceptTouchEvent(
+                                    true
+                                )
+                        }
+
+                        false
                     }
                 }
 
                 MotionEvent.ACTION_UP,
                 MotionEvent.ACTION_CANCEL -> {
 
-                    if (
-                        draggingEmptyArea
-                    ) {
-
-                        editor.parent
-                            ?.requestDisallowInterceptTouchEvent(
-                                false
-                            )
-
-                        draggingEmptyArea =
+                    editor.parent
+                        ?.requestDisallowInterceptTouchEvent(
                             false
+                        )
 
-                        true
-
-                    } else {
-
+                    horizontalDrag =
                         false
-                    }
+
+                    verticalDrag =
+                        false
+
+                    /*
+                     * El siguiente gesto decidirá de nuevo
+                     * si pertenece o no a la navegación.
+                     */
+                    ignoreCurrentSwipe =
+                        false
+
+                    false
                 }
 
                 else -> {
 
-                    draggingEmptyArea
+                    false
                 }
             }
         }
@@ -5362,6 +5458,35 @@ class LessonActivity : AppCompatActivity() {
         copyButton.isClickable =
             true
 
+        /*
+ * PANTALLA COMPLETA.
+ */
+        val fullscreenButton =
+            TextView(this)
+
+        fullscreenButton.gravity =
+            Gravity.CENTER
+
+        fullscreenButton.setPadding(
+            dp(10),
+            dp(8),
+            dp(10),
+            dp(8)
+        )
+
+        fullscreenButton.setCompoundDrawablesWithIntrinsicBounds(
+            R.drawable.ic_code_fullscreen,
+            0,
+            0,
+            0
+        )
+
+        fullscreenButton.contentDescription =
+            "Pantalla completa"
+
+        fullscreenButton.isClickable =
+            true
+
         header.addView(
             languageLabel
         )
@@ -5380,6 +5505,10 @@ class LessonActivity : AppCompatActivity() {
 
         header.addView(
             copyButton
+        )
+
+        header.addView(
+            fullscreenButton
         )
 
         codeCard.addView(
@@ -5445,26 +5574,51 @@ class LessonActivity : AppCompatActivity() {
             dp(16)
         )
 
+        /*
+ * El TextView contiene TODOS los números.
+ * Su contenedor será quien se desplace.
+ */
         lineNumbers.layoutParams =
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+
+        val lineNumberScroll =
+            ScrollView(this)
+
+        lineNumberScroll.isVerticalScrollBarEnabled =
+            false
+
+        lineNumberScroll.isFillViewport =
+            false
+
+        lineNumberScroll.isClickable =
+            false
+
+        lineNumberScroll.isFocusable =
+            false
+
+        lineNumberScroll.layoutParams =
             LinearLayout.LayoutParams(
                 dp(18),
                 LinearLayout.LayoutParams.MATCH_PARENT
             )
 
+        lineNumberScroll.addView(
+            lineNumbers
+        )
+
         /*
          * EDITOR REAL.
          */
         val sourceCode =
-            EditText(this)
+            FreeScrollEditText(this)
 
         sourceCode.tag =
             CODE_INPUT_TAG
 
         enableCppAutoClose(
-            sourceCode
-        )
-
-        protectHorizontalEditorFromPageSwipe(
             sourceCode
         )
 
@@ -5498,6 +5652,24 @@ class LessonActivity : AppCompatActivity() {
                     android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
                     android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
 
+        /*
+ * Impide que Android/SwiftKey sustituya
+ * nuestro editor por su editor especial
+ * de pantalla completa al usar el teléfono
+ * horizontalmente.
+ *
+ * Debe permanecer visible nuestra interfaz:
+ *
+ * - cabecera
+ * - números de línea
+ * - barras
+ * - comportamiento real de wrap
+ */
+        sourceCode.imeOptions =
+            sourceCode.imeOptions or
+                    android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI or
+                    android.view.inputmethod.EditorInfo.IME_FLAG_NO_FULLSCREEN
+
         sourceCode.setPadding(
             dp(10),
             dp(16),
@@ -5523,6 +5695,16 @@ class LessonActivity : AppCompatActivity() {
         sourceCode.isHorizontalScrollBarEnabled =
             false
 
+        /*
+ * Las scrollbars nativas del EditText
+ * permanecen desactivadas.
+ *
+ * Utilizaremos una barra vertical propia,
+ * igual que hacemos con la horizontal.
+ */
+        sourceCode.isVerticalScrollBarEnabled =
+            false
+
         sourceCode.layoutParams =
             LinearLayout.LayoutParams(
                 0,
@@ -5535,11 +5717,78 @@ class LessonActivity : AppCompatActivity() {
         )
 
         editorBody.addView(
-            lineNumbers
+            lineNumberScroll
+        )
+
+        /*
+         * CONTENEDOR DEL EDITOR.
+         *
+         * Nos permite superponer una barra vertical
+         * propia sobre el lado derecho del código.
+         */
+        val editorContainer =
+            FrameLayout(this)
+
+        editorContainer.layoutParams =
+            LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                1f
+            )
+
+        /*
+         * El EditText ocupa todo el contenedor.
+         */
+        sourceCode.layoutParams =
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+
+        editorContainer.addView(
+            sourceCode
+        )
+
+        /*
+         * BARRA VERTICAL PERSONALIZADA.
+         */
+        val editorVerticalBar =
+            SeekBar(this)
+
+        editorVerticalBar.rotation =
+            90f
+
+        editorVerticalBar.visibility =
+            View.GONE
+
+        editorVerticalBar.setSplitTrack(
+            false
+        )
+
+        val verticalBarParams =
+            FrameLayout.LayoutParams(
+                dp(180),
+                dp(28),
+                Gravity.END or
+                        Gravity.CENTER_VERTICAL
+            )
+
+        /*
+         * Como la barra está rotada 90 grados,
+         * sus dimensiones visuales se intercambian.
+         */
+        verticalBarParams.marginEnd =
+            -dp(76)
+
+        editorVerticalBar.layoutParams =
+            verticalBarParams
+
+        editorContainer.addView(
+            editorVerticalBar
         )
 
         editorBody.addView(
-            sourceCode
+            editorContainer
         )
 
         codeCard.addView(
@@ -5586,6 +5835,172 @@ class LessonActivity : AppCompatActivity() {
         makeCodeCardFullWidth(
             codeCard
         )
+
+        /*
+ * ESPACIO INFERIOR SEGURO DEL EDITOR.
+ *
+ * La última línea nunca debe quedar
+ * debajo ni cortada por la barra horizontal.
+ *
+ * El espacio depende de lineHeight,
+ * por lo que también aumenta automáticamente
+ * cuando aumenta el tamaño del texto.
+ */
+        fun updateEditorBottomSafety() {
+
+            val safeBottomPadding =
+                if (
+                    compilerFullscreenActive
+                ) {
+
+                    /*
+                     * En fullscreen dejamos una zona
+                     * adicional para proteger completamente
+                     * la última línea y el cursor.
+                     */
+                    maxOf(
+                        sourceCode.lineHeight,
+                        lineNumbers.lineHeight
+                    ) +
+                            dp(12)
+
+                } else {
+
+                    /*
+                     * En la ventana normal no necesitamos
+                     * otra línea artificial debajo.
+                     *
+                     * La propia altura de 10 líneas ya
+                     * reservará correctamente el viewport.
+                     */
+                    dp(16)
+                }
+
+            /*
+             * Conservamos izquierda, arriba y derecha.
+             * Solo cambia el espacio inferior.
+             */
+            if (
+                sourceCode.paddingBottom !=
+                safeBottomPadding
+            ) {
+
+                sourceCode.setPadding(
+                    sourceCode.paddingLeft,
+                    sourceCode.paddingTop,
+                    sourceCode.paddingRight,
+                    safeBottomPadding
+                )
+            }
+
+            /*
+             * Los números necesitan exactamente
+             * la misma zona inferior para seguir
+             * alineados con el código.
+             */
+            if (
+                lineNumbers.paddingBottom !=
+                safeBottomPadding
+            ) {
+
+                lineNumbers.setPadding(
+                    lineNumbers.paddingLeft,
+                    lineNumbers.paddingTop,
+                    lineNumbers.paddingRight,
+                    safeBottomPadding
+                )
+            }
+        }
+
+        /*
+ * ALTURA DEL EDITOR EN VISTA NORMAL.
+ *
+ * La ventana normal siempre equivale
+ * a 10 líneas del tamaño de texto actual.
+ *
+ * Si el código necesita más espacio,
+ * el editor no crece:
+ * aparece desplazamiento vertical.
+ */
+        fun updateNormalCompilerEditorHeight() {
+
+            /*
+             * Fullscreen controla su propia altura.
+             */
+            if (
+                compilerFullscreenActive
+            ) {
+                return
+            }
+
+            /*
+             * Primero actualizamos el espacio inferior
+             * de seguridad porque forma parte de la
+             * altura real necesaria del editor.
+             */
+            updateEditorBottomSafety()
+
+            val visibleLines =
+                10
+
+            /*
+ * La altura TOTAL de la caja equivale
+ * exactamente a 10 alturas de línea.
+ *
+ * No añadimos los padding porque entonces
+ * la caja terminaría midiendo más de
+ * las 10 líneas solicitadas.
+ */
+            /*
+ * Queremos 10 líneas COMPLETAS visibles.
+ *
+ * Por eso la altura total debe contener:
+ *
+ * padding superior
+ * + 10 alturas reales de línea
+ * + padding inferior
+ *
+ * lineHeight cambia automáticamente cuando
+ * cambia el tamaño del texto del curso.
+ */
+            val desiredHeight =
+                sourceCode.totalPaddingTop +
+                        sourceCode.lineHeight *
+                        visibleLines +
+                        sourceCode.totalPaddingBottom
+
+            val params =
+                editorBody.layoutParams
+                        as? LinearLayout.LayoutParams
+                    ?: LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        desiredHeight
+                    )
+
+            /*
+             * Evitamos provocar otro layout
+             * si ya tenemos exactamente la altura.
+             */
+            if (
+                params.height !=
+                desiredHeight
+            ) {
+
+                params.width =
+                    LinearLayout.LayoutParams.MATCH_PARENT
+
+                params.height =
+                    desiredHeight
+
+                params.weight =
+                    0f
+
+                editorBody.layoutParams =
+                    params
+
+                editorBody.requestLayout()
+            }
+        }
 
         fun updateEditorHorizontalBar() {
 
@@ -5667,9 +6082,6 @@ class LessonActivity : AppCompatActivity() {
                 return
             }
 
-            editorHorizontalBar.visibility =
-                View.VISIBLE
-
             editorHorizontalBar.max =
                 maximumScroll.coerceAtLeast(
                     1
@@ -5680,6 +6092,163 @@ class LessonActivity : AppCompatActivity() {
                     0,
                     maximumScroll
                 )
+
+            /*
+             * En fullscreen horizontal con teclado
+             * ocultamos solamente la barra VISUAL.
+             *
+             * El max se conserva, por lo que nuestros
+             * gestos horizontales continúan funcionando.
+             */
+            val hideHorizontalBar =
+                compilerFullscreenActive &&
+                        keyboardVisible &&
+                        resources.configuration.orientation ==
+                        android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
+            editorHorizontalBar.visibility =
+                if (
+                    hideHorizontalBar
+                ) {
+                    View.GONE
+                } else {
+                    View.VISIBLE
+                }
+        }
+
+        fun updateEditorVerticalBar() {
+
+            /*
+             * Primero reservamos espacio suficiente
+             * para que la última línea y el cursor
+             * puedan mostrarse completamente.
+             */
+            updateEditorBottomSafety()
+
+            val layout =
+                sourceCode.layout
+
+            if (
+                layout == null ||
+                sourceCode.height <= 0
+            ) {
+
+                editorVerticalBar.visibility =
+                    View.GONE
+
+                return
+            }
+
+            /*
+             * Altura completa ocupada por todo
+             * el texto del editor.
+             */
+            /*
+ * Altura REAL disponible únicamente
+ * para dibujar texto.
+ *
+ * Quitamos el padding porque éste no forma
+ * parte del viewport de las líneas.
+ */
+            val visibleTextHeight =
+                (
+                        sourceCode.height -
+                                sourceCode.totalPaddingTop -
+                                sourceCode.totalPaddingBottom
+                        ).coerceAtLeast(
+                        1
+                    )
+
+            /*
+             * layout.height representa la altura que
+             * realmente necesita el texto.
+             *
+             * Si wrap está activado, las líneas visuales
+             * adicionales también están incluidas aquí.
+             */
+            val contentTextHeight =
+                layout.height
+
+            val maximumScroll =
+                (
+                        contentTextHeight -
+                                visibleTextHeight
+                        ).coerceAtLeast(
+                        0
+                    )
+
+            if (
+                maximumScroll <=
+                dp(1)
+            ) {
+
+                editorVerticalBar.visibility =
+                    View.GONE
+
+                editorVerticalBar.progress =
+                    0
+
+                if (
+                    sourceCode.scrollY != 0
+                ) {
+
+                    sourceCode.scrollTo(
+                        sourceCode.scrollX,
+                        0
+                    )
+                }
+
+                return
+            }
+
+            editorVerticalBar.visibility =
+                View.VISIBLE
+
+            editorVerticalBar.max =
+                maximumScroll.coerceAtLeast(
+                    1
+                )
+
+            editorVerticalBar.progress =
+                sourceCode.scrollY.coerceIn(
+                    0,
+                    maximumScroll
+                )
+        }
+
+        fun updateCompilerCompactLandscapeUi() {
+
+            val compactMode =
+                compilerFullscreenActive &&
+                        keyboardVisible &&
+                        resources.configuration.orientation ==
+                        android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
+            /*
+             * Cabecera del compilador:
+             *
+             * </> C++
+             * Reiniciar
+             * Wrap
+             * Copiar
+             * Fullscreen
+             */
+            header.visibility =
+                if (
+                    compactMode
+                ) {
+                    View.GONE
+                } else {
+                    View.VISIBLE
+                }
+
+            /*
+             * Recalculamos la barra horizontal.
+             *
+             * En modo compacto permanecerá oculta,
+             * pero seguirá conservando su max.
+             */
+            updateEditorHorizontalBar()
         }
 
         editorHorizontalBar
@@ -5716,28 +6285,596 @@ class LessonActivity : AppCompatActivity() {
                 }
             )
 
+        editorVerticalBar
+            .setOnSeekBarChangeListener(
+                object :
+                    SeekBar.OnSeekBarChangeListener {
+
+                    override fun onProgressChanged(
+                        seekBar: SeekBar?,
+                        progress: Int,
+                        fromUser: Boolean
+                    ) {
+
+                        if (
+                            fromUser
+                        ) {
+
+                            sourceCode.scrollTo(
+                                sourceCode.scrollX,
+                                progress
+                            )
+                        }
+                    }
+
+                    override fun onStartTrackingTouch(
+                        seekBar: SeekBar?
+                    ) {
+                    }
+
+                    override fun onStopTrackingTouch(
+                        seekBar: SeekBar?
+                    ) {
+                    }
+                }
+            )
+
+        editorVerticalBar.setOnTouchListener {
+                view,
+                event ->
+
+            ignoreCurrentSwipe =
+                true
+
+            when (
+                event.actionMasked
+            ) {
+
+                MotionEvent.ACTION_DOWN,
+                MotionEvent.ACTION_MOVE -> {
+
+                    view.parent
+                        ?.requestDisallowInterceptTouchEvent(
+                            true
+                        )
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+
+                    view.parent
+                        ?.requestDisallowInterceptTouchEvent(
+                            false
+                        )
+                }
+            }
+
+            false
+        }
+
         editorHorizontalBar.setOnTouchListener {
-                _,
-                _ ->
+                view,
+                event ->
 
             /*
-             * Con el teclado abierto editamos código.
-             * La barra queda visible como referencia,
-             * pero no responde al arrastre.
-             *
-             * Con el teclado cerrado sí puede
-             * utilizarse directamente.
+             * Cualquier gesto iniciado sobre esta barra
+             * pertenece exclusivamente al editor.
+             */
+            ignoreCurrentSwipe =
+                true
+
+            when (
+                event.actionMasked
+            ) {
+
+                MotionEvent.ACTION_DOWN,
+                MotionEvent.ACTION_MOVE -> {
+
+                    view.parent
+                        ?.requestDisallowInterceptTouchEvent(
+                            true
+                        )
+                }
+
+                MotionEvent.ACTION_UP,
+                MotionEvent.ACTION_CANCEL -> {
+
+                    view.parent
+                        ?.requestDisallowInterceptTouchEvent(
+                            false
+                        )
+                }
+            }
+
+            /*
+             * Con teclado abierto se mantiene
+             * el comportamiento anterior:
+             * la barra es solo referencia visual.
              */
             keyboardVisible
+        }
+
+        /*
+ * GESTOS DIRECTAMENTE SOBRE EL EDITOR.
+ *
+ * FULLSCREEN:
+ *
+ * toque sin arrastrar
+ *     -> coloca el cursor
+ *
+ * arrastre horizontal
+ *     -> NUNCA mueve el cursor
+ *
+ * si existe scroll horizontal
+ *     -> desplaza el código
+ *
+ * si no existe scroll horizontal
+ *     -> simplemente consume el gesto
+ *
+ * arrastre vertical con scroll vertical
+ *     -> desplaza el código
+ */
+        var editorTouchStartX =
+            0f
+
+        var editorTouchStartY =
+            0f
+
+        var editorInitialScrollX =
+            0
+
+        var editorInitialScrollY =
+            0
+
+        /*
+ * 0 = posible toque
+ * 1 = scroll horizontal
+ * 2 = scroll vertical
+ * 3 = gesto horizontal fullscreen sin recorrido
+ * 4 = gesto vertical fullscreen sin recorrido
+ *
+ * Los modos 3 y 4 consumen el gesto
+ * sin mover el cursor.
+ */
+        var editorGestureMode =
+            0
+
+        val editorDragThreshold =
+            maxOf(
+                dp(2),
+                android.view.ViewConfiguration
+                    .get(this)
+                    .scaledTouchSlop / 2
+            ).toFloat()
+
+        sourceCode.setOnTouchListener {
+                view,
+                event ->
+
+            when (
+                event.actionMasked
+            ) {
+
+                MotionEvent.ACTION_DOWN -> {
+
+                    /*
+                     * Todo gesto iniciado dentro
+                     * del editor pertenece al editor.
+                     */
+                    ignoreCurrentSwipe =
+                        true
+
+                    view.parent
+                        ?.requestDisallowInterceptTouchEvent(
+                            true
+                        )
+
+                    editorTouchStartX =
+                        event.x
+
+                    editorTouchStartY =
+                        event.y
+
+                    editorInitialScrollX =
+                        sourceCode.scrollX
+
+                    editorInitialScrollY =
+                        sourceCode.scrollY
+
+                    editorGestureMode =
+                        0
+
+                    /*
+                     * Consumimos DOWN.
+                     *
+                     * El cursor se colocará manualmente
+                     * en ACTION_UP solamente si realmente
+                     * fue un toque.
+                     */
+                    true
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+
+                    ignoreCurrentSwipe =
+                        true
+
+                    view.parent
+                        ?.requestDisallowInterceptTouchEvent(
+                            true
+                        )
+
+                    val movementX =
+                        event.x -
+                                editorTouchStartX
+
+                    val movementY =
+                        event.y -
+                                editorTouchStartY
+
+                    val distanceX =
+                        kotlin.math.abs(
+                            movementX
+                        )
+
+                    val distanceY =
+                        kotlin.math.abs(
+                            movementY
+                        )
+
+                    /*
+                     * Decidimos la intención apenas
+                     * el dedo supera el pequeño umbral.
+                     */
+                    if (
+                        editorGestureMode ==
+                        0 &&
+                        (
+                                distanceX >=
+                                        editorDragThreshold ||
+                                        distanceY >=
+                                        editorDragThreshold
+                                )
+                    ) {
+
+                        if (
+                            distanceX >
+                            distanceY
+                        ) {
+
+                            /*
+ * Desde que sabemos que el gesto
+ * es horizontal, el cursor deja
+ * de controlar el scroll.
+ */
+                            sourceCode.suppressCursorAutoScroll =
+                                true
+
+                            /*
+                             * MOVIMIENTO HORIZONTAL.
+                             *
+                             * En fullscreen jamás puede
+                             * convertirse en movimiento
+                             * del cursor.
+                             */
+                            if (
+                                compilerFullscreenActive
+                            ) {
+
+                                editorGestureMode =
+                                    if (
+                                        editorHorizontalBar.max >
+                                        0
+                                    ) {
+                                        1
+                                    } else {
+                                        3
+                                    }
+
+                            } else {
+
+                                /*
+                                 * Fuera de fullscreen:
+                                 * si realmente existe recorrido,
+                                 * hacemos scroll horizontal.
+                                 */
+                                editorGestureMode =
+                                    if (
+                                        editorHorizontalBar.max >
+                                        0
+                                    ) {
+                                        1
+                                    } else {
+                                        0
+                                    }
+                            }
+
+                        } else {
+
+                            /*
+                             * MOVIMIENTO VERTICAL.
+                             *
+                             * Igual que en horizontal:
+                             * desde que detectamos un arrastre
+                             * dejamos de permitir que el cursor
+                             * controle automáticamente la vista.
+                             */
+                            sourceCode.suppressCursorAutoScroll =
+                                true
+
+                            if (
+                                compilerFullscreenActive
+                            ) {
+
+                                /*
+                                 * FULLSCREEN:
+                                 *
+                                 * cualquier arrastre vertical
+                                 * deja de pertenecer al cursor.
+                                 */
+                                editorGestureMode =
+                                    if (
+                                        editorVerticalBar.max >
+                                        0
+                                    ) {
+
+                                        /*
+                                         * Existe recorrido vertical.
+                                         */
+                                        2
+
+                                    } else {
+
+                                        /*
+                                         * No existe recorrido vertical,
+                                         * pero tampoco permitimos que
+                                         * el gesto mueva el cursor.
+                                         */
+                                        4
+                                    }
+
+                            } else {
+
+                                /*
+                                 * Vista normal:
+                                 *
+                                 * si existe desplazamiento vertical,
+                                 * navegamos libremente.
+                                 *
+                                 * Si no existe, conservamos el
+                                 * comportamiento normal del toque.
+                                 */
+                                editorGestureMode =
+                                    if (
+                                        editorVerticalBar.max >
+                                        0
+                                    ) {
+                                        2
+                                    } else {
+
+                                        sourceCode.suppressCursorAutoScroll =
+                                            false
+
+                                        0
+                                    }
+                            }
+                        }
+                    }
+
+                    when (
+                        editorGestureMode
+                    ) {
+
+                        /*
+                         * SCROLL HORIZONTAL.
+                         */
+                        1 -> {
+
+                            val movement =
+                                editorTouchStartX -
+                                        event.x
+
+                            val newScrollX =
+                                (
+                                        editorInitialScrollX +
+                                                movement
+                                        )
+                                    .toInt()
+                                    .coerceIn(
+                                        0,
+                                        editorHorizontalBar.max
+                                    )
+
+                            sourceCode.scrollTo(
+                                newScrollX,
+                                sourceCode.scrollY
+                            )
+                        }
+
+                        /*
+                         * SCROLL VERTICAL.
+                         */
+                        2 -> {
+
+                            val movement =
+                                editorTouchStartY -
+                                        event.y
+
+                            val newScrollY =
+                                (
+                                        editorInitialScrollY +
+                                                movement
+                                        )
+                                    .toInt()
+                                    .coerceIn(
+                                        0,
+                                        editorVerticalBar.max
+                                    )
+
+                            /*
+                             * Código y números se desplazan
+                             * exactamente la misma cantidad
+                             * durante el mismo gesto.
+                             */
+                            sourceCode.scrollTo(
+                                sourceCode.scrollX,
+                                newScrollY
+                            )
+
+                            editorVerticalBar.progress =
+                                newScrollY.coerceIn(
+                                    0,
+                                    editorVerticalBar.max
+                                )
+                        }
+
+                        /*
+                         * HORIZONTAL FULLSCREEN
+                         * SIN RECORRIDO.
+                         *
+                         * No hacemos nada.
+                         *
+                         * Lo importante es que tampoco
+                         * moveremos el cursor.
+                         */
+                        3 -> {
+                        }
+
+                        /*
+ * VERTICAL FULLSCREEN
+ * SIN RECORRIDO.
+ *
+ * Consumimos el gesto.
+ *
+ * No desplazamos la vista
+ * y tampoco movemos el cursor.
+ */
+                        4 -> {
+                        }
+                    }
+
+                    true
+                }
+
+                MotionEvent.ACTION_UP -> {
+
+                    val wasSimpleTap =
+                        editorGestureMode ==
+                                0
+
+                    /*
+                     * Solamente un toque verdadero
+                     * puede colocar el cursor.
+                     */
+                    if (
+                        wasSimpleTap
+                    ) {
+
+                        /*
+     * Un toque real sí significa:
+     * "quiero trabajar aquí".
+     *
+     * Ahora permitimos nuevamente
+     * que el cursor controle su posición.
+     */
+                        sourceCode.suppressCursorAutoScroll =
+                            false
+
+                        sourceCode.requestFocus()
+
+                        val offset =
+                            sourceCode.getOffsetForPosition(
+                                event.x,
+                                event.y
+                            )
+
+                        sourceCode.setSelection(
+                            offset.coerceIn(
+                                0,
+                                sourceCode.text?.length ?: 0
+                            )
+                        )
+
+                        val inputMethodManager =
+                            getSystemService(
+                                Context.INPUT_METHOD_SERVICE
+                            ) as
+                                    android.view.inputmethod.InputMethodManager
+
+                        inputMethodManager.showSoftInput(
+                            sourceCode,
+                            android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT
+                        )
+                    }
+
+                    view.parent
+                        ?.requestDisallowInterceptTouchEvent(
+                            false
+                        )
+
+                    editorGestureMode =
+                        0
+
+                    ignoreCurrentSwipe =
+                        false
+
+                    true
+                }
+
+                MotionEvent.ACTION_CANCEL -> {
+
+                    view.parent
+                        ?.requestDisallowInterceptTouchEvent(
+                            false
+                        )
+
+                    editorGestureMode =
+                        0
+
+                    ignoreCurrentSwipe =
+                        false
+
+                    true
+                }
+
+                else -> {
+
+                    true
+                }
+            }
         }
 
         sourceCode.setOnScrollChangeListener {
                 _,
                 scrollX,
-                _,
+                scrollY,
                 _,
                 _ ->
 
+            /*
+             * Números sincronizados verticalmente.
+             */
+            /*
+ * El contenedor permanece fijo.
+ *
+ * Movemos directamente el contenido de los
+ * números exactamente la misma cantidad
+ * que se desplazó el código.
+ *
+ * Así no existe un segundo límite de scroll
+ * capaz de desalinear números y editor.
+ */
+            lineNumberScroll.scrollTo(
+                0,
+                0
+            )
+
+            lineNumbers.translationY =
+                -scrollY.toFloat()
+
+            /*
+             * Barra horizontal sincronizada.
+             */
             if (
                 editorHorizontalBar.visibility ==
                 View.VISIBLE
@@ -5747,6 +6884,21 @@ class LessonActivity : AppCompatActivity() {
                     scrollX.coerceIn(
                         0,
                         editorHorizontalBar.max
+                    )
+            }
+
+            /*
+             * Barra vertical sincronizada.
+             */
+            if (
+                editorVerticalBar.visibility ==
+                View.VISIBLE
+            ) {
+
+                editorVerticalBar.progress =
+                    scrollY.coerceIn(
+                        0,
+                        editorVerticalBar.max
                     )
             }
         }
@@ -5762,12 +6914,20 @@ class LessonActivity : AppCompatActivity() {
                 _,
                 _ ->
 
-            updateEditorHorizontalBar()
+            updateNormalCompilerEditorHeight()
+
+            updateCompilerCompactLandscapeUi()
+
+            updateEditorVerticalBar()
         }
 
         sourceCode.post {
 
+            updateNormalCompilerEditorHeight()
+
             updateEditorHorizontalBar()
+
+            updateEditorVerticalBar()
         }
 
         /*
@@ -5775,16 +6935,153 @@ class LessonActivity : AppCompatActivity() {
          */
         fun updateLineNumbers() {
 
-            val amount =
-                sourceCode.text.count {
-                    it == '\n'
-                } + 1
+            /*
+             * Esperamos a que Android haya calculado
+             * el layout real del EditText.
+             *
+             * Esto es necesario porque una línea lógica
+             * puede ocupar varias filas visuales cuando
+             * el ajuste de línea está activado.
+             */
+            sourceCode.post {
 
-            lineNumbers.text =
-                (1..amount)
-                    .joinToString(
-                        "\n"
+                val layout =
+                    sourceCode.layout
+                        ?: return@post
+
+                val text =
+                    sourceCode.text
+                        ?.toString()
+                        .orEmpty()
+
+                /*
+                 * Cantidad REAL de líneas lógicas.
+                 *
+                 * Solo '\n' crea una línea nueva.
+                 * El ajuste visual NO cuenta.
+                 */
+                val logicalLineAmount =
+                    text.count {
+                        it == '\n'
+                    } + 1
+
+                var logicalLineNumber =
+                    1
+
+                val displayedNumbers =
+                    buildString {
+
+                        for (
+                        visualLine in
+                        0 until layout.lineCount
+                        ) {
+
+                            val startOffset =
+                                layout.getLineStart(
+                                    visualLine
+                                )
+
+                            /*
+                             * Primera fila visual del documento.
+                             */
+                            if (
+                                visualLine == 0
+                            ) {
+
+                                append(
+                                    logicalLineNumber
+                                )
+
+                            } else {
+
+                                /*
+                                 * Una nueva línea lógica solamente
+                                 * empieza si justo antes existe '\n'.
+                                 *
+                                 * Si no existe '\n', significa que
+                                 * esta fila es únicamente la
+                                 * continuación visual de la misma
+                                 * línea debido al ajuste.
+                                 */
+                                val startsNewLogicalLine =
+                                    startOffset > 0 &&
+                                            text.getOrNull(
+                                                startOffset - 1
+                                            ) == '\n'
+
+                                if (
+                                    startsNewLogicalLine
+                                ) {
+
+                                    logicalLineNumber++
+
+                                    append(
+                                        logicalLineNumber
+                                    )
+
+                                } else {
+
+                                    /*
+                                     * Continuación visual.
+                                     *
+                                     * Dejamos esta posición vacía
+                                     * para conservar la alineación.
+                                     */
+                                    append("")
+                                }
+                            }
+
+                            if (
+                                visualLine <
+                                layout.lineCount - 1
+                            ) {
+
+                                append('\n')
+                            }
+                        }
+                    }
+
+                lineNumbers.text =
+                    displayedNumbers
+
+                /*
+                 * El ancho se calcula usando el número
+                 * lógico más grande, no la cantidad de
+                 * filas visuales.
+                 */
+                val widestNumber =
+                    logicalLineAmount.toString()
+
+                val textWidth =
+                    kotlin.math.ceil(
+                        lineNumbers.paint.measureText(
+                            widestNumber
+                        ).toDouble()
+                    ).toInt()
+
+                val requiredWidth =
+                    maxOf(
+                        dp(18),
+                        textWidth +
+                                dp(8)
                     )
+
+                val params =
+                    lineNumberScroll.layoutParams
+                            as LinearLayout.LayoutParams
+
+                if (
+                    params.width !=
+                    requiredWidth
+                ) {
+
+                    params.width =
+                        requiredWidth
+
+                    lineNumberScroll.layoutParams =
+                        params
+                }
+            }
         }
 
         updateLineNumbers()
@@ -5807,11 +7104,44 @@ class LessonActivity : AppCompatActivity() {
                     count: Int
                 ) {
 
+                    /*
+                     * Si el usuario estaba navegando
+                     * libremente lejos del cursor,
+                     * al comenzar a escribir volvemos
+                     * inmediatamente hacia él.
+                     */
+                    if (
+                        sourceCode.suppressCursorAutoScroll
+                    ) {
+
+                        sourceCode.suppressCursorAutoScroll =
+                            false
+
+                        sourceCode.post {
+
+                            val cursorPosition =
+                                sourceCode.selectionStart
+
+                            if (
+                                cursorPosition >= 0
+                            ) {
+
+                                sourceCode.bringPointIntoView(
+                                    cursorPosition
+                                )
+                            }
+                        }
+                    }
+
                     updateLineNumbers()
 
                     sourceCode.post {
 
+                        updateNormalCompilerEditorHeight()
+
                         updateEditorHorizontalBar()
+
+                        updateEditorVerticalBar()
                     }
                 }
 
@@ -5935,6 +7265,402 @@ class LessonActivity : AppCompatActivity() {
         )
 
         /*
+ * PANTALLA COMPLETA DEL EDITOR.
+ *
+ * En fullscreen solamente permanecen:
+ *
+ * - cabecera C++
+ * - Reiniciar
+ * - Ajuste de línea
+ * - Copiar
+ * - Salir de fullscreen
+ * - editor de código
+ * - barra horizontal del editor
+ *
+ * Compilar, estado y consola permanecen
+ * disponibles únicamente en la vista normal.
+ */
+
+        val lessonProgressView =
+            findViewById<ProgressBar>(
+                R.id.lessonProgress
+            )
+
+        val lessonTopBar =
+            lessonProgressView.parent
+                    as View
+
+        val continueButton =
+            findViewById<Button>(
+                R.id.buttonContinue
+            )
+
+        val normalPaddingLeft =
+            lessonContent.paddingLeft
+
+        val normalPaddingTop =
+            lessonContent.paddingTop
+
+        val normalPaddingRight =
+            lessonContent.paddingRight
+
+        val normalPaddingBottom =
+            lessonContent.paddingBottom
+
+        val normalChildVisibilities =
+            mutableMapOf<View, Int>()
+
+        var normalSystemUiVisibility =
+            window.decorView.systemUiVisibility
+
+        var normalTopBarVisibility =
+            lessonTopBar.visibility
+
+        var normalContinueVisibility =
+            continueButton.visibility
+
+        /*
+         * Ajusta la geometría del editor fullscreen.
+         *
+         * También se puede ejecutar después de
+         * una rotación porque LessonActivity ya
+         * no será destruida.
+         */
+        fun updateCompilerFullscreenGeometry() {
+
+            if (
+                !compilerFullscreenActive ||
+                lessonScroll.height <= 0
+            ) {
+                return
+            }
+
+            /*
+             * La tarjeta ocupa exactamente la altura
+             * visible disponible.
+             */
+            val cardParams =
+                codeCard.layoutParams
+                        as LinearLayout.LayoutParams
+
+            cardParams.width =
+                LinearLayout.LayoutParams.MATCH_PARENT
+
+            cardParams.height =
+                lessonScroll.height
+
+            codeCard.layoutParams =
+                cardParams
+
+            codeCard.translationX =
+                0f
+
+            /*
+             * La cabecera conserva su altura normal.
+             *
+             * editorBody recibe TODO el espacio restante.
+             * Por eso la cabecera nunca se desplaza aunque
+             * existan miles de líneas.
+             */
+            editorBody.layoutParams =
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    0,
+                    1f
+                )
+
+            /*
+             * La columna de números ocupa toda
+             * la altura del editor.
+             */
+            val numberParams =
+                lineNumberScroll.layoutParams
+                        as LinearLayout.LayoutParams
+
+            numberParams.height =
+                LinearLayout.LayoutParams.MATCH_PARENT
+
+            lineNumberScroll.layoutParams =
+                numberParams
+
+            /*
+             * El EditText ocupa toda la altura disponible.
+             *
+             * El desplazamiento vertical ocurre dentro
+             * del propio editor, no moviendo la cabecera.
+             */
+            sourceCode.layoutParams =
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+
+            sourceCode.minHeight =
+                0
+
+            sourceCode.requestLayout()
+
+            editorBody.requestLayout()
+
+            codeCard.requestLayout()
+
+            sourceCode.post {
+
+                updateEditorVerticalBar()
+
+                updateLineNumbers()
+            }
+        }
+
+        fun enterCompilerFullscreen() {
+
+            if (
+                compilerFullscreenActive
+            ) {
+                return
+            }
+
+            compilerFullscreenActive =
+                true
+
+            normalTopBarVisibility =
+                lessonTopBar.visibility
+
+            normalContinueVisibility =
+                continueButton.visibility
+
+            normalSystemUiVisibility =
+                window.decorView.systemUiVisibility
+
+            normalChildVisibilities.clear()
+
+            /*
+             * Guardamos la visibilidad normal de
+             * todo el contenido de la página.
+             */
+            for (
+            index in 0 until
+                    lessonContent.childCount
+            ) {
+
+                val child =
+                    lessonContent.getChildAt(
+                        index
+                    )
+
+                normalChildVisibilities[
+                    child
+                ] =
+                    child.visibility
+
+                /*
+                 * En fullscreen únicamente queda
+                 * visible la tarjeta del editor.
+                 *
+                 * Esto oculta también:
+                 *
+                 * - Compilar y ejecutar
+                 * - estado
+                 * - consola
+                 */
+                child.visibility =
+                    if (
+                        child === codeCard
+                    ) {
+                        View.VISIBLE
+                    } else {
+                        View.GONE
+                    }
+            }
+
+            lessonTopBar.visibility =
+                View.GONE
+
+            continueButton.visibility =
+                View.GONE
+
+            lessonContent.setPadding(
+                0,
+                0,
+                0,
+                0
+            )
+
+            /*
+             * Ocultamos la barra de estado Android.
+             */
+            window.decorView.systemUiVisibility =
+                normalSystemUiVisibility or
+                        View.SYSTEM_UI_FLAG_FULLSCREEN or
+                        View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+
+            fullscreenButton.contentDescription =
+                "Salir de pantalla completa"
+
+            /*
+             * Esperamos al nuevo tamaño disponible.
+             */
+            lessonScroll.post {
+
+                lessonScroll.scrollTo(
+                    0,
+                    0
+                )
+
+                updateCompilerFullscreenGeometry()
+
+                updateCompilerCompactLandscapeUi()
+
+                updateProgrammingKeyboardBarVisibility()
+            }
+        }
+
+        fun exitCompilerFullscreen() {
+
+            if (
+                !compilerFullscreenActive
+            ) {
+                return
+            }
+
+            compilerFullscreenActive =
+                false
+
+            /*
+             * Recuperamos exactamente la visibilidad
+             * que tenía cada elemento.
+             */
+            for (
+            entry in normalChildVisibilities
+            ) {
+
+                entry.key.visibility =
+                    entry.value
+            }
+
+            lessonTopBar.visibility =
+                normalTopBarVisibility
+
+            continueButton.visibility =
+                normalContinueVisibility
+
+            lessonContent.setPadding(
+                normalPaddingLeft,
+                normalPaddingTop,
+                normalPaddingRight,
+                normalPaddingBottom
+            )
+
+            /*
+             * Restauramos la geometría normal.
+             */
+            val cardParams =
+                codeCard.layoutParams
+                        as LinearLayout.LayoutParams
+
+            cardParams.height =
+                LinearLayout.LayoutParams.WRAP_CONTENT
+
+            codeCard.layoutParams =
+                cardParams
+
+            val numberParams =
+                lineNumberScroll.layoutParams
+                        as LinearLayout.LayoutParams
+
+            numberParams.height =
+                LinearLayout.LayoutParams.MATCH_PARENT
+
+            lineNumberScroll.layoutParams =
+                numberParams
+
+            sourceCode.layoutParams =
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+
+            sourceCode.minHeight =
+                dp(220)
+
+            window.decorView.systemUiVisibility =
+                normalSystemUiVisibility
+
+            fullscreenButton.contentDescription =
+                "Pantalla completa"
+
+            /*
+             * Recuperamos el mismo ancho especial
+             * que normalmente utiliza la tarjeta.
+             */
+            codeCard.post {
+
+                makeCodeCardFullWidth(
+                    codeCard
+                )
+
+                /*
+                 * Al abandonar fullscreen recuperamos
+                 * la ventana normal de exactamente
+                 * 10 líneas.
+                 */
+                updateNormalCompilerEditorHeight()
+
+                sourceCode.requestLayout()
+
+                updateLineNumbers()
+
+                updateCompilerCompactLandscapeUi()
+
+                updateEditorHorizontalBar()
+
+                updateEditorVerticalBar()
+
+                updateProgrammingKeyboardBarVisibility()
+            }
+        }
+
+        /*
+         * Si giramos el teléfono estando en fullscreen,
+         * Android conserva esta Activity.
+         *
+         * Cuando lessonScroll recibe sus nuevas
+         * dimensiones, recalculamos la tarjeta.
+         */
+        lessonScroll.addOnLayoutChangeListener {
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _ ->
+
+            if (
+                compilerFullscreenActive
+            ) {
+
+                updateCompilerFullscreenGeometry()
+            }
+        }
+
+        fullscreenButton.setOnClickListener {
+
+            if (
+                compilerFullscreenActive
+            ) {
+
+                exitCompilerFullscreen()
+
+            } else {
+
+                enterCompilerFullscreen()
+            }
+        }
+
+        /*
          * REINICIAR.
          */
         resetButton.setOnClickListener {
@@ -6018,6 +7744,8 @@ class LessonActivity : AppCompatActivity() {
             sourceCode.post {
 
                 updateEditorHorizontalBar()
+
+                updateLineNumbers()
             }
         }
 
@@ -6153,6 +7881,27 @@ class LessonActivity : AppCompatActivity() {
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+
+        /*
+ * FULLSCREEN DEL COMPILADOR.
+ *
+ * En este modo ningún gesto pertenece
+ * a la navegación entre páginas.
+ *
+ * El evento sigue llegando normalmente
+ * al editor, barras, botones y teclado.
+ */
+        if (
+            compilerFullscreenActive
+        ) {
+
+            ignoreCurrentSwipe =
+                true
+
+            return super.dispatchTouchEvent(
+                event
+            )
+        }
 
         when (event.action) {
 
