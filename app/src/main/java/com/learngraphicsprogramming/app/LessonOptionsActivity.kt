@@ -87,6 +87,11 @@ class LessonOptionsActivity : AppCompatActivity() {
                 R.id.buttonSaveCourseSettings
             )
 
+        val switchAllowGlobalWrapOverwrite =
+            findViewById<Switch>(
+                R.id.switchAllowGlobalWrapOverwrite
+            )
+
         /*
          * PROGRAMACIÓN.
          */
@@ -139,6 +144,13 @@ class LessonOptionsActivity : AppCompatActivity() {
                     courseId
                 )
 
+        val savedAllowGlobalWrapOverwrite =
+            CodeWrapSettingsRepository
+                .allowsGlobalOverwrite(
+                    this,
+                    courseId
+                )
+
         /*
          * VALORES TEMPORALES.
          *
@@ -152,9 +164,12 @@ class LessonOptionsActivity : AppCompatActivity() {
         var pendingCourseScale =
             savedCourseScale
 
+        var pendingAllowGlobalWrapOverwrite =
+            savedAllowGlobalWrapOverwrite
+
         fun updateSaveButtonState() {
 
-            val hasChanges =
+            val textSizeHasChanges =
                 pendingUseGlobal !=
                         savedUseGlobal ||
                         (
@@ -162,6 +177,14 @@ class LessonOptionsActivity : AppCompatActivity() {
                                         pendingCourseScale !=
                                         savedCourseScale
                                 )
+
+            val wrapProtectionHasChanges =
+                pendingAllowGlobalWrapOverwrite !=
+                        savedAllowGlobalWrapOverwrite
+
+            val hasChanges =
+                textSizeHasChanges ||
+                        wrapProtectionHasChanges
 
             buttonSaveCourseSettings.isEnabled =
                 hasChanges
@@ -243,10 +266,13 @@ class LessonOptionsActivity : AppCompatActivity() {
         }
 
         /*
-         * ESTADO INICIAL.
-         */
+ * ESTADO INICIAL.
+ */
         switchUseGlobalTextSize.isChecked =
             savedUseGlobal
+
+        switchAllowGlobalWrapOverwrite.isChecked =
+            savedAllowGlobalWrapOverwrite
 
         seekLessonTextSize.progress =
             (
@@ -261,6 +287,7 @@ class LessonOptionsActivity : AppCompatActivity() {
                     LessonTextSizeSettingsRepository.MIN_SCALE
 
         updateCourseTextSizeControls()
+        updateSaveButtonState()
 
         /*
          * USAR TAMAÑO GLOBAL.
@@ -335,6 +362,17 @@ class LessonOptionsActivity : AppCompatActivity() {
                 }
             )
 
+        switchAllowGlobalWrapOverwrite
+            .setOnCheckedChangeListener {
+                    _,
+                    isChecked ->
+
+                pendingAllowGlobalWrapOverwrite =
+                    isChecked
+
+                updateSaveButtonState()
+            }
+
         /*
          * GUARDAR AJUSTES DEL CURSO.
          *
@@ -362,6 +400,13 @@ class LessonOptionsActivity : AppCompatActivity() {
                             pendingCourseScale
                         )
                 }
+
+                CodeWrapSettingsRepository
+                    .saveAllowsGlobalOverwrite(
+                        this,
+                        courseId,
+                        pendingAllowGlobalWrapOverwrite
+                    )
 
                 Toast.makeText(
                     this,

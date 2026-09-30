@@ -51,6 +51,11 @@ class OptionsActivity : AppCompatActivity() {
                 R.id.switchSwipeFinish
             )
 
+        val switchGlobalCodeWrap =
+            findViewById<Switch>(
+                R.id.switchGlobalCodeWrap
+            )
+
         val buttonSave =
             findViewById<Button>(
                 R.id.buttonSave
@@ -59,6 +64,16 @@ class OptionsActivity : AppCompatActivity() {
         val buttonResetProgrammingRoute =
             findViewById<Button>(
                 R.id.buttonResetProgrammingRoute
+            )
+
+        val buttonResetProgrammingWrapExceptions =
+            findViewById<Button>(
+                R.id.buttonResetProgrammingWrapExceptions
+            )
+
+        val buttonResetMathPhysicsWrapExceptions =
+            findViewById<Button>(
+                R.id.buttonResetMathPhysicsWrapExceptions
             )
 
         val textGlobalTextSize =
@@ -137,6 +152,12 @@ class OptionsActivity : AppCompatActivity() {
                     this
                 )
 
+        val originalGlobalCodeWrap =
+            CodeWrapSettingsRepository
+                .getGlobalWrap(
+                    this
+                )
+
         val originalAccent =
             AppearanceSettingsRepository
                 .getAccentRgb(
@@ -186,6 +207,9 @@ class OptionsActivity : AppCompatActivity() {
         switchSwipeFinish.isChecked =
             originalSwipeFinish
 
+        switchGlobalCodeWrap.isChecked =
+            originalGlobalCodeWrap
+
         seekGlobalTextSize.progress =
             originalGlobalTextScale -
                     LessonTextSizeSettingsRepository.MIN_SCALE
@@ -228,6 +252,10 @@ class OptionsActivity : AppCompatActivity() {
                                 LessonTextSizeSettingsRepository.MIN_SCALE
                         ) != originalGlobalTextScale
 
+            val codeWrapHasChanges =
+                switchGlobalCodeWrap.isChecked !=
+                        originalGlobalCodeWrap
+
             val appearanceHasChanges =
                 seekAccentRed.progress !=
                         originalAccentRed ||
@@ -241,7 +269,8 @@ class OptionsActivity : AppCompatActivity() {
             val hasChanges =
                 flowHasChanges ||
                         appearanceHasChanges ||
-                        textSizeHasChanges
+                        textSizeHasChanges ||
+                        codeWrapHasChanges
 
             buttonSave.isEnabled =
                 hasChanges
@@ -368,6 +397,12 @@ class OptionsActivity : AppCompatActivity() {
                 updateSaveButtonState()
             }
 
+        switchGlobalCodeWrap
+            .setOnCheckedChangeListener { _, _ ->
+
+                updateSaveButtonState()
+            }
+
         seekGlobalTextSize
             .setOnSeekBarChangeListener(
                 object :
@@ -486,6 +521,89 @@ class OptionsActivity : AppCompatActivity() {
             }
 
         /*
+ * RESTABLECER EXCEPCIONES DE AJUSTE
+ * DE LÍNEA DE PROGRAMACIÓN.
+ *
+ * Es una acción inmediata.
+ * No participa en Guardar cambios.
+ */
+        buttonResetProgrammingWrapExceptions
+            .setOnClickListener {
+
+                AlertDialog.Builder(
+                    this
+                )
+                    .setTitle(
+                        "Restablecer excepciones de Programación"
+                    )
+                    .setMessage(
+                        "Todos los cursos de Programación volverán a permitir " +
+                                "que las Opciones globales sobrescriban su ajuste " +
+                                "de línea.\n\n" +
+                                "Además, todos recibirán inmediatamente el ajuste " +
+                                "de línea predeterminado actualmente guardado."
+                    )
+                    .setNegativeButton(
+                        "Cancelar",
+                        null
+                    )
+                    .setPositiveButton(
+                        "Restablecer"
+                    ) { _, _ ->
+
+                        val programmingCourseIds =
+                            CourseRepository
+                                .loadProgrammingCourses(
+                                    this
+                                )
+                                .map {
+                                    it.id
+                                }
+
+                        CodeWrapSettingsRepository
+                            .resetRouteExceptions(
+                                this,
+                                programmingCourseIds
+                            )
+
+                        Toast.makeText(
+                            this,
+                            "Excepciones de Programación restablecidas",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    .show()
+            }
+
+        /*
+ * RESTABLECER EXCEPCIONES DE AJUSTE
+ * DE LÍNEA DE MATEMÁTICAS Y FÍSICA.
+ *
+ * La ruta todavía no tiene contenido.
+ * Esta acción no participa en Guardar cambios.
+ */
+        buttonResetMathPhysicsWrapExceptions
+            .setOnClickListener {
+
+                AlertDialog.Builder(
+                    this
+                )
+                    .setTitle(
+                        "Matemáticas y Física"
+                    )
+                    .setMessage(
+                        "Todavía no hay cursos disponibles en esta ruta.\n\n" +
+                                "Cuando se agreguen cursos, este botón permitirá " +
+                                "restablecer sus excepciones de ajuste de línea."
+                    )
+                    .setPositiveButton(
+                        "Aceptar",
+                        null
+                    )
+                    .show()
+            }
+
+        /*
          * GUARDAR ÚNICAMENTE LOS AJUSTES
          * QUE REQUIEREN CONFIRMACIÓN MANUAL.
          */
@@ -526,6 +644,28 @@ class OptionsActivity : AppCompatActivity() {
                     seekGlobalTextSize.progress +
                             LessonTextSizeSettingsRepository.MIN_SCALE
                 )
+
+            if (
+                switchGlobalCodeWrap.isChecked !=
+                originalGlobalCodeWrap
+            ) {
+
+                val programmingCourseIds =
+                    CourseRepository
+                        .loadProgrammingCourses(
+                            this
+                        )
+                        .map {
+                            it.id
+                        }
+
+                CodeWrapSettingsRepository
+                    .saveGlobalWrapAndApplyToCourses(
+                        this,
+                        switchGlobalCodeWrap.isChecked,
+                        programmingCourseIds
+                    )
+            }
 
             AppearanceSettingsRepository
                 .saveAccentColor(

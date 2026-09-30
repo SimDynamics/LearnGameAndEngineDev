@@ -126,6 +126,9 @@ class LessonActivity : AppCompatActivity() {
     private val pageCompletedExercises =
         mutableMapOf<Int, Int>()
 
+    private val courseWrapControllers =
+        mutableListOf<(Boolean) -> Unit>()
+
     private var ignoreCurrentSwipe = false
     private lateinit var lessonContent: LinearLayout
     private lateinit var lessonScroll: ScrollView
@@ -647,6 +650,41 @@ class LessonActivity : AppCompatActivity() {
                 View.VISIBLE
             } else {
                 View.GONE
+            }
+    }
+
+    private fun registerCourseWrapController(
+        controller: (Boolean) -> Unit
+    ) {
+
+        courseWrapControllers.add(
+            controller
+        )
+
+        controller(
+            CodeWrapSettingsRepository
+                .getCourseWrap(
+                    this,
+                    currentCourseId
+                )
+        )
+    }
+
+    private fun setCurrentCourseWrap(
+        enabled: Boolean
+    ) {
+
+        CodeWrapSettingsRepository
+            .saveCourseWrap(
+                this,
+                currentCourseId,
+                enabled
+            )
+
+        courseWrapControllers
+            .toList()
+            .forEach {
+                it(enabled)
             }
     }
 
@@ -5898,15 +5936,17 @@ class LessonActivity : AppCompatActivity() {
         }
 
         /*
-         * AJUSTE DE LÍNEA.
-         */
+ * AJUSTE DE LÍNEA DEL CURSO.
+ */
         var wrapEnabled =
             false
 
-        wrapButton.setOnClickListener {
+        fun applyCourseWrap(
+            enabled: Boolean
+        ) {
 
             wrapEnabled =
-                !wrapEnabled
+                enabled
 
             sourceCode.setHorizontallyScrolling(
                 !wrapEnabled
@@ -5916,10 +5956,6 @@ class LessonActivity : AppCompatActivity() {
                 wrapEnabled
             ) {
 
-                /*
-                 * Al activar ajuste de línea volvemos
-                 * al inicio horizontal.
-                 */
                 sourceCode.scrollTo(
                     0,
                     sourceCode.scrollY
@@ -5952,6 +5988,20 @@ class LessonActivity : AppCompatActivity() {
 
                 updateEditorHorizontalBar()
             }
+        }
+
+        registerCourseWrapController { enabled ->
+
+            applyCourseWrap(
+                enabled
+            )
+        }
+
+        wrapButton.setOnClickListener {
+
+            setCurrentCourseWrap(
+                !wrapEnabled
+            )
         }
 
         /*
@@ -6983,6 +7033,8 @@ class LessonActivity : AppCompatActivity() {
     private fun loadLesson(
         lessonId: String
     ) {
+
+        courseWrapControllers.clear()
 
         lessonJson =
             try {
@@ -8882,10 +8934,10 @@ class LessonActivity : AppCompatActivity() {
         var wrapEnabled =
             false
 
-        wrapButton.setOnClickListener {
+        registerCourseWrapController { enabled ->
 
             wrapEnabled =
-                !wrapEnabled
+                enabled
 
             setPuzzleWrapMode(
                 wrapEnabled,
@@ -8893,6 +8945,13 @@ class LessonActivity : AppCompatActivity() {
                 codeLines,
                 flowRows,
                 wrapButton
+            )
+        }
+
+        wrapButton.setOnClickListener {
+
+            setCurrentCourseWrap(
+                !wrapEnabled
             )
         }
 
@@ -9042,6 +9101,43 @@ class LessonActivity : AppCompatActivity() {
                         )
 
                         slots[slotIndex].post {
+
+                            /*
+                             * Al restaurar una respuesta guardada,
+                             * el tamaño de texto del curso ya fue
+                             * aplicado cuando se ejecuta este post.
+                             *
+                             * Recalculamos el tamaño compacto real
+                             * del bloque con la fuente ya escalada.
+                             */
+                            val compactWidth =
+                                kotlin.math.ceil(
+                                    token.paint.measureText(
+                                        token.text.toString()
+                                    ).toDouble()
+                                ).toInt()
+                                    .coerceAtLeast(1)
+
+                            val metrics =
+                                token.paint.fontMetricsInt
+
+                            val compactHeight =
+                                (
+                                        metrics.bottom -
+                                                metrics.top
+                                        ).coerceAtLeast(1)
+
+                            token.layoutParams =
+                                FrameLayout.LayoutParams(
+                                    compactWidth,
+                                    compactHeight
+                                ).apply {
+
+                                    gravity =
+                                        Gravity.CENTER
+                                }
+
+                            token.requestLayout()
 
                             compactDragSlot(
                                 slots[slotIndex]
@@ -9940,10 +10036,12 @@ class LessonActivity : AppCompatActivity() {
         var wrapEnabled =
             false
 
-        wrapButton.setOnClickListener {
+        fun applyCourseWrap(
+            enabled: Boolean
+        ) {
 
             wrapEnabled =
-                !wrapEnabled
+                enabled
 
             val params =
                 codeView.layoutParams
@@ -10018,6 +10116,20 @@ class LessonActivity : AppCompatActivity() {
 
             codeView.layoutParams =
                 params
+        }
+
+        registerCourseWrapController { enabled ->
+
+            applyCourseWrap(
+                enabled
+            )
+        }
+
+        wrapButton.setOnClickListener {
+
+            setCurrentCourseWrap(
+                !wrapEnabled
+            )
         }
 
         /*
@@ -11635,10 +11747,10 @@ class LessonActivity : AppCompatActivity() {
         var wrapEnabled =
             false
 
-        wrapButton.setOnClickListener {
+        registerCourseWrapController { enabled ->
 
             wrapEnabled =
-                !wrapEnabled
+                enabled
 
             setPuzzleWrapMode(
                 wrapEnabled,
@@ -11650,10 +11762,16 @@ class LessonActivity : AppCompatActivity() {
 
             codeLines.postDelayed(
                 {
-
                     syncLineNumberHeights()
                 },
                 80L
+            )
+        }
+
+        wrapButton.setOnClickListener {
+
+            setCurrentCourseWrap(
+                !wrapEnabled
             )
         }
 
