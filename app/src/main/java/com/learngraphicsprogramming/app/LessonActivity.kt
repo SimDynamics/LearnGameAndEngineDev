@@ -137,6 +137,72 @@ class LessonActivity : AppCompatActivity() {
  */
     private var compilerFullscreenActive =
         false
+
+    /*
+ * FULLSCREEN GENÉRICO DE EJERCICIOS.
+ *
+ * Es independiente del fullscreen
+ * del compilador real.
+ */
+    private var exerciseFullscreenActive =
+        false
+
+    /*
+     * Indica si el ejercicio fullscreen actual
+     * utiliza teclado.
+     *
+     * Más adelante permitirá distinguir:
+     *
+     * - escribir código       -> true
+     * - adivinar salida       -> true
+     * - ordenar bloques       -> false
+     * - completar con bloques -> false
+     */
+    private var exerciseFullscreenUsesKeyboard =
+        false
+
+    /*
+     * Overlay actualmente utilizado por
+     * un ejercicio fullscreen.
+     */
+    private var exerciseFullscreenOverlay:
+            FrameLayout? =
+        null
+
+    /*
+ * Referencias a las piezas reales de una
+ * consola fake creada por addCode().
+ *
+ * Nos permiten mover esas mismas Views
+ * al fullscreen sin reconstruirlas.
+ */
+    private data class FakeCodeBlockHandle(
+        val card: LinearLayout,
+        val header: LinearLayout,
+        val codeBody: LinearLayout,
+        val fullscreenButton: TextView,
+        val resetButton: TextView?
+    )
+
+    /*
+     * Estado necesario para devolver cada View
+     * exactamente a su padre, posición y
+     * LayoutParams originales.
+     */
+    private data class ExerciseFullscreenViewState(
+        val view: View,
+        val originalParent: ViewGroup,
+        val originalIndex: Int,
+        val originalLayoutParams: ViewGroup.LayoutParams,
+        val originalVisibility: Int
+    )
+
+    private val exerciseFullscreenMovedViews =
+        mutableListOf<ExerciseFullscreenViewState>()
+
+    private var exerciseFullscreenSystemUiVisibility =
+        0
+
     private lateinit var lessonContent: LinearLayout
     private lateinit var lessonScroll: ScrollView
 
@@ -2254,48 +2320,112 @@ class LessonActivity : AppCompatActivity() {
 
         } else {
 
-            endX =
-                (
-                        destinationLocation[0] -
-                                rootLocation[0] +
-                                newParent.paddingLeft
-                        ).toFloat()
-
-            var calculatedY =
-                destinationLocation[1] -
-                        rootLocation[1] +
-                        newParent.paddingTop
-
-            for (
-            i in 0 until newParent.childCount
+            /*
+             * La paleta normal es vertical,
+             * pero en fullscreen se convierte
+             * en una banda horizontal.
+             *
+             * La animación debe respetar
+             * ambas orientaciones.
+             */
+            if (
+                newParent is LinearLayout &&
+                newParent.orientation ==
+                LinearLayout.HORIZONTAL
             ) {
 
-                val child =
-                    newParent.getChildAt(i)
+                var calculatedX =
+                    destinationLocation[0] -
+                            rootLocation[0] +
+                            newParent.paddingLeft
 
-                if (
-                    child !== view
+                for (
+                i in 0 until
+                        newParent.childCount
                 ) {
 
-                    calculatedY +=
-                        child.height
-
-                    val params =
-                        child.layoutParams
+                    val child =
+                        newParent.getChildAt(i)
 
                     if (
-                        params is ViewGroup.MarginLayoutParams
+                        child !== view
+                    ) {
+
+                        calculatedX +=
+                            child.width
+
+                        val params =
+                            child.layoutParams
+
+                        if (
+                            params is
+                                    ViewGroup.MarginLayoutParams
+                        ) {
+
+                            calculatedX +=
+                                params.leftMargin +
+                                        params.rightMargin
+                        }
+                    }
+                }
+
+                endX =
+                    calculatedX.toFloat()
+
+                endY =
+                    (
+                            destinationLocation[1] -
+                                    rootLocation[1] +
+                                    newParent.paddingTop
+                            ).toFloat()
+
+            } else {
+
+                endX =
+                    (
+                            destinationLocation[0] -
+                                    rootLocation[0] +
+                                    newParent.paddingLeft
+                            ).toFloat()
+
+                var calculatedY =
+                    destinationLocation[1] -
+                            rootLocation[1] +
+                            newParent.paddingTop
+
+                for (
+                i in 0 until
+                        newParent.childCount
+                ) {
+
+                    val child =
+                        newParent.getChildAt(i)
+
+                    if (
+                        child !== view
                     ) {
 
                         calculatedY +=
-                            params.topMargin +
-                                    params.bottomMargin
+                            child.height
+
+                        val params =
+                            child.layoutParams
+
+                        if (
+                            params is
+                                    ViewGroup.MarginLayoutParams
+                        ) {
+
+                            calculatedY +=
+                                params.topMargin +
+                                        params.bottomMargin
+                        }
                     }
                 }
-            }
 
-            endY =
-                calculatedY.toFloat()
+                endY =
+                    calculatedY.toFloat()
+            }
         }
 
         /*
@@ -2451,12 +2581,32 @@ class LessonActivity : AppCompatActivity() {
                     }
 
                     is LinearLayout -> {
+
                         view.setPadding(
                             dp(12),
                             dp(10),
                             dp(12),
                             dp(10)
                         )
+
+                        /*
+                         * En una paleta horizontal todos
+                         * los bloques deben compartir
+                         * exactamente la misma coordenada Y.
+                         *
+                         * El margen vertical de 4 dp
+                         * solamente pertenece a las listas
+                         * verticales.
+                         */
+                        val verticalMargin =
+                            if (
+                                newParent.orientation ==
+                                LinearLayout.HORIZONTAL
+                            ) {
+                                0
+                            } else {
+                                dp(4)
+                            }
 
                         view.layoutParams =
                             LinearLayout.LayoutParams(
@@ -2466,9 +2616,9 @@ class LessonActivity : AppCompatActivity() {
 
                                 setMargins(
                                     0,
-                                    dp(4),
+                                    verticalMargin,
                                     0,
-                                    dp(4)
+                                    verticalMargin
                                 )
                             }
                     }
@@ -2868,17 +3018,22 @@ class LessonActivity : AppCompatActivity() {
         )
 
         /*
-         * CÓDIGO DEL EJERCICIO.
-         */
-        addCode(
-            block.getString(
-                "code"
-            ),
-            block.optString(
-                "language",
-                "cpp"
+ * CÓDIGO DEL EJERCICIO.
+ *
+ * Conservamos las referencias de sus Views
+ * para poder llevar este ejercicio completo
+ * al fullscreen.
+ */
+        val codeHandle =
+            addCode(
+                block.getString(
+                    "code"
+                ),
+                block.optString(
+                    "language",
+                    "cpp"
+                )
             )
-        )
 
         /*
          * TARJETA DONDE EL USUARIO
@@ -3134,6 +3289,19 @@ class LessonActivity : AppCompatActivity() {
         lessonContent.addView(
             answerCard
         )
+
+        /*
+ * FULLSCREEN DEL EJERCICIO.
+ *
+ * Mostramos:
+ *
+ * - cabecera de la consola
+ * - código
+ * - sección de respuesta
+ * - barra de atajos cuando aparece teclado
+ *
+ * NO movemos el botón Comprobar.
+ */
 
         /*
          * COMPROBAR.
@@ -3529,15 +3697,16 @@ class LessonActivity : AppCompatActivity() {
         /*
          * CÓDIGO QUE EL USUARIO DEBE ANALIZAR.
          */
-        addCode(
-            block.getString(
-                "code"
-            ),
-            block.optString(
-                "language",
-                "cpp"
+        val codeHandle =
+            addCode(
+                block.getString(
+                    "code"
+                ),
+                block.optString(
+                    "language",
+                    "cpp"
+                )
             )
-        )
 
         /*
          * TARJETA DE RESPUESTA.
@@ -3773,6 +3942,18 @@ class LessonActivity : AppCompatActivity() {
         )
 
         lessonContent.addView(
+            answerCard
+        )
+
+        /*
+ * Fullscreen:
+ *
+ * código + campo de respuesta.
+ *
+ * El botón Comprobar queda fuera.
+ */
+        configureFakeCodeFullscreen(
+            codeHandle,
             answerCard
         )
 
@@ -4329,6 +4510,41 @@ class LessonActivity : AppCompatActivity() {
         copyButton.isClickable =
             true
 
+        /*
+ * PANTALLA COMPLETA.
+ */
+        val fullscreenButton =
+            TextView(this)
+
+        fullscreenButton.gravity =
+            Gravity.CENTER
+
+        fullscreenButton.setPadding(
+            dp(10),
+            dp(8),
+            dp(10),
+            dp(8)
+        )
+
+        fullscreenButton.setCompoundDrawablesWithIntrinsicBounds(
+            R.drawable.ic_code_fullscreen,
+            0,
+            0,
+            0
+        )
+
+        fullscreenButton.contentDescription =
+            "Pantalla completa"
+
+        fullscreenButton.isClickable =
+            true
+
+        /*
+         * Nos permitirá recuperar el nuevo botón
+         * después de Reiniciar y reconstruir la página.
+         */
+        fullscreenButton.tag =
+            "order_code_fullscreen_$blockIndex"
 
         header.addView(
             languageLabel
@@ -4344,6 +4560,10 @@ class LessonActivity : AppCompatActivity() {
 
         header.addView(
             copyButton
+        )
+
+        header.addView(
+            fullscreenButton
         )
 
         codeCard.addView(
@@ -4533,6 +4753,105 @@ class LessonActivity : AppCompatActivity() {
         makeCodeCardFullWidth(
             codeCard
         )
+
+        /*
+ * FULLSCREEN DEL PUZZLE DE ORDENAR.
+ *
+ * Movemos las Views reales.
+ * Por tanto se conserva:
+ *
+ * - orden actual
+ * - listeners
+ * - drag and drop
+ * - toque para ordenar
+ */
+        fullscreenButton.setOnClickListener {
+
+            /*
+             * SALIR.
+             */
+            if (
+                exerciseFullscreenActive
+            ) {
+
+                closeExerciseFullscreenHost()
+
+                fullscreenButton.contentDescription =
+                    "Pantalla completa"
+
+                return@setOnClickListener
+            }
+
+            /*
+             * ENTRAR.
+             *
+             * Este ejercicio no utiliza teclado.
+             */
+            openExerciseFullscreenHost(
+                usesKeyboard = false
+            ) {
+                    headerHost,
+                    bodyHost,
+                    _ ->
+
+                /*
+                 * Scroll vertical para permitir
+                 * ejercicios de muchas líneas.
+                 */
+                val verticalCodeScroll =
+                    ScrollView(this)
+
+                verticalCodeScroll.isFillViewport =
+                    true
+
+                verticalCodeScroll.isVerticalScrollBarEnabled =
+                    true
+
+                verticalCodeScroll.isScrollbarFadingEnabled =
+                    false
+
+                verticalCodeScroll.layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        0,
+                        1f
+                    )
+
+                bodyHost.addView(
+                    verticalCodeScroll
+                )
+
+                /*
+                 * codeBody era el hijo 1 de codeCard.
+                 * Lo retiramos primero para conservar
+                 * correctamente su índice original.
+                 */
+                moveViewToExerciseFullscreen(
+                    codeBody,
+                    verticalCodeScroll,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    )
+                )
+
+                /*
+                 * header era el hijo 0.
+                 * Visualmente permanece fijo arriba.
+                 */
+                moveViewToExerciseFullscreen(
+                    header,
+                    headerHost,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    )
+                )
+
+                fullscreenButton.contentDescription =
+                    "Salir de pantalla completa"
+            }
+        }
 
         fun saveOrderState(
             correct: Boolean =
@@ -5046,6 +5365,20 @@ class LessonActivity : AppCompatActivity() {
 
         resetButton.setOnClickListener {
 
+            /*
+             * Si Reiniciar se pulsa desde fullscreen,
+             * cerramos primero las Views actuales.
+             */
+            val reopenFullscreen =
+                exerciseFullscreenActive
+
+            if (
+                reopenFullscreen
+            ) {
+
+                closeExerciseFullscreenHost()
+            }
+
             val originalOrder =
                 org.json.JSONArray()
 
@@ -5093,6 +5426,27 @@ class LessonActivity : AppCompatActivity() {
             )
 
             renderCurrentPage()
+
+            /*
+             * Si estábamos en fullscreen,
+             * volvemos automáticamente al nuevo
+             * puzzle recién reiniciado.
+             */
+            if (
+                reopenFullscreen
+            ) {
+
+                lessonContent.post {
+
+                    val newFullscreenButton =
+                        lessonContent.findViewWithTag<View>(
+                            "order_code_fullscreen_$blockIndex"
+                        )
+
+                    newFullscreenButton
+                        ?.performClick()
+                }
+            }
         }
 
         val checkParams =
@@ -7891,8 +8245,13 @@ class LessonActivity : AppCompatActivity() {
  * El evento sigue llegando normalmente
  * al editor, barras, botones y teclado.
  */
+        /*
+ * Ningún fullscreen permite que un gesto
+ * se convierta en navegación entre páginas.
+ */
         if (
-            compilerFullscreenActive
+            compilerFullscreenActive ||
+            exerciseFullscreenActive
         ) {
 
             ignoreCurrentSwipe =
@@ -9055,14 +9414,19 @@ class LessonActivity : AppCompatActivity() {
 
                 "code" -> {
 
-                    addCode(
-                        block.getString(
-                            "code"
-                        ),
-                        block.optString(
-                            "language",
-                            "text"
+                    val codeHandle =
+                        addCode(
+                            block.getString(
+                                "code"
+                            ),
+                            block.optString(
+                                "language",
+                                "cpp"
+                            )
                         )
+
+                    configureFakeCodeFullscreen(
+                        codeHandle
                     )
                 }
 
@@ -9806,6 +10170,42 @@ class LessonActivity : AppCompatActivity() {
         copyButton.isClickable =
             true
 
+        /*
+ * PANTALLA COMPLETA DEL PUZZLE.
+ */
+        val fullscreenButton =
+            TextView(this)
+
+        fullscreenButton.gravity =
+            Gravity.CENTER
+
+        fullscreenButton.setPadding(
+            dp(10),
+            dp(8),
+            dp(10),
+            dp(8)
+        )
+
+        fullscreenButton.setCompoundDrawablesWithIntrinsicBounds(
+            R.drawable.ic_code_fullscreen,
+            0,
+            0,
+            0
+        )
+
+        fullscreenButton.contentDescription =
+            "Pantalla completa"
+
+        fullscreenButton.isClickable =
+            true
+
+        /*
+ * Identificador estable para poder encontrar
+ * nuevamente este botón después de reconstruir
+ * la página mediante Reiniciar.
+ */
+        fullscreenButton.tag =
+            "drag_fill_fullscreen_$blockIndex"
 
         actionsContainer.addView(
             wrapButton
@@ -9813,6 +10213,10 @@ class LessonActivity : AppCompatActivity() {
 
         actionsContainer.addView(
             copyButton
+        )
+
+        actionsContainer.addView(
+            fullscreenButton
         )
 
         header.addView(
@@ -11124,6 +11528,192 @@ class LessonActivity : AppCompatActivity() {
         )
 
         /*
+ * FULLSCREEN INTERACTIVO DEL PUZZLE.
+ *
+ * Se mueven las Views REALES:
+ *
+ * - cabecera
+ * - código interactivo
+ * - paleta de bloques
+ *
+ * El botón Comprobar permanece fuera.
+ */
+        fullscreenButton.setOnClickListener {
+
+            /*
+             * SALIR.
+             */
+            if (
+                exerciseFullscreenActive
+            ) {
+
+                /*
+                 * En vista normal la paleta recupera
+                 * su disposición vertical.
+                 */
+                palette.orientation =
+                    LinearLayout.VERTICAL
+
+                closeExerciseFullscreenHost()
+
+                fullscreenButton.contentDescription =
+                    "Pantalla completa"
+
+                return@setOnClickListener
+            }
+
+            /*
+             * ENTRAR.
+             *
+             * Este puzzle utiliza bloques,
+             * no teclado.
+             */
+            openExerciseFullscreenHost(
+                usesKeyboard = false
+            ) {
+                    headerHost,
+                    bodyHost,
+                    floatingHost ->
+
+                /*
+                 * CABECERA FIJA.
+                 */
+                /*
+ * Primero retiramos codeBody.
+ *
+ * Así conserva su índice original 1
+ * dentro de codeCard.
+ */
+                /*
+ * SCROLL VERTICAL DEL CÓDIGO.
+ *
+ * Debe existir ANTES de intentar
+ * mover codeBody dentro de él.
+ */
+                val verticalCodeScroll =
+                    ScrollView(this)
+
+                verticalCodeScroll.isFillViewport =
+                    true
+
+                verticalCodeScroll.isVerticalScrollBarEnabled =
+                    true
+
+                verticalCodeScroll.isScrollbarFadingEnabled =
+                    false
+
+                verticalCodeScroll.layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        0,
+                        1f
+                    )
+
+                bodyHost.addView(
+                    verticalCodeScroll
+                )
+
+                /*
+                 * IMPORTANTE:
+                 *
+                 * codeBody originalmente ocupa el índice 1
+                 * dentro de codeCard.
+                 *
+                 * Lo retiramos PRIMERO para conservar
+                 * ese índice original correctamente.
+                 */
+                moveViewToExerciseFullscreen(
+                    codeBody,
+                    verticalCodeScroll,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    )
+                )
+
+                /*
+                 * Después retiramos header,
+                 * que originalmente ocupa el índice 0.
+                 *
+                 * Visualmente seguirá apareciendo arriba
+                 * porque lo colocamos en headerHost.
+                 */
+                moveViewToExerciseFullscreen(
+                    header,
+                    headerHost,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    )
+                )
+
+                /*
+                 * BANDEJA FLOTANTE INFERIOR.
+                 */
+                floatingHost.visibility =
+                    View.VISIBLE
+
+                floatingHost.setBackgroundColor(
+                    Color.rgb(
+                        24,
+                        26,
+                        31
+                    )
+                )
+
+                /*
+                 * La bandeja puede desplazarse
+                 * horizontalmente si existen
+                 * muchos bloques.
+                 */
+                val paletteScroll =
+                    HorizontalScrollView(this)
+
+                paletteScroll.isFillViewport =
+                    false
+
+                paletteScroll.isHorizontalScrollBarEnabled =
+                    true
+
+                paletteScroll.isScrollbarFadingEnabled =
+                    false
+
+                paletteScroll.layoutParams =
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    )
+
+                floatingHost.addView(
+                    paletteScroll
+                )
+
+                /*
+                 * En fullscreen los bloques forman
+                 * una sola banda horizontal.
+                 *
+                 * Sigue siendo la MISMA palette,
+                 * por lo que conserva sus listeners
+                 * de drag/drop.
+                 */
+                palette.orientation =
+                    LinearLayout.HORIZONTAL
+
+                moveViewToExerciseFullscreen(
+                    palette,
+                    paletteScroll,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    )
+                )
+
+                fullscreenButton.contentDescription =
+                    "Salir de pantalla completa"
+            }
+        }
+
+        /*
          * COMPROBAR
          */
 
@@ -11155,6 +11745,24 @@ class LessonActivity : AppCompatActivity() {
         )
 
         resetButton.setOnClickListener {
+
+            /*
+             * Recordamos si estábamos trabajando
+             * en fullscreen.
+             *
+             * Reiniciar reconstruye este ejercicio,
+             * por lo que primero debemos retirar
+             * correctamente las Views viejas.
+             */
+            val reopenFullscreen =
+                exerciseFullscreenActive
+
+            if (
+                reopenFullscreen
+            ) {
+
+                closeExerciseFullscreenHost()
+            }
 
             val emptySlots =
                 org.json.JSONArray()
@@ -11202,6 +11810,27 @@ class LessonActivity : AppCompatActivity() {
             )
 
             renderCurrentPage()
+
+            /*
+             * Si Reiniciar se pulsó desde fullscreen,
+             * la página nueva vuelve a abrir
+             * automáticamente el mismo puzzle.
+             */
+            if (
+                reopenFullscreen
+            ) {
+
+                lessonContent.post {
+
+                    val newFullscreenButton =
+                        lessonContent.findViewWithTag<View>(
+                            "drag_fill_fullscreen_$blockIndex"
+                        )
+
+                    newFullscreenButton
+                        ?.performClick()
+                }
+            }
         }
 
         if (
@@ -11512,11 +12141,518 @@ class LessonActivity : AppCompatActivity() {
         }
     }
 
+    /*
+ * Mueve una View REAL al fullscreen.
+ *
+ * No hacemos copias.
+ *
+ * De esta manera se conserva automáticamente:
+ *
+ * - texto escrito
+ * - selección
+ * - posición de bloques
+ * - estado de puzzles
+ * - listeners
+ * - animaciones
+ * - respuestas parciales
+ */
+    private fun moveViewToExerciseFullscreen(
+        view: View,
+        destination: ViewGroup,
+        fullscreenLayoutParams: ViewGroup.LayoutParams
+    ) {
+
+        val originalParent =
+            view.parent as? ViewGroup
+                ?: return
+
+        val originalIndex =
+            originalParent.indexOfChild(
+                view
+            )
+
+        val originalLayoutParams =
+            view.layoutParams
+
+        val originalVisibility =
+            view.visibility
+
+        exerciseFullscreenMovedViews.add(
+            ExerciseFullscreenViewState(
+                view = view,
+                originalParent = originalParent,
+                originalIndex = originalIndex,
+                originalLayoutParams = originalLayoutParams,
+                originalVisibility = originalVisibility
+            )
+        )
+
+        originalParent.removeView(
+            view
+        )
+
+        view.layoutParams =
+            fullscreenLayoutParams
+
+        view.visibility =
+            View.VISIBLE
+
+        destination.addView(
+            view
+        )
+    }
+
+    /*
+ * CREA EL HOST FULLSCREEN DE UN EJERCICIO.
+ *
+ * El host tiene tres zonas:
+ *
+ * 1. headerHost
+ *      cabecera fija
+ *
+ * 2. bodyHost
+ *      código + interacción principal
+ *
+ * 3. floatingHost
+ *      zona flotante inferior opcional
+ *
+ * floatingHost servirá posteriormente para
+ * la bandeja horizontal de bloques.
+ */
+    private fun openExerciseFullscreenHost(
+        usesKeyboard: Boolean,
+        onReady: (
+            headerHost: FrameLayout,
+            bodyHost: LinearLayout,
+            floatingHost: FrameLayout
+        ) -> Unit
+    ) {
+
+        if (
+            exerciseFullscreenActive ||
+            compilerFullscreenActive
+        ) {
+            return
+        }
+
+        exerciseFullscreenActive =
+            true
+
+        exerciseFullscreenUsesKeyboard =
+            usesKeyboard
+
+        exerciseFullscreenMovedViews.clear()
+
+        exerciseFullscreenSystemUiVisibility =
+            window.decorView.systemUiVisibility
+
+        val activityRoot =
+            findViewById<ViewGroup>(
+                android.R.id.content
+            )
+
+        /*
+         * OVERLAY GENERAL.
+         */
+        val overlay =
+            FrameLayout(this)
+
+        overlay.setBackgroundColor(
+            Color.rgb(
+                18,
+                20,
+                24
+            )
+        )
+
+        overlay.layoutParams =
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+
+        /*
+         * Impide que cualquier gesto llegue
+         * accidentalmente a la lección que
+         * permanece debajo.
+         */
+        overlay.isClickable =
+            true
+
+        overlay.isFocusable =
+            true
+
+        exerciseFullscreenOverlay =
+            overlay
+
+        /*
+         * ESTRUCTURA VERTICAL PRINCIPAL.
+         */
+        val fullscreenColumn =
+            LinearLayout(this)
+
+        fullscreenColumn.orientation =
+            LinearLayout.VERTICAL
+
+        fullscreenColumn.layoutParams =
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+
+        /*
+         * CABECERA FIJA.
+         */
+        val headerHost =
+            FrameLayout(this)
+
+        headerHost.layoutParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+        /*
+         * CUERPO.
+         *
+         * Recibe todo el espacio restante.
+         */
+        val bodyHost =
+            LinearLayout(this)
+
+        bodyHost.orientation =
+            LinearLayout.VERTICAL
+
+        bodyHost.layoutParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+
+        bodyHost.clipChildren =
+            false
+
+        bodyHost.clipToPadding =
+            false
+
+        /*
+         * BANDEJA FLOTANTE INFERIOR.
+         *
+         * Comienza oculta.
+         *
+         * Más adelante aquí vivirán los bloques
+         * disponibles de drag-fill / inline-fill.
+         */
+        val floatingHost =
+            FrameLayout(this)
+
+        floatingHost.visibility =
+            View.GONE
+
+        floatingHost.layoutParams =
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+        fullscreenColumn.addView(
+            headerHost
+        )
+
+        fullscreenColumn.addView(
+            bodyHost
+        )
+
+        fullscreenColumn.addView(
+            floatingHost
+        )
+
+        overlay.addView(
+            fullscreenColumn
+        )
+
+        activityRoot.addView(
+            overlay
+        )
+
+        /*
+         * Pantalla realmente completa.
+         */
+        window.decorView.systemUiVisibility =
+            exerciseFullscreenSystemUiVisibility or
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+
+        /*
+         * El ejercicio concreto decide qué Views
+         * reales colocar en cada zona.
+         */
+        onReady(
+            headerHost,
+            bodyHost,
+            floatingHost
+        )
+
+        updateProgrammingKeyboardBarVisibility()
+    }
+
+    /*
+ * CIERRA EL FULLSCREEN DE EJERCICIO.
+ *
+ * Cada View vuelve exactamente al mismo:
+ *
+ * - padre
+ * - índice
+ * - LayoutParams
+ * - estado de visibilidad
+ *
+ * No reconstruimos el ejercicio.
+ */
+    private fun closeExerciseFullscreenHost() {
+
+        if (
+            !exerciseFullscreenActive
+        ) {
+            return
+        }
+
+        /*
+         * Primero retiramos las Views
+         * de sus padres fullscreen.
+         */
+        for (
+        state in exerciseFullscreenMovedViews
+        ) {
+
+            val currentParent =
+                state.view.parent
+                        as? ViewGroup
+
+            currentParent?.removeView(
+                state.view
+            )
+        }
+
+        /*
+         * Restauramos por índice ascendente.
+         *
+         * Esto conserva el orden original
+         * incluso si varias Views pertenecían
+         * al mismo padre.
+         */
+        exerciseFullscreenMovedViews
+            .sortedWith(
+                compareBy<ExerciseFullscreenViewState> {
+
+                    System.identityHashCode(
+                        it.originalParent
+                    )
+                }
+                    .thenBy {
+                        it.originalIndex
+                    }
+            )
+            .forEach { state ->
+
+                state.view.layoutParams =
+                    state.originalLayoutParams
+
+                state.view.visibility =
+                    state.originalVisibility
+
+                val safeIndex =
+                    state.originalIndex.coerceIn(
+                        0,
+                        state.originalParent.childCount
+                    )
+
+                state.originalParent.addView(
+                    state.view,
+                    safeIndex
+                )
+            }
+
+        exerciseFullscreenMovedViews.clear()
+
+        exerciseFullscreenOverlay
+            ?.let { overlay ->
+
+                val parent =
+                    overlay.parent
+                            as? ViewGroup
+
+                parent?.removeView(
+                    overlay
+                )
+            }
+
+        exerciseFullscreenOverlay =
+            null
+
+        exerciseFullscreenActive =
+            false
+
+        exerciseFullscreenUsesKeyboard =
+            false
+
+        window.decorView.systemUiVisibility =
+            exerciseFullscreenSystemUiVisibility
+
+        updateProgrammingKeyboardBarVisibility()
+    }
+
+    private fun configureFakeCodeFullscreen(
+        codeHandle: FakeCodeBlockHandle,
+        responseView: View? = null
+    ) {
+
+        codeHandle.fullscreenButton
+            .setOnClickListener {
+
+                if (
+                    exerciseFullscreenActive
+                ) {
+
+                    closeExerciseFullscreenHost()
+
+                    codeHandle.fullscreenButton
+                        .contentDescription =
+                        "Pantalla completa"
+
+                    return@setOnClickListener
+                }
+
+                openExerciseFullscreenHost(
+                    usesKeyboard =
+                        responseView != null
+                ) {
+                        headerHost,
+                        bodyHost,
+                        _ ->
+
+                    val fullscreenScroll =
+                        ScrollView(this)
+
+                    fullscreenScroll.isFillViewport =
+                        true
+
+                    fullscreenScroll.layoutParams =
+                        LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            0,
+                            1f
+                        )
+
+                    val fullscreenContent =
+                        LinearLayout(this)
+
+                    fullscreenContent.orientation =
+                        LinearLayout.VERTICAL
+
+                    fullscreenContent.layoutParams =
+                        FrameLayout.LayoutParams(
+                            FrameLayout.LayoutParams.MATCH_PARENT,
+                            FrameLayout.LayoutParams.WRAP_CONTENT
+                        )
+
+                    fullscreenScroll.addView(
+                        fullscreenContent
+                    )
+
+                    bodyHost.addView(
+                        fullscreenScroll
+                    )
+
+                    /*
+                     * Zona real del código.
+                     */
+                    val fullscreenCodeSection =
+                        LinearLayout(this)
+
+                    fullscreenCodeSection.orientation =
+                        LinearLayout.VERTICAL
+
+                    fullscreenCodeSection.setBackgroundColor(
+                        Color.rgb(
+                            28,
+                            31,
+                            36
+                        )
+                    )
+
+                    fullscreenCodeSection.layoutParams =
+                        LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        )
+
+                    fullscreenContent.addView(
+                        fullscreenCodeSection
+                    )
+
+                    /*
+                     * Movemos primero el cuerpo.
+                     */
+                    moveViewToExerciseFullscreen(
+                        codeHandle.codeBody,
+                        fullscreenCodeSection,
+                        LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        )
+                    )
+
+                    /*
+                     * La cabecera permanece fija.
+                     */
+                    moveViewToExerciseFullscreen(
+                        codeHandle.header,
+                        headerHost,
+                        FrameLayout.LayoutParams(
+                            FrameLayout.LayoutParams.MATCH_PARENT,
+                            FrameLayout.LayoutParams.WRAP_CONTENT
+                        )
+                    )
+
+                    /*
+                     * Algunos ejercicios también
+                     * llevan respuesta.
+                     */
+                    if (
+                        responseView != null
+                    ) {
+
+                        moveViewToExerciseFullscreen(
+                            responseView,
+                            fullscreenContent,
+                            LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT
+                            ).apply {
+
+                                setMargins(
+                                    dp(12),
+                                    dp(12),
+                                    dp(12),
+                                    dp(12)
+                                )
+                            }
+                        )
+                    }
+
+                    codeHandle.fullscreenButton
+                        .contentDescription =
+                        "Salir de pantalla completa"
+                }
+            }
+    }
+
     private fun addCode(
         code: String,
         language: String,
         showReset: Boolean = false
-    ): TextView? {
+    ): FakeCodeBlockHandle {
 
         val card =
             LinearLayout(this)
@@ -11722,6 +12858,35 @@ class LessonActivity : AppCompatActivity() {
         copyButton.isClickable =
             true
 
+        /*
+ * PANTALLA COMPLETA.
+ */
+        val fullscreenButton =
+            TextView(this)
+
+        fullscreenButton.gravity =
+            Gravity.CENTER
+
+        fullscreenButton.setPadding(
+            dp(10),
+            dp(8),
+            dp(10),
+            dp(8)
+        )
+
+        fullscreenButton.setCompoundDrawablesWithIntrinsicBounds(
+            R.drawable.ic_code_fullscreen,
+            0,
+            0,
+            0
+        )
+
+        fullscreenButton.contentDescription =
+            "Pantalla completa"
+
+        fullscreenButton.isClickable =
+            true
+
         copyButton.setPadding(
             dp(10),
             dp(8),
@@ -11762,6 +12927,10 @@ class LessonActivity : AppCompatActivity() {
 
         header.addView(
             copyButton
+        )
+
+        header.addView(
+            fullscreenButton
         )
 
         card.addView(
@@ -12068,7 +13237,13 @@ class LessonActivity : AppCompatActivity() {
                 Toast.LENGTH_SHORT
             ).show()
         }
-        return resetButton
+        return FakeCodeBlockHandle(
+            card = card,
+            header = header,
+            codeBody = codeBody,
+            fullscreenButton = fullscreenButton,
+            resetButton = resetButton
+        )
     }
 
     private fun addMultipleChoice(
@@ -13060,6 +14235,41 @@ class LessonActivity : AppCompatActivity() {
         copyButton.isClickable =
             true
 
+        /*
+ * PANTALLA COMPLETA.
+ */
+        val fullscreenButton =
+            TextView(this)
+
+        fullscreenButton.gravity =
+            Gravity.CENTER
+
+        fullscreenButton.setPadding(
+            dp(10),
+            dp(8),
+            dp(10),
+            dp(8)
+        )
+
+        fullscreenButton.setCompoundDrawablesWithIntrinsicBounds(
+            R.drawable.ic_code_fullscreen,
+            0,
+            0,
+            0
+        )
+
+        fullscreenButton.contentDescription =
+            "Pantalla completa"
+
+        fullscreenButton.isClickable =
+            true
+
+        /*
+         * Identificador estable para recuperar
+         * este ejercicio después de Reiniciar.
+         */
+        fullscreenButton.tag =
+            "inline_fill_fullscreen_$blockIndex"
 
         actionsContainer.addView(
             wrapButton
@@ -13067,6 +14277,10 @@ class LessonActivity : AppCompatActivity() {
 
         actionsContainer.addView(
             copyButton
+        )
+
+        actionsContainer.addView(
+            fullscreenButton
         )
 
         header.addView(
@@ -13197,6 +14411,19 @@ class LessonActivity : AppCompatActivity() {
         makeCodeCardFullWidth(
             codeCard
         )
+
+        /*
+ * FULLSCREEN DEL INLINE_FILL_CODE.
+ *
+ * Los EditText forman parte de codeBody,
+ * así que al mover codeBody movemos también
+ * los campos reales y conservamos:
+ *
+ * - texto escrito
+ * - selección
+ * - listeners
+ * - foco
+ */
 
         /*
          * CAMPOS EDITABLES.
@@ -13369,6 +14596,31 @@ class LessonActivity : AppCompatActivity() {
 
                 input.tag =
                     CODE_INPUT_TAG
+
+                /*
+                 * Este campo contiene código,
+                 * no credenciales.
+                 *
+                 * Evitamos que Android lo considere
+                 * candidato para contraseñas/autorrelleno.
+                 */
+                if (
+                    android.os.Build.VERSION.SDK_INT >=
+                    android.os.Build.VERSION_CODES.O
+                ) {
+
+                    input.importantForAutofill =
+                        View.IMPORTANT_FOR_AUTOFILL_NO
+                }
+
+                /*
+                 * Campo de texto normal para código,
+                 * sin autocorrección ni sugerencias
+                 * lingüísticas del teclado.
+                 */
+                input.inputType =
+                    android.text.InputType.TYPE_CLASS_TEXT or
+                            android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
 
                 enableCppAutoClose(
                     input
@@ -13682,6 +14934,135 @@ class LessonActivity : AppCompatActivity() {
             )
         }
 
+        fullscreenButton.setOnClickListener {
+
+            /*
+             * SALIR.
+             */
+            if (
+                exerciseFullscreenActive
+            ) {
+
+                closeExerciseFullscreenHost()
+
+                fullscreenButton.contentDescription =
+                    "Pantalla completa"
+
+                return@setOnClickListener
+            }
+
+            /*
+             * ENTRAR.
+             *
+             * Este ejercicio SÍ utiliza teclado.
+             */
+            openExerciseFullscreenHost(
+                usesKeyboard = true
+            ) {
+                    headerHost,
+                    bodyHost,
+                    floatingHost ->
+
+                /*
+                 * Scroll vertical general del código.
+                 *
+                 * Esto permite ejercicios muy largos
+                 * sin desplazar la cabecera.
+                 */
+                val verticalCodeScroll =
+                    ScrollView(this)
+
+                verticalCodeScroll.isFillViewport =
+                    true
+
+                verticalCodeScroll.isVerticalScrollBarEnabled =
+                    true
+
+                verticalCodeScroll.isScrollbarFadingEnabled =
+                    false
+
+                verticalCodeScroll.layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        0,
+                        1f
+                    )
+
+                bodyHost.addView(
+                    verticalCodeScroll
+                )
+
+                /*
+                 * codeBody originalmente ocupa el índice 1
+                 * dentro de codeCard.
+                 *
+                 * Lo retiramos primero para conservar
+                 * correctamente ese índice.
+                 */
+                moveViewToExerciseFullscreen(
+                    codeBody,
+                    verticalCodeScroll,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    )
+                )
+
+                /*
+                 * header ocupa el índice 0.
+                 *
+                 * Visualmente permanece fija arriba.
+                 */
+                moveViewToExerciseFullscreen(
+                    header,
+                    headerHost,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    )
+                )
+
+                /*
+                 * Barra real de atajos del teclado.
+                 *
+                 * No creamos una segunda.
+                 */
+                floatingHost.visibility =
+                    View.VISIBLE
+
+                moveViewToExerciseFullscreen(
+                    programmingKeyboardBar,
+                    floatingHost,
+                    FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    )
+                )
+
+                fullscreenButton.contentDescription =
+                    "Salir de pantalla completa"
+
+                /*
+                 * Recalculamos el ajuste de línea porque
+                 * el viewport acaba de cambiar de tamaño.
+                 */
+                horizontalScroll.post {
+
+                    setPuzzleWrapMode(
+                        wrapEnabled,
+                        horizontalScroll,
+                        codeLines,
+                        flowRows,
+                        wrapButton
+                    )
+
+                    syncLineNumberHeights()
+                }
+
+                updateProgrammingKeyboardBarVisibility()
+            }
+        }
+
         /*
  * BOTÓN COMPROBAR
  */
@@ -13708,6 +15089,25 @@ class LessonActivity : AppCompatActivity() {
         )
 
         resetButton.setOnClickListener {
+
+            /*
+             * Recordamos si el usuario estaba
+             * trabajando en fullscreen.
+             */
+            val reopenFullscreen =
+                exerciseFullscreenActive
+
+            /*
+             * Antes de reconstruir la página
+             * restauramos correctamente todas
+             * las Views movidas.
+             */
+            if (
+                reopenFullscreen
+            ) {
+
+                closeExerciseFullscreenHost()
+            }
 
             val resetState =
                 JSONObject()
@@ -13743,6 +15143,27 @@ class LessonActivity : AppCompatActivity() {
             )
 
             renderCurrentPage()
+
+            /*
+             * Si Reiniciar ocurrió desde fullscreen,
+             * abrimos nuevamente el ejercicio recién
+             * reconstruido.
+             */
+            if (
+                reopenFullscreen
+            ) {
+
+                lessonContent.post {
+
+                    val newFullscreenButton =
+                        lessonContent.findViewWithTag<View>(
+                            "inline_fill_fullscreen_$blockIndex"
+                        )
+
+                    newFullscreenButton
+                        ?.performClick()
+                }
+            }
         }
 
         /*
