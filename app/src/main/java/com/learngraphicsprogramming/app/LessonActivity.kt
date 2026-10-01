@@ -4904,8 +4904,13 @@ class LessonActivity : AppCompatActivity() {
             val row =
                 TextView(this)
 
-            row.text =
+            val fragmentText =
                 fragments.getString(i)
+
+            row.text =
+                CppSyntaxHighlighter.highlight(
+                    fragmentText
+                )
 
             // Guardamos cuál era el bloque original.
             row.tag = i
@@ -5991,9 +5996,9 @@ class LessonActivity : AppCompatActivity() {
 
         sourceCode.setTextColor(
             Color.rgb(
-                230,
-                237,
-                243
+                216,
+                216,
+                216
             )
         )
 
@@ -6069,6 +6074,13 @@ class LessonActivity : AppCompatActivity() {
         sourceCode.setText(
             initialCode
         )
+
+        sourceCode.text?.let { editable ->
+
+            CppSyntaxHighlighter.applyTo(
+                editable
+            )
+        }
 
         editorBody.addView(
             lineNumberScroll
@@ -7502,6 +7514,16 @@ class LessonActivity : AppCompatActivity() {
                 override fun afterTextChanged(
                     s: Editable?
                 ) {
+
+                    if (
+                        s == null
+                    ) {
+                        return
+                    }
+
+                    CppSyntaxHighlighter.applyTo(
+                        s
+                    )
                 }
             }
         )
@@ -9555,9 +9577,14 @@ class LessonActivity : AppCompatActivity() {
         val token =
             TextView(this)
 
-        token.text =
+        val compactText =
             compactCodeSpaces(
                 text
+            ).toString()
+
+        token.text =
+            CppSyntaxHighlighter.highlight(
+                compactText
             )
 
         token.tag =
@@ -9573,7 +9600,11 @@ class LessonActivity : AppCompatActivity() {
             false
 
         token.setTextColor(
-            Color.WHITE
+            Color.rgb(
+                216,
+                216,
+                216
+            )
         )
 
         token.setPadding(
@@ -13033,13 +13064,31 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         codeView.text =
-            code
+            if (
+                language.equals(
+                    "cpp",
+                    ignoreCase = true
+                ) ||
+                language.equals(
+                    "c++",
+                    ignoreCase = true
+                )
+            ) {
+
+                CppSyntaxHighlighter.highlight(
+                    code
+                )
+
+            } else {
+
+                code
+            }
 
         codeView.setTextColor(
             Color.rgb(
-                225,
-                230,
-                235
+                216,
+                216,
+                216
             )
         )
 
@@ -15554,9 +15603,14 @@ class LessonActivity : AppCompatActivity() {
         val view =
             TextView(this)
 
-        view.text =
+        val compactText =
             compactCodeSpaces(
                 text
+            ).toString()
+
+        view.text =
+            CppSyntaxHighlighter.highlight(
+                compactText
             )
 
         view.typeface =
