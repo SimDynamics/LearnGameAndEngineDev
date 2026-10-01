@@ -1,16 +1,22 @@
 package com.learngraphicsprogramming.app
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import android.content.res.ColorStateList
 
 class LessonAdapter(
+
     private val lessons: List<Lesson>,
+
+    private val routeId: String =
+        AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+
     private val onLessonClick: (Lesson) -> Unit
+
 ) : RecyclerView.Adapter<LessonAdapter.LessonViewHolder>() {
 
     class LessonViewHolder(
@@ -45,7 +51,6 @@ class LessonAdapter(
             )
     }
 
-
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
@@ -67,7 +72,6 @@ class LessonAdapter(
         )
     }
 
-
     override fun onBindViewHolder(
         holder: LessonViewHolder,
         position: Int
@@ -83,14 +87,14 @@ class LessonAdapter(
             AppearanceSettingsRepository
                 .getRouteAccentColor(
                     context,
-                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    routeId
                 )
 
         val accentTextColor =
             AppearanceSettingsRepository
                 .getRouteAccentTextColor(
                     context,
-                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    routeId
                 )
 
         holder.textLessonNumber.text =
@@ -108,9 +112,9 @@ class LessonAdapter(
             ProgressRepository
                 .getLessonPageProgress(
                     context,
+                    routeId,
                     lesson.id
                 )
-
 
         holder.textLessonProgress.text =
             "${progress.completed} de " +
@@ -137,7 +141,6 @@ class LessonAdapter(
             )
         }
     }
-
 
     override fun getItemCount(): Int {
 

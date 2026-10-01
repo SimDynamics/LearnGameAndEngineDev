@@ -1,17 +1,20 @@
 package com.learngraphicsprogramming.app
 
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.learngraphicsprogramming.app.databinding.ItemUnitBinding
-import android.content.res.ColorStateList
 
 class UnitAdapter(
 
     private val courseId: String,
 
     private val units: List<LearningUnit>,
+
+    private val routeId: String =
+        AppearanceSettingsRepository.ROUTE_PROGRAMMING,
 
     private val onUnitClick: (LearningUnit) -> Unit
 
@@ -57,14 +60,14 @@ class UnitAdapter(
             AppearanceSettingsRepository
                 .getRouteAccentColor(
                     context,
-                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    routeId
                 )
 
         val accentTextColor =
             AppearanceSettingsRepository
                 .getRouteAccentTextColor(
                     context,
-                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    routeId
                 )
 
         /*
@@ -81,6 +84,7 @@ class UnitAdapter(
             ProgressRepository
                 .getUnitProgress(
                     context,
+                    routeId,
                     courseId,
                     unit.id
                 )
@@ -102,6 +106,7 @@ class UnitAdapter(
             ProgressRepository
                 .getUnitLearningProgress(
                     context,
+                    routeId,
                     courseId,
                     unit.id
                 )

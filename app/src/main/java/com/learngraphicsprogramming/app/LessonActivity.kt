@@ -226,6 +226,9 @@ class LessonActivity : AppCompatActivity() {
 
     private lateinit var currentCourseId: String
 
+    private var currentRouteId =
+        AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
     private var appliedContentTextScale =
         LessonTextSizeSettingsRepository.DEFAULT_SCALE
 
@@ -343,6 +346,13 @@ class LessonActivity : AppCompatActivity() {
                 "courseId"
             ) ?: return
 
+        currentRouteId =
+            intent.getStringExtra(
+                "routeId"
+            ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
+        updateSwipeToggle()
+
         currentLessonId =
             intent.getStringExtra(
                 "lessonId"
@@ -390,6 +400,11 @@ class LessonActivity : AppCompatActivity() {
                 )
 
             intent.putExtra(
+                "routeId",
+                currentRouteId
+            )
+
+            intent.putExtra(
                 "courseId",
                 currentCourseId
             )
@@ -423,7 +438,7 @@ class LessonActivity : AppCompatActivity() {
 
         AppearanceUi.applyRoute(
             this,
-            AppearanceSettingsRepository.ROUTE_PROGRAMMING
+            currentRouteId
         )
 
         if (
@@ -635,7 +650,7 @@ class LessonActivity : AppCompatActivity() {
             AppearanceSettingsRepository
                 .getRouteAccentColor(
                     this,
-                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    currentRouteId
                 )
         )
 
@@ -2200,6 +2215,7 @@ class LessonActivity : AppCompatActivity() {
 
         ProgressRepository.saveCurrentPage(
             this,
+            currentRouteId,
             currentLessonId,
             currentPage
         )
@@ -2843,7 +2859,7 @@ class LessonActivity : AppCompatActivity() {
                 AppearanceSettingsRepository
                     .getRouteAccentColor(
                         this,
-                        AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                        currentRouteId
                     )
 
             background.setColor(
@@ -3534,6 +3550,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,
@@ -3597,6 +3614,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,
@@ -4186,6 +4204,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,
@@ -4247,6 +4266,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,
@@ -4890,6 +4910,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,
@@ -5412,6 +5433,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,
@@ -8436,10 +8458,6 @@ class LessonActivity : AppCompatActivity() {
 
         saveCurrentPageState()
 
-        /*
-         * Todavía quedan páginas
-         * dentro de esta misma lección.
-         */
         if (
             currentPage <
             totalPages - 1
@@ -8454,22 +8472,11 @@ class LessonActivity : AppCompatActivity() {
             return
         }
 
-        /*
-         * Última página.
-         *
-         * Llegamos aquí mediante:
-         *
-         * - botón "Terminar lección"
-         *
-         * o
-         *
-         * - swipe final, si está permitido.
-         */
-
         saveCurrentPageProgress()
 
         ProgressRepository.completeLesson(
             this,
+            currentRouteId,
             currentLessonId
         )
 
@@ -8503,12 +8510,10 @@ class LessonActivity : AppCompatActivity() {
             NavigationRepository
                 .getNextLesson(
                     this,
+                    currentRouteId,
                     currentLessonId
                 )
 
-        /*
-         * No existe ninguna lección posterior.
-         */
         if (
             nextLesson == null
         ) {
@@ -8518,9 +8523,6 @@ class LessonActivity : AppCompatActivity() {
             return
         }
 
-        /*
-         * FRONTERA ENTRE CURSOS
-         */
         if (
             nextLesson.courseId !=
             currentCourseId
@@ -8542,9 +8544,6 @@ class LessonActivity : AppCompatActivity() {
             return
         }
 
-        /*
-         * FRONTERA ENTRE UNIDADES
-         */
         if (
             nextLesson.unitId !=
             currentUnitId
@@ -8568,10 +8567,6 @@ class LessonActivity : AppCompatActivity() {
             return
         }
 
-        /*
-         * FRONTERA ENTRE LECCIONES
-         * DE LA MISMA UNIDAD
-         */
         if (
             settings.automaticBetweenLessons
         ) {
@@ -8658,6 +8653,11 @@ class LessonActivity : AppCompatActivity() {
             )
 
         intent.putExtra(
+            "routeId",
+            currentRouteId
+        )
+
+        intent.putExtra(
             "courseId",
             nextLesson.courseId
         )
@@ -8691,24 +8691,16 @@ class LessonActivity : AppCompatActivity() {
         nextLesson: NavigationLesson
     ) {
 
-        /*
-         * Eliminamos del stack la unidad
-         * anterior y la lección anterior.
-         *
-         * Después construimos:
-         *
-         * CourseActivity
-         *      ↓
-         * nueva UnitActivity
-         *      ↓
-         * nueva LessonActivity
-         */
-
         val courseIntent =
             Intent(
                 this,
                 CourseActivity::class.java
             )
+
+        courseIntent.putExtra(
+            "routeId",
+            currentRouteId
+        )
 
         courseIntent.putExtra(
             "courseId",
@@ -8737,6 +8729,11 @@ class LessonActivity : AppCompatActivity() {
             )
 
         unitIntent.putExtra(
+            "routeId",
+            currentRouteId
+        )
+
+        unitIntent.putExtra(
             "courseId",
             nextLesson.courseId
         )
@@ -8761,6 +8758,16 @@ class LessonActivity : AppCompatActivity() {
                 this,
                 LessonActivity::class.java
             )
+
+        lessonIntent.putExtra(
+            "routeId",
+            currentRouteId
+        )
+
+        lessonIntent.putExtra(
+            "courseId",
+            nextLesson.courseId
+        )
 
         lessonIntent.putExtra(
             "lessonId",
@@ -8785,23 +8792,16 @@ class LessonActivity : AppCompatActivity() {
         nextLesson: NavigationLesson
     ) {
 
-        /*
-         * Al cruzar de curso reconstruimos:
-         *
-         * CoursesActivity
-         *      ↓
-         * nuevo CourseActivity
-         *      ↓
-         * nueva UnitActivity
-         *      ↓
-         * nueva LessonActivity
-         */
-
         val coursesIntent =
             Intent(
                 this,
                 CoursesActivity::class.java
             )
+
+        coursesIntent.putExtra(
+            "routeId",
+            currentRouteId
+        )
 
         coursesIntent.addFlags(
             Intent.FLAG_ACTIVITY_CLEAR_TOP or
@@ -8813,6 +8813,11 @@ class LessonActivity : AppCompatActivity() {
                 this,
                 CourseActivity::class.java
             )
+
+        courseIntent.putExtra(
+            "routeId",
+            currentRouteId
+        )
 
         courseIntent.putExtra(
             "courseId",
@@ -8834,6 +8839,11 @@ class LessonActivity : AppCompatActivity() {
                 this,
                 UnitActivity::class.java
             )
+
+        unitIntent.putExtra(
+            "routeId",
+            currentRouteId
+        )
 
         unitIntent.putExtra(
             "courseId",
@@ -8860,6 +8870,16 @@ class LessonActivity : AppCompatActivity() {
                 this,
                 LessonActivity::class.java
             )
+
+        lessonIntent.putExtra(
+            "routeId",
+            currentRouteId
+        )
+
+        lessonIntent.putExtra(
+            "courseId",
+            nextLesson.courseId
+        )
 
         lessonIntent.putExtra(
             "lessonId",
@@ -8885,12 +8905,6 @@ class LessonActivity : AppCompatActivity() {
         nextLesson: NavigationLesson
     ) {
 
-        /*
-         * La unidad acaba de terminar.
-         *
-         * Volvemos al nivel donde
-         * el usuario elige unidades.
-         */
         NavigationStateRepository.saveCourse(
             this,
             nextLesson.courseId
@@ -8901,6 +8915,11 @@ class LessonActivity : AppCompatActivity() {
                 this,
                 CourseActivity::class.java
             )
+
+        intent.putExtra(
+            "routeId",
+            currentRouteId
+        )
 
         intent.putExtra(
             "courseId",
@@ -8917,13 +8936,6 @@ class LessonActivity : AppCompatActivity() {
             nextLesson.courseTitle
         )
 
-        /*
-         * CourseActivity ya existe normalmente
-         * debajo de UnitActivity y LessonActivity.
-         *
-         * CLEAR_TOP elimina esos niveles
-         * superiores y recupera ese CourseActivity.
-         */
         intent.addFlags(
             Intent.FLAG_ACTIVITY_CLEAR_TOP or
                     Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -8936,12 +8948,6 @@ class LessonActivity : AppCompatActivity() {
 
     private fun returnToCourses() {
 
-        /*
-         * El curso acaba de terminar.
-         *
-         * Volvemos al nivel donde
-         * el usuario elige cursos.
-         */
         NavigationStateRepository.saveCourses(
             this
         )
@@ -8951,6 +8957,11 @@ class LessonActivity : AppCompatActivity() {
                 this,
                 CoursesActivity::class.java
             )
+
+        intent.putExtra(
+            "routeId",
+            currentRouteId
+        )
 
         intent.addFlags(
             Intent.FLAG_ACTIVITY_CLEAR_TOP or
@@ -9202,6 +9213,7 @@ class LessonActivity : AppCompatActivity() {
 
                 LessonRepository.loadLessonJson(
                     this,
+                    currentRouteId,
                     lessonId
                 )
 
@@ -9222,7 +9234,8 @@ class LessonActivity : AppCompatActivity() {
 
         ProgressRepository.markLessonStarted(
             this,
-            lessonId
+            currentRouteId,
+            currentLessonId
         )
 
         totalPages =
@@ -9361,7 +9374,7 @@ class LessonActivity : AppCompatActivity() {
 
             AppearanceUi.applyRoute(
                 this,
-                AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                currentRouteId
             )
 
             return
@@ -9565,7 +9578,7 @@ class LessonActivity : AppCompatActivity() {
 
         AppearanceUi.applyRoute(
             this,
-            AppearanceSettingsRepository.ROUTE_PROGRAMMING
+            currentRouteId
         )
     }
 
@@ -10489,6 +10502,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,
@@ -11822,6 +11836,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,
@@ -13705,6 +13720,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,
@@ -13889,6 +13905,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,
@@ -13954,6 +13971,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,
@@ -15173,6 +15191,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,
@@ -15330,6 +15349,7 @@ class LessonActivity : AppCompatActivity() {
 
             ProgressRepository.saveExerciseState(
                 this,
+                currentRouteId,
                 currentLessonId,
                 currentPage,
                 blockIndex,

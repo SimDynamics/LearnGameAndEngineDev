@@ -5,10 +5,16 @@ import org.json.JSONArray
 
 object CourseRepository {
 
-    fun loadProgrammingCourses(context: Context): List<Course> {
+    fun loadCourses(
+        context: Context,
+        routeId: String
+    ): List<Course> {
 
-        val json = context.assets
-            .open("content/es/programming/courses.json")
+        val json =
+            context.assets
+                .open(
+                    "content/es/$routeId/courses.json"
+                )
             .bufferedReader()
             .use { it.readText() }
 

@@ -34,7 +34,20 @@ class MainActivity : AppCompatActivity() {
                 this
             )
 
-            openCourses()
+            openCourses(
+                AppearanceSettingsRepository.ROUTE_PROGRAMMING
+            )
+        }
+
+        binding.buttonMathPhysics.setOnClickListener {
+
+            NavigationStateRepository.saveCourses(
+                this
+            )
+
+            openCourses(
+                AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
+            )
         }
 
         binding.buttonOptions.setOnClickListener {
@@ -98,7 +111,9 @@ class MainActivity : AppCompatActivity() {
 
             NavigationStateRepository.SCREEN_COURSES -> {
 
-                openCourses()
+                openCourses(
+    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+)
             }
 
             NavigationStateRepository.SCREEN_COURSE -> {
@@ -173,7 +188,9 @@ class MainActivity : AppCompatActivity() {
          * → Curso
          */
 
-        openCourses()
+        openCourses(
+    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+)
 
         openCourse(
             course
@@ -205,7 +222,9 @@ class MainActivity : AppCompatActivity() {
          * → Unidad
          */
 
-        openCourses()
+        openCourses(
+    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+)
 
         openCourse(
             course
@@ -254,7 +273,9 @@ class MainActivity : AppCompatActivity() {
          * Atrás seguirá recorriendo cada nivel.
          */
 
-        openCourses()
+        openCourses(
+    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+)
 
         openCourse(
             course
@@ -272,13 +293,20 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun openCourses() {
+    private fun openCourses(
+        routeId: String
+    ) {
 
         val intent =
             Intent(
                 this,
                 CoursesActivity::class.java
             )
+
+        intent.putExtra(
+            "routeId",
+            routeId
+        )
 
         startActivity(
             intent

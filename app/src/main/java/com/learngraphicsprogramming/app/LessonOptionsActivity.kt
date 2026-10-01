@@ -30,6 +30,11 @@ class LessonOptionsActivity : AppCompatActivity() {
             R.layout.activity_lesson_options
         )
 
+        val routeId =
+            intent.getStringExtra(
+                "routeId"
+            ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
         val courseId =
             intent.getStringExtra(
                 "courseId"
@@ -118,7 +123,7 @@ class LessonOptionsActivity : AppCompatActivity() {
             AppearanceSettingsRepository
                 .getRouteAccentTextColor(
                     this,
-                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    routeId
                 )
         )
 
@@ -479,6 +484,7 @@ class LessonOptionsActivity : AppCompatActivity() {
 
                     ProgressRepository.resetLesson(
                         this,
+                        routeId,
                         lessonId
                     )
 
@@ -746,9 +752,14 @@ class LessonOptionsActivity : AppCompatActivity() {
 
         super.onResume()
 
+        val routeId =
+            intent.getStringExtra(
+                "routeId"
+            ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
         AppearanceUi.applyRoute(
             this,
-            AppearanceSettingsRepository.ROUTE_PROGRAMMING
+            routeId
         )
     }
 

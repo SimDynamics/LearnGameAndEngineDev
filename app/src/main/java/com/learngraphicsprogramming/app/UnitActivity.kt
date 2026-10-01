@@ -3,11 +3,11 @@ package com.learngraphicsprogramming.app
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.widget.ImageButton
 
 class UnitActivity : AppCompatActivity() {
 
@@ -53,6 +53,11 @@ class UnitActivity : AppCompatActivity() {
                 "courseId"
             ) ?: return
 
+        val routeId =
+            intent.getStringExtra(
+                "routeId"
+            ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
         val unitId =
             intent.getStringExtra(
                 "unitId"
@@ -76,7 +81,7 @@ class UnitActivity : AppCompatActivity() {
             AppearanceSettingsRepository
                 .getRouteAccentTextColor(
                     this,
-                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    routeId
                 )
         )
 
@@ -95,6 +100,11 @@ class UnitActivity : AppCompatActivity() {
                     this,
                     UnitOptionsActivity::class.java
                 )
+
+            intent.putExtra(
+                "routeId",
+                routeId
+            )
 
             intent.putExtra(
                 "courseId",
@@ -124,6 +134,7 @@ class UnitActivity : AppCompatActivity() {
         val lessons =
             LessonRepository.loadLessons(
                 this,
+                routeId,
                 courseId,
                 unitId
             )
@@ -135,7 +146,8 @@ class UnitActivity : AppCompatActivity() {
 
         recyclerLessons.adapter =
             LessonAdapter(
-                lessons
+                lessons,
+                routeId
             ) { lesson ->
 
                 val intent =
@@ -143,6 +155,11 @@ class UnitActivity : AppCompatActivity() {
                         this,
                         LessonActivity::class.java
                     )
+
+                intent.putExtra(
+                    "routeId",
+                    routeId
+                )
 
                 intent.putExtra(
                     "courseId",
@@ -174,9 +191,14 @@ class UnitActivity : AppCompatActivity() {
 
         super.onResume()
 
+        val routeId =
+            intent.getStringExtra(
+                "routeId"
+            ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
         AppearanceUi.applyRoute(
             this,
-            AppearanceSettingsRepository.ROUTE_PROGRAMMING
+            routeId
         )
 
         val courseId =

@@ -5,11 +5,33 @@ import org.json.JSONObject
 
 object LessonRepository {
 
-    private const val BASE_PATH =
-        "content/es/programming"
-
+    /*
+     * COMPATIBILIDAD CON PROGRAMACIÓN.
+     *
+     * Las llamadas antiguas continúan
+     * utilizando automáticamente la ruta
+     * de Programación.
+     */
     fun loadLessons(
         context: Context,
+        courseId: String,
+        unitId: String
+    ): List<Lesson> {
+
+        return loadLessons(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            courseId,
+            unitId
+        )
+    }
+
+    /*
+     * CARGAR LECCIONES SEGÚN LA RUTA.
+     */
+    fun loadLessons(
+        context: Context,
+        routeId: String,
         courseId: String,
         unitId: String
     ): List<Lesson> {
@@ -17,6 +39,7 @@ object LessonRepository {
         val root =
             UnitRepository.loadUnitJson(
                 context,
+                routeId,
                 courseId,
                 unitId
             )
@@ -34,7 +57,9 @@ object LessonRepository {
         ) {
 
             val item =
-                array.getJSONObject(i)
+                array.getJSONObject(
+                    i
+                )
 
             lessons.add(
                 Lesson(
@@ -42,10 +67,12 @@ object LessonRepository {
                         item.getString(
                             "id"
                         ),
+
                     number =
                         item.getInt(
                             "number"
                         ),
+
                     title =
                         item.getString(
                             "title"
@@ -57,19 +84,42 @@ object LessonRepository {
         return lessons
     }
 
+    /*
+     * COMPATIBILIDAD CON PROGRAMACIÓN.
+     */
     fun loadLessonJson(
         context: Context,
         lessonId: String
     ): JSONObject {
 
+        return loadLessonJson(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            lessonId
+        )
+    }
+
+    /*
+     * CARGAR EL JSON DE UNA LECCIÓN
+     * SEGÚN LA RUTA.
+     */
+    fun loadLessonJson(
+        context: Context,
+        routeId: String,
+        lessonId: String
+    ): JSONObject {
+
         val path =
             getLessonAssetPath(
+                routeId,
                 lessonId
             )
 
         val json =
             context.assets
-                .open(path)
+                .open(
+                    path
+                )
                 .bufferedReader()
                 .use {
                     it.readText()
@@ -80,8 +130,28 @@ object LessonRepository {
         )
     }
 
+    /*
+     * COMPATIBILIDAD CON PROGRAMACIÓN.
+     */
     fun lessonExists(
         context: Context,
+        lessonId: String
+    ): Boolean {
+
+        return lessonExists(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            lessonId
+        )
+    }
+
+    /*
+     * COMPROBAR SI EXISTE UNA LECCIÓN
+     * SEGÚN LA RUTA.
+     */
+    fun lessonExists(
+        context: Context,
+        routeId: String,
         lessonId: String
     ): Boolean {
 
@@ -90,6 +160,7 @@ object LessonRepository {
             context.assets
                 .open(
                     getLessonAssetPath(
+                        routeId,
                         lessonId
                     )
                 )
@@ -105,7 +176,12 @@ object LessonRepository {
         }
     }
 
+    /*
+     * CONSTRUIR LA RUTA DEL ARCHIVO
+     * DE UNA LECCIÓN.
+     */
     private fun getLessonAssetPath(
+        routeId: String,
         lessonId: String
     ): String {
 
@@ -128,7 +204,7 @@ object LessonRepository {
         val lessonSlug =
             parts[2]
 
-        return "$BASE_PATH/" +
+        return "content/es/$routeId/" +
                 "$courseId/" +
                 "$unitSlug/" +
                 "lesson_$lessonSlug.json"

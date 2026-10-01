@@ -1,12 +1,12 @@
 package com.learngraphicsprogramming.app
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.widget.Button
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import android.app.AlertDialog
 
 class CourseOptionsActivity : AppCompatActivity() {
 
@@ -21,6 +21,11 @@ class CourseOptionsActivity : AppCompatActivity() {
         setContentView(
             R.layout.activity_course_options
         )
+
+        val routeId =
+            intent.getStringExtra(
+                "routeId"
+            ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
 
         val courseId =
             intent.getStringExtra(
@@ -88,14 +93,27 @@ class CourseOptionsActivity : AppCompatActivity() {
                 R.id.buttonResetCourse
             )
 
+        val totalCourses =
+            if (
+                routeId ==
+                AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
+            ) {
+
+                72
+
+            } else {
+
+                44
+            }
+
         textCourseNumber.text =
-            "Curso $courseNumber de 44"
+            "Curso $courseNumber de $totalCourses"
 
         textCourseNumber.setTextColor(
             AppearanceSettingsRepository
                 .getRouteAccentTextColor(
                     this,
-                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    routeId
                 )
         )
 
@@ -164,9 +182,14 @@ class CourseOptionsActivity : AppCompatActivity() {
                 enabled
 
             val alpha =
-                if (enabled) {
+                if (
+                    enabled
+                ) {
+
                     1f
+
                 } else {
+
                     0.45f
                 }
 
@@ -213,9 +236,14 @@ class CourseOptionsActivity : AppCompatActivity() {
                 hasChanges
 
             buttonSave.alpha =
-                if (hasChanges) {
+                if (
+                    hasChanges
+                ) {
+
                     1f
+
                 } else {
+
                     0.35f
                 }
         }
@@ -223,53 +251,66 @@ class CourseOptionsActivity : AppCompatActivity() {
         updateEnabledState()
         updateSaveButtonState()
 
-        switchUseGlobal.setOnCheckedChangeListener { _, useGlobal ->
+        switchUseGlobal
+            .setOnCheckedChangeListener {
+                    _,
+                    useGlobal ->
 
-            if (useGlobal) {
+                if (
+                    useGlobal
+                ) {
 
-                val global =
-                    LearningFlowSettingsRepository
-                        .getGlobalSettings(
-                            this
-                        )
+                    val global =
+                        LearningFlowSettingsRepository
+                            .getGlobalSettings(
+                                this
+                            )
 
-                switchBetweenLessons.isChecked =
-                    global.automaticBetweenLessons
+                    switchBetweenLessons.isChecked =
+                        global.automaticBetweenLessons
 
-                switchBetweenUnits.isChecked =
-                    global.automaticBetweenUnits
+                    switchBetweenUnits.isChecked =
+                        global.automaticBetweenUnits
 
-                switchBetweenCourses.isChecked =
-                    global.automaticBetweenCourses
+                    switchBetweenCourses.isChecked =
+                        global.automaticBetweenCourses
 
-                switchSwipeFinish.isChecked =
-                    global.swipeCanFinishLesson
+                    switchSwipeFinish.isChecked =
+                        global.swipeCanFinishLesson
+                }
+
+                updateEnabledState()
+                updateSaveButtonState()
             }
 
-            updateEnabledState()
-            updateSaveButtonState()
-        }
-
         switchBetweenLessons
-            .setOnCheckedChangeListener { _, _ ->
+            .setOnCheckedChangeListener {
+                    _,
+                    _ ->
 
                 updateSaveButtonState()
             }
 
         switchBetweenUnits
-            .setOnCheckedChangeListener { _, _ ->
+            .setOnCheckedChangeListener {
+                    _,
+                    _ ->
 
                 updateSaveButtonState()
             }
 
         switchBetweenCourses
-            .setOnCheckedChangeListener { _, _ ->
+            .setOnCheckedChangeListener {
+                    _,
+                    _ ->
 
                 updateSaveButtonState()
             }
 
         switchSwipeFinish
-            .setOnCheckedChangeListener { _, _ ->
+            .setOnCheckedChangeListener {
+                    _,
+                    _ ->
 
                 updateSaveButtonState()
             }
@@ -303,6 +344,7 @@ class CourseOptionsActivity : AppCompatActivity() {
 
                     ProgressRepository.resetCourse(
                         this,
+                        routeId,
                         courseId
                     )
 
@@ -376,9 +418,14 @@ class CourseOptionsActivity : AppCompatActivity() {
 
         super.onResume()
 
+        val routeId =
+            intent.getStringExtra(
+                "routeId"
+            ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
         AppearanceUi.applyRoute(
             this,
-            AppearanceSettingsRepository.ROUTE_PROGRAMMING
+            routeId
         )
     }
 }

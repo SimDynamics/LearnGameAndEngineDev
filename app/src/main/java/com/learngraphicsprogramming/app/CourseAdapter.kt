@@ -11,6 +11,9 @@ class CourseAdapter(
 
     private val courses: List<Course>,
 
+    private val routeId: String =
+        AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+
     private val onCourseClick: (Course) -> Unit
 
 ) : RecyclerView.Adapter<CourseAdapter.CourseViewHolder>() {
@@ -55,20 +58,21 @@ class CourseAdapter(
             AppearanceSettingsRepository
                 .getRouteAccentColor(
                     context,
-                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    routeId
                 )
 
         val accentTextColor =
             AppearanceSettingsRepository
                 .getRouteAccentTextColor(
                     context,
-                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    routeId
                 )
 
         val progress =
             ProgressRepository
                 .getCourseProgress(
                     context,
+                    routeId,
                     course.id
                 )
 
@@ -83,11 +87,6 @@ class CourseAdapter(
         holder.binding.textCourseTitle.text =
             course.title
 
-        /*
-         * Los cursos que todavía no tienen
-         * contenido real mostrarán su estado
-         * de desarrollo en lugar de 0 de 0.
-         */
         if (
             progress.total == 0
         ) {
@@ -104,7 +103,8 @@ class CourseAdapter(
         } else {
 
             holder.binding.textCourseProgress.text =
-                "${progress.completed} de ${progress.total} lecciones completadas"
+                "${progress.completed} de " +
+                        "${progress.total} lecciones completadas"
 
             holder.binding.textCoursePercentage.text =
                 "${progress.percentage} %"
@@ -113,9 +113,6 @@ class CourseAdapter(
                 progress.percentage
         }
 
-        /*
-         * Curso completamente terminado.
-         */
         if (
             progress.total > 0 &&
             progress.completed ==

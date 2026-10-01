@@ -1,8 +1,6 @@
 package com.learngraphicsprogramming.app
 
 import android.content.Context
-import org.json.JSONArray
-import org.json.JSONObject
 
 data class NavigationLesson(
 
@@ -21,11 +19,35 @@ data class NavigationLesson(
 
 object NavigationRepository {
 
-    private const val BASE_PATH =
-        "content/es/programming"
-
+    /*
+     * Compatibilidad con todo el código
+     * anterior de Programación.
+     */
     fun getNextLesson(
         context: Context,
+        currentLessonId: String
+    ): NavigationLesson? {
+
+        return getNextLesson(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            currentLessonId
+        )
+    }
+
+    /*
+     * Busca la siguiente lección dentro
+     * de la ruta indicada.
+     *
+     * Puede recorrer:
+     *
+     * lección -> lección
+     * unidad  -> unidad
+     * curso   -> curso
+     */
+    fun getNextLesson(
+        context: Context,
+        routeId: String,
         currentLessonId: String
     ): NavigationLesson? {
 
@@ -49,214 +71,151 @@ object NavigationRepository {
             "${parts[0]}__${parts[1]}"
 
         val courses =
-            loadCourses(
-                context
-            ) ?: return null
+            try {
 
-        var currentCourseIndex =
-            -1
+                CourseRepository.loadCourses(
+                    context,
+                    routeId
+                )
 
-        for (
-        i in 0 until courses.length()
-        ) {
-
-            if (
-                courses
-                    .getJSONObject(i)
-                    .getString("id") ==
-                currentCourseId
+            } catch (
+                exception: Exception
             ) {
 
-                currentCourseIndex =
-                    i
-
-                break
+                emptyList()
             }
-        }
+
+        val currentCourseIndex =
+            courses.indexOfFirst {
+                it.id ==
+                        currentCourseId
+            }
 
         if (
-            currentCourseIndex == -1
+            currentCourseIndex < 0
         ) {
 
             return null
         }
 
         val currentCourse =
-            courses.getJSONObject(
+            courses[
                 currentCourseIndex
-            )
+            ]
 
-        val insideCurrentCourse =
-            findNextInsideCourse(
-                context,
-                currentCourse,
-                currentUnitId,
-                currentLessonId
-            )
-
-        if (
-            insideCurrentCourse != null
-        ) {
-
-            return insideCurrentCourse
-        }
-
-        for (
-        courseIndex in
-        currentCourseIndex + 1 until
-                courses.length()
-        ) {
-
-            val course =
-                courses.getJSONObject(
-                    courseIndex
-                )
-
-            val firstLesson =
-                findFirstLessonInCourse(
-                    context,
-                    course
-                )
-
-            if (
-                firstLesson != null
-            ) {
-
-                return firstLesson
-            }
-        }
-
-        return null
-    }
-
-    private fun findNextInsideCourse(
-        context: Context,
-        course: JSONObject,
-        currentUnitId: String,
-        currentLessonId: String
-    ): NavigationLesson? {
-
-        val courseId =
-            course.getString(
-                "id"
-            )
-
-        val courseRoot =
-            try {
-
-                UnitRepository.loadCourseJson(
-                    context,
-                    courseId
-                )
-
-            } catch (
-                exception: Exception
-            ) {
-
-                return null
-            }
-
+        /*
+         * Primero intentamos continuar
+         * dentro del mismo curso.
+         */
         val units =
-            courseRoot.getJSONArray(
-                "units"
-            )
-
-        var currentUnitIndex =
-            -1
-
-        for (
-        i in 0 until units.length()
-        ) {
-
-            if (
-                units
-                    .getJSONObject(i)
-                    .getString("id") ==
-                currentUnitId
-            ) {
-
-                currentUnitIndex =
-                    i
-
-                break
-            }
-        }
-
-        if (
-            currentUnitIndex == -1
-        ) {
-
-            return null
-        }
-
-        val currentUnit =
-            units.getJSONObject(
-                currentUnitIndex
-            )
-
-        val unitRoot =
             try {
 
-                UnitRepository.loadUnitJson(
+                UnitRepository.loadUnits(
                     context,
-                    courseId,
-                    currentUnitId
+                    routeId,
+                    currentCourse.id
                 )
 
             } catch (
                 exception: Exception
             ) {
 
-                return null
+                emptyList()
             }
 
-        val lessons =
-            unitRoot.getJSONArray(
-                "lessons"
-            )
-
-        var currentLessonIndex =
-            -1
-
-        for (
-        i in 0 until lessons.length()
-        ) {
-
-            if (
-                lessons
-                    .getJSONObject(i)
-                    .getString("id") ==
-                currentLessonId
-            ) {
-
-                currentLessonIndex =
-                    i
-
-                break
+        val currentUnitIndex =
+            units.indexOfFirst {
+                it.id ==
+                        currentUnitId
             }
-        }
 
         if (
-            currentLessonIndex != -1
+            currentUnitIndex >= 0
         ) {
 
-            for (
-            lessonIndex in
-            currentLessonIndex + 1 until
-                    lessons.length()
-            ) {
+            val currentUnit =
+                units[
+                    currentUnitIndex
+                ]
 
-                val lesson =
-                    lessons.getJSONObject(
-                        lessonIndex
+            val lessons =
+                try {
+
+                    LessonRepository.loadLessons(
+                        context,
+                        routeId,
+                        currentCourse.id,
+                        currentUnit.id
                     )
 
+                } catch (
+                    exception: Exception
+                ) {
+
+                    emptyList()
+                }
+
+            val currentLessonIndex =
+                lessons.indexOfFirst {
+                    it.id ==
+                            currentLessonId
+                }
+
+            /*
+             * Siguiente lección dentro
+             * de la misma unidad.
+             */
+            if (
+                currentLessonIndex >= 0
+            ) {
+
+                for (
+                lessonIndex in
+                currentLessonIndex + 1 until
+                        lessons.size
+                ) {
+
+                    val lesson =
+                        lessons[
+                            lessonIndex
+                        ]
+
+                    val result =
+                        createNavigationLesson(
+                            context,
+                            routeId,
+                            currentCourse,
+                            currentUnit,
+                            lesson
+                        )
+
+                    if (
+                        result != null
+                    ) {
+
+                        return result
+                    }
+                }
+            }
+
+            /*
+             * Si la unidad terminó,
+             * buscamos la primera lección
+             * disponible de las unidades
+             * posteriores.
+             */
+            for (
+            unitIndex in
+            currentUnitIndex + 1 until
+                    units.size
+            ) {
+
                 val result =
-                    createNavigationLesson(
+                    findFirstLessonInUnit(
                         context,
-                        course,
-                        currentUnit,
-                        lesson
+                        routeId,
+                        currentCourse,
+                        units[unitIndex]
                     )
 
                 if (
@@ -268,22 +227,22 @@ object NavigationRepository {
             }
         }
 
+        /*
+         * Si terminó el curso,
+         * buscamos el primer contenido
+         * disponible de los cursos siguientes.
+         */
         for (
-        unitIndex in
-        currentUnitIndex + 1 until
-                units.length()
+        courseIndex in
+        currentCourseIndex + 1 until
+                courses.size
         ) {
 
-            val unit =
-                units.getJSONObject(
-                    unitIndex
-                )
-
             val result =
-                findFirstLessonInUnit(
+                findFirstLessonInCourse(
                     context,
-                    course,
-                    unit
+                    routeId,
+                    courses[courseIndex]
                 )
 
             if (
@@ -299,47 +258,34 @@ object NavigationRepository {
 
     private fun findFirstLessonInCourse(
         context: Context,
-        course: JSONObject
+        routeId: String,
+        course: Course
     ): NavigationLesson? {
 
-        val courseId =
-            course.getString(
-                "id"
-            )
-
-        val courseRoot =
+        val units =
             try {
 
-                UnitRepository.loadCourseJson(
+                UnitRepository.loadUnits(
                     context,
-                    courseId
+                    routeId,
+                    course.id
                 )
 
             } catch (
                 exception: Exception
             ) {
 
-                return null
+                emptyList()
             }
 
-        val units =
-            courseRoot.getJSONArray(
-                "units"
-            )
-
         for (
-        unitIndex in
-        0 until units.length()
+        unit in units
         ) {
-
-            val unit =
-                units.getJSONObject(
-                    unitIndex
-                )
 
             val result =
                 findFirstLessonInUnit(
                     context,
+                    routeId,
                     course,
                     unit
                 )
@@ -357,54 +303,36 @@ object NavigationRepository {
 
     private fun findFirstLessonInUnit(
         context: Context,
-        course: JSONObject,
-        unit: JSONObject
+        routeId: String,
+        course: Course,
+        unit: LearningUnit
     ): NavigationLesson? {
 
-        val courseId =
-            course.getString(
-                "id"
-            )
-
-        val unitId =
-            unit.getString(
-                "id"
-            )
-
-        val root =
+        val lessons =
             try {
 
-                UnitRepository.loadUnitJson(
+                LessonRepository.loadLessons(
                     context,
-                    courseId,
-                    unitId
+                    routeId,
+                    course.id,
+                    unit.id
                 )
 
             } catch (
                 exception: Exception
             ) {
 
-                return null
+                emptyList()
             }
 
-        val lessons =
-            root.getJSONArray(
-                "lessons"
-            )
-
         for (
-        lessonIndex in
-        0 until lessons.length()
+        lesson in lessons
         ) {
-
-            val lesson =
-                lessons.getJSONObject(
-                    lessonIndex
-                )
 
             val result =
                 createNavigationLesson(
                     context,
+                    routeId,
                     course,
                     unit,
                     lesson
@@ -423,20 +351,17 @@ object NavigationRepository {
 
     private fun createNavigationLesson(
         context: Context,
-        course: JSONObject,
-        unit: JSONObject,
-        lesson: JSONObject
+        routeId: String,
+        course: Course,
+        unit: LearningUnit,
+        lesson: Lesson
     ): NavigationLesson? {
-
-        val lessonId =
-            lesson.getString(
-                "id"
-            )
 
         if (
             !LessonRepository.lessonExists(
                 context,
-                lessonId
+                routeId,
+                lesson.id
             )
         ) {
 
@@ -446,75 +371,31 @@ object NavigationRepository {
         return NavigationLesson(
 
             courseId =
-                course.getString(
-                    "id"
-                ),
+                course.id,
 
             courseNumber =
-                course.getInt(
-                    "number"
-                ),
+                course.number,
 
             courseTitle =
-                course.getString(
-                    "title"
-                ),
+                course.title,
 
             unitId =
-                unit.getString(
-                    "id"
-                ),
+                unit.id,
 
             unitNumber =
-                unit.getInt(
-                    "number"
-                ),
+                unit.number,
 
             unitTitle =
-                unit.getString(
-                    "title"
-                ),
+                unit.title,
 
             lessonId =
-                lessonId,
+                lesson.id,
 
             lessonNumber =
-                lesson.getInt(
-                    "number"
-                ),
+                lesson.number,
 
             lessonTitle =
-                lesson.getString(
-                    "title"
-                )
+                lesson.title
         )
-    }
-
-    private fun loadCourses(
-        context: Context
-    ): JSONArray? {
-
-        return try {
-
-            val json =
-                context.assets
-                    .open(
-                        "$BASE_PATH/courses.json"
-                    )
-                    .bufferedReader()
-                    .use {
-                        it.readText()
-                    }
-
-            JSONArray(
-                json
-            )
-
-        } catch (
-            exception: Exception
-        ) {
-
-            null
-        }
     }
 }

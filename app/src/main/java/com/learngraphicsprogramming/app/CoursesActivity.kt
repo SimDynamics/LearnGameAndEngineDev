@@ -11,6 +11,9 @@ class CoursesActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityCoursesBinding
 
+    private var routeId =
+        AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
     override fun onCreate(
         savedInstanceState: Bundle?
     ) {
@@ -28,16 +31,47 @@ class CoursesActivity : AppCompatActivity() {
             binding.root
         )
 
+        routeId =
+            intent.getStringExtra(
+                "routeId"
+            ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
+        /*
+         * ENCABEZADO SEGÚN LA RUTA.
+         */
+        if (
+            routeId ==
+            AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
+        ) {
+
+            binding.textCoursesTitle.text =
+                "Matemáticas y Física"
+
+            binding.textCoursesDescription.text =
+                "Ruta progresiva de matemáticas y física."
+
+        } else {
+
+            binding.textCoursesTitle.text =
+                "Programación Avanzada y Arquitectura de Motores"
+
+            binding.textCoursesDescription.text =
+                "Ruta de programación, sistemas, gráficos y motores."
+        }
+
         binding.buttonBack.setOnClickListener {
 
             finish()
         }
 
+        /*
+         * CARGAMOS LOS CURSOS DE LA RUTA ACTUAL.
+         */
         val courses =
-            CourseRepository
-                .loadProgrammingCourses(
-                    this
-                )
+            CourseRepository.loadCourses(
+                this,
+                routeId
+            )
 
         binding.recyclerCourses.layoutManager =
             LinearLayoutManager(
@@ -46,19 +80,40 @@ class CoursesActivity : AppCompatActivity() {
 
         binding.recyclerCourses.adapter =
             CourseAdapter(
-                courses
+                courses,
+                routeId
             ) { course ->
 
-                val availableCourses =
-                    setOf(
-                        "cpp_fundamentals",
-                        "programming_practice_tools",
-                        "systems_architecture_toolchain"
-                    )
+                val available =
+                    if (
+                        routeId ==
+                        AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
+                    ) {
+
+                        /*
+                         * Por ahora solamente existe
+                         * contenido real para el curso 1
+                         * de Matemáticas.
+                         */
+                        course.id ==
+                                "math_course_01"
+
+                    } else {
+
+                        /*
+                         * Cursos actualmente disponibles
+                         * de Programación.
+                         */
+                        course.id in
+                                setOf(
+                                    "cpp_fundamentals",
+                                    "programming_practice_tools",
+                                    "systems_architecture_toolchain"
+                                )
+                    }
 
                 if (
-                    course.id in
-                    availableCourses
+                    available
                 ) {
 
                     val intent =
@@ -66,6 +121,11 @@ class CoursesActivity : AppCompatActivity() {
                             this,
                             CourseActivity::class.java
                         )
+
+                    intent.putExtra(
+                        "routeId",
+                        routeId
+                    )
 
                     intent.putExtra(
                         "courseId",
@@ -103,7 +163,7 @@ class CoursesActivity : AppCompatActivity() {
 
         AppearanceUi.applyRoute(
             this,
-            AppearanceSettingsRepository.ROUTE_PROGRAMMING
+            routeId
         )
 
         NavigationStateRepository.saveCourses(

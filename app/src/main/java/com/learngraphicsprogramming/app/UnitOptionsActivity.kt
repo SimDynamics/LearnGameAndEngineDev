@@ -21,6 +21,11 @@ class UnitOptionsActivity : AppCompatActivity() {
             R.layout.activity_unit_options
         )
 
+        val routeId =
+            intent.getStringExtra(
+                "routeId"
+            ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
         val courseId =
             intent.getStringExtra(
                 "courseId"
@@ -69,7 +74,7 @@ class UnitOptionsActivity : AppCompatActivity() {
             AppearanceSettingsRepository
                 .getRouteAccentTextColor(
                     this,
-                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    routeId
                 )
         )
 
@@ -104,6 +109,7 @@ class UnitOptionsActivity : AppCompatActivity() {
 
                     ProgressRepository.resetUnit(
                         this,
+                        routeId,
                         courseId,
                         unitId
                     )
@@ -124,9 +130,14 @@ class UnitOptionsActivity : AppCompatActivity() {
 
         super.onResume()
 
+        val routeId =
+            intent.getStringExtra(
+                "routeId"
+            ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
         AppearanceUi.applyRoute(
             this,
-            AppearanceSettingsRepository.ROUTE_PROGRAMMING
+            routeId
         )
     }
 }

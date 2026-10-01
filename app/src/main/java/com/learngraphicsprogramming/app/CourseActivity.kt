@@ -3,11 +3,11 @@ package com.learngraphicsprogramming.app
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.widget.ImageButton
 
 class CourseActivity : AppCompatActivity() {
 
@@ -48,6 +48,11 @@ class CourseActivity : AppCompatActivity() {
                 "courseId"
             ) ?: return
 
+        val routeId =
+            intent.getStringExtra(
+                "routeId"
+            ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
         val courseNumber =
             intent.getIntExtra(
                 "courseNumber",
@@ -59,14 +64,27 @@ class CourseActivity : AppCompatActivity() {
                 "courseTitle"
             ) ?: ""
 
+        val totalCourses =
+            if (
+                routeId ==
+                AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
+            ) {
+
+                72
+
+            } else {
+
+                44
+            }
+
         textCourseNumber.text =
-            "Curso $courseNumber de 44"
+            "Curso $courseNumber de $totalCourses"
 
         textCourseNumber.setTextColor(
             AppearanceSettingsRepository
                 .getRouteAccentTextColor(
                     this,
-                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    routeId
                 )
         )
 
@@ -92,6 +110,11 @@ class CourseActivity : AppCompatActivity() {
                 )
 
             intent.putExtra(
+                "routeId",
+                routeId
+            )
+
+            intent.putExtra(
                 "courseId",
                 courseId
             )
@@ -114,6 +137,7 @@ class CourseActivity : AppCompatActivity() {
         val units =
             UnitRepository.loadUnits(
                 this,
+                routeId,
                 courseId
             )
 
@@ -125,7 +149,8 @@ class CourseActivity : AppCompatActivity() {
         recyclerUnits.adapter =
             UnitAdapter(
                 courseId,
-                units
+                units,
+                routeId
             ) { unit ->
 
                 val intent =
@@ -133,6 +158,11 @@ class CourseActivity : AppCompatActivity() {
                         this,
                         UnitActivity::class.java
                     )
+
+                intent.putExtra(
+                    "routeId",
+                    routeId
+                )
 
                 intent.putExtra(
                     "courseId",
@@ -164,9 +194,14 @@ class CourseActivity : AppCompatActivity() {
 
         super.onResume()
 
+        val routeId =
+            intent.getStringExtra(
+                "routeId"
+            ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
         AppearanceUi.applyRoute(
             this,
-            AppearanceSettingsRepository.ROUTE_PROGRAMMING
+            routeId
         )
 
         val courseId =

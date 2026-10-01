@@ -1843,8 +1843,9 @@ class OptionsActivity : AppCompatActivity() {
 
                         val programmingCourseIds =
                             CourseRepository
-                                .loadProgrammingCourses(
-                                    this
+                                .loadCourses(
+                                    this,
+                                    AppearanceSettingsRepository.ROUTE_PROGRAMMING
                                 )
                                 .map {
                                     it.id
@@ -1942,8 +1943,9 @@ class OptionsActivity : AppCompatActivity() {
 
                 val programmingCourseIds =
                     CourseRepository
-                        .loadProgrammingCourses(
-                            this
+                        .loadCourses(
+                            this,
+                            AppearanceSettingsRepository.ROUTE_PROGRAMMING
                         )
                         .map {
                             it.id

@@ -49,6 +49,21 @@ object ProgressRepository {
         pageIndex: Int
     ) {
 
+        saveCurrentPage(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            lessonId,
+            pageIndex
+        )
+    }
+
+    fun saveCurrentPage(
+        context: Context,
+        routeId: String,
+        lessonId: String,
+        pageIndex: Int
+    ) {
+
         preferences(context)
             .edit()
             .putInt(
@@ -59,6 +74,7 @@ object ProgressRepository {
 
         refreshLessonCompletionFromProgress(
             context,
+            routeId,
             lessonId
         )
     }
@@ -91,6 +107,19 @@ object ProgressRepository {
         lessonId: String
     ) {
 
+        markLessonStarted(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            lessonId
+        )
+    }
+
+    fun markLessonStarted(
+        context: Context,
+        routeId: String,
+        lessonId: String
+    ) {
+
         preferences(context)
             .edit()
             .putBoolean(
@@ -101,6 +130,7 @@ object ProgressRepository {
 
         refreshLessonCompletionFromProgress(
             context,
+            routeId,
             lessonId
         )
     }
@@ -135,11 +165,25 @@ object ProgressRepository {
         lessonId: String
     ): ProgressSnapshot {
 
+        return getLessonPageProgress(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            lessonId
+        )
+    }
+
+    fun getLessonPageProgress(
+        context: Context,
+        routeId: String,
+        lessonId: String
+    ): ProgressSnapshot {
+
         val lessonJson =
             try {
 
                 LessonRepository.loadLessonJson(
                     context,
+                    routeId,
                     lessonId
                 )
 
@@ -249,29 +293,12 @@ object ProgressRepository {
                     exerciseBlocks.isEmpty()
                 ) {
 
-                    /*
-                     * PÁGINA DE TEORÍA
-                     *
-                     * Cuenta únicamente si está
-                     * en la posición actual de
-                     * lectura o antes de ella.
-                     */
                     started &&
                             pageIndex <=
                             currentPage
 
                 } else {
 
-                    /*
-                     * PÁGINA CON EJERCICIOS
-                     *
-                     * La posición de lectura deja
-                     * de importar.
-                     *
-                     * Lo único que importa es que
-                     * TODOS sus ejercicios estén
-                     * correctamente resueltos.
-                     */
                     exerciseBlocks.all {
                             blockIndex ->
 
@@ -298,6 +325,7 @@ object ProgressRepository {
         return ProgressSnapshot(
             completed =
                 completedPages,
+
             total =
                 totalPages
         )
@@ -316,9 +344,23 @@ object ProgressRepository {
         lessonId: String
     ) {
 
+        refreshLessonCompletionFromProgress(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            lessonId
+        )
+    }
+
+    fun refreshLessonCompletionFromProgress(
+        context: Context,
+        routeId: String,
+        lessonId: String
+    ) {
+
         val progress =
             getLessonPageProgress(
                 context,
+                routeId,
                 lessonId
             )
 
@@ -340,12 +382,14 @@ object ProgressRepository {
 
         refreshUnitCompletion(
             context,
+            routeId,
             location.courseId,
             location.unitId
         )
 
         refreshCourseCompletion(
             context,
+            routeId,
             location.courseId
         )
     }
@@ -356,6 +400,25 @@ object ProgressRepository {
 
     fun saveExerciseState(
         context: Context,
+        lessonId: String,
+        pageIndex: Int,
+        blockIndex: Int,
+        state: JSONObject
+    ) {
+
+        saveExerciseState(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            lessonId,
+            pageIndex,
+            blockIndex,
+            state
+        )
+    }
+
+    fun saveExerciseState(
+        context: Context,
+        routeId: String,
         lessonId: String,
         pageIndex: Int,
         blockIndex: Int,
@@ -379,6 +442,7 @@ object ProgressRepository {
 
         refreshLessonCompletionFromProgress(
             context,
+            routeId,
             lessonId
         )
     }
@@ -462,6 +526,19 @@ object ProgressRepository {
         lessonId: String
     ) {
 
+        completeLesson(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            lessonId
+        )
+    }
+
+    fun completeLesson(
+        context: Context,
+        routeId: String,
+        lessonId: String
+    ) {
+
         setLessonCompleted(
             context,
             lessonId,
@@ -475,12 +552,14 @@ object ProgressRepository {
 
         refreshUnitCompletion(
             context,
+            routeId,
             location.courseId,
             location.unitId
         )
 
         refreshCourseCompletion(
             context,
+            routeId,
             location.courseId
         )
     }
@@ -490,11 +569,19 @@ object ProgressRepository {
         lessonId: String
     ) {
 
-        /*
-         * Si se reinicia o invalida cualquier
-         * ejercicio de una lección ya terminada,
-         * esa lección deja de contar como completa.
-         */
+        invalidateLessonCompletion(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            lessonId
+        )
+    }
+
+    fun invalidateLessonCompletion(
+        context: Context,
+        routeId: String,
+        lessonId: String
+    ) {
+
         setLessonCompleted(
             context,
             lessonId,
@@ -506,24 +593,39 @@ object ProgressRepository {
                 lessonId
             ) ?: return
 
-        /*
-         * Recalculamos inmediatamente
-         * sus niveles superiores.
-         */
         refreshUnitCompletion(
             context,
+            routeId,
             location.courseId,
             location.unitId
         )
 
         refreshCourseCompletion(
             context,
+            routeId,
             location.courseId
         )
     }
 
     fun resetExerciseState(
         context: Context,
+        lessonId: String,
+        pageIndex: Int,
+        blockIndex: Int
+    ) {
+
+        resetExerciseState(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            lessonId,
+            pageIndex,
+            blockIndex
+        )
+    }
+
+    fun resetExerciseState(
+        context: Context,
+        routeId: String,
         lessonId: String,
         pageIndex: Int,
         blockIndex: Int
@@ -540,12 +642,9 @@ object ProgressRepository {
             )
             .apply()
 
-        /*
-         * Un ejercicio pendiente significa que
-         * la lección debe volver a completarse.
-         */
         invalidateLessonCompletion(
             context,
+            routeId,
             lessonId
         )
     }
@@ -560,11 +659,27 @@ object ProgressRepository {
         unitId: String
     ): ProgressSnapshot {
 
+        return getUnitProgress(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            courseId,
+            unitId
+        )
+    }
+
+    fun getUnitProgress(
+        context: Context,
+        routeId: String,
+        courseId: String,
+        unitId: String
+    ): ProgressSnapshot {
+
         val lessons =
             try {
 
                 LessonRepository.loadLessons(
                     context,
+                    routeId,
                     courseId,
                     unitId
                 )
@@ -609,11 +724,27 @@ object ProgressRepository {
         unitId: String
     ): ProgressSnapshot {
 
+        return getUnitLearningProgress(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            courseId,
+            unitId
+        )
+    }
+
+    fun getUnitLearningProgress(
+        context: Context,
+        routeId: String,
+        courseId: String,
+        unitId: String
+    ): ProgressSnapshot {
+
         val lessons =
             try {
 
                 LessonRepository.loadLessons(
                     context,
+                    routeId,
                     courseId,
                     unitId
                 )
@@ -659,6 +790,7 @@ object ProgressRepository {
             val lessonProgress =
                 getLessonPageProgress(
                     context,
+                    routeId,
                     lesson.id
                 )
 
@@ -712,9 +844,25 @@ object ProgressRepository {
         unitId: String
     ) {
 
+        refreshUnitCompletion(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            courseId,
+            unitId
+        )
+    }
+
+    fun refreshUnitCompletion(
+        context: Context,
+        routeId: String,
+        courseId: String,
+        unitId: String
+    ) {
+
         val progress =
             getUnitProgress(
                 context,
+                routeId,
                 courseId,
                 unitId
             )
@@ -748,11 +896,25 @@ object ProgressRepository {
         courseId: String
     ): ProgressSnapshot {
 
+        return getCourseProgress(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            courseId
+        )
+    }
+
+    fun getCourseProgress(
+        context: Context,
+        routeId: String,
+        courseId: String
+    ): ProgressSnapshot {
+
         val units =
             try {
 
                 UnitRepository.loadUnits(
                     context,
+                    routeId,
                     courseId
                 )
 
@@ -776,6 +938,7 @@ object ProgressRepository {
             val progress =
                 getUnitProgress(
                     context,
+                    routeId,
                     courseId,
                     unit.id
                 )
@@ -832,11 +995,25 @@ object ProgressRepository {
         courseId: String
     ) {
 
+        refreshCourseCompletion(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            courseId
+        )
+    }
+
+    fun refreshCourseCompletion(
+        context: Context,
+        routeId: String,
+        courseId: String
+    ) {
+
         val units =
             try {
 
                 UnitRepository.loadUnits(
                     context,
+                    routeId,
                     courseId
                 )
 
@@ -897,6 +1074,19 @@ object ProgressRepository {
         lessonId: String
     ) {
 
+        resetLesson(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            lessonId
+        )
+    }
+
+    fun resetLesson(
+        context: Context,
+        routeId: String,
+        lessonId: String
+    ) {
+
         val prefs =
             preferences(
                 context
@@ -938,11 +1128,6 @@ object ProgressRepository {
 
         editor.apply()
 
-        /*
-         * Si una lección completada se reinicia,
-         * su unidad y su curso también deben
-         * actualizar inmediatamente su estado.
-         */
         val location =
             getLessonLocation(
                 lessonId
@@ -950,12 +1135,14 @@ object ProgressRepository {
 
         refreshUnitCompletion(
             context,
+            routeId,
             location.courseId,
             location.unitId
         )
 
         refreshCourseCompletion(
             context,
+            routeId,
             location.courseId
         )
     }
@@ -970,11 +1157,27 @@ object ProgressRepository {
         unitId: String
     ) {
 
+        resetUnit(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            courseId,
+            unitId
+        )
+    }
+
+    fun resetUnit(
+        context: Context,
+        routeId: String,
+        courseId: String,
+        unitId: String
+    ) {
+
         val lessons =
             try {
 
                 LessonRepository.loadLessons(
                     context,
+                    routeId,
                     courseId,
                     unitId
                 )
@@ -986,37 +1189,26 @@ object ProgressRepository {
                 emptyList()
             }
 
-        /*
-         * Reiniciamos todas las lecciones
-         * pertenecientes a esta unidad.
-         */
         for (
         lesson in lessons
         ) {
 
             resetLesson(
                 context,
+                routeId,
                 lesson.id
             )
         }
 
-        /*
-         * La unidad deja de estar completada,
-         * incluso si estuviera vacía o todavía
-         * no tuviera contenido.
-         */
         setUnitCompleted(
             context,
             unitId,
             false
         )
 
-        /*
-         * El curso superior también debe
-         * recalcular su estado.
-         */
         refreshCourseCompletion(
             context,
+            routeId,
             courseId
         )
     }
@@ -1031,11 +1223,25 @@ object ProgressRepository {
         courseId: String
     ) {
 
+        resetCourse(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            courseId
+        )
+    }
+
+    fun resetCourse(
+        context: Context,
+        routeId: String,
+        courseId: String
+    ) {
+
         val units =
             try {
 
                 UnitRepository.loadUnits(
                     context,
+                    routeId,
                     courseId
                 )
 
@@ -1046,28 +1252,18 @@ object ProgressRepository {
                 emptyList()
             }
 
-        /*
-         * Reiniciamos todas las unidades
-         * pertenecientes a este curso.
-         */
         for (
         unit in units
         ) {
 
             resetUnit(
                 context,
+                routeId,
                 courseId,
                 unit.id
             )
         }
 
-        /*
-         * El curso deja de estar marcado
-         * como completado.
-         *
-         * Esto NO toca sus preferencias
-         * particulares de navegación.
-         */
         setCourseCompleted(
             context,
             courseId,
@@ -1089,8 +1285,9 @@ object ProgressRepository {
             try {
 
                 CourseRepository
-                    .loadProgrammingCourses(
-                        context
+                    .loadCourses(
+                        context,
+                        AppearanceSettingsRepository.ROUTE_PROGRAMMING
                     )
 
             } catch (

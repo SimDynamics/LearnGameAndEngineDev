@@ -5,17 +5,38 @@ import org.json.JSONObject
 
 object UnitRepository {
 
-    private const val BASE_PATH =
-        "content/es/programming"
-
+    /*
+     * COMPATIBILIDAD CON PROGRAMACIÓN.
+     *
+     * Las llamadas antiguas que únicamente
+     * proporcionan context y courseId
+     * continúan utilizando Programación.
+     */
     fun loadUnits(
         context: Context,
+        courseId: String
+    ): List<LearningUnit> {
+
+        return loadUnits(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            courseId
+        )
+    }
+
+    /*
+     * CARGAR UNIDADES SEGÚN LA RUTA.
+     */
+    fun loadUnits(
+        context: Context,
+        routeId: String,
         courseId: String
     ): List<LearningUnit> {
 
         val root =
             loadCourseJson(
                 context,
+                routeId,
                 courseId
             )
 
@@ -32,7 +53,9 @@ object UnitRepository {
         ) {
 
             val item =
-                array.getJSONObject(i)
+                array.getJSONObject(
+                    i
+                )
 
             units.add(
                 LearningUnit(
@@ -40,10 +63,12 @@ object UnitRepository {
                         item.getString(
                             "id"
                         ),
+
                     number =
                         item.getInt(
                             "number"
                         ),
+
                     title =
                         item.getString(
                             "title"
@@ -55,19 +80,41 @@ object UnitRepository {
         return units
     }
 
+    /*
+     * COMPATIBILIDAD CON PROGRAMACIÓN.
+     */
     fun loadCourseJson(
         context: Context,
         courseId: String
     ): JSONObject {
 
+        return loadCourseJson(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            courseId
+        )
+    }
+
+    /*
+     * CARGAR EL JSON DEL CURSO
+     * SEGÚN LA RUTA.
+     */
+    fun loadCourseJson(
+        context: Context,
+        routeId: String,
+        courseId: String
+    ): JSONObject {
+
         val path =
-            "$BASE_PATH/" +
+            "content/es/$routeId/" +
                     "$courseId/" +
                     "course_$courseId.json"
 
         val json =
             context.assets
-                .open(path)
+                .open(
+                    path
+                )
                 .bufferedReader()
                 .use {
                     it.readText()
@@ -78,8 +125,30 @@ object UnitRepository {
         )
     }
 
+    /*
+     * COMPATIBILIDAD CON PROGRAMACIÓN.
+     */
     fun loadUnitJson(
         context: Context,
+        courseId: String,
+        unitId: String
+    ): JSONObject {
+
+        return loadUnitJson(
+            context,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            courseId,
+            unitId
+        )
+    }
+
+    /*
+     * CARGAR EL JSON DE LA UNIDAD
+     * SEGÚN LA RUTA.
+     */
+    fun loadUnitJson(
+        context: Context,
+        routeId: String,
         courseId: String,
         unitId: String
     ): JSONObject {
@@ -93,14 +162,16 @@ object UnitRepository {
             )
 
         val path =
-            "$BASE_PATH/" +
+            "content/es/$routeId/" +
                     "$courseId/" +
                     "$unitSlug/" +
                     "unit_$unitSlug.json"
 
         val json =
             context.assets
-                .open(path)
+                .open(
+                    path
+                )
                 .bufferedReader()
                 .use {
                     it.readText()
