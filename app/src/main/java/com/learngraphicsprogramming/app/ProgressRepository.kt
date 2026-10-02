@@ -302,15 +302,17 @@ object ProgressRepository {
                     exerciseBlocks.all {
                             blockIndex ->
 
-                        getExerciseState(
+                        val savedState = getExerciseState(
                             context,
                             lessonId,
                             pageIndex,
                             blockIndex
-                        )?.optBoolean(
-                            "correct",
-                            false
-                        ) == true
+                        )
+                        val exerciseBlock = blocks?.optJSONObject(blockIndex)
+                        if (exerciseBlock != null &&
+                            com.learngraphicsprogramming.app.math.MathPuzzleTypes.isExercise(exerciseBlock.optString("type"))) {
+                            com.learngraphicsprogramming.app.math.MathPuzzleState.isCurrentCorrect(exerciseBlock, savedState)
+                        } else savedState?.optBoolean("correct", false) == true
                     }
                 }
 
@@ -1380,7 +1382,7 @@ object ProgressRepository {
                 true
 
             else ->
-                false
+                com.learngraphicsprogramming.app.math.MathPuzzleTypes.isExercise(type)
         }
     }
 

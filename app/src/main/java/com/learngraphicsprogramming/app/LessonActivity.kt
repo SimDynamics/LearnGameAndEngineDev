@@ -37,6 +37,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import android.util.TypedValue
 import android.widget.SeekBar
+import com.learngraphicsprogramming.app.math.MathPuzzleRenderer
+import com.learngraphicsprogramming.app.math.MathPuzzleTypes
+import com.learngraphicsprogramming.app.math.MathTextScaleAware
 
 class LessonActivity : AppCompatActivity() {
 
@@ -8330,7 +8333,7 @@ class LessonActivity : AppCompatActivity() {
                         root,
                         event.rawX,
                         event.rawY
-                    )
+                    ) || isTouchInsideMathPuzzle(root, event.rawX, event.rawY)
 
                 touchStartX =
                     event.x
@@ -8388,6 +8391,20 @@ class LessonActivity : AppCompatActivity() {
         }
 
         return super.dispatchTouchEvent(event)
+    }
+
+    private fun isTouchInsideMathPuzzle(view: View, rawX: Float, rawY: Float): Boolean {
+        if (view.visibility != View.VISIBLE) return false
+        if (view.tag == MathPuzzleRenderer.INTERACTION_TAG) {
+            val bounds = android.graphics.Rect()
+            return view.getGlobalVisibleRect(bounds) && bounds.contains(rawX.toInt(), rawY.toInt())
+        }
+        if (view is ViewGroup) {
+            for (index in 0 until view.childCount) {
+                if (isTouchInsideMathPuzzle(view.getChildAt(index), rawX, rawY)) return true
+            }
+        }
+        return false
     }
 
     private fun trySwipeNextPage() {
@@ -9028,6 +9045,8 @@ class LessonActivity : AppCompatActivity() {
             view: View
         ) {
 
+            if (view is MathTextScaleAware) view.scaleMathText(scale / 100f)
+
             /*
              * Button y EditText también heredan
              * de TextView, por lo que quedan
@@ -9115,6 +9134,8 @@ class LessonActivity : AppCompatActivity() {
         fun rescaleView(
             view: View
         ) {
+
+            if (view is MathTextScaleAware) view.scaleMathText(ratio)
 
             if (
                 view is TextView
@@ -9517,6 +9538,12 @@ class LessonActivity : AppCompatActivity() {
                         block
                     )
                 }
+
+                else -> {
+                    if (MathPuzzleTypes.isExercise(block.getString("type"))) {
+                        addMathPuzzle(block, i)
+                    }
+                }
             }
         }
 
@@ -9580,6 +9607,50 @@ class LessonActivity : AppCompatActivity() {
             this,
             currentRouteId
         )
+    }
+
+    private fun addMathPuzzle(block: JSONObject, blockIndex: Int) {
+        requiredExercises++
+        val puzzlePage = currentPage
+        try {
+            val renderer = MathPuzzleRenderer(
+                this, currentRouteId, currentLessonId, puzzlePage, blockIndex, block
+            ) { correct ->
+                val count = if (currentPage == puzzlePage) completedExercises
+                    else pageCompletedExercises[puzzlePage] ?: 0
+                val updated = (count + if (correct) 1 else -1).coerceAtLeast(0)
+                pageCompletedExercises[puzzlePage] = updated
+                if (currentPage == puzzlePage) completedExercises = updated
+            }
+            if (renderer.isCorrect) completedExercises++
+            lessonContent.addView(renderer.view)
+            renderer.fullscreenButton.setOnClickListener {
+                if (exerciseFullscreenActive) {
+                    closeExerciseFullscreenHost()
+                    renderer.fullscreenButton.text = "Pantalla completa"
+                } else {
+                    openExerciseFullscreenHost(usesKeyboard = true) { headerHost, bodyHost, _ ->
+                        val scroll = ScrollView(this).apply {
+                            isFillViewport = true
+                            layoutParams = LinearLayout.LayoutParams(-1, 0, 1f)
+                        }
+                        val content = LinearLayout(this).apply {
+                            orientation = LinearLayout.VERTICAL
+                            layoutParams = FrameLayout.LayoutParams(-1, -2)
+                            setPadding(dp(12), dp(12), dp(12), dp(12))
+                        }
+                        scroll.addView(content)
+                        bodyHost.addView(scroll)
+                        moveViewToExerciseFullscreen(renderer.view, content, LinearLayout.LayoutParams(-1, -2))
+                        moveViewToExerciseFullscreen(renderer.fullscreenButton, headerHost, FrameLayout.LayoutParams(-1, -2))
+                        renderer.fullscreenButton.text = "Salir de pantalla completa"
+                    }
+                }
+            }
+        } catch (exception: Exception) {
+            // Invalid content is visible and remains required instead of silently completing a page.
+            addNote("No se pudo cargar el puzzle matemático: ${exception.message}")
+        }
     }
 
     private fun createDragCodeToken(

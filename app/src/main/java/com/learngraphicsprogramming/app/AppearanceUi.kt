@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.SeekBar
@@ -203,6 +204,12 @@ object AppearanceUi {
                     view,
                     accentColor
                 )
+            }
+
+            is CheckBox -> {
+                // Selection labels sit on the dark card, rather than on an accent-filled button.
+                view.buttonTintList = ColorStateList.valueOf(accentColor)
+                view.setTextColor(Color.rgb(235, 239, 245))
             }
 
             is SeekBar -> {

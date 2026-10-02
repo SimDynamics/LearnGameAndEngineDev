@@ -168,6 +168,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
     testImplementation(libs.junit)
+    // Android's org.json is a stub in local JVM tests; use its standalone implementation.
+    testImplementation("org.json:json:20240303")
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     implementation("androidx.recyclerview:recyclerview:1.3.2")

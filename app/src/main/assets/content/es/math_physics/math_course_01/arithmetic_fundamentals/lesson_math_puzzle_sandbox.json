@@ -1,0 +1,1531 @@
+{
+  "id": "math_course_01__arithmetic_fundamentals__math_puzzle_sandbox",
+  "title": "Sandbox de desarrollo: puzzles matemáticos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "01 · P03: números y fracciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contenido original de desarrollo. Esta lección reúne ejemplos pequeños para revisar interacciones, validación, progreso y restauración. No es un curso curricular."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "numbers_and_fractions",
+          "prompt": "Resuelve 9,5 − 2, escribe tres cuartos como fracción y aproxima un tercio con un error máximo de 0,005.",
+          "representations": [
+            {
+              "type": "math_formula",
+              "text": "9,5 − 2 = ?"
+            },
+            {
+              "type": "math_formula",
+              "text": "3/4 de una unidad"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "difference",
+              "type": "math_numeric_input",
+              "label": "9,5 − 2",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7.5"
+              }
+            },
+            {
+              "id": "fraction",
+              "type": "math_numeric_input",
+              "label": "Tres cuartos",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "exact_fraction",
+                "expected": "3/4"
+              }
+            },
+            {
+              "id": "approximation",
+              "type": "math_numeric_input",
+              "label": "Un tercio en decimal",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "tolerance",
+              "expected": "1/3",
+                "tolerance": 0.005
+              }
+            }
+          ],
+          "feedback": {
+          "correct": "7,5; 3/4; y 0,33 como aproximación admitida de un tercio. Las tres respuestas pertenecen al mismo puzzle.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "02 · P01: una opción con contenido enriquecido"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "single_rich_option",
+          "prompt": "¿Qué opción representa y = 2x + 1?",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "x",
+                "y"
+              ],
+              "rows": [
+                [
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  3
+                ],
+                [
+                  2,
+                  5
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "choice",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "linear",
+                  "label": "y = 2x + 1",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "y = 2x + 1"
+                    },
+                    {
+                      "type": "math_table",
+                      "headers": [
+                        "x",
+                        "y"
+                      ],
+                      "rows": [
+                        [
+                          0,
+                          1
+                        ],
+                        [
+                          1,
+                          3
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "shifted",
+                  "label": "y = 2x − 1",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "y = 2x − 1"
+                    },
+                    {
+                      "type": "math_coordinate_graph",
+                      "mode": "line",
+                      "bounds": {
+                        "xMin": -5,
+                        "xMax": 5,
+                        "yMin": -5,
+                        "yMax": 7
+                      },
+                      "snap": 1,
+                      "points": [
+                        {
+                          "x": 0,
+                          "y": -1,
+                          "draggable": false
+                        },
+                        {
+                          "x": 2,
+                          "y": 3,
+                          "draggable": false
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "constant",
+                  "label": "y = 3",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "y = 3"
+                    },
+                    {
+                      "type": "math_coordinate_graph",
+                      "mode": "line",
+                      "bounds": {
+                        "xMin": -5,
+                        "xMax": 5,
+                        "yMin": -5,
+                        "yMax": 7
+                      },
+                      "snap": 1,
+                      "points": [
+                        {
+                          "x": -2,
+                          "y": 3,
+                          "draggable": false
+                        },
+                        {
+                          "x": 2,
+                          "y": 3,
+                          "draggable": false
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "linear"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera opción coincide con los valores de la tabla.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "03 · P02: varias opciones correctas"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "multi_rich_option",
+          "prompt": "Selecciona todas las representaciones equivalentes a 1/2.",
+          "representations": [
+            {
+              "type": "math_formula",
+              "text": "1/2"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "choices",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "fraction",
+                  "label": "2/4",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "2/4"
+                    }
+                  ]
+                },
+                {
+                  "id": "decimal",
+                  "label": "0,5",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "0,5"
+                    }
+                  ]
+                },
+                {
+                  "id": "ratio",
+                  "label": "Proporción: 3 de 6",
+                  "content": [
+                    {
+                      "type": "math_table",
+                      "headers": [
+                        "Parte",
+                        "Total"
+                      ],
+                      "rows": [
+                        [
+                          3,
+                          6
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "other",
+                  "label": "2/3",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "2/3"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "fraction",
+                  "decimal",
+                  "ratio"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2/4, 0,5 y 3 de 6 expresan la misma proporción.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "04 · P04: tabla con varias celdas editables"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "editable_table",
+          "prompt": "Completa la tabla aplicando y = 2x + 1.",
+          "representations": [
+            {
+              "type": "math_formula",
+              "text": "y = 2x + 1"
+            }
+          ],
+          "tools": [
+            {
+              "type": "math_coordinate_graph",
+              "mode": "line",
+              "bounds": {
+                "xMin": -3,
+                "xMax": 3,
+                "yMin": -5,
+                "yMax": 7
+              },
+              "snap": 0,
+              "points": [
+                {
+                  "x": -2,
+                  "y": -3
+                },
+                {
+                  "x": 3,
+                  "y": 7
+                }
+              ]
+            }
+          ],
+          "responses": [
+            {
+              "id": "table",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "x",
+                "y"
+              ],
+              "rows": [
+                [
+                  -1,
+                  {
+                    "field": "a"
+                  }
+                ],
+                [
+                  0,
+                  {
+                    "field": "b"
+                  }
+                ],
+                [
+                  2,
+                  {
+                    "field": "c"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "y cuando x = −1",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "y cuando x = 0",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "y cuando x = 2",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La columna y queda −1, 1 y 5.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "05 · P05: expresión con validación extensible"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "equivalent_expression",
+          "prompt": "Escribe la relación que multiplica x por 3 y luego suma 2. Puedes reordenar términos equivalentes.",
+          "representations": [
+            {
+              "type": "math_formula",
+              "text": "x → multiplicar por 3 → sumar 2 → y"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "equation",
+              "type": "math_expression_input",
+              "label": "Relación de y con x",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y = 3x + 2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "y = 3x + 2. Por ejemplo, y = 2 + 3*x representa la misma relación.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pi_expression",
+          "prompt": "Escribe el producto de cuatro por pi.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "product",
+              "type": "math_expression_input",
+              "label": "Producto",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "4π"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4π es el producto pedido.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "06 · P06: respuesta estructurada"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "structured_comparison",
+          "prompt": "Construye la comparación «−2 es menor que 1» usando el operador y el número.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparison",
+              "type": "math_structured_answer",
+              "fields": [
+                {
+                  "id": "left",
+                  "type": "fixed",
+                  "text": "−2"
+                },
+                {
+                  "id": "operator",
+                  "type": "dropdown",
+                  "label": "Operador",
+                  "options": [
+                    {
+                      "id": "lt",
+                      "label": "<"
+                    },
+                    {
+                      "id": "eq",
+                      "label": "="
+                    },
+                    {
+                      "id": "gt",
+                      "label": ">"
+                    }
+                  ]
+                },
+                {
+                  "id": "right",
+                  "type": "numeric",
+                  "label": "Segundo número",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "segments": [
+                {
+                  "field": "left"
+                },
+                {
+                  "field": "operator"
+                },
+                {
+                  "field": "right"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "operator": {
+                    "type": "text",
+                    "expected": "lt"
+                  },
+                  "right": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−2 < 1.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "07 · P07: ecuación con huecos"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "equation_blanks",
+          "prompt": "Una caja contiene 5 fichas y se añaden 4. Completa el sumando y el total.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "blanks",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "added",
+                  "type": "numeric",
+                  "label": "Fichas añadidas",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Total",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "5 + "
+                },
+                {
+                  "field": "added"
+                },
+                {
+                  "text": " = "
+                },
+                {
+                  "field": "total"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "added": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "total": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5 + 4 = 9.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "08 · P08 compuesto: ordenar y calcular mediana"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ordering_and_median",
+          "prompt": "Ordena de menor a mayor los cinco datos y escribe su mediana.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "order",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "n3",
+                  "label": "−3",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "−3"
+                    }
+                  ]
+                },
+                {
+                  "id": "n0",
+                  "label": "0",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "0"
+                    }
+                  ]
+                },
+                {
+                  "id": "n2",
+                  "label": "2",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "2"
+                    }
+                  ]
+                },
+                {
+                  "id": "n5",
+                  "label": "5",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "5"
+                    }
+                  ]
+                },
+                {
+                  "id": "n8",
+                  "label": "8",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "8"
+                    }
+                  ]
+                }
+              ],
+              "initialOrder": [
+                "n5",
+                "n3",
+                "n8",
+                "n0",
+                "n2"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "n3",
+                  "n0",
+                  "n2",
+                  "n5",
+                  "n8"
+                ]
+              }
+            },
+            {
+              "id": "median",
+              "type": "math_numeric_input",
+              "label": "Mediana",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El orden es −3, 0, 2, 5, 8; el dato central es 2.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "09 · P11: relacionar mediante arrastre"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "matching_expressions",
+          "prompt": "Relaciona cada operación con su resultado.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pairs",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "sum",
+                  "label": "2 + 3",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "2 + 3"
+                    }
+                  ]
+                },
+                {
+                  "id": "product",
+                  "label": "3 × 4",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "3 × 4"
+                    }
+                  ]
+                },
+                {
+                  "id": "difference",
+                  "label": "9 − 2",
+                  "content": [
+                    {
+                      "type": "math_formula",
+                      "text": "9 − 2"
+                    }
+                  ]
+                }
+              ],
+              "targets": [
+                {
+                  "id": "seven",
+                  "label": "7",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "7"
+                    }
+                  ]
+                },
+                {
+                  "id": "five",
+                  "label": "5",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "5"
+                    }
+                  ]
+                },
+                {
+                  "id": "twelve",
+                  "label": "12",
+                  "content": [
+                    {
+                      "type": "text",
+                      "text": "12"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "sum": "five",
+                  "product": "twelve",
+                  "difference": "seven"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2 + 3 → 5; 3 × 4 → 12; 9 − 2 → 7.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "10 · P09: recta numérica y desigualdad"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inequality_builder",
+          "prompt": "Representa x ≤ 2: coloca el extremo en 2, usa un punto cerrado y dirige la región a la izquierda.",
+          "representations": [
+            {
+              "type": "math_formula",
+              "text": "x ≤ 2"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "inequality",
+              "type": "math_number_line",
+              "mode": "build_inequality",
+              "min": -5,
+              "max": 5,
+              "step": 1,
+              "value": 0,
+              "closed": false,
+              "direction": "right",
+              "validator": {
+                "type": "number_line",
+                "value": 2,
+                "closed": true,
+                "direction": "left"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El punto cerrado incluye el 2 y la flecha izquierda incluye los valores menores.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "number_line_absolute",
+          "prompt": "Lee el punto de la recta y escribe su distancia a cero.",
+          "representations": [
+            {
+              "type": "math_number_line",
+              "mode": "absolute_value",
+              "min": -5,
+              "max": 5,
+              "value": -3,
+              "closed": true
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distance",
+              "type": "math_numeric_input",
+              "label": "Distancia a cero",
+              "unit": "unidades",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El punto está en −3 y su distancia a cero es 3.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "11 · P12 compuesto: punto y coordenada"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "point_and_coordinate",
+          "prompt": "Mueve el punto hasta (2, 3) y escribe su coordenada horizontal.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "point",
+              "type": "math_coordinate_graph_builder",
+              "mode": "point",
+              "bounds": {
+                "xMin": -5,
+                "xMax": 5,
+                "yMin": -5,
+                "yMax": 7
+              },
+              "snap": 1,
+              "points": [
+                {
+                  "x": 0,
+                  "y": 0,
+                  "draggable": true
+                }
+              ],
+              "validator": {
+                "type": "coordinates",
+                "mode": "point",
+                "expected": [
+                  {
+                    "x": 2,
+                    "y": 3
+                  }
+                ]
+              }
+            },
+            {
+              "id": "x",
+              "type": "math_numeric_input",
+              "label": "Coordenada x",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El punto es (2, 3) y su coordenada x vale 2.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "12 · P12: recta y dispersión"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "line_builder",
+          "prompt": "Construye la recta que pasa por (0, 1) y (2, 5). Cualquier par de puntos distintos sobre esa recta es válido.",
+          "representations": [
+            {
+              "type": "math_formula",
+              "text": "y = 2x + 1"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "line",
+              "type": "math_coordinate_graph_builder",
+              "mode": "line",
+              "bounds": {
+                "xMin": -5,
+                "xMax": 5,
+                "yMin": -5,
+                "yMax": 7
+              },
+              "snap": 1,
+              "points": [
+                {
+                  "x": -2,
+                  "y": 0,
+                  "draggable": true
+                },
+                {
+                  "x": 2,
+                  "y": 0,
+                  "draggable": true
+                }
+              ],
+              "validator": {
+                "type": "coordinates",
+                "mode": "line",
+                "expected": [
+                  {
+                    "x": 0,
+                    "y": 1
+                  },
+                  {
+                    "x": 2,
+                    "y": 5
+                  }
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los dos puntos definen y = 2x + 1.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "scatter_builder",
+          "prompt": "Coloca los tres puntos de los datos: (−2, 1), (0, 3) y (2, 2). El orden de los puntos no importa.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "x",
+                "y"
+              ],
+              "rows": [
+                [
+                  -2,
+                  1
+                ],
+                [
+                  0,
+                  3
+                ],
+                [
+                  2,
+                  2
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "scatter",
+              "type": "math_coordinate_graph_builder",
+              "mode": "scatter",
+              "bounds": {
+                "xMin": -5,
+                "xMax": 5,
+                "yMin": -5,
+                "yMax": 7
+              },
+              "snap": 1,
+              "points": [
+                {
+                  "x": -2,
+                  "y": 0,
+                  "draggable": true
+                },
+                {
+                  "x": 0,
+                  "y": 0,
+                  "draggable": true
+                },
+                {
+                  "x": 2,
+                  "y": 0,
+                  "draggable": true
+                }
+              ],
+              "validator": {
+                "type": "coordinates",
+                "mode": "scatter",
+                "expected": [
+                  {
+                    "x": -2,
+                    "y": 1
+                  },
+                  {
+                    "x": 0,
+                    "y": 3
+                  },
+                  {
+                    "x": 2,
+                    "y": 2
+                  }
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los tres puntos coinciden con la tabla.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "13 · P12: polígono y parábola"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "polygon_builder",
+          "prompt": "Construye el triángulo con vértices (0, 0), (3, 0) y (0, 2).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "triangle",
+              "type": "math_coordinate_graph_builder",
+              "mode": "polygon",
+              "bounds": {
+                "xMin": -5,
+                "xMax": 5,
+                "yMin": -5,
+                "yMax": 7
+              },
+              "snap": 1,
+              "points": [
+                {
+                  "x": -2,
+                  "y": -1,
+                  "draggable": true
+                },
+                {
+                  "x": 1,
+                  "y": -1,
+                  "draggable": true
+                },
+                {
+                  "x": -2,
+                  "y": 1,
+                  "draggable": true
+                }
+              ],
+              "validator": {
+                "type": "coordinates",
+                "mode": "polygon",
+                "expected": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 3,
+                    "y": 0
+                  },
+                  {
+                    "x": 0,
+                    "y": 2
+                  }
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los vértices forman el triángulo pedido.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "parabola_builder",
+          "prompt": "Coloca el primer punto, el vértice, en (1, −1); coloca el segundo punto en (2, 1).",
+          "representations": [
+            {
+              "type": "math_formula",
+              "text": "y = 2(x − 1)² − 1"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "parabola",
+              "type": "math_coordinate_graph_builder",
+              "mode": "parabola",
+              "bounds": {
+                "xMin": -5,
+                "xMax": 5,
+                "yMin": -5,
+                "yMax": 7
+              },
+              "snap": 1,
+              "points": [
+                {
+                  "x": 0,
+                  "y": 0,
+                  "draggable": true
+                },
+                {
+                  "x": 1,
+                  "y": 1,
+                  "draggable": true
+                }
+              ],
+              "validator": {
+                "type": "coordinates",
+                "mode": "parabola",
+                "expected": [
+                  {
+                    "x": 1,
+                    "y": -1
+                  },
+                  {
+                    "x": 2,
+                    "y": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El vértice y el segundo punto determinan la parábola indicada.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "14 · P13: propiedades geométricas"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "rectangle_area",
+          "prompt": "Mueve los vértices hasta obtener un rectángulo de área 8 unidades cuadradas. Una solución posible tiene ancho 4 y alto 2.",
+          "representations": [
+            {
+              "type": "math_formula",
+              "text": "Área del rectángulo = ancho × alto"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "rectangle",
+              "type": "math_geometry_builder",
+              "mode": "polygon",
+              "bounds": {
+                "xMin": -5,
+                "xMax": 5,
+                "yMin": -5,
+                "yMax": 7
+              },
+              "snap": 1,
+              "points": [
+                {
+                  "x": 0,
+                  "y": 0,
+                  "draggable": true
+                },
+                {
+                  "x": 3,
+                  "y": 0,
+                  "draggable": true
+                },
+                {
+                  "x": 3,
+                  "y": 2,
+                  "draggable": true
+                },
+                {
+                  "x": 0,
+                  "y": 2,
+                  "draggable": true
+                }
+              ],
+              "validator": {
+                "type": "geometry",
+                "expected": 8,
+                "shape": "rectangle"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La figura es un rectángulo y su área es 8.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "15 · P10: sliders de parámetros"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "rectangle_sliders",
+          "prompt": "Ajusta el ancho a 4 y el alto a 3. Observa cómo cambia el rectángulo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dimensions",
+              "type": "math_slider_interaction",
+              "parameters": [
+                {
+                  "id": "width",
+                  "label": "Ancho",
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "value": 2
+                },
+                {
+                  "id": "height",
+                  "label": "Alto",
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "value": 2
+                }
+              ],
+              "visual": {
+                "type": "rectangle",
+                "widthParameter": "width",
+                "heightParameter": "height"
+              },
+              "validator": {
+                "type": "sliders",
+                "values": {
+                  "width": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "height": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Ancho 4 y alto 3 producen un área de 12 unidades cuadradas.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "16 · Representaciones compuestas: Venn y tabla"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "venn_and_table",
+          "prompt": "En el diagrama hay 4 elementos solo en A, 2 en la intersección y 3 solo en B. Completa los totales.",
+          "representations": [
+            {
+              "type": "venn_diagram",
+              "leftLabel": "A",
+              "rightLabel": "B",
+              "leftOnly": "4",
+              "intersection": "2",
+              "rightOnly": "3"
+            },
+            {
+              "type": "math_formula",
+              "text": "|A ∪ B| = |A| + |B| − |A ∩ B|"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "totals",
+              "type": "math_multi_input",
+              "layout": "table",
+              "headers": [
+                "Conjunto",
+                "Cantidad"
+              ],
+              "rows": [
+                [
+                  "A",
+                  {
+                    "field": "a"
+                  }
+                ],
+                [
+                  "B",
+                  {
+                    "field": "b"
+                  }
+                ],
+                [
+                  "A ∪ B",
+                  {
+                    "field": "union"
+                  }
+                ]
+              ],
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Total A",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Total B",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "union",
+                  "type": "numeric",
+                  "label": "Unión",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "union": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A contiene 6 elementos, B contiene 5 y la unión contiene 9.",
+            "incorrect": "Revisa la representación y vuelve a comprobar."
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Diagramas 2D y 3D con respuesta numérica"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "static_geometry_volume",
+          "prompt": "Una caja rectangular mide 3 cm de ancho, 2 cm de fondo y 4 cm de alto. ¿Cuál es su volumen?",
+          "representations": [
+            {
+              "type": "geometry_2d_diagram",
+              "shape": "rectangle",
+              "labels": [
+                "Base: 3 cm × 2 cm"
+              ]
+            },
+            {
+              "type": "geometry_3d_diagram",
+              "shape": "prism",
+              "labels": [
+                "3 cm",
+                "2 cm",
+                "4 cm"
+              ]
+            },
+            {
+              "type": "math_formula",
+              "text": "Volumen = ancho × fondo × alto"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "volume",
+              "type": "math_numeric_input",
+              "label": "Volumen",
+              "unit": "cm³",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "24"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3 × 2 × 4 = 24 cm³.",
+            "incorrect": "Multiplica las tres dimensiones."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+package com.learngraphicsprogramming.app.math
+
+import android.content.Context
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.view.Gravity
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.TextView
+import org.json.JSONArray
+import org.json.JSONObject
+
+internal object MathWidgetUi {
+    val foreground: Int = Color.rgb(235, 239, 245)
+    val muted: Int = Color.rgb(174, 183, 198)
+    fun dp(context: Context, value: Int): Int =
+        (value * context.resources.displayMetrics.density).toInt()
+
+    fun column(context: Context): LinearLayout = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        layoutParams = LinearLayout.LayoutParams(-1, -2)
+    }
+
+    fun row(context: Context): LinearLayout = LinearLayout(context).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        layoutParams = LinearLayout.LayoutParams(-1, -2)
+    }
+
+    fun background(context: Context, selected: Boolean = false, accent: Int = foreground) =
+        GradientDrawable().apply {
+            setColor(Color.rgb(28, 31, 36))
+            cornerRadius = dp(context, 10).toFloat()
+            setStroke(dp(context, 1), if (selected) accent else Color.rgb(67, 73, 84))
+        }
+
+    fun text(context: Context, value: String, bold: Boolean = false): TextView = TextView(context).apply {
+        text = value
+        textSize = if (bold) 18f else 16f
+        setTextColor(MathWidgetUi.foreground)
+        if (bold) setTypeface(typeface, Typeface.BOLD)
+        setPadding(0, dp(context, 6), 0, dp(context, 6))
+        layoutParams = LinearLayout.LayoutParams(-1, -2)
+    }
+
+    fun button(context: Context, label: String, accent: Int): Button = Button(context).apply {
+        text = label
+        isAllCaps = false
+        textSize = 14f
+        minHeight = dp(context, 48)
+        val brightness = (Color.red(accent) * 299 + Color.green(accent) * 587 + Color.blue(accent) * 114) / 1000
+        setTextColor(if (brightness >= 160) Color.rgb(20, 23, 29) else Color.WHITE)
+        backgroundTintList = ColorStateList.valueOf(accent)
+        layoutParams = LinearLayout.LayoutParams(-2, -2)
+    }
+
+    fun rich(context: Context, item: JSONObject, accent: Int): View {
+        val result = column(context)
+        val content = item.optJSONArray("content")
+        if (content == null) {
+            result.addView(text(context, item.optString("label", item.optString("text", item.optString("id")))))
+        } else {
+            for (index in 0 until content.length()) {
+                val representation = content.optJSONObject(index)
+                result.addView(if (representation != null) {
+                    MathRepresentationRenderer.render(context, representation, accent)
+                } else text(context, content.optString(index)))
+            }
+        }
+        fun allowCardTap(view: View) {
+            if (view is TextView) view.setTextIsSelectable(false)
+            if (view is ViewGroup) for (index in 0 until view.childCount) allowCardTap(view.getChildAt(index))
+        }
+        allowCardTap(result)
+        return result
+    }
+
+    fun objects(array: JSONArray?): List<JSONObject> =
+        if (array == null) emptyList() else (0 until array.length()).map { array.getJSONObject(it) }
+}
