@@ -75,29 +75,152 @@ private class MathDropdown(context: Context) :
     }
 }
 
-private class TextControl(context: Context, spec: MathResponseSpec, accent: Int, onChange: () -> Unit) : MathResponseControl {
-    override val view = MathWidgetUi.column(context)
-    private val keyboardMode = spec.config.optString("keyboard", if (spec.type == "math_expression_input") "ALGEBRA" else "NUMERIC")
-    private val edit = input(context, accent, spec.config.optString("hint", "Respuesta"), keyboardMode)
-    private val keyboard = MathKeyboardView(context, accent)
+private class TextControl(
+    context: Context,
+    spec: MathResponseSpec,
+    accent: Int,
+    onChange: () -> Unit
+) : MathResponseControl {
+
+    override val view =
+        MathWidgetUi.column(context)
+
+    private val fieldType =
+        if (spec.type == "math_expression_input") {
+            "expression"
+        } else {
+            "numeric"
+        }
+
+    private val inputMode =
+        MathInputMode.parse(
+            spec.config.optString("inputMode", "simple"),
+            fieldType
+        )
+
+    private val keyboardMode =
+        spec.config.optString(
+            "keyboard",
+            if (fieldType == "expression") {
+                "ALGEBRA"
+            } else {
+                "NUMERIC"
+            }
+        )
+
+    /*
+     * FUTURO:
+     *
+     * when (inputMode) {
+     *     SIMPLE -> EditText
+     *     STRUCTURED -> MathExpressionEditor
+     * }
+     *
+     * Por ahora el editor estructurado todavía no existe.
+     */
+    private val edit =
+        when (inputMode) {
+            MathInputMode.SIMPLE ->
+                input(
+                    context,
+                    accent,
+                    spec.config.optString(
+                        "hint",
+                        "Respuesta"
+                    ),
+                    keyboardMode
+                )
+
+            MathInputMode.STRUCTURED ->
+                throw IllegalStateException(
+                    "MathExpressionEditor todavía no está disponible."
+                )
+        }
+
+    private val keyboard =
+        MathKeyboardView(
+            context,
+            accent
+        )
+
     init {
-        val label = spec.config.optString("label")
-        if (label.isNotBlank()) view.addView(MathWidgetUi.text(context, label))
-        val unit = spec.config.optString("unit")
-        if (unit.isNotBlank()) view.addView(MathWidgetUi.text(context, "Unidad: $unit"))
-        edit.contentDescription = label.ifBlank { "Respuesta matemática" }
-        MathKeyboardContext.configure(edit, spec.validator, keyboardMode, spec.config.optJSONArray("keyboardSymbols"))
+        val label =
+            spec.config.optString("label")
+
+        if (label.isNotBlank()) {
+            view.addView(
+                MathWidgetUi.text(
+                    context,
+                    label
+                )
+            )
+        }
+
+        val unit =
+            spec.config.optString("unit")
+
+        if (unit.isNotBlank()) {
+            view.addView(
+                MathWidgetUi.text(
+                    context,
+                    "Unidad: $unit"
+                )
+            )
+        }
+
+        edit.contentDescription =
+            label.ifBlank {
+                "Respuesta matemática"
+            }
+
+        MathKeyboardContext.configure(
+            edit,
+            spec.validator,
+            keyboardMode,
+            spec.config.optJSONArray(
+                "keyboardSymbols"
+            )
+        )
+
         view.addView(edit)
         view.addView(keyboard)
+
         edit.setOnFocusChangeListener { _, focused ->
-            if (focused) keyboard.bind(edit, keyboardMode)
-            else keyboard.hide()
+            if (focused) {
+                keyboard.bind(
+                    edit,
+                    keyboardMode
+                )
+            } else {
+                keyboard.hide()
+            }
         }
+
         edit.changed(onChange)
     }
-    override fun answer(): MathAnswer = MathAnswer.Text(edit.text.toString())
-    override fun restore(answer: MathAnswer) { if (answer is MathAnswer.Text) edit.setText(answer.value) }
-    override fun setEditable(enabled: Boolean) { edit.isEnabled = enabled; if (!enabled) keyboard.hide() }
+
+    override fun answer(): MathAnswer =
+        MathAnswer.Text(
+            edit.text.toString()
+        )
+
+    override fun restore(
+        answer: MathAnswer
+    ) {
+        if (answer is MathAnswer.Text) {
+            edit.setText(answer.value)
+        }
+    }
+
+    override fun setEditable(
+        enabled: Boolean
+    ) {
+        edit.isEnabled = enabled
+
+        if (!enabled) {
+            keyboard.hide()
+        }
+    }
 }
 
 private class ChoiceControl(context: Context, spec: MathResponseSpec, private val accent: Int, private val onChange: () -> Unit) : MathResponseControl {
@@ -240,18 +363,96 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
                     Field(fieldColumn, { ids[dropdown.selectedItemPosition.coerceAtLeast(0)] }, { dropdown.setSelection(ids.indexOf(it).coerceAtLeast(0)) }, true)
                 }
                 "numeric", "expression" -> {
-                    val keyboardMode = definition.optString("keyboard", if (definition.optString("type") == "expression") "ALGEBRA" else "NUMERIC")
-                    val edit = input(context, accent, definition.optString("hint", if (inlineFields) fieldLabel.ifBlank { "Respuesta" } else "Respuesta"), keyboardMode)
-                    edit.contentDescription = fieldLabel.ifBlank { id }
-                    MathKeyboardContext.configure(edit, spec.validator.optJSONObject("fields")?.optJSONObject(id), keyboardMode,
-                        definition.optJSONArray("keyboardSymbols") ?: spec.config.optJSONArray("keyboardSymbols"))
+
+                    val fieldType =
+                        definition.optString(
+                            "type",
+                            "numeric"
+                        )
+
+                    val inputMode =
+                        MathInputMode.parse(
+                            definition.optString(
+                                "inputMode",
+                                "simple"
+                            ),
+                            fieldType
+                        )
+
+                    val keyboardMode =
+                        definition.optString(
+                            "keyboard",
+                            if (fieldType == "expression") {
+                                "ALGEBRA"
+                            } else {
+                                "NUMERIC"
+                            }
+                        )
+
+                    val edit =
+                        when (inputMode) {
+                            MathInputMode.SIMPLE ->
+                                input(
+                                    context,
+                                    accent,
+                                    definition.optString(
+                                        "hint",
+                                        if (inlineFields) {
+                                            fieldLabel.ifBlank {
+                                                "Respuesta"
+                                            }
+                                        } else {
+                                            "Respuesta"
+                                        }
+                                    ),
+                                    keyboardMode
+                                )
+
+                            MathInputMode.STRUCTURED ->
+                                throw IllegalStateException(
+                                    "MathExpressionEditor todavía no está disponible."
+                                )
+                        }
+
+                    edit.contentDescription =
+                        fieldLabel.ifBlank {
+                            id
+                        }
+
+                    MathKeyboardContext.configure(
+                        edit,
+                        spec.validator
+                            .optJSONObject("fields")
+                            ?.optJSONObject(id),
+                        keyboardMode,
+                        definition.optJSONArray(
+                            "keyboardSymbols"
+                        ) ?: spec.config.optJSONArray(
+                            "keyboardSymbols"
+                        )
+                    )
+
                     edit.changed(onChange)
+
                     edit.setOnFocusChangeListener { _, focused ->
-                        if (focused) keyboard.bind(edit, keyboardMode)
-                        else keyboard.hide()
+                        if (focused) {
+                            keyboard.bind(
+                                edit,
+                                keyboardMode
+                            )
+                        } else {
+                            keyboard.hide()
+                        }
                     }
+
                     addControl(edit)
-                    Field(fieldColumn, { edit.text.toString() }, { edit.setText(it) }, true)
+
+                    Field(
+                        fieldColumn,
+                        { edit.text.toString() },
+                        { edit.setText(it) },
+                        true
+                    )
                 }
                 else -> throw IllegalArgumentException("Tipo de campo desconocido en $id")
             }
