@@ -90,13 +90,15 @@ class CoursesActivity : AppCompatActivity() {
                         AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
                     ) {
 
-                        /*
-                         * Por ahora solamente existe
-                         * contenido real para el curso 1
-                         * de Matemáticas.
-                         */
-                        course.id ==
-                                "math_course_01"
+                        // Availability follows actual local lesson assets, including provisional
+                        // QA courses. A listed future course with no content remains unavailable.
+                        runCatching {
+                            UnitRepository.loadUnits(this, routeId, course.id).any { unit ->
+                                LessonRepository.loadLessons(this, routeId, course.id, unit.id).any { lesson ->
+                                    LessonRepository.lessonExists(this, routeId, lesson.id)
+                                }
+                            }
+                        }.getOrDefault(false)
 
                     } else {
 
@@ -167,7 +169,8 @@ class CoursesActivity : AppCompatActivity() {
         )
 
         NavigationStateRepository.saveCourses(
-            this
+            this,
+            routeId
         )
 
         binding.recyclerCourses.adapter

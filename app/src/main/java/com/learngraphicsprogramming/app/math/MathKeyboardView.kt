@@ -1,6 +1,10 @@
 package com.learngraphicsprogramming.app.math
 
 import android.content.Context
+import android.app.Activity
+import android.graphics.Color
+import android.content.res.ColorStateList
+import org.json.JSONArray
 import android.view.View
 import android.util.TypedValue
 import android.widget.EditText
@@ -16,36 +20,50 @@ class MathKeyboardView(context: Context, private val accentColor: Int) : Horizon
     init {
         isFillViewport = false
         isHorizontalScrollBarEnabled = false
+        tag = MathInputFocusOrder.GESTURE_OWNER_TAG
         layoutParams = LinearLayout.LayoutParams(-1, -2)
         visibility = View.GONE
         addView(keys)
         contentDescription = "Atajos del teclado matemático"
     }
 
-    fun bind(editText: EditText, mode: String) {
+    fun bind(editText: EditText, mode: String, keyboardSymbols: JSONArray? = null) {
         input = editText
         visibility = View.VISIBLE
         keys.removeAllViews()
         val selected = runCatching { Mode.valueOf(mode.uppercase()) }.getOrDefault(Mode.NUMERIC)
-        val symbols = when (selected) {
-            Mode.NUMERIC -> listOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", ",", "+", "−", "%", "a/b", "()")
-            Mode.FRACTION -> listOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a/b", "−", ".", "()")
-            Mode.ALGEBRA -> listOf("x", "y", "+", "−", "*", "/", "^", "=", "π", "a/b", "()")
-            Mode.INEQUALITY -> listOf("x", "=", "<", ">", "!=", "<=", ">=", "−", "a/b", "()")
-            // Reserved contexts currently offer algebra shortcuts, not a CAS.
-            Mode.TRIG, Mode.CALCULUS -> listOf("x", "y", "+", "−", "*", "/", "^", "π", "()")
+        val defaults = when (selected) {
+            Mode.NUMERIC -> listOf("−", ".", ",")
+            Mode.FRACTION -> listOf("a/b", "−")
+            Mode.ALGEBRA -> listOf("x", "y", "+", "−", "×", "÷", "^", "=", "()")
+            Mode.INEQUALITY -> listOf("x", "=", "<", ">", "≠", "≤", "≥", "−", "()")
+            Mode.TRIG -> listOf("x", "π", "+", "−", "×", "÷", "^", "()")
+            Mode.CALCULUS -> listOf("x", "y", "+", "−", "×", "÷", "^", "()")
         }
+        val allowed = setOf(".", ",", "+", "−", "-", "×", "÷", "π", "%", "a/b", "/", "(", ")", "()", "=", "<", ">", "≤", "≥", "≠", "x", "y", "a", "b", "^", "√", "∞")
+        val symbols = if (keyboardSymbols == null) defaults else
+            (0 until keyboardSymbols.length()).map { keyboardSymbols.optString(it) }
+                .filter { it in allowed }.distinct()
         for (symbol in symbols + "⌫") {
             val key = MathWidgetUi.button(context, symbol, accentColor)
             key.setTextSize(TypedValue.COMPLEX_UNIT_PX, editText.textSize * 14f / 18f)
             key.isFocusable = false
+            key.minWidth = 0
+            key.isSingleLine = true
+            key.setPadding(0, 0, 0, 0)
+            key.layoutParams = LinearLayout.LayoutParams(MathWidgetUi.dp(context, 48), MathWidgetUi.dp(context, 48)).apply {
+                marginEnd = MathWidgetUi.dp(context, 2)
+            }
+            key.tag = MathInputFocusOrder.GESTURE_OWNER_TAG
             key.contentDescription = if (symbol == "a/b") "Insertar barra de fracción" else symbol
             key.setOnClickListener { insert(symbol) }
             keys.addView(key)
         }
+        (context as? Activity)?.let { MathKeyboardHost.current(it)?.show(this, editText) }
     }
 
     fun hide() {
+        (context as? Activity)?.let { MathKeyboardHost.current(it)?.hide(this) }
         input = null
         visibility = View.GONE
     }

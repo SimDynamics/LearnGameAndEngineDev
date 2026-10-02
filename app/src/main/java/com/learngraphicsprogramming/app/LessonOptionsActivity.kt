@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
 import android.view.Gravity
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -113,6 +114,17 @@ class LessonOptionsActivity : AppCompatActivity() {
                 R.id.buttonResetLesson
             )
 
+        val isProgramming = routeId == AppearanceSettingsRepository.ROUTE_PROGRAMMING
+        val programmingVisibility = if (isProgramming) View.VISIBLE else View.GONE
+        listOf(R.id.textCodeWrapHeading, R.id.codeWrapSettings,
+            R.id.textProgrammingHeading, R.id.buttonEditProgrammingShortcuts,
+            R.id.textProgrammingShortcutsDescription).forEach { id ->
+            findViewById<View>(id).visibility = programmingVisibility
+        }
+        findViewById<TextView>(R.id.textLessonOptionsDescription).text =
+            if (isProgramming) "Configura la experiencia de esta lección y las herramientas de programación."
+            else "Configura el tamaño del contenido y el progreso de esta lección."
+
         /*
          * CABECERA.
          */
@@ -184,9 +196,8 @@ class LessonOptionsActivity : AppCompatActivity() {
                                         savedCourseScale
                                 )
 
-            val wrapProtectionHasChanges =
-                pendingAllowGlobalWrapOverwrite !=
-                        savedAllowGlobalWrapOverwrite
+            val wrapProtectionHasChanges = isProgramming &&
+                pendingAllowGlobalWrapOverwrite != savedAllowGlobalWrapOverwrite
 
             val hasChanges =
                 textSizeHasChanges ||
@@ -407,12 +418,11 @@ class LessonOptionsActivity : AppCompatActivity() {
                         )
                 }
 
-                CodeWrapSettingsRepository
-                    .saveAllowsGlobalOverwrite(
-                        this,
-                        courseId,
-                        pendingAllowGlobalWrapOverwrite
+                if (isProgramming) {
+                    CodeWrapSettingsRepository.saveAllowsGlobalOverwrite(
+                        this, courseId, pendingAllowGlobalWrapOverwrite
                     )
+                }
 
                 Toast.makeText(
                     this,

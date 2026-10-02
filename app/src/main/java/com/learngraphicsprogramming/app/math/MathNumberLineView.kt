@@ -32,7 +32,7 @@ class MathNumberLineView(
     private var dragging = false
     private var textScale = 1f
     var editable = interactive
-        set(value) { field = value; dragging = false; invalidate() }
+        set(value) { field = value; tag = if (value) "math_gesture_owner" else null; dragging = false; invalidate() }
     var onValueChanged: (() -> Unit)? = null
 
     override fun scaleMathText(factor: Float) {
@@ -41,6 +41,7 @@ class MathNumberLineView(
 
     init {
         setBackgroundColor(Color.rgb(16, 17, 20))
+        tag = if (interactive) "math_gesture_owner" else null
         isFocusable = true
         updateDescription()
     }

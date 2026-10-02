@@ -211,7 +211,8 @@ class CourseActivity : AppCompatActivity() {
 
         NavigationStateRepository.saveCourse(
             this,
-            courseId
+            courseId,
+            routeId
         )
 
         val recyclerUnits =

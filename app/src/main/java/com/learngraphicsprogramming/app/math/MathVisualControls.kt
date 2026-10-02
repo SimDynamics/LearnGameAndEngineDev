@@ -18,6 +18,7 @@ import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
+import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.ceil
 import kotlin.math.max
@@ -37,20 +38,19 @@ object MathVisualControls {
         if (spec.type == "math_geometry_builder" && !config.has("mode")) config.put("mode", "polygon")
         val layout = column(context)
         val graph = MathCartesianView(context, config, accent, true)
-        graph.tag = "math_interactive_surface"
-        layout.addView(graph, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 280)))
+        layout.addView(MathExpandableRepresentation.wrap(context, graph, accent))
         layout.addView(label(context, "Arrastra los puntos o edita sus coordenadas."))
         val fields = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         layout.addView(fields)
         var synchronizing = false
         var editable = true
         val inputs = mutableListOf<Pair<EditText, EditText>>()
-        fun sync() {
+        fun sync(preserveIncomplete: Boolean = false) {
             synchronizing = true
             graph.points().forEachIndexed { index, point ->
                 inputs.getOrNull(index)?.let { (x, y) ->
-                    x.setText(MathCartesianView.formatCoordinate(point.x))
-                    y.setText(MathCartesianView.formatCoordinate(point.y))
+                    if (!preserveIncomplete || parse(x.text.toString()) != null) x.setText(MathCartesianView.formatCoordinate(point.x))
+                    if (!preserveIncomplete || parse(y.text.toString()) != null) y.setText(MathCartesianView.formatCoordinate(point.y))
                 }
             }
             synchronizing = false
@@ -61,7 +61,9 @@ object MathVisualControls {
             inputs.clear()
             graph.points().forEachIndexed { index, point ->
                 val row = LinearLayout(context).apply { orientation = LinearLayout.HORIZONTAL }
-                row.addView(label(context, "${index + 1}. x ="))
+                row.gravity = android.view.Gravity.CENTER_VERTICAL
+                val pointPrefix = if (graph.points().size > 1) "${MathCartesianView.pointLabel(index)}: " else ""
+                row.addView(label(context, "${pointPrefix}x ="))
                 val x = numberInput(context, "Coordenada x del punto ${index + 1}", point.x, accent)
                 row.addView(x, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
                 row.addView(label(context, " y ="))
@@ -76,26 +78,55 @@ object MathVisualControls {
                 inputs += x to y
                 fun update() {
                     if (synchronizing || !editable) return
-                    val newX = parse(x.text.toString()) ?: return
-                    val newY = parse(y.text.toString()) ?: return
+                    val newX = parse(x.text.toString())
+                    val newY = parse(y.text.toString())
                     // Keep the active input intact so that negative and decimal values can be typed.
-                    synchronizing = true
-                    graph.movePoint(index, newX, newY)
-                    synchronizing = false
+                    if (newX != null && newY != null) {
+                        synchronizing = true
+                        graph.movePoint(index, newX, newY)
+                        synchronizing = false
+                    }
+                    onChange()
                 }
                 x.addTextChangedListener(watcher(::update))
                 y.addTextChangedListener(watcher(::update))
-                val finish = View.OnFocusChangeListener { _, focused -> if (!focused) sync() }
+                val finish = View.OnFocusChangeListener { _, focused ->
+                    if (!focused && !synchronizing && editable && inputs.all { (xField, yField) -> parse(xField.text.toString()) != null && parse(yField.text.toString()) != null }) {
+                        sync()
+                        onChange()
+                    }
+                }
                 x.onFocusChangeListener = finish
                 y.onFocusChangeListener = finish
                 fields.addView(row)
             }
         }
         buildFields()
-        graph.onPointsChanged = { if (!synchronizing) sync(); onChange() }
+        val initialCoordinateText = inputs.map { (x, y) -> x.text.toString() to y.text.toString() }
+        graph.onPointsChanged = { if (!synchronizing) { sync(preserveIncomplete = true); onChange() } }
         return object : MathResponseControl {
             override val view: View = layout
             override fun answer(): MathAnswer = MathAnswer.Graph(graph.points())
+            override fun hasDraftChanges(): Boolean = inputs.map { (x, y) -> x.text.toString() to y.text.toString() } != initialCoordinateText
+            override fun draftError(): String? = if (inputs.any { (x, y) -> parse(x.text.toString()) == null || parse(y.text.toString()) == null }) {
+                "Escribe valores numéricos válidos en todas las coordenadas."
+            } else null
+            override fun saveDraft(): JSONObject? = if (hasDraftChanges()) JSONObject().put("coords", JSONArray().apply {
+                inputs.forEach { (x, y) -> put(JSONObject().put("x", x.text.toString()).put("y", y.text.toString())) }
+            }) else null
+            override fun restoreDraft(state: JSONObject) {
+                val coordinates = state.optJSONArray("coords") ?: return
+                synchronizing = true
+                try {
+                    inputs.forEachIndexed { index, (x, y) ->
+                        coordinates.optJSONObject(index)?.let { point ->
+                            x.setText(point.optString("x", x.text.toString()))
+                            y.setText(point.optString("y", y.text.toString()))
+                        }
+                    }
+                } finally { synchronizing = false }
+                onChange()
+            }
             override fun restore(answer: MathAnswer) {
                 if (answer is MathAnswer.Graph) {
                     val sameCount = answer.points.size == inputs.size
@@ -120,9 +151,9 @@ object MathVisualControls {
         if (!config.has("direction")) config.put("direction", "right")
         val layout = column(context)
         val line = MathNumberLineView(context, config, accent, true)
-        line.tag = "math_interactive_surface"
-        layout.addView(line, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 136)))
+        layout.addView(MathExpandableRepresentation.wrap(context, line, accent, 2.4f))
         val position = numberInput(context, "Posición del punto en la recta", line.answer().value, accent)
+        val initialPositionText = position.text.toString()
         layout.addView(label(context, "Posición"))
         layout.addView(position)
         val closed = CheckBox(context).apply {
@@ -135,22 +166,42 @@ object MathVisualControls {
         layout.addView(label(context, "Dirección del intervalo"))
         val direction = Spinner(context)
         direction.contentDescription = "Dirección del intervalo"
+        direction.minimumHeight = dp(context, 48)
+        direction.setPadding(dp(context, 4), dp(context, 4), dp(context, 4), dp(context, 4))
         direction.adapter = object : ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, listOf("Izquierda", "Derecha")) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View = super.getView(position, convertView, parent).also { (it as TextView).setTextColor(Color.WHITE) }
-            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View = super.getDropDownView(position, convertView, parent).also { it.setBackgroundColor(Color.rgb(28, 31, 36)); (it as TextView).setTextColor(Color.WHITE) }
+            private var selectedTextSize: Float? = null
+            private var baseTextSize: Float? = null
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View = super.getView(position, convertView, parent).also {
+                (it as TextView).setTextColor(Color.WHITE)
+                if (baseTextSize == null) baseTextSize = it.textSize
+                selectedTextSize = (direction.selectedView as? TextView)?.textSize ?: (baseTextSize ?: it.textSize) * layout.mathTextScale
+                it.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, selectedTextSize ?: it.textSize)
+                it.minimumHeight = dp(context, 48)
+                it.gravity = android.view.Gravity.CENTER_VERTICAL
+                it.setPadding(dp(context, 8), dp(context, 8), dp(context, 8), dp(context, 8))
+            }
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View = super.getDropDownView(position, convertView, parent).also {
+                it.setBackgroundColor(Color.rgb(28, 31, 36))
+                (it as TextView).setTextColor(Color.WHITE)
+                selectedTextSize = (direction.selectedView as? TextView)?.textSize ?: (baseTextSize ?: it.textSize) * layout.mathTextScale
+                it.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, selectedTextSize ?: it.textSize)
+                it.minimumHeight = dp(context, 48)
+                it.gravity = android.view.Gravity.CENTER_VERTICAL
+                it.setPadding(dp(context, 8), dp(context, 10), dp(context, 8), dp(context, 10))
+            }
         }
         direction.setSelection(if (line.answer().direction == "left") 0 else 1)
         layout.addView(direction)
         var synchronizing = false
-        fun sync() {
+        fun sync(preserveIncomplete: Boolean = false) {
             synchronizing = true
             val answer = line.answer()
-            position.setText(MathCartesianView.formatCoordinate(answer.value))
+            if (!preserveIncomplete || parse(position.text.toString()) != null) position.setText(MathCartesianView.formatCoordinate(answer.value))
             closed.isChecked = answer.closed
             direction.setSelection(if (answer.direction == "left") 0 else 1)
             synchronizing = false
         }
-        line.onValueChanged = { if (!synchronizing) sync(); onChange() }
+        line.onValueChanged = { if (!synchronizing) { sync(preserveIncomplete = true); onChange() } }
         position.addTextChangedListener(watcher {
             if (!synchronizing && line.editable) {
                 parse(position.text.toString())?.let {
@@ -158,9 +209,12 @@ object MathVisualControls {
                     line.setMarker(value = it)
                     synchronizing = false
                 }
+                onChange()
             }
         })
-        position.onFocusChangeListener = View.OnFocusChangeListener { _, focused -> if (!focused) sync() }
+        position.onFocusChangeListener = View.OnFocusChangeListener { _, focused ->
+            if (!focused && !synchronizing && line.editable && parse(position.text.toString()) != null) { sync(); onChange() }
+        }
         closed.setOnCheckedChangeListener { _, checked -> if (!synchronizing) line.setMarker(closed = checked) }
         direction.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -171,6 +225,16 @@ object MathVisualControls {
         return object : MathResponseControl {
             override val view: View = layout
             override fun answer(): MathAnswer = line.answer()
+            override fun hasDraftChanges(): Boolean = position.text.toString() != initialPositionText
+            override fun draftError(): String? = if (parse(position.text.toString()) == null) "Escribe una posición numérica válida en la recta." else null
+            override fun saveDraft(): JSONObject? = if (hasDraftChanges()) JSONObject().put("position", position.text.toString()) else null
+            override fun restoreDraft(state: JSONObject) {
+                if (!state.has("position")) return
+                synchronizing = true
+                try { position.setText(state.optString("position", position.text.toString())) }
+                finally { synchronizing = false }
+                onChange()
+            }
             override fun restore(answer: MathAnswer) {
                 if (answer is MathAnswer.NumberLine) { line.restore(answer.value, answer.closed, answer.direction); sync() }
             }
@@ -257,12 +321,12 @@ object MathVisualControls {
             }
         }
         preview.setBackgroundColor(Color.rgb(16, 17, 20))
-        layout.addView(preview, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 230)))
+        layout.addView(MathExpandableRepresentation.wrap(context, preview, accent, if (graph != null) 1f else 1.2f))
         val seekBars = mutableMapOf<String, SeekBar>()
         val labels = mutableMapOf<String, TextView>()
         var synchronizing = false
         fun updatePreview() {
-            parameters.forEach { p -> labels[p.id]?.text = "${p.name}: ${MathCartesianView.formatCoordinate(values[p.id] ?: p.min)}" }
+            parameters.forEach { p -> labels[p.id]?.let { MathTextRenderer.apply(it, "${p.name}: ${MathCartesianView.formatCoordinate(values[p.id] ?: p.min)}") } }
             if (graph != null) {
                 val slope = values[visual.optString("slopeParameter", parameters.firstOrNull()?.id ?: "")] ?: 1.0
                 val intercept = values[visual.optString("interceptParameter", parameters.getOrNull(1)?.id ?: "")] ?: 0.0
@@ -281,7 +345,7 @@ object MathVisualControls {
                 progressTintList = ColorStateList.valueOf(accent)
                 thumbTintList = ColorStateList.valueOf(accent)
                 contentDescription = parameter.name
-                tag = "math_interactive_surface"
+                tag = "math_gesture_owner"
             }
             bar.setOnTouchListener { view, event ->
                 if (event.actionMasked == MotionEvent.ACTION_DOWN) view.parent?.requestDisallowInterceptTouchEvent(true)
@@ -315,28 +379,40 @@ object MathVisualControls {
                 synchronizing = false
                 updatePreview()
             }
-            override fun setEditable(enabled: Boolean) { seekBars.values.forEach { it.isEnabled = enabled } }
+            override fun setEditable(enabled: Boolean) { seekBars.values.forEach { it.isEnabled = enabled; it.tag = if (enabled) "math_gesture_owner" else null } }
         }
     }
 
-    private fun column(context: Context): LinearLayout = LinearLayout(context).apply {
+    /** Keeps the lesson scale available to spinner rows that Android creates after initial layout. */
+    private class VisualColumn(context: Context) : LinearLayout(context), MathTextScaleAware {
+        var mathTextScale = 1f
+            private set
+        override fun scaleMathText(factor: Float) {
+            if (factor.isFinite() && factor > 0) mathTextScale *= factor
+        }
+    }
+
+    private fun column(context: Context): VisualColumn = VisualColumn(context).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(dp(context, 8), dp(context, 8), dp(context, 8), dp(context, 8))
+        setPadding(0, dp(context, 6), 0, dp(context, 6))
         setBackgroundColor(Color.rgb(28, 31, 36))
     }
     private fun label(context: Context, value: String): TextView = TextView(context).apply {
-        text = value
+        MathTextRenderer.apply(this, value)
         setTextColor(Color.WHITE)
         textSize = 15f
         setPadding(dp(context, 4), dp(context, 8), dp(context, 4), dp(context, 8))
     }
     private fun numberInput(context: Context, description: String, value: Double, accent: Int): EditText = EditText(context).apply {
-        inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or InputType.TYPE_NUMBER_FLAG_SIGNED
+        // Ask Android for numeric keys while permitting locale separators from the shortcut bar.
+        keyListener = android.text.method.TextKeyListener.getInstance()
         setSingleLine(true)
+        setRawInputType(InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or InputType.TYPE_NUMBER_FLAG_SIGNED)
         setTextColor(Color.WHITE)
         setHintTextColor(Color.LTGRAY)
         backgroundTintList = ColorStateList.valueOf(accent)
         contentDescription = description
+        tag = "math_gesture_owner"
         setText(MathCartesianView.formatCoordinate(value))
         textSize = 16f
         minimumHeight = dp(context, 48)

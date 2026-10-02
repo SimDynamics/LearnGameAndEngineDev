@@ -26,22 +26,16 @@ object MathRepresentationRenderer {
         val config = spec.optJSONObject("config") ?: spec
         val type = spec.optString("type", "text")
         return when (type) {
-            "text" -> text(context, config.optString("text", config.optString("value", "")))
-            "math_formula" -> text(context, config.optString("text", config.optString("formula", config.optString("value", ""))), true)
+            "text" -> text(context, config.optString("text", config.optString("value", "")), config.optString("mathMode", "auto"))
+            "math_formula" -> formula(context, config)
             "math_table" -> table(context, config)
-            "math_coordinate_graph", "coordinate_graph" -> MathCartesianView(context, config, accentColor).apply {
-                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, MathVisualControls.dp(context, 260))
-            }
-            "math_number_line" -> MathNumberLineView(context, config, accentColor).apply {
-                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, MathVisualControls.dp(context, 136))
-            }
-            "geometry_2d_diagram" -> if (config.has("points")) {
-                MathCartesianView(context, JSONObject(config.toString()).put("mode", config.optString("mode", "polygon")), accentColor).apply {
-                    layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, MathVisualControls.dp(context, 260))
-                }
-            } else GeometryDiagramView(context, config, accentColor, false)
-            "geometry_3d_diagram" -> GeometryDiagramView(context, config, accentColor, true)
-            "venn_diagram" -> VennDiagramView(context, config, accentColor)
+            "math_coordinate_graph", "coordinate_graph" -> MathExpandableRepresentation.wrap(context, MathCartesianView(context, config, accentColor), accentColor)
+            "math_number_line" -> MathExpandableRepresentation.wrap(context, MathNumberLineView(context, config, accentColor), accentColor, 2.4f)
+            "geometry_2d_diagram" -> MathExpandableRepresentation.wrap(context, if (config.has("points")) {
+                MathCartesianView(context, JSONObject(config.toString()).put("mode", config.optString("mode", "polygon")), accentColor)
+            } else GeometryDiagramView(context, config, accentColor, false), accentColor, 1.2f)
+            "geometry_3d_diagram" -> MathExpandableRepresentation.wrap(context, GeometryDiagramView(context, config, accentColor, true), accentColor, 1.2f)
+            "venn_diagram" -> MathExpandableRepresentation.wrap(context, VennDiagramView(context, config, accentColor), accentColor, 1.2f)
             "rich_answer_option" -> content(context, config.optJSONArray("content") ?: JSONArray(), accentColor)
             else -> text(context, "Representación no compatible: $type").apply { setTextColor(Color.rgb(255, 194, 132)) }
         }
@@ -55,12 +49,24 @@ object MathRepresentationRenderer {
         }
     }
 
-    private fun text(context: Context, value: String, formula: Boolean = false): TextView = TextView(context).apply {
-        text = value
-        textSize = if (formula) 22f else 16f
-        setTextColor(Color.WHITE)
-        setPadding(MathVisualControls.dp(context, 10), MathVisualControls.dp(context, 10), MathVisualControls.dp(context, 10), MathVisualControls.dp(context, 10))
-        setTextIsSelectable(true)
+    private fun text(context: Context, value: String, mathMode: String = "auto"): TextView = MathWidgetUi.text(context, value, mathMode = mathMode).apply {
+        setPadding(MathWidgetUi.dp(context, 6), MathWidgetUi.dp(context, 6), MathWidgetUi.dp(context, 6), MathWidgetUi.dp(context, 6))
+    }
+
+    private fun formula(context: Context, config: JSONObject): View {
+        val mode = config.optString("display", "block")
+        val source = config.optString("latex", config.optString("text", config.optString("formula", config.optString("value", ""))))
+        val content = text(context, source, if (mode == "inline") "inline" else "block").apply {
+            // A block is modestly larger than prose; both use the same lesson scale afterwards.
+            textSize = if (mode == "inline") 16f else 18f
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
+        return if (mode == "inline") content else HorizontalScrollView(context).apply {
+            tag = "math_gesture_owner"
+            isFillViewport = false
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            addView(content)
+        }
     }
 
     private fun table(context: Context, config: JSONObject): View {
@@ -82,7 +88,7 @@ object MathRepresentationRenderer {
         }
         if (headers != null) addRow(headers, true)
         for (index in 0 until rows.length()) rows.optJSONArray(index)?.let { addRow(it, false) }
-        return HorizontalScrollView(context).apply { addView(table) }
+        return HorizontalScrollView(context).apply { tag = "math_gesture_owner"; addView(table) }
     }
 }
 

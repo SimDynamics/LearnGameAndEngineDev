@@ -4,9 +4,11 @@ import android.content.ClipData
 import android.content.Context
 import android.view.DragEvent
 import android.view.View
-import android.widget.Button
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.learngraphicsprogramming.app.DirectDragTouch
+import org.json.JSONObject
 
 internal object MathDragControls {
     fun create(context: Context, spec: MathResponseSpec, accent: Int, onChange: () -> Unit): MathResponseControl? = when (spec.type) {
@@ -25,52 +27,47 @@ private class OrderingControl(context: Context, spec: MathResponseSpec, accent: 
     private val owner = Any()
     private val order = mutableListOf<String>()
     private val rows = linkedMapOf<String, LinearLayout>()
-    private val ranks = linkedMapOf<String, TextView>()
-    private val arrows = linkedMapOf<String, Pair<Button, Button>>()
+    private var nextTapPosition = 0
     private var editable = true
     init {
-        view.addView(MathWidgetUi.text(context, spec.config.optString("label", "Mantén pulsada una tarjeta y arrástrala, o usa ↑ y ↓.")))
+        view.addView(MathWidgetUi.text(context, spec.config.optString("label", "Arrastra una tarjeta directamente o toca las tarjetas en el orden deseado.")))
         val items = MathWidgetUi.objects(spec.config.optJSONArray("items"))
         require(items.isNotEmpty()) { "Faltan tarjetas para ordenar." }
         items.forEach { item ->
             val id = item.getString("id")
             require(id.isNotBlank() && id !in rows) { "ID de tarjeta vacío o repetido: $id" }
             order.add(id)
-            val card = MathWidgetUi.column(context).apply {
+            val card = MathTouchCard(context).apply {
+                tag = MathInputFocusOrder.GESTURE_OWNER_TAG
                 background = MathWidgetUi.background(context)
                 setPadding(MathWidgetUi.dp(context, 10), MathWidgetUi.dp(context, 6), MathWidgetUi.dp(context, 10), MathWidgetUi.dp(context, 6))
                 layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = MathWidgetUi.dp(context, 8) }
             }
-            val header = MathWidgetUi.row(context)
-            val rank = MathWidgetUi.text(context, "")
-            rank.layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
-            header.addView(rank)
-            val up = MathWidgetUi.button(context, "↑", accent)
-            val down = MathWidgetUi.button(context, "↓", accent)
-            up.contentDescription = "Subir tarjeta $id"
-            down.contentDescription = "Bajar tarjeta $id"
-            up.setOnClickListener { move(id, order.indexOf(id) - 1) }
-            down.setOnClickListener { move(id, order.indexOf(id) + 1) }
-            header.addView(up)
-            header.addView(down)
-            card.addView(header)
             card.addView(MathWidgetUi.rich(context, item, accent))
             card.isFocusable = true
-            card.setOnLongClickListener {
-                editable && card.startDragAndDrop(ClipData.newPlainText("math_order", id), View.DragShadowBuilder(card), MathDragToken(owner, id), 0)
+            card.contentDescription = "Ordenar tarjeta $id: ${item.optString("label", id)}"
+            card.setOnClickListener {
+                if (editable && nextTapPosition < order.size) {
+                    move(id, nextTapPosition, notify = false)
+                    nextTapPosition++
+                    onChange()
+                }
             }
+            DirectDragTouch.bind(card, { editable }, { target ->
+                target.startDragAndDrop(ClipData.newPlainText("math_order", id), View.DragShadowBuilder(target), MathDragToken(owner, id), 0)
+            })
             card.setOnDragListener { _, event ->
                 val token = event.localState as? MathDragToken
                 if (!editable || token?.owner !== owner) false
                 else when (event.action) {
                     DragEvent.ACTION_DRAG_STARTED -> true
+                    DragEvent.ACTION_DRAG_ENTERED -> { move(token.id, order.indexOf(id)); true }
                     DragEvent.ACTION_DROP -> { move(token.id, order.indexOf(id)); true }
+                    DragEvent.ACTION_DRAG_ENDED -> { rows[token.id]?.let(DirectDragTouch::finish); true }
                     else -> true
                 }
             }
             rows[id] = card
-            ranks[id] = rank
-            arrows[id] = up to down
         }
         val initial = spec.config.optJSONArray("initialOrder")
         if (initial != null) {
@@ -82,41 +79,48 @@ private class OrderingControl(context: Context, spec: MathResponseSpec, accent: 
         view.addView(list)
         refresh()
     }
-    private fun move(id: String, destination: Int) {
+    private fun move(id: String, destination: Int, notify: Boolean = true) {
         if (!editable || destination !in order.indices || order.indexOf(id) == destination) return
         order.remove(id)
         order.add(destination, id)
-        refresh()
-        onChange()
+        // Keep the other native drop targets attached while moving only the dragged View.
+        val row = rows.getValue(id)
+        list.removeView(row)
+        list.addView(row, destination)
+        if (notify) onChange()
     }
     private fun refresh() {
         // Reuse the same Views, preserving font scaling and accessibility focus.
         list.removeAllViews()
-        order.forEachIndexed { index, id ->
-            ranks.getValue(id).text = "${index + 1}."
-            arrows.getValue(id).first.isEnabled = editable && index > 0
-            arrows.getValue(id).second.isEnabled = editable && index < order.lastIndex
-            list.addView(rows.getValue(id))
-        }
+        order.forEach { id -> list.addView(rows.getValue(id)) }
     }
     override fun answer(): MathAnswer = MathAnswer.Order(order.toList())
     override fun restore(answer: MathAnswer) {
         if (answer is MathAnswer.Order && answer.ids.size == order.size && answer.ids.toSet() == order.toSet()) {
             order.clear()
             order.addAll(answer.ids)
+            nextTapPosition = 0
             refresh()
         }
     }
-    override fun setEditable(enabled: Boolean) { editable = enabled; refresh() }
+    override fun saveDraft(): JSONObject = JSONObject().put("nextTapPosition", nextTapPosition)
+    override fun restoreDraft(state: JSONObject) {
+        nextTapPosition = state.optInt("nextTapPosition", 0).coerceIn(0, order.size)
+    }
+    override fun setEditable(enabled: Boolean) {
+        editable = enabled
+        rows.values.forEach { it.isEnabled = enabled }
+    }
 }
 
 private class MatchingControl(context: Context, spec: MathResponseSpec, private val accent: Int, private val onChange: () -> Unit) : MathResponseControl {
     override val view = MathWidgetUi.column(context)
     private val owner = Any()
     private val sources = linkedMapOf<String, LinearLayout>()
-    private val sourceLabels = linkedMapOf<String, String>()
+    private val sourceList = MathWidgetUi.column(context)
     private val targets = linkedMapOf<String, LinearLayout>()
     private val assignedLabels = linkedMapOf<String, TextView>()
+    private val assignedSlots = linkedMapOf<String, LinearLayout>()
     private val pairs = linkedMapOf<String, String>()
     private var selectedSource: String? = null
     private var editable = true
@@ -125,38 +129,54 @@ private class MatchingControl(context: Context, spec: MathResponseSpec, private 
         val sourceItems = MathWidgetUi.objects(spec.config.optJSONArray("sources"))
         val targetItems = MathWidgetUi.objects(spec.config.optJSONArray("targets"))
         require(sourceItems.isNotEmpty() && targetItems.isNotEmpty()) { "Faltan fichas o destinos." }
+        view.addView(MathWidgetUi.text(context, "Fichas disponibles", true))
+        sourceList.minimumHeight = MathWidgetUi.dp(context, 48)
+        sourceList.contentDescription = "Fichas disponibles. Arrastra aquí una ficha asignada para liberarla."
+        sourceList.setOnDragListener { _, event ->
+            val token = event.localState as? MathDragToken
+            if (!editable || token?.owner !== owner) false
+            else when (event.action) {
+                DragEvent.ACTION_DRAG_STARTED -> true
+                DragEvent.ACTION_DROP -> { unassign(token.id); true }
+                else -> true
+            }
+        }
+        view.addView(sourceList)
         sourceItems.forEach { item ->
             val id = item.getString("id")
             require(id.isNotBlank() && id !in sources) { "ID de ficha vacío o repetido: $id" }
             val card = card(context)
+            card.tag = MathInputFocusOrder.GESTURE_OWNER_TAG
             card.contentDescription = "Seleccionar ficha ${item.optString("label", id)}"
-            sourceLabels[id] = item.optString("label", id)
             card.addView(MathWidgetUi.rich(context, item, accent))
             card.setOnClickListener {
                 if (editable) { selectedSource = if (selectedSource == id) null else id; refresh() }
             }
-            card.setOnLongClickListener {
-                editable && card.startDragAndDrop(ClipData.newPlainText("math_match", id), View.DragShadowBuilder(card), MathDragToken(owner, id), 0)
-            }
+            DirectDragTouch.bind(card, { editable }, { target ->
+                target.startDragAndDrop(ClipData.newPlainText("math_match", id), View.DragShadowBuilder(target), MathDragToken(owner, id), 0)
+            })
             sources[id] = card
-            view.addView(card)
+            sourceList.addView(card)
         }
         view.addView(MathWidgetUi.text(context, "Destinos", true))
         targetItems.forEach { item ->
             val id = item.getString("id")
             require(id.isNotBlank() && id !in targets) { "ID de destino vacío o repetido: $id" }
             val card = card(context)
+            card.contentDescription = "Destino ${item.optString("label", id)}"
             card.addView(MathWidgetUi.rich(context, item, accent))
             val assigned = MathWidgetUi.text(context, "Sin asignar")
             assigned.setTextColor(MathWidgetUi.muted)
             card.addView(assigned)
+            val slot = MathWidgetUi.column(context)
+            card.addView(slot)
             card.setOnClickListener {
                 if (editable) {
                     val source = selectedSource
                     if (source != null) assign(source, id)
                     else {
                         val removed = pairs.entries.firstOrNull { it.value == id }?.key
-                        if (removed != null) { pairs.remove(removed); refresh(); onChange() }
+                        if (removed != null) unassign(removed)
                     }
                 }
             }
@@ -166,16 +186,18 @@ private class MatchingControl(context: Context, spec: MathResponseSpec, private 
                 else when (event.action) {
                     DragEvent.ACTION_DRAG_STARTED -> true
                     DragEvent.ACTION_DROP -> { assign(token.id, id); true }
+                    DragEvent.ACTION_DRAG_ENDED -> { sources[token.id]?.let(DirectDragTouch::finish); true }
                     else -> true
                 }
             }
             targets[id] = card
             assignedLabels[id] = assigned
+            assignedSlots[id] = slot
             view.addView(card)
         }
         refresh()
     }
-    private fun card(context: Context) = MathWidgetUi.column(context).apply {
+    private fun card(context: Context) = MathTouchCard(context).apply {
         isFocusable = true
         background = MathWidgetUi.background(context)
         setPadding(MathWidgetUi.dp(context, 12), MathWidgetUi.dp(context, 6), MathWidgetUi.dp(context, 12), MathWidgetUi.dp(context, 6))
@@ -183,6 +205,7 @@ private class MatchingControl(context: Context, spec: MathResponseSpec, private 
     }
     private fun assign(source: String, target: String) {
         if (!editable || source !in sources || target !in targets) return
+        if (pairs[source] == target) { selectedSource = null; refresh(); return }
         val displaced = pairs.entries.firstOrNull { it.value == target }?.key
         if (displaced != null) pairs.remove(displaced)
         pairs[source] = target
@@ -190,11 +213,23 @@ private class MatchingControl(context: Context, spec: MathResponseSpec, private 
         refresh()
         onChange()
     }
+    private fun unassign(source: String) {
+        if (!editable || pairs.remove(source) == null) return
+        selectedSource = null
+        refresh()
+        onChange()
+    }
     private fun refresh() {
-        sources.forEach { (id, view) -> view.background = MathWidgetUi.background(view.context, selectedSource == id, accent) }
+        // A source has exactly one View. Move it into a destination; never leave a clone behind.
+        sources.values.forEach { (it.parent as? ViewGroup)?.removeView(it) }
+        sources.forEach { (id, source) ->
+            source.background = MathWidgetUi.background(source.context, selectedSource == id, accent)
+            val destination = pairs[id]?.let { assignedSlots[it] } ?: sourceList
+            destination.addView(source)
+        }
         targets.forEach { (id, view) ->
             val source = pairs.entries.firstOrNull { it.value == id }?.key
-            assignedLabels.getValue(id).text = source?.let { "Asignado: ${sourceLabels[it]}" } ?: "Sin asignar"
+            assignedLabels.getValue(id).visibility = if (source == null) View.VISIBLE else View.GONE
             view.background = MathWidgetUi.background(view.context, source != null, accent)
         }
     }
@@ -209,6 +244,7 @@ private class MatchingControl(context: Context, spec: MathResponseSpec, private 
     }
     override fun setEditable(enabled: Boolean) {
         editable = enabled
+        sourceList.isEnabled = enabled
         sources.values.forEach { it.isEnabled = enabled }
         targets.values.forEach { it.isEnabled = enabled }
         selectedSource = null

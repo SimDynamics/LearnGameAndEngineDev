@@ -19,7 +19,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import com.learngraphicsprogramming.app.LessonActivity
 import com.learngraphicsprogramming.app.LessonTextSizeSettingsRepository
 import com.learngraphicsprogramming.app.ProgressRepository
@@ -121,14 +121,14 @@ class MathPuzzleDeviceTest {
                     button(content, "Pantalla completa").performClick()
                 }
                 instrumentation.waitForIdleSync()
-                onView(withText("Salir de pantalla completa")).check(matches(isDisplayed()))
+                onView(withContentDescription("Salir de pantalla completa")).check(matches(isDisplayed()))
                 scenario.onActivity { activity ->
                     val exit = button(activity.window.decorView, "Salir de pantalla completa")
                     val bounds = Rect()
                     assertTrue("Salida fija visible en página ${page + 1}", exit.getGlobalVisibleRect(bounds))
                     assertTrue(bounds.width() > 0 && bounds.height() > 0)
                 }
-                if (page in listOf(0, 3, 9, 10, 13, 14, 15)) screenshot("sandbox-page-${page + 1}.png")
+                if (page in listOf(0, 2, 3, 5, 8, 9, 10, 13, 14, 15)) screenshot("sandbox-page-${page + 1}.png")
                 scenario.onActivity { activity ->
                     button(activity.window.decorView, "Salir de pantalla completa").performClick()
                     assertTrue(descendants(activity.findViewById<ViewGroup>(R.id.lessonContent)).any { it.tag == MathPuzzleRenderer.INTERACTION_TAG })
@@ -139,17 +139,17 @@ class MathPuzzleDeviceTest {
 
     @Test fun selectionOrderMatchingCoordinatesGeometryAndSlidersCanBeAnswered() {
         withPage(1) { content ->
-            descendants(content).filterIsInstance<RadioButton>().first { it.text == "y = 2x + 1" }.performClick()
+            descendants(content).filterIsInstance<RadioButton>().first { it.contentDescription == "y = 2x + 1" || it.text == "y = 2x + 1" }.performClick()
             assertPuzzleCorrect(content)
             button(content, "Reiniciar").performClick()
             assertTrue(descendants(content).filterIsInstance<RadioButton>().none { it.isChecked })
         }
         withPage(2) { content ->
-            descendants(content).filterIsInstance<CheckBox>().filter { it.text.toString() != "2/3" }.forEach { it.performClick() }
+            descendants(content).filterIsInstance<CheckBox>().filter { it.contentDescription != "2/3" && it.text.toString() != "2/3" }.forEach { it.performClick() }
             assertPuzzleCorrect(content)
         }
         withPage(7) { content ->
-            listOf("n3", "n0", "n0", "n2", "n2").forEach { id -> descendants(content).first { it.contentDescription == "Subir tarjeta $id" }.performClick() }
+            listOf("n3", "n0", "n2", "n5", "n8").forEach { id -> descendants(content).first { it.contentDescription?.startsWith("Ordenar tarjeta $id:") == true }.performClick() }
             descendants(content).filterIsInstance<EditText>().single().setText("2")
             assertPuzzleCorrect(content)
         }
@@ -249,7 +249,7 @@ class MathPuzzleDeviceTest {
     private fun descendants(view: View): List<View> = listOf(view) +
         if (view is ViewGroup) (0 until view.childCount).flatMap { descendants(view.getChildAt(it)) } else emptyList()
 
-    private fun button(view: View, label: String): Button = descendants(view).filterIsInstance<Button>().first { it.text.toString() == label }
+    private fun button(view: View, label: String): View = descendants(view).first { (it is Button && it.text.toString() == label) || it.contentDescription?.toString() == label }
 
     private fun screenshot(name: String) {
         instrumentation.waitForIdleSync()

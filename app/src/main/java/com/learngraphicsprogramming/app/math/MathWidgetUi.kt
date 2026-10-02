@@ -5,6 +5,7 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.RippleDrawable
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -38,13 +39,36 @@ internal object MathWidgetUi {
             setStroke(dp(context, 1), if (selected) accent else Color.rgb(67, 73, 84))
         }
 
-    fun text(context: Context, value: String, bold: Boolean = false): TextView = TextView(context).apply {
-        text = value
+    fun text(context: Context, value: String, bold: Boolean = false, mathMode: String = "auto"): TextView = MathTextView(context).apply {
+        setMathContent(value, mathMode)
         textSize = if (bold) 18f else 16f
         setTextColor(MathWidgetUi.foreground)
         if (bold) setTypeface(typeface, Typeface.BOLD)
         setPadding(0, dp(context, 6), 0, dp(context, 6))
         layoutParams = LinearLayout.LayoutParams(-1, -2)
+    }
+
+    /** The icon is visually compact; its touch/accessibility target remains 48 dp. */
+    fun icon(context: Context, drawableId: Int, description: String, enabledColor: Int = foreground): TextView = TextView(context).apply {
+        text = ""
+        contentDescription = description
+        gravity = Gravity.CENTER
+        minWidth = dp(context, 48)
+        minHeight = dp(context, 48)
+        isClickable = true
+        isFocusable = true
+        setPadding(dp(context, 12), dp(context, 12), dp(context, 12), dp(context, 12))
+        val drawable = context.getDrawable(drawableId)?.mutate()?.apply { setBounds(0, 0, dp(context, 24), dp(context, 24)) }
+        setCompoundDrawables(drawable, null, null, null)
+        compoundDrawableTintList = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_enabled), intArrayOf()),
+            intArrayOf(enabledColor, Color.rgb(95, 101, 113))
+        )
+        background = RippleDrawable(ColorStateList.valueOf(Color.argb(40, 235, 239, 245)), null, GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(Color.WHITE)
+        })
+        layoutParams = LinearLayout.LayoutParams(dp(context, 48), dp(context, 48))
     }
 
     fun button(context: Context, label: String, accent: Int): Button = Button(context).apply {
@@ -61,7 +85,7 @@ internal object MathWidgetUi {
     fun rich(context: Context, item: JSONObject, accent: Int): View {
         val result = column(context)
         val content = item.optJSONArray("content")
-        if (content == null) {
+        if (content == null || content.length() == 0) {
             result.addView(text(context, item.optString("label", item.optString("text", item.optString("id")))))
         } else {
             for (index in 0 until content.length()) {
@@ -71,6 +95,8 @@ internal object MathWidgetUi {
                 } else text(context, content.optString(index)))
             }
         }
+        val explanation = item.optString("explanation")
+        if (explanation.isNotBlank()) result.addView(text(context, explanation))
         fun allowCardTap(view: View) {
             if (view is TextView) view.setTextIsSelectable(false)
             if (view is ViewGroup) for (index in 0 until view.childCount) allowCardTap(view.getChildAt(index))

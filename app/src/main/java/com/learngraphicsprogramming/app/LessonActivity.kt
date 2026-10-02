@@ -40,6 +40,8 @@ import android.widget.SeekBar
 import com.learngraphicsprogramming.app.math.MathPuzzleRenderer
 import com.learngraphicsprogramming.app.math.MathPuzzleTypes
 import com.learngraphicsprogramming.app.math.MathTextScaleAware
+import com.learngraphicsprogramming.app.math.MathInputFocusOrder
+import com.learngraphicsprogramming.app.math.MathKeyboardHost
 
 class LessonActivity : AppCompatActivity() {
 
@@ -242,8 +244,15 @@ class LessonActivity : AppCompatActivity() {
 
     private lateinit var lessonJson: JSONObject
 
+    private var mathKeyboardHost: MathKeyboardHost? = null
+
     private var touchStartX = 0f
     private var touchStartY = 0f
+
+    override fun onDestroy() {
+        mathKeyboardHost?.close()
+        super.onDestroy()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -355,6 +364,10 @@ class LessonActivity : AppCompatActivity() {
             ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
 
         updateSwipeToggle()
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
+            lessonContent.setPadding(0, dp(24), 0, dp(16))
+            mathKeyboardHost = MathKeyboardHost.install(this)
+        }
 
         currentLessonId =
             intent.getStringExtra(
@@ -383,7 +396,8 @@ class LessonActivity : AppCompatActivity() {
 
         NavigationStateRepository.saveLesson(
             this,
-            currentLessonId
+            currentLessonId,
+            currentRouteId
         )
 
         textTopLesson.text =
@@ -457,7 +471,8 @@ class LessonActivity : AppCompatActivity() {
 
             NavigationStateRepository.saveLesson(
                 this,
-                currentLessonId
+                currentLessonId,
+                currentRouteId
             )
         }
     }
@@ -4990,146 +5005,16 @@ class LessonActivity : AppCompatActivity() {
             row.layoutParams =
                 params
 
-            var dragStarted =
-                false
-
-            var downX =
-                0f
-
-            var downY =
-                0f
-
-            val dragThreshold =
-                maxOf(
-                    dp(2),
-                    android.view.ViewConfiguration
-                        .get(this)
-                        .scaledTouchSlop / 2
-                )
-
-            row.setOnTouchListener { view, event ->
-
-                if (answeredCorrectly) {
-
-                    return@setOnTouchListener false
-                }
-
-                when (event.actionMasked) {
-
-                    MotionEvent.ACTION_DOWN -> {
-
-                        ignoreCurrentSwipe =
-                            true
-
-                        dragStarted =
-                            false
-
-                        downX =
-                            event.x
-
-                        downY =
-                            event.y
-
-                        view.parent
-                            ?.requestDisallowInterceptTouchEvent(
-                                true
-                            )
-
-                        true
-                    }
-
-                    MotionEvent.ACTION_MOVE -> {
-
-                        ignoreCurrentSwipe =
-                            true
-
-                        view.parent
-                            ?.requestDisallowInterceptTouchEvent(
-                                true
-                            )
-
-                        val distanceX =
-                            kotlin.math.abs(
-                                event.x - downX
-                            )
-
-                        val distanceY =
-                            kotlin.math.abs(
-                                event.y - downY
-                            )
-
-                        if (
-                            !dragStarted &&
-                            (
-                                    distanceX >= dragThreshold ||
-                                            distanceY >= dragThreshold
-                                    )
-                        ) {
-
-                            dragStarted =
-                                true
-
-                            val data =
-                                ClipData.newPlainText(
-                                    "code_order",
-                                    ""
-                                )
-
-                            view.alpha =
-                                0.55f
-
-                            view.startDragAndDrop(
-                                data,
-                                View.DragShadowBuilder(
-                                    view
-                                ),
-                                view,
-                                0
-                            )
-                        }
-
-                        true
-                    }
-
-                    MotionEvent.ACTION_UP -> {
-
-                        view.parent
-                            ?.requestDisallowInterceptTouchEvent(
-                                false
-                            )
-
-                        if (
-                            !dragStarted
-                        ) {
-
-                            view.performClick()
-                        }
-
-                        true
-                    }
-
-                    MotionEvent.ACTION_CANCEL -> {
-
-                        view.parent
-                            ?.requestDisallowInterceptTouchEvent(
-                                false
-                            )
-
-                        if (
-                            !dragStarted
-                        ) {
-
-                            view.alpha =
-                                1f
-                        }
-
-                        true
-                    }
-
-                    else ->
-                        true
-                }
-            }
+            DirectDragTouch.bind(
+                row,
+                canInteract = { !answeredCorrectly },
+                startDrag = { view ->
+                    view.alpha = 0.55f
+                    view.startDragAndDrop(ClipData.newPlainText("code_order", ""),
+                        View.DragShadowBuilder(view), view, 0)
+                },
+                onGestureClaim = { ignoreCurrentSwipe = true }
+            )
 
             row.setOnClickListener {
 
@@ -8309,7 +8194,7 @@ class LessonActivity : AppCompatActivity() {
             )
         }
 
-        when (event.action) {
+        when (event.actionMasked) {
 
             MotionEvent.ACTION_DOWN -> {
 
@@ -8328,12 +8213,9 @@ class LessonActivity : AppCompatActivity() {
                         android.R.id.content
                     )
 
-                ignoreCurrentSwipe =
-                    isTouchInsideActiveHorizontalScroll(
-                        root,
-                        event.rawX,
-                        event.rawY
-                    ) || isTouchInsideMathPuzzle(root, event.rawX, event.rawY)
+                ignoreCurrentSwipe = LessonGesturePolicy.isOwnedByControl(root, event.rawX, event.rawY) ||
+                    (currentRouteId != AppearanceSettingsRepository.ROUTE_MATH_PHYSICS &&
+                        isTouchInsideActiveHorizontalScroll(root, event.rawX, event.rawY))
 
                 touchStartX =
                     event.x
@@ -8342,6 +8224,17 @@ class LessonActivity : AppCompatActivity() {
                     event.y
             }
 
+            MotionEvent.ACTION_POINTER_DOWN -> ignoreCurrentSwipe = true
+            MotionEvent.ACTION_MOVE -> {
+                // Once a gesture commits to vertical reading, it cannot later turn into a page swipe.
+                val selectedText = currentFocus as? TextView
+                if (event.eventTime - event.downTime >= android.view.ViewConfiguration.getLongPressTimeout() &&
+                    selectedText?.isEnabled == true && selectedText.hasSelection()) ignoreCurrentSwipe = true
+                val dx = kotlin.math.abs(event.x - touchStartX)
+                val dy = kotlin.math.abs(event.y - touchStartY)
+                if (dy > dp(16) && dy > dx * 1.2f) ignoreCurrentSwipe = true
+            }
+            MotionEvent.ACTION_CANCEL -> ignoreCurrentSwipe = true
             MotionEvent.ACTION_UP -> {
 
                 if (ignoreCurrentSwipe) {
@@ -8368,10 +8261,15 @@ class LessonActivity : AppCompatActivity() {
                     kotlin.math.abs(differenceY)
 
                 if (
-                    horizontalDistance > 180 &&
+                    horizontalDistance > dp(64) &&
                     horizontalDistance > verticalDistance * 1.5f
                 ) {
 
+                    // Cancel the original child gesture before replacing the page.
+                    val cancel = MotionEvent.obtain(event)
+                    cancel.action = MotionEvent.ACTION_CANCEL
+                    super.dispatchTouchEvent(cancel)
+                    cancel.recycle()
                     if (differenceX < 0) {
 
                         // Deslizar hacia la izquierda:
@@ -8391,20 +8289,6 @@ class LessonActivity : AppCompatActivity() {
         }
 
         return super.dispatchTouchEvent(event)
-    }
-
-    private fun isTouchInsideMathPuzzle(view: View, rawX: Float, rawY: Float): Boolean {
-        if (view.visibility != View.VISIBLE) return false
-        if (view.tag == MathPuzzleRenderer.INTERACTION_TAG) {
-            val bounds = android.graphics.Rect()
-            return view.getGlobalVisibleRect(bounds) && bounds.contains(rawX.toInt(), rawY.toInt())
-        }
-        if (view is ViewGroup) {
-            for (index in 0 until view.childCount) {
-                if (isTouchInsideMathPuzzle(view.getChildAt(index), rawX, rawY)) return true
-            }
-        }
-        return false
     }
 
     private fun trySwipeNextPage() {
@@ -8516,6 +8400,13 @@ class LessonActivity : AppCompatActivity() {
         val currentUnitId =
             "${currentParts[0]}__${currentParts[1]}"
 
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
+            val next = NavigationRepository.getNextLessonInUnit(this, currentRouteId, currentLessonId)
+            if (next != null) openNextLesson(next)
+            else returnToContainingMathUnit(currentCourseId, currentUnitId)
+            return
+        }
+
         val settings =
             LearningFlowSettingsRepository
                 .getSettingsForCourse(
@@ -8600,6 +8491,20 @@ class LessonActivity : AppCompatActivity() {
         }
     }
 
+    private fun returnToContainingMathUnit(courseId: String, unitId: String) {
+        val unit = NavigationRepository.getContainingUnit(this, currentRouteId, currentLessonId)
+        NavigationStateRepository.saveUnit(this, courseId, unitId, currentRouteId)
+        val unitIntent = Intent(this, UnitActivity::class.java)
+            .putExtra("routeId", currentRouteId)
+            .putExtra("courseId", courseId)
+            .putExtra("unitId", unitId)
+            .putExtra("unitNumber", unit?.number ?: 1)
+            .putExtra("unitTitle", unit?.title.orEmpty())
+            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        startActivity(unitIntent)
+        finish()
+    }
+
     private fun getCurrentFlowSettings():
             LearningFlowSettings {
 
@@ -8625,6 +8530,12 @@ class LessonActivity : AppCompatActivity() {
 
         lessonNumber =
             nextLesson.lessonNumber
+        currentCourseId = nextLesson.courseId
+        intent.putExtra("routeId", currentRouteId)
+            .putExtra("courseId", nextLesson.courseId)
+            .putExtra("unitId", nextLesson.unitId)
+            .putExtra("lessonId", nextLesson.lessonId)
+            .putExtra("lessonNumber", nextLesson.lessonNumber)
 
         pageViewCache.clear()
 
@@ -8640,7 +8551,8 @@ class LessonActivity : AppCompatActivity() {
 
         NavigationStateRepository.saveLesson(
             this,
-            currentLessonId
+            currentLessonId,
+            currentRouteId
         )
 
         findViewById<TextView>(
@@ -8660,7 +8572,8 @@ class LessonActivity : AppCompatActivity() {
         NavigationStateRepository.saveUnit(
             this,
             nextLesson.courseId,
-            nextLesson.unitId
+            nextLesson.unitId,
+            currentRouteId
         )
 
         val intent =
@@ -8924,7 +8837,8 @@ class LessonActivity : AppCompatActivity() {
 
         NavigationStateRepository.saveCourse(
             this,
-            nextLesson.courseId
+            nextLesson.courseId,
+            currentRouteId
         )
 
         val intent =
@@ -8966,7 +8880,8 @@ class LessonActivity : AppCompatActivity() {
     private fun returnToCourses() {
 
         NavigationStateRepository.saveCourses(
-            this
+            this,
+            currentRouteId
         )
 
         val intent =
@@ -9556,6 +9471,9 @@ class LessonActivity : AppCompatActivity() {
          * salen antes de este punto, por lo que
          * nunca se escalan dos veces.
          */
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
+            MathInputFocusOrder.configure(lessonContent)
+        }
         applyLessonContentTextScale(
             lessonContent
         )
@@ -9627,7 +9545,7 @@ class LessonActivity : AppCompatActivity() {
             renderer.fullscreenButton.setOnClickListener {
                 if (exerciseFullscreenActive) {
                     closeExerciseFullscreenHost()
-                    renderer.fullscreenButton.text = "Pantalla completa"
+                    renderer.fullscreenButton.contentDescription = "Pantalla completa"
                 } else {
                     openExerciseFullscreenHost(usesKeyboard = true) { headerHost, bodyHost, _ ->
                         val scroll = ScrollView(this).apply {
@@ -9637,13 +9555,14 @@ class LessonActivity : AppCompatActivity() {
                         val content = LinearLayout(this).apply {
                             orientation = LinearLayout.VERTICAL
                             layoutParams = FrameLayout.LayoutParams(-1, -2)
-                            setPadding(dp(12), dp(12), dp(12), dp(12))
+                            setPadding(0, dp(6), 0, dp(6))
                         }
                         scroll.addView(content)
                         bodyHost.addView(scroll)
                         moveViewToExerciseFullscreen(renderer.view, content, LinearLayout.LayoutParams(-1, -2))
-                        moveViewToExerciseFullscreen(renderer.fullscreenButton, headerHost, FrameLayout.LayoutParams(-1, -2))
-                        renderer.fullscreenButton.text = "Salir de pantalla completa"
+                        MathInputFocusOrder.configure(renderer.view)
+                        moveViewToExerciseFullscreen(renderer.fullscreenButton, headerHost, FrameLayout.LayoutParams(dp(48), dp(48)).apply { gravity = Gravity.START })
+                        renderer.fullscreenButton.contentDescription = "Salir de pantalla completa"
                     }
                 }
             }
@@ -9736,129 +9655,11 @@ class LessonActivity : AppCompatActivity() {
         token.background =
             background
 
-        var downX =
-            0f
-
-        var downY =
-            0f
-
-        var dragging =
-            false
-
-        val dragThreshold =
-            maxOf(
-                dp(2),
-                android.view.ViewConfiguration
-                    .get(this)
-                    .scaledTouchSlop / 2
-            )
-
-        token.setOnTouchListener { view, event ->
-
-            when (
-                event.actionMasked
-            ) {
-
-                MotionEvent.ACTION_DOWN -> {
-
-                    ignoreCurrentSwipe =
-                        true
-
-                    downX =
-                        event.x
-
-                    downY =
-                        event.y
-
-                    dragging =
-                        false
-
-                    view.parent
-                        ?.requestDisallowInterceptTouchEvent(
-                            true
-                        )
-
-                    true
-                }
-
-                MotionEvent.ACTION_MOVE -> {
-
-                    val distanceX =
-                        kotlin.math.abs(
-                            event.x - downX
-                        )
-
-                    val distanceY =
-                        kotlin.math.abs(
-                            event.y - downY
-                        )
-
-                    if (
-                        !dragging &&
-                        (
-                                distanceX >= dragThreshold ||
-                                        distanceY >= dragThreshold
-                                )
-                    ) {
-
-                        dragging =
-                            true
-
-                        val data =
-                            ClipData.newPlainText(
-                                "code_fragment",
-                                text
-                            )
-
-                        view.alpha =
-                            0.55f
-
-                        view.startDragAndDrop(
-                            data,
-                            View.DragShadowBuilder(
-                                view
-                            ),
-                            view,
-                            0
-                        )
-                    }
-
-                    true
-                }
-
-                MotionEvent.ACTION_UP -> {
-
-                    view.parent
-                        ?.requestDisallowInterceptTouchEvent(
-                            false
-                        )
-
-                    if (
-                        !dragging
-                    ) {
-
-                        view.performClick()
-                    }
-
-                    true
-                }
-
-                MotionEvent.ACTION_CANCEL -> {
-
-                    view.parent
-                        ?.requestDisallowInterceptTouchEvent(
-                            false
-                        )
-
-                    view.alpha =
-                        1f
-
-                    true
-                }
-
-                else -> true
-            }
-        }
+        DirectDragTouch.bind(token, { token.isEnabled }, { target ->
+            target.alpha = 0.55f
+            target.startDragAndDrop(ClipData.newPlainText("code_fragment", text),
+                View.DragShadowBuilder(target), target, 0)
+        }, { ignoreCurrentSwipe = true })
 
         return token
     }
@@ -12616,6 +12417,9 @@ class LessonActivity : AppCompatActivity() {
         window.decorView.systemUiVisibility =
             exerciseFullscreenSystemUiVisibility
 
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
+            MathInputFocusOrder.configure(lessonContent)
+        }
         updateProgrammingKeyboardBarVisibility()
     }
 

@@ -5,8 +5,10 @@ import android.content.res.ColorStateList
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
+import android.view.Gravity
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.CheckBox
@@ -31,14 +33,20 @@ internal object MathInputControls {
         }
 }
 
-private fun input(context: Context, accent: Int, hint: String): EditText = EditText(context).apply {
+private fun input(context: Context, accent: Int, hint: String, keyboardMode: String): EditText = EditText(context).apply {
+    tag = MathInputFocusOrder.GESTURE_OWNER_TAG
     setTextColor(MathWidgetUi.foreground)
     setHintTextColor(MathWidgetUi.muted)
     this.hint = hint
     textSize = 18f
-    // Text IME preserves '/', signs and symbols; a decimal-only IME rejects fractions.
+    // Keep the unrestricted TextKeyListener for fractions/symbol shortcuts. Only tell the
+    // Android IME to show its signed decimal keypad for numeric/fraction contexts.
     inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
     isSingleLine = true
+    if (keyboardMode.uppercase() in setOf("NUMERIC", "FRACTION")) {
+        setRawInputType(InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_SIGNED or InputType.TYPE_NUMBER_FLAG_DECIMAL)
+    }
+    setSelectAllOnFocus(true)
     minWidth = MathWidgetUi.dp(context, 100)
     minHeight = MathWidgetUi.dp(context, 48)
     background = MathWidgetUi.background(context, true, accent)
@@ -54,9 +62,17 @@ private fun EditText.changed(callback: () -> Unit) {
     })
 }
 
+/** Newly created spinner rows inherit the lesson scale already applied to this control. */
+private class MathDropdown(context: Context) : Spinner(context), MathTextScaleAware {
+    var mathTextScale = 1f
+        private set
+    override fun scaleMathText(factor: Float) { mathTextScale *= factor }
+}
+
 private class TextControl(context: Context, spec: MathResponseSpec, accent: Int, onChange: () -> Unit) : MathResponseControl {
     override val view = MathWidgetUi.column(context)
-    private val edit = input(context, accent, spec.config.optString("hint", "Respuesta"))
+    private val keyboardMode = spec.config.optString("keyboard", if (spec.type == "math_expression_input") "ALGEBRA" else "NUMERIC")
+    private val edit = input(context, accent, spec.config.optString("hint", "Respuesta"), keyboardMode)
     private val keyboard = MathKeyboardView(context, accent)
     init {
         val label = spec.config.optString("label")
@@ -67,7 +83,7 @@ private class TextControl(context: Context, spec: MathResponseSpec, accent: Int,
         view.addView(edit)
         view.addView(keyboard)
         edit.setOnFocusChangeListener { _, focused ->
-            if (focused) keyboard.bind(edit, spec.config.optString("keyboard", if (spec.type == "math_expression_input") "ALGEBRA" else "NUMERIC"))
+            if (focused) keyboard.bind(edit, keyboardMode, spec.config.optJSONArray("keyboardSymbols"))
             else keyboard.hide()
         }
         edit.changed(onChange)
@@ -93,13 +109,15 @@ private class ChoiceControl(context: Context, spec: MathResponseSpec, private va
         options.forEach { option ->
             val id = option.getString("id")
             require(id.isNotBlank() && !buttons.containsKey(id)) { "ID de opción vacío o repetido: $id" }
-            val card = MathWidgetUi.column(context).apply {
+            val card = MathTouchCard(context).apply {
                 background = MathWidgetUi.background(context)
                 setPadding(MathWidgetUi.dp(context, 12), MathWidgetUi.dp(context, 6), MathWidgetUi.dp(context, 12), MathWidgetUi.dp(context, 8))
                 layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = MathWidgetUi.dp(context, 8) }
             }
             val button = if (multi) CheckBox(context) else RadioButton(context)
-            button.text = option.optString("label", "Opción ${buttons.size + 1}")
+            // The rich body owns the visible answer. Keep the label for accessibility only.
+            button.text = ""
+            button.contentDescription = option.optString("label", "Opción ${buttons.size + 1}")
             button.setTextColor(MathWidgetUi.foreground)
             button.buttonTintList = ColorStateList.valueOf(accent)
             button.minHeight = MathWidgetUi.dp(context, 48)
@@ -113,8 +131,10 @@ private class ChoiceControl(context: Context, spec: MathResponseSpec, private va
             }
             cards[id] = card
             buttons[id] = button
-            card.addView(button)
-            card.addView(MathWidgetUi.rich(context, option, accent))
+            val optionRow = MathWidgetUi.row(context).apply { isBaselineAligned = false }
+            optionRow.addView(button, LinearLayout.LayoutParams(MathWidgetUi.dp(context, 48), -2))
+            optionRow.addView(MathWidgetUi.rich(context, option, accent), LinearLayout.LayoutParams(0, -2, 1f))
+            card.addView(optionRow)
             card.isFocusable = true
             card.setOnClickListener { if (editable) button.isChecked = !button.isChecked }
             view.addView(card)
@@ -154,16 +174,25 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
         if (label.isNotBlank()) view.addView(MathWidgetUi.text(context, label))
         val definitions = MathWidgetUi.objects(spec.config.optJSONArray("fields"))
         require(definitions.isNotEmpty()) { "Faltan campos de respuesta." }
+        val inlineFields = spec.config.optJSONArray("segments") != null
         definitions.forEach { definition ->
             val id = definition.getString("id")
             require(id.isNotBlank() && !fields.containsKey(id)) { "ID de campo vacío o repetido: $id" }
-            val fieldColumn = MathWidgetUi.column(context)
+            val fieldColumn = MathWidgetUi.column(context).apply {
+                orientation = if (inlineFields) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_VERTICAL
+                isBaselineAligned = false
+            }
             val fieldLabel = definition.optString("label")
-            if (fieldLabel.isNotBlank()) fieldColumn.addView(MathWidgetUi.text(context, fieldLabel))
+            // An inline answer is one visual line; descriptions remain on the controls.
+            if (!inlineFields && fieldLabel.isNotBlank()) fieldColumn.addView(MathWidgetUi.text(context, fieldLabel))
+            fun addControl(control: View) {
+                fieldColumn.addView(control, LinearLayout.LayoutParams(if (inlineFields) -2 else -1, -2))
+            }
             val field = when (definition.optString("type", "numeric")) {
                 "fixed" -> {
                     val text = definition.getString("text")
-                    fieldColumn.addView(MathWidgetUi.text(context, text))
+                    addControl(MathWidgetUi.text(context, text).apply { contentDescription = fieldLabel.ifBlank { text } })
                     Field(fieldColumn, { text }, {}, false)
                 }
                 "dropdown" -> {
@@ -171,36 +200,54 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
                     require(options.isNotEmpty() && options.map { it.getString("id") }.toSet().size == options.size) { "Opciones inválidas en $id" }
                     val ids = listOf("") + options.map { it.getString("id") }
                     val labels = listOf("Selecciona…") + options.map { it.optString("label", it.getString("id")) }
-                    val dropdown = Spinner(context).apply {
+                    val dropdown = MathDropdown(context).apply {
+                        val owner = this
                         minimumHeight = MathWidgetUi.dp(context, 48)
                         contentDescription = fieldLabel.ifBlank { id }
                         adapter = object : ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, labels) {
                             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
-                                super.getView(position, convertView, parent).also { (it as TextView).setTextColor(MathWidgetUi.foreground) }
+                                super.getView(position, convertView, parent).also {
+                                    (it as TextView).apply {
+                                        setTextColor(MathWidgetUi.foreground)
+                                        gravity = Gravity.CENTER_VERTICAL
+                                        minimumHeight = MathWidgetUi.dp(context, 48)
+                                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f * owner.mathTextScale)
+                                        MathTextRenderer.apply(this, labels[position])
+                                    }
+                                }
+                            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View =
+                                super.getDropDownView(position, convertView, parent).also {
+                                    (it as TextView).apply {
+                                        gravity = Gravity.CENTER_VERTICAL
+                                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f * owner.mathTextScale)
+                                        MathTextRenderer.apply(this, labels[position])
+                                    }
+                                }
                         }.apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
                         onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) = onChange()
                             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
                         }
                     }
-                    fieldColumn.addView(dropdown)
+                    addControl(dropdown)
                     Field(fieldColumn, { ids[dropdown.selectedItemPosition.coerceAtLeast(0)] }, { dropdown.setSelection(ids.indexOf(it).coerceAtLeast(0)) }, true)
                 }
                 "numeric", "expression" -> {
-                    val edit = input(context, accent, definition.optString("hint", "Respuesta"))
+                    val keyboardMode = definition.optString("keyboard", if (definition.optString("type") == "expression") "ALGEBRA" else "NUMERIC")
+                    val edit = input(context, accent, definition.optString("hint", if (inlineFields) fieldLabel.ifBlank { "Respuesta" } else "Respuesta"), keyboardMode)
                     edit.contentDescription = fieldLabel.ifBlank { id }
                     edit.changed(onChange)
                     edit.setOnFocusChangeListener { _, focused ->
-                        if (focused) keyboard.bind(edit, definition.optString("keyboard", if (definition.optString("type") == "expression") "ALGEBRA" else "NUMERIC"))
+                        if (focused) keyboard.bind(edit, keyboardMode, definition.optJSONArray("keyboardSymbols") ?: spec.config.optJSONArray("keyboardSymbols"))
                         else keyboard.hide()
                     }
-                    fieldColumn.addView(edit)
+                    addControl(edit)
                     Field(fieldColumn, { edit.text.toString() }, { edit.setText(it) }, true)
                 }
                 else -> throw IllegalArgumentException("Tipo de campo desconocido en $id")
             }
             val unit = definition.optString("unit")
-            if (unit.isNotBlank()) fieldColumn.addView(MathWidgetUi.text(context, unit))
+            if (unit.isNotBlank()) addControl(MathWidgetUi.text(context, unit))
             fields[id] = field
         }
 
@@ -213,14 +260,19 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
         val rows = spec.config.optJSONArray("rows")
         when {
             segments != null -> {
-                val line = MathWidgetUi.row(context)
+                val line = MathWidgetUi.row(context).apply { isBaselineAligned = false }
                 for (index in 0 until segments.length()) {
                     val segment = segments.getJSONObject(index)
                     val child = if (segment.has("field")) fieldView(segment.getString("field")) else MathWidgetUi.text(context, segment.getString("text"))
-                    child.layoutParams = LinearLayout.LayoutParams(-2, -2).apply { marginEnd = MathWidgetUi.dp(context, 8) }
+                    child.layoutParams = LinearLayout.LayoutParams(-2, -2).apply {
+                        gravity = Gravity.CENTER_VERTICAL
+                        marginEnd = MathWidgetUi.dp(context, 8)
+                    }
                     line.addView(child)
                 }
-                view.addView(HorizontalScrollView(context).apply { addView(line) })
+                view.addView(HorizontalScrollView(context).apply {
+                    addView(line)
+                })
             }
             spec.config.optString("layout") == "table" && rows != null -> {
                 val table = MathWidgetUi.column(context)
@@ -231,7 +283,7 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
                     table.addView(header)
                 }
                 for (rowIndex in 0 until rows.length()) {
-                    val row = MathWidgetUi.row(context)
+                    val row = MathWidgetUi.row(context).apply { isBaselineAligned = false }
                     val cells = rows.getJSONArray(rowIndex)
                     for (index in 0 until cells.length()) {
                         val cell = cells.optJSONObject(index)
@@ -241,7 +293,9 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
                     }
                     table.addView(row)
                 }
-                view.addView(HorizontalScrollView(context).apply { addView(table) })
+                view.addView(HorizontalScrollView(context).apply {
+                    addView(table)
+                })
             }
             else -> fields.forEach { (id, _) -> view.addView(fieldView(id)) }
         }

@@ -3,10 +3,12 @@ package com.learngraphicsprogramming.app.math
 import android.content.Context
 import android.graphics.Color
 import android.view.View
+import android.view.Gravity
 import android.widget.LinearLayout
 import com.learngraphicsprogramming.app.AppearanceSettingsRepository
 import com.learngraphicsprogramming.app.AppearanceUi
 import com.learngraphicsprogramming.app.ProgressRepository
+import com.learngraphicsprogramming.app.R
 import org.json.JSONObject
 
 /** One host for any combination of representations, tools and independent responses. */
@@ -21,9 +23,9 @@ class MathPuzzleRenderer(
 ) {
     val view = MathWidgetUi.column(context)
     private val accent = AppearanceSettingsRepository.getRouteAccentColor(context, routeId)
-    val fullscreenButton = MathWidgetUi.button(context, "Pantalla completa", accent)
+    val fullscreenButton = MathWidgetUi.icon(context, R.drawable.ic_code_fullscreen, "Pantalla completa")
     private val checkButton = MathWidgetUi.button(context, "Comprobar", accent)
-    private val resetButton = MathWidgetUi.button(context, "Reiniciar", accent)
+    private val resetButton = MathWidgetUi.icon(context, R.drawable.ic_code_reset, "Reiniciar", accent)
     private val feedback = MathWidgetUi.text(context, "")
     private val spec = MathPuzzleParser.parse(block)
     private val fingerprint = MathPuzzleState.fingerprint(block)
@@ -36,14 +38,13 @@ class MathPuzzleRenderer(
         private set
 
     init {
-        // The activity's swipe detector recognizes this container before children handle touches.
+        // Identifies math cards for layout/tests. Gesture ownership belongs to interactive children.
         view.tag = INTERACTION_TAG
         view.background = MathWidgetUi.background(context)
-        view.setPadding(MathWidgetUi.dp(context, 14), MathWidgetUi.dp(context, 10), MathWidgetUi.dp(context, 14), MathWidgetUi.dp(context, 14))
+        view.setPadding(MathWidgetUi.dp(context, 6), MathWidgetUi.dp(context, 8), MathWidgetUi.dp(context, 6), MathWidgetUi.dp(context, 12))
         view.layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = MathWidgetUi.dp(context, 24) }
         val toolbar = MathWidgetUi.row(context)
-        fullscreenButton.layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
-        resetButton.layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+        toolbar.gravity = Gravity.END or Gravity.CENTER_VERTICAL
         toolbar.addView(fullscreenButton)
         toolbar.addView(resetButton)
         view.addView(toolbar)
@@ -80,6 +81,7 @@ class MathPuzzleRenderer(
         view.addView(checkButton.apply { layoutParams = LinearLayout.LayoutParams(-1, -2) })
         feedback.accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
         view.addView(feedback)
+        MathInputFocusOrder.configure(view)
 
         val saved = ProgressRepository.getExerciseState(context, lessonId, pageIndex, blockIndex)
             ?.takeIf { it.optString("contentFingerprint") == fingerprint }
@@ -87,44 +89,58 @@ class MathPuzzleRenderer(
         responses.forEach { (id, control) -> savedAnswers?.optJSONObject(id)?.let { MathAnswerJson.decode(it) }?.let(control::restore) }
         val savedTools = saved?.optJSONObject("tools")
         tools.forEach { (id, control) -> savedTools?.optJSONObject(id)?.let { MathAnswerJson.decode(it) }?.let(control::restore) }
+        // Restore raw visual-editor text after its normalized answer; an incomplete '-' must not
+        // disappear or be checked as the previous valid point/endpoint on activity recreation.
+        val responseDrafts = saved?.optJSONObject("responseDrafts")
+        responses.forEach { (id, control) -> responseDrafts?.optJSONObject(id)?.let(control::restoreDraft) }
+        val toolDrafts = saved?.optJSONObject("toolDrafts")
+        tools.forEach { (id, control) -> toolDrafts?.optJSONObject(id)?.let(control::restoreDraft) }
         // Never trust an old 'correct' flag without revalidating the current content and controls.
         isCorrect = saved?.optBoolean("correct", false) == true && spec.responses.all {
-            savedAnswers?.has(it.id) == true && MathValidators.validate(it.validator, responses.getValue(it.id).answer()).correct
+            val control = responses.getValue(it.id)
+            savedAnswers?.has(it.id) == true && control.draftError() == null && MathValidators.validate(it.validator, control.answer()).correct
         }
         if (isCorrect) showCorrect()
         initializing = false
         checkButton.setOnClickListener { check() }
         resetButton.setOnClickListener { reset() }
         AppearanceUi.applyRouteToViewTree(context, view, routeId)
+        updateActionState()
         save()
     }
 
     private fun changed() {
         if (initializing || isCorrect) return
-        feedback.text = ""
+        MathTextRenderer.apply(feedback, "")
+        updateActionState()
         save()
     }
 
     private fun check() {
-        if (isCorrect) return
-        val results = spec.responses.map { it to MathValidators.validate(it.validator, responses.getValue(it.id).answer()) }
+        if (isCorrect || !hasResponseChanges()) return
+        val results = spec.responses.map { response ->
+            val control = responses.getValue(response.id)
+            response to (control.draftError()?.let { MathValidationResult(false, it) }
+                ?: MathValidators.validate(response.validator, control.answer()))
+        }
         if (results.all { it.second.correct }) {
             isCorrect = true
             showCorrect()
+            updateActionState()
             save()
             onCompletionChanged(true)
         } else {
             val details = results.filterNot { it.second.correct }.map { (response, result) ->
                 "${response.config.optString("label", response.id)}: ${result.message}"
             }
-            feedback.text = (listOf("✗ ${spec.incorrectFeedback}") + details).filter { it.isNotBlank() }.joinToString("\n")
+            MathTextRenderer.apply(feedback, (listOf("✗ ${spec.incorrectFeedback}") + details).filter { it.isNotBlank() }.joinToString("\n"))
             feedback.setTextColor(Color.rgb(240, 166, 166))
             save()
         }
     }
 
     private fun showCorrect() {
-        feedback.text = "✓ Correcto" + spec.correctFeedback.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()
+        MathTextRenderer.apply(feedback, "✓ Correcto" + spec.correctFeedback.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty())
         feedback.setTextColor(Color.rgb(180, 220, 190))
         checkButton.text = "Correcto ✓"
         checkButton.isEnabled = false
@@ -138,12 +154,25 @@ class MathPuzzleRenderer(
         isCorrect = false
         responses.forEach { (id, control) -> control.setEditable(true); control.restore(initialResponses.getValue(id)) }
         tools.forEach { (id, control) -> control.setEditable(true); control.restore(initialTools.getValue(id)) }
-        checkButton.isEnabled = true
         checkButton.text = "Comprobar"
-        feedback.text = ""
+        MathTextRenderer.apply(feedback, "")
         initializing = false
+        updateActionState()
         save()
         if (wasCorrect) onCompletionChanged(false)
+    }
+
+    /** Compare complete typed answers, including non-text controls; undoing an edit also restores
+     * the initial disabled state. Tool changes can be reset but do not enable answer checking. */
+    private fun hasResponseChanges(): Boolean = responses.any { (id, control) ->
+        control.answer() != initialResponses[id] || control.hasDraftChanges()
+    }
+
+    private fun updateActionState() {
+        checkButton.isEnabled = !isCorrect && hasResponseChanges()
+        resetButton.isEnabled = isCorrect || hasResponseChanges() || tools.any { (id, control) ->
+            control.answer() != initialTools[id] || control.hasDraftChanges()
+        }
     }
 
     private fun save() {
@@ -154,6 +183,12 @@ class MathPuzzleRenderer(
         val auxiliary = JSONObject()
         tools.forEach { (id, control) -> auxiliary.put(id, MathAnswerJson.encode(control.answer())) }
         state.put("responses", answers).put("tools", auxiliary)
+        val responseDrafts = JSONObject()
+        responses.forEach { (id, control) -> control.saveDraft()?.let { responseDrafts.put(id, it) } }
+        val toolDrafts = JSONObject()
+        tools.forEach { (id, control) -> control.saveDraft()?.let { toolDrafts.put(id, it) } }
+        if (responseDrafts.length() > 0) state.put("responseDrafts", responseDrafts)
+        if (toolDrafts.length() > 0) state.put("toolDrafts", toolDrafts)
         ProgressRepository.saveExerciseState(context, routeId, lessonId, pageIndex, blockIndex, state)
     }
 

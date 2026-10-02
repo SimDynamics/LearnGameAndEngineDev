@@ -10,7 +10,9 @@ data class NavigationState(
 
     val unitId: String?,
 
-    val lessonId: String?
+    val lessonId: String?,
+
+    val routeId: String = AppearanceSettingsRepository.ROUTE_PROGRAMMING
 )
 
 object NavigationStateRepository {
@@ -35,6 +37,8 @@ object NavigationStateRepository {
 
     private const val KEY_SCREEN =
         "last_screen"
+
+    private const val KEY_ROUTE_ID = "last_route_id"
 
     private const val KEY_COURSE_ID =
         "last_course_id"
@@ -64,11 +68,13 @@ object NavigationStateRepository {
             .remove(
                 KEY_LESSON_ID
             )
+            .remove(KEY_ROUTE_ID)
             .apply()
     }
 
     fun saveCourses(
-        context: Context
+        context: Context,
+        routeId: String = AppearanceSettingsRepository.ROUTE_PROGRAMMING
     ) {
 
         preferences(context)
@@ -77,6 +83,7 @@ object NavigationStateRepository {
                 KEY_SCREEN,
                 SCREEN_COURSES
             )
+            .putString(KEY_ROUTE_ID, routeId)
             .remove(
                 KEY_COURSE_ID
             )
@@ -91,7 +98,8 @@ object NavigationStateRepository {
 
     fun saveCourse(
         context: Context,
-        courseId: String
+        courseId: String,
+        routeId: String = AppearanceSettingsRepository.ROUTE_PROGRAMMING
     ) {
 
         preferences(context)
@@ -100,6 +108,7 @@ object NavigationStateRepository {
                 KEY_SCREEN,
                 SCREEN_COURSE
             )
+            .putString(KEY_ROUTE_ID, routeId)
             .putString(
                 KEY_COURSE_ID,
                 courseId
@@ -116,7 +125,8 @@ object NavigationStateRepository {
     fun saveUnit(
         context: Context,
         courseId: String,
-        unitId: String
+        unitId: String,
+        routeId: String = AppearanceSettingsRepository.ROUTE_PROGRAMMING
     ) {
 
         preferences(context)
@@ -125,6 +135,7 @@ object NavigationStateRepository {
                 KEY_SCREEN,
                 SCREEN_UNIT
             )
+            .putString(KEY_ROUTE_ID, routeId)
             .putString(
                 KEY_COURSE_ID,
                 courseId
@@ -141,7 +152,8 @@ object NavigationStateRepository {
 
     fun saveLesson(
         context: Context,
-        lessonId: String
+        lessonId: String,
+        routeId: String = AppearanceSettingsRepository.ROUTE_PROGRAMMING
     ) {
 
         val parts =
@@ -157,6 +169,7 @@ object NavigationStateRepository {
                     KEY_SCREEN,
                     SCREEN_LESSON
                 )
+                .putString(KEY_ROUTE_ID, routeId)
                 .putString(
                     KEY_LESSON_ID,
                     lessonId
@@ -189,6 +202,8 @@ object NavigationStateRepository {
                 KEY_UNIT_ID,
                 unitId
             )
+        } else {
+            editor.remove(KEY_COURSE_ID).remove(KEY_UNIT_ID)
         }
 
         editor.apply()
@@ -227,7 +242,15 @@ object NavigationStateRepository {
                 preferences.getString(
                     KEY_LESSON_ID,
                     null
-                )
+                ),
+
+            // Migrate older math state whose IDs already identify the route. Old Programming
+            // states and the previous two-argument APIs retain their existing default.
+            routeId = preferences.getString(KEY_ROUTE_ID, null)
+                ?: if ((preferences.getString(KEY_COURSE_ID, null)
+                        ?: preferences.getString(KEY_LESSON_ID, "")).orEmpty().startsWith("math_course_"))
+                    AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
+                else AppearanceSettingsRepository.ROUTE_PROGRAMMING
         )
     }
 

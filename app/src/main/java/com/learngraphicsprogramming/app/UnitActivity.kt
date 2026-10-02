@@ -166,6 +166,8 @@ class UnitActivity : AppCompatActivity() {
                     courseId
                 )
 
+                intent.putExtra("unitId", unitId)
+
                 intent.putExtra(
                     "lessonId",
                     lesson.id
@@ -214,7 +216,8 @@ class UnitActivity : AppCompatActivity() {
         NavigationStateRepository.saveUnit(
             this,
             courseId,
-            unitId
+            unitId,
+            routeId
         )
 
         val recyclerLessons =

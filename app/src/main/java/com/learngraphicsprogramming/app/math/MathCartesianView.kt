@@ -36,6 +36,9 @@ class MathCartesianView(
     private val xMax = finite(bounds, "xMax", 5.0).let { if (it > xMin) it else xMin + 10 }
     private val yMin = finite(bounds, "yMin", -5.0)
     private val yMax = finite(bounds, "yMax", 5.0).let { if (it > yMin) it else yMin + 10 }
+    val coordinateAspectRatio: Float = ((xMax - xMin) / (yMax - yMin)).toFloat().let {
+        if (it.isFinite() && it > 0) it else 1f
+    }
     val snap: Double = finite(config, "snap", 1.0).coerceAtLeast(0.0)
     private val gridStep = finite(config, "gridStep", 1.0).let {
         max(if (it > 0) it else 1.0, max(xMax - xMin, yMax - yMin) / 100.0)
@@ -46,7 +49,7 @@ class MathCartesianView(
     private var movingIndex = -1
     private var textScale = 1f
     var editable: Boolean = interactive
-        set(value) { field = value; movingIndex = -1; invalidate() }
+        set(value) { field = value; tag = if (value) "math_gesture_owner" else null; movingIndex = -1; invalidate() }
     var onPointsChanged: (() -> Unit)? = null
 
     override fun scaleMathText(factor: Float) {
@@ -73,6 +76,7 @@ class MathCartesianView(
             defaults.forEach { mutablePoints += bounded(it); draggable += true }
         }
         setBackgroundColor(Color.rgb(16, 17, 20))
+        tag = if (interactive) "math_gesture_owner" else null
         isFocusable = true
         updateDescription()
     }
@@ -112,8 +116,19 @@ class MathCartesianView(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        plot.set(44 * density, 20 * density, width - 20 * density, height - 36 * density)
+        paint.textSize = 11 * density * textScale
+        val fontHeight = paint.fontMetrics.bottom - paint.fontMetrics.top
+        val widestY = listOf(yMin, yMax, 0.0).maxOf { paint.measureText(formatCoordinate(it)) }
+        val edgeX = max(paint.measureText(formatCoordinate(xMin)), paint.measureText(formatCoordinate(xMax))) / 2f
+        plot.set(max(widestY + 8 * density, edgeX + 4 * density), max(fontHeight, 16 * density),
+            width - max(edgeX + 4 * density, 18 * density), height - max(fontHeight + 12 * density, 30 * density))
         if (plot.width() <= 0 || plot.height() <= 0) return
+        // Equal coordinate units keep geometric figures and graphs proportional in either orientation.
+        val usableWidth = kotlin.math.min(plot.width(), plot.height() * coordinateAspectRatio)
+        val usableHeight = usableWidth / coordinateAspectRatio
+        val centerX = plot.centerX()
+        val centerY = plot.centerY()
+        plot.set(centerX - usableWidth / 2, centerY - usableHeight / 2, centerX + usableWidth / 2, centerY + usableHeight / 2)
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = density
         paint.color = Color.rgb(51, 56, 65)
@@ -135,19 +150,19 @@ class MathCartesianView(
         var labelCount = 0
         while (x <= xMax && labelCount++ <= 15) {
             paint.textAlign = Paint.Align.CENTER
-            canvas.drawText(formatCoordinate(x), px(x), plot.bottom + 16 * density, paint)
+            canvas.drawText(formatCoordinate(x), px(x), plot.bottom - paint.fontMetrics.top + 4 * density, paint)
             x += labelStep
         }
         y = ceil(yMin / labelStep) * labelStep
         labelCount = 0
         while (y <= yMax && labelCount++ <= 15) {
             paint.textAlign = Paint.Align.RIGHT
-            canvas.drawText(formatCoordinate(y), plot.left - 6 * density, py(y) + 4 * density, paint)
+            canvas.drawText(formatCoordinate(y), plot.left - 6 * density, py(y) - (paint.fontMetrics.top + paint.fontMetrics.bottom) / 2, paint)
             y += labelStep
         }
         paint.textAlign = Paint.Align.LEFT
-        canvas.drawText("x", plot.right + 5 * density, plot.bottom + 16 * density, paint)
-        canvas.drawText("y", plot.left - 4 * density, plot.top - 6 * density, paint)
+        canvas.drawText("x", plot.right + 5 * density, plot.bottom - paint.fontMetrics.top + 4 * density, paint)
+        canvas.drawText("y", plot.left - 4 * density, max(-paint.fontMetrics.top, plot.top - 6 * density), paint)
         canvas.save()
         canvas.clipRect(plot)
         paint.color = accentColor
@@ -177,7 +192,13 @@ class MathCartesianView(
             canvas.drawCircle(px(point.x), py(point.y), 6 * density, paint)
             if (showLabels) {
                 paint.color = Color.WHITE
-                canvas.drawText("${index + 1}: (${formatCoordinate(point.x)}, ${formatCoordinate(point.y)})", px(point.x) + 9 * density, py(point.y) - 9 * density, paint)
+                val prefix = if (mutablePoints.size > 1) "${pointLabel(index)}: " else ""
+                val label = "$prefix(${formatCoordinate(point.x)}, ${formatCoordinate(point.y)})"
+                val labelWidth = paint.measureText(label)
+                val preferredX = if (px(point.x) + 9 * density + labelWidth <= plot.right) px(point.x) + 9 * density else px(point.x) - 9 * density - labelWidth
+                val labelX = preferredX.coerceIn(plot.left + 2 * density, max(plot.left + 2 * density, plot.right - labelWidth - 2 * density))
+                val labelY = (py(point.y) - 9 * density).coerceIn(plot.top - paint.fontMetrics.top, plot.bottom - paint.fontMetrics.bottom)
+                canvas.drawText(label, labelX, labelY, paint)
             }
         }
         canvas.restore()
@@ -245,6 +266,7 @@ class MathCartesianView(
     }
 
     companion object {
+        internal fun pointLabel(index: Int): String = if (index < 26) ('A'.code + index).toChar().toString() else "P${index + 1}"
         internal fun finite(json: JSONObject, key: String, fallback: Double): Double = json.optDouble(key, fallback).let { if (it.isFinite()) it else fallback }
         internal fun formatCoordinate(value: Double): String {
             val clean = if (abs(value) < 1e-9) 0.0 else value

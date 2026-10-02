@@ -3,6 +3,18 @@
 Fecha: 2026-10-01. Infraestructura inicial para la ruta `math_physics`.
 Los ejemplos del sandbox son originales y sirven para desarrollo; no sustituyen un curso curricular.
 
+## Lecciones provisionales para QA de navegación
+
+Los cursos 1, 2 y 3 tienen tres unidades disponibles y tres lecciones de prueba por unidad: **27 lecciones estándar**, más el sandbox original de 16 páginas/21 puzzles en Curso 1 / Unidad 1. Cada nueva lección se marca como **Contenido provisional de desarrollo** y contiene un ejemplo mínimo original. Los títulos de cursos/unidades conservan la estructura prevista; estos ejemplos no desarrollan aún su temario curricular.
+
+Curso 1 / Unidad 1 conserva `numbers_operations` y añade contenido real a `fractions_decimals` y `powers_roots`. Las ocho unidades restantes usan IDs `qa_step_01`, `qa_step_02` y `qa_step_03`. La disponibilidad sigue el mecanismo existente de assets locales, sin una lista matemática limitada al Curso 1.
+
+La finalización matemática busca la siguiente lección válida **en la misma unidad** mediante `NavigationRepository.getNextLessonInUnit`. Una cadena recorre Lección 1 → 2 → 3 → unidad contenedora; no salta automáticamente a otra unidad o curso. El sandbox sigue disponible desde su tarjeta, pero su entrada en el JSON de la unidad declara `automaticContinuation: false`: permite ensayar la cadena de tres lecciones sin entrar involuntariamente en sus 16 páginas. Esta metadata opcional excluye esa lección de la continuación automática y no modifica su contenido ni su progreso.
+
+`NavigationStateRepository` guarda también `routeId` junto a pantalla/curso/unidad/lección; sus APIs anteriores mantienen el valor predeterminado de Programming. Un estado anterior sin routeId se migra a Matemáticas si sus IDs empiezan por `math_course_`. `MainActivity` reconstruye la pila de la ruta persistida usando los mismos repositorios y evita guardar la pantalla principal mientras está abriendo el destino. La página de la lección continúa perteneciendo a `ProgressRepository`; no se crea una segunda clave para duplicar ese estado.
+
+Las pruebas de una nueva instancia de MainActivity verifican esta reconstrucción con preferencias persistidas. Una prueba de force-stop/reapertura real y la revisión del botón Atrás en dispositivo siguen siendo parte de QA manual; no equivalen a recrear una Activity mediante instrumentación.
+
 ## Abrir el sandbox
 
 En la app: **Matemáticas y Física → Curso 1: Fundamentos aritméticos, álgebra elemental y precálculo → Unidad 1: Fundamentos aritméticos → Lección 4: Sandbox de desarrollo: puzzles matemáticos**.
@@ -109,6 +121,8 @@ Los nombres P01–P13 también sirven como aliases de bloque para contenido senc
 ```
 
 Las opciones se identifican por `id`, no por posición ni por su texto. Una opción puede combinar fórmula, texto, mini tabla o gráfico.
+
+Si `content` contiene la representación completa, `label` se conserva para accesibilidad y no se repite visualmente. Sin contenido enriquecido se muestra `label` una sola vez. Para agregar una explicación sin duplicar la representación, usar `explanation` únicamente en las opciones que la necesitan.
 
 ### Campos, fragmentos y celdas
 
@@ -275,12 +289,18 @@ Una herramienta puede reutilizar una gráfica, un constructor de desigualdad o s
 
 Los tipos interactivos iniciales de herramienta son `math_coordinate_graph`, `math_number_line` en modo `build_inequality` y `math_slider_interaction`. Se pueden colocar sus propiedades en un objeto `config`. Sin `interactive: true`, la herramienta se muestra como una representación de lectura. El reinicio restaura tanto respuestas como herramientas al estado inicial; tras acertar se bloquean las interacciones del puzzle.
 
+`Comprobar` comienza gris/deshabilitado y se habilita cuando una respuesta actual difiere de su estado inicial; la comparación incluye texto, selección, dropdown, orden, matching, sliders, recta, gráfica y geometría. Deshacer todos los cambios devuelve el botón al estado inicial. Cambiar una herramienta auxiliar habilita `Reiniciar`, pero no `Comprobar`: las herramientas no son respuestas. Restaurar progreso compara las respuestas restauradas con el estado inicial; un puzzle ya correcto sigue bloqueado y puede reiniciarse.
+
+Los editores de coordenadas y del extremo de la recta pueden contener texto parcial, por ejemplo `-`, mientras el modelo visual conserva su último valor válido. Ese borrador también cuenta como modificación y puede reiniciarse. `Comprobar` rechaza un borrador inválido con feedback; nunca valida silenciosamente el valor anterior. La restauración repone primero el modelo y después el texto escrito, sin perder ese borrador.
+
+Para implementar controles que separen edición textual/modelo, `MathResponseControl` proporciona los hooks opcionales `hasDraftChanges()`, `draftError()`, `saveDraft()` y `restoreDraft(state)`. Sus implementaciones por defecto no alteran controles anteriores. El estado persistido admite mapas opcionales `responseDrafts` y `toolDrafts` por ID, conservando `schemaVersion: 1` y la huella del contenido. Un estado correcto restaurado se revalida y requiere que las respuestas no tengan errores de borrador. Esta extensión pertenece al estado de progreso; no exige campos nuevos en el JSON curricular.
+
 ## Representaciones y teclado
 
 | `type` | Datos |
 | --- | --- |
-| `text` | `text`. |
-| `math_formula` | `text` Unicode. |
+| `text` | `text`; `mathMode` opcional: `auto`, `text`, `inline`, `block`. |
+| `math_formula` | `text`/`formula` Unicode o `latex`; `display`: `inline`/`block` (block por defecto). |
 | `math_table` | `headers`, `rows` de lectura. |
 | `math_number_line` | `min`, `max`, `value`, `closed`, `direction` opcional. |
 | `math_coordinate_graph` | Contrato cartesiano común. |
@@ -293,7 +313,30 @@ En la recta, `showValueLabel` permite controlar la etiqueta del punto; por defec
 Una opción enriquecida es una colección de estas representaciones, no un renderer temático nuevo.
 Las transformaciones geométricas avanzadas quedan como extensión futura.
 
+### Render matemático local e inline
+
+`MathTextView` y `MathTextRenderer` componen matemáticas mediante spans dibujados localmente, sin WebView ni servicio remoto. Las fracciones tienen numerador, barra y denominador; los exponentes/subíndices tienen su propia posición y tamaño relativo. Se admiten fracciones numéricas como `1/2`, expresiones/relaciones Unicode y un subconjunto de LaTeX: `\frac{a}{b}`, `\dfrac`, `\tfrac`, `^`, `_`, grupos, `\sqrt{a}`, `\pi`, `\theta`, `\times`, `\cdot`, `\div`, `\leq`, `\geq`, `\neq`, `\infty`, `\cup`, `\cap`, `\in`, `\left`, `\right`, `\text`, `\mathrm` y `\operatorname`. Las raíces cuadradas simples se dibujan con signo y barra superior; no se admiten índices de raíz.
+
+```json
+{ "type": "math_formula", "latex": "\\frac{1}{2} + x^{2} \\leq 3", "display": "block" }
+```
+
+Los campos nuevos son opcionales y aditivos: el contenido anterior conserva `schemaVersion: 1`. `latex` tiene prioridad sobre `text` cuando ambos existen, sin crear una segunda línea visual. `display: block` usa una escala base moderadamente mayor que el texto y permite desplazamiento horizontal de fórmulas largas; `inline` conserva la escala base de la prosa.
+
+La prosa conserva su fuente normal. En modo automático se reconocen fragmentos inequívocos (fracción numérica, coordenadas, ecuación/relación corta, producto, potencia, símbolos) y snippets completos. Para marcar una expresión dentro de una frase, escribir delimitadores `\( ... \)`, `\[ ... \]` o `$ ... $`; no convertir todo el párrafo a LaTeX. `mathMode: text` conserva literalmente una representación textual. La escala del usuario cambia el Paint del TextView, así que la composición de fracciones/scripts y su espacio vertical se recalculan con la misma proporción que el texto ordinario.
+
+Este renderer es un subconjunto de presentación, no un motor TeX completo ni un editor de fórmulas: no admite matrices, entornos aligned, macros, integrales/sumatorias con límites o saltos TeX. Los comandos no reconocidos permanecen visibles; no se evalúan ni se usan para validar la respuesta. Las respuestas siguen aceptando la sintaxis matemática existente del validador.
+
+Las gráficas, rectas y diagramas usan un contenedor expandible común: el icono se encuentra fuera del canvas y el fullscreen mueve la misma View, conservando sus listeners y estado. La salida está en la esquina inferior izquierda. Las alturas inline siguen el ancho disponible mediante un aspect ratio; no dependen de un ancho/alto fijo de teléfono.
+
 `keyboard` selecciona un conjunto contextual de teclas: `NUMERIC`, `FRACTION`, `ALGEBRA` o `INEQUALITY`. Es una ayuda de entrada; el validador determina qué respuesta es válida. TRIG y CALCULUS son extensiones previstas.
+La barra auxiliar contiene símbolos y variables según modo; los dígitos siguen disponibles en el teclado Android.
+
+Una respuesta puede declarar `keyboardSymbols` como array de símbolos permitidos, por ejemplo `['+', '−', '×', '÷', '(', ')']` (usar comillas dobles en JSON). Un campo concreto puede sobrescribir los símbolos de la respuesta compuesta. Omitir el array conserva el conjunto de su modo; un array vacío no añade símbolos innecesarios. Los valores desconocidos y los dígitos se filtran. `a/b` inserta `/` y `()` envuelve la selección entre paréntesis; el botón de borrar permanece como utilidad de edición. Declarar un símbolo no amplía las operaciones que admite el validador.
+
+La barra se aloja inmediatamente sobre el IME en un host común de la lección; los botones tienen área táctil cuadrada de 48 dp y desplazamiento horizontal. El scroll del campo activo utiliza los insets del IME y la altura medida de la barra, no un offset específico de un teléfono.
+
+Los campos NUMERIC/FRACTION piden el teclado numérico Android sin filtrar los símbolos insertados por la barra. Los inputs matemáticos desactivan el editor extract/fullscreen del IME para mantener visible la lección en horizontal. Si el espacio disponible no alcanza para campo, margen y barra, el host oculta temporalmente la cabecera de la lección y la restaura al terminar la edición. Next sigue el orden visual y selecciona el contenido del siguiente campo.
 
 ## Validadores y límites
 
@@ -321,7 +364,7 @@ Las transformaciones geométricas avanzadas quedan como extensión futura.
 - `equivalent_expression` normaliza polinomios exactamente, con coeficientes racionales y π formal. Admite +, −, *, /, ^ y multiplicación implícita; división solo entre constantes racionales, exponentes enteros de 0 a 8, grado total máximo 16, hasta 128 términos y entrada de hasta 256 caracteres.
 - Las expresiones admiten una variable; las ecuaciones hasta dos, comparando ambos lados por un factor racional no nulo. Las variables son letras a–z salvo e/i. No se admite dividir entre variables o π, ni funciones trigonométricas, exponenciales o logaritmos. La equivalencia no utiliza muestreo de valores.
 - No asumir equivalencia simbólica general, demostraciones, integración, sistemas, regiones ni manipulación al estilo de GeoGebra.
-- La fórmula es texto Unicode: no hay renderizado TeX/LaTeX ni editor de fórmulas bidimensional.
+- El render local de fórmulas cubre el subconjunto descrito arriba; no hay motor TeX general ni editor bidimensional.
 - La geometría inicial trabaja con polígonos simples y propiedades básicas; no autorizar figuras degeneradas o autointersecadas como ejemplos.
 - Los modos futuros `function`, `system` y `region` no forman parte de este contrato inicial.
 - Un validador incompatible debe corregirse en el JSON; no presentar contenido inválido como una respuesta correcta.
