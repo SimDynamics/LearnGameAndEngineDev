@@ -67,6 +67,7 @@ object MathPuzzleParser {
                 ?: throw IllegalArgumentException("La respuesta $id requiere validator como objeto.")
             MathValidators.validateSpec(validator)
             validateResponse(raw, responseType, validator, id)
+            MathShortcutResolver.validateResponseConfiguration(raw, validator, responseType)
             MathResponseSpec(id, responseType, JSONObject(raw.toString()), JSONObject(validator.toString()))
         }
         val feedback = if (block.has("feedback")) {

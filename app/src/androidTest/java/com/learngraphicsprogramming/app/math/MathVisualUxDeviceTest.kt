@@ -10,14 +10,18 @@ import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import android.view.MotionEvent
+import android.view.InputDevice
+import android.view.KeyEvent
 import android.widget.EditText
 import android.widget.CheckBox
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.ArrayAdapter
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.Espresso.pressBack
+import androidx.lifecycle.Lifecycle
 import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
@@ -34,6 +38,7 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.json.JSONObject
 
 /** Covers actual View reparenting and lifecycle, not a second graph with copied answer data. */
 @RunWith(AndroidJUnit4::class)
@@ -110,6 +115,9 @@ class MathVisualUxDeviceTest {
                 assertTrue(exit.getGlobalVisibleRect(exitBounds))
                 assertTrue("Salida fuera del área manipulable", exitBounds.top >= visualBounds.bottom)
                 assertTrue("Área táctil accesible", exitBounds.height() >= 48 * graph.resources.displayMetrics.density - 1)
+                assertEquals("Salida en la esquina derecha de su fila", (exit.parent as View).width, exit.right)
+                assertExitRespectsInsets(exit)
+                assertFalse("La gráfica no permite un swipe propio de cierre", MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(graph))
                 val viewport = graph.parent as View
                 assertEquals("La ampliación conserva la proporción inline", inlineAspectRatio, graph.width.toFloat() / graph.height, .02f)
                 assertEquals("Visual centrado horizontalmente", viewport.width / 2f, graph.left + graph.width / 2f, 1.5f)
@@ -120,9 +128,10 @@ class MathVisualUxDeviceTest {
                 assertEquals(MathPoint(-1.0, 4.0), graph.points().first())
             }
             screenshot("sandbox-graph-expanded-150.png")
-            pressBack()
+            systemBack()
             instrumentation.waitForIdleSync()
             scenario.onActivity { activity ->
+                assertFalse("Back solo cierra la representación", activity.isFinishing)
                 assertSame("Se devuelve la misma View a su holder", originalParent, graph.parent)
                 assertSame(originalRoot, graph.rootView)
                 assertEquals(MathPoint(-1.0, 4.0), graph.points().first())
@@ -140,6 +149,87 @@ class MathVisualUxDeviceTest {
                 assertFalse(graph.isAttachedToWindow)
                 val recreatedGraph = descendants(activity.findViewById(R.id.lessonContent)).filterIsInstance<MathCartesianView>().first { it.editable }
                 assertEquals(MathPoint(-1.0, 4.0), recreatedGraph.points().first())
+            }
+        }
+    }
+
+    @Test fun wholePuzzleFullscreenClosesOnOfficialBackAndNextBackNavigatesNormally() {
+        lateinit var graph: MathCartesianView
+        lateinit var puzzle: View
+        lateinit var originalParent: ViewGroup
+        ActivityScenario.launch<LessonActivity>(intent()).use { scenario ->
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                val content = activity.findViewById<ViewGroup>(R.id.lessonContent)
+                graph = descendants(content).filterIsInstance<MathCartesianView>().first { it.editable }
+                puzzle = puzzleFor(graph)
+                originalParent = puzzle.parent as ViewGroup
+                graph.movePoint(0, 2.0, 3.0)
+                descendants(puzzle).first { it.contentDescription?.toString() == "Pantalla completa" }.performClick()
+            }
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                assertNotSame(originalParent, puzzle.parent)
+                assertSame(graph, descendants(puzzle).filterIsInstance<MathCartesianView>().first())
+                val exit = descendants(activity.findViewById(android.R.id.content)).first {
+                    it.contentDescription?.toString() == "Salir de pantalla completa"
+                }
+                val exitBounds = Rect()
+                val bodyBounds = Rect()
+                assertTrue(exit.getGlobalVisibleRect(exitBounds))
+                val footer = exit.parent as View
+                assertEquals("Salida abajo a la derecha", footer.width, exit.right)
+                assertTrue(exitBounds.width() >= 48 * exit.resources.displayMetrics.density - 1)
+                assertTrue(exitBounds.height() >= 48 * exit.resources.displayMetrics.density - 1)
+                assertExitRespectsInsets(exit)
+                val scroll = puzzle.parent.parent as View
+                assertTrue(scroll.getGlobalVisibleRect(bodyBounds))
+                assertTrue("La salida está fuera del contenido interactivo", exitBounds.top >= bodyBounds.bottom)
+            }
+            systemBack()
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { activity ->
+                assertFalse(activity.isFinishing)
+                assertSame("Back devuelve la misma tarjeta", originalParent, puzzle.parent)
+                assertEquals(MathPoint(2.0, 3.0), graph.points().first())
+                assertEquals(listOf("2", "3"), pointCoordinateEditors(puzzle).map { it.text.toString() })
+                assertTrue(activity.findViewById<TextView>(R.id.textProgress).text.contains("11 de 16"))
+                assertEquals("Pantalla completa", descendants(puzzle).first {
+                    it.contentDescription?.toString() == "Pantalla completa"
+                }.contentDescription)
+            }
+            systemBack()
+            instrumentation.waitForIdleSync()
+            assertEquals("El siguiente Back conserva la navegación normal", Lifecycle.State.DESTROYED, scenario.state)
+        }
+    }
+
+    @Test fun edgeSwipeCapabilityOptsInOnlyKnownStaticSurfaces() {
+        ActivityScenario.launch<LessonActivity>(intent()).use { scenario ->
+            scenario.onActivity { activity ->
+                val accent = android.graphics.Color.GREEN
+                val interactiveGraph = MathCartesianView(activity, JSONObject(), accent, true)
+                val interactiveGeometry = MathCartesianView(activity, JSONObject().put("mode", "polygon"), accent, true)
+                val interactiveLine = MathNumberLineView(activity, JSONObject(), accent, true)
+                listOf(interactiveGraph, interactiveGeometry, interactiveLine).forEach { visual ->
+                    assertFalse(MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(visual))
+                    assertFalse(MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(
+                        MathExpandableRepresentation.wrap(activity, visual, accent)))
+                }
+                interactiveGraph.editable = false
+                interactiveGeometry.editable = false
+                interactiveLine.editable = false
+                listOf(interactiveGraph, interactiveGeometry, interactiveLine).forEach {
+                    assertFalse("Completar un control no vuelve seguro un swipe propio", MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(it))
+                }
+                assertTrue(MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(MathCartesianView(activity, JSONObject(), accent)))
+                assertTrue(MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(MathNumberLineView(activity, JSONObject(), accent)))
+                listOf("geometry_2d_diagram", "geometry_3d_diagram", "venn_diagram").forEach { type ->
+                    assertTrue(MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(
+                        MathRepresentationRenderer.render(activity, JSONObject().put("type", type), accent)))
+                }
+                assertFalse("Views desconocidas no optan automáticamente a capturar bordes",
+                    MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(View(activity)))
             }
         }
     }
@@ -302,5 +392,27 @@ class MathVisualUxDeviceTest {
             ParcelFileDescriptor.AutoCloseInputStream(streams[0]).use { it.readBytes() }
         }
         bitmap.recycle()
+    }
+
+    private fun systemBack() {
+        val down = SystemClock.uptimeMillis()
+        listOf(KeyEvent.ACTION_DOWN, KeyEvent.ACTION_UP).forEachIndexed { index, action ->
+            val event = KeyEvent(down, down + index * 16, action, KeyEvent.KEYCODE_BACK,
+                0, 0, KeyEvent.KEYCODE_UNKNOWN, 0, 0, InputDevice.SOURCE_KEYBOARD)
+            assertTrue("Android acepta Back del sistema", instrumentation.uiAutomation.injectInputEvent(event, true))
+        }
+        SystemClock.sleep(300)
+    }
+
+    private fun assertExitRespectsInsets(exit: View) {
+        val rootBounds = Rect()
+        val exitBounds = Rect()
+        assertTrue(exit.rootView.getGlobalVisibleRect(rootBounds))
+        assertTrue(exit.getGlobalVisibleRect(exitBounds))
+        val safe = ViewCompat.getRootWindowInsets(exit)?.getInsets(WindowInsetsCompat.Type.systemBars() or
+            WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.mandatorySystemGestures())
+            ?: error("Fullscreen sin insets disponibles")
+        assertTrue("Salida encima de la zona del sistema", exitBounds.bottom <= rootBounds.bottom - safe.bottom)
+        assertTrue("Salida dentro del borde derecho seguro", exitBounds.right <= rootBounds.right - safe.right)
     }
 }

@@ -65,9 +65,11 @@ object MathVisualControls {
                 val pointPrefix = if (graph.points().size > 1) "${MathCartesianView.pointLabel(index)}: " else ""
                 row.addView(label(context, "${pointPrefix}x ="))
                 val x = numberInput(context, "Coordenada x del punto ${index + 1}", point.x, accent)
+                MathKeyboardContext.configureVisual(x, config, spec.validator, "x")
                 row.addView(x, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
                 row.addView(label(context, " y ="))
                 val y = numberInput(context, "Coordenada y del punto ${index + 1}", point.y, accent)
+                MathKeyboardContext.configureVisual(y, config, spec.validator, "y")
                 if (previousTextSize != null) {
                     x.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, previousTextSize)
                     y.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, previousTextSize)
@@ -153,6 +155,7 @@ object MathVisualControls {
         val line = MathNumberLineView(context, config, accent, true)
         layout.addView(MathExpandableRepresentation.wrap(context, line, accent, 2.4f))
         val position = numberInput(context, "Posición del punto en la recta", line.answer().value, accent)
+        MathKeyboardContext.configureVisual(position, config, spec.validator)
         val initialPositionText = position.text.toString()
         layout.addView(label(context, "Posición"))
         layout.addView(position)

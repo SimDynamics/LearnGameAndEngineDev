@@ -19,7 +19,8 @@ class MathNumberLineView(
     config: JSONObject,
     private val accentColor: Int,
     interactive: Boolean = false
-) : View(context), MathTextScaleAware {
+) : View(context), MathTextScaleAware, MathFullscreenGestureCapability {
+    override val allowEdgeSwipeToDismiss: Boolean = !interactive
     private val density = resources.displayMetrics.density
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val min = MathCartesianView.finite(config, "min", -10.0)

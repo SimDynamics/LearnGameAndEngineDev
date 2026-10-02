@@ -2,8 +2,6 @@ package com.learngraphicsprogramming.app.math
 
 import android.content.Context
 import android.app.Activity
-import android.graphics.Color
-import android.content.res.ColorStateList
 import org.json.JSONArray
 import android.view.View
 import android.util.TypedValue
@@ -16,6 +14,7 @@ class MathKeyboardView(context: Context, private val accentColor: Int) : Horizon
     enum class Mode { NUMERIC, FRACTION, ALGEBRA, INEQUALITY, TRIG, CALCULUS }
     private val keys = MathWidgetUi.row(context)
     private var input: EditText? = null
+    private var minusInsertion = "-"
 
     init {
         isFillViewport = false
@@ -31,19 +30,10 @@ class MathKeyboardView(context: Context, private val accentColor: Int) : Horizon
         input = editText
         visibility = View.VISIBLE
         keys.removeAllViews()
-        val selected = runCatching { Mode.valueOf(mode.uppercase()) }.getOrDefault(Mode.NUMERIC)
-        val defaults = when (selected) {
-            Mode.NUMERIC -> listOf("−", ".", ",")
-            Mode.FRACTION -> listOf("a/b", "−")
-            Mode.ALGEBRA -> listOf("x", "y", "+", "−", "×", "÷", "^", "=", "()")
-            Mode.INEQUALITY -> listOf("x", "=", "<", ">", "≠", "≤", "≥", "−", "()")
-            Mode.TRIG -> listOf("x", "π", "+", "−", "×", "÷", "^", "()")
-            Mode.CALCULUS -> listOf("x", "y", "+", "−", "×", "÷", "^", "()")
-        }
-        val allowed = setOf(".", ",", "+", "−", "-", "×", "÷", "π", "%", "a/b", "/", "(", ")", "()", "=", "<", ">", "≤", "≥", "≠", "x", "y", "a", "b", "^", "√", "∞")
-        val symbols = if (keyboardSymbols == null) defaults else
-            (0 until keyboardSymbols.length()).map { keyboardSymbols.optString(it) }
-                .filter { it in allowed }.distinct()
+        val fieldContext = MathKeyboardContext.get(editText)
+        minusInsertion = fieldContext?.minus ?: "-"
+        val symbols = if (keyboardSymbols != null) MathShortcutResolver.resolve(null, mode, keyboardSymbols)
+            else fieldContext?.symbols ?: MathShortcutResolver.resolve(null, mode)
         for (symbol in symbols + "⌫") {
             val key = MathWidgetUi.button(context, symbol, accentColor)
             key.setTextSize(TypedValue.COMPLEX_UNIT_PX, editText.textSize * 14f / 18f)
@@ -55,7 +45,7 @@ class MathKeyboardView(context: Context, private val accentColor: Int) : Horizon
                 marginEnd = MathWidgetUi.dp(context, 2)
             }
             key.tag = MathInputFocusOrder.GESTURE_OWNER_TAG
-            key.contentDescription = if (symbol == "a/b") "Insertar barra de fracción" else symbol
+            key.contentDescription = if (symbol in setOf("a/b", "/")) "Insertar barra de fracción" else symbol
             key.setOnClickListener { insert(symbol) }
             keys.addView(key)
         }
@@ -80,7 +70,7 @@ class MathKeyboardView(context: Context, private val accentColor: Int) : Horizon
                 value.replace(start, end, "(${value.substring(start, end)})")
                 target.setSelection(start + 1)
             }
-            else -> value.replace(start, end, when (symbol) { "a/b" -> "/"; "−" -> "-"; else -> symbol })
+            else -> value.replace(start, end, when (symbol) { "a/b" -> "/"; "−" -> minusInsertion; else -> symbol })
         }
     }
 }

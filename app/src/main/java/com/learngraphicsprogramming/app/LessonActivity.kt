@@ -260,28 +260,26 @@ class LessonActivity : AppCompatActivity() {
         setContentView(R.layout.activity_lesson)
 
         /*
- * Dentro de una lección desactivamos
- * el Atrás del sistema Android.
- *
- * Esto evita que el gesto desde el borde
- * cierre accidentalmente la lección.
- *
- * La salida voluntaria seguirá realizándose
- * mediante nuestra flecha superior.
+ * Programming conserva su política de Atrás.
+ * Matemáticas cierra primero la tarjeta fullscreen;
+ * fuera de fullscreen usa la navegación normal de Android.
  */
         onBackPressedDispatcher.addCallback(
             this,
             object : OnBackPressedCallback(true) {
 
                 override fun handleOnBackPressed() {
-
-                    /*
-                     * Intencionadamente vacío.
-                     *
-                     * El botón Atrás del sistema
-                     * y su gesto asociado no abandonan
-                     * una lección.
-                     */
+                    if (currentRouteId != AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) return
+                    if (exerciseFullscreenActive) {
+                        closeExerciseFullscreenHost()
+                        return
+                    }
+                    isEnabled = false
+                    try {
+                        onBackPressedDispatcher.onBackPressed()
+                    } finally {
+                        isEnabled = true
+                    }
                 }
             }
         )
@@ -9547,7 +9545,7 @@ class LessonActivity : AppCompatActivity() {
                     closeExerciseFullscreenHost()
                     renderer.fullscreenButton.contentDescription = "Pantalla completa"
                 } else {
-                    openExerciseFullscreenHost(usesKeyboard = true) { headerHost, bodyHost, _ ->
+                    openExerciseFullscreenHost(usesKeyboard = true) { _, bodyHost, footerHost ->
                         val scroll = ScrollView(this).apply {
                             isFillViewport = true
                             layoutParams = LinearLayout.LayoutParams(-1, 0, 1f)
@@ -9561,7 +9559,8 @@ class LessonActivity : AppCompatActivity() {
                         bodyHost.addView(scroll)
                         moveViewToExerciseFullscreen(renderer.view, content, LinearLayout.LayoutParams(-1, -2))
                         MathInputFocusOrder.configure(renderer.view)
-                        moveViewToExerciseFullscreen(renderer.fullscreenButton, headerHost, FrameLayout.LayoutParams(dp(48), dp(48)).apply { gravity = Gravity.START })
+                        footerHost.visibility = View.VISIBLE
+                        moveViewToExerciseFullscreen(renderer.fullscreenButton, footerHost, FrameLayout.LayoutParams(dp(48), dp(48)).apply { gravity = Gravity.RIGHT })
                         renderer.fullscreenButton.contentDescription = "Salir de pantalla completa"
                     }
                 }
@@ -12312,6 +12311,16 @@ class LessonActivity : AppCompatActivity() {
             floatingHost
         )
 
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
+            ViewCompat.setOnApplyWindowInsetsListener(overlay) { view, insets ->
+                val safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() or
+                    WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.mandatorySystemGestures())
+                view.setPadding(safe.left, safe.top, safe.right, safe.bottom)
+                insets
+            }
+            ViewCompat.requestApplyInsets(overlay)
+        }
+
         updateProgrammingKeyboardBarVisibility()
     }
 
@@ -12372,6 +12381,11 @@ class LessonActivity : AppCompatActivity() {
                     }
             )
             .forEach { state ->
+
+                if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS &&
+                    state.view.contentDescription == "Salir de pantalla completa") {
+                    state.view.contentDescription = "Pantalla completa"
+                }
 
                 state.view.layoutParams =
                     state.originalLayoutParams

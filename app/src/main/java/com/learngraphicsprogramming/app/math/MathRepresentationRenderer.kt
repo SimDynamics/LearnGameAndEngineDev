@@ -97,7 +97,8 @@ private class GeometryDiagramView(
     private val config: JSONObject,
     private val accent: Int,
     private val threeDimensional: Boolean
-) : View(context), MathTextScaleAware {
+) : View(context), MathTextScaleAware, MathFullscreenGestureCapability {
+    override val allowEdgeSwipeToDismiss: Boolean = true
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val density = resources.displayMetrics.density
     private val shape = config.optString("shape", if (threeDimensional) "cube" else "rectangle")
@@ -182,7 +183,8 @@ private class GeometryDiagramView(
     }
 }
 
-private class VennDiagramView(context: Context, private val config: JSONObject, private val accent: Int) : View(context), MathTextScaleAware {
+private class VennDiagramView(context: Context, private val config: JSONObject, private val accent: Int) : View(context), MathTextScaleAware, MathFullscreenGestureCapability {
+    override val allowEdgeSwipeToDismiss: Boolean = true
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val density = resources.displayMetrics.density
     private var textScale = 1f

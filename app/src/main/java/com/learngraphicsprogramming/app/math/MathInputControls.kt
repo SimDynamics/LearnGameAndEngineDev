@@ -16,9 +16,9 @@ import android.widget.EditText
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.RadioButton
-import android.widget.Spinner
 import android.widget.TextView
 import org.json.JSONObject
+import androidx.appcompat.widget.AppCompatSpinner
 
 internal object MathInputControls {
     fun create(context: Context, spec: MathResponseSpec, accent: Int, onChange: () -> Unit): MathResponseControl? =
@@ -63,10 +63,16 @@ private fun EditText.changed(callback: () -> Unit) {
 }
 
 /** Newly created spinner rows inherit the lesson scale already applied to this control. */
-private class MathDropdown(context: Context) : Spinner(context), MathTextScaleAware {
+private class MathDropdown(context: Context) :
+    AppCompatSpinner(context),
+    MathTextScaleAware {
+
     var mathTextScale = 1f
         private set
-    override fun scaleMathText(factor: Float) { mathTextScale *= factor }
+
+    override fun scaleMathText(factor: Float) {
+        mathTextScale *= factor
+    }
 }
 
 private class TextControl(context: Context, spec: MathResponseSpec, accent: Int, onChange: () -> Unit) : MathResponseControl {
@@ -80,10 +86,11 @@ private class TextControl(context: Context, spec: MathResponseSpec, accent: Int,
         val unit = spec.config.optString("unit")
         if (unit.isNotBlank()) view.addView(MathWidgetUi.text(context, "Unidad: $unit"))
         edit.contentDescription = label.ifBlank { "Respuesta matemática" }
+        MathKeyboardContext.configure(edit, spec.validator, keyboardMode, spec.config.optJSONArray("keyboardSymbols"))
         view.addView(edit)
         view.addView(keyboard)
         edit.setOnFocusChangeListener { _, focused ->
-            if (focused) keyboard.bind(edit, keyboardMode, spec.config.optJSONArray("keyboardSymbols"))
+            if (focused) keyboard.bind(edit, keyboardMode)
             else keyboard.hide()
         }
         edit.changed(onChange)
@@ -236,9 +243,11 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
                     val keyboardMode = definition.optString("keyboard", if (definition.optString("type") == "expression") "ALGEBRA" else "NUMERIC")
                     val edit = input(context, accent, definition.optString("hint", if (inlineFields) fieldLabel.ifBlank { "Respuesta" } else "Respuesta"), keyboardMode)
                     edit.contentDescription = fieldLabel.ifBlank { id }
+                    MathKeyboardContext.configure(edit, spec.validator.optJSONObject("fields")?.optJSONObject(id), keyboardMode,
+                        definition.optJSONArray("keyboardSymbols") ?: spec.config.optJSONArray("keyboardSymbols"))
                     edit.changed(onChange)
                     edit.setOnFocusChangeListener { _, focused ->
-                        if (focused) keyboard.bind(edit, keyboardMode, definition.optJSONArray("keyboardSymbols") ?: spec.config.optJSONArray("keyboardSymbols"))
+                        if (focused) keyboard.bind(edit, keyboardMode)
                         else keyboard.hide()
                     }
                     addControl(edit)

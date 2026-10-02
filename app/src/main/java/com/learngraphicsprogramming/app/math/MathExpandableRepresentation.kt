@@ -1,6 +1,5 @@
 package com.learngraphicsprogramming.app.math
 
-import android.app.Dialog
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
@@ -15,6 +14,8 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import androidx.activity.ComponentDialog
+import androidx.activity.OnBackPressedCallback
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -34,10 +35,12 @@ object MathExpandableRepresentation {
         private val visual: View,
         accentColor: Int,
         aspectRatio: Float
-    ) : LinearLayout(context) {
+    ) : LinearLayout(context), MathFullscreenGestureCapability {
+        override val allowEdgeSwipeToDismiss: Boolean
+            get() = MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(visual)
         private val visualRatio = aspectRatio.takeIf { it.isFinite() && it > 0 }?.coerceIn(.6f, 4f) ?: 1f
         private val holder = AspectFrame(context, visualRatio)
-        private var expanded: Dialog? = null
+        private var expanded: ComponentDialog? = null
 
         init {
             orientation = VERTICAL
@@ -59,8 +62,13 @@ object MathExpandableRepresentation {
             val previousFocus = rootView.findFocus()
             (context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
                 ?.hideSoftInputFromWindow(windowToken, 0)
-            val dialog = Dialog(context, android.R.style.Theme_Material_NoActionBar)
+            val dialog = ComponentDialog(context, android.R.style.Theme_Material_NoActionBar)
             dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+            // ComponentDialog connects this dispatcher to Android's OnBackInvokedDispatcher
+            // on API 33+, including system gesture navigation. No app-owned swipe is installed.
+            dialog.onBackPressedDispatcher.addCallback(dialog, object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() = dialog.dismiss()
+            })
             val column = LinearLayout(context).apply {
                 orientation = VERTICAL
                 setBackgroundColor(Color.BLACK)
@@ -69,7 +77,7 @@ object MathExpandableRepresentation {
             val expandedHolder = ContainFrame(context, visualRatio).apply { tag = "math_expanded_visual_container" }
             column.addView(expandedHolder, LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f))
             val exitRow = LinearLayout(context).apply {
-                gravity = Gravity.START or Gravity.CENTER_VERTICAL
+                gravity = Gravity.RIGHT or Gravity.CENTER_VERTICAL
             }
             exitRow.addView(icon(context, accentColor, "Cerrar representación ampliada", "math_exit_representation").apply {
                 setOnClickListener { dialog.dismiss() }
@@ -97,7 +105,8 @@ object MathExpandableRepresentation {
                     hide(WindowInsetsCompat.Type.systemBars())
                 }
                 ViewCompat.setOnApplyWindowInsetsListener(column) { view, insets ->
-                    val safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+                    val safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() or
+                        WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.mandatorySystemGestures())
                     view.setPadding(safe.left, safe.top, safe.right, safe.bottom)
                     insets
                 }
