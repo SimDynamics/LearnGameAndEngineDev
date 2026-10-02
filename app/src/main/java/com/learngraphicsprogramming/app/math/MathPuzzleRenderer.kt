@@ -24,7 +24,9 @@ class MathPuzzleRenderer(
     val view = MathWidgetUi.column(context)
     private val accent = AppearanceSettingsRepository.getRouteAccentColor(context, routeId)
     val fullscreenButton = MathWidgetUi.icon(context, R.drawable.ic_code_fullscreen, "Pantalla completa")
-    private val checkButton = MathWidgetUi.button(context, "Comprobar", accent)
+    private val checkButton = MathWidgetUi.button(context, "Comprobar", accent).apply {
+        tag = CHECK_ACTION_TAG
+    }
     private val resetButton = MathWidgetUi.icon(context, R.drawable.ic_code_reset, "Reiniciar", accent)
     private val feedback = MathWidgetUi.text(context, "")
     private val spec = MathPuzzleParser.parse(block)
@@ -192,5 +194,8 @@ class MathPuzzleRenderer(
         ProgressRepository.saveExerciseState(context, routeId, lessonId, pageIndex, blockIndex, state)
     }
 
-    companion object { const val INTERACTION_TAG = "math_puzzle_interaction" }
+    companion object {
+        const val INTERACTION_TAG = "math_puzzle_interaction"
+        const val CHECK_ACTION_TAG = "math_puzzle_check_action"
+    }
 }
