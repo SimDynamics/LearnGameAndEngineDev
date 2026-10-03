@@ -86,7 +86,7 @@ class MathShortcutDeviceTest {
             awaitIme(scenario, pi.inputs.single())
             instrumentation.waitForIdleSync()
             SystemClock.sleep(300)
-            scenario.onActivity {
+            scenario.onActivity { activity ->
                 assertTrue("La barra contextual se conecta a la ventana sobre IME", pi.keyboard.isAttachedToWindow)
                 assertEquals(View.VISIBLE, pi.keyboard.visibility)
                 assertKeys(pi, listOf("π"))
@@ -205,14 +205,14 @@ class MathShortcutDeviceTest {
     }
 
     private fun assertKeys(bound: BoundControl, expected: List<String>) {
-        val labels = tree(bound.keyboard).filterIsInstance<Button>().map { it.text.toString() }
+        val labels = tree(bound.keyboard).filterIsInstance<Button>().map { if (it.contentDescription == "Insertar fracción") "/" else it.text.toString() }
         assertEquals("Atajos exactos para el campo enfocado", expected + "⌫", labels)
         assertFalse("Las letras y los números quedan en el teclado Android", labels.any { it.matches(Regex("[A-Za-z0-9]")) })
         assertEquals(labels.size, labels.distinct().size)
     }
 
     private fun key(bound: BoundControl, symbol: String): Button =
-        tree(bound.keyboard).filterIsInstance<Button>().single { it.text.toString() == symbol }
+        tree(bound.keyboard).filterIsInstance<Button>().single { it.text.toString() == symbol || symbol == "/" && it.contentDescription == "Insertar fracción" }
 
     private fun sandboxPuzzles(): List<Pair<JSONObject, MathPuzzleSpec>> {
         val asset = "content/es/math_physics/math_course_01/arithmetic_fundamentals/lesson_math_puzzle_sandbox.json"

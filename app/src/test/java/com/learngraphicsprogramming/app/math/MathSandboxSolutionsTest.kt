@@ -33,7 +33,26 @@ class MathSandboxSolutionsTest {
             "rectangle_area" to mapOf("rectangle" to graph(0 to 0, 4 to 0, 4 to 2, 0 to 2)),
             "rectangle_sliders" to mapOf("dimensions" to MathAnswer.Sliders(mapOf("width" to 4.0, "height" to 3.0))),
             "venn_and_table" to mapOf("totals" to fields("a" to "6", "b" to "5", "union" to "9")),
-            "static_geometry_volume" to mapOf("volume" to text("24"))
+            "static_geometry_volume" to mapOf("volume" to text("24")),
+            "structured_editor_basic_qa" to mapOf("expressions" to fields(
+                "fraction" to "\\frac{x+1}{2}",
+                "scripts" to "x_{1}^{2}",
+                "root" to "\\sqrt{x}",
+                "nested" to "\\frac{1}{\\sqrt[3]{x+4}}",
+                "group" to "\\left(x+1\\right)",
+                "absolute" to "\\left|x\\right|",
+                "functions" to "\\sin{x}+\\log_{2}{x}",
+                "relation" to "\\pi+e\\leq2"
+            )),
+            "structured_editor_advanced_qa" to mapOf("expressions" to fields(
+                "integral" to "\\int_{0}^{1}{x^{2}dx}",
+                "sum" to "\\sum_{i=1}^{n}{i}",
+                "product" to "\\prod_{i=1}^{n}{i}",
+                "limit" to "\\lim_{x\\to0}{x}",
+                "derivative" to "\\frac{\\mathrm{d}x^{2}}{\\mathrm{d}{x}}",
+                "matrix" to "\\begin{matrix}1&2\\\\3&4\\end{matrix}",
+                "cases" to "\\begin{cases}x&x\\geq0\\\\-x&x<0\\end{cases}"
+            ))
         )
         val relative = "src/main/assets/content/es/math_physics/math_course_01/arithmetic_fundamentals/lesson_math_puzzle_sandbox.json"
         val lesson = JSONObject(sequenceOf(File(relative), File("app/$relative")).first { it.isFile }.readText(Charsets.UTF_8))

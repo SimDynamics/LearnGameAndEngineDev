@@ -55,6 +55,10 @@ object MathExpandableRepresentation {
             addView(controls)
             addView(holder, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
             holder.addView(visual, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
+            if (MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(visual) || visual is android.widget.ImageView ||
+                (visual is MathTextView && !visual.isTextSelectable && visual.movementMethod == null)) {
+                holder.onDoubleTap = { expand(accentColor) }
+            }
         }
 
         private fun expand(accentColor: Int) {
@@ -75,10 +79,19 @@ object MathExpandableRepresentation {
             }
             // Fullscreen is a black viewport; fit the same visual proportionally inside it.
             val expandedHolder = ContainFrame(context, visualRatio).apply { tag = "math_expanded_visual_container" }
+            if (holder.onDoubleTap != null) expandedHolder.onDoubleTap = { dialog.dismiss() }
             column.addView(expandedHolder, LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f))
             val exitRow = LinearLayout(context).apply {
                 gravity = Gravity.RIGHT or Gravity.CENTER_VERTICAL
             }
+            val resetZoom = icon(context, accentColor, "Restablecer zoom", "math_reset_representation_zoom").apply {
+                setImageResource(R.drawable.ic_math_reset_zoom)
+                visibility = View.GONE
+                setOnClickListener { expandedHolder.resetZoom() }
+            }
+            expandedHolder.onZoomChanged = { enlarged -> resetZoom.visibility = if (enlarged) View.VISIBLE else View.GONE }
+            exitRow.addView(resetZoom)
+            exitRow.addView(View(context), LayoutParams(0, 1, 1f))
             exitRow.addView(icon(context, accentColor, "Cerrar representación ampliada", "math_exit_representation").apply {
                 setOnClickListener { dialog.dismiss() }
             })
@@ -89,6 +102,7 @@ object MathExpandableRepresentation {
             expanded = dialog
             dialog.setContentView(column)
             dialog.setOnDismissListener {
+                expandedHolder.resetZoom()
                 (visual.parent as? ViewGroup)?.removeView(visual)
                 holder.addView(visual, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
                 expanded = null
@@ -121,7 +135,7 @@ object MathExpandableRepresentation {
     }
 
     /** Like fit-center for an image: use the largest possible size without stretching either axis. */
-    private class ContainFrame(context: Context, private val ratio: Float) : FrameLayout(context) {
+    private class ContainFrame(context: Context, private val ratio: Float) : MathZoomViewport(context) {
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
             super.onMeasure(widthMeasureSpec, heightMeasureSpec)
             val availableWidth = (measuredWidth - paddingLeft - paddingRight).coerceAtLeast(1)
@@ -136,7 +150,7 @@ object MathExpandableRepresentation {
     }
 
     /** Inline height follows the available width instead of a fixed dp rectangle. */
-    private class AspectFrame(context: Context, ratio: Float) : FrameLayout(context) {
+    private class AspectFrame(context: Context, ratio: Float) : MathDoubleTapFrame(context) {
         private val ratio = ratio.takeIf { it.isFinite() && it > 0 }?.coerceIn(.6f, 4f) ?: 1f
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
             val width = MeasureSpec.getSize(widthMeasureSpec)

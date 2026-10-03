@@ -33,7 +33,7 @@ class MathKeyboardView(
     private val keys =
         MathWidgetUi.row(context)
 
-    private var input: EditText? = null
+    private var input: View? = null
 
     private var minusInsertion = "-"
 
@@ -94,6 +94,20 @@ class MathKeyboardView(
                 .map(MathKeyboardAction::fromShortcut)
                 .plus(MathKeyboardAction.Backspace)
 
+        renderActions(actions, editText.textSize)
+    }
+
+    fun bind(editor: MathExpressionEditor, shortcuts: List<String>) {
+        input = editor
+        editor.keyboardShortcuts = shortcuts
+        visibility = View.VISIBLE
+        keys.removeAllViews()
+        renderActions(shortcuts.map { MathKeyboardAction.fromShortcut(when (it) { "^" -> "POWER"; "√" -> "ROOT"; else -> it }) } + listOf(
+            MathKeyboardAction.MoveLeft, MathKeyboardAction.MoveRight, MathKeyboardAction.Backspace), editor.textSizePx)
+    }
+
+    private fun renderActions(actions: List<MathKeyboardAction>, textSize: Float) {
+
         actions.forEach { action ->
 
             val key =
@@ -105,7 +119,7 @@ class MathKeyboardView(
 
             key.setTextSize(
                 TypedValue.COMPLEX_UNIT_PX,
-                editText.textSize * 14f / 18f
+                textSize * 14f / 18f
             )
 
             key.isFocusable = false
@@ -158,7 +172,7 @@ class MathKeyboardView(
                 .current(it)
                 ?.show(
                     this,
-                    editText
+                    input!!
                 )
         }
     }
@@ -184,9 +198,9 @@ class MathKeyboardView(
             return
         }
 
-        action.apply(
-            target,
-            minusInsertion
-        )
+        when (target) {
+            is EditText -> action.apply(target, minusInsertion)
+            is MathExpressionEditor -> target.perform(action)
+        }
     }
 }

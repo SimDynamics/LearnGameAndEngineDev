@@ -28,10 +28,10 @@ object MathInputFocusOrder {
     }
 
     fun configure(root: View) {
-        val inputs = mutableListOf<EditText>()
+        val inputs = mutableListOf<View>()
         fun collect(view: View) {
             if (view.visibility != View.VISIBLE) return
-            if (view is EditText) inputs.add(view)
+            if (view is EditText || view is MathExpressionEditor) inputs.add(view)
             if (view is ViewGroup) for (index in 0 until view.childCount) collect(view.getChildAt(index))
         }
         collect(root)
@@ -39,15 +39,17 @@ object MathInputFocusOrder {
         inputs.forEach { input ->
             if (input.id == View.NO_ID) input.id = View.generateViewId()
             input.tag = GESTURE_OWNER_TAG
-            input.setSelectAllOnFocus(true)
+            (input as? EditText)?.setSelectAllOnFocus(true)
         }
         inputs.forEachIndexed { index, input ->
             fun nextInput() = inputs.drop(index + 1).firstOrNull { it.isEnabled && it.visibility == View.VISIBLE }
             fun updateIme() {
                 val next = nextInput()
-                input.imeOptions = (input.imeOptions and (EditorInfo.IME_MASK_ACTION or EditorInfo.IME_FLAG_NO_ENTER_ACTION).inv()) or
+                val options = if (input is EditText) input.imeOptions else (input as MathExpressionEditor).imeOptions
+                val updated = (options and (EditorInfo.IME_MASK_ACTION or EditorInfo.IME_FLAG_NO_ENTER_ACTION).inv()) or
                     (if (next == null) EditorInfo.IME_ACTION_DONE else EditorInfo.IME_ACTION_NEXT) or
                     EditorInfo.IME_FLAG_NO_EXTRACT_UI or EditorInfo.IME_FLAG_NO_FULLSCREEN
+                if (input is EditText) input.imeOptions = updated else (input as MathExpressionEditor).imeOptions = updated
                 input.nextFocusForwardId = next?.id ?: View.NO_ID
             }
             updateIme()
@@ -59,11 +61,11 @@ object MathInputFocusOrder {
                 (input.context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
                     ?.hideSoftInputFromWindow(input.windowToken, 0)
             }
-            input.setOnEditorActionListener { _, action, _ ->
+            val editorAction: (Int) -> Boolean = { action ->
                 when (action) {
                     EditorInfo.IME_ACTION_NEXT -> {
                         val next = nextInput()
-                        if (next != null) { next.requestFocus(); next.selectAll() } else finishEditing()
+                        if (next != null) { next.requestFocus(); (next as? EditText)?.selectAll() } else finishEditing()
                         true
                     }
                     EditorInfo.IME_ACTION_DONE -> {
@@ -73,6 +75,8 @@ object MathInputFocusOrder {
                     else -> false
                 }
             }
+            if (input is EditText) input.setOnEditorActionListener { _, action, _ -> editorAction(action) }
+            else (input as MathExpressionEditor).onImeAction = editorAction
         }
     }
 }

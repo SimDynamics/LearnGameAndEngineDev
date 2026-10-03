@@ -42,6 +42,7 @@ import com.learngraphicsprogramming.app.math.MathPuzzleTypes
 import com.learngraphicsprogramming.app.math.MathTextScaleAware
 import com.learngraphicsprogramming.app.math.MathInputFocusOrder
 import com.learngraphicsprogramming.app.math.MathKeyboardHost
+import com.learngraphicsprogramming.app.math.MathTextRenderer
 
 class LessonActivity : AppCompatActivity() {
 
@@ -2961,12 +2962,15 @@ class LessonActivity : AppCompatActivity() {
         pageRequiredExercises[currentPage] =
             requiredExercises
     }
-    private fun addNote(text: String) {
+    private fun addNote(text: String, mathMode: String = "auto") {
 
         val view = TextView(this)
 
         view.text =
             "Nota\n\n$text"
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
+            MathTextRenderer.apply(view, "Nota\n\n$text", mathMode)
+        }
 
         view.setTextColor(
             Color.rgb(225, 225, 235)
@@ -9368,7 +9372,8 @@ class LessonActivity : AppCompatActivity() {
                     addHeading(
                         block.getString(
                             "text"
-                        )
+                        ),
+                        block.optString("mathMode", "auto")
                     )
                 }
 
@@ -9377,7 +9382,8 @@ class LessonActivity : AppCompatActivity() {
                     addParagraph(
                         block.getString(
                             "text"
-                        )
+                        ),
+                        block.optString("mathMode", "auto")
                     )
                 }
 
@@ -9411,7 +9417,8 @@ class LessonActivity : AppCompatActivity() {
                     addNote(
                         block.getString(
                             "text"
-                        )
+                        ),
+                        block.optString("mathMode", "auto")
                     )
                 }
 
@@ -11953,7 +11960,8 @@ class LessonActivity : AppCompatActivity() {
     }
 
     private fun addHeading(
-        text: String
+        text: String,
+        mathMode: String = "auto"
     ) {
 
         val view =
@@ -11961,6 +11969,9 @@ class LessonActivity : AppCompatActivity() {
 
         view.text =
             text
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
+            MathTextRenderer.apply(view, text, mathMode)
+        }
 
         view.setTextColor(
             Color.WHITE
@@ -11987,7 +11998,8 @@ class LessonActivity : AppCompatActivity() {
     }
 
     private fun addParagraph(
-        text: String
+        text: String,
+        mathMode: String = "auto"
     ) {
 
         val view =
@@ -11995,6 +12007,9 @@ class LessonActivity : AppCompatActivity() {
 
         view.text =
             text
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
+            MathTextRenderer.apply(view, text, mathMode)
+        }
 
         view.setTextColor(
             Color.rgb(
@@ -12312,12 +12327,19 @@ class LessonActivity : AppCompatActivity() {
         )
 
         if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
-            ViewCompat.setOnApplyWindowInsetsListener(overlay) { view, insets ->
+            fun applyMathFullscreenInsets(insets: WindowInsetsCompat) {
                 val safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() or
                     WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.mandatorySystemGestures())
-                view.setPadding(safe.left, safe.top, safe.right, safe.bottom)
+                overlay.setPadding(safe.left, safe.top, safe.right, safe.bottom)
+            }
+            ViewCompat.setOnApplyWindowInsetsListener(overlay) { view, insets ->
+                applyMathFullscreenInsets(insets)
                 insets
             }
+            // A new overlay can be added after AppCompat has already dispatched/consumed
+            // this window's insets. Apply the cached window geometry as well.
+            ViewCompat.getRootWindowInsets(window.decorView)?.let(::applyMathFullscreenInsets)
+            overlay.post { ViewCompat.getRootWindowInsets(window.decorView)?.let(::applyMathFullscreenInsets) }
             ViewCompat.requestApplyInsets(overlay)
         }
 

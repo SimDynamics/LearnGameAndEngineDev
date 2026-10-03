@@ -17,6 +17,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsAnimationCompat
 import java.util.WeakHashMap
+import java.lang.ref.WeakReference
 
 /** A single non-focusable toolbar follows the resized window immediately above the real IME.
  * Measures its own height and asks the existing ScrollView to reveal the input plus that space.
@@ -24,7 +25,7 @@ import java.util.WeakHashMap
 class MathKeyboardHost private constructor(private val activity: Activity) {
     private val root = activity.findViewById<View>(android.R.id.content)
     private var keyboard: MathKeyboardView? = null
-    private var activeInput: EditText? = null
+    private var activeInput: View? = null
     private var popup: PopupWindow? = null
     private var originalParent: ViewGroup? = null
     private var originalIndex = 0
@@ -32,6 +33,28 @@ class MathKeyboardHost private constructor(private val activity: Activity) {
     private var previousGeometry = ""
     private var compactHeader: View? = null
     private var originalHeaderVisibility = View.VISIBLE
+    private var paddedScroll: ScrollView? = null
+    private var originalScrollBottomPadding = 0
+
+    internal fun refreshPosition() { root.post { update() } }
+
+    private fun restoreScrollPadding() {
+        paddedScroll?.let { scroll ->
+            scroll.setPadding(scroll.paddingLeft, scroll.paddingTop, scroll.paddingRight, originalScrollBottomPadding)
+        }
+        paddedScroll = null
+    }
+
+    private fun reserveToolbarSpace(scroll: ScrollView?, height: Int) {
+        if (paddedScroll !== scroll) {
+            restoreScrollPadding()
+            if (scroll != null) { paddedScroll = scroll; originalScrollBottomPadding = scroll.paddingBottom }
+        }
+        scroll?.let {
+            val bottom = originalScrollBottomPadding + height
+            if (it.paddingBottom != bottom) it.setPadding(it.paddingLeft, it.paddingTop, it.paddingRight, bottom)
+        }
+    }
 
     init {
         root.viewTreeObserver.addOnGlobalLayoutListener { update() }
@@ -71,20 +94,23 @@ class MathKeyboardHost private constructor(private val activity: Activity) {
             root.post {
                 // Focus can move again before this callback runs; never dismiss the latest binding
                 // because an earlier input has already lost focus.
-                val input = (root.findFocus() as? EditText)?.takeIf {
-                    it.isEnabled && it.tag == MathInputFocusOrder.GESTURE_OWNER_TAG && it.hasFocus()
+                val input = root.findFocus()?.takeIf {
+                    (it is EditText || it is MathExpressionEditor) && it.isEnabled && it.tag == MathInputFocusOrder.GESTURE_OWNER_TAG && it.hasFocus()
                 }
                 if (input == null) dismissCurrent()
                 else if (activeInput !== input) {
                     // Graph and number-line coordinate editors use the same toolbar infrastructure.
-                    MathKeyboardView(activity, AppearanceSettingsRepository.getRouteAccentColor(activity,
-                        AppearanceSettingsRepository.ROUTE_MATH_PHYSICS)).bind(input, "NUMERIC")
+                    val bar = bindings[input]?.get() ?: MathKeyboardView(activity, AppearanceSettingsRepository.getRouteAccentColor(activity,
+                        AppearanceSettingsRepository.ROUTE_MATH_PHYSICS))
+                    if (input is EditText) bar.bind(input, "NUMERIC")
+                    else if (input is MathExpressionEditor) bar.bind(input, input.keyboardShortcuts)
                 } else update()
             }
         }
     }
 
-    internal fun show(bar: MathKeyboardView, input: EditText) {
+    internal fun show(bar: MathKeyboardView, input: View) {
+        remember(input, bar)
         if (keyboard !== bar) {
             dismissCurrent()
             keyboard = bar
@@ -153,6 +179,7 @@ class MathKeyboardHost private constructor(private val activity: Activity) {
         ) {
             popup?.dismiss()
             restoreHeader()
+            restoreScrollPadding()
             previousGeometry = ""
             return
         }
@@ -189,6 +216,7 @@ class MathKeyboardHost private constructor(private val activity: Activity) {
             generateSequence(input.parent) { it.parent }
                 .filterIsInstance<ScrollView>()
                 .firstOrNull()
+        reserveToolbarSpace(scroll.takeIf { input is MathExpressionEditor }, barHeight + margin)
 
         // ============================================================
         // LANDSCAPE / ESPACIO MUY PEQUEÑO
@@ -310,6 +338,10 @@ class MathKeyboardHost private constructor(private val activity: Activity) {
 
         if (scroll != null) {
 
+            // A touch picks a slot in the geometry at DOWN. Reposition only after
+            // the gesture ends so lower controls cannot move under the finger.
+            if ((input as? MathExpressionEditor)?.isSelectingSlot == true) return
+
             val scrollBounds = Rect()
 
             if (!scroll.getGlobalVisibleRect(scrollBounds)) {
@@ -329,7 +361,28 @@ class MathKeyboardHost private constructor(private val activity: Activity) {
             val contentHeight =
                 contentBottom - inputTop
 
+            val caret = (input as? MathExpressionEditor)?.let { editor ->
+                editor.expressionLayout.caretBounds(editor.model.cursor)?.apply {
+                    offset(0f, inputTop + editor.expressionBaseline)
+                }
+            }
+
             val delta = when {
+
+                // Una matriz o fracción alta puede exceder el viewport. En ese
+                // caso seguimos el slot activo para poder editar sus filas inferiores.
+                input.height >= availableHeight && caret != null -> when {
+                    caret.height() >= availableHeight -> (caret.top - visibleTop).toInt()
+                    caret.bottom > visibleBottom -> kotlin.math.ceil(caret.bottom - visibleBottom).toInt()
+                    caret.top < visibleTop -> kotlin.math.floor(caret.top - visibleTop).toInt()
+                    else -> 0
+                }
+
+                // Un editor más alto que el área disponible no puede mostrar
+                // ambos extremos. Alinearlo arriba evita alternar entre ellos.
+                input.height >= availableHeight ->
+
+                    inputTop - visibleTop
 
                 // Si input + Comprobar caben juntos,
                 // desplazamos hasta hacer visible Comprobar.
@@ -356,12 +409,16 @@ class MathKeyboardHost private constructor(private val activity: Activity) {
             }
 
             if (delta != 0) {
+                val previousScrollY = scroll.scrollY
                 scroll.scrollBy(0, delta)
 
                 // Después del movimiento obtenemos nuevamente
-                // las coordenadas reales.
-                root.post {
-                    update()
+                // las coordenadas reales. En el extremo del contenido,
+                // scrollBy puede quedar limitado sin mover nada.
+                if (scroll.scrollY != previousScrollY) {
+                    root.post {
+                        update()
+                    }
                 }
             }
 
@@ -381,6 +438,7 @@ class MathKeyboardHost private constructor(private val activity: Activity) {
 
     private fun dismissCurrent() {
         restoreHeader()
+        restoreScrollPadding()
         popup?.dismiss()
         val bar = keyboard
         if (bar != null) {
@@ -410,6 +468,8 @@ class MathKeyboardHost private constructor(private val activity: Activity) {
 
     companion object {
         private val hosts = WeakHashMap<Activity, MathKeyboardHost>()
+        private val bindings = WeakHashMap<View, WeakReference<MathKeyboardView>>()
+        internal fun remember(input: View, bar: MathKeyboardView) { bindings[input] = WeakReference(bar) }
         fun install(activity: Activity): MathKeyboardHost = hosts.getOrPut(activity) { MathKeyboardHost(activity) }
         internal fun current(activity: Activity): MathKeyboardHost? = hosts[activity]
     }

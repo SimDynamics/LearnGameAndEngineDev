@@ -77,7 +77,7 @@ class MathPuzzleDeviceTest {
                 inputs[1].setText("6/8")
                 check.performClick()
                 activity.findViewById<Button>(R.id.buttonContinue).performClick()
-                assertEquals("1 de 16", activity.findViewById<TextView>(R.id.textProgress).text.toString())
+                assertEquals("1 de 18", activity.findViewById<TextView>(R.id.textProgress).text.toString())
                 assertEquals(0, ProgressRepository.getLessonPageProgress(activity, route, lesson).completed)
                 inputs[2].setText("0.33")
                 check.performClick()
@@ -95,13 +95,13 @@ class MathPuzzleDeviceTest {
                 assertTrue(inputs.all { it.isEnabled && it.text.isEmpty() })
                 assertEquals(0, ProgressRepository.getLessonPageProgress(activity, route, lesson).completed)
                 activity.findViewById<Button>(R.id.buttonContinue).performClick()
-                assertEquals("1 de 16", activity.findViewById<TextView>(R.id.textProgress).text.toString())
+                assertEquals("1 de 18", activity.findViewById<TextView>(R.id.textProgress).text.toString())
                 inputs[0].setText("7.5")
                 inputs[1].setText("3/4")
                 inputs[2].setText("0,33")
                 button(content, "Comprobar").performClick()
                 activity.findViewById<Button>(R.id.buttonContinue).performClick()
-                assertEquals("2 de 16", activity.findViewById<TextView>(R.id.textProgress).text.toString())
+                assertEquals("2 de 18", activity.findViewById<TextView>(R.id.textProgress).text.toString())
             }
         }
     }
@@ -109,7 +109,7 @@ class MathPuzzleDeviceTest {
     @Test fun everySandboxPageRendersAndFullscreenExitStaysVisibleAtLargeTextSize() {
         LessonTextSizeSettingsRepository.saveUsesGlobalScale(context, "math_course_01", true)
         LessonTextSizeSettingsRepository.saveGlobalScale(context, 150)
-        for (page in 0 until 16) {
+        for (page in 0 until 18) {
             wakeDevice()
             ProgressRepository.saveCurrentPage(context, route, lesson, page)
             ActivityScenario.launch<LessonActivity>(intent()).use { scenario ->
@@ -117,7 +117,7 @@ class MathPuzzleDeviceTest {
                     val content = activity.findViewById<ViewGroup>(R.id.lessonContent)
                     assertFalse("Página ${page + 1}: JSON no renderizado", descendants(content).filterIsInstance<TextView>().any { it.text.contains("No se pudo cargar") })
                     assertTrue(descendants(content).any { it.tag == MathPuzzleRenderer.INTERACTION_TAG })
-                    assertEquals("${page + 1} de 16", activity.findViewById<TextView>(R.id.textProgress).text.toString())
+                    assertEquals("${page + 1} de 18", activity.findViewById<TextView>(R.id.textProgress).text.toString())
                     button(content, "Pantalla completa").performClick()
                 }
                 instrumentation.waitForIdleSync()

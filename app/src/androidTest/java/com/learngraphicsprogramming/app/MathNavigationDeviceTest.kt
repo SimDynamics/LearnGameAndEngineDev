@@ -109,18 +109,22 @@ class MathNavigationDeviceTest {
                 }
                 assertEquals(chain[1].id, NavigationRepository.getNextLessonInUnit(context, route, chain[0].id)?.lessonId)
                 assertEquals(chain[2].id, NavigationRepository.getNextLessonInUnit(context, route, chain[1].id)?.lessonId)
-                assertNull("Last lesson cannot cross to another unit/course", NavigationRepository.getNextLessonInUnit(context, route, chain[2].id))
+                if (currentUnit.id == unit) {
+                    assertEquals("La siguiente lección válida incluye el sandbox existente", sandbox,
+                        NavigationRepository.getNextLessonInUnit(context, route, chain[2].id)?.lessonId)
+                } else {
+                    assertNull("Last lesson cannot cross to another unit/course", NavigationRepository.getNextLessonInUnit(context, route, chain[2].id))
+                }
             }
         }
         assertTrue("Sandbox remains manually available", LessonRepository.lessonExists(context, route, sandbox))
         assertNull(NavigationRepository.getNextLessonInUnit(context, route, sandbox))
     }
 
-    @Test fun firstThreeLessonsContinueThenReturnToTheCorrectUnit() {
+    @Test fun firstThreeLessonsContinueToTheExistingFourthLesson() {
         val lessonIds = listOf("numbers_operations", "fractions_decimals", "powers_roots").map { "${unit}__$it" }
         lessonIds.forEach { ProgressRepository.resetLesson(context, route, it) }
         val monitor = instrumentation.addMonitor(UnitActivity::class.java.name, null, false)
-        var destination: Activity? = null
         try {
             val intent = Intent(context, LessonActivity::class.java).putExtra("routeId", route)
                 .putExtra("courseId", course).putExtra("unitId", unit).putExtra("lessonId", lessonIds[0]).putExtra("lessonNumber", 1)
@@ -140,12 +144,44 @@ class MathNavigationDeviceTest {
                     assertEquals(lessonIds[2], NavigationStateRepository.getState(context).lessonId)
                     answer(activity, "9")
                     activity.findViewById<View>(R.id.buttonContinue).performClick()
+                    assertEquals("Lección 4", activity.findViewById<TextView>(R.id.textTopLesson).text.toString())
+                    assertEquals(sandbox, NavigationStateRepository.getState(context).lessonId)
+                    assertEquals(NavigationStateRepository.SCREEN_LESSON, NavigationStateRepository.getState(context).screen)
+                }
+                scenario.recreate()
+                scenario.onActivity { activity ->
+                    assertEquals("Lección 4", activity.findViewById<TextView>(R.id.textTopLesson).text.toString())
+                    assertEquals(sandbox, activity.intent.getStringExtra("lessonId"))
+                }
+                assertNull("No se abre UnitActivity mientras exista la siguiente lección", monitor.lastActivity)
+            }
+        } finally {
+            instrumentation.removeMonitor(monitor)
+            instrumentation.waitForIdleSync()
+        }
+    }
+
+    @Test fun lastValidLessonReturnsToItsContainingUnit() {
+        val lastCourse = "math_course_02"
+        val lastUnit = "${lastCourse}__angles_and_ratios"
+        val lastLesson = "${lastUnit}__qa_step_03"
+        ProgressRepository.resetLesson(context, route, lastLesson)
+        val monitor = instrumentation.addMonitor(UnitActivity::class.java.name, null, false)
+        var destination: Activity? = null
+        try {
+            val intent = Intent(context, LessonActivity::class.java).putExtra("routeId", route)
+                .putExtra("courseId", lastCourse).putExtra("unitId", lastUnit)
+                .putExtra("lessonId", lastLesson).putExtra("lessonNumber", 3)
+            ActivityScenario.launch<LessonActivity>(intent).use { scenario ->
+                scenario.onActivity { activity ->
+                    answer(activity, "6")
+                    activity.findViewById<View>(R.id.buttonContinue).performClick()
                 }
                 destination = instrumentation.waitForMonitorWithTimeout(monitor, 5000)
                 assertNotNull(destination)
                 assertEquals(route, destination!!.intent.getStringExtra("routeId"))
-                assertEquals(course, destination!!.intent.getStringExtra("courseId"))
-                assertEquals(unit, destination!!.intent.getStringExtra("unitId"))
+                assertEquals(lastCourse, destination!!.intent.getStringExtra("courseId"))
+                assertEquals(lastUnit, destination!!.intent.getStringExtra("unitId"))
                 assertEquals(NavigationStateRepository.SCREEN_UNIT, NavigationStateRepository.getState(context).screen)
             }
         } finally {
@@ -170,7 +206,7 @@ class MathNavigationDeviceTest {
                     assertEquals(course, destination.intent.getStringExtra("courseId"))
                     assertEquals(unit, destination.intent.getStringExtra("unitId"))
                     assertEquals(sandbox, destination.intent.getStringExtra("lessonId"))
-                    assertEquals("8 de 16", destination.findViewById<TextView>(R.id.textProgress).text.toString())
+                    assertEquals("8 de 18", destination.findViewById<TextView>(R.id.textProgress).text.toString())
                     val saved = NavigationStateRepository.getState(context)
                     assertEquals(NavigationStateRepository.SCREEN_LESSON, saved.screen)
                     assertEquals(route, saved.routeId)

@@ -35,6 +35,7 @@ object MathValidators {
         register("symbolic", ::expression)
         register("text", ::literal)
         register("exact_text", ::literal)
+        register("latex", ::latex)
         register("choice", ::choice)
         register("fields", ::fields)
         register("order", ::order)
@@ -76,9 +77,13 @@ object MathValidators {
             "numeric", "tolerance", "exact_fraction" -> number(spec, "expected")
             "equivalent_expression", "symbolic" -> {
                 require(spec.opt("expected") is String) { "$type requiere expected como texto." }
-                PolynomialExpression.parse(spec.getString("expected"))
+                PolynomialExpression.parse(MathExpressionSemantics.polynomialSource(spec.getString("expected")))
             }
             "text", "exact_text" -> require(spec.opt("expected") is String) { "$type requiere expected como texto." }
+            "latex" -> {
+                require(spec.opt("expected") is String) { "latex requiere expected como texto." }
+                MathExpressionSemantics.canonical(spec.getString("expected"))
+            }
             "choice", "order" -> stringList(requiredArray(spec, "expected"))
             "matching" -> stringMap(requiredObject(spec, "expected"))
             "fields", "sliders" -> {
@@ -157,13 +162,18 @@ object MathValidators {
     private fun expression(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val text = (answer as? MathAnswer.Text)?.value ?: return wrongKind()
         if (text.isBlank()) return fail("Escribe una expresión.")
-        val actual = PolynomialExpression.parse(text)
-        val expected = PolynomialExpression.parse(spec.getString("expected"))
+        val actual = PolynomialExpression.parse(MathExpressionSemantics.polynomialSource(text))
+        val expected = PolynomialExpression.parse(MathExpressionSemantics.polynomialSource(spec.getString("expected")))
         return result(actual == expected)
     }
 
     private fun literal(spec: JSONObject, answer: MathAnswer): MathValidationResult =
         result((answer as? MathAnswer.Text)?.value == spec.getString("expected"))
+
+    private fun latex(spec: JSONObject, answer: MathAnswer): MathValidationResult {
+        val text = (answer as? MathAnswer.Text)?.value ?: return wrongKind()
+        return result(MathExpressionSemantics.canonical(text) == MathExpressionSemantics.canonical(spec.getString("expected")))
+    }
 
     private fun choice(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val selected = (answer as? MathAnswer.Choice)?.selected ?: return wrongKind()

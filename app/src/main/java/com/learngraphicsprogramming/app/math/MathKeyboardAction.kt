@@ -15,7 +15,7 @@ import android.widget.EditText
  * POWER    -> □^□
  * ROOT     -> sqrt{□}
  */
-internal sealed class MathKeyboardAction {
+sealed class MathKeyboardAction {
 
     abstract val label: String
     abstract val contentDescription: String
@@ -117,6 +117,29 @@ internal sealed class MathKeyboardAction {
         }
     }
 
+    /** One action has linear insertion for SIMPLE and AST insertion for STRUCTURED. */
+    sealed class Structure(override val label: String, override val contentDescription: String,
+        private val linear: String) : MathKeyboardAction() {
+        override fun apply(target: EditText, minusInsertion: String) = replaceSelection(target, linear)
+    }
+    data object Power : Structure("xⁿ", "Insertar potencia", "^")
+    data object Subscript : Structure("xₙ", "Insertar subíndice", "_")
+    data object Root : Structure("√", "Insertar raíz cuadrada", "√")
+    data object NthRoot : Structure("ⁿ√", "Insertar raíz de índice n", "√")
+    data object AbsoluteValue : Structure("|□|", "Insertar valor absoluto", "||")
+    data object Brackets : Structure("[□]", "Insertar corchetes", "[]")
+    data object Braces : Structure("{□}", "Insertar agrupación entre llaves", "{}")
+    data object Integral : Structure("∫", "Insertar integral", "∫")
+    data object Sum : Structure("∑", "Insertar sumatoria", "∑")
+    data object Product : Structure("∏", "Insertar producto", "∏")
+    data object Limit : Structure("lim", "Insertar límite", "lim")
+    data object Matrix : Structure("▦", "Insertar matriz 2 por 2", "")
+    data object Cases : Structure("{…", "Insertar expresión por partes", "")
+    data object Derivative : Structure("d/dx", "Insertar derivada", "d/dx")
+    data class Function(val name: String) : Structure("$name()", "Insertar función $name", "$name()")
+    data object MoveLeft : Structure("←", "Mover cursor atrás", "")
+    data object MoveRight : Structure("→", "Mover cursor adelante", "")
+
     companion object {
 
         /**
@@ -137,8 +160,27 @@ internal sealed class MathKeyboardAction {
                 "⌫" ->
                     Backspace
 
+                "FRACTION" -> Fraction
+                "POWER" -> Power
+                "SUBSCRIPT" -> Subscript
+                "ROOT" -> Root
+                "NTH_ROOT" -> NthRoot
+                "PARENTHESES" -> Parentheses
+                "ABSOLUTE_VALUE" -> AbsoluteValue
+                "BRACKETS" -> Brackets
+                "BRACES" -> Braces
+                "INTEGRAL" -> Integral
+                "SUM" -> Sum
+                "PRODUCT" -> Product
+                "LIMIT" -> Limit
+                "MATRIX" -> Matrix
+                "CASES" -> Cases
+                "DERIVATIVE" -> Derivative
+                "MOVE_LEFT" -> MoveLeft
+                "MOVE_RIGHT" -> MoveRight
+
                 else ->
-                    Symbol(shortcut)
+                    if (shortcut.startsWith("FUNCTION:")) Function(shortcut.substringAfter(':')) else Symbol(shortcut)
             }
 
         private fun replaceSelection(

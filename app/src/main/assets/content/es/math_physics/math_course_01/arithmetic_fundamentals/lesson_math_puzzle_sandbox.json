@@ -1526,6 +1526,309 @@
           }
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "17 · QA: editor estructurado y expresiones anidadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba del motor, sin contenido curricular. Texto en línea con \\(x^2+1\\), y bloque matemático: \\[\\frac{x+1}{2}\\]. Prueba también foco, cursor, pegado, Reiniciar, Comprobar y restauración."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "structured_editor_basic_qa",
+          "prompt": "Reproduce cada muestra con el editor o pega su LaTeX soportado. Los espacios vacíos se conservan como borrador; Comprobar requiere completar todos los campos.",
+          "representations": [
+            {
+              "type": "math_formula",
+              "latex": "\\frac{x+1}{2}"
+            },
+            {
+              "type": "math_formula",
+              "latex": "x_{1}^{2}"
+            },
+            {
+              "type": "math_formula",
+              "latex": "\\sqrt{x}"
+            },
+            {
+              "type": "math_formula",
+              "latex": "\\frac{1}{\\sqrt[3]{x+4}}"
+            },
+            {
+              "type": "math_formula",
+              "latex": "\\left(x+1\\right)"
+            },
+            {
+              "type": "math_formula",
+              "latex": "\\left|x\\right|"
+            },
+            {
+              "type": "math_formula",
+              "latex": "\\sin{x}+\\log_{2}{x}"
+            },
+            {
+              "type": "math_formula",
+              "latex": "\\pi+e\\leq2"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "expressions",
+              "label": "Expresiones",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "fraction",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Fracción: x más uno sobre dos",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "scripts",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Potencia y subíndice",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "root",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Raíz cuadrada",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "nested",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Fracción con raíz cúbica anidada",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "group",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Paréntesis",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "absolute",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Valor absoluto",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "functions",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Seno y logaritmo de base dos",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "relation",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Constantes y relación",
+                  "keyboard": "ALGEBRA"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fraction": {
+                    "type": "latex",
+                    "expected": "\\frac{x+1}{2}"
+                  },
+                  "scripts": {
+                    "type": "latex",
+                    "expected": "x_{1}^{2}"
+                  },
+                  "root": {
+                    "type": "latex",
+                    "expected": "\\sqrt{x}"
+                  },
+                  "nested": {
+                    "type": "latex",
+                    "expected": "\\frac{1}{\\sqrt[3]{x+4}}"
+                  },
+                  "group": {
+                    "type": "latex",
+                    "expected": "\\left(x+1\\right)"
+                  },
+                  "absolute": {
+                    "type": "latex",
+                    "expected": "\\left|x\\right|"
+                  },
+                  "functions": {
+                    "type": "latex",
+                    "expected": "\\sin{x}+\\log_{2}{x}"
+                  },
+                  "relation": {
+                    "type": "latex",
+                    "expected": "\\pi+e\\leq2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las estructuras coinciden con las muestras de QA.",
+            "incorrect": "Completa las estructuras y revisa la muestra correspondiente."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "18 · QA: operadores, matrices y expresiones por partes"
+        },
+        {
+          "type": "paragraph",
+          "text": "QA del motor. Las muestras reúnen límites, celdas y condiciones editables. Comprueba navegación entre sus espacios y restauración de un borrador incompleto."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "structured_editor_advanced_qa",
+          "prompt": "Reproduce cada muestra con el editor o pega su LaTeX soportado. Los espacios vacíos se conservan como borrador; Comprobar requiere completar todos los campos.",
+          "representations": [
+            {
+              "type": "math_formula",
+              "latex": "\\int_{0}^{1}{x^{2}dx}"
+            },
+            {
+              "type": "math_formula",
+              "latex": "\\sum_{i=1}^{n}{i}"
+            },
+            {
+              "type": "math_formula",
+              "latex": "\\prod_{i=1}^{n}{i}"
+            },
+            {
+              "type": "math_formula",
+              "latex": "\\lim_{x\\to0}{x}"
+            },
+            {
+              "type": "math_formula",
+              "latex": "\\frac{\\mathrm{d}x^{2}}{\\mathrm{d}{x}}"
+            },
+            {
+              "type": "math_formula",
+              "latex": "\\begin{matrix}1&2\\\\3&4\\end{matrix}"
+            },
+            {
+              "type": "math_formula",
+              "latex": "\\begin{cases}x&x\\geq0\\\\-x&x<0\\end{cases}"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "expressions",
+              "label": "Expresiones",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "integral",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Integral con límites",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "sum",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Sumatoria",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "product",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Producto",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "limit",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Límite",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "derivative",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Derivada",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "matrix",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Matriz de dos por dos",
+                  "keyboard": "ALGEBRA"
+                },
+                {
+                  "id": "cases",
+                  "type": "expression",
+                  "inputMode": "structured",
+                  "label": "Expresión por partes",
+                  "keyboard": "ALGEBRA"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "integral": {
+                    "type": "latex",
+                    "expected": "\\int_{0}^{1}{x^{2}dx}"
+                  },
+                  "sum": {
+                    "type": "latex",
+                    "expected": "\\sum_{i=1}^{n}{i}"
+                  },
+                  "product": {
+                    "type": "latex",
+                    "expected": "\\prod_{i=1}^{n}{i}"
+                  },
+                  "limit": {
+                    "type": "latex",
+                    "expected": "\\lim_{x\\to0}{x}"
+                  },
+                  "derivative": {
+                    "type": "latex",
+                    "expected": "\\frac{\\mathrm{d}x^{2}}{\\mathrm{d}{x}}"
+                  },
+                  "matrix": {
+                    "type": "latex",
+                    "expected": "\\begin{matrix}1&2\\\\3&4\\end{matrix}"
+                  },
+                  "cases": {
+                    "type": "latex",
+                    "expected": "\\begin{cases}x&x\\geq0\\\\-x&x<0\\end{cases}"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las estructuras coinciden con las muestras de QA.",
+            "incorrect": "Completa las estructuras y revisa la muestra correspondiente."
+          }
+        }
+      ]
     }
   ]
 }

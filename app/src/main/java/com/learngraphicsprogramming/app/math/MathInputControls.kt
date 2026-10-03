@@ -108,34 +108,11 @@ private class TextControl(
             }
         )
 
-    /*
-     * FUTURO:
-     *
-     * when (inputMode) {
-     *     SIMPLE -> EditText
-     *     STRUCTURED -> MathExpressionEditor
-     * }
-     *
-     * Por ahora el editor estructurado todavía no existe.
-     */
-    private val edit =
-        when (inputMode) {
-            MathInputMode.SIMPLE ->
-                input(
-                    context,
-                    accent,
-                    spec.config.optString(
-                        "hint",
-                        "Respuesta"
-                    ),
-                    keyboardMode
-                )
-
-            MathInputMode.STRUCTURED ->
-                throw IllegalStateException(
-                    "MathExpressionEditor todavía no está disponible."
-                )
-        }
+    private val edit: EditText? = if (inputMode == MathInputMode.SIMPLE)
+        input(context, accent, spec.config.optString("hint", "Respuesta"), keyboardMode) else null
+    private val structured = if (inputMode == MathInputMode.STRUCTURED) MathExpressionEditor(context).apply {
+        background = MathWidgetUi.background(context, true, accent)
+    } else null
 
     private val keyboard =
         MathKeyboardView(
@@ -168,59 +145,66 @@ private class TextControl(
             )
         }
 
-        edit.contentDescription =
+        val surface = edit ?: structured!!
+        MathKeyboardHost.remember(surface, keyboard)
+        structured?.configureExpected(spec.validator.optString("expected"))
+        structured?.keyboardShortcuts = MathShortcutResolver.resolveStructured(spec.validator, keyboardMode, spec.config.optJSONArray("keyboardSymbols"))
+        surface.contentDescription =
             label.ifBlank {
                 "Respuesta matemática"
             }
 
-        MathKeyboardContext.configure(
-            edit,
-            spec.validator,
-            keyboardMode,
-            spec.config.optJSONArray(
-                "keyboardSymbols"
-            )
-        )
-
-        view.addView(edit)
+        if (edit != null) MathKeyboardContext.configure(edit, spec.validator, keyboardMode, spec.config.optJSONArray("keyboardSymbols"))
+        view.addView(if (structured != null) structuredContainer(context, structured) else surface)
         view.addView(keyboard)
 
-        edit.setOnFocusChangeListener { _, focused ->
+        surface.setOnFocusChangeListener { _, focused ->
             if (focused) {
-                keyboard.bind(
-                    edit,
-                    keyboardMode
-                )
+                if (edit != null) keyboard.bind(edit, keyboardMode)
+                else keyboard.bind(structured!!, MathShortcutResolver.resolveStructured(spec.validator, keyboardMode, spec.config.optJSONArray("keyboardSymbols")))
             } else {
                 keyboard.hide()
             }
         }
 
-        edit.changed(onChange)
+        edit?.changed(onChange)
+        structured?.onExpressionChanged = onChange
     }
 
     override fun answer(): MathAnswer =
         MathAnswer.Text(
-            edit.text.toString()
+            edit?.text?.toString() ?: structured!!.getLatex()
         )
 
     override fun restore(
         answer: MathAnswer
     ) {
         if (answer is MathAnswer.Text) {
-            edit.setText(answer.value)
+            if (edit != null) edit.setText(answer.value) else structured!!.setLatex(answer.value)
         }
     }
 
     override fun setEditable(
         enabled: Boolean
     ) {
-        edit.isEnabled = enabled
+        (edit ?: structured!!).isEnabled = enabled
 
         if (!enabled) {
             keyboard.hide()
         }
     }
+    override fun hasDraftChanges(): Boolean = structured?.getLatex()?.isNotBlank() == true
+    override fun draftError(): String? = structured?.takeIf { it.getLatex().isNotBlank() && !it.isComplete() }
+        ?.let { "Completa los espacios de la expresión matemática." }
+    override fun saveDraft(): JSONObject? = structured?.saveDraft()
+    override fun restoreDraft(state: JSONObject) { structured?.restoreDraft(state) }
+}
+
+private fun structuredContainer(context: Context, editor: MathExpressionEditor): View = HorizontalScrollView(context).apply {
+    isFillViewport = true
+    tag = MathInputFocusOrder.GESTURE_OWNER_TAG
+    layoutParams = LinearLayout.LayoutParams(-1, -2)
+    addView(editor, ViewGroup.LayoutParams(-2, -2))
 }
 
 private class ChoiceControl(context: Context, spec: MathResponseSpec, private val accent: Int, private val onChange: () -> Unit) : MathResponseControl {
@@ -295,7 +279,8 @@ private class ChoiceControl(context: Context, spec: MathResponseSpec, private va
 
 private class FieldsControl(context: Context, spec: MathResponseSpec, accent: Int, onChange: () -> Unit) : MathResponseControl {
     override val view = MathWidgetUi.column(context)
-    private data class Field(val view: View, val read: () -> String, val write: (String) -> Unit, val editable: Boolean)
+    private data class Field(val view: View, val read: () -> String, val write: (String) -> Unit, val editable: Boolean,
+        val structured: MathExpressionEditor? = null)
     private val fields = linkedMapOf<String, Field>()
     private val keyboard = MathKeyboardView(context, accent)
 
@@ -389,7 +374,7 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
                             }
                         )
 
-                    val edit =
+                    val edit: View =
                         when (inputMode) {
                             MathInputMode.SIMPLE ->
                                 input(
@@ -409,17 +394,20 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
                                 )
 
                             MathInputMode.STRUCTURED ->
-                                throw IllegalStateException(
-                                    "MathExpressionEditor todavía no está disponible."
-                                )
+                                MathExpressionEditor(context).apply { background = MathWidgetUi.background(context, true, accent) }
                         }
+                    MathKeyboardHost.remember(edit, keyboard)
 
                     edit.contentDescription =
                         fieldLabel.ifBlank {
                             id
                         }
 
-                    MathKeyboardContext.configure(
+                    val fieldValidator = spec.validator.optJSONObject("fields")?.optJSONObject(id)
+                    (edit as? MathExpressionEditor)?.configureExpected(fieldValidator?.optString("expected").orEmpty())
+                    val symbols = definition.optJSONArray("keyboardSymbols") ?: spec.config.optJSONArray("keyboardSymbols")
+                    (edit as? MathExpressionEditor)?.keyboardShortcuts = MathShortcutResolver.resolveStructured(fieldValidator, keyboardMode, symbols)
+                    if (edit is EditText) MathKeyboardContext.configure(
                         edit,
                         spec.validator
                             .optJSONObject("fields")
@@ -432,26 +420,26 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
                         )
                     )
 
-                    edit.changed(onChange)
+                    if (edit is EditText) edit.changed(onChange)
+                    if (edit is MathExpressionEditor) edit.onExpressionChanged = onChange
 
                     edit.setOnFocusChangeListener { _, focused ->
                         if (focused) {
-                            keyboard.bind(
-                                edit,
-                                keyboardMode
-                            )
+                            if (edit is EditText) keyboard.bind(edit, keyboardMode)
+                            else keyboard.bind(edit as MathExpressionEditor, MathShortcutResolver.resolveStructured(fieldValidator, keyboardMode, symbols))
                         } else {
                             keyboard.hide()
                         }
                     }
 
-                    addControl(edit)
+                    addControl(if (edit is MathExpressionEditor) structuredContainer(context, edit) else edit)
 
                     Field(
                         fieldColumn,
-                        { edit.text.toString() },
-                        { edit.setText(it) },
-                        true
+                        { if (edit is EditText) edit.text.toString() else (edit as MathExpressionEditor).getLatex() },
+                        { if (edit is EditText) edit.setText(it) else (edit as MathExpressionEditor).setLatex(it) },
+                        true,
+                        edit as? MathExpressionEditor
                     )
                 }
                 else -> throw IllegalArgumentException("Tipo de campo desconocido en $id")
@@ -514,6 +502,15 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
         view.addView(keyboard)
     }
     override fun answer(): MathAnswer = MathAnswer.Fields(fields.filterValues { it.editable }.mapValues { it.value.read() })
+    override fun hasDraftChanges(): Boolean = fields.values.any { it.structured?.getLatex()?.isNotBlank() == true }
+    override fun draftError(): String? = fields.values.firstOrNull { it.structured?.let { editor -> editor.getLatex().isNotBlank() && !editor.isComplete() } == true }
+        ?.let { "Completa los espacios de todos los campos matemáticos." }
+    override fun saveDraft(): JSONObject? = fields.filterValues { it.structured != null }.takeIf { it.isNotEmpty() }?.let { selected ->
+        JSONObject().put("fields", JSONObject().apply { selected.forEach { (id, field) -> put(id, field.structured!!.saveDraft()) } })
+    }
+    override fun restoreDraft(state: JSONObject) {
+        state.optJSONObject("fields")?.let { drafts -> fields.forEach { (id, field) -> drafts.optJSONObject(id)?.let { field.structured?.restoreDraft(it) } } }
+    }
     override fun restore(answer: MathAnswer) {
         if (answer is MathAnswer.Fields) answer.values.forEach { (id, value) -> fields[id]?.write?.invoke(value) }
     }

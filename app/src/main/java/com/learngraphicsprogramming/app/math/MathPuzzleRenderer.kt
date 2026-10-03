@@ -133,7 +133,17 @@ class MathPuzzleRenderer(
             onCompletionChanged(true)
         } else {
             val details = results.filterNot { it.second.correct }.map { (response, result) ->
-                "${response.config.optString("label", response.id)}: ${result.message}"
+                val definitions = response.config.optJSONArray("fields")
+                var message = result.message
+                if (definitions != null) for (index in 0 until definitions.length()) {
+                    val field = definitions.getJSONObject(index)
+                    val prefix = "${field.getString("id")}: "
+                    if (message.startsWith(prefix)) {
+                        message = "${field.optString("label", "Campo ${index + 1}")}: ${message.removePrefix(prefix)}"
+                        break
+                    }
+                }
+                "${response.config.optString("label", response.id)}: $message"
             }
             MathTextRenderer.apply(feedback, (listOf("✗ ${spec.incorrectFeedback}") + details).filter { it.isNotBlank() }.joinToString("\n"))
             feedback.setTextColor(Color.rgb(240, 166, 166))

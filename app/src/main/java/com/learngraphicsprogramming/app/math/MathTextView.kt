@@ -3,7 +3,6 @@ package com.learngraphicsprogramming.app.math
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.Typeface
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.ReplacementSpan
@@ -42,29 +41,53 @@ object MathTextRenderer {
     fun render(value: String, mode: String = "auto"): CharSequence {
         if (mode == "text" || value.isBlank()) return value
         val output = SpannableStringBuilder()
-        fun appendMath(source: String) {
+        fun appendMath(source: String, content: Boolean = false) {
             if (source.isBlank()) { output.append(source); return }
             val start = output.length
             output.append(source)
-            output.setSpan(MathFormulaSpan(MathFormulaParser(source).parse()), start, output.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            output.setSpan(MathFormulaSpan(parseExpression(source, content)), start, output.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         }
-        if (mode == "inline" || mode == "block" || (value.length <= 100 && wholeMath.matches(value.trim()))) {
-            appendMath(value.removeSurrounding("\\(", "\\)").removeSurrounding("\\[", "\\]"))
+        fun appendContent(source: String) {
+            // TextView owns line breaks; every line still uses the common AST layout.
+            source.split('\n').forEachIndexed { index, line ->
+                if (index > 0) output.append('\n')
+                appendMath(line, content = true)
+            }
+        }
+        if (mode == "inline" || mode == "block") {
+            var index = 0
+            var contentStart = 0
+            while (index < value.length) {
+                val delimiters = delimitersAt(value, index)
+                val end = delimiters?.let { value.indexOf(it.second, index + it.first.length) } ?: -1
+                if (delimiters != null && end > index + delimiters.first.length) {
+                    appendContent(value.substring(contentStart, index))
+                    val display = delimiters.first == "\\[" || delimiters.first == "$$"
+                    if (display && output.isNotEmpty() && output.last() != '\n') output.append('\n')
+                    appendMath(value.substring(index + delimiters.first.length, end).let { if (display) it.trim() else it })
+                    index = end + delimiters.second.length
+                    if (display && index < value.length && value[index] != '\n') output.append('\n')
+                    contentStart = index
+                } else index++
+            }
+            appendContent(value.substring(contentStart))
+            return output
+        }
+        if (value.length <= 100 && wholeMath.matches(value.trim())) {
+            appendMath(value)
             return output
         }
         var index = 0
         while (index < value.length) {
-            val delimiters = when {
-                value.startsWith("\\(", index) -> "\\(" to "\\)"
-                value.startsWith("\\[", index) -> "\\[" to "\\]"
-                value[index] == '$' -> "$" to "$"
-                else -> null
-            }
+            val delimiters = delimitersAt(value, index)
             if (delimiters != null) {
                 val end = value.indexOf(delimiters.second, index + delimiters.first.length)
                 if (end > index + delimiters.first.length) {
-                    appendMath(value.substring(index + delimiters.first.length, end))
+                    val display = delimiters.first == "\\[" || delimiters.first == "$$"
+                    if (display && output.isNotEmpty() && output.last() != '\n') output.append('\n')
+                    appendMath(value.substring(index + delimiters.first.length, end).let { if (display) it.trim() else it })
                     index = end + delimiters.second.length
+                    if (display && index < value.length && value[index] != '\n') output.append('\n')
                     continue
                 }
             }
@@ -84,96 +107,38 @@ object MathTextRenderer {
         }
         return output
     }
-}
 
-private data class MathMetrics(val width: Float, val ascent: Float, val descent: Float)
-
-private sealed interface MathBox {
-    fun measure(paint: Paint, size: Float): MathMetrics
-    fun draw(canvas: Canvas, paint: Paint, size: Float, x: Float, baseline: Float)
-}
-
-private class MathLiteral(private val value: String) : MathBox {
-    private fun configure(paint: Paint, size: Float) { paint.textSize = size; paint.typeface = Typeface.create("serif", paint.typeface?.style ?: Typeface.NORMAL) }
-    override fun measure(paint: Paint, size: Float): MathMetrics {
-        configure(paint, size)
-        val metrics = paint.fontMetrics
-        return MathMetrics(paint.measureText(value), metrics.ascent, metrics.descent)
+    private fun delimitersAt(value: String, index: Int): Pair<String, String>? = when {
+        value.startsWith("\\(", index) -> "\\(" to "\\)"
+        value.startsWith("\\[", index) -> "\\[" to "\\]"
+        value.startsWith("$$", index) -> "$$" to "$$"
+        value[index] == '$' -> "$" to "$"
+        else -> null
     }
-    override fun draw(canvas: Canvas, paint: Paint, size: Float, x: Float, baseline: Float) {
-        configure(paint, size)
-        canvas.drawText(value, x, baseline, paint)
-    }
-}
 
-private class MathRow(private val children: List<MathBox>) : MathBox {
-    override fun measure(paint: Paint, size: Float): MathMetrics {
-        val metrics = children.map { it.measure(paint, size) }
-        return MathMetrics(metrics.sumOf { it.width.toDouble() }.toFloat(), metrics.minOfOrNull { it.ascent } ?: 0f, metrics.maxOfOrNull { it.descent } ?: 0f)
-    }
-    override fun draw(canvas: Canvas, paint: Paint, size: Float, x: Float, baseline: Float) {
-        var currentX = x
-        children.forEach { child ->
-            val width = child.measure(paint, size).width
-            child.draw(canvas, paint, size, currentX, baseline)
-            currentX += width
+    /** Legacy authored fractions and Unicode scripts remain supported by the shared AST engine. */
+    internal fun parseExpression(source: String, content: Boolean = false): MathExpression.Sequence {
+        // A coordinate separator is punctuation even without whitespace: (1,2) must not
+        // become the decimal (1.2) when imported by the shared mathematical parser.
+        val preservedCoordinates = coordinates.replace(source) { match -> match.value.replace(",", "\\mathrm{,}") }
+        val fractions = numericFraction.replace(preservedCoordinates) { match ->
+            val (top, bottom) = match.value.split('/', limit = 2)
+            "\\frac{$top}{$bottom}"
+        }
+        val normalized = Regex("[⁰¹²³⁴⁵⁶⁷⁸⁹]+").replace(fractions) { match ->
+            "^{${match.value.map { "⁰¹²³⁴⁵⁶⁷⁸⁹".indexOf(it) }.joinToString("")}}"
+        }
+        return when (val result = if (content) MathLatexParser.parseContent(normalized) else MathLatexParser.parse(normalized)) {
+            is MathLatexParser.Result.Success -> result.expression
+            is MathLatexParser.Result.Failure -> MathExpression.Sequence(listOf(MathExpression.Symbol(source)))
         }
     }
 }
 
-private class MathFraction(private val numerator: MathBox, private val denominator: MathBox) : MathBox {
-    private fun positions(paint: Paint, size: Float): Triple<MathMetrics, Float, Float> {
-        val top = numerator.measure(paint, size * .82f)
-        val bottom = denominator.measure(paint, size * .82f)
-        val axis = -size * .29f
-        val topBaseline = axis - size * .11f - top.descent
-        val bottomBaseline = axis + size * .11f - bottom.ascent
-        return Triple(MathMetrics(max(top.width, bottom.width) + size * .25f, topBaseline + top.ascent, bottomBaseline + bottom.descent), topBaseline, bottomBaseline)
-    }
-    override fun measure(paint: Paint, size: Float): MathMetrics = positions(paint, size).first
-    override fun draw(canvas: Canvas, paint: Paint, size: Float, x: Float, baseline: Float) {
-        val (metrics, top, bottom) = positions(paint, size)
-        val numeratorWidth = numerator.measure(paint, size * .82f).width
-        val denominatorWidth = denominator.measure(paint, size * .82f).width
-        numerator.draw(canvas, paint, size * .82f, x + (metrics.width - numeratorWidth) / 2, baseline + top)
-        denominator.draw(canvas, paint, size * .82f, x + (metrics.width - denominatorWidth) / 2, baseline + bottom)
-        paint.strokeWidth = max(1f, size * .045f)
-        canvas.drawLine(x + size * .025f, baseline - size * .29f, x + metrics.width - size * .025f, baseline - size * .29f, paint)
-    }
-}
-
-private class MathScript(private val base: MathBox, private val script: MathBox, private val superscript: Boolean) : MathBox {
-    override fun measure(paint: Paint, size: Float): MathMetrics {
-        val first = base.measure(paint, size)
-        val second = script.measure(paint, size * .68f)
-        val offset = if (superscript) -size * .48f else size * .28f
-        return MathMetrics(first.width + second.width, min(first.ascent, second.ascent + offset), max(first.descent, second.descent + offset))
-    }
-    override fun draw(canvas: Canvas, paint: Paint, size: Float, x: Float, baseline: Float) {
-        val width = base.measure(paint, size).width
-        base.draw(canvas, paint, size, x, baseline)
-        script.draw(canvas, paint, size * .68f, x + width, baseline + if (superscript) -size * .48f else size * .28f)
-    }
-}
-
-private class MathRoot(private val body: MathBox) : MathBox {
-    override fun measure(paint: Paint, size: Float): MathMetrics {
-        val metrics = body.measure(paint, size)
-        return MathMetrics(metrics.width + size * .8f, min(metrics.ascent - size * .09f, -size), metrics.descent)
-    }
-    override fun draw(canvas: Canvas, paint: Paint, size: Float, x: Float, baseline: Float) {
-        val metrics = body.measure(paint, size)
-        MathLiteral("√").draw(canvas, paint, size, x, baseline)
-        body.draw(canvas, paint, size, x + size * .7f, baseline)
-        paint.strokeWidth = max(1f, size * .035f)
-        canvas.drawLine(x + size * .65f, baseline + metrics.ascent - size * .04f, x + size * .8f + metrics.width, baseline + metrics.ascent - size * .04f, paint)
-    }
-}
-
-private class MathFormulaSpan(private val box: MathBox) : ReplacementSpan() {
+private class MathFormulaSpan(private val expression: MathExpression.Sequence) : ReplacementSpan() {
     override fun getSize(paint: Paint, text: CharSequence, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int {
         val size = paint.textSize
-        val metrics = box.measure(Paint(paint), size)
+        val metrics = MathExpressionLayout.create(expression, paint, size)
         fm?.let {
             it.ascent = min(it.ascent, kotlin.math.floor(metrics.ascent).toInt())
             it.top = min(it.top, it.ascent)
@@ -183,88 +148,6 @@ private class MathFormulaSpan(private val box: MathBox) : ReplacementSpan() {
         return ceil(metrics.width).toInt()
     }
     override fun draw(canvas: Canvas, text: CharSequence, start: Int, end: Int, x: Float, top: Int, y: Int, bottom: Int, paint: Paint) {
-        box.draw(canvas, Paint(paint), paint.textSize, x, y.toFloat())
-    }
-}
-
-/** A bounded parser for display only; it never changes the answer/validator syntax. */
-private class MathFormulaParser(private val source: String, private val depth: Int = 0) {
-    private var index = 0
-    fun parse(): MathBox {
-        if (depth > 12 || source.length > 2000) return MathLiteral(source)
-        val boxes = mutableListOf<MathBox>()
-        while (index < source.length) {
-            val char = source[index]
-            if (char == '^' || char == '_') {
-                index++
-                val script = argument()
-                val base = if (boxes.isEmpty()) MathLiteral("") else boxes.removeAt(boxes.lastIndex)
-                boxes += MathScript(base, script, char == '^')
-                continue
-            }
-            if (char in "⁰¹²³⁴⁵⁶⁷⁸⁹") {
-                val digits = "⁰¹²³⁴⁵⁶⁷⁸⁹"
-                val value = buildString { while (index < source.length && source[index] in digits) append(digits.indexOf(source[index++])) }
-                val base = if (boxes.isEmpty()) MathLiteral("") else boxes.removeAt(boxes.lastIndex)
-                boxes += MathScript(base, MathLiteral(value), true)
-                continue
-            }
-            val fraction = NUMERIC_FRACTION.matchAt(source, index)
-            if (fraction != null) {
-                val (top, bottom) = fraction.value.split('/', limit = 2)
-                boxes += MathFraction(MathLiteral(top.replace('-', '−')), MathLiteral(bottom))
-                index = fraction.range.last + 1
-                continue
-            }
-            if (char == '\\') { boxes += command(); continue }
-            if (char == '{') { boxes += argument(); continue }
-            boxes += MathLiteral(if (char == '-') "−" else char.toString())
-            index++
-        }
-        return MathRow(boxes)
-    }
-
-    private fun argument(): MathBox {
-        while (index < source.length && source[index].isWhitespace()) index++
-        if (index >= source.length) return MathLiteral("")
-        if (source[index] != '{') return if (source[index] == '\\') command() else MathLiteral(source[index++].toString())
-        val start = ++index
-        var balance = 1
-        while (index < source.length && balance > 0) {
-            if (source[index] == '{') balance++
-            if (source[index] == '}') balance--
-            index++
-        }
-        val end = if (balance == 0) index - 1 else index
-        return MathFormulaParser(source.substring(start, end), depth + 1).parse()
-    }
-
-    private fun command(): MathBox {
-        val start = index++
-        while (index < source.length && source[index].isLetter()) index++
-        val command = source.substring(start + 1, index)
-        return when (command) {
-            "frac", "dfrac", "tfrac" -> MathFraction(argument(), argument())
-            "sqrt" -> MathRoot(argument())
-            "text", "mathrm", "operatorname" -> argument()
-            "left", "right" -> MathLiteral("")
-            "pi" -> MathLiteral("π")
-            "theta" -> MathLiteral("θ")
-            "times" -> MathLiteral(" × ")
-            "cdot" -> MathLiteral(" · ")
-            "div" -> MathLiteral(" ÷ ")
-            "le", "leq" -> MathLiteral(" ≤ ")
-            "ge", "geq" -> MathLiteral(" ≥ ")
-            "ne", "neq" -> MathLiteral(" ≠ ")
-            "infty" -> MathLiteral("∞")
-            "cup" -> MathLiteral(" ∪ ")
-            "cap" -> MathLiteral(" ∩ ")
-            "in" -> MathLiteral(" ∈ ")
-            else -> MathLiteral(source.substring(start, index))
-        }
-    }
-
-    companion object {
-        private val NUMERIC_FRACTION = Regex("[−-]?\\d+(?:[.,]\\d+)?/\\d+(?:[.,]\\d+)?")
+        MathExpressionLayout.create(expression, paint, paint.textSize).draw(canvas, Paint(paint), x, y.toFloat())
     }
 }

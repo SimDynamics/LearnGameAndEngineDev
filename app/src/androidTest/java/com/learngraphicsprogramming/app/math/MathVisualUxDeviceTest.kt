@@ -193,7 +193,7 @@ class MathVisualUxDeviceTest {
                 assertSame("Back devuelve la misma tarjeta", originalParent, puzzle.parent)
                 assertEquals(MathPoint(2.0, 3.0), graph.points().first())
                 assertEquals(listOf("2", "3"), pointCoordinateEditors(puzzle).map { it.text.toString() })
-                assertTrue(activity.findViewById<TextView>(R.id.textProgress).text.contains("11 de 16"))
+                assertTrue(activity.findViewById<TextView>(R.id.textProgress).text.contains("11 de 18"))
                 assertEquals("Pantalla completa", descendants(puzzle).first {
                     it.contentDescription?.toString() == "Pantalla completa"
                 }.contentDescription)
@@ -407,12 +407,14 @@ class MathVisualUxDeviceTest {
     private fun assertExitRespectsInsets(exit: View) {
         val rootBounds = Rect()
         val exitBounds = Rect()
-        assertTrue(exit.rootView.getGlobalVisibleRect(rootBounds))
+        val rootLocation = IntArray(2)
+        exit.rootView.getLocationOnScreen(rootLocation)
+        rootBounds.set(rootLocation[0], rootLocation[1], rootLocation[0] + exit.rootView.width, rootLocation[1] + exit.rootView.height)
         assertTrue(exit.getGlobalVisibleRect(exitBounds))
         val safe = ViewCompat.getRootWindowInsets(exit)?.getInsets(WindowInsetsCompat.Type.systemBars() or
             WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.mandatorySystemGestures())
             ?: error("Fullscreen sin insets disponibles")
-        assertTrue("Salida encima de la zona del sistema", exitBounds.bottom <= rootBounds.bottom - safe.bottom)
+        assertTrue("Salida encima de la zona del sistema: exit=$exitBounds root=$rootBounds safe=$safe", exitBounds.bottom <= rootBounds.bottom - safe.bottom)
         assertTrue("Salida dentro del borde derecho seguro", exitBounds.right <= rootBounds.right - safe.right)
     }
 }

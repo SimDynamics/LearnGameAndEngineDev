@@ -89,7 +89,7 @@ object MathPuzzleParser {
     }
 
     private fun validatorFamily(type: String): String? = when (type) {
-        "numeric", "tolerance", "exact_fraction", "equivalent_expression", "symbolic", "text", "exact_text" -> "text"
+        "numeric", "tolerance", "exact_fraction", "equivalent_expression", "symbolic", "text", "exact_text", "latex" -> "text"
         "choice", "fields", "order", "matching", "number_line", "sliders" -> type
         "coordinates", "geometry" -> "graph"
         else -> null // Registered extensions define their own answer contract.

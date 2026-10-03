@@ -20,6 +20,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.learngraphicsprogramming.app.math.MathPuzzleRenderer
+import com.learngraphicsprogramming.app.math.MathExpressionEditor
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -110,7 +112,7 @@ class MathLessonUxDeviceTest {
             instrumentation.waitForIdleSync()
             SystemClock.sleep(300)
             scenario.onActivity { activity ->
-                assertEquals("1 de 16", activity.findViewById<TextView>(R.id.textProgress).text.toString())
+                assertEquals("1 de 18", activity.findViewById<TextView>(R.id.textProgress).text.toString())
                 val input = tree(activity.findViewById<View>(R.id.lessonContent)).filterIsInstance<EditText>().first()
                 input.requestRectangleOnScreen(Rect(0, 0, input.width, input.height), true)
                 assertTrue("El input debe quedar visible tras desplazar la página", input.getGlobalVisibleRect(bounds))
@@ -121,7 +123,7 @@ class MathLessonUxDeviceTest {
             swipe(bounds, toRight = false)
             instrumentation.waitForIdleSync()
             scenario.onActivity { activity ->
-                assertEquals("1 de 16", activity.findViewById<TextView>(R.id.textProgress).text.toString())
+                assertEquals("1 de 18", activity.findViewById<TextView>(R.id.textProgress).text.toString())
             }
         }
     }
@@ -165,7 +167,7 @@ class MathLessonUxDeviceTest {
             swipe(bounds, toRight = true)
             instrumentation.waitForIdleSync()
             scenario.onActivity { activity ->
-                assertEquals("2 de 16", activity.findViewById<TextView>(R.id.textProgress).text.toString())
+                assertEquals("2 de 18", activity.findViewById<TextView>(R.id.textProgress).text.toString())
                 val reset = named(activity.findViewById<View>(R.id.lessonContent), "Reiniciar")
                 assertFalse(reset.isEnabled)
                 assertTrue(reset.getGlobalVisibleRect(bounds))
@@ -192,17 +194,27 @@ class MathLessonUxDeviceTest {
     }
 
     @Test fun completingLastMathLessonReturnsToItsContainingUnitWithRouteContext() {
-        ProgressRepository.saveCurrentPage(context, route, lesson, 15)
+        ProgressRepository.saveCurrentPage(context, route, lesson, 17)
         val monitor = instrumentation.addMonitor(UnitActivity::class.java.name, null, false)
         var destination: Activity? = null
         try {
             ActivityScenario.launch<LessonActivity>(intent()).use { scenario ->
                 scenario.onActivity { activity ->
                     val content = activity.findViewById<ViewGroup>(R.id.lessonContent)
-                    val answers = listOf("6", "5", "9", "24")
-                    tree(content).filterIsInstance<EditText>().forEachIndexed { i, input -> input.setText(answers[i]) }
+                    val asset = "content/es/math_physics/math_course_01/arithmetic_fundamentals/lesson_math_puzzle_sandbox.json"
+                    val blocks = JSONObject(activity.assets.open(asset).bufferedReader().use { it.readText() })
+                        .getJSONArray("pages").getJSONObject(17).getJSONArray("blocks")
+                    val response = (0 until blocks.length()).map { blocks.getJSONObject(it) }
+                        .single { it.optString("type") == "math_puzzle" }.getJSONArray("responses").getJSONObject(0)
+                    val fields = response.getJSONArray("fields")
+                    val validators = response.getJSONObject("validator").getJSONObject("fields")
+                    val editors = tree(content).filterIsInstance<MathExpressionEditor>()
+                    assertEquals(fields.length(), editors.size)
+                    editors.forEachIndexed { index, editor ->
+                        assertTrue(editor.setLatex(validators.getJSONObject(fields.getJSONObject(index).getString("id")).getString("expected")))
+                    }
                     tree(content).filterIsInstance<TextView>().filter { it.text == "Comprobar" }.forEach { it.performClick() }
-                    assertEquals(2, tree(content).filterIsInstance<TextView>().count { it.text == "Correcto ✓" })
+                    assertEquals(1, tree(content).filterIsInstance<TextView>().count { it.text == "Correcto ✓" })
                     activity.findViewById<View>(R.id.buttonContinue).performClick()
                 }
                 destination = instrumentation.waitForMonitorWithTimeout(monitor, 5000)

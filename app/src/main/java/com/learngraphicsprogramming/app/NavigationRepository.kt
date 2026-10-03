@@ -19,8 +19,7 @@ data class NavigationLesson(
 
 object NavigationRepository {
 
-    /** Mathematics continues inside its current unit only. Development sandboxes remain manually
-     * available but may opt out of the automatic QA lesson sequence through unit metadata. */
+    /** Mathematics continues to the next lesson with usable content inside its current unit. */
     fun getNextLessonInUnit(context: Context, routeId: String, currentLessonId: String): NavigationLesson? {
         val parts = currentLessonId.split("__", limit = 3)
         if (parts.size != 3) return null
@@ -30,12 +29,10 @@ object NavigationRepository {
         val entries = runCatching { UnitRepository.loadUnitJson(context, routeId, course.id, unit.id).getJSONArray("lessons") }
             .getOrNull() ?: return null
         val currentIndex = (0 until entries.length()).firstOrNull { entries.getJSONObject(it).optString("id") == currentLessonId } ?: return null
-        if (!entries.getJSONObject(currentIndex).optBoolean("automaticContinuation", true)) return null
         val lessons = runCatching { LessonRepository.loadLessons(context, routeId, course.id, unit.id) }
             .getOrDefault(emptyList())
         for (index in currentIndex + 1 until entries.length()) {
             val entry = entries.getJSONObject(index)
-            if (!entry.optBoolean("automaticContinuation", true)) continue
             val lesson = lessons.firstOrNull { it.id == entry.optString("id") } ?: continue
             val content = runCatching { LessonRepository.loadLessonJson(context, routeId, lesson.id) }.getOrNull() ?: continue
             if (content.optJSONArray("pages")?.length()?.let { it > 0 } != true) continue

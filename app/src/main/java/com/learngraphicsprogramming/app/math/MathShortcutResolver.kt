@@ -14,6 +14,52 @@ object MathShortcutResolver {
     private val numeric = setOf("numeric", "tolerance", "exact_fraction")
     private val symbolic = setOf("equivalent_expression", "symbolic")
     private val literal = setOf("text", "exact_text")
+    private val structures = setOf("FRACTION", "POWER", "SUBSCRIPT", "ROOT", "NTH_ROOT", "PARENTHESES",
+        "ABSOLUTE_VALUE", "BRACKETS", "BRACES", "INTEGRAL", "SUM", "PRODUCT", "LIMIT", "MATRIX", "CASES", "DERIVATIVE")
+    private fun validStructuredKey(key: String) = key in allowed || key in structures || validFunction(key) || key in MathLatexSerializer.symbols || key in setOf("≈", "→")
+
+    /** Structural actions come from the expected AST; keyboard modes never add a toolbox. */
+    fun resolveStructured(validator: JSONObject?, mode: String, keyboardSymbols: JSONArray? = null): List<String> {
+        if (keyboardSymbols != null) return (0 until keyboardSymbols.length()).mapNotNull {
+            (keyboardSymbols.opt(it) as? String)?.takeIf(::validStructuredKey)
+        }.distinct()
+        val expected = validator?.optString("expected").orEmpty()
+        val parsed = MathLatexParser.parse(expected)
+        if (parsed !is MathLatexParser.Result.Success) return resolve(validator, mode)
+        val result = linkedSetOf<String>()
+        fun visit(node: MathExpression) {
+            when (node) {
+                is MathExpression.Fraction -> result.add("FRACTION")
+                is MathExpression.Scripts -> {
+                    if (node.upper != null) result.add("POWER")
+                    if (node.lower != null) result.add("SUBSCRIPT")
+                }
+                is MathExpression.Root -> result.add(if (node.index == null) "ROOT" else "NTH_ROOT")
+                is MathExpression.Group -> result.add(when (node.delimiter) {
+                    MathDelimiter.ABSOLUTE -> "ABSOLUTE_VALUE"; MathDelimiter.BRACKETS -> "BRACKETS"
+                    MathDelimiter.BRACES -> "BRACES"; MathDelimiter.PARENTHESES -> "PARENTHESES"
+                })
+                is MathExpression.Function -> result.add("FUNCTION:${node.name}")
+                is MathExpression.LargeOperator -> result.add(node.kind.name)
+                is MathExpression.Limit -> result.add("LIMIT")
+                is MathExpression.Derivative -> result.add("DERIVATIVE")
+                is MathExpression.Matrix -> result.add("MATRIX")
+                is MathExpression.Cases -> result.add("CASES")
+                is MathExpression.Operator -> result.add(if (node.value == "-") "−" else node.value)
+                is MathExpression.Relation -> result.add(node.value)
+                is MathExpression.Symbol -> if (validStructuredKey(node.value)) result.add(node.value)
+                is MathExpression.Number -> if ('.' in node.value || ',' in node.value) result.add(".")
+                else -> Unit
+            }
+            if (node is MathExpression.Sequence) node.children.forEach(::visit)
+            else node.childSlots().forEach { visit(it.second) }
+        }
+        visit(parsed.expression)
+        return result.toList()
+    }
+
+    private fun validFunction(key: String) = key.startsWith("FUNCTION:") &&
+        key.substringAfter(':') in MathLatexSerializer.functions
 
     fun resolve(validator: JSONObject?, mode: String, keyboardSymbols: JSONArray? = null): List<String> {
         if (keyboardSymbols != null) return (0 until keyboardSymbols.length())
@@ -95,14 +141,23 @@ object MathShortcutResolver {
     }
 
     /** Explicit overrides are checked at content parse time, before an unusable field renders. */
-    fun validateConfiguration(validator: JSONObject?, mode: String, keyboardSymbols: JSONArray?) {
+    fun validateConfiguration(validator: JSONObject?, mode: String, keyboardSymbols: JSONArray?, inputMode: String = "simple") {
         if (keyboardSymbols == null) return
         val declared = (0 until keyboardSymbols.length()).map { index ->
             val symbol = keyboardSymbols.opt(index)
-            require(symbol is String && symbol in allowed) { "keyboardSymbols[$index] debe ser un símbolo matemático; sin letras ni dígitos." }
+            require(symbol is String && (symbol in allowed || (inputMode == "structured" && validStructuredKey(symbol)))) {
+                "keyboardSymbols[$index] debe ser un símbolo o acción estructural pertinente; sin letras ni dígitos."
+            }
             symbol
         }
         require(declared.distinct().size == declared.size) { "keyboardSymbols contiene símbolos duplicados." }
+        if (inputMode == "structured") {
+            fun action(key: String) = when (key) { "/", "a/b" -> "FRACTION"; "^" -> "POWER"; "√" -> "ROOT"; "()" -> "PARENTHESES"; else -> key }
+            val required = resolveStructured(validator, mode).map(::action).toSet()
+            val available = declared.map(::action).toSet()
+            require(required == available) { "keyboardSymbols no coincide con las estructuras requeridas: faltan ${required - available}; sobran ${available - required}." }
+            return
+        }
         val type = validator?.optString("type").orEmpty()
         if (type !in numeric + symbolic + literal) return // Registered extension: author declares its syntax.
         if (type in numeric) require(declared.all { it in setOf("−", "-", ".", ",", "/", "a/b", "%", "+") }) {
@@ -135,10 +190,14 @@ object MathShortcutResolver {
                 val fieldOverride = override(field)
                 if (field.optString("type", "numeric") !in setOf("numeric", "expression")) continue
                 val mode = field.optString("keyboard", if (field.optString("type") == "expression") "ALGEBRA" else "NUMERIC")
-                validateConfiguration(validator.optJSONObject("fields")?.optJSONObject(field.getString("id")), mode, fieldOverride ?: parent)
+                val inputMode = field.optString("inputMode", "simple")
+                MathInputMode.parse(inputMode, field.optString("type", "numeric"))
+                validateConfiguration(validator.optJSONObject("fields")?.optJSONObject(field.getString("id")), mode, fieldOverride ?: parent, inputMode)
             }
         } else if (responseType in setOf("math_numeric_input", "math_expression_input")) {
-            validateConfiguration(validator, config.optString("keyboard", if (responseType == "math_expression_input") "ALGEBRA" else "NUMERIC"), parent)
+            val inputMode = config.optString("inputMode", "simple")
+            MathInputMode.parse(inputMode, if (responseType == "math_expression_input") "expression" else "numeric")
+            validateConfiguration(validator, config.optString("keyboard", if (responseType == "math_expression_input") "ALGEBRA" else "NUMERIC"), parent, inputMode)
         } else if (parent != null) {
             require(false) { "keyboardSymbols solo corresponde a respuestas de texto o sus campos." }
         }
