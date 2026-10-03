@@ -31,6 +31,7 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
     var onImeAction: ((Int) -> Boolean)? = null
     var keyboardShortcuts: List<String> = emptyList()
     private var expectedTemplate: MathExpression.Sequence? = null
+
     var imeOptions = EditorInfo.IME_ACTION_DONE or EditorInfo.IME_FLAG_NO_EXTRACT_UI or EditorInfo.IME_FLAG_NO_FULLSCREEN
     private data class Composition(val draft: String, val path: List<MathCursorStep>,
         val start: Int, var end: Int, var cursor: MathCursor)
@@ -39,6 +40,25 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
     internal var isSelectingSlot = false
         private set
     private var longPressed = false
+
+    private var pendingTouchCursor:
+            MathCursor? = null
+
+    private var touchDownX =
+        0f
+
+    private var touchDownY =
+        0f
+
+    private var touchDragged =
+        false
+
+    private val touchSlop =
+        android.view.ViewConfiguration
+            .get(context)
+            .scaledTouchSlop
+            .toFloat()
+
     private val gestures = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
         override fun onDown(event: MotionEvent) = true
         override fun onLongPress(event: MotionEvent) { longPressed = true; performLongClick() }
@@ -97,7 +117,10 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
 
     fun perform(action: MathKeyboardAction) {
         if (!isEnabled) return
-        composition = null
+        finishImeCompositionForExternalAction()
+
+        val previousCursorPath =
+            model.cursor.path.toList()
         val previousDraft = model.saveDraft()
         var accepted = true
         val empty = MathExpression.Sequence()
@@ -151,27 +174,68 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
         }
         if (!accepted) model.restoreDraft(previousDraft)
         refresh()
-        restartIme()
+
+        /*
+         * Solo reconstruimos InputConnection cuando
+         * realmente cambiamos de slot estructural.
+         *
+         * Escribir:
+         *
+         * x
+         * +
+         * 1
+         *
+         * dentro del mismo slot NO necesita reiniciar
+         * todo el teclado Android tres veces.
+         */
+        if (
+            previousCursorPath !=
+            model.cursor.path
+        ) {
+            restartIme()
+        }
         if (!accepted) { lastError = "La expresión supera el tamaño o la profundidad admitidos."; announceForAccessibility(lastError) }
     }
 
-    private fun refresh(notify: Boolean = true) {
-        expression = model.expression
-        cursor = if (hasFocus()) model.cursor else null
-        lastError = null
-        contentDescription = "Editor matemático: ${getLatex().ifBlank { "vacío" }}"
-        invalidate()
-        updateImeSelection()
-        post {
-            if (!hasFocus() || !isAttachedToWindow || isSelectingSlot) return@post
-            expressionLayout.caretBounds(model.cursor)?.let { bounds ->
-                val region = android.graphics.Rect((bounds.left + expressionOriginX).toInt(),
-                    (bounds.top + expressionBaseline).toInt(), (bounds.right + expressionOriginX + 16).toInt(),
-                    (bounds.bottom + expressionBaseline).toInt())
-                requestRectangleOnScreen(region, true)
+    private fun refresh(
+        notify: Boolean = true
+    ) {
+
+        expression =
+            model.expression
+
+        cursor =
+            if (hasFocus()) {
+                model.cursor
+            } else {
+                null
             }
+
+        lastError =
+            null
+
+        contentDescription =
+            "Editor matemático: " +
+                    getLatex()
+                        .ifBlank {
+                            "vacío"
+                        }
+
+        invalidate()
+
+        /*
+         * Actualizamos la posición lógica del IME,
+         * pero NO pedimos al ScrollView que persiga
+         * continuamente al cursor.
+         *
+         * El desplazamiento inicial lo controla
+         * MathKeyboardHost una sola vez al enfocar.
+         */
+        updateImeSelection()
+
+        if (notify) {
+            onExpressionChanged?.invoke()
         }
-        if (notify) onExpressionChanged?.invoke()
     }
 
     override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: android.graphics.Rect?) {
@@ -196,26 +260,135 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
         super.onDraw(canvas)
     }
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (!isEnabled) return false
-        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-            longPressed = false
-            isSelectingSlot = true
-            // Resolve the slot before focus/IME scrolling can move this surface under the finger.
-            val target = expressionLayout.hitTest(event.x - expressionOriginX, event.y - expressionBaseline)
-            requestFocus()
-            selectCursor(target)
+    override fun onTouchEvent(
+        event: MotionEvent
+    ): Boolean {
+
+        if (!isEnabled) {
+            return false
         }
-        gestures.onTouchEvent(event)
-        if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
-            isSelectingSlot = false
-            (context as? android.app.Activity)?.let { MathKeyboardHost.current(it)?.refreshPosition() }
-            refresh(false)
-            if (event.actionMasked == MotionEvent.ACTION_UP && !longPressed) {
-                performClick()
-                (context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(this, InputMethodManager.SHOW_IMPLICIT)
+
+        when (event.actionMasked) {
+
+            MotionEvent.ACTION_DOWN -> {
+
+                longPressed = false
+                touchDragged = false
+
+                touchDownX =
+                    event.x
+
+                touchDownY =
+                    event.y
+
+                isSelectingSlot =
+                    true
+
+                /*
+                 * Guardamos el destino AHORA,
+                 * antes de que cualquier scroll cambie
+                 * la geometría.
+                 *
+                 * Pero todavía NO movemos el cursor.
+                 */
+                pendingTouchCursor =
+                    expressionLayout.hitTest(
+                        event.x -
+                                expressionOriginX,
+                        event.y -
+                                expressionBaseline
+                    )
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+
+                val dx =
+                    kotlin.math.abs(
+                        event.x -
+                                touchDownX
+                    )
+
+                val dy =
+                    kotlin.math.abs(
+                        event.y -
+                                touchDownY
+                    )
+
+                if (
+                    dx > touchSlop ||
+                    dy > touchSlop
+                ) {
+                    touchDragged =
+                        true
+                }
+            }
+
+            MotionEvent.ACTION_UP -> {
+
+                isSelectingSlot =
+                    false
+
+                if (
+                    !longPressed &&
+                    !touchDragged
+                ) {
+
+                    val target =
+                        pendingTouchCursor
+
+                    requestFocus()
+
+                    if (target != null) {
+                        selectCursor(target)
+                    }
+
+                    performClick()
+
+                    (
+                            context.getSystemService(
+                                Context.INPUT_METHOD_SERVICE
+                            ) as InputMethodManager
+                            ).showSoftInput(
+                            this,
+                            InputMethodManager.SHOW_IMPLICIT
+                        )
+                }
+
+                pendingTouchCursor =
+                    null
+
+                (context as? android.app.Activity)
+                    ?.let {
+                        MathKeyboardHost
+                            .current(it)
+                            ?.refreshPosition()
+                    }
+
+                refresh(false)
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
+
+                isSelectingSlot =
+                    false
+
+                touchDragged =
+                    false
+
+                pendingTouchCursor =
+                    null
+
+                (context as? android.app.Activity)
+                    ?.let {
+                        MathKeyboardHost
+                            .current(it)
+                            ?.refreshPosition()
+                    }
             }
         }
+
+        gestures.onTouchEvent(event)
+
         return true
     }
 
@@ -315,30 +488,118 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
                 return inserted
             }
             override fun finishComposingText(): Boolean {
-                if (!current()) return false
+
+                if (!current()) {
+                    return false
+                }
+
+                val wasComposing =
+                    composition != null
+
                 composition = null
-                updateImeSelection()
-                return true
-            }
-            override fun setComposingRegion(start: Int, end: Int): Boolean {
-                if (!current()) return false
-                val projection = imeProjection()
-                model.select(model.cursor.path, projection.nodeOffset(start), projection.nodeOffset(end))
-                composition = Composition(model.saveDraft(), model.cursor.path.toList(), minOf(start, end).coerceIn(0, projection.text.length),
-                    maxOf(start, end).coerceIn(0, projection.text.length), model.cursor)
-                updateImeSelection()
-                return true
-            }
-            override fun setSelection(start: Int, end: Int): Boolean {
-                if (!current()) return false
-                val projection = imeProjection()
-                if (start == projection.start && end == projection.end) {
+
+                if (wasComposing) {
+                    model.clearSelection()
+                    refresh(false)
+                } else {
                     updateImeSelection()
+                }
+
+                return true
+            }
+            override fun setComposingRegion(
+                start: Int,
+                end: Int
+            ): Boolean {
+
+                if (!current()) {
+                    return false
+                }
+
+                /*
+                 * El teclado Android utiliza regiones de composición
+                 * para sugerencias, predicción, correcciones, etc.
+                 *
+                 * Nuestro editor matemático NO debe convertir esa
+                 * región temporal en una selección real del AST.
+                 *
+                 * De hacerlo:
+                 *
+                 * x|
+                 *
+                 * puede convertirse internamente en:
+                 *
+                 * [x]
+                 *
+                 * y después pulsar "+" reemplazaría la x.
+                 */
+                composition =
+                    null
+
+                model.clearSelection()
+
+                updateImeSelection()
+
+                return true
+            }
+            override fun setSelection(
+                start: Int,
+                end: Int
+            ): Boolean {
+
+                if (!current()) {
+                    return false
+                }
+
+                val projection =
+                    imeProjection()
+
+                /*
+                 * Si Android solamente confirma exactamente
+                 * la posición que ya tenemos, no hacemos nada.
+                 */
+                if (
+                    start == projection.start &&
+                    end == projection.end
+                ) {
+
+                    updateImeSelection()
+
                     return true
                 }
-                composition = null
-                model.select(model.cursor.path, projection.nodeOffset(start), projection.nodeOffset(end))
-                refresh()
+
+                /*
+                 * IMPORTANTE:
+                 *
+                 * setSelection() pertenece al protocolo del IME.
+                 *
+                 * Una selección temporal del teclado NO equivale
+                 * a una selección matemática realizada por el usuario.
+                 *
+                 * Por eso siempre colapsamos esa selección en un
+                 * único cursor y jamás llamamos aquí a model.select().
+                 */
+                composition =
+                    null
+
+                model.clearSelection()
+
+                val safeEnd =
+                    end.coerceIn(
+                        0,
+                        projection.text.length
+                    )
+
+                model.cursor =
+                    MathCursor(
+                        model.cursor.path,
+                        projection.nodeOffset(
+                            safeEnd
+                        )
+                    )
+
+                refresh(false)
+
                 return true
             }
             override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {
@@ -446,6 +707,24 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
         refresh()
         restartIme()
         return true
+    }
+
+    private fun finishImeCompositionForExternalAction() {
+
+        if (
+            composition == null
+        ) {
+            return
+        }
+
+        composition =
+            null
+
+        /*
+         * La selección creada por una composición
+         * temporal no debe sobrevivir.
+         */
+        model.clearSelection()
     }
 
     override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {

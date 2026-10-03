@@ -85,24 +85,149 @@ class MathPuzzleRenderer(
         view.addView(feedback)
         MathInputFocusOrder.configure(view)
 
-        val saved = ProgressRepository.getExerciseState(context, lessonId, pageIndex, blockIndex)
-            ?.takeIf { it.optString("contentFingerprint") == fingerprint }
-        val savedAnswers = saved?.optJSONObject("responses")
-        responses.forEach { (id, control) -> savedAnswers?.optJSONObject(id)?.let { MathAnswerJson.decode(it) }?.let(control::restore) }
-        val savedTools = saved?.optJSONObject("tools")
-        tools.forEach { (id, control) -> savedTools?.optJSONObject(id)?.let { MathAnswerJson.decode(it) }?.let(control::restore) }
-        // Restore raw visual-editor text after its normalized answer; an incomplete '-' must not
-        // disappear or be checked as the previous valid point/endpoint on activity recreation.
-        val responseDrafts = saved?.optJSONObject("responseDrafts")
-        responses.forEach { (id, control) -> responseDrafts?.optJSONObject(id)?.let(control::restoreDraft) }
-        val toolDrafts = saved?.optJSONObject("toolDrafts")
-        tools.forEach { (id, control) -> toolDrafts?.optJSONObject(id)?.let(control::restoreDraft) }
-        // Never trust an old 'correct' flag without revalidating the current content and controls.
-        isCorrect = saved?.optBoolean("correct", false) == true && spec.responses.all {
-            val control = responses.getValue(it.id)
-            savedAnswers?.has(it.id) == true && control.draftError() == null && MathValidators.validate(it.validator, control.answer()).correct
+        val developmentAnswers =
+            MathDevelopmentMode.answersFor(
+                context,
+                lessonId,
+                pageIndex,
+                block.optString("id")
+            )
+
+        val saved =
+            if (developmentAnswers == null) {
+
+                ProgressRepository
+                    .getExerciseState(
+                        context,
+                        lessonId,
+                        pageIndex,
+                        blockIndex
+                    )
+                    ?.takeIf {
+                        it.optString(
+                            "contentFingerprint"
+                        ) == fingerprint
+                    }
+
+            } else {
+                null
+            }
+
+        val savedAnswers =
+            saved?.optJSONObject(
+                "responses"
+            )
+
+        responses.forEach { (id, control) ->
+            savedAnswers
+                ?.optJSONObject(id)
+                ?.let {
+                    MathAnswerJson.decode(it)
+                }
+                ?.let(control::restore)
         }
-        if (isCorrect) showCorrect()
+
+        val savedTools =
+            saved?.optJSONObject(
+                "tools"
+            )
+
+        tools.forEach { (id, control) ->
+            savedTools
+                ?.optJSONObject(id)
+                ?.let {
+                    MathAnswerJson.decode(it)
+                }
+                ?.let(control::restore)
+        }
+
+// Borradores normales.
+        if (developmentAnswers == null) {
+
+            val responseDrafts =
+                saved?.optJSONObject(
+                    "responseDrafts"
+                )
+
+            responses.forEach { (id, control) ->
+                responseDrafts
+                    ?.optJSONObject(id)
+                    ?.let(control::restoreDraft)
+            }
+
+            val toolDrafts =
+                saved?.optJSONObject(
+                    "toolDrafts"
+                )
+
+            tools.forEach { (id, control) ->
+                toolDrafts
+                    ?.optJSONObject(id)
+                    ?.let(control::restoreDraft)
+            }
+        }
+
+// ------------------------------------------------------------
+// MODO DE DESARROLLO
+//
+// Restauramos respuestas REALES en los controles.
+// No hacemos simplemente isCorrect = true.
+// ------------------------------------------------------------
+
+        developmentAnswers?.forEach { (id, answer) ->
+            responses[id]
+                ?.restore(answer)
+        }
+
+        isCorrect =
+            if (developmentAnswers != null) {
+
+                spec.responses.all { response ->
+
+                    val control =
+                        responses.getValue(
+                            response.id
+                        )
+
+                    developmentAnswers.containsKey(
+                        response.id
+                    ) &&
+                            control.draftError() == null &&
+                            MathValidators.validate(
+                                response.validator,
+                                control.answer()
+                            ).correct
+                }
+
+            } else {
+
+                saved
+                    ?.optBoolean(
+                        "correct",
+                        false
+                    ) == true &&
+                        spec.responses.all { response ->
+
+                            val control =
+                                responses.getValue(
+                                    response.id
+                                )
+
+                            savedAnswers
+                                ?.has(
+                                    response.id
+                                ) == true &&
+                                    control.draftError() == null &&
+                                    MathValidators.validate(
+                                        response.validator,
+                                        control.answer()
+                                    ).correct
+                        }
+            }
+
+        if (isCorrect) {
+            showCorrect()
+        }
         initializing = false
         checkButton.setOnClickListener { check() }
         resetButton.setOnClickListener { reset() }

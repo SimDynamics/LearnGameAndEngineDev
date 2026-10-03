@@ -43,6 +43,7 @@ import com.learngraphicsprogramming.app.math.MathTextScaleAware
 import com.learngraphicsprogramming.app.math.MathInputFocusOrder
 import com.learngraphicsprogramming.app.math.MathKeyboardHost
 import com.learngraphicsprogramming.app.math.MathTextRenderer
+import com.learngraphicsprogramming.app.math.MathDevelopmentMode
 
 class LessonActivity : AppCompatActivity() {
 
@@ -9192,7 +9193,7 @@ class LessonActivity : AppCompatActivity() {
             return
         }
 
-        currentPage =
+        val savedPage =
             ProgressRepository
                 .getCurrentPage(
                     this,
@@ -9201,6 +9202,15 @@ class LessonActivity : AppCompatActivity() {
                 .coerceIn(
                     0,
                     totalPages - 1
+                )
+
+        currentPage =
+            MathDevelopmentMode
+                .initialPage(
+                    this,
+                    lessonId,
+                    savedPage,
+                    totalPages
                 )
 
         renderCurrentPage()

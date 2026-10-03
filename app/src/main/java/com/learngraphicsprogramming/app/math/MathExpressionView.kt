@@ -38,7 +38,17 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox) {
 
     companion object {
         fun create(expression: MathExpression.Sequence, paint: Paint, size: Float, showPlaceholders: Boolean = false): MathExpressionLayout =
-            MathExpressionLayout(ExpressionLayoutBuilder(Paint(paint), showPlaceholders).sequence(expression, size, emptyList()))
+            MathExpressionLayout(
+                ExpressionLayoutBuilder(
+                    Paint(paint),
+                    showPlaceholders,
+                    size
+                ).sequence(
+                    expression,
+                    size,
+                    emptyList()
+                )
+            )
     }
 }
 
@@ -166,15 +176,118 @@ private data class ExpressionBox(val width: Float, val ascent: Float, val descen
     fun draw(canvas: Canvas, paint: Paint, x: Float, baseline: Float) { ink.forEach { it.draw(canvas, paint, x, baseline) } }
 }
 
-private class ExpressionLayoutBuilder(private val paint: Paint, private val placeholders: Boolean) {
+private class ExpressionLayoutBuilder(
+    private val paint: Paint,
+    private val placeholders: Boolean,
+    private val rootSize: Float
+) {
     fun sequence(sequence: MathExpression.Sequence, size: Float, path: List<MathCursorStep>): ExpressionBox {
-        if (sequence.children.isEmpty()) {
-            val width = if (placeholders) size * .65f else 0f
-            val ink = if (placeholders) listOf(ExpressionStroke(Path().apply {
-                addRoundRect(RectF(size * .08f, -size * .73f, width - size * .08f, size * .12f), size * .08f, size * .08f, Path.Direction.CW)
-            }, size, true)) else emptyList()
-            return ExpressionBox(width, -size * .8f, size * .2f, ink,
-                listOf(ExpressionCaret(MathCursor(path, 0), width / 2f, -size * .8f, size * .2f)))
+        if (
+            sequence.children.isEmpty()
+        ) {
+
+            /*
+             * La raíz vacía del editor se comporta
+             * como un campo de texto vacío normal.
+             *
+             * Los cuadrados aparecen únicamente dentro
+             * de estructuras creadas por el usuario.
+             */
+            val internalSlot =
+                placeholders &&
+                        path.isNotEmpty()
+
+            if (!internalSlot) {
+
+                return ExpressionBox(
+                    0f,
+                    -size * .8f,
+                    size * .2f,
+                    emptyList(),
+                    listOf(
+                        ExpressionCaret(
+                            MathCursor(
+                                path,
+                                0
+                            ),
+                            0f,
+                            -size * .8f,
+                            size * .2f
+                        )
+                    )
+                )
+            }
+
+            /*
+             * Un slot vacío necesita ser cómodo para touch.
+             *
+             * Nunca queda microscópico aunque pertenezca
+             * a un exponente o subíndice.
+             *
+             * Como depende de rootSize, crecerá
+             * proporcionalmente con la escala matemática.
+             */
+            val slotSize =
+                max(
+                    size,
+                    rootSize * 1.05f
+                )
+
+            val width =
+                slotSize * 1.05f
+
+            val top =
+                -slotSize * .88f
+
+            val bottom =
+                slotSize * .28f
+
+            val horizontalInset =
+                slotSize * .08f
+
+            val corner =
+                slotSize * .10f
+
+            val ink =
+                listOf(
+                    ExpressionStroke(
+                        Path().apply {
+
+                            addRoundRect(
+                                RectF(
+                                    horizontalInset,
+                                    top,
+                                    width -
+                                            horizontalInset,
+                                    bottom
+                                ),
+                                corner,
+                                corner,
+                                Path.Direction.CW
+                            )
+                        },
+                        slotSize,
+                        true
+                    )
+                )
+
+            return ExpressionBox(
+                width,
+                top,
+                bottom,
+                ink,
+                listOf(
+                    ExpressionCaret(
+                        MathCursor(
+                            path,
+                            0
+                        ),
+                        width / 2f,
+                        top,
+                        bottom
+                    )
+                )
+            )
         }
         val boxes = sequence.children.mapIndexed { index, child -> node(child, size, path, index) }
         val ascent = boxes.minOf { it.ascent }
