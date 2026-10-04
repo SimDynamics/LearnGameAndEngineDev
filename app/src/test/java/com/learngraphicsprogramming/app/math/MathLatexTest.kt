@@ -60,13 +60,20 @@ class MathLatexTest {
         roundTrip("A\\cup B\\cap C\\in D+50%")
     }
 
-    @Test fun integralsSumsProductsAndLimitsHaveEditableBoundsAndBodies() {
-        val integral = roundTrip("\\int_0^1 x^2\\,dx").children.single() as MathExpression.LargeOperator
+    @Test fun largeOperatorsHaveEditableBoundsAndIndependentFollowingSiblingsWhileLimitsRetainTheirBody() {
+        val integralTree = roundTrip("\\int_0^1 x^2\\,dx")
+        val integral = integralTree.children.first() as MathExpression.LargeOperator
         assertEquals(MathLargeOperator.INTEGRAL, integral.kind)
         assertEquals(MathExpression.Number("0"), integral.lower!!.children.single())
         assertEquals(MathExpression.Number("1"), integral.upper!!.children.single())
-        roundTrip("\\sum_{i=1}^{n}i")
-        roundTrip("\\prod_{i=1}^{n}{i+1}")
+        assertEquals(listOf("upper", "lower"), integral.navigationChildren().map { it.id })
+        assertEquals(parse("x^2dx").children, integralTree.children.drop(1))
+        val sum = roundTrip("\\sum_{i=1}^{n}i")
+        assertEquals(MathLargeOperator.SUM, (sum.children.first() as MathExpression.LargeOperator).kind)
+        assertEquals(parse("i").children, sum.children.drop(1))
+        val product = roundTrip("\\prod_{i=1}^{n}{i+1}")
+        assertEquals(MathLargeOperator.PRODUCT, (product.children.first() as MathExpression.LargeOperator).kind)
+        assertEquals(parse("i+1").children, product.children.drop(1))
         val limit = roundTrip("\\lim_{x\\to0}{\\frac{\\sin{x}}{x}}").children.single() as MathExpression.Limit
         assertTrue(limit.condition.children.contains(MathExpression.Relation("→")))
         assertTrue(limit.body.children.single() is MathExpression.Fraction)

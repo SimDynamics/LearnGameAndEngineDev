@@ -17,7 +17,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** An editing touch may identify a UTF-16 boundary inside one AST leaf. */
-internal data class MathExpressionTouchTarget(val cursor: MathCursor, val leafTextOffset: Int? = null)
+internal data class MathExpressionTouchTarget(val cursor: MathCursor, val leafTextOffset: Int? = null,
+    val sequenceInsertion: Boolean = false)
 
 /** The same layout is used by editable expressions and formula spans in lesson prose. */
 class MathExpressionLayout private constructor(private val box: ExpressionBox, private val textSize: Float) {
@@ -43,8 +44,10 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
         }
         MathCursorPresentation.Neutral -> {
             val caret = caretBounds(cursor)
+            val continuation = continuationBounds(cursor)
             val scope = sequenceBounds(cursor.path)
-            if (caret == null || scope == null) caret else RectF(caret.left, scope.top - textSize * .06f,
+            if (caret != null && continuation != null) RectF(caret.left, continuation.top, caret.left, continuation.bottom)
+            else if (caret == null || scope == null) caret else RectF(caret.left, scope.top - textSize * .06f,
                 caret.left, scope.bottom + textSize * .06f)
         }
         is MathCursorPresentation.ChildBoundary -> sequenceBounds(presentation.slotPath)?.let { scope ->
@@ -76,6 +79,7 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
     }
 
     fun hitTest(x: Float, y: Float): MathCursor {
+        continuationTouchTarget(x, y)?.let { return it.cursor }
         rootExteriorTouchCursor(x)?.let { return it }
         return box.carets.filter { it.leafTextOffset == null }.minByOrNull {
             distance(it, x, y)
@@ -84,6 +88,7 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
 
     /** Interior glyph boundaries are resolved only for an actual editing touch, never during draw. */
     internal fun hitTestForEditing(x: Float, y: Float): MathExpressionTouchTarget {
+        continuationTouchTarget(x, y)?.let { return it }
         rootExteriorTouchCursor(x)?.let { return MathExpressionTouchTarget(it) }
         return box.carets.filter {
             it.leafTextOffset == null || x in requireNotNull(it.leafLeft)..requireNotNull(it.leafRight) && y in it.top..it.bottom
@@ -91,6 +96,15 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
             compareBy<ExpressionCaret> { distance(it, x, y) }.thenBy { if (it.leafTextOffset == null) 1 else 0 }
         )?.let { MathExpressionTouchTarget(it.cursor, it.leafTextOffset) } ?: MathExpressionTouchTarget(MathCursor())
     }
+
+    internal fun continuationBounds(cursor: MathCursor): RectF? = box.carets.firstOrNull {
+        sameLocation(it.cursor, cursor) && it.continuationBounds != null
+    }?.continuationBounds?.let(::RectF)
+
+    private fun continuationTouchTarget(x: Float, y: Float): MathExpressionTouchTarget? = box.carets
+        .filter { it.continuationBounds?.contains(x, y) == true }
+        .maxByOrNull { it.cursor.path.size }
+        ?.let { MathExpressionTouchTarget(it.cursor, sequenceInsertion = true) }
 
     /** Empty fields have HOME; space beyond all written groups has the last parent edge, at any height. */
     private fun rootExteriorTouchCursor(x: Float): MathCursor? {
@@ -225,9 +239,11 @@ open class MathExpressionView @JvmOverloads constructor(context: Context, attrs:
 }
 
 private data class ExpressionCaret(val cursor: MathCursor, val x: Float, val top: Float, val bottom: Float,
-    val leafTextOffset: Int? = null, val leafLeft: Float? = null, val leafRight: Float? = null) {
+    val leafTextOffset: Int? = null, val leafLeft: Float? = null, val leafRight: Float? = null,
+    val continuationBounds: RectF? = null) {
     fun translated(dx: Float, dy: Float) = copy(x = x + dx, top = top + dy, bottom = bottom + dy,
-        leafLeft = leafLeft?.plus(dx), leafRight = leafRight?.plus(dx))
+        leafLeft = leafLeft?.plus(dx), leafRight = leafRight?.plus(dx),
+        continuationBounds = continuationBounds?.let { RectF(it).apply { offset(dx, dy) } })
 }
 
 private data class ExpressionSequenceBounds(val path: List<MathCursorStep>, val left: Float, val top: Float,
@@ -438,7 +454,7 @@ private class ExpressionLayoutBuilder(
          */
         val showLargeOperatorContinuation =
             placeholders &&
-                    (sequence.children.lastOrNull() is MathExpression.LargeOperator)
+                    sequence.hasContinuationInsertion()
 
         val continuationSlotSize =
             max(
@@ -571,8 +587,12 @@ private class ExpressionLayoutBuilder(
                     boxes.size
                 ),
                 x,
-                ascent,
-                descent
+                if (showLargeOperatorContinuation) continuationTop else ascent,
+                if (showLargeOperatorContinuation) continuationBottom else descent,
+                continuationBounds = if (showLargeOperatorContinuation) RectF(
+                    x + continuationSlotSize * .08f, continuationTop,
+                    x + continuationWidth - continuationSlotSize * .08f, continuationBottom
+                ) else null
             )
 
         if (showLargeOperatorContinuation) {

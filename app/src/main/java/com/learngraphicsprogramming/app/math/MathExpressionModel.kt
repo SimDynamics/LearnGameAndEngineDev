@@ -10,9 +10,13 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     var expression: MathExpression.Sequence = initialExpression
         private set
     private var navigationBoundary: NavigationBoundary? = null
+    private var navigationInsertion: NavigationInsertion? = null
+    private var navigationEdge: NavigationEdge? = null
     var cursor: MathCursor = MathCursor(offset = initialExpression.children.size)
         set(value) {
             navigationBoundary = null
+            navigationInsertion = null
+            navigationEdge = null
             field = safeCursor(value)
         }
     var selectionRange: MathSelection? = null
@@ -120,6 +124,8 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         val originalCursor = cursor
         val originalSelection = selectionRange
         val originalBoundary = navigationBoundary
+        val originalInsertion = navigationInsertion
+        val originalEdge = navigationEdge
         val slot = if (upper) "upper" else "lower"
         if (selectionRange == null) {
             for (depth in cursor.path.indices.reversed().take(1)) {
@@ -139,6 +145,8 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 cursor = originalCursor
                 selectionRange = originalSelection
                 navigationBoundary = originalBoundary
+                navigationInsertion = originalInsertion
+                navigationEdge = originalEdge
                 return false
             }
         }
@@ -157,6 +165,8 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         cursor = originalCursor
         selectionRange = originalSelection
         navigationBoundary = originalBoundary
+        navigationInsertion = originalInsertion
+        navigationEdge = originalEdge
         return false
     }
 
@@ -178,6 +188,8 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         val originalCursor = cursor
         val originalSelection = selectionRange
         val originalBoundary = navigationBoundary
+        val originalInsertion = navigationInsertion
+        val originalEdge = navigationEdge
         for (char in text) {
             val inserted = when {
                 char.isWhitespace() -> true
@@ -199,6 +211,8 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 cursor = originalCursor
                 selectionRange = originalSelection
                 navigationBoundary = originalBoundary
+                navigationInsertion = originalInsertion
+                navigationEdge = originalEdge
                 return false
             }
         }
@@ -229,7 +243,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     fun moveRight(): Boolean = stepRight()
     fun moveLeft(): Boolean = stepLeft()
 
-    /** LEFT opens each parent and its children; RIGHT exits editing and advances parent boundaries. */
+    /** LEFT opens declared children; RIGHT advances through the next declared child. */
     fun navigateNext(): Boolean = navigateProgressively(forward = true)
     fun navigatePrevious(): Boolean = navigateProgressively(forward = false)
 
@@ -238,17 +252,23 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         val expression: MathExpression.Sequence, val cursor: MathCursor
     ) { init { require(after) } }
     private data class NavigationTarget(
-        val cursor: MathCursor, val selection: MathSelection? = null, val boundary: NavigationBoundary? = null
+        val cursor: MathCursor, val selection: MathSelection? = null, val boundary: NavigationBoundary? = null,
+        val insertion: Boolean = false
     )
+    private data class NavigationInsertion(val expression: MathExpression.Sequence, val cursor: MathCursor)
+    private data class NavigationEdge(val expression: MathExpression.Sequence, val forward: Boolean,
+        val from: NavigationTarget, val to: NavigationTarget)
 
     /** Exterior navigation is anchored to a real parent AST cursor, never an IME selection. */
     val isAtNavigationBoundary: Boolean get() = activeNavigationBoundary() != null
+    val isAtSequenceInsertion: Boolean get() = activeNavigationInsertion() != null
     val navigationLevel: MathCursorLevel get() = if (isAtNavigationBoundary) MathCursorLevel.CHILD_BOUNDARY
         else cursor.level.takeUnless { it == MathCursorLevel.CHILD_BOUNDARY } ?: MathCursorLevel.NEUTRAL
     val editingScope: MathContentScope? get() = cursor.scope
     val cursorPresentation: MathCursorPresentation get() = activeNavigationBoundary()?.let {
         MathCursorPresentation.ChildBoundary(it.slotPath, it.after)
-    } ?: if (navigationLevel == MathCursorLevel.INTERIOR) MathCursorPresentation.Interior(cursor.scope)
+    } ?: if (isAtSequenceInsertion) MathCursorPresentation.Neutral
+        else if (navigationLevel == MathCursorLevel.INTERIOR) MathCursorPresentation.Interior(cursor.scope)
         else if (cursor.offset > 0) MathCursorPresentation.ParentBoundary(cursor.path.toList(), cursor.offset - 1)
         else MathCursorPresentation.Neutral
 
@@ -265,24 +285,54 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         it.expression === expression && it.cursor == cursor && sequenceAt(it.slotPath) != null
     }
 
+    private fun activeNavigationInsertion(): NavigationInsertion? = navigationInsertion?.takeIf {
+        it.expression === expression && it.cursor == cursor && selectionRange == null &&
+            sequenceAt(cursor.path)?.let { sequence ->
+                cursor.offset == sequence.children.size && sequence.hasContinuationInsertion()
+            } == true
+    }
+
+    private fun navigationState() = NavigationTarget(cursor, selectionRange, activeNavigationBoundary(), isAtSequenceInsertion)
+
     private fun navigateProgressively(forward: Boolean): Boolean {
         val target = progressiveNavigationTarget(forward) ?: return false
+        val previous = navigationState()
         cursor = target.cursor
         selectionRange = target.selection
         navigationBoundary = target.boundary
+        navigationInsertion = if (target.insertion) NavigationInsertion(expression, cursor) else null
+        navigationEdge = NavigationEdge(expression, forward, previous, navigationState())
         return true
     }
 
     /** Both availability and execution use this pure transition function. */
     private fun progressiveNavigationTarget(forward: Boolean): NavigationTarget? {
+        // LEFT can return across the last editing/child edge, preserving a precise caret.
+        // RIGHT always uses the next declared child, never an inverse of a prior LEFT.
+        navigationEdge?.takeIf {
+            !forward && it.forward && it.from.cursor.level != MathCursorLevel.NEUTRAL &&
+                it.expression === expression && it.to == navigationState()
+        }?.let { return it.from }
+        if (isAtSequenceInsertion) return if (forward) {
+            if (cursor.path.isEmpty()) null else slotExitRightTarget(cursor.path)
+        } else NavigationTarget(cursor)
         if (forward) {
-            activeNavigationBoundary()?.let { return parentAfterTarget(it.slotPath) }
-            if (navigationLevel == MathCursorLevel.INTERIOR) return editingExitTarget()
-            selectionRange?.let { return NavigationTarget(MathCursor(it.path, it.end, MathCursorLevel.NEUTRAL, null)) }
+            selectionRange?.let { return NavigationTarget(cursor.copy(path = it.path, offset = it.end)) }
+            activeNavigationBoundary()?.let { return nextSlotEditingTarget(it.slotPath) }
+            if (navigationLevel == MathCursorLevel.INTERIOR) {
+                val (start, end) = contentScopeBounds()
+                if (end > start && cursor.offset == start)
+                    return NavigationTarget(cursor.copy(offset = end), MathSelection(cursor.path.toList(), start, end))
+                if (cursor.offset < end) return NavigationTarget(cursor.copy(offset = end))
+                return if (cursor.scope is MathContentScope.Atom || cursor.path.isEmpty())
+                    NavigationTarget(MathCursor(cursor.path, end, MathCursorLevel.NEUTRAL, null))
+                    else slotExitRightTarget(cursor.path)
+            }
             val sequence = sequenceAt(cursor.path) ?: return null
-            return if (cursor.offset < sequence.children.size)
-                NavigationTarget(MathCursor(cursor.path, cursor.offset + 1, MathCursorLevel.NEUTRAL, null))
-                else if (cursor.path.isNotEmpty()) editingExitTarget() else null
+            if (cursor.offset < sequence.children.size) {
+                return NavigationTarget(MathCursor(cursor.path, cursor.offset + 1, MathCursorLevel.NEUTRAL, null))
+            }
+            return continuationTarget(cursor.path) ?: if (cursor.path.isNotEmpty()) slotExitRightTarget(cursor.path) else null
         }
         selectionRange?.let { selection ->
             if (sequenceAt(selection.path) != null) {
@@ -353,11 +403,27 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         return NavigationTarget(MathCursor(path.dropLast(1), step.nodeIndex + 1, MathCursorLevel.NEUTRAL, null))
     }
 
-    private fun editingExitTarget(): NavigationTarget? =
-        if (cursor.scope is MathContentScope.Atom || cursor.path.isEmpty())
-            NavigationTarget(MathCursor(cursor.path, contentScopeBounds().second, MathCursorLevel.NEUTRAL, null))
-        else if (navigationChild(cursor.path)?.role == MathNavigationRole.PARENT_CONTENT) parentAfterTarget(cursor.path)
-        else boundaryTarget(cursor.path)
+    private fun slotExitRightTarget(path: List<MathCursorStep>): NavigationTarget? =
+        if (navigationChild(path)?.role == MathNavigationRole.PARENT_CONTENT) nextSlotEditingTarget(path)
+        else boundaryTarget(path)
+
+    /** RIGHT visits the next declared child before leaving its owner. */
+    private fun nextSlotEditingTarget(path: List<MathCursorStep>): NavigationTarget? {
+        val step = path.lastOrNull() ?: return null
+        val parentPath = path.dropLast(1)
+        val children = sequenceAt(parentPath)?.children?.getOrNull(step.nodeIndex)?.navigationChildren() ?: return null
+        val index = children.indexOfFirst { it.id == step.slot }
+        if (index < 0) return null
+        val next = children.getOrNull(index + 1)
+        return if (next != null) enterSlotTarget(parentPath + step.copy(slot = next.id), forward = true)
+            else parentAfterTarget(path)
+    }
+
+    private fun continuationTarget(path: List<MathCursorStep>): NavigationTarget? {
+        val sequence = sequenceAt(path) ?: return null
+        if (!sequence.hasContinuationInsertion()) return null
+        return NavigationTarget(MathCursor(path, sequence.children.size, MathCursorLevel.NEUTRAL, null), insertion = true)
+    }
 
     private fun boundaryTarget(path: List<MathCursorStep>): NavigationTarget? {
         if (path.isEmpty() || sequenceAt(path) == null) return null
@@ -400,7 +466,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         }
     }
 
-    /** LEFT visits a parent's declared children after its content, then continues before that parent. */
+    /** LEFT visits children in their declared order, then continues before their parent. */
     private fun afterSlotEditingTarget(
         path: List<MathCursorStep>
     ): NavigationTarget? {
@@ -473,7 +539,8 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     /** AST shape chooses a local Sequence level; no mathematical meaning is consulted. */
     private fun enterSlotTarget(path: List<MathCursorStep>, forward: Boolean): NavigationTarget? {
         val sequence = sequenceAt(path) ?: return null
-        val structural = sequence.children.any { it.navigationChildren().isNotEmpty() }
+        if (!forward) continuationTarget(path)?.let { return it }
+        val structural = sequence.hasContinuationInsertion() || sequence.children.any { it.navigationChildren().isNotEmpty() }
         return NavigationTarget(MathCursor(path, if (forward) 0 else sequence.children.size,
             if (structural) MathCursorLevel.NEUTRAL else MathCursorLevel.INTERIOR,
             if (structural) null else MathContentScope.Slot))
@@ -687,8 +754,14 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     }
 
     /** Touch chooses text editing explicitly; IME caret echoes never choose a structural level. */
-    fun placeTextCursor(position: MathCursor, leafTextOffset: Int? = null): Boolean {
+    fun placeTextCursor(position: MathCursor, leafTextOffset: Int? = null, sequenceInsertion: Boolean = false): Boolean {
         val sequence = sequenceAt(position.path) ?: return false
+        if (sequenceInsertion && position.offset == sequence.children.size && sequence.hasContinuationInsertion()) {
+            cursor = position.copy(level = MathCursorLevel.NEUTRAL, scope = null)
+            selectionRange = null
+            navigationInsertion = NavigationInsertion(expression, cursor)
+            return true
+        }
         if (leafTextOffset == null && (position.path.isEmpty() || sequence.children.any { it.navigationChildren().isNotEmpty() })) {
             cursor = position.copy(level = MathCursorLevel.NEUTRAL, scope = null)
             selectionRange = null
@@ -714,11 +787,15 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         val originalCursor = cursor
         val originalSelection = selectionRange
         val originalBoundary = navigationBoundary
+        val originalInsertion = navigationInsertion
+        val originalEdge = navigationEdge
         fun rollback(): Boolean {
             expression = originalExpression
             cursor = originalCursor
             selectionRange = originalSelection
             navigationBoundary = originalBoundary
+            navigationInsertion = originalInsertion
+            navigationEdge = originalEdge
             return false
         }
         if (selectionRange != null) {
@@ -850,6 +927,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         .apply { activeNavigationBoundary()?.let {
             put("navigationBoundary", JSONObject().put("path", encodePath(it.slotPath)).put("after", it.after))
         } }
+        .apply { if (isAtSequenceInsertion) put("sequenceInsertion", true) }
         .toString()
 
     /** Invalid or unsupported drafts leave the current tree unchanged. */
@@ -880,6 +958,11 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             }
             if (navigationBoundary == null && cursor.level == MathCursorLevel.CHILD_BOUNDARY) {
                 cursor = cursor.copy(level = MathCursorLevel.NEUTRAL, scope = null)
+            }
+            if (selectionRange == null && json.optBoolean("sequenceInsertion") &&
+                cursor.level == MathCursorLevel.NEUTRAL && cursor.scope == null &&
+                sequenceAt(cursor.path)?.let { cursor.offset == it.children.size && it.hasContinuationInsertion() } == true) {
+                navigationInsertion = NavigationInsertion(expression, cursor)
             }
             val scope = cursor.scope as? MathContentScope.Atom
             if (selectionRange == null && cursor.level == MathCursorLevel.INTERIOR && scope != null && scope.end - scope.start > 1 &&
@@ -943,6 +1026,8 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         val scope = cursor.scope as? MathContentScope.Atom
         expression = expressionReplacingSequence(path, value)
         navigationBoundary = null
+        navigationInsertion = null
+        navigationEdge = null
         if (old != null && scope != null && cursor.path == path) {
             cursor = cursor.copy(scope = MathContentScope.Atom(scope.start, maxOf(scope.start, scope.end + value.children.size - old.children.size)))
         }

@@ -7,29 +7,29 @@ import org.junit.Test
 class MathNavigationChildOrderTest {
     private fun atom(value: String) = MathExpression.Sequence(listOf(MathExpression.Variable(value)))
 
-    @Test fun scriptsDeclareUpperBeforeLowerAndLeftVisitsThemAfterTheirParentContent() {
+    @Test fun scriptsDeclareAndVisitUpperThenBaseThenLowerWithoutPrioritizingParentContent() {
         val scripts = MathExpression.Scripts(atom("x"), upper = atom("a"), lower = atom("b"))
-        assertEquals(listOf("base", "upper", "lower"), scripts.navigationChildren().map { it.id })
+        assertEquals(listOf("upper", "base", "lower"), scripts.navigationChildren().map { it.id })
         assertEquals(listOf("upper", "lower"), scripts.navigationChildren()
             .filter { it.role == MathNavigationRole.CHILD }.map { it.id })
         val model = MathExpressionModel(MathExpression.Sequence(listOf(scripts)))
         assertTrue(model.stepLeft())
-        assertEquals(MathCursor(listOf(MathCursorStep(0, "base")), 1), model.cursor)
-        assertEquals(listOf("upper", "lower"), visitChildBoundaries(model))
+        assertEquals(MathCursorPresentation.ChildBoundary(listOf(MathCursorStep(0, "upper"))), model.cursorPresentation)
+        assertEquals(listOf("upper", "lower"), listOf("upper") + visitChildBoundaries(model))
     }
 
-    @Test fun everyLargeOperatorDeclaresUpperBeforeLowerWhileLeftOpensItsBodyFirst() {
+    @Test fun everyLargeOperatorDeclaresAndVisitsOnlyUpperThenLower() {
         for (kind in MathLargeOperator.entries) {
             val node = MathExpression.LargeOperator(
                 kind = kind,
                 lower = atom("c"),
                 upper = atom("a")
             )
-            assertEquals(listOf("upper", "lower", "body"), node.navigationChildren().map { it.id })
+            assertEquals(listOf("upper", "lower"), node.navigationChildren().map { it.id })
             val model = MathExpressionModel(MathExpression.Sequence(listOf(node)))
             assertTrue(model.stepLeft())
-            assertEquals(MathCursor(listOf(MathCursorStep(0, "body")), 1), model.cursor)
-            assertEquals(listOf("upper", "lower"), visitChildBoundaries(model))
+            assertEquals(MathCursorPresentation.ChildBoundary(listOf(MathCursorStep(0, "upper"))), model.cursorPresentation)
+            assertEquals(listOf("upper", "lower"), listOf("upper") + visitChildBoundaries(model))
         }
     }
 
@@ -45,7 +45,7 @@ class MathNavigationChildOrderTest {
 
     @Test fun omittingAnOptionalScriptDoesNotCreateAnEmptyChildOrChangeTheRemainingOrder() {
         val scripts = MathExpression.Scripts(atom("x"), upper = atom("a"), lower = atom("b"))
-        assertEquals(listOf("base", "upper"), scripts.copy(lower = null).navigationChildren().map { it.id })
+        assertEquals(listOf("upper", "base"), scripts.copy(lower = null).navigationChildren().map { it.id })
         assertEquals(listOf("base", "lower"), scripts.copy(upper = null).navigationChildren().map { it.id })
         assertEquals(listOf("base"), scripts.copy(upper = null, lower = null).navigationChildren().map { it.id })
     }

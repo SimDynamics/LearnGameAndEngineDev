@@ -20,6 +20,80 @@ class MathStructuralNavigationDeviceTest {
     private val context = instrumentation.targetContext
     private enum class Transport { TEXT, CODE_POINTS, KEY, TOOLBAR }
 
+    @Test fun firstRightFromAnEmptyIntegralUpperVisitsItsChildBoundaryExactlyOnce() = onMain {
+        for (native in listOf(false, true)) {
+            val editor = MathExpressionEditor(context)
+            editor.perform(MathKeyboardAction.Integral)
+            val upper = listOf(MathCursorStep(0, "upper"))
+            val original = editor.model.expression
+            val integral = original.children.single() as MathExpression.LargeOperator
+            assertEquals(listOf("upper", "lower"), integral.navigationChildren().map { it.id })
+            assertEquals(MathCursor(upper, 0), editor.model.cursor)
+            assertEquals(MathCursorLevel.INTERIOR, editor.model.navigationLevel)
+            fineArrow(editor, forward = true, native = native)
+            assertEquals("One RIGHT must expose upper's own border before the owner border",
+                MathCursorPresentation.ChildBoundary(upper), editor.model.cursorPresentation)
+            assertSame("Navigation and the visual continuation never add an AST node", original, editor.model.expression)
+            assertNull(editor.model.selectionRange)
+            assertTrue(editor.model.canNavigateNext)
+            fineArrow(editor, forward = true, native = native)
+            val lower = listOf(MathCursorStep(0, "lower"))
+            assertEquals(MathCursor(lower, 0), editor.model.cursor)
+            assertEquals(MathCursorPresentation.Interior(MathContentScope.Slot), editor.model.cursorPresentation)
+            assertSame(original, editor.model.expression)
+            fineArrow(editor, forward = true, native = native)
+            assertEquals(MathCursorPresentation.ChildBoundary(lower), editor.model.cursorPresentation)
+            fineArrow(editor, forward = true, native = native)
+            assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), 0), editor.model.cursorPresentation)
+            assertTrue("The visual Sequence continuation is still one state away", editor.model.canNavigateNext)
+            fineArrow(editor, forward = true, native = native)
+            assertEquals(MathCursor(offset = 1), editor.model.cursor)
+            assertEquals(MathCursorPresentation.Neutral, editor.model.cursorPresentation)
+            assertFalse(editor.model.canNavigateNext)
+            assertSame(original, editor.model.expression)
+            assertEquals("\\int_{}^{}", editor.getLatex())
+            val restored = MathExpressionModel()
+            assertTrue(restored.restoreDraft(editor.model.saveDraft()))
+            assertEquals(original, restored.expression)
+            assertEquals(MathCursorPresentation.Neutral, restored.cursorPresentation)
+            fineArrow(editor, forward = false, native = native)
+            assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), 0), editor.model.cursorPresentation)
+            fineArrow(editor, forward = true, native = native)
+            assertTrue(connection(editor).commitText("x", 1))
+            assertEquals(listOf(integral, MathExpression.Variable("x")), editor.model.expression.children)
+            assertNull(editor.model.sequenceAt(listOf(MathCursorStep(0, "body"))))
+        }
+    }
+
+    @Test fun touchingTheVisualIntegralContinuationCreatesASiblingAndRemovalLeavesNoGhost() = onMain {
+        val editor = MathExpressionEditor(context)
+        editor.perform(MathKeyboardAction.Integral)
+        measureEditor(editor)
+        val layout = editor.expressionLayout
+        val owner = requireNotNull(layout.childBounds(emptyList(), 0))
+        val x = owner.right + (layout.width - owner.right) / 2f
+        assertTrue("The empty continuation extends beyond the real owner", x > owner.right)
+        assertEquals(MathCursor(offset = 1), layout.hitTest(x, 0f))
+        val original = editor.model.expression
+        tapEditor(editor, editor.expressionOriginX + x, editor.expressionBaseline)
+        assertEquals(MathCursor(offset = 1), editor.model.cursor)
+        assertEquals(MathCursorPresentation.Neutral, editor.model.cursorPresentation)
+        assertSame(original, editor.model.expression)
+        val persisted = MathExpressionModel()
+        assertTrue(persisted.restoreDraft(editor.model.saveDraft()))
+        assertEquals(original, persisted.expression)
+        assertEquals(1, persisted.expression.children.size)
+        assertNull(persisted.sequenceAt(listOf(MathCursorStep(0, "body"))))
+        editor.perform(MathKeyboardAction.Backspace)
+        assertEquals(MathExpression.Sequence(), editor.model.expression)
+        assertEquals(MathCursor(), editor.model.cursor)
+        assertEquals(MathCursorPresentation.Neutral, editor.model.cursorPresentation)
+        assertEquals("", editor.getLatex())
+        assertEquals(0f, editor.expressionLayout.width, .001f)
+        assertTrue(connection(editor).commitText("x", 1))
+        assertEquals(listOf(MathExpression.Variable("x")), editor.model.expression.children)
+    }
+
     @Test fun neutralBackspaceDeletesThePreviousDirectGroupWholeWithoutEnteringItsSlots() = onMain {
         for (transport in Transport.entries) {
             val editor = neutralEditor("x_{1}^{2}")
@@ -59,19 +133,22 @@ class MathStructuralNavigationDeviceTest {
     @Test fun leftVisitsThePowerParentAndChildBeforeTheIndependentIntegral() = onMain {
         val editor = integralAndPower()
         val original = editor.model.expression
+        val upper = listOf(MathCursorStep(1, "upper"))
         editor.perform(MathKeyboardAction.PreviousSlot)
-        assertEquals(MathCursor(listOf(MathCursorStep(1, "base")), 1), editor.model.cursor)
+        assertEquals(MathCursorPresentation.ChildBoundary(upper), editor.model.cursorPresentation)
         editor.perform(MathKeyboardAction.NextSlot)
-        assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), 1), editor.model.cursorPresentation)
+        assertEquals("RIGHT continues from the upper border to the next declared content",
+            MathCursor(listOf(MathCursorStep(1, "base")), 0), editor.model.cursor)
         assertSame(original, editor.model.expression)
+        editor.model.cursor = MathCursor(offset = 2)
         editor.perform(MathKeyboardAction.MoveLeft)
-        assertEquals(MathCursor(listOf(MathCursorStep(1, "base")), 1), editor.model.cursor)
+        assertEquals(MathCursorPresentation.ChildBoundary(upper), editor.model.cursorPresentation)
         editor.perform(MathKeyboardAction.PreviousSlot)
-        assertEquals(MathSelection(listOf(MathCursorStep(1, "base")), 0, 1), editor.model.selectionRange)
+        assertEquals(MathCursor(upper, 1), editor.model.cursor)
         editor.perform(MathKeyboardAction.PreviousSlot)
-        assertEquals(MathCursor(listOf(MathCursorStep(1, "base")), 0), editor.model.cursor)
+        assertEquals(MathSelection(upper, 0, 1), editor.model.selectionRange)
         editor.perform(MathKeyboardAction.PreviousSlot)
-        assertEquals(MathCursorPresentation.ChildBoundary(listOf(MathCursorStep(1, "upper")), true), editor.model.cursorPresentation)
+        assertEquals(MathCursor(upper, 0), editor.model.cursor)
         assertSame(original, editor.model.expression)
         var steps = 0
         while (editor.model.cursor != MathCursor(offset = 1) && steps++ < 24) {
@@ -348,14 +425,7 @@ class MathStructuralNavigationDeviceTest {
         val original = editor.model.expression
         assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), 0), editor.model.cursorPresentation)
         stepLeft(editor)
-        assertEquals(MathCursor(base, 1), editor.model.cursor)
-        stepLeft(editor)
-        assertEquals(MathSelection(base, 0, 1), editor.model.selectionRange)
-        stepLeft(editor)
-        assertEquals(MathCursor(base, 0), editor.model.cursor)
-        assertNull(editor.model.selectionRange)
-        stepLeft(editor)
-        assertEquals(MathCursorPresentation.ChildBoundary(upper, true), editor.model.cursorPresentation)
+        assertEquals(MathCursorPresentation.ChildBoundary(upper), editor.model.cursorPresentation)
         stepLeft(editor)
         assertEquals(MathCursor(upper, 1), editor.model.cursor)
         stepLeft(editor)
@@ -364,10 +434,18 @@ class MathStructuralNavigationDeviceTest {
         assertEquals(MathCursor(upper, 0), editor.model.cursor)
         assertNull(editor.model.selectionRange)
         stepLeft(editor)
+        assertEquals(MathCursor(base, 1), editor.model.cursor)
+        stepLeft(editor)
+        assertEquals(MathSelection(base, 0, 1), editor.model.selectionRange)
+        stepLeft(editor)
+        assertEquals(MathCursor(base, 0), editor.model.cursor)
+        assertNull(editor.model.selectionRange)
+        stepLeft(editor)
         assertEquals(MathCursor(), editor.model.cursor)
         assertEquals(MathCursorPresentation.Neutral, editor.model.cursorPresentation)
         assertFalse(editor.model.canNavigatePrevious)
         editor.perform(MathKeyboardAction.NextSlot)
+        assertEquals(MathCursor(offset = 1), editor.model.cursor)
         assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), 0), editor.model.cursorPresentation)
         assertFalse(editor.model.canNavigateNext)
         assertSame(original, editor.model.expression)
@@ -381,13 +459,13 @@ class MathStructuralNavigationDeviceTest {
             val original = editor.model.expression
             val expected = listOf(
                 Triple(MathCursor(offset = 1), null, MathCursorPresentation.ParentBoundary(emptyList(), 0)),
-                Triple(MathCursor(base, 1), null, MathCursorPresentation.Interior(MathContentScope.Slot)),
-                Triple(MathCursor(base, 1), MathSelection(base, 0, 1), MathCursorPresentation.Interior(MathContentScope.Slot)),
-                Triple(MathCursor(base, 0), null, MathCursorPresentation.Interior(MathContentScope.Slot)),
                 Triple(MathCursor(offset = 1, level = MathCursorLevel.CHILD_BOUNDARY), null, MathCursorPresentation.ChildBoundary(upper)),
                 Triple(MathCursor(upper, 1), null, MathCursorPresentation.Interior(MathContentScope.Slot)),
                 Triple(MathCursor(upper, 1), MathSelection(upper, 0, 1), MathCursorPresentation.Interior(MathContentScope.Slot)),
                 Triple(MathCursor(upper, 0), null, MathCursorPresentation.Interior(MathContentScope.Slot)),
+                Triple(MathCursor(base, 1), null, MathCursorPresentation.Interior(MathContentScope.Slot)),
+                Triple(MathCursor(base, 1), MathSelection(base, 0, 1), MathCursorPresentation.Interior(MathContentScope.Slot)),
+                Triple(MathCursor(base, 0), null, MathCursorPresentation.Interior(MathContentScope.Slot)),
                 Triple(MathCursor(), null, MathCursorPresentation.Neutral)
             )
             assertEquals(expected.first(), snapshot(editor))
@@ -398,12 +476,13 @@ class MathStructuralNavigationDeviceTest {
             }
             assertFalse(editor.model.canNavigatePrevious)
             fineArrow(editor, forward = true, native = native)
-            assertEquals(expected.first(), snapshot(editor))
+            assertEquals("RIGHT from HOME reaches the nearest parent despite the preceding LEFT history", expected.first(), snapshot(editor))
+            assertSame(original, editor.model.expression)
             assertFalse("There is no FINISH state after the parent boundary", editor.model.canNavigateNext)
         }
     }
 
-    @Test fun rightVisitsOnlyTheNearestParentBoundaryAndEmptyRootHasOnlyHome() = onMain {
+    @Test fun rightTraversesEachNearestParentAndEmptyRootHasOnlyHome() = onMain {
         for (native in listOf(false, true)) {
             val editor = integralAndPower()
             editor.model.cursor = MathCursor()
@@ -411,6 +490,7 @@ class MathStructuralNavigationDeviceTest {
             fineArrow(editor, forward = true, native = native)
             assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), 0), editor.model.cursorPresentation)
             assertEquals(MathCursor(offset = 1), editor.model.cursor)
+            assertSame(original, editor.model.expression)
             fineArrow(editor, forward = true, native = native)
             assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), 1), editor.model.cursorPresentation)
             assertEquals(MathCursor(offset = 2), editor.model.cursor)
@@ -440,7 +520,7 @@ class MathStructuralNavigationDeviceTest {
         stepLeft(editor)
         assertEquals(inside, snapshot(editor))
         stepLeft(editor)
-        assertEquals(MathCursor(), editor.model.cursor)
+        assertEquals(MathCursor(listOf(MathCursorStep(0, "base")), 1), editor.model.cursor)
         assertNull(editor.model.selectionRange)
         editor.onCursorRequested?.invoke(MathCursor(listOf(MathCursorStep(0, "upper")), 0))
         assertEquals(inside, snapshot(editor))
@@ -544,6 +624,19 @@ class MathStructuralNavigationDeviceTest {
     }
 
     private fun snapshot(editor: MathExpressionEditor) = Triple(editor.model.cursor, editor.model.selectionRange, editor.model.cursorPresentation)
+
+    private fun measureEditor(editor: MathExpressionEditor) {
+        editor.measure(View.MeasureSpec.makeMeasureSpec(500, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+        editor.layout(0, 0, editor.measuredWidth, editor.measuredHeight)
+    }
+
+    private fun tapEditor(editor: MathExpressionEditor, x: Float, y: Float) {
+        val now = SystemClock.uptimeMillis()
+        val down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, x, y, 0)
+        val up = MotionEvent.obtain(now, now + 30, MotionEvent.ACTION_UP, x, y, 0)
+        try { editor.dispatchTouchEvent(down); editor.dispatchTouchEvent(up) } finally { down.recycle(); up.recycle() }
+    }
 
     private fun assertRightBoundary(editor: MathExpressionEditor) {
         val boundary = editor.model.cursorPresentation as? MathCursorPresentation.ChildBoundary ?: return

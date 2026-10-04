@@ -31,6 +31,10 @@ sealed interface MathExpression {
 
 enum class MathDelimiter { PARENTHESES, BRACKETS, BRACES, ABSOLUTE }
 enum class MathLargeOperator { INTEGRAL, SUM, PRODUCT }
+
+/** A standalone operator's operand is inserted as the next sibling, never as a child slot. */
+internal fun MathExpression.Sequence.hasContinuationInsertion(): Boolean =
+    children.lastOrNull() is MathExpression.LargeOperator
 data class MathCursorStep(val nodeIndex: Int, val slot: String)
 enum class MathCursorLevel { NEUTRAL, CHILD_BOUNDARY, INTERIOR }
 sealed interface MathContentScope {

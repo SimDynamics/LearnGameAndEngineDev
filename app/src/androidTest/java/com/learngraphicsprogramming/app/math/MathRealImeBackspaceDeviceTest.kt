@@ -88,6 +88,125 @@ class MathRealImeBackspaceDeviceTest {
         }
     }
 
+    @Test fun swiftKeyFirstRightFromEmptyIntegralUpperRetainsTheChildBoundary() {
+        assertTrue("Use the installed SwiftKey IME for this regression",
+            Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD).contains("swiftkey"))
+        ActivityScenario.launch<LessonActivity>(intent()).use { scenario ->
+            val editor = openEditor(scenario, "")
+            lateinit var original: MathExpression.Sequence
+            val upper = listOf(MathCursorStep(0, "upper"))
+            scenario.onActivity {
+                editor.perform(MathKeyboardAction.Integral)
+                original = editor.model.expression
+                assertEquals(MathCursor(upper, 0), editor.model.cursor)
+                assertEquals(listOf("upper", "lower"), original.children.single().navigationChildren().map { it.id })
+            }
+            tapSlotNavigation(forward = true)
+            await(scenario, "One physical toolbar RIGHT must remain on the upper child border",
+                failureDetails = { "cursor=${editor.model.cursor}, presentation=${editor.model.cursorPresentation}" }) {
+                editor.model.cursorPresentation == MathCursorPresentation.ChildBoundary(upper)
+            }
+            scenario.onActivity {
+                assertSame("IME acknowledgements cannot consume a second navigation state", original, editor.model.expression)
+                assertNull(editor.model.selectionRange)
+            }
+            tapSlotNavigation(forward = true)
+            val lower = listOf(MathCursorStep(0, "lower"))
+            await(scenario, "The next physical RIGHT reaches the real lower child") {
+                editor.model.cursor == MathCursor(lower, 0) &&
+                    editor.model.cursorPresentation == MathCursorPresentation.Interior(MathContentScope.Slot)
+            }
+            tapSlotNavigation(forward = true)
+            await(scenario, "RIGHT exposes the lower child's own border") {
+                editor.model.cursorPresentation == MathCursorPresentation.ChildBoundary(lower)
+            }
+            tapSlotNavigation(forward = true)
+            await(scenario, "Only after both declared children does RIGHT reach the whole operator border") {
+                editor.model.cursorPresentation == MathCursorPresentation.ParentBoundary(emptyList(), 0)
+            }
+            scenario.onActivity { assertTrue(editor.model.canNavigateNext) }
+            tapSlotNavigation(forward = true)
+            await(scenario, "RIGHT reaches the independent Sequence continuation while SwiftKey stays open") {
+                editor.model.cursor == MathCursor(offset = 1) &&
+                    editor.model.cursorPresentation == MathCursorPresentation.Neutral && editor.hasFocus()
+            }
+            scenario.onActivity {
+                assertSame(original, editor.model.expression)
+                assertFalse(editor.model.canNavigateNext)
+                assertNull(editor.model.sequenceAt(listOf(MathCursorStep(0, "body"))))
+            }
+            tapImeKey("x")
+            awaitLatex(scenario, editor, "\\int_{}^{}x")
+            scenario.onActivity {
+                assertEquals(listOf(original.children.single(), MathExpression.Variable("x")), editor.model.expression.children)
+            }
+        }
+    }
+
+    @Test fun swiftKeyRightFromFractionNumeratorReachesTheEmptyDenominatorBeforeParent() {
+        assertTrue("Use the installed SwiftKey IME for this regression",
+            Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD).contains("swiftkey"))
+        ActivityScenario.launch<LessonActivity>(intent()).use { scenario ->
+            val editor = openEditor(scenario, "\\frac{x+1}{}", fieldIndex = 0)
+            val numerator = listOf(MathCursorStep(0, "numerator"))
+            val denominator = listOf(MathCursorStep(0, "denominator"))
+            lateinit var original: MathExpression.Sequence
+            lateinit var realDenominator: MathExpression.Sequence
+            scenario.onActivity {
+                original = editor.model.expression
+                realDenominator = (original.children.single() as MathExpression.Fraction).denominator
+                editor.onCursorRequested?.invoke(MathCursor(numerator,
+                    requireNotNull(editor.model.sequenceAt(numerator)).children.size))
+            }
+            tapSlotNavigation(forward = true)
+            await(scenario, "Physical RIGHT leaves numerator at its child border") {
+                editor.model.cursorPresentation == MathCursorPresentation.ChildBoundary(numerator)
+            }
+            tapSlotNavigation(forward = true)
+            await(scenario, "Physical RIGHT reaches the empty denominator before the whole fraction") {
+                editor.model.cursor == MathCursor(denominator, 0) &&
+                    editor.model.cursorPresentation == MathCursorPresentation.Interior(MathContentScope.Slot) && editor.hasFocus()
+            }
+            scenario.onActivity {
+                assertSame(original, editor.model.expression)
+                assertSame(realDenominator, editor.model.sequenceAt(denominator))
+                assertEquals(listOf("numerator", "denominator"), original.children.single().navigationChildren().map { it.id })
+                assertTrue(realDenominator.children.isEmpty())
+            }
+            tapSlotNavigation(forward = false)
+            await(scenario, "LEFT coherently returns across the just-traversed child edge") {
+                editor.model.cursorPresentation == MathCursorPresentation.ChildBoundary(numerator)
+            }
+            tapSlotNavigation(forward = true)
+            await(scenario, "RIGHT reenters the same real denominator") {
+                editor.model.cursor == MathCursor(denominator, 0)
+            }
+            tapSlotNavigation(forward = true)
+            await(scenario, "RIGHT exposes the denominator border") {
+                editor.model.cursorPresentation == MathCursorPresentation.ChildBoundary(denominator)
+            }
+            tapSlotNavigation(forward = true)
+            await(scenario, "ParentBoundary is reached only after both children") {
+                editor.model.cursorPresentation == MathCursorPresentation.ParentBoundary(emptyList(), 0)
+            }
+            scenario.onActivity { assertSame(original, editor.model.expression) }
+            tapSlotNavigation(forward = false)
+            await(scenario, "LEFT returns to the denominator border") {
+                editor.model.cursorPresentation == MathCursorPresentation.ChildBoundary(denominator)
+            }
+            tapSlotNavigation(forward = false)
+            await(scenario, "LEFT enters the existing empty denominator") {
+                editor.model.cursor == MathCursor(denominator, 0)
+            }
+            tapImeKey("2")
+            awaitLatex(scenario, editor, "\\frac{x+1}{2}")
+            scenario.onActivity {
+                assertEquals("x+1", MathLatexSerializer.serialize((editor.model.expression.children.single() as MathExpression.Fraction).numerator))
+                assertEquals(listOf(MathExpression.Number("2")), requireNotNull(editor.model.sequenceAt(denominator)).children)
+            }
+        }
+    }
+
     @Test fun swiftKeyBackspaceOnTouchedSubscriptOnlyDeletesOneDigit() {
         assertTrue("Use the installed SwiftKey IME for this regression",
             Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD).contains("swiftkey"))
@@ -208,12 +327,30 @@ class MathRealImeBackspaceDeviceTest {
                 assertEquals(MathCursor(offset = 1), editor.model.cursor)
             }
             tapSlotNavigation(forward = false)
-            await(scenario, "Actual left navigation opens the parent's base content") {
-                editor.model.cursor == MathCursor(listOf(MathCursorStep(0, "base")), 1) && editor.model.selectionRange == null
+            await(scenario, "Actual left navigation opens the first declared upper child border") {
+                editor.model.cursorPresentation == MathCursorPresentation.ChildBoundary(listOf(MathCursorStep(0, "upper"))) &&
+                    editor.model.selectionRange == null
             }
-            tapSlotNavigation(forward = true)
-            await(scenario, "Actual toolbar navigation returns to the neutral Sequence") {
-                editor.model.navigationLevel == MathCursorLevel.NEUTRAL && editor.model.cursor.offset == 1
+            val base = listOf(MathCursorStep(0, "base"))
+            val lower = listOf(MathCursorStep(0, "lower"))
+            val interior = MathCursorPresentation.Interior(MathContentScope.Slot)
+            val forwardStates = listOf(
+                Triple(MathCursor(base, 0), null, interior),
+                Triple(MathCursor(base, 1), MathSelection(base, 0, 1), interior),
+                Triple(MathCursor(base, 1), null, interior),
+                Triple(MathCursor(lower, 0), null, interior),
+                Triple(MathCursor(lower, 1), MathSelection(lower, 0, 1), interior),
+                Triple(MathCursor(lower, 1), null, interior),
+                Triple(MathCursor(offset = 1, level = MathCursorLevel.CHILD_BOUNDARY), null,
+                    MathCursorPresentation.ChildBoundary(lower)),
+                Triple(MathCursor(offset = 1), null, MathCursorPresentation.ParentBoundary(emptyList(), 0))
+            )
+            for (state in forwardStates) {
+                tapSlotNavigation(forward = true)
+                await(scenario, "RIGHT visits the declared script checkpoint before neutral deletion: $state") {
+                    Triple(editor.model.cursor, editor.model.selectionRange, editor.model.cursorPresentation) == state
+                }
+                scenario.onActivity { assertEquals(canonical("x_{1}^{2}"), editor.getLatex()) }
             }
             instrumentation.waitForIdleSync()
             tapImeDelete()
@@ -332,7 +469,7 @@ class MathRealImeBackspaceDeviceTest {
         }
     }
 
-    private fun openEditor(scenario: ActivityScenario<LessonActivity>, source: String): MathExpressionEditor {
+    private fun openEditor(scenario: ActivityScenario<LessonActivity>, source: String, fieldIndex: Int = 1): MathExpressionEditor {
         assertTrue("This regression requires the installed SwiftKey keyboard",
             Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD).contains("swiftkey"))
         scenario.onActivity { it.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT }
@@ -343,7 +480,7 @@ class MathRealImeBackspaceDeviceTest {
         scenario.onActivity { activity ->
             val fields = tree(activity.findViewById<ViewGroup>(R.id.lessonContent)).filterIsInstance<MathExpressionEditor>()
             assertEquals(8, fields.size)
-            editor = fields[1]
+            editor = fields[fieldIndex]
             assertTrue(editor.setLatex(source))
             assertTrue(editor.requestFocus())
             (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)

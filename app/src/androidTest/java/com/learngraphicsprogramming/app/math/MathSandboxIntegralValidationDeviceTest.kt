@@ -155,6 +155,11 @@ class MathSandboxIntegralValidationDeviceTest {
             }
             scenario.recreate()
             scenario.onActivity { activity ->
+                // Debug startup deliberately returns to page 17. Re-enter the already
+                // accepted advanced page through the app before asserting its saved answers.
+                assertEquals("17 de 18", activity.findViewById<TextView>(R.id.textProgress).text.toString())
+                activity.findViewById<Button>(R.id.buttonContinue).performClick()
+                assertEquals("18 de 18", activity.findViewById<TextView>(R.id.textProgress).text.toString())
                 val content = activity.findViewById<ViewGroup>(R.id.lessonContent)
                 val editors = tree(content).filterIsInstance<MathExpressionEditor>()
                 assertEquals("The actual serialized answers persist across recreation", serializedAnswers, editors.map { it.getLatex() })

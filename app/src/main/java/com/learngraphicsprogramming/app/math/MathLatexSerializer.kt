@@ -3,7 +3,18 @@ package com.learngraphicsprogramming.app.math
 /** Canonical supported LaTeX; editable placeholders are empty braces, never answer characters. */
 object MathLatexSerializer {
     fun serialize(expression: MathExpression): String = when (expression) {
-        is MathExpression.Sequence -> expression.children.joinToString("") { serialize(it) }
+        is MathExpression.Sequence -> buildString {
+            for (child in expression.children) {
+                val value = serialize(child)
+                // A bare command and a letter sibling need a lexical boundary (\\int x).
+                if (value.firstOrNull()?.isLetter() == true) {
+                    var commandStart = length
+                    while (commandStart > 0 && this[commandStart - 1].isLetter()) commandStart--
+                    if (commandStart in 1 until length && this[commandStart - 1] == '\\') append(' ')
+                }
+                append(value)
+            }
+        }
         is MathExpression.Number -> expression.value
         is MathExpression.Variable -> expression.name
         is MathExpression.Symbol -> symbols[expression.value]?.let { "$it{}" } ?: "\\mathrm{${escape(expression.value)}}"

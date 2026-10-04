@@ -103,9 +103,11 @@ class MathImeSlotRegressionDeviceTest {
             activity.findViewById<ViewGroup>(R.id.lessonContent).apply { removeAllViews(); addView(root) }
             editor.setLatex("x_{1}^{2}")
             editor.requestFocus()
-            selectSlot(editor, "base")
+            // Fast IME Next follows the current descriptor order upper→base→lower.
+            // Begin at upper so the test still verifies every declared script slot.
+            selectSlot(editor, "upper")
             assertTrue(connection(editor).performEditorAction(EditorInfo.IME_ACTION_NEXT))
-            assertEquals("upper", editor.model.cursor.path.last().slot)
+            assertEquals("base", editor.model.cursor.path.last().slot)
             assertTrue(editor.hasFocus())
             assertTrue(connection(editor).performEditorAction(EditorInfo.IME_ACTION_NEXT))
             assertEquals("lower", editor.model.cursor.path.last().slot)
@@ -177,7 +179,21 @@ class MathImeSlotRegressionDeviceTest {
             editors[3].apply { requestFocus(); perform(MathKeyboardAction.Fraction); type(this, "1"); nextSlot(this); perform(MathKeyboardAction.NthRoot); type(this, "3"); nextSlot(this); type(this, "x+4") }
             editors[4].apply { requestFocus(); perform(MathKeyboardAction.Parentheses); type(this, "x+1") }
             editors[5].apply { requestFocus(); perform(MathKeyboardAction.AbsoluteValue); type(this, "x") }
-            editors[6].apply { requestFocus(); perform(MathKeyboardAction.Function("sin")); type(this, "x"); nextSlot(this); perform(MathKeyboardAction.Symbol("+")); perform(MathKeyboardAction.Function("log")); type(this, "2"); nextSlot(this); type(this, "x") }
+            editors[6].apply {
+                requestFocus()
+                perform(MathKeyboardAction.Function("sin"))
+                type(this, "x")
+                nextSlot(this)
+                perform(MathKeyboardAction.Symbol("+"))
+                perform(MathKeyboardAction.Function("log"))
+                type(this, "2")
+                // Logarithm argument precedes its lower base in the declared order.
+                // Touch the intended argument rather than advancing past the final base.
+                val log = model.expression.children.last() as MathExpression.Function
+                assertEquals("log", log.name)
+                selectSlot(this, "argument", model.expression.children.lastIndex)
+                type(this, "x")
+            }
             editors[7].apply { requestFocus(); perform(MathKeyboardAction.Symbol("π")); type(this, "+e≤2") }
             val asset = "content/es/math_physics/math_course_01/arithmetic_fundamentals/lesson_math_puzzle_sandbox.json"
             val page = JSONObject(context.assets.open(asset).bufferedReader().use { it.readText() }).getJSONArray("pages").getJSONObject(16)
@@ -206,9 +222,9 @@ class MathImeSlotRegressionDeviceTest {
         editor.requestFocus()
     }
     private fun connection(editor: MathExpressionEditor): InputConnection = requireNotNull(editor.onCreateInputConnection(EditorInfo()))
-    private fun selectSlot(editor: MathExpressionEditor, slot: String) {
+    private fun selectSlot(editor: MathExpressionEditor, slot: String, explicitNodeIndex: Int? = null) {
         val sequence = editor.model.expression
-        val nodeIndex = sequence.children.indexOfFirst { it.childSlots().any { child -> child.first == slot } }
+        val nodeIndex = explicitNodeIndex ?: sequence.children.indexOfFirst { it.childSlots().any { child -> child.first == slot } }
         assertTrue("Slot $slot exists", nodeIndex >= 0)
         val sequenceSlot = sequence.children[nodeIndex].childSlots().single { it.first == slot }.second
         val cursor = MathCursor(listOf(MathCursorStep(nodeIndex, slot)), sequenceSlot.children.size)

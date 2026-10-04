@@ -425,7 +425,7 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
                     requestFocus()
 
                     if (target != null) {
-                        selectCursor(target.cursor, target.leafTextOffset)
+                        selectCursor(target.cursor, target.leafTextOffset, target.sequenceInsertion)
                     }
 
                     performClick()
@@ -478,11 +478,11 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
         return true
     }
 
-    private fun selectCursor(target: MathCursor, leafTextOffset: Int? = null) {
+    private fun selectCursor(target: MathCursor, leafTextOffset: Int? = null, sequenceInsertion: Boolean = false) {
         composition = null
         imeSelection = null
         model.clearSelection()
-        model.placeTextCursor(target, leafTextOffset)
+        model.placeTextCursor(target, leafTextOffset, sequenceInsertion)
         refresh()
         restartIme()
     }

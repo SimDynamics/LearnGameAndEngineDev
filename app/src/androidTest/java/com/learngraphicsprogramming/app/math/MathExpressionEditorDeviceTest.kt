@@ -113,7 +113,13 @@ class MathExpressionEditorDeviceTest {
                 assertEquals("numerator", editor.model.cursor.path.last().slot)
                 perform(MathKeyboardAction.Backspace)
                 assertEquals("Toolbar Backspace inside an empty slot also preserves its owner", "\\frac{}{}", editor.getLatex())
-                repeat(2) { perform(MathKeyboardAction.NextSlot) }
+                perform(MathKeyboardAction.NextSlot)
+                assertEquals(MathCursorPresentation.ChildBoundary(listOf(MathCursorStep(0, "numerator"))), editor.model.cursorPresentation)
+                perform(MathKeyboardAction.NextSlot)
+                assertEquals(MathCursor(listOf(MathCursorStep(0, "denominator")), 0), editor.model.cursor)
+                perform(MathKeyboardAction.NextSlot)
+                assertEquals(MathCursorPresentation.ChildBoundary(listOf(MathCursorStep(0, "denominator"))), editor.model.cursorPresentation)
+                perform(MathKeyboardAction.NextSlot)
                 assertEquals(MathCursorLevel.NEUTRAL, editor.model.navigationLevel)
                 assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), 0), editor.model.cursorPresentation)
                 perform(MathKeyboardAction.Backspace)
@@ -152,7 +158,8 @@ class MathExpressionEditorDeviceTest {
                 assertNull("An indefinite integral has no lower placeholder", integral.lower)
                 assertNull("An indefinite integral has no upper placeholder", integral.upper)
                 assertTrue(connection.commitText("x", 1))
-                assertEquals("\\int{x}", editor.getLatex())
+                assertEquals("\\int x", editor.getLatex())
+                assertEquals(listOf(integral, MathExpression.Variable("x")), editor.model.expression.children)
                 assertTrue(editor.isComplete())
 
                 assertTrue(setLatex(""))
@@ -383,7 +390,8 @@ class MathExpressionEditorDeviceTest {
             SystemClock.sleep(350)
             scenario.onActivity { activity ->
                 assertTrue("The small landscape viewport settles without losing window focus", activity.hasWindowFocus())
-                assertTrue(editor.hasFocus())
+                assertTrue("The structured field retains focus after rotation: attached=${editor.isAttachedToWindow}, " +
+                    "currentFocus=${activity.currentFocus}, model=${editor.model.cursor}", editor.hasFocus())
                 assertTrue(toolbar.isAttachedToWindow)
                 assertEquals(View.VISIBLE, toolbar.visibility)
                 assertEquals("\\frac{}{}", editor.getLatex())
@@ -392,7 +400,10 @@ class MathExpressionEditorDeviceTest {
                 assertEquals(frame.bottom.toDouble(), screenBounds(toolbar).bottom.toDouble(), 3.0)
             }
             scenario.onActivity {
-                editor.perform(MathKeyboardAction.MoveRight)
+                // LEFT follows the declared numerator→denominator order through the
+                // denominator's own border, rather than using an obsolete RIGHT shortcut.
+                editor.perform(MathKeyboardAction.PreviousSlot)
+                editor.perform(MathKeyboardAction.PreviousSlot)
                 assertEquals("denominator", editor.model.cursor.path.last().slot)
                 requireNotNull(editor.onCreateInputConnection(EditorInfo())).commitText("2", 1)
             }

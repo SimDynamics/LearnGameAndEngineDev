@@ -46,6 +46,21 @@ class MathProgressiveSlotNavigationTest {
         step(m, false, false)
         return states
     }
+    private fun rightAfterRecreation(m: MathExpressionModel) {
+        val restored = MathExpressionModel()
+        assertTrue(restored.restoreDraft(m.saveDraft()))
+        step(restored, true)
+        step(m, true)
+        assertEquals("The next child cannot depend on transient inverse navigation history", state(restored), state(m))
+    }
+    private fun visitRootParentBorders(m: MathExpressionModel) {
+        assertEquals(MathCursor(), m.cursor)
+        m.expression.children.indices.forEach { index ->
+            rightAfterRecreation(m)
+            assertEquals(MathCursor(offset = index + 1), m.cursor)
+            assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), index), m.cursorPresentation)
+        }
+    }
     private fun unchangedSiblings(before: MathExpressionModel, after: MathExpressionModel, slotPath: List<MathCursorStep>) {
         slotPath.forEachIndexed { depth, edge ->
             val parentPath = slotPath.take(depth)
@@ -83,45 +98,94 @@ class MathProgressiveSlotNavigationTest {
         }
     }
 
-    @Test fun leftFollowsTheExactParentThenExponentDiagramWithoutFinish() {
+    @Test fun fractionRightFromNumeratorReachesTheRealDenominatorBeforeTheParentBoundary() {
+        val numerator = parse("x+1")
+        val denominator = MathExpression.Sequence()
+        val fraction = MathExpression.Fraction(numerator, denominator)
+        val m = MathExpressionModel(MathExpression.Sequence(listOf(fraction)))
+        val original = m.expression
+        val numeratorPath = path("numerator")
+        val denominatorPath = path("denominator")
+        m.cursor = MathCursor(numeratorPath, numerator.children.size)
+
+        step(m, true)
+        assertEquals(MathCursorPresentation.ChildBoundary(numeratorPath), m.cursorPresentation)
+        step(m, true)
+        assertEquals("RIGHT must visit denominator before the Fraction parent border", MathCursor(denominatorPath, 0), m.cursor)
+        assertEquals(MathCursorPresentation.Interior(MathContentScope.Slot), m.cursorPresentation)
+        assertSame(denominator, m.sequenceAt(m.cursor.path))
+        assertEquals(listOf("numerator", "denominator"), fraction.navigationChildren().map { it.id })
+        val denominatorDraft = m.saveDraft()
+        step(m, false)
+        assertEquals("LEFT can return across the child transition without editing either child",
+            MathCursorPresentation.ChildBoundary(numeratorPath), m.cursorPresentation)
+        rightAfterRecreation(m)
+        assertEquals(denominatorDraft, m.saveDraft())
+
+        step(m, true)
+        assertEquals(MathCursorPresentation.ChildBoundary(denominatorPath), m.cursorPresentation)
+        step(m, true)
+        assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), 0), m.cursorPresentation)
+        step(m, true, false)
+
+        val leftStates = walkLeft(m)
+        assertTrue(leftStates.any { it.presentation == MathCursorPresentation.ChildBoundary(numeratorPath) })
+        assertTrue(leftStates.any { it.presentation == MathCursorPresentation.ChildBoundary(denominatorPath) })
+        assertSame(original, m.expression)
+        assertSame(numerator, (m.expression.children.single() as MathExpression.Fraction).numerator)
+        assertSame(denominator, (m.expression.children.single() as MathExpression.Fraction).denominator)
+    }
+
+    @Test fun canonicalScriptLeftVisitsEveryStateAndRightFromHomeVisitsTheNearestParentWithoutFinish() {
         val m=model("x^2")
         assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),0),m.cursorPresentation)
         val interior=MathCursorPresentation.Interior(MathContentScope.Slot)
         val expected=listOf(
-            State(MathCursor(path("base"),1),null,interior),
-            State(MathCursor(path("base"),1),MathSelection(path("base"),0,1),interior),
-            State(MathCursor(path("base"),0),null,interior),
             State(MathCursor(offset=1,level=MathCursorLevel.CHILD_BOUNDARY,scope=null),null,MathCursorPresentation.ChildBoundary(path("upper"))),
             State(MathCursor(path("upper"),1),null,interior),
             State(MathCursor(path("upper"),1),MathSelection(path("upper"),0,1),interior),
             State(MathCursor(path("upper"),0),null,interior),
+            State(MathCursor(path("base"),1),null,interior),
+            State(MathCursor(path("base"),1),MathSelection(path("base"),0,1),interior),
+            State(MathCursor(path("base"),0),null,interior),
             State(MathCursor(),null,MathCursorPresentation.Neutral))
         expected.forEach { step(m,false);assertEquals(it,state(m)) }
-        step(m,false,false);step(m,true)
+        step(m,false,false)
+        visitRootParentBorders(m)
         assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),0),m.cursorPresentation)
         step(m,true,false)
     }
-    @Test fun rightFromHomeVisitsOnlyTheNearestParentThenTheNextParent() {
+    @Test fun rightFromHomeVisitsEachIndependentParentBorderWithoutOpeningItsChildren() {
         val integral=MathExpression.LargeOperator(MathLargeOperator.INTEGRAL, lower = parse("0"), upper = parse("1"))
         val m=MathExpressionModel(MathExpression.Sequence(listOf(integral,parse("x^2").children.single())))
-        m.cursor=MathCursor()
-        step(m,true);assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),0),m.cursorPresentation)
-        assertEquals(MathCursor(offset=1),m.cursor)
-        step(m,true);assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),1),m.cursorPresentation)
+        val states=walkLeft(m)
+        assertTrue(states.any { it.presentation==MathCursorPresentation.ParentBoundary(emptyList(),0) })
+        visitRootParentBorders(m)
+        assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),1),m.cursorPresentation)
         assertEquals(MathCursor(offset=2),m.cursor)
         val last=m.saveDraft();repeat(5){step(m,true,false);assertEquals(last,m.saveDraft())}
     }
-    @Test fun rightFromAnyInteriorPhaseExitsItsParentOrChildWithoutAReverseCycle() {
+    @Test fun rightFromInteriorVisitsSelectionThenEndThenTheNextStructuralCheckpoint() {
         listOf("base","upper","lower").forEach { slot -> repeat(3) { phase ->
             val m=model("x_{12}^{23}");val p=path(slot);val end=m.sequenceAt(p)!!.children.size
             m.cursor=MathCursor(p,if(phase==0)0 else end)
             if(phase==2)step(m,false)
-            val tree=m.expression;step(m,true);assertSame(tree,m.expression);assertNull(m.selectionRange)
-            assertEquals(if(slot=="base")MathCursorPresentation.ParentBoundary(emptyList(),0)
-            else MathCursorPresentation.ChildBoundary(p),m.cursorPresentation)
-            if(slot!="base"){step(m,true);assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),0),m.cursorPresentation)}
+            val tree=m.expression;step(m,true);assertSame(tree,m.expression)
+            if(phase==0) {
+                assertEquals(MathSelection(p,0,end),m.selectionRange)
+                assertEquals(MathCursorPresentation.Interior(MathContentScope.Slot),m.cursorPresentation)
+            } else if(phase==2) {
+                assertNull(m.selectionRange)
+                assertEquals(MathCursor(p,end),m.cursor)
+            } else {
+                assertNull(m.selectionRange)
+                if(slot=="base")assertEquals(MathCursor(path("lower"),0),m.cursor)
+                else assertEquals(MathCursorPresentation.ChildBoundary(p),m.cursorPresentation)
+            }
         } }
         val middle=model("x_{12}");middle.placeTextCursor(MathCursor(path("lower"),0),1)
+        step(middle,true);assertEquals(2,middle.cursor.offset)
+        assertEquals(MathCursorPresentation.Interior(MathContentScope.Slot),middle.cursorPresentation)
         step(middle,true);assertEquals(MathCursorPresentation.ChildBoundary(path("lower")),middle.cursorPresentation)
     }
     @Test fun emptyRootHasOnlyHomeEvenAfterSelectAllTouchAndNativeEcho() {
@@ -142,27 +206,53 @@ class MathProgressiveSlotNavigationTest {
     }
     @Test fun descriptorsDeclareParentContentIndependentlyFromLegacySlotOrder() {
         val m=model("x_1^2")
-        assertEquals(listOf("base","upper","lower"),m.expression.children.single().navigationChildren().map { it.id })
-        assertEquals(listOf(MathNavigationRole.PARENT_CONTENT,MathNavigationRole.CHILD,MathNavigationRole.CHILD),
+        assertEquals(listOf("upper","base","lower"),m.expression.children.single().navigationChildren().map { it.id })
+        assertEquals(listOf(MathNavigationRole.CHILD,MathNavigationRole.PARENT_CONTENT,MathNavigationRole.CHILD),
             m.expression.children.single().navigationChildren().map { it.role })
         val states=walkLeft(m)
-        assertEquals(path("base"),states[1].cursor.path)
+        assertEquals(MathCursorPresentation.ChildBoundary(path("upper")),states[1].presentation)
         assertEquals(listOf("upper","lower"),states.mapNotNull {
             (it.presentation as? MathCursorPresentation.ChildBoundary)?.slotPath?.last()?.slot })
     }
-    @Test fun everyDescriptorTypeOpensItsDeclaredParentThenChildrenAndTerminatesAtHome() {
+    @Test fun everyDescriptorTypeKeepsLeftOrderAndRightReachesEachDeclaredChildBeforeItsParent() {
         val v=parse("12")
-        val nodes=listOf<MathExpression>(MathExpression.Fraction(v,v),MathExpression.Root(v,v),MathExpression.Group(v),
+        val nodes=listOf<MathExpression>(MathExpression.Scripts(v,v,v),MathExpression.Fraction(v,v),MathExpression.Root(v,v),MathExpression.Group(v),
             MathExpression.Function("log",v,v),MathExpression.Limit(v,v),MathExpression.Derivative(v,v,v),
             MathExpression.Matrix(List(2){List(2){v}}),MathExpression.Cases(listOf(MathExpression.Case(v,v))))+
                 MathLargeOperator.entries.map{MathExpression.LargeOperator(it, lower = v, upper = v)}
         nodes.forEach { node ->
-            val children=node.navigationChildren();val parent=children.firstOrNull{it.role==MathNavigationRole.PARENT_CONTENT}
-            val states=walkLeft(MathExpressionModel(MathExpression.Sequence(listOf(node))))
-            if(parent!=null)assertEquals(path(parent.id),states[1].cursor.path)
-            else assertEquals(MathCursorPresentation.ChildBoundary(path(children.first().id)),states[1].presentation)
+            val children=node.navigationChildren();val first=children.first()
+            val candidate=MathExpressionModel(MathExpression.Sequence(listOf(node)))
+            val states=walkLeft(candidate)
+            if(first.role==MathNavigationRole.PARENT_CONTENT)assertEquals(path(first.id),states[1].cursor.path)
+            else assertEquals(MathCursorPresentation.ChildBoundary(path(first.id)),states[1].presentation)
             assertEquals(children.filter{it.role==MathNavigationRole.CHILD}.map{it.id},states.mapNotNull{
                 (it.presentation as? MathCursorPresentation.ChildBoundary)?.slotPath?.last()?.slot})
+            visitRootParentBorders(candidate)
+            candidate.cursor = MathCursor(path(first.id), 0)
+            children.forEachIndexed { index, child ->
+                val currentPath = path(child.id)
+                assertEquals(MathCursor(currentPath, 0), candidate.cursor)
+                assertSame(child.content, candidate.sequenceAt(candidate.cursor.path))
+                rightAfterRecreation(candidate)
+                assertEquals(MathSelection(currentPath, 0, v.children.size), candidate.selectionRange)
+                rightAfterRecreation(candidate)
+                assertNull(candidate.selectionRange)
+                assertEquals(MathCursor(currentPath, v.children.size), candidate.cursor)
+                if (child.role == MathNavigationRole.CHILD) {
+                    rightAfterRecreation(candidate)
+                    assertEquals(MathCursorPresentation.ChildBoundary(currentPath), candidate.cursorPresentation)
+                }
+                rightAfterRecreation(candidate)
+                val next = children.getOrNull(index + 1)
+                if (next != null) {
+                    assertEquals("${node.javaClass.simpleName}: ${child.id} must reach the next real child ${next.id}",
+                        MathCursor(path(next.id), 0), candidate.cursor)
+                    assertEquals(MathCursorPresentation.Interior(MathContentScope.Slot), candidate.cursorPresentation)
+                } else {
+                    assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), 0), candidate.cursorPresentation)
+                }
+            }
         }
     }
     @Test fun structuralSlotsOpenTheirLocalParentsBeforeContinuingOuterChildren() {
@@ -192,7 +282,7 @@ class MathProgressiveSlotNavigationTest {
         val states=walkLeft(m)
 
         // x^2 is the independent parent to the right of the integral.
-        assertEquals(listOf(MathCursorStep(1,"base")),states[1].cursor.path)
+        assertEquals(MathCursorPresentation.ChildBoundary(listOf(MathCursorStep(1,"upper"))),states[1].presentation)
 
         // LargeOperator no longer owns a "body" slot. Its structural children are upper/lower.
         assertFalse(states.any { state -> state.cursor.path.any { it.slot == "body" } })
@@ -216,7 +306,7 @@ class MathProgressiveSlotNavigationTest {
     @Test fun emptyChildrenHaveOneInteriorStateAndNoEmptySelectionOrLeftBoundary() {
         val m=model("x^{}");frontier(m,path("upper"));step(m,false)
         assertEquals(MathCursor(path("upper"),0),m.cursor);assertNull(m.selectionRange)
-        step(m,false);assertEquals(MathCursor(),m.cursor)
+        step(m,false);assertEquals(MathCursor(path("base"),1),m.cursor)
         m.cursor=MathCursor(path("upper"),0);step(m,true)
         assertEquals(MathCursorPresentation.ChildBoundary(path("upper")),m.cursorPresentation)
         walkLeft(model("\\frac{}{34}"))
@@ -244,6 +334,7 @@ class MathProgressiveSlotNavigationTest {
         assertEquals(m.expression,restored.expression);assertEquals(MathCursor(),restored.cursor)
         assertFalse(restored.saveDraft().contains("navigationOrigins"))
         step(restored,false,false);step(restored,true)
+        assertEquals(MathCursor(offset=1),restored.cursor)
         assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),0),restored.cursorPresentation)
     }
     @Test fun legacyParentContentChildBoundariesNormalizeToWholeParentBoundaries() {
@@ -252,7 +343,7 @@ class MathProgressiveSlotNavigationTest {
         val restored=MathExpressionModel();assertTrue(restored.restoreDraft(draft.toString()))
         assertEquals(MathCursor(offset=1),restored.cursor)
         assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),0),restored.cursorPresentation)
-        step(restored,false);assertEquals(MathCursor(path("base"),1),restored.cursor)
+        step(restored,false);assertEquals(MathCursorPresentation.ChildBoundary(path("upper")),restored.cursorPresentation)
     }
     @Test fun orphanedChildBoundaryCursorsRestoreAsWholeParentBoundaries() {
         val m=model("x^2");frontier(m,path("upper"))
@@ -293,18 +384,25 @@ class MathProgressiveSlotNavigationTest {
         m.cursor=MathCursor(path("lower"),1);step(m,false);val selected=m.takeSelection()
         assertTrue(m.insert(MathExpression.Fraction(selected,MathExpression.Sequence()),"denominator"));assertEquals(path("lower","denominator"),m.cursor.path)
     }
-    @Test fun manualInteriorLeftMovesToStartWhileRightImmediatelyEscapes() {
+    @Test fun manualInteriorMovesToTheCorrespondingEndBeforeLeavingTheSlot() {
         listOf(true,false).forEach { right -> val m=model("x_{12}");m.placeTextCursor(MathCursor(path("lower"),0),1)
             step(m,right);assertNull(m.selectionRange)
-            if(right)assertEquals(MathCursorPresentation.ChildBoundary(path("lower")),m.cursorPresentation)
+            if(right) {
+                assertEquals(MathCursor(path("lower"),2),m.cursor)
+                step(m,true);assertEquals(MathCursorPresentation.ChildBoundary(path("lower")),m.cursorPresentation)
+            }
             else {assertEquals(MathCursor(path("lower"),0),m.cursor);step(m,false);assertEquals(MathCursor(),m.cursor)}
         }
     }
-    @Test fun rootNumericSplitKeepsBothHalvesAndRightExitsTheOwnedSpan() {
+    @Test fun rootNumericSplitKeepsBothHalvesAndRightVisitsTheOwnedEndBeforeTheParentBorder() {
         val m=model("1234+x^2");m.placeTextCursor(MathCursor(),2);assertEquals(MathContentScope.Atom(0,2),m.editingScope)
-        val tree=m.expression;step(m,true);assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),1),m.cursorPresentation)
+        val tree=m.expression;step(m,true)
+        assertEquals(MathCursor(emptyList(),2,MathCursorLevel.INTERIOR,MathContentScope.Atom(0,2)),m.cursor)
+        assertNull(m.selectionRange)
+        val ownedEnd=state(m)
+        step(m,true);assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),1),m.cursorPresentation)
         assertSame(tree,m.expression);assertEquals("1234+{x}^{2}",MathLatexSerializer.serialize(m.expression))
-        step(m,false);assertEquals(MathContentScope.Atom(1,2),m.editingScope)
+        step(m,false);assertEquals(ownedEnd,state(m))
         assertEquals(2,m.cursor.offset);assertNull(m.selectionRange)
     }
     @Test fun rootTypingImmediatelyScopesOnlyTheLastIndependentAtom() {
@@ -312,11 +410,13 @@ class MathProgressiveSlotNavigationTest {
         step(m,false);assertEquals(MathSelection(emptyList(),5,6),m.selectionRange)
         m.deleteBackward();assertEquals(parse("12+x^2ab"),m.expression)
     }
-    @Test fun partialSelectionLeftCollapsesToStartAndRightEscapesTheChild() {
+    @Test fun partialSelectionCollapsesInsideItsSlotBeforeFurtherNavigation() {
         val m=model("\\frac{x+y}{3}");m.select(path("numerator"),1,2);step(m,false)
         assertEquals(1,m.cursor.offset);assertNull(m.selectionRange)
         m.select(path("numerator"),1,2);step(m,true)
-        assertEquals(MathCursorPresentation.ChildBoundary(path("numerator")),m.cursorPresentation);assertNull(m.selectionRange)
+        assertEquals(MathCursor(path("numerator"),2),m.cursor);assertNull(m.selectionRange)
+        step(m,true);assertEquals(MathCursor(path("numerator"),3),m.cursor)
+        step(m,true);assertEquals(MathCursorPresentation.ChildBoundary(path("numerator")),m.cursorPresentation)
     }
     @Test fun newlyCreatedScriptsEnterTheirOwnChildEvenWhenBaseIsEmpty() {
         listOf(true,false).forEach { upper -> val m=MathExpressionModel();assertTrue(m.addScript(upper))
@@ -352,8 +452,18 @@ class MathProgressiveSlotNavigationTest {
         assertTrue(m.insertText("3"));assertFalse(m.saveDraft().contains("navigationOrigins"));valid(m)
         walkLeft(MathExpressionModel(MathExpression.Sequence(listOf(MathExpression.Matrix(List(2){List(2){MathExpression.Sequence()}})))))
     }
-    @Test fun atomicNeutralGroupsCrossOneStepWithoutInterpretingMathematics() {
-        val m=model("+12=x");m.cursor=MathCursor();step(m,true);assertEquals(MathCursor(offset=1),m.cursor)
+    @Test fun atomicNeutralParentsAdvanceToTheirOwnBorderAndLeftOpensTheirEditingStates() {
+        val m=model("+12=x");m.cursor=MathCursor();step(m,true)
+        assertEquals(MathCursor(offset=1),m.cursor)
+        assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),0),m.cursorPresentation)
+        step(m,false)
+        assertEquals(MathCursor(emptyList(),1,MathCursorLevel.INTERIOR,MathContentScope.Atom(0,1)),m.cursor)
+        step(m,false);assertEquals(MathSelection(emptyList(),0,1),m.selectionRange)
+        step(m,false);assertNull(m.selectionRange)
+        assertEquals(MathCursor(emptyList(),0,MathCursorLevel.INTERIOR,MathContentScope.Atom(0,1)),m.cursor)
+        step(m,true);assertEquals(MathSelection(emptyList(),0,1),m.selectionRange)
+        step(m,true);assertNull(m.selectionRange)
+        step(m,true);assertEquals(MathCursor(offset=1),m.cursor)
         m.deleteBackward();assertEquals(parse("12=x"),m.expression)
     }
     @Test fun neutralNumericTypingCreatesANewSiblingAndPowerUsesOnlyThatSibling() {
@@ -408,7 +518,11 @@ class MathProgressiveSlotNavigationTest {
     }
     @Test fun repeatedDirectionalNavigationKeepsNoObsoleteInverseHistory() {
         val m=model("12");val tree=m.expression
-        repeat(50){m.cursor=MathCursor();step(m,true);step(m,true,false);step(m,false);step(m,true)}
+        repeat(50){
+            walkLeft(m)
+            visitRootParentBorders(m)
+            step(m,true,false)
+        }
         assertFalse(m.saveDraft().contains("navigationOrigins"))
         assertSame(tree,m.expression);assertEquals(MathCursor(offset=1),m.cursor)
     }
@@ -429,7 +543,7 @@ class MathProgressiveSlotNavigationTest {
         repeat(24){
             val expression=tree(2);val candidateWalk=MathExpressionModel(expression)
             val states=walkLeft(candidateWalk);assertSame(expression,candidateWalk.expression)
-            expression.children.indices.forEach{index->step(candidateWalk,true);assertEquals(MathCursor(offset=index+1),candidateWalk.cursor)}
+            visitRootParentBorders(candidateWalk)
             step(candidateWalk,true,false)
             states.mapNotNull{it.presentation as? MathCursorPresentation.ChildBoundary}.distinct().forEach{anchor->
                 assertTrue(anchor.after)
