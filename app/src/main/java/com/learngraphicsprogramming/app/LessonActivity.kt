@@ -3,7 +3,9 @@ package com.learngraphicsprogramming.app
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -33,8 +35,10 @@ import android.text.Editable
 import android.text.TextWatcher
 import com.learngraphicsprogramming.app.runtime.CppExecutionEngine
 import android.view.ViewTreeObserver
+import android.view.inputmethod.InputMethodManager
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsAnimationCompat
 import android.util.TypedValue
 import android.widget.SeekBar
 import com.learngraphicsprogramming.app.math.MathPuzzleRenderer
@@ -226,6 +230,30 @@ class LessonActivity : AppCompatActivity() {
     private var keyboardVisible =
         false
 
+    private val programmingImeAnimations = mutableSetOf<WindowInsetsAnimationCompat>()
+    private var programmingWindowInsets: WindowInsetsCompat? = null
+    private var normalProgrammingBarHeight = 0
+    private var programmingLessonHeaderHeight = 0
+    private var programmingImeFullscreenSystemUi: Int? = null
+    private var programmingImeFullscreenWindowFlag = false
+    private data class ProgrammingKeySize(val height: Int, val minimumHeight: Int, val top: Int, val bottom: Int)
+    private val programmingKeySizes = mutableMapOf<TextView, ProgrammingKeySize>()
+    private val programmingViewportUiControllers = mutableListOf<() -> Unit>()
+    private var programmingFullscreenHeader: View? = null
+    private var programmingFullscreenFloating: View? = null
+    private val programmingFullscreenPaddings = mutableMapOf<View, Rect>()
+    private val programmingFullscreenMargins = mutableMapOf<View, Rect>()
+    private val programmingInputPaddings = mutableMapOf<EditText, Rect>()
+    private data class ProgrammingTextSize(val size: Float, val lineHeight: Int)
+    private data class ProgrammingReparentFocus(val input: EditText, val selectionStart: Int,
+        val selectionEnd: Int, val imeWasVisible: Boolean)
+    private val programmingTextSizes = mutableMapOf<TextView, ProgrammingTextSize>()
+    private val programmingCodeTextCompanions = mutableMapOf<EditText, TextView>()
+    private var lastProgrammingRevealInput: EditText? = null
+    private var lastProgrammingRevealViewport = ""
+    private data class CodeSurfaceWidth(val portraitWidth: Int, val portraitTranslation: Float, val extendInPortrait: Boolean)
+    private val codeSurfaceWidths = mutableMapOf<View, CodeSurfaceWidth>()
+
     private var lessonNumber = 1
 
     private var currentPage = 0
@@ -254,6 +282,12 @@ class LessonActivity : AppCompatActivity() {
     override fun onDestroy() {
         mathKeyboardHost?.close()
         super.onDestroy()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        mathKeyboardHost?.onConfigurationChanged()
+        updateProgrammingKeyboardBarVisibility()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -367,6 +401,8 @@ class LessonActivity : AppCompatActivity() {
         if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
             lessonContent.setPadding(0, dp(24), 0, dp(16))
             mathKeyboardHost = MathKeyboardHost.install(this)
+        } else {
+            setupProgrammingViewportInsets()
         }
 
         currentLessonId =
@@ -479,6 +515,7 @@ class LessonActivity : AppCompatActivity() {
 
     private fun setupProgrammingKeyboardBar() {
 
+        normalProgrammingBarHeight = programmingKeyboardBar.layoutParams.height
         rebuildProgrammingKeyboardBar()
 
         protectProgrammingInteractionFromPageSwipe(
@@ -503,6 +540,11 @@ class LessonActivity : AppCompatActivity() {
                             it.tag ==
                                     CODE_INPUT_TAG
                         }
+
+                activeCodeInput?.let { input ->
+                    programmingInputPaddings.putIfAbsent(input, Rect(input.paddingLeft, input.paddingTop,
+                        input.paddingRight, input.paddingBottom))
+                }
 
                 updateProgrammingKeyboardBarVisibility()
             }
@@ -536,7 +578,12 @@ class LessonActivity : AppCompatActivity() {
                     ) == true
 
                 updateProgrammingKeyboardBarVisibility()
+                updateCodeSurfaceWidths()
             }
+
+        lessonContent.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            updateCodeSurfaceWidths()
+        }
 
         root.post {
 
@@ -556,6 +603,7 @@ class LessonActivity : AppCompatActivity() {
 
     private fun rebuildProgrammingKeyboardBar() {
 
+        programmingKeySizes.clear()
         programmingKeyboardBarContent
             .removeAllViews()
 
@@ -691,6 +739,9 @@ class LessonActivity : AppCompatActivity() {
         button.layoutParams =
             params
 
+        programmingKeySizes[button] = ProgrammingKeySize(params.height, button.minimumHeight,
+            button.paddingTop, button.paddingBottom)
+
         button.setOnClickListener {
 
             insertProgrammingShortcut(
@@ -751,22 +802,12 @@ class LessonActivity : AppCompatActivity() {
     }
 
     private fun updateProgrammingKeyboardBarVisibility() {
-
-        /*
-         * En fullscreen + horizontal + teclado
-         * usamos toda la altura posible para código.
-         */
-        val compactLandscapeCompiler =
-            compilerFullscreenActive &&
-                    resources.configuration.orientation ==
-                    android.content.res.Configuration.ORIENTATION_LANDSCAPE
-
+        if (!::programmingKeyboardBar.isInitialized) return
         val shouldShow =
-            keyboardVisible &&
+            (keyboardVisible || programmingImeAnimations.isNotEmpty()) &&
                     activeCodeInput
                         ?.hasFocus() ==
-                    true &&
-                    !compactLandscapeCompiler
+                    true
 
         programmingKeyboardBar.visibility =
             if (
@@ -776,6 +817,247 @@ class LessonActivity : AppCompatActivity() {
             } else {
                 View.GONE
             }
+
+        if (currentRouteId != AppearanceSettingsRepository.ROUTE_PROGRAMMING) return
+
+        updateProgrammingFullscreenResize()
+        val compact = isCompactProgrammingFullscreen() && shouldShow
+        val available = programmingAvailableViewport()
+        val barHeight = if (compact) minOf(normalProgrammingBarHeight,
+            (available.height() / 2).coerceAtLeast(1)) else normalProgrammingBarHeight
+        if (programmingKeyboardBar.layoutParams.height != barHeight) {
+            programmingKeyboardBar.layoutParams = programmingKeyboardBar.layoutParams.apply { height = barHeight }
+        }
+        programmingKeySizes.forEach { (button, normal) ->
+            val keyHeight = if (compact) minOf(normal.height, barHeight) else normal.height
+            if (button.layoutParams.height != keyHeight) {
+                button.layoutParams = button.layoutParams.apply { height = keyHeight }
+            }
+            val minimumHeight = if (compact) 0 else normal.minimumHeight
+            if (button.minimumHeight != minimumHeight) button.minimumHeight = minimumHeight
+            val top = if (compact) 0 else normal.top
+            val bottom = if (compact) 0 else normal.bottom
+            if (button.paddingTop != top || button.paddingBottom != bottom) {
+                button.setPadding(button.paddingLeft, top, button.paddingRight, bottom)
+            }
+        }
+
+        // Configuration can change before the resized content receives its new height.
+        // Restoring the header into the old landscape viewport would clear focus again.
+        val lessonHeader = findViewById<View>(R.id.lessonHeader)
+        if (lessonHeader.visibility == View.VISIBLE && lessonHeader.measuredHeight > 0) {
+            programmingLessonHeaderHeight = lessonHeader.measuredHeight
+        }
+        val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val imeOccupiesViewport = keyboardVisible || programmingImeAnimations.isNotEmpty()
+        val actualContentHeight = (lessonScroll.parent as? View)?.height ?: available.height()
+        val readyHeight = minOf(available.height(), actualContentHeight)
+        val editableLineHeight = activeCodeInput?.let { input ->
+            maxOf(input.lineHeight, programmingTextSizes[input]?.lineHeight ?: input.lineHeight) +
+                input.compoundPaddingTop + input.compoundPaddingBottom
+        } ?: 1
+        val headerFitsPortrait = readyHeight >= programmingLessonHeaderHeight + barHeight + editableLineHeight
+        val hideLessonHeader = compilerFullscreenActive ||
+            (imeOccupiesViewport && (landscape || (shouldShow && !headerFitsPortrait)))
+        lessonHeader.visibility = if (hideLessonHeader) View.GONE else View.VISIBLE
+        val hideFullscreenHeader = compact ||
+            (!landscape && imeOccupiesViewport && shouldShow && !headerFitsPortrait)
+        programmingFullscreenHeader?.visibility = if (hideFullscreenHeader) View.GONE else View.VISIBLE
+        programmingFullscreenFloating?.visibility = if (shouldShow) View.VISIBLE else View.GONE
+        programmingFullscreenPaddings.forEach { (view, padding) ->
+            val top = if (compact) 0 else padding.top
+            val bottom = if (compact) 0 else padding.bottom
+            if (view.paddingTop != top || view.paddingBottom != bottom) {
+                view.setPadding(padding.left, top, padding.right, bottom)
+            }
+        }
+        programmingFullscreenMargins.forEach { (view, margins) ->
+            val params = view.layoutParams as? ViewGroup.MarginLayoutParams ?: return@forEach
+            val left = if (landscape) 0 else margins.left
+            val right = if (landscape) 0 else margins.right
+            val top = if (compact) 0 else margins.top
+            val bottom = if (compact) 0 else margins.bottom
+            if (params.leftMargin != left || params.rightMargin != right ||
+                params.topMargin != top || params.bottomMargin != bottom) {
+                params.setMargins(left, top, right, bottom)
+                view.layoutParams = params
+            }
+        }
+        programmingInputPaddings.forEach { (input, padding) ->
+            // The compiler controller owns its editor and line-number padding together.
+            if (programmingCodeTextCompanions.containsKey(input)) return@forEach
+            val removeVerticalPadding = landscape && shouldShow && input === activeCodeInput
+            val top = if (removeVerticalPadding) 0 else padding.top
+            val bottom = if (removeVerticalPadding) 0 else padding.bottom
+            if (input.paddingTop != top || input.paddingBottom != bottom) {
+                input.setPadding(padding.left, top, padding.right, bottom)
+            }
+        }
+        programmingViewportUiControllers.forEach { it() }
+        updateProgrammingCodeTextSize(available, shouldShow)
+        updateCodeSurfaceWidths()
+        programmingKeyboardBar.post { revealProgrammingCaretForViewport() }
+    }
+
+    private fun isCompactProgrammingFullscreen(): Boolean =
+        resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
+            (keyboardVisible || programmingImeAnimations.isNotEmpty()) &&
+            (compilerFullscreenActive || (exerciseFullscreenActive && exerciseFullscreenUsesKeyboard))
+
+    private fun updateProgrammingFullscreenResize() {
+        val fullscreen = compilerFullscreenActive || (exerciseFullscreenActive && exerciseFullscreenUsesKeyboard)
+        val resizeForIme = fullscreen && (keyboardVisible || programmingImeAnimations.isNotEmpty())
+        val decor = window.decorView
+        val fullscreenFlag = android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN
+        if (resizeForIme) {
+            if (programmingImeFullscreenSystemUi == null) {
+                programmingImeFullscreenSystemUi = decor.systemUiVisibility
+                programmingImeFullscreenWindowFlag = window.attributes.flags and fullscreenFlag != 0
+            }
+            // Legacy fullscreen ignores adjustResize. Let the window apply its real
+            // IME inset instead of placing the app's shortcut bar behind the keyboard.
+            val resizedFlags = decor.systemUiVisibility and View.SYSTEM_UI_FLAG_FULLSCREEN.inv() and
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN.inv()
+            if (decor.systemUiVisibility != resizedFlags) decor.systemUiVisibility = resizedFlags
+            if (window.attributes.flags and fullscreenFlag != 0) window.clearFlags(fullscreenFlag)
+        } else {
+            programmingImeFullscreenSystemUi?.let { savedFlags ->
+                if (fullscreen) {
+                    if (decor.systemUiVisibility != savedFlags) decor.systemUiVisibility = savedFlags
+                    if (programmingImeFullscreenWindowFlag) window.addFlags(fullscreenFlag)
+                }
+                // A real fullscreen exit already restored the normal window flags.
+                programmingImeFullscreenSystemUi = null
+                programmingImeFullscreenWindowFlag = false
+            }
+        }
+    }
+
+    private fun setupProgrammingViewportInsets() {
+        val decor = window.decorView
+        fun observe(insets: WindowInsetsCompat?) {
+            if (insets != null) {
+                programmingWindowInsets = insets
+                keyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+            }
+            updateProgrammingKeyboardBarVisibility()
+        }
+        // Observe above AppCompat's optional-fit content, before its legacy resize.
+        ViewCompat.setOnApplyWindowInsetsListener(decor) { view, insets ->
+            observe(insets)
+            ViewCompat.onApplyWindowInsets(view, insets)
+        }
+        ViewCompat.setWindowInsetsAnimationCallback(decor,
+            object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+                override fun onPrepare(animation: WindowInsetsAnimationCompat) {
+                    if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
+                        programmingImeAnimations.add(animation)
+                        updateProgrammingKeyboardBarVisibility()
+                    }
+                }
+                override fun onProgress(insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>): WindowInsetsCompat {
+                    observe(insets)
+                    return insets
+                }
+                override fun onEnd(animation: WindowInsetsAnimationCompat) {
+                    programmingImeAnimations.remove(animation)
+                    observe(ViewCompat.getRootWindowInsets(decor))
+                }
+            })
+        ViewCompat.requestApplyInsets(decor)
+    }
+
+    private fun programmingAvailableViewport(): Rect {
+        val frame = Rect().also { window.decorView.getWindowVisibleDisplayFrame(it) }
+        if (android.os.Build.VERSION.SDK_INT >= 30) {
+            val viewport = Rect(windowManager.currentWindowMetrics.bounds)
+            val insets = programmingWindowInsets ?: ViewCompat.getRootWindowInsets(window.decorView)
+            insets?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or
+                WindowInsetsCompat.Type.ime())?.let { safe ->
+                viewport.set(viewport.left + safe.left, viewport.top + safe.top,
+                    viewport.right - safe.right, viewport.bottom - safe.bottom)
+            }
+            if (frame.width() > 0 && frame.height() > 0) viewport.intersect(frame)
+            if (viewport.width() > 0 && viewport.height() > 0) return viewport
+        }
+        return frame
+    }
+
+    private fun revealProgrammingCaretForViewport() {
+        val input = activeCodeInput ?: return
+        if (!keyboardVisible || !input.hasFocus() || !input.isAttachedToWindow ||
+            programmingImeAnimations.isNotEmpty() || input.isLayoutRequested || lessonScroll.isLayoutRequested) return
+        val viewport = programmingAvailableViewport()
+        val geometry = "${viewport.width()}:${viewport.height()}:${programmingKeyboardBar.height}:" +
+            "$compilerFullscreenActive:$exerciseFullscreenActive"
+        if (lastProgrammingRevealInput === input && lastProgrammingRevealViewport == geometry) return
+        val layout = input.layout ?: return
+        val offset = input.selectionEnd.coerceIn(0, input.text.length)
+        val line = layout.getLineForOffset(offset)
+        val top = layout.getLineTop(line)
+        val bottom = layout.getLineBottom(line)
+        val textHeight = (input.height - input.totalPaddingTop - input.totalPaddingBottom).coerceAtLeast(1)
+        val textWidth = (input.width - input.totalPaddingLeft - input.totalPaddingRight).coerceAtLeast(1)
+        val x = layout.getPrimaryHorizontal(offset).toInt()
+        var scrollY = input.scrollY
+        if (top < scrollY) scrollY = top
+        if (bottom > scrollY + textHeight) scrollY = bottom - textHeight
+        var scrollX = input.scrollX
+        if (x < scrollX) scrollX = x
+        if (x >= scrollX + textWidth) scrollX = x - textWidth + 1
+        input.scrollTo(scrollX.coerceAtLeast(0), scrollY.coerceAtLeast(0))
+        // Reveal the actual endpoint without changing selection or enabling continuous following.
+        // Android offsets the child's scroll when propagating this content-coordinate rectangle.
+        input.requestRectangleOnScreen(Rect(input.totalPaddingLeft + x,
+            input.totalPaddingTop + top, input.totalPaddingLeft + x + 2,
+            input.totalPaddingTop + bottom), true)
+        lastProgrammingRevealInput = input
+        lastProgrammingRevealViewport = geometry
+    }
+
+    private fun updateProgrammingCodeTextSize(viewport: Rect, toolbarShown: Boolean) {
+        val landscapeIme = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
+            (keyboardVisible || programmingImeAnimations.isNotEmpty()) && toolbarShown
+        val input = activeCodeInput
+        val activeViews = if (landscapeIme && input != null)
+            listOfNotNull<TextView>(input, programmingCodeTextCompanions[input]) else emptyList()
+        val availableLineHeight = (viewport.height() - programmingKeyboardBar.layoutParams.height).coerceAtLeast(1)
+        activeViews.forEach { view ->
+            programmingTextSizes.putIfAbsent(view, ProgrammingTextSize(view.textSize, view.lineHeight))
+        }
+        programmingTextSizes.forEach { (view, normal) ->
+            // The normal shortcut bar stays unchanged. Scale only when a complete line
+            // physically cannot fit its remaining landscape viewport, and restore in portrait.
+            val size = if (view in activeViews && normal.lineHeight > availableLineHeight)
+                normal.size * availableLineHeight / normal.lineHeight else normal.size
+            if (kotlin.math.abs(view.textSize - size) > 0.1f) view.setTextSize(TypedValue.COMPLEX_UNIT_PX, size)
+        }
+    }
+
+    private fun captureProgrammingReparentFocus(): ProgrammingReparentFocus? {
+        if (currentRouteId != AppearanceSettingsRepository.ROUTE_PROGRAMMING) return null
+        val input = (currentFocus as? EditText)?.takeIf { it.tag == CODE_INPUT_TAG && it.hasFocus() }
+            ?: return null
+        return ProgrammingReparentFocus(input, input.selectionStart, input.selectionEnd,
+            keyboardVisible || ViewCompat.getRootWindowInsets(window.decorView)
+                ?.isVisible(WindowInsetsCompat.Type.ime()) == true)
+    }
+
+    private fun restoreProgrammingReparentFocus(state: ProgrammingReparentFocus?) {
+        if (state == null || !state.input.isAttachedToWindow) return
+        // Removing a focused subtree clears native focus. Restore only that same
+        // editor after its actual reparent; viewport resizing never uses this path.
+        val input = state.input
+        if (!input.hasFocus()) input.requestFocus()
+        if (state.selectionStart in 0..input.text.length && state.selectionEnd in 0..input.text.length) {
+            input.setSelection(state.selectionStart, state.selectionEnd)
+        }
+        updateProgrammingKeyboardBarVisibility()
+        if (state.imeWasVisible && input.hasFocus()) {
+            (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                .showSoftInput(input, 0)
+        }
     }
 
     private fun registerCourseWrapController(
@@ -976,6 +1258,12 @@ class LessonActivity : AppCompatActivity() {
     private fun enableCppAutoClose(
         input: EditText
     ) {
+
+        // All native programming fields stay in the lesson in landscape. The IME's
+        // extract editor would replace this surface and consume its usable viewport.
+        input.imeOptions = input.imeOptions or
+            android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI or
+            android.view.inputmethod.EditorInfo.IME_FLAG_NO_FULLSCREEN
 
         /*
          * Desactiva autocorrección, sugerencias y
@@ -3326,6 +3614,7 @@ class LessonActivity : AppCompatActivity() {
         lessonContent.addView(
             answerCard
         )
+        makeCodeCardFullWidth(answerCard, extendInPortrait = false)
 
         /*
  * FULLSCREEN DEL EJERCICIO.
@@ -3983,6 +4272,7 @@ class LessonActivity : AppCompatActivity() {
         lessonContent.addView(
             answerCard
         )
+        makeCodeCardFullWidth(answerCard, extendInPortrait = false)
 
         /*
  * Fullscreen:
@@ -6128,7 +6418,10 @@ class LessonActivity : AppCompatActivity() {
         fun updateEditorBottomSafety() {
 
             val safeBottomPadding =
-                if (
+                if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
+                    (keyboardVisible || programmingImeAnimations.isNotEmpty()) && sourceCode.hasFocus()) {
+                    0
+                } else if (
                     compilerFullscreenActive
                 ) {
 
@@ -6243,10 +6536,10 @@ class LessonActivity : AppCompatActivity() {
  * cambia el tamaño del texto del curso.
  */
             val desiredHeight =
-                sourceCode.totalPaddingTop +
+                sourceCode.compoundPaddingTop +
                         sourceCode.lineHeight *
                         visibleLines +
-                        sourceCode.totalPaddingBottom
+                        sourceCode.compoundPaddingBottom
 
             val params =
                 editorBody.layoutParams
@@ -6498,10 +6791,7 @@ class LessonActivity : AppCompatActivity() {
         fun updateCompilerCompactLandscapeUi() {
 
             val compactMode =
-                compilerFullscreenActive &&
-                        keyboardVisible &&
-                        resources.configuration.orientation ==
-                        android.content.res.Configuration.ORIENTATION_LANDSCAPE
+                compilerFullscreenActive && isCompactProgrammingFullscreen()
 
             /*
              * Cabecera del compilador:
@@ -6521,6 +6811,19 @@ class LessonActivity : AppCompatActivity() {
                     View.VISIBLE
                 }
 
+            val landscapeIme = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
+                (keyboardVisible || programmingImeAnimations.isNotEmpty()) && sourceCode.hasFocus()
+            val topPadding = if (landscapeIme) 0 else dp(16)
+            if (sourceCode.paddingTop != topPadding) {
+                sourceCode.setPadding(sourceCode.paddingLeft, topPadding, sourceCode.paddingRight,
+                    sourceCode.paddingBottom)
+            }
+            if (lineNumbers.paddingTop != topPadding) {
+                lineNumbers.setPadding(lineNumbers.paddingLeft, topPadding, lineNumbers.paddingRight,
+                    lineNumbers.paddingBottom)
+            }
+            updateEditorBottomSafety()
+
             /*
              * Recalculamos la barra horizontal.
              *
@@ -6529,6 +6832,11 @@ class LessonActivity : AppCompatActivity() {
              */
             updateEditorHorizontalBar()
         }
+
+        programmingViewportUiControllers.add {
+            if (codeCard.isAttachedToWindow) updateCompilerCompactLandscapeUi()
+        }
+        programmingCodeTextCompanions[sourceCode] = lineNumbers
 
         editorHorizontalBar
             .setOnSeekBarChangeListener(
@@ -7552,6 +7860,7 @@ class LessonActivity : AppCompatActivity() {
         lessonContent.addView(
             outputText
         )
+        makeCodeCardFullWidth(outputText, extendInPortrait = false)
 
         /*
  * PANTALLA COMPLETA DEL EDITOR.
@@ -7624,6 +7933,8 @@ class LessonActivity : AppCompatActivity() {
                 return
             }
 
+            var geometryChanged = false
+
             /*
              * La tarjeta ocupa exactamente la altura
              * visible disponible.
@@ -7632,14 +7943,13 @@ class LessonActivity : AppCompatActivity() {
                 codeCard.layoutParams
                         as LinearLayout.LayoutParams
 
-            cardParams.width =
-                LinearLayout.LayoutParams.MATCH_PARENT
-
-            cardParams.height =
-                lessonScroll.height
-
-            codeCard.layoutParams =
-                cardParams
+            if (cardParams.width != LinearLayout.LayoutParams.MATCH_PARENT ||
+                cardParams.height != lessonScroll.height) {
+                cardParams.width = LinearLayout.LayoutParams.MATCH_PARENT
+                cardParams.height = lessonScroll.height
+                codeCard.layoutParams = cardParams
+                geometryChanged = true
+            }
 
             codeCard.translationX =
                 0f
@@ -7651,12 +7961,15 @@ class LessonActivity : AppCompatActivity() {
              * Por eso la cabecera nunca se desplaza aunque
              * existan miles de líneas.
              */
-            editorBody.layoutParams =
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    0,
-                    1f
-                )
+            val bodyParams = editorBody.layoutParams as LinearLayout.LayoutParams
+            if (bodyParams.width != LinearLayout.LayoutParams.MATCH_PARENT ||
+                bodyParams.height != 0 || bodyParams.weight != 1f) {
+                bodyParams.width = LinearLayout.LayoutParams.MATCH_PARENT
+                bodyParams.height = 0
+                bodyParams.weight = 1f
+                editorBody.layoutParams = bodyParams
+                geometryChanged = true
+            }
 
             /*
              * La columna de números ocupa toda
@@ -7666,11 +7979,11 @@ class LessonActivity : AppCompatActivity() {
                 lineNumberScroll.layoutParams
                         as LinearLayout.LayoutParams
 
-            numberParams.height =
-                LinearLayout.LayoutParams.MATCH_PARENT
-
-            lineNumberScroll.layoutParams =
-                numberParams
+            if (numberParams.height != LinearLayout.LayoutParams.MATCH_PARENT) {
+                numberParams.height = LinearLayout.LayoutParams.MATCH_PARENT
+                lineNumberScroll.layoutParams = numberParams
+                geometryChanged = true
+            }
 
             /*
              * El EditText ocupa toda la altura disponible.
@@ -7678,26 +7991,24 @@ class LessonActivity : AppCompatActivity() {
              * El desplazamiento vertical ocurre dentro
              * del propio editor, no moviendo la cabecera.
              */
-            sourceCode.layoutParams =
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT
-                )
+            val sourceParams = sourceCode.layoutParams as FrameLayout.LayoutParams
+            if (sourceParams.width != FrameLayout.LayoutParams.MATCH_PARENT ||
+                sourceParams.height != FrameLayout.LayoutParams.MATCH_PARENT) {
+                sourceParams.width = FrameLayout.LayoutParams.MATCH_PARENT
+                sourceParams.height = FrameLayout.LayoutParams.MATCH_PARENT
+                sourceCode.layoutParams = sourceParams
+                geometryChanged = true
+            }
+            if (sourceCode.minHeight != 0) {
+                sourceCode.minHeight = 0
+                geometryChanged = true
+            }
 
-            sourceCode.minHeight =
-                0
-
-            sourceCode.requestLayout()
-
-            editorBody.requestLayout()
-
-            codeCard.requestLayout()
-
-            sourceCode.post {
-
-                updateEditorVerticalBar()
-
-                updateLineNumbers()
+            if (geometryChanged) {
+                sourceCode.post {
+                    updateEditorVerticalBar()
+                    updateLineNumbers()
+                }
             }
         }
 
@@ -9146,6 +9457,11 @@ class LessonActivity : AppCompatActivity() {
     ) {
 
         courseWrapControllers.clear()
+        programmingViewportUiControllers.clear()
+        codeSurfaceWidths.clear()
+        programmingCodeTextCompanions.clear()
+        programmingTextSizes.clear()
+        programmingInputPaddings.clear()
 
         lessonJson =
             try {
@@ -10281,33 +10597,7 @@ class LessonActivity : AppCompatActivity() {
             codeCard
         )
 
-        lessonContent.clipToPadding =
-            false
-
-        lessonContent.clipChildren =
-            false
-
-        lessonScroll.clipToPadding =
-            false
-
-        lessonScroll.clipChildren =
-            false
-
-        codeCard.post {
-
-            val params =
-                codeCard.layoutParams
-                        as LinearLayout.LayoutParams
-
-            params.width =
-                lessonContent.width
-
-            codeCard.layoutParams =
-                params
-
-            codeCard.translationX =
-                -lessonContent.paddingLeft.toFloat()
-        }
+        makeCodeCardFullWidth(codeCard)
 
         val slots =
             mutableListOf<FrameLayout>()
@@ -12050,7 +12340,8 @@ class LessonActivity : AppCompatActivity() {
     }
 
     private fun makeCodeCardFullWidth(
-        card: View
+        card: View,
+        extendInPortrait: Boolean = true
     ) {
 
         lessonContent.clipToPadding =
@@ -12065,21 +12356,21 @@ class LessonActivity : AppCompatActivity() {
         lessonScroll.clipChildren =
             false
 
-        card.post {
+        codeSurfaceWidths.putIfAbsent(card, CodeSurfaceWidth(card.layoutParams.width,
+            card.translationX, extendInPortrait))
+        card.post { updateCodeSurfaceWidths() }
+    }
 
-            val params =
-                card.layoutParams
-                        as? LinearLayout.LayoutParams
-                    ?: return@post
-
-            params.width =
-                lessonContent.width
-
-            card.layoutParams =
-                params
-
-            card.translationX =
-                -lessonContent.paddingLeft.toFloat()
+    private fun updateCodeSurfaceWidths() {
+        if (!::lessonContent.isInitialized || lessonContent.width <= 0 || compilerFullscreenActive) return
+        val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        codeSurfaceWidths.forEach { (card, original) ->
+            if (card.parent !== lessonContent) return@forEach
+            val params = card.layoutParams as? LinearLayout.LayoutParams ?: return@forEach
+            val extend = original.extendInPortrait || landscape
+            val width = if (extend) lessonContent.width else original.portraitWidth
+            if (params.width != width) card.layoutParams = params.apply { this.width = width }
+            card.translationX = if (extend) -lessonContent.paddingLeft.toFloat() else original.portraitTranslation
         }
     }
 
@@ -12176,6 +12467,8 @@ class LessonActivity : AppCompatActivity() {
         ) {
             return
         }
+
+        val reparentFocus = captureProgrammingReparentFocus()
 
         exerciseFullscreenActive =
             true
@@ -12278,6 +12571,13 @@ class LessonActivity : AppCompatActivity() {
         bodyHost.clipToPadding =
             false
 
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_PROGRAMMING) {
+            overlay.tag = "programming_fullscreen_overlay"
+            bodyHost.tag = "programming_fullscreen_body"
+            headerHost.tag = "programming_fullscreen_header"
+            programmingFullscreenHeader = headerHost
+        }
+
         /*
          * BANDEJA FLOTANTE INFERIOR.
          *
@@ -12297,6 +12597,10 @@ class LessonActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
+
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_PROGRAMMING) {
+            programmingFullscreenFloating = if (usesKeyboard) floatingHost else null
+        }
 
         fullscreenColumn.addView(
             headerHost
@@ -12336,6 +12640,22 @@ class LessonActivity : AppCompatActivity() {
             floatingHost
         )
 
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_PROGRAMMING && usesKeyboard) {
+            // Keep the same shortcut bar above the IME, including fake-console responses.
+            if (programmingKeyboardBar.parent !== floatingHost) {
+                moveViewToExerciseFullscreen(programmingKeyboardBar, floatingHost,
+                    FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, normalProgrammingBarHeight))
+            }
+            fun rememberPadding(view: View) {
+                programmingFullscreenPaddings[view] = Rect(view.paddingLeft, view.paddingTop,
+                    view.paddingRight, view.paddingBottom)
+                if (view is ViewGroup) {
+                    for (index in 0 until view.childCount) rememberPadding(view.getChildAt(index))
+                }
+            }
+            rememberPadding(bodyHost)
+        }
+
         if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
             fun applyMathFullscreenInsets(insets: WindowInsetsCompat) {
                 val safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() or
@@ -12354,6 +12674,7 @@ class LessonActivity : AppCompatActivity() {
         }
 
         updateProgrammingKeyboardBarVisibility()
+        restoreProgrammingReparentFocus(reparentFocus)
     }
 
     /*
@@ -12375,6 +12696,22 @@ class LessonActivity : AppCompatActivity() {
         ) {
             return
         }
+
+        val reparentFocus = captureProgrammingReparentFocus()
+
+        programmingFullscreenPaddings.forEach { (view, padding) ->
+            view.setPadding(padding.left, padding.top, padding.right, padding.bottom)
+        }
+        programmingFullscreenMargins.forEach { (view, margins) ->
+            (view.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
+                params.setMargins(margins.left, margins.top, margins.right, margins.bottom)
+                view.layoutParams = params
+            }
+        }
+        programmingFullscreenPaddings.clear()
+        programmingFullscreenMargins.clear()
+        programmingFullscreenHeader = null
+        programmingFullscreenFloating = null
 
         /*
          * Primero retiramos las Views
@@ -12467,6 +12804,7 @@ class LessonActivity : AppCompatActivity() {
             MathInputFocusOrder.configure(lessonContent)
         }
         updateProgrammingKeyboardBarVisibility()
+        restoreProgrammingReparentFocus(reparentFocus)
     }
 
     private fun configureFakeCodeFullscreen(
@@ -12606,6 +12944,7 @@ class LessonActivity : AppCompatActivity() {
                                 )
                             }
                         )
+                        programmingFullscreenMargins[responseView] = Rect(dp(12), dp(12), dp(12), dp(12))
                     }
 
                     codeHandle.fullscreenButton
@@ -13546,6 +13885,9 @@ class LessonActivity : AppCompatActivity() {
         lessonContent.addView(
             answerCard
         )
+        if (currentRouteId == AppearanceSettingsRepository.ROUTE_PROGRAMMING) {
+            makeCodeCardFullWidth(answerCard, extendInPortrait = false)
+        }
 
         /*
          * BOTÓN COMPROBAR

@@ -48,6 +48,33 @@ class MathKeyboardView(
     private var renderedTemplate: MathExpression.Sequence? = null
     private val previews = mutableListOf<Pair<MathKeyboardAction, MathKeyboardActionPreviewView>>()
     private val symbolKeys = mutableListOf<Button>()
+    private data class KeyGeometry(val height: Int, val minimumHeight: Int, val textMinimumHeight: Int?,
+        val paddingTop: Int, val paddingBottom: Int, val textSize: Float?)
+    private val normalKeys = mutableMapOf<View, KeyGeometry>()
+    private var compactHeight: Int? = null
+
+    /** Only the host's real landscape/IME viewport enables this temporary geometry. */
+    internal fun setCompactHeight(height: Int?) {
+        if (compactHeight == height) return
+        compactHeight = height
+        normalKeys.forEach { (key, normal) ->
+            key.layoutParams = key.layoutParams.apply { this.height = height ?: normal.height }
+            key.minimumHeight = if (height == null) normal.minimumHeight else 0
+            if (key is Button) {
+                key.minHeight = if (height == null) normal.textMinimumHeight ?: 0 else 0
+                if (key !is MathKeyboardActionPreviewView) {
+                    val size = requireNotNull(normal.textSize)
+                    key.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                        if (height == null) size else minOf(size, height * .48f))
+                }
+            }
+            if (key is MathKeyboardActionPreviewView) key.setCompactHeight(height)
+            else key.setPadding(key.paddingLeft,
+                if (height == null) normal.paddingTop else 0, key.paddingRight,
+                if (height == null) normal.paddingBottom else 0)
+        }
+        requestLayout()
+    }
 
     init {
         isFillViewport = false
@@ -184,6 +211,8 @@ class MathKeyboardView(
     }
 
     private fun addKey(key: View, action: MathKeyboardAction) {
+        normalKeys[key] = KeyGeometry(key.layoutParams.height, key.minimumHeight,
+            (key as? Button)?.minHeight, key.paddingTop, key.paddingBottom, (key as? Button)?.textSize)
         key.isFocusable = false
         (key.layoutParams as LinearLayout.LayoutParams).marginEnd = MathWidgetUi.dp(context, 2)
         key.tag = MathInputFocusOrder.GESTURE_OWNER_TAG
@@ -209,10 +238,16 @@ class MathKeyboardView(
             preview.previewTextSizePx = editor.textSizePx
         }
         renderedTemplate = editor.previewTemplate
-        symbolKeys.forEach { it.setTextSize(TypedValue.COMPLEX_UNIT_PX, editor.textSizePx * 14f / 18f) }
+        symbolKeys.forEach { key ->
+            val size = editor.textSizePx * 14f / 18f
+            normalKeys[key]?.let { normalKeys[key] = it.copy(textSize = size) }
+            key.setTextSize(TypedValue.COMPLEX_UNIT_PX, compactHeight?.let { minOf(size, it * .48f) } ?: size)
+        }
     }
 
     private fun unbindEditor() {
+        setCompactHeight(null)
+        normalKeys.clear()
         (input as? MathExpressionEditor)?.removeKeyboardStateListener(keyboardStateListener)
         previews.clear()
         symbolKeys.clear()

@@ -21,6 +21,8 @@ class MathKeyboardActionPreviewView(
 ) : Button(context) {
     private val previewPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var cachedPreviewLayout: MathExpressionLayout? = null
+    private var compactHeight: Int? = null
+    private var normalVerticalPadding: Pair<Int, Int>? = null
 
     var previewExpression: MathExpression.Sequence = expression
         set(value) {
@@ -41,8 +43,26 @@ class MathKeyboardActionPreviewView(
         }
 
     val previewLayout: MathExpressionLayout
-        get() = cachedPreviewLayout ?: MathExpressionLayout.create(previewExpression, previewPaint,
-            previewTextSizePx * COMPACT_TEXT_RATIO, showPlaceholders = true).also { cachedPreviewLayout = it }
+        get() = cachedPreviewLayout ?: run {
+            val size = previewTextSizePx * COMPACT_TEXT_RATIO
+            val normal = MathExpressionLayout.create(previewExpression, previewPaint, size, showPlaceholders = true)
+            val inkHeight = compactHeight?.let { (it - paddingTop - paddingBottom).coerceAtLeast(1) }
+            if (inkHeight != null && normal.height > inkHeight) {
+                MathExpressionLayout.create(previewExpression, previewPaint,
+                    size * inkHeight / normal.height, showPlaceholders = true)
+            } else normal
+        }.also { cachedPreviewLayout = it }
+
+    internal fun setCompactHeight(height: Int?) {
+        if (compactHeight == height) return
+        if (normalVerticalPadding == null) normalVerticalPadding = paddingTop to paddingBottom
+        compactHeight = height
+        val normal = requireNotNull(normalVerticalPadding)
+        val compactPadding = MathWidgetUi.dp(context, 2).coerceAtMost((height ?: Int.MAX_VALUE) / 8)
+        setPadding(paddingLeft, if (height == null) normal.first else compactPadding,
+            paddingRight, if (height == null) normal.second else compactPadding)
+        invalidatePreviewLayout()
+    }
 
     init {
         text = ""

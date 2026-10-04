@@ -116,6 +116,10 @@ class MathFullscreenGesturesDeviceTest {
                 assertEquals(0f, visual.translationY, 0f)
                 assertEquals(View.GONE, reset.visibility)
                 descendants(visual.rootView).single { it.tag == "math_exit_representation" }.performClick()
+            }
+            // Dialog posts onDismiss, where the same visual returns to its inline holder.
+            instrumentation.waitForIdleSync()
+            scenario.onActivity {
                 assertSame(holder, visual.parent)
                 assertEquals(1f, visual.scaleX, 0f)
             }

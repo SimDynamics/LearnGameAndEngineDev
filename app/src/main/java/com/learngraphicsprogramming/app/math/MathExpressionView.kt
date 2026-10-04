@@ -174,8 +174,26 @@ open class MathExpressionView @JvmOverloads constructor(context: Context, attrs:
     var caretColor: Int = Color.rgb(133, 193, 255)
         set(value) { field = value; invalidate() }
 
+    /** Temporary display budget; the source text size and mathematical state stay unchanged. */
+    internal var viewportHeightLimit: Int? = null
+        set(value) {
+            if (field == value) return
+            field = value
+            resetExpressionLayout()
+        }
+
     val expressionLayout: MathExpressionLayout
-        get() = cachedLayout ?: MathExpressionLayout.create(expression, expressionPaint, textSizePx, showPlaceholders).also { cachedLayout = it }
+        get() = cachedLayout ?: run {
+            val normal = MathExpressionLayout.create(expression, expressionPaint, textSizePx, showPlaceholders)
+            val inkHeight = viewportHeightLimit?.let { (it - paddingTop - paddingBottom - 1).coerceAtLeast(1) }
+            if (inkHeight != null && normal.height > inkHeight) {
+                // Ordinary fractions/scripts fit as a whole. Taller matrices retain readable
+                // text and the host reveals the active slot once, instead of shrinking forever.
+                val readableSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12f, resources.displayMetrics)
+                val size = min(textSizePx, max(readableSize, textSizePx * inkHeight / normal.height))
+                MathExpressionLayout.create(expression, expressionPaint, size, showPlaceholders)
+            } else normal
+        }.also { cachedLayout = it }
     val expressionOriginX: Float get() = paddingLeft.toFloat()
     val expressionBaseline: Float get() = paddingTop - expressionLayout.ascent
 
@@ -194,7 +212,8 @@ open class MathExpressionView @JvmOverloads constructor(context: Context, attrs:
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val layout = expressionLayout
         val desiredWidth = max(suggestedMinimumWidth, ceil(layout.width).toInt() + paddingLeft + paddingRight)
-        val desiredHeight = max(suggestedMinimumHeight, ceil(layout.height).toInt() + paddingTop + paddingBottom)
+        val minimum = viewportHeightLimit?.let { min(suggestedMinimumHeight, it) } ?: suggestedMinimumHeight
+        val desiredHeight = max(minimum, ceil(layout.height).toInt() + paddingTop + paddingBottom)
         setMeasuredDimension(resolveSize(desiredWidth, widthMeasureSpec), resolveSize(desiredHeight, heightMeasureSpec))
     }
 

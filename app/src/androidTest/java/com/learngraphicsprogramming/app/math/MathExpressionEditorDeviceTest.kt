@@ -1,16 +1,22 @@
 package com.learngraphicsprogramming.app.math
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
-import android.graphics.Bitmap
 import android.graphics.Rect
+import android.os.Parcel
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
+import android.provider.Settings
+import android.view.InputDevice
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
@@ -313,13 +319,29 @@ class MathExpressionEditorDeviceTest {
             lateinit var editor: MathExpressionEditor
             lateinit var toolbar: MathKeyboardView
             lateinit var check: View
+            lateinit var header: View
+            lateinit var progress: View
+            var normalToolbarHeight = 0
+            var normalEditorPadding = 0 to 0
+            var normalTextSize = 0f
+            val focusLosses = mutableListOf<String>()
             scenario.onActivity { activity ->
                 val puzzle = MathPuzzleRenderer(activity, route, lesson, 0, 200, block) {}
                 activity.findViewById<ViewGroup>(R.id.lessonContent).apply { removeAllViews(); addView(puzzle.view) }
                 editor = tree(puzzle.view).filterIsInstance<MathExpressionEditor>().single()
                 toolbar = tree(puzzle.view).filterIsInstance<MathKeyboardView>().single()
                 check = tree(puzzle.view).single { it.tag == MathPuzzleRenderer.CHECK_ACTION_TAG }
+                header = activity.findViewById(R.id.lessonHeader)
+                progress = activity.findViewById(R.id.lessonProgress)
                 editor.perform(MathKeyboardAction.Fraction)
+                activity.window.decorView.viewTreeObserver.addOnGlobalFocusChangeListener { oldFocus, newFocus ->
+                    if (oldFocus === editor && newFocus !== editor) {
+                        val ancestors = generateSequence<View>(editor) { it.parent as? View }.joinToString(" > ") {
+                            "${it.javaClass.simpleName}(id=${it.id},height=${it.height},measured=${it.measuredHeight},visibility=${it.visibility})"
+                        }
+                        focusLosses += "newFocus=$newFocus, ancestors=$ancestors"
+                    }
+                }
                 editor.requestFocus()
                 (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                     .showSoftInput(editor, InputMethodManager.SHOW_IMPLICIT)
@@ -339,13 +361,21 @@ class MathExpressionEditorDeviceTest {
                 }
             }
             assertTrue("Android IME opens for the native structured View", shown)
-            instrumentation.waitForIdleSync()
-            SystemClock.sleep(350)
+            awaitUi(scenario, "Portrait editor and check action fit above the real IME") { activity ->
+                isImeVisible(activity) && toolbar.isAttachedToWindow && toolbar.visibility == View.VISIBLE &&
+                    screenBounds(editor).bottom <= screenBounds(toolbar).top &&
+                    screenBounds(check).bottom <= screenBounds(toolbar).top
+            }
             scenario.onActivity { activity ->
                 assertTrue(editor.hasFocus())
+                assertEquals("Portrait retains the full lesson header with IME open", View.VISIBLE, header.visibility)
+                assertTrue("Portrait retains the progress line", progress.isShown)
                 assertTrue("Structured toolbar attached above the real IME", toolbar.isAttachedToWindow)
                 assertEquals(View.VISIBLE, toolbar.visibility)
                 val barBounds = screenBounds(toolbar)
+                normalToolbarHeight = toolbar.height
+                normalEditorPadding = editor.paddingTop to editor.paddingBottom
+                normalTextSize = editor.textSizePx
                 val editorBounds = screenBounds(editor)
                 val checkBounds = screenBounds(check)
                 val visible = Rect()
@@ -384,20 +414,48 @@ class MathExpressionEditorDeviceTest {
                 }
                 assertFalse(buttons.any { it.text.toString().matches(Regex("[0-9xy]")) })
             }
-            screenshot("structured-ime-portrait.png")
+            lateinit var modelBeforeRotation: MathExpressionModel
+            lateinit var expressionBeforeRotation: MathExpression.Sequence
+            lateinit var cursorBeforeRotation: MathCursor
+            lateinit var draftBeforeRotation: String
+            scenario.onActivity {
+                modelBeforeRotation = editor.model
+                expressionBeforeRotation = editor.model.expression
+                cursorBeforeRotation = editor.model.cursor
+                draftBeforeRotation = editor.model.saveDraft()
+            }
             orient(scenario, ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE, Configuration.ORIENTATION_LANDSCAPE)
-            instrumentation.waitForIdleSync()
-            SystemClock.sleep(350)
+            awaitUi(scenario, "Landscape hides the lesson header and lays out the same IME toolbar",
+                diagnostic = { "focus losses=$focusLosses" }) { activity ->
+                val frame = Rect().also { activity.window.decorView.getWindowVisibleDisplayFrame(it) }
+                isImeVisible(activity) && header.visibility == View.GONE && toolbar.isAttachedToWindow &&
+                    toolbar.visibility == View.VISIBLE && kotlin.math.abs(screenBounds(toolbar).bottom - frame.bottom) <= 3
+            }
             scenario.onActivity { activity ->
                 assertTrue("The small landscape viewport settles without losing window focus", activity.hasWindowFocus())
                 assertTrue("The structured field retains focus after rotation: attached=${editor.isAttachedToWindow}, " +
-                    "currentFocus=${activity.currentFocus}, model=${editor.model.cursor}", editor.hasFocus())
+                    "currentFocus=${activity.currentFocus}, model=${editor.model.cursor}, losses=$focusLosses", editor.hasFocus())
+                assertTrue("Rotation never clears focus temporarily: $focusLosses", focusLosses.isEmpty())
+                assertSame("Rotation keeps the original editor active", editor, activity.currentFocus)
+                assertSame("Rotation keeps the original mathematical model", modelBeforeRotation, editor.model)
+                assertSame("Rotation does not rebuild the AST", expressionBeforeRotation, editor.model.expression)
+                assertEquals("Rotation preserves the exact mathematical cursor", cursorBeforeRotation, editor.model.cursor)
+                assertEquals("Rotation preserves slot and selection state", draftBeforeRotation, editor.model.saveDraft())
+                assertEquals("Landscape with real IME removes the entire lesson header", View.GONE, header.visibility)
+                assertFalse("The green progress line disappears with the header", progress.isShown)
                 assertTrue(toolbar.isAttachedToWindow)
                 assertEquals(View.VISIBLE, toolbar.visibility)
                 assertEquals("\\frac{}{}", editor.getLatex())
                 val frame = Rect()
                 activity.window.decorView.getWindowVisibleDisplayFrame(frame)
                 assertEquals(frame.bottom.toDouble(), screenBounds(toolbar).bottom.toDouble(), 3.0)
+                assertTrue("Landscape math toolbar occupies at most half of the real safe viewport: H=${frame.height()}, bar=${toolbar.height}",
+                    toolbar.height <= frame.height() / 2)
+                assertEquals("Responsive rendering preserves the lesson text-size setting", normalTextSize, editor.textSizePx, 0f)
+                tree(toolbar).filterIsInstance<MathKeyboardActionPreviewView>().forEach { preview ->
+                    assertTrue("Compact mode keeps every preview complete",
+                        preview.height >= kotlin.math.ceil(preview.previewLayout.height).toInt() + preview.paddingTop + preview.paddingBottom)
+                }
             }
             scenario.onActivity {
                 // LEFT follows the declared numerator→denominator order through the
@@ -407,8 +465,18 @@ class MathExpressionEditorDeviceTest {
                 assertEquals("denominator", editor.model.cursor.path.last().slot)
                 requireNotNull(editor.onCreateInputConnection(EditorInfo())).commitText("2", 1)
             }
-            instrumentation.waitForIdleSync()
-            SystemClock.sleep(200)
+            var lowerViewportDiagnostic = "Viewport not yet sampled"
+            awaitUi(scenario, "The lower slot settles above the same toolbar",
+                diagnostic = { lowerViewportDiagnostic }) { activity ->
+                val caret = editor.expressionLayout.caretBounds(editor.model.cursor)
+                val frame = Rect().also(activity.window.decorView::getWindowVisibleDisplayFrame)
+                val scroll = activity.findViewById<View>(R.id.lessonScroll)
+                lowerViewportDiagnostic = "frame=$frame, root=${screenBounds(activity.window.decorView)}, " +
+                    "scrollHeight=${scroll.height}, scrollY=${scroll.scrollY}, editor=${screenBounds(editor)}, " +
+                    "baseline=${editor.expressionBaseline}, caret=$caret, toolbar=${screenBounds(toolbar)}"
+                toolbar.isAttachedToWindow && caret != null &&
+                    screenBounds(editor).top + editor.expressionBaseline + caret.bottom <= screenBounds(toolbar).top
+            }
             scenario.onActivity {
                 val caret = requireNotNull(editor.expressionLayout.caretBounds(editor.model.cursor))
                 val bounds = screenBounds(editor)
@@ -417,8 +485,341 @@ class MathExpressionEditorDeviceTest {
                 assertEquals("\\frac{}{2}", editor.getLatex())
                 assertTrue(toolbar.isAttachedToWindow)
             }
-            screenshot("structured-ime-landscape.png")
+            scenario.onActivity { activity ->
+                expressionBeforeRotation = editor.model.expression
+                cursorBeforeRotation = editor.model.cursor
+                draftBeforeRotation = editor.model.saveDraft()
+                (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                    .hideSoftInputFromWindow(editor.windowToken, 0)
+            }
+            awaitUi(scenario, "Closing the real IME restores the landscape lesson header") { activity ->
+                !isImeVisible(activity) && header.visibility == View.VISIBLE && progress.isShown
+            }
+            scenario.onActivity { activity ->
+                assertEquals(View.VISIBLE, header.visibility)
+                assertTrue(progress.isShown)
+                assertNull("Closing the IME removes the temporary editor viewport budget", editor.viewportHeightLimit)
+                assertEquals("Closing IME restores the exact editor padding", normalEditorPadding, editor.paddingTop to editor.paddingBottom)
+                assertSame(expressionBeforeRotation, editor.model.expression)
+                assertEquals(draftBeforeRotation, editor.model.saveDraft())
+                (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                    .showSoftInput(editor, InputMethodManager.SHOW_IMPLICIT)
+            }
+            awaitUi(scenario, "Reopening the real IME hides the landscape lesson header again") { activity ->
+                isImeVisible(activity) && header.visibility == View.GONE && toolbar.isAttachedToWindow &&
+                    toolbar.visibility == View.VISIBLE
+            }
+            orient(scenario, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, Configuration.ORIENTATION_PORTRAIT)
+            var portraitDiagnostic = "Portrait geometry not yet sampled"
+            awaitUi(scenario, "Returning to portrait restores the header while the real IME stays open",
+                diagnostic = { portraitDiagnostic }) { activity ->
+                val frame = Rect().also(activity.window.decorView::getWindowVisibleDisplayFrame)
+                val scroll = activity.findViewById<View>(R.id.lessonScroll)
+                portraitDiagnostic = "frame=$frame, root=${screenBounds(activity.window.decorView)}, " +
+                    "scroll=${screenBounds(scroll)}, header=${header.visibility}, progress=${progress.isShown}, " +
+                    "IMEvisible=${isImeVisible(activity)}, toolbar=${screenBounds(toolbar)}, " +
+                    "toolbarAttached=${toolbar.isAttachedToWindow}, toolbarVisibility=${toolbar.visibility}, " +
+                    "focus=${editor.hasFocus()}, currentFocus=${activity.currentFocus}, losses=$focusLosses"
+                isImeVisible(activity) && header.visibility == View.VISIBLE && progress.isShown &&
+                    toolbar.isAttachedToWindow && toolbar.visibility == View.VISIBLE
+            }
+            scenario.onActivity { activity ->
+                assertTrue("The original structured field keeps focus when returning to portrait", editor.hasFocus())
+                assertTrue("Responsive layout never clears focus temporarily: $focusLosses", focusLosses.isEmpty())
+                assertSame(editor, activity.currentFocus)
+                assertSame(modelBeforeRotation, editor.model)
+                assertSame(expressionBeforeRotation, editor.model.expression)
+                assertEquals(cursorBeforeRotation, editor.model.cursor)
+                assertEquals(draftBeforeRotation, editor.model.saveDraft())
+                assertEquals(View.VISIBLE, header.visibility)
+                assertTrue(progress.isShown)
+                assertEquals("\\frac{}{2}", editor.getLatex())
+                assertEquals("Portrait restores the exact normal toolbar height", normalToolbarHeight, toolbar.height)
+                assertNull(editor.viewportHeightLimit)
+                assertEquals(normalEditorPadding, editor.paddingTop to editor.paddingBottom)
+            }
         }
+    }
+
+    @Test fun realSandboxPage17KeepsSwiftKeyFocusAndSlotAcrossRotation() {
+        assertTrue("Use the installed SwiftKey keyboard for the page 17 rotation regression",
+            Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD).orEmpty().contains("swiftkey"))
+        ProgressRepository.saveCurrentPage(context, route, lesson, 16)
+        val automation = instrumentation.uiAutomation
+        val originalServiceInfo = automation.serviceInfo
+        val parcel = Parcel.obtain()
+        try {
+            originalServiceInfo.writeToParcel(parcel, 0)
+            parcel.setDataPosition(0)
+            automation.serviceInfo = AccessibilityServiceInfo.CREATOR.createFromParcel(parcel).apply {
+                flags = flags or AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+            }
+        } finally { parcel.recycle() }
+        try {
+            ActivityScenario.launch<LessonActivity>(intent()).use { scenario ->
+                orient(scenario, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, Configuration.ORIENTATION_PORTRAIT)
+                lateinit var editor: MathExpressionEditor
+                lateinit var fields: List<MathExpressionEditor>
+                lateinit var toolbar: MathKeyboardView
+                lateinit var header: View
+                lateinit var progress: View
+                val focusLosses = mutableListOf<String>()
+                scenario.onActivity { activity ->
+                    val content = activity.findViewById<View>(R.id.lessonContent)
+                    fields = tree(content).filterIsInstance<MathExpressionEditor>()
+                    assertEquals("The real page 17 contains its eight structured fields", 8, fields.size)
+                    assertTrue(tree(content).filterIsInstance<TextView>().any { it.text.toString() == "Potencia y subíndice" })
+                    editor = fields[1]
+                    toolbar = tree(content).filterIsInstance<MathKeyboardView>().single()
+                    header = activity.findViewById(R.id.lessonHeader)
+                    progress = activity.findViewById(R.id.lessonProgress)
+                    assertTrue(editor.setLatex("x_1^2"))
+                    activity.window.decorView.viewTreeObserver.addOnGlobalFocusChangeListener { oldFocus, newFocus ->
+                        if (oldFocus === editor && newFocus !== editor) {
+                            val ancestors = generateSequence<View>(editor) { it.parent as? View }.joinToString(" > ") {
+                                "${it.javaClass.simpleName}(id=${it.id},height=${it.height},measured=${it.measuredHeight},visibility=${it.visibility})"
+                            }
+                            focusLosses += "newFocus=$newFocus, ancestors=$ancestors"
+                        }
+                    }
+                    assertTrue(editor.requestFocus())
+                    (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                        .showSoftInput(editor, InputMethodManager.SHOW_IMPLICIT)
+                }
+                val lower = MathCursor(listOf(MathCursorStep(0, "lower")), 1)
+                var lowerX = 0f
+                var lowerY = 0f
+                var lowerSetupDiagnostic = "Subscript geometry not yet sampled"
+                var previousSubscriptGeometry: String? = null
+                var stableSubscriptSamples = 0
+                awaitUi(scenario, "The real subscript is visible with SwiftKey open",
+                    diagnostic = { lowerSetupDiagnostic }) { activity ->
+                    val caret = editor.expressionLayout.caretBounds(lower)
+                    val scroll = activity.findViewById<android.widget.ScrollView>(R.id.lessonScroll)
+                    val frame = Rect().also(activity.window.decorView::getWindowVisibleDisplayFrame)
+                    val viewport = Rect().also { scroll.getGlobalVisibleRect(it) }
+                    val toolbarBounds = screenBounds(toolbar)
+                    val imeBounds = automation.windows.filter { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+                        .map { Rect().also(it::getBoundsInScreen) }
+                    lowerSetupDiagnostic = "frame=$frame, scrollHeight=${scroll.height}, scrollY=${scroll.scrollY}, " +
+                        "viewport=$viewport, editor=${screenBounds(editor)}, baseline=${editor.expressionBaseline}, " +
+                        "caret=$caret, toolbar=$toolbarBounds, IME=$imeBounds, focus=${editor.hasFocus()}"
+                    if (caret == null || !isImeVisible(activity) || !editor.hasFocus() || !toolbar.isAttachedToWindow ||
+                        toolbar.visibility != View.VISIBLE || !viewport.intersect(frame)) {
+                        previousSubscriptGeometry = null
+                        stableSubscriptSamples = 0
+                        false
+                    } else {
+                        val bounds = screenBounds(editor)
+                        lowerX = bounds.left + editor.expressionOriginX + caret.centerX()
+                        lowerY = bounds.top + editor.expressionBaseline + caret.centerY()
+                        viewport.bottom = minOf(viewport.bottom, toolbarBounds.top - MathWidgetUi.dp(activity, 4))
+                        val visible = Rect()
+                        val visibleSlot = !viewport.isEmpty && editor.getGlobalVisibleRect(visible) &&
+                            visible.contains(lowerX.toInt(), lowerY.toInt()) && viewport.contains(lowerX.toInt(), lowerY.toInt())
+                        if (!visibleSlot && !viewport.isEmpty) {
+                            // Like a user scrolling page 17 before touching its second field, align the
+                            // slot while replacing Android's pending scroll target. Plain scrollBy can
+                            // be overwritten by the next OverScroller frame after coordinates are read.
+                            scroll.smoothScrollBy(0, kotlin.math.round(lowerY - viewport.exactCenterY()).toInt())
+                        }
+                        val geometry = "$bounds|${scroll.scrollY}|${scroll.height}|$toolbarBounds|$frame|$imeBounds|$lowerX,$lowerY"
+                        stableSubscriptSamples = if (visibleSlot && !editor.isLayoutRequested && !scroll.isLayoutRequested &&
+                            previousSubscriptGeometry == geometry) stableSubscriptSamples + 1 else 0
+                        previousSubscriptGeometry = geometry
+                        stableSubscriptSamples >= 2
+                    }
+                }
+                tapScreen(lowerX, lowerY)
+                var touchDiagnostic = "Touch result not yet sampled"
+                awaitUi(scenario, "A real touch enters the subscript before rotating",
+                    diagnostic = { touchDiagnostic }) { activity ->
+                    val scroll = activity.findViewById<View>(R.id.lessonScroll)
+                    touchDiagnostic = "cursor=${editor.model.cursor}, expected=$lower, touch=($lowerX,$lowerY), " +
+                        "editor=${screenBounds(editor)}, scrollY=${scroll.scrollY}, viewport=${screenBounds(scroll)}"
+                    editor.model.cursor == lower
+                }
+                val originalModel = editor.model
+                val originalExpression = editor.model.expression
+                val originalDraft = editor.model.saveDraft()
+                val otherDrafts = fields.filterNot { it === editor }.map { it.model.saveDraft() }
+                orient(scenario, ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE, Configuration.ORIENTATION_LANDSCAPE)
+                awaitUi(scenario, "Landscape retains SwiftKey and hides the real lesson header",
+                    diagnostic = { "focus losses=$focusLosses" }) { activity ->
+                    val frame = Rect().also(activity.window.decorView::getWindowVisibleDisplayFrame)
+                    val caret = editor.expressionLayout.caretBounds(editor.model.cursor)
+                    val caretTop = caret?.let { screenBounds(editor).top + editor.expressionBaseline + it.top }
+                    val caretBottom = caret?.let { screenBounds(editor).top + editor.expressionBaseline + it.bottom }
+                    isImeVisible(activity) && header.visibility == View.GONE && toolbar.isAttachedToWindow &&
+                        toolbar.visibility == View.VISIBLE && !editor.isLayoutRequested &&
+                        toolbar.height <= frame.height() / 2 && caretTop != null && caretBottom != null &&
+                        caretTop >= frame.top && caretBottom <= screenBounds(toolbar).top
+                }
+                scenario.onActivity { activity ->
+                    assertTrue("The real page 17 editor keeps focus across rotation", editor.hasFocus())
+                    assertTrue("Rotation never clears focus temporarily: $focusLosses", focusLosses.isEmpty())
+                    assertSame(editor, activity.currentFocus)
+                    assertSame(originalModel, editor.model)
+                    assertSame(originalExpression, editor.model.expression)
+                    assertEquals(lower, editor.model.cursor)
+                    assertEquals(originalDraft, editor.model.saveDraft())
+                    assertEquals(View.GONE, header.visibility)
+                    assertFalse(progress.isShown)
+                }
+                tapSwiftKeyTwo()
+                val expectedLatex = MathLatexSerializer.serialize(
+                    (MathLatexParser.parse("x_{12}^{2}") as MathLatexParser.Result.Success).expression)
+                awaitUi(scenario, "A physical SwiftKey press edits the same subscript after rotation",
+                    diagnostic = { "latex=${editor.getLatex()}, cursor=${editor.model.cursor}, losses=$focusLosses" }) {
+                    editor.getLatex() == expectedLatex
+                }
+                scenario.onActivity { activity ->
+                    assertTrue(editor.hasFocus())
+                    assertSame(editor, activity.currentFocus)
+                    assertEquals("lower", editor.model.cursor.path.last().slot)
+                    assertEquals(otherDrafts, fields.filterNot { it === editor }.map { it.model.saveDraft() })
+                    (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                        .hideSoftInputFromWindow(editor.windowToken, 0)
+                }
+                awaitUi(scenario, "Closing SwiftKey restores the real landscape header") { activity ->
+                    !isImeVisible(activity) && header.visibility == View.VISIBLE && progress.isShown
+                }
+                scenario.onActivity { activity ->
+                    assertTrue("Closing SwiftKey retains editor focus: currentFocus=${activity.currentFocus}, losses=$focusLosses",
+                        editor.hasFocus())
+                    assertTrue("Closing SwiftKey never clears focus temporarily: $focusLosses", focusLosses.isEmpty())
+                }
+                val editedDraft = editor.model.saveDraft()
+                val editedExpression = editor.model.expression
+                val editedCursor = editor.model.cursor
+                scenario.onActivity { activity ->
+                    (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                        .showSoftInput(editor, InputMethodManager.SHOW_IMPLICIT)
+                }
+                var reopenDiagnostic = "IME reopening not yet sampled"
+                awaitUi(scenario, "Reopening SwiftKey hides the real landscape header again",
+                    diagnostic = { reopenDiagnostic }) { activity ->
+                    val scroll = activity.findViewById<View>(R.id.lessonScroll)
+                    reopenDiagnostic = "IMEvisible=${isImeVisible(activity)}, header=${header.visibility}, " +
+                        "toolbarAttached=${toolbar.isAttachedToWindow}, toolbarVisibility=${toolbar.visibility}, " +
+                        "focus=${editor.hasFocus()}, currentFocus=${activity.currentFocus}, " +
+                        "root=${screenBounds(activity.window.decorView)}, scrollHeight=${scroll.height}, losses=$focusLosses"
+                    isImeVisible(activity) && header.visibility == View.GONE && toolbar.isAttachedToWindow &&
+                        toolbar.visibility == View.VISIBLE
+                }
+                orient(scenario, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, Configuration.ORIENTATION_PORTRAIT)
+                var finalPortraitDiagnostic = "Page 17 portrait geometry not yet sampled"
+                awaitUi(scenario, "Portrait restores the real page 17 header while SwiftKey stays open",
+                    diagnostic = { finalPortraitDiagnostic }) { activity ->
+                    val frame = Rect().also(activity.window.decorView::getWindowVisibleDisplayFrame)
+                    val parent = header.parent as View
+                    finalPortraitDiagnostic = "frame=$frame, header=${header.visibility}/${header.measuredHeight}, " +
+                        "parent=${screenBounds(parent)}/requested=${parent.isLayoutRequested}, " +
+                        "rootRequested=${activity.findViewById<View>(android.R.id.content).isLayoutRequested}, " +
+                        "progress=${progress.isShown}, IMEvisible=${isImeVisible(activity)}, " +
+                        "toolbar=${screenBounds(toolbar)}/attached=${toolbar.isAttachedToWindow}/visible=${toolbar.visibility}, " +
+                        "focus=${editor.hasFocus()}, currentFocus=${activity.currentFocus}, losses=$focusLosses"
+                    isImeVisible(activity) && header.visibility == View.VISIBLE && progress.isShown &&
+                        toolbar.isAttachedToWindow && toolbar.visibility == View.VISIBLE
+                }
+                scenario.onActivity { activity ->
+                    assertTrue("The same real editor remains focused in portrait with SwiftKey open", editor.hasFocus())
+                    assertTrue("Neither rotation nor IME visibility clears focus temporarily: $focusLosses", focusLosses.isEmpty())
+                    assertSame(editor, activity.currentFocus)
+                    assertSame(originalModel, editor.model)
+                    assertSame(editedExpression, editor.model.expression)
+                    assertEquals(editedCursor, editor.model.cursor)
+                    assertEquals(editedDraft, editor.model.saveDraft())
+                    assertEquals(otherDrafts, fields.filterNot { it === editor }.map { it.model.saveDraft() })
+                }
+            }
+        } finally { automation.serviceInfo = originalServiceInfo }
+    }
+
+    private data class ImeKey(val text: String, val description: String, val bounds: Rect, val clickable: Boolean)
+
+    private fun imeKeys(): List<ImeKey> {
+        val keys = mutableListOf<ImeKey>()
+        fun collect(node: AccessibilityNodeInfo) {
+            if (!node.refresh()) return
+            if (node.isVisibleToUser) {
+                val bounds = Rect().also(node::getBoundsInScreen)
+                if (!bounds.isEmpty) keys += ImeKey(node.text?.toString().orEmpty(),
+                    node.contentDescription?.toString().orEmpty(), bounds, node.isClickable)
+            }
+            for (index in 0 until node.childCount) {
+                val child = node.getChild(index) ?: continue
+                try { collect(child) } finally { child.recycle() }
+            }
+        }
+        instrumentation.uiAutomation.windows.filter { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }.forEach { window ->
+            val root = window.root ?: return@forEach
+            try { collect(root) } finally { root.recycle() }
+        }
+        return keys
+    }
+
+    private fun stableImeKeys(): List<ImeKey> {
+        var previous = emptyList<ImeKey>()
+        val deadline = SystemClock.uptimeMillis() + 3_000
+        do {
+            val keys = imeKeys()
+            if (keys.isNotEmpty() && keys == previous) return keys
+            previous = keys
+            SystemClock.sleep(80)
+        } while (SystemClock.uptimeMillis() < deadline)
+        throw AssertionError("SwiftKey key labels and bounds did not settle before a physical press: $previous")
+    }
+
+    /** Only actual touches on the installed IME are allowed; no InputConnection or hardware-key substitute. */
+    private fun tapSwiftKeyTwo() {
+        var keys = stableImeKeys()
+        var key = keys.filter { it.text == "2" || it.description == "2" }.maxByOrNull { it.clickable }
+        if (key == null) {
+            val modeLabels = setOf("123", "?123", "? 123", "Símbolos", "Números y símbolos", "Symbols", "Numbers and symbols")
+            val mode = requireNotNull(keys.firstOrNull { it.text in modeLabels || it.description in modeLabels }) {
+                "SwiftKey exposes neither digit 2 nor its numeric-mode key: $keys"
+            }
+            tapScreen(mode.bounds.exactCenterX(), mode.bounds.exactCenterY())
+            keys = stableImeKeys()
+            key = keys.filter { it.text == "2" || it.description == "2" }.maxByOrNull { it.clickable }
+        }
+        val bounds = requireNotNull(key) { "SwiftKey exposes no accessible numeric 2 key: $keys" }.bounds
+        tapScreen(bounds.exactCenterX(), bounds.exactCenterY())
+    }
+
+    private fun tapScreen(x: Float, y: Float) {
+        val automation = instrumentation.uiAutomation
+        val downTime = SystemClock.uptimeMillis()
+        val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0).apply {
+            source = InputDevice.SOURCE_TOUCHSCREEN
+        }
+        try { assertTrue(automation.injectInputEvent(down, true)) } finally { down.recycle() }
+        SystemClock.sleep(45)
+        val up = MotionEvent.obtain(downTime, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, x, y, 0).apply {
+            source = InputDevice.SOURCE_TOUCHSCREEN
+        }
+        try { assertTrue(automation.injectInputEvent(up, true)) } finally { up.recycle() }
+        instrumentation.waitForIdleSync()
+    }
+
+    private fun isImeVisible(activity: LessonActivity): Boolean =
+        ViewCompat.getRootWindowInsets(activity.window.decorView)?.isVisible(WindowInsetsCompat.Type.ime()) == true
+
+    private fun awaitUi(
+        scenario: ActivityScenario<LessonActivity>,
+        message: String,
+        diagnostic: () -> String = { "" },
+        condition: (LessonActivity) -> Boolean
+    ) {
+        val deadline = SystemClock.uptimeMillis() + 5_000
+        var settled = false
+        do {
+            instrumentation.waitForIdleSync()
+            scenario.onActivity { settled = condition(it) }
+            if (!settled) SystemClock.sleep(50)
+        } while (!settled && SystemClock.uptimeMillis() < deadline)
+        assertTrue("$message ${diagnostic()}", settled)
     }
 
     private fun orient(scenario: ActivityScenario<LessonActivity>, requested: Int, expected: Int) {
@@ -431,17 +832,6 @@ class MathExpressionEditorDeviceTest {
             }
         }
         assertTrue("Test window reaches the requested orientation", settled)
-    }
-
-    private fun screenshot(name: String) {
-        val bitmap = instrumentation.uiAutomation.takeScreenshot() ?: error("No screenshot of structured editor")
-        if (android.os.Build.VERSION.SDK_INT >= 31) {
-            ParcelFileDescriptor.AutoCloseInputStream(instrumentation.uiAutomation.executeShellCommand("mkdir -p /data/local/tmp/math-puzzle-smoke")).use { it.readBytes() }
-            val streams = instrumentation.uiAutomation.executeShellCommandRw("dd of=/data/local/tmp/math-puzzle-smoke/$name")
-            ParcelFileDescriptor.AutoCloseOutputStream(streams[1]).use { assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) }
-            ParcelFileDescriptor.AutoCloseInputStream(streams[0]).use { it.readBytes() }
-        }
-        bitmap.recycle()
     }
 
     private fun control(activity: LessonActivity, id: String, type: String, config: JSONObject, validator: JSONObject) =

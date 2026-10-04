@@ -269,6 +269,50 @@ class MathKeyboardActionPreviewDeviceTest {
         assertEquals("/+", editor.text.toString())
     }
 
+    @Test fun compactViewportFitsEveryPreviewAndRestoresTheSameControlsAndGeometry() = onMain {
+        val editor = MathExpressionEditor(context)
+        assertTrue(editor.setLatex("x_1^2"))
+        editor.model.select(listOf(MathCursorStep(0, "lower")), 0, 1)
+        val toolbar = MathKeyboardView(context, accent)
+        toolbar.bind(editor, listOf("FRACTION", "POWER", "SUBSCRIPT", "ROOT", "NTH_ROOT", "PARENTHESES",
+            "ABSOLUTE_VALUE", "BRACKETS", "BRACES", "FUNCTION:log", "INTEGRAL", "SUM", "PRODUCT",
+            "LIMIT", "DERIVATIVE", "MATRIX", "CASES", "+"))
+        measure(toolbar)
+        val keys = descendants(toolbar).filter { it is Button || it is ImageButton }
+        val normal = keys.associateWith { listOf(it.width, it.height, it.paddingTop, it.paddingBottom) }
+        val model = editor.model
+        val expression = model.expression
+        val draft = model.saveDraft()
+        val limit = MathWidgetUi.dp(context, 32)
+        toolbar.setCompactHeight(limit)
+        measure(toolbar)
+        assertEquals("One horizontal row stays inside its real height budget", limit, toolbar.height)
+        assertEquals(keys, descendants(toolbar).filter { it is Button || it is ImageButton })
+        assertTrue(keys.all { !it.isFocusable && it.height <= limit && it.width >= MathWidgetUi.dp(context, 48) })
+        keys.filterIsInstance<MathKeyboardActionPreviewView>().forEach {
+            assertTrue("The entire ${it.contentDescription} preview fits the compact key",
+                it.height >= kotlin.math.ceil(it.previewLayout.height).toInt() + it.paddingTop + it.paddingBottom)
+            assertMathematicalInk(it)
+        }
+        assertSame(model, editor.model)
+        assertSame(expression, model.expression)
+        assertEquals("Presentation cannot change mathematical cursor or selection", draft, model.saveDraft())
+        val previous = navigation(toolbar, "Slot anterior")
+        val next = navigation(toolbar, "Slot siguiente")
+        assertTrue(previous.performClick())
+        assertSame(expression, model.expression)
+        assertTrue(next.performClick())
+        assertSame(expression, model.expression)
+        toolbar.setCompactHeight(null)
+        measure(toolbar)
+        normal.forEach { (key, geometry) ->
+            assertEquals("Restore the same ${key.contentDescription} control exactly", geometry,
+                listOf(key.width, key.height, key.paddingTop, key.paddingBottom))
+        }
+        assertSame(previous, navigation(toolbar, "Slot anterior"))
+        assertSame(next, navigation(toolbar, "Slot siguiente"))
+    }
+
     private fun assertNavigationStable(toolbar: MathKeyboardView, editor: MathExpressionEditor, previous: ImageButton, next: ImageButton) {
         measure(toolbar)
         assertSame(previous, navigation(toolbar, "Slot anterior"))

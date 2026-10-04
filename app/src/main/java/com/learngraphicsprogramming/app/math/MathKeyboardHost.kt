@@ -1,8 +1,10 @@
 package com.learngraphicsprogramming.app.math
 
 import android.app.Activity
+import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.drawable.ColorDrawable
 import android.view.Gravity
 import android.view.View
@@ -35,6 +37,8 @@ class MathKeyboardHost private constructor(
             android.R.id.content
         )
 
+    private val insetsView = activity.window.decorView
+
     private var keyboard:
             MathKeyboardView? = null
 
@@ -45,10 +49,20 @@ class MathKeyboardHost private constructor(
      * Guarda el último campo al que ya se le hizo
      * el ajuste especial para mostrar también Comprobar.
      *
-     * Mientras conserve el foco, no volvemos a perseguirlo.
+     * Mientras conserve el foco y el viewport, no volvemos a perseguirlo.
      */
     private var lastSpeciallyRevealedInput:
             View? = null
+
+    private data class RevealViewport(
+        val windowWidth: Int,
+        val windowHeight: Int,
+        val scrollWidth: Int?,
+        val scrollHeight: Int?,
+        val toolbarHeight: Int
+    )
+
+    private var lastRevealedViewport: RevealViewport? = null
 
     private val runningImeAnimations =
         mutableSetOf<WindowInsetsAnimationCompat>()
@@ -68,11 +82,12 @@ class MathKeyboardHost private constructor(
     private var previousGeometry =
         ""
 
-    private var compactHeader:
-            View? = null
+    private val lessonHeader =
+        activity.findViewById<View>(R.id.lessonHeader)
 
-    private var originalHeaderVisibility =
-        View.VISIBLE
+    private var normalHeaderHeight = 0
+
+    private var imeVisible = false
 
     private var paddedScroll:
             ScrollView? = null
@@ -80,10 +95,79 @@ class MathKeyboardHost private constructor(
     private var originalScrollBottomPadding =
         0
 
+    private var compactEditor: MathExpressionEditor? = null
+    private var originalEditorPadding: Pair<Int, Int>? = null
+
+    private fun setEditorViewport(editor: MathExpressionEditor?, height: Int?) {
+        if (compactEditor !== editor || height == null) {
+            compactEditor?.let { previous ->
+                originalEditorPadding?.let { (top, bottom) ->
+                    previous.setPadding(previous.paddingLeft, top, previous.paddingRight, bottom)
+                }
+                previous.viewportHeightLimit = null
+            }
+            compactEditor = null
+            originalEditorPadding = null
+        }
+        if (editor != null && height != null) {
+            if (compactEditor == null) {
+                compactEditor = editor
+                originalEditorPadding = editor.paddingTop to editor.paddingBottom
+            }
+            if (editor.paddingTop != 0 || editor.paddingBottom != 0) {
+                editor.setPadding(editor.paddingLeft, 0, editor.paddingRight, 0)
+            }
+            editor.viewportHeightLimit = height
+        }
+    }
+
     internal fun refreshPosition() {
 
         root.post {
             update()
+        }
+    }
+
+    internal fun onConfigurationChanged() {
+        // Configuration arrives before the resized window's first layout. Use the
+        // last real IME state so the header cannot collapse lessonScroll to zero.
+        updateLessonHeader()
+        refreshPosition()
+    }
+
+    private fun observeImeInsets(insets: WindowInsetsCompat?) {
+        if (insets != null) {
+            imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+        }
+        updateLessonHeader()
+    }
+
+    private fun updateLessonHeader() {
+        // Final IME insets are dispatched before the animation/layout finishes.
+        // Keep the header out of the resize during both opening and closing.
+        val imeOccupiesViewport = imeVisible || runningImeAnimations.isNotEmpty()
+        val header = lessonHeader ?: return
+        if ((header.visibility == View.VISIBLE || normalHeaderHeight == 0) && header.measuredHeight > 0) {
+            normalHeaderHeight = header.measuredHeight
+        }
+        val frame = Rect().also(activity.window.decorView::getWindowVisibleDisplayFrame)
+        val content = header.parent as? View ?: root
+        val focusedInput = root.findFocus()?.takeIf {
+            (it is EditText || it is MathExpressionEditor) && it.hasFocus() &&
+                it.tag == MathInputFocusOrder.GESTURE_OWNER_TAG
+        }
+        // A portrait configuration can precede the content's taller layout. Keep
+        // the existing focused ancestor nonzero until the IME animation and native
+        // layout have finished, rather than restoring into an intermediate resize.
+        val waitForHeaderSpace = header.visibility == View.GONE && focusedInput != null &&
+            (runningImeAnimations.isNotEmpty() || root.isLayoutRequested || content.isLayoutRequested ||
+                content.width != frame.width() || minOf(frame.height(), content.height) <= normalHeaderHeight)
+        val visibility = if (
+            (activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
+                imeOccupiesViewport) || waitForHeaderSpace
+        ) View.GONE else View.VISIBLE
+        if (header.visibility != visibility) {
+            header.visibility = visibility
         }
     }
 
@@ -160,18 +244,24 @@ class MathKeyboardHost private constructor(
          * event on real IMEs.
          */
         ViewCompat.setOnApplyWindowInsetsListener(
-            root
-        ) { _, insets ->
+            insetsView
+        ) { view, insets ->
+
+            // Apply before measure/layout, not in the posted popup geometry pass.
+            // A zero-height focused ancestor causes Android to clear editor focus.
+            observeImeInsets(insets)
 
             root.post {
                 update()
             }
 
-            insets
+            // Decor applies legacy fit-system-windows sizing before dispatching to
+            // AppCompat's content. Observe first, then preserve that default sizing.
+            ViewCompat.onApplyWindowInsets(view, insets)
         }
 
         ViewCompat.setWindowInsetsAnimationCallback(
-            root,
+            insetsView,
             object :
                 WindowInsetsAnimationCompat.Callback(
                     DISPATCH_MODE_CONTINUE_ON_SUBTREE
@@ -181,6 +271,7 @@ class MathKeyboardHost private constructor(
                     super.onPrepare(animation)
                     if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
                         runningImeAnimations.add(animation)
+                        updateLessonHeader()
                     }
                 }
 
@@ -189,6 +280,8 @@ class MathKeyboardHost private constructor(
                     runningAnimations:
                     MutableList<WindowInsetsAnimationCompat>
                 ): WindowInsetsCompat {
+
+                    observeImeInsets(insets)
 
                     root.post {
                         update()
@@ -203,6 +296,8 @@ class MathKeyboardHost private constructor(
                 ) {
 
                     runningImeAnimations.remove(animation)
+
+                    observeImeInsets(ViewCompat.getRootWindowInsets(root))
 
                     super.onEnd(
                         animation
@@ -227,7 +322,7 @@ class MathKeyboardHost private constructor(
         )
 
         ViewCompat.requestApplyInsets(
-            root
+            insetsView
         )
 
         root.viewTreeObserver
@@ -533,6 +628,8 @@ class MathKeyboardHost private constructor(
 
     private fun update() {
 
+        observeImeInsets(ViewCompat.getRootWindowInsets(root))
+
         val bar =
             keyboard
                 ?: return
@@ -554,19 +651,6 @@ class MathKeyboardHost private constructor(
             return
         }
 
-        val insets =
-            ViewCompat
-                .getRootWindowInsets(
-                    root
-                )
-
-        val imeVisible =
-            insets?.isVisible(
-                WindowInsetsCompat
-                    .Type
-                    .ime()
-            ) == true
-
         val frame =
             Rect()
 
@@ -580,9 +664,10 @@ class MathKeyboardHost private constructor(
             frame.width() <= 0
         ) {
 
-            popup?.dismiss()
+            bar.setCompactHeight(null)
+            setEditorViewport(null, null)
 
-            restoreHeader()
+            popup?.dismiss()
 
             restoreScrollPadding()
 
@@ -599,6 +684,10 @@ class MathKeyboardHost private constructor(
         bar.visibility =
             View.VISIBLE
 
+        val compact = activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val toolbarHeightLimit = if (compact) (frame.height() / 2).coerceAtLeast(1) else frame.height()
+        bar.setCompactHeight(toolbarHeightLimit.takeIf { compact })
+
         bar.measure(
             View.MeasureSpec
                 .makeMeasureSpec(
@@ -607,22 +696,17 @@ class MathKeyboardHost private constructor(
                 ),
             View.MeasureSpec
                 .makeMeasureSpec(
-                    frame.height(),
+                    toolbarHeightLimit,
                     View.MeasureSpec.AT_MOST
                 )
         )
 
-        val barHeight =
-            bar.measuredHeight
-                .coerceAtLeast(
-                    MathWidgetUi.dp(
-                        activity,
-                        48
-                    )
-                )
+        val barHeight = if (compact) bar.measuredHeight.coerceAtMost(toolbarHeightLimit)
+            else bar.measuredHeight.coerceAtLeast(MathWidgetUi.dp(activity, 48))
 
-        val margin =
-            MathWidgetUi.dp(
+        setEditorViewport(input as? MathExpressionEditor, (frame.height() - barHeight).takeIf { compact })
+
+        val margin = if (compact) 0 else MathWidgetUi.dp(
                 activity,
                 8
             )
@@ -646,52 +730,6 @@ class MathKeyboardHost private constructor(
             },
             barHeight + margin
         )
-
-        // ============================================================
-        // LANDSCAPE / ESPACIO MUY PEQUEÑO
-        // ============================================================
-
-        if (
-            scroll != null &&
-            compactHeader == null &&
-            scroll.height <
-            input.height +
-            barHeight +
-            margin * 2
-        ) {
-
-            (
-                    activity
-                        .findViewById<View>(
-                            R.id.textTopLesson
-                        )
-                        ?.parent
-                        ?.parent as? View
-                    )
-                ?.let { header ->
-
-                    if (
-                        header.visibility ==
-                        View.VISIBLE
-                    ) {
-
-                        compactHeader =
-                            header
-
-                        originalHeaderVisibility =
-                            header.visibility
-
-                        header.visibility =
-                            View.GONE
-
-                        root.post {
-                            update()
-                        }
-
-                        return
-                    }
-                }
-        }
 
         // ============================================================
         // POSICIÓN DEL INPUT
@@ -825,15 +863,10 @@ class MathKeyboardHost private constructor(
             }
         }
 
-        /*
-         * Los campos normales conservan completamente
-         * el comportamiento estándar de Android.
-         *
-         * La lógica manual de desplazamiento solamente
-         * existe para el ÚLTIMO campo editable del puzzle.
-         */
+        // Normal geometry reveals only the final puzzle input and its check action.
+        // The compact viewport must also reveal whichever math input retains focus.
         if (
-            !lastInput
+            !lastInput && !compact
         ) {
 
             return
@@ -859,8 +892,8 @@ class MathKeyboardHost private constructor(
         }
 
         /*
-         * El último campo recibe el ajuste especial
-         * solamente una vez mientras conserve el foco.
+         * El campo recibe el ajuste especial
+         * solamente una vez por foco y tamaño del viewport.
          *
          * Después de esto:
          *
@@ -869,19 +902,20 @@ class MathKeyboardHost private constructor(
          * - hacer scroll manual no vuelve a llevarnos
          *   automáticamente al campo
          */
-        if (
-            lastSpeciallyRevealedInput ===
-            input
-        ) {
-
-            return
-        }
-
         // IME visibility becomes true before its opening animation and resize finish.
         // Keep positioning the popup above, but consume the single reveal only after
         // the final viewport and pending toolbar-padding/input layouts have settled.
         if (runningImeAnimations.isNotEmpty() || root.isLayoutRequested ||
             scroll?.isLayoutRequested == true || input.isLayoutRequested) {
+            return
+        }
+
+        // Rotation and real IME resizes need a new placement. Text, cursor changes
+        // and manual scrolling do not change these viewport dimensions.
+        val viewport = RevealViewport(
+            frame.width(), frame.height(), scroll?.width, scroll?.height, barHeight
+        )
+        if (lastSpeciallyRevealedInput === input && lastRevealedViewport == viewport) {
             return
         }
 
@@ -921,12 +955,8 @@ class MathKeyboardHost private constructor(
                 contentBottom -
                         inputTop
 
-            val caret =
-                (
-                        input as?
-                                MathExpressionEditor
-                        )
-                    ?.let { editor ->
+            val caret = when (input) {
+                is MathExpressionEditor -> input.let { editor ->
 
                         editor
                             .expressionLayout
@@ -942,7 +972,15 @@ class MathKeyboardHost private constructor(
                                                 .expressionBaseline
                                 )
                             }
+                }
+                is EditText -> if (compact) input.layout?.let { layout ->
+                    val line = layout.getLineForOffset(input.selectionEnd.coerceIn(0, input.text.length))
+                    RectF(0f, layout.getLineTop(line).toFloat(), 0f, layout.getLineBottom(line).toFloat()).apply {
+                        offset(0f, (inputTop + input.compoundPaddingTop - input.scrollY).toFloat())
                     }
+                } else null
+                else -> null
+            }
 
             val delta =
                 when {
@@ -954,7 +992,7 @@ class MathKeyboardHost private constructor(
                      * En ese caso seguimos el slot activo
                      * durante este único ajuste inicial.
                      */
-                    input.height >=
+                    input.height >
                             availableHeight &&
                             caret != null ->
 
@@ -997,7 +1035,7 @@ class MathKeyboardHost private constructor(
                      * Un editor completo es más alto que
                      * todo el área disponible.
                      */
-                    input.height >=
+                    input.height >
                             availableHeight ->
 
                         inputTop -
@@ -1050,6 +1088,8 @@ class MathKeyboardHost private constructor(
              */
             lastSpeciallyRevealedInput =
                 input
+
+            lastRevealedViewport = viewport
 
             if (
                 delta != 0
@@ -1105,12 +1145,14 @@ class MathKeyboardHost private constructor(
 
             lastSpeciallyRevealedInput =
                 input
+
+            lastRevealedViewport = viewport
         }
     }
 
     private fun dismissCurrent() {
 
-        restoreHeader()
+        setEditorViewport(null, null)
 
         restoreScrollPadding()
 
@@ -1122,6 +1164,8 @@ class MathKeyboardHost private constructor(
         if (
             bar != null
         ) {
+
+            bar.setCompactHeight(null)
 
             (
                     bar.parent as?
@@ -1175,6 +1219,8 @@ class MathKeyboardHost private constructor(
         lastSpeciallyRevealedInput =
             null
 
+        lastRevealedViewport = null
+
         popup =
             null
 
@@ -1188,19 +1234,11 @@ class MathKeyboardHost private constructor(
             ""
     }
 
-    private fun restoreHeader() {
-
-        compactHeader
-            ?.visibility =
-            originalHeaderVisibility
-
-        compactHeader =
-            null
-    }
-
     fun close() {
 
         dismissCurrent()
+
+        lessonHeader?.visibility = View.VISIBLE
 
         hosts.remove(
             activity
