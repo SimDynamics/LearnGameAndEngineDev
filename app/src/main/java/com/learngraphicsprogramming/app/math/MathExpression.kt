@@ -28,36 +28,68 @@ sealed interface MathExpression {
 enum class MathDelimiter { PARENTHESES, BRACKETS, BRACES, ABSOLUTE }
 enum class MathLargeOperator { INTEGRAL, SUM, PRODUCT }
 data class MathCursorStep(val nodeIndex: Int, val slot: String)
-data class MathCursor(val path: List<MathCursorStep> = emptyList(), val offset: Int = 0)
+enum class MathCursorLevel { NEUTRAL, CHILD_BOUNDARY, INTERIOR }
+sealed interface MathContentScope {
+    data object Slot : MathContentScope
+    data class Atom(val start: Int, val end: Int) : MathContentScope
+}
+data class MathCursor(
+    val path: List<MathCursorStep> = emptyList(), val offset: Int = 0,
+    val level: MathCursorLevel = if (path.isEmpty()) MathCursorLevel.NEUTRAL else MathCursorLevel.INTERIOR,
+    val scope: MathContentScope? = if (level == MathCursorLevel.INTERIOR && path.isNotEmpty()) MathContentScope.Slot else null
+)
+sealed interface MathCursorPresentation {
+    data class Interior(val scope: MathContentScope? = null) : MathCursorPresentation
+    data object Neutral : MathCursorPresentation
+    data class ParentBoundary(val path: List<MathCursorStep>, val nodeIndex: Int) : MathCursorPresentation
+    /** An exterior child cursor always means immediately after that child. */
+    data class ChildBoundary(val slotPath: List<MathCursorStep>, val after: Boolean = true) : MathCursorPresentation {
+        init { require(after) { "A child boundary exists only to its right" } }
+    }
+}
+enum class MathSlotRequirement { REQUIRED, OPTIONAL }
+enum class MathNavigationRole { PARENT_CONTENT, CHILD }
+data class MathNavigationChild(
+    val id: String, val content: MathExpression.Sequence, val requirement: MathSlotRequirement,
+    val update: (MathExpression.Sequence) -> MathExpression,
+    val remove: () -> List<MathExpression>, val role: MathNavigationRole = MathNavigationRole.CHILD
+)
 
-/** Shared structural slot contract for editing, rendering, hit testing and future node types. */
-fun MathExpression.childSlots(): List<Pair<String, MathExpression.Sequence>> = when (this) {
-    is MathExpression.Fraction -> listOf("numerator" to numerator, "denominator" to denominator)
-    is MathExpression.Scripts -> listOfNotNull("base" to base, upper?.let { "upper" to it }, lower?.let { "lower" to it })
-    is MathExpression.Root -> listOfNotNull(index?.let { "index" to it }, "radicand" to radicand)
-    is MathExpression.Group -> listOf("content" to content)
-    is MathExpression.Function -> listOfNotNull(base?.let { "base" to it }, "argument" to argument)
-    is MathExpression.LargeOperator -> listOfNotNull(lower?.let { "lower" to it }, upper?.let { "upper" to it }, "body" to body)
-    is MathExpression.Limit -> listOf("condition" to condition, "body" to body)
-    is MathExpression.Derivative -> listOfNotNull(order?.let { "order" to it }, "body" to body, "variable" to variable)
-    is MathExpression.Matrix -> rows.flatMapIndexed { r, row -> row.mapIndexed { c, cell -> "r${r}c$c" to cell } }
-    is MathExpression.Cases -> rows.flatMapIndexed { index, row -> listOf("expression$index" to row.expression, "condition$index" to row.condition) }
-    else -> emptyList()
+/** Shared structural slots. Children declare upper left-to-right, then lower left-to-right order. */
+fun MathExpression.navigationChildren(): List<MathNavigationChild> {
+    fun required(id: String, content: MathExpression.Sequence, role: MathNavigationRole = MathNavigationRole.CHILD,
+                 update: (MathExpression.Sequence) -> MathExpression) =
+        MathNavigationChild(id, content, MathSlotRequirement.REQUIRED, update, { listOf(update(MathExpression.Sequence())) }, role)
+    fun optional(id: String, content: MathExpression.Sequence?, update: (MathExpression.Sequence) -> MathExpression,
+                 remove: () -> List<MathExpression>) = content?.let { MathNavigationChild(id, it, MathSlotRequirement.OPTIONAL, update, remove) }
+    fun scriptReplacement(value: MathExpression.Scripts): List<MathExpression> =
+        if (value.lower == null && value.upper == null) value.base.children else listOf(value)
+    return when (this) {
+        is MathExpression.Fraction -> listOf(required("numerator", numerator) { copy(numerator = it) }, required("denominator", denominator) { copy(denominator = it) })
+        is MathExpression.Scripts -> listOfNotNull(required("base", base, MathNavigationRole.PARENT_CONTENT) { copy(base = it) },
+            optional("upper", upper, { copy(upper = it) }) { scriptReplacement(copy(upper = null)) },
+            optional("lower", lower, { copy(lower = it) }) { scriptReplacement(copy(lower = null)) })
+        is MathExpression.Root -> listOfNotNull(optional("index", index, { copy(index = it) }) { listOf(copy(index = null)) }, required("radicand", radicand, MathNavigationRole.PARENT_CONTENT) { copy(radicand = it) })
+        is MathExpression.Group -> listOf(required("content", content, MathNavigationRole.PARENT_CONTENT) { copy(content = it) })
+        is MathExpression.Function -> listOfNotNull(optional("base", base, { copy(base = it) }) { listOf(copy(base = null)) }, required("argument", argument, MathNavigationRole.PARENT_CONTENT) { copy(argument = it) })
+        is MathExpression.LargeOperator -> listOfNotNull(optional("upper", upper, { copy(upper = it) }) { listOf(copy(upper = null)) },
+            optional("lower", lower, { copy(lower = it) }) { listOf(copy(lower = null)) }, required("body", body, MathNavigationRole.PARENT_CONTENT) { copy(body = it) })
+        is MathExpression.Limit -> listOf(required("condition", condition) { copy(condition = it) }, required("body", body, MathNavigationRole.PARENT_CONTENT) { copy(body = it) })
+        is MathExpression.Derivative -> listOfNotNull(optional("order", order, { copy(order = it) }) { listOf(copy(order = null)) },
+            required("body", body, MathNavigationRole.PARENT_CONTENT) { copy(body = it) }, required("variable", variable) { copy(variable = it) })
+        is MathExpression.Matrix -> rows.flatMapIndexed { r, row -> row.mapIndexed { c, cell ->
+            required("r${r}c$c", cell) { value -> copy(rows = rows.mapIndexed { rr, cells -> cells.mapIndexed { cc, old -> if (rr == r && cc == c) value else old } }) }
+        } }
+        is MathExpression.Cases -> rows.flatMapIndexed { index, row -> listOf(
+            required("expression$index", row.expression) { value -> copy(rows = rows.mapIndexed { i, old -> if (i == index) old.copy(expression = value) else old }) },
+            required("condition$index", row.condition) { value -> copy(rows = rows.mapIndexed { i, old -> if (i == index) old.copy(condition = value) else old }) }) }
+        else -> emptyList()
+    }
 }
 
-fun MathExpression.withChildSlot(slot: String, value: MathExpression.Sequence): MathExpression = when (this) {
-    is MathExpression.Fraction -> when (slot) { "numerator" -> copy(numerator = value); "denominator" -> copy(denominator = value); else -> this }
-    is MathExpression.Scripts -> when (slot) { "base" -> copy(base = value); "upper" -> copy(upper = value); "lower" -> copy(lower = value); else -> this }
-    is MathExpression.Root -> when (slot) { "radicand" -> copy(radicand = value); "index" -> copy(index = value); else -> this }
-    is MathExpression.Group -> if (slot == "content") copy(content = value) else this
-    is MathExpression.Function -> when (slot) { "argument" -> copy(argument = value); "base" -> copy(base = value); else -> this }
-    is MathExpression.LargeOperator -> when (slot) { "body" -> copy(body = value); "lower" -> copy(lower = value); "upper" -> copy(upper = value); else -> this }
-    is MathExpression.Limit -> when (slot) { "body" -> copy(body = value); "condition" -> copy(condition = value); else -> this }
-    is MathExpression.Derivative -> when (slot) { "body" -> copy(body = value); "variable" -> copy(variable = value); "order" -> copy(order = value); else -> this }
-    is MathExpression.Matrix -> copy(rows = rows.mapIndexed { r, row -> row.mapIndexed { c, cell -> if (slot == "r${r}c$c") value else cell } })
-    is MathExpression.Cases -> copy(rows = rows.mapIndexed { index, row -> when (slot) { "expression$index" -> row.copy(expression = value); "condition$index" -> row.copy(condition = value); else -> row } })
-    else -> this
-}
+fun MathExpression.childSlots(): List<Pair<String, MathExpression.Sequence>> = navigationChildren().map { it.id to it.content }
+fun MathExpression.withChildSlot(slot: String, value: MathExpression.Sequence): MathExpression =
+    navigationChildren().firstOrNull { it.id == slot }?.update?.invoke(value) ?: this
 
 fun MathExpression.isComplete(): Boolean = when (this) {
     is MathExpression.Sequence -> children.isNotEmpty() && children.all { it.isComplete() }

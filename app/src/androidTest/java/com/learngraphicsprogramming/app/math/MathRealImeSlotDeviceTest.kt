@@ -118,7 +118,8 @@ class MathRealImeSlotDeviceTest {
                         .showSoftInput(editor, InputMethodManager.SHOW_IMPLICIT)
                 }
                 activity.hasWindowFocus() && editor.hasFocus() && ViewCompat.getRootWindowInsets(activity.window.decorView)
-                    ?.isVisible(WindowInsetsCompat.Type.ime()) == true
+                    ?.isVisible(WindowInsetsCompat.Type.ime()) == true &&
+                    (activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).isActive(editor)
             }
 
             tapImeKey("2")
@@ -164,6 +165,7 @@ class MathRealImeSlotDeviceTest {
     private fun imeNodes(): List<ImeNode> {
         val result = mutableListOf<ImeNode>()
         fun collect(node: AccessibilityNodeInfo) {
+            if (!node.refresh()) return
             if (node.isVisibleToUser) {
                 val bounds = Rect().also(node::getBoundsInScreen)
                 if (!bounds.isEmpty) result += ImeNode(node.text?.toString().orEmpty(),
@@ -186,7 +188,7 @@ class MathRealImeSlotDeviceTest {
         var nodes = emptyList<ImeNode>()
         var switched = false
         repeat(20) {
-            nodes = imeNodes()
+            nodes = stableImeNodes()
             val match = nodes.filter { it.text == key || it.description == key }
                 .sortedByDescending { it.clickable }.firstOrNull()
             if (match != null) {
@@ -211,6 +213,22 @@ class MathRealImeSlotDeviceTest {
             nodes.map { it.text.ifEmpty { it.description } }.filter { it.isNotBlank() }.distinct().joinToString())
     }
 
+    /** Synchronizes only the live keyboard UI, before any physical character press. */
+    private fun stableImeNodes(): List<ImeNode> {
+        var previous = emptyList<ImeNode>()
+        var previousWindows = emptyList<Rect>()
+        repeat(30) {
+            val nodes = imeNodes()
+            val windows = automation.windows.filter { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+                .map { window -> Rect().also(window::getBoundsInScreen) }
+            if (nodes.isNotEmpty() && nodes == previous && windows == previousWindows) return nodes
+            previous = nodes
+            previousWindows = windows
+            SystemClock.sleep(80)
+        }
+        throw AssertionError("The live IME key labels/bounds did not settle before injection: windows=$previousWindows, nodes=$previous")
+    }
+
     private fun tap(x: Float, y: Float) {
         val downTime = SystemClock.uptimeMillis()
         val down = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0)
@@ -224,7 +242,15 @@ class MathRealImeSlotDeviceTest {
     }
 
     private fun awaitLatex(scenario: ActivityScenario<LessonActivity>, editor: MathExpressionEditor, expected: String) {
-        await(scenario, "The actual IME produces $expected exactly once") { editor.getLatex() == expected && editor.hasFocus() }
+        var observed = ""
+        try {
+            await(scenario, "The actual IME produces $expected exactly once") {
+                observed = "latex=${editor.getLatex()}, cursor=${editor.model.cursor}, level=${editor.model.navigationLevel}, focus=${editor.hasFocus()}, window=${it.hasWindowFocus()}"
+                editor.getLatex() == expected && editor.hasFocus()
+            }
+        } catch (failure: AssertionError) {
+            throw AssertionError("${failure.message}; last observed: $observed", failure)
+        }
         scenario.onActivity { assertEquals(expected, editor.getLatex()) }
     }
 

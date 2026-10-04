@@ -85,7 +85,10 @@ class MathExpressionEditorDeviceTest {
                 fun fresh() { connection = requireNotNull(editor.onCreateInputConnection(EditorInfo())) }
                 fun perform(action: MathKeyboardAction) { editor.perform(action); fresh() }
                 fun setLatex(source: String): Boolean = editor.setLatex(source).also { if (it) fresh() }
-                fun navigate(key: Int) { arrow(connection, key); fresh() }
+                fun nextEditableSlot() {
+                    assertTrue(connection.performEditorAction(EditorInfo.IME_ACTION_NEXT))
+                    fresh()
+                }
                 assertTrue(info.imeOptions and EditorInfo.IME_FLAG_NO_EXTRACT_UI != 0)
                 assertTrue(info.imeOptions and EditorInfo.IME_FLAG_NO_FULLSCREEN != 0)
 
@@ -94,7 +97,7 @@ class MathExpressionEditorDeviceTest {
                 assertFalse(editor.isComplete())
                 assertTrue(connection.commitText("x+1", 1))
                 assertEquals("\\frac{x+1}{}", editor.getLatex())
-                navigate(KeyEvent.KEYCODE_DPAD_RIGHT)
+                nextEditableSlot()
                 assertTrue(connection.commitText("2", 1))
                 assertEquals("\\frac{x+1}{2}", editor.getLatex())
                 assertTrue(editor.isComplete())
@@ -106,6 +109,15 @@ class MathExpressionEditorDeviceTest {
                 assertTrue(setLatex(""))
                 perform(MathKeyboardAction.Fraction)
                 assertTrue(connection.deleteSurroundingText(1, 0))
+                assertEquals("IME Backspace preserves an empty editable slot", "\\frac{}{}", editor.getLatex())
+                assertEquals("numerator", editor.model.cursor.path.last().slot)
+                perform(MathKeyboardAction.Backspace)
+                assertEquals("Toolbar Backspace inside an empty slot also preserves its owner", "\\frac{}{}", editor.getLatex())
+                repeat(2) { perform(MathKeyboardAction.NextSlot) }
+                assertEquals(MathCursorLevel.NEUTRAL, editor.model.navigationLevel)
+                assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), 0), editor.model.cursorPresentation)
+                perform(MathKeyboardAction.Backspace)
+                // Whole-owner removal belongs to the neutral Sequence level.
                 assertEquals("", editor.getLatex())
                 assertTrue(setLatex(""))
                 assertTrue(connection.commitText("\\sqrt{x+4}", 1))
@@ -118,7 +130,7 @@ class MathExpressionEditorDeviceTest {
                 assertTrue(connection.commitText("x", 1))
                 perform(MathKeyboardAction.Subscript)
                 assertTrue(connection.commitText("1", 1))
-                navigate(KeyEvent.KEYCODE_DPAD_RIGHT)
+                nextEditableSlot()
                 perform(MathKeyboardAction.Power)
                 assertTrue(connection.commitText("2", 1))
                 assertEquals("Scripts combine on the same base", "{x}_{1}^{2}", editor.getLatex())
@@ -151,7 +163,7 @@ class MathExpressionEditorDeviceTest {
                 assertEquals("Template determines column count", 3, matrix.rows.single().size)
                 listOf("1", "2", "3").forEachIndexed { index, number ->
                     assertTrue(connection.commitText(number, 1))
-                    if (index < 2) navigate(KeyEvent.KEYCODE_DPAD_RIGHT)
+                    if (index < 2) nextEditableSlot()
                 }
                 assertEquals("\\begin{matrix}1&2&3\\end{matrix}", editor.getLatex())
                 assertTrue(editor.isComplete())
@@ -341,7 +353,28 @@ class MathExpressionEditorDeviceTest {
                 assertTrue(checkBounds.bottom <= barBounds.top)
                 val buttons = tree(toolbar).filterIsInstance<Button>()
                 assertTrue(buttons.any { it.contentDescription == "Insertar fracción" })
-                assertTrue(buttons.all { kotlin.math.abs(it.width - it.height) <= 2 })
+                val minimumKeySize = MathWidgetUi.dp(activity, 48)
+                assertTrue("Structured actions retain accessible touch targets", buttons.all {
+                    it.width >= minimumKeySize - 1 && it.height >= minimumKeySize - 1
+                })
+                assertTrue("Structured previews remain compact above the IME", buttons.all {
+                    it.width <= MathWidgetUi.dp(activity, 180) && it.height <= MathWidgetUi.dp(activity, 120)
+                })
+                assertTrue("Simple symbol keys retain their square targets", buttons.filterNot {
+                    it is MathKeyboardActionPreviewView
+                }.all { kotlin.math.abs(it.width - it.height) <= 2 })
+                buttons.filterIsInstance<MathKeyboardActionPreviewView>().forEach { preview ->
+                    assertTrue("The real popup fits the full mathematical preview vertically",
+                        preview.height >= kotlin.math.ceil(preview.previewLayout.height).toInt() + preview.paddingTop + preview.paddingBottom)
+                    assertTrue("The real popup fits the full mathematical preview horizontally",
+                        preview.width >= kotlin.math.ceil(preview.previewLayout.width).toInt() + preview.paddingLeft + preview.paddingRight)
+                    val accessibility = preview.createAccessibilityNodeInfo()
+                    try {
+                        assertEquals("android.widget.Button", accessibility.className.toString())
+                        assertEquals(preview.contentDescription.toString(), accessibility.contentDescription.toString())
+                        assertTrue(accessibility.isClickable)
+                    } finally { accessibility.recycle() }
+                }
                 assertFalse(buttons.any { it.text.toString().matches(Regex("[0-9xy]")) })
             }
             screenshot("structured-ime-portrait.png")

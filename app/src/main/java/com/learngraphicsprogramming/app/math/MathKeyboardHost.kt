@@ -50,6 +50,9 @@ class MathKeyboardHost private constructor(
     private var lastSpeciallyRevealedInput:
             View? = null
 
+    private val runningImeAnimations =
+        mutableSetOf<WindowInsetsAnimationCompat>()
+
     private var popup:
             PopupWindow? = null
 
@@ -174,6 +177,13 @@ class MathKeyboardHost private constructor(
                     DISPATCH_MODE_CONTINUE_ON_SUBTREE
                 ) {
 
+                override fun onPrepare(animation: WindowInsetsAnimationCompat) {
+                    super.onPrepare(animation)
+                    if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
+                        runningImeAnimations.add(animation)
+                    }
+                }
+
                 override fun onProgress(
                     insets: WindowInsetsCompat,
                     runningAnimations:
@@ -191,6 +201,8 @@ class MathKeyboardHost private constructor(
                     animation:
                     WindowInsetsAnimationCompat
                 ) {
+
+                    runningImeAnimations.remove(animation)
 
                     super.onEnd(
                         animation
@@ -865,6 +877,14 @@ class MathKeyboardHost private constructor(
             return
         }
 
+        // IME visibility becomes true before its opening animation and resize finish.
+        // Keep positioning the popup above, but consume the single reveal only after
+        // the final viewport and pending toolbar-padding/input layouts have settled.
+        if (runningImeAnimations.isNotEmpty() || root.isLayoutRequested ||
+            scroll?.isLayoutRequested == true || input.isLayoutRequested) {
+            return
+        }
+
         // ============================================================
         // SCROLL ESPECIAL DEL ÚLTIMO CAMPO
         // ============================================================
@@ -1038,7 +1058,11 @@ class MathKeyboardHost private constructor(
                 val previousScrollY =
                     scroll.scrollY
 
-                scroll.scrollBy(
+                // Android's focus/resize reveal may still own a pending OverScroller target.
+                // scrollBy only jumps the View, which that animation then overwrites. The
+                // native smooth-scroll operation replaces or aborts the pending scroll with
+                // this single target, including Comprobar, without revealing again on navigation.
+                scroll.smoothScrollBy(
                     0,
                     delta
                 )

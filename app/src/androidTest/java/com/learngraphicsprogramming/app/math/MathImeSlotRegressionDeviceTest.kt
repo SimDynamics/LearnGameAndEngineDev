@@ -142,16 +142,23 @@ class MathImeSlotRegressionDeviceTest {
             connection(editor).commitText("x", 1)
             editor.perform(MathKeyboardAction.Power)
             connection(editor).setComposingText("2", 1)
+            selectSlot(editor, "base")
             editor.perform(MathKeyboardAction.Subscript)
             connection(editor).commitText("1", 1)
             assertEquals("{x}_{1}^{2}", editor.getLatex())
             editor.perform(MathKeyboardAction.Backspace)
             editor.perform(MathKeyboardAction.Backspace)
+            assertEquals("Backspace inside the empty lower slot preserves its placeholder", "{x}_{}^{2}", editor.getLatex())
+            editor.perform(MathKeyboardAction.NextSlot)
+            editor.perform(MathKeyboardAction.Backspace)
             assertEquals("{x}^{2}", editor.getLatex())
             editor.setLatex("")
             editor.perform(MathKeyboardAction.Parentheses)
-            connection(editor).setComposingText("x", 1)
-            connection(editor).commitText("+1", 1)
+            val groupInput = connection(editor)
+            assertTrue(groupInput.setComposingText("x", 1))
+            // Finalize x before appending a new token; a factory query does not finish a word.
+            assertTrue(groupInput.finishComposingText())
+            assertTrue(groupInput.commitText("+1", 1))
             assertEquals("\\left(x+1\\right)", editor.getLatex())
         } }
     }
@@ -165,7 +172,7 @@ class MathImeSlotRegressionDeviceTest {
             fun type(editor: MathExpressionEditor, text: String) { assertTrue(connection(editor).commitText(text, 1)) }
             fun nextSlot(editor: MathExpressionEditor) { assertTrue(connection(editor).performEditorAction(EditorInfo.IME_ACTION_NEXT)) }
             editors[0].apply { requestFocus(); perform(MathKeyboardAction.Fraction); type(this, "x+1"); nextSlot(this); type(this, "2") }
-            editors[1].apply { requestFocus(); type(this, "x"); perform(MathKeyboardAction.Power); type(this, "2"); perform(MathKeyboardAction.Subscript); type(this, "1") }
+            editors[1].apply { requestFocus(); type(this, "x"); perform(MathKeyboardAction.Power); type(this, "2"); selectSlot(this, "base"); perform(MathKeyboardAction.Subscript); type(this, "1") }
             editors[2].apply { requestFocus(); perform(MathKeyboardAction.Root); type(this, "x") }
             editors[3].apply { requestFocus(); perform(MathKeyboardAction.Fraction); type(this, "1"); nextSlot(this); perform(MathKeyboardAction.NthRoot); type(this, "3"); nextSlot(this); type(this, "x+4") }
             editors[4].apply { requestFocus(); perform(MathKeyboardAction.Parentheses); type(this, "x+1") }

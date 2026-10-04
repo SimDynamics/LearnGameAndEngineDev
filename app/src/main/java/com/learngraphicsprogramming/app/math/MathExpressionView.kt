@@ -16,8 +16,11 @@ import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
+/** An editing touch may identify a UTF-16 boundary inside one AST leaf. */
+internal data class MathExpressionTouchTarget(val cursor: MathCursor, val leafTextOffset: Int? = null)
+
 /** The same layout is used by editable expressions and formula spans in lesson prose. */
-class MathExpressionLayout private constructor(private val box: ExpressionBox) {
+class MathExpressionLayout private constructor(private val box: ExpressionBox, private val textSize: Float) {
     val width: Float get() = box.width
     val ascent: Float get() = box.ascent
     val descent: Float get() = box.descent
@@ -26,15 +29,88 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox) {
     fun draw(canvas: Canvas, paint: Paint, x: Float, baseline: Float) = box.draw(canvas, paint, x, baseline)
 
     /** Coordinates are relative to the expression's origin and baseline. */
-    fun caretBounds(cursor: MathCursor): RectF? = box.carets.firstOrNull { it.cursor == cursor }?.let {
+    fun caretBounds(cursor: MathCursor): RectF? = box.carets.firstOrNull { sameLocation(it.cursor, cursor) && it.leafTextOffset == null }?.let {
         RectF(it.x, it.top, it.x, it.bottom)
     }
 
-    fun hitTest(x: Float, y: Float): MathCursor = box.carets.minByOrNull {
-        val dx = abs(x - it.x)
-        val dy = when { y < it.top -> it.top - y; y > it.bottom -> y - it.bottom; else -> 0f }
-        dx * dx + dy * dy * 4f - it.cursor.path.size * .01f
-    }?.cursor ?: MathCursor()
+    /** Visualizes the model's level; geometry never chooses or changes a navigation state. */
+    fun presentationCaretBounds(cursor: MathCursor, presentation: MathCursorPresentation): RectF? = when (presentation) {
+        is MathCursorPresentation.Interior -> {
+            val caret = caretBounds(cursor)
+            val atom = presentation.scope as? MathContentScope.Atom
+            val content = atom?.let { contentBounds(cursor.path, it.start, it.end) }
+            if (caret == null || content == null) caret else RectF(caret.left, content.top, caret.left, content.bottom)
+        }
+        MathCursorPresentation.Neutral -> {
+            val caret = caretBounds(cursor)
+            val scope = sequenceBounds(cursor.path)
+            if (caret == null || scope == null) caret else RectF(caret.left, scope.top - textSize * .06f,
+                caret.left, scope.bottom + textSize * .06f)
+        }
+        is MathCursorPresentation.ChildBoundary -> sequenceBounds(presentation.slotPath)?.let { scope ->
+            val gap = max(1f, textSize * .05f)
+            val x = scope.right + gap
+            RectF(x, scope.top, x, scope.bottom)
+        } ?: caretBounds(cursor)
+        is MathCursorPresentation.ParentBoundary -> childBounds(presentation.path, presentation.nodeIndex)?.let { parent ->
+            val x = parent.right + max(1f, textSize * .05f)
+            RectF(x, parent.top, x, parent.bottom)
+        } ?: caretBounds(cursor)
+    }
+
+    /** Bounds of an actual Sequence, including its empty placeholder when shown. */
+    internal fun sequenceBounds(path: List<MathCursorStep>): RectF? = box.sequences.firstOrNull { it.path == path }?.let {
+        RectF(it.left, it.top, it.right, it.bottom)
+    }
+
+    /** Bounds of one direct group include all of its nested children and decorations. */
+    internal fun childBounds(path: List<MathCursorStep>, nodeIndex: Int): RectF? = box.childrenBounds.firstOrNull {
+        it.path == path && it.index == nodeIndex
+    }?.let { RectF(it.left, it.top, it.right, it.bottom) }
+
+    /** An atom may span adjacent text leaves after a precise edit splits its AST node. */
+    private fun contentBounds(path: List<MathCursorStep>, start: Int, end: Int): RectF? {
+        val children = box.childrenBounds.filter { it.path == path && it.index in start until end }
+        if (children.isEmpty()) return null
+        return RectF(children.minOf { it.left }, children.minOf { it.top }, children.maxOf { it.right }, children.maxOf { it.bottom })
+    }
+
+    fun hitTest(x: Float, y: Float): MathCursor {
+        rootExteriorTouchCursor(x)?.let { return it }
+        return box.carets.filter { it.leafTextOffset == null }.minByOrNull {
+            distance(it, x, y)
+        }?.cursor ?: MathCursor()
+    }
+
+    /** Interior glyph boundaries are resolved only for an actual editing touch, never during draw. */
+    internal fun hitTestForEditing(x: Float, y: Float): MathExpressionTouchTarget {
+        rootExteriorTouchCursor(x)?.let { return MathExpressionTouchTarget(it) }
+        return box.carets.filter {
+            it.leafTextOffset == null || x in requireNotNull(it.leafLeft)..requireNotNull(it.leafRight) && y in it.top..it.bottom
+        }.minWithOrNull(
+            compareBy<ExpressionCaret> { distance(it, x, y) }.thenBy { if (it.leafTextOffset == null) 1 else 0 }
+        )?.let { MathExpressionTouchTarget(it.cursor, it.leafTextOffset) } ?: MathExpressionTouchTarget(MathCursor())
+    }
+
+    /** Empty fields have HOME; space beyond all written groups has the last parent edge, at any height. */
+    private fun rootExteriorTouchCursor(x: Float): MathCursor? {
+        val parents = box.childrenBounds.filter { it.path.isEmpty() }
+        if (parents.isEmpty()) return MathCursor()
+        if (x > parents.maxOf { it.right }) return MathCursor(offset = parents.maxOf { it.index } + 1)
+        return null
+    }
+
+    internal fun textCaretBounds(cursor: MathCursor, leafTextOffset: Int): RectF? = box.carets.firstOrNull {
+        sameLocation(it.cursor, cursor) && it.leafTextOffset == leafTextOffset
+    }?.let { RectF(it.x, it.top, it.x, it.bottom) }
+
+    private fun sameLocation(first: MathCursor, second: MathCursor) = first.path == second.path && first.offset == second.offset
+
+    private fun distance(caret: ExpressionCaret, x: Float, y: Float): Float {
+        val dx = abs(x - caret.x)
+        val dy = when { y < caret.top -> caret.top - y; y > caret.bottom -> y - caret.bottom; else -> 0f }
+        return dx * dx + dy * dy * 4f - caret.cursor.path.size * .01f
+    }
 
     companion object {
         fun create(expression: MathExpression.Sequence, paint: Paint, size: Float, showPlaceholders: Boolean = false): MathExpressionLayout =
@@ -47,7 +123,8 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox) {
                     expression,
                     size,
                     emptyList()
-                )
+                ),
+                size
             )
     }
 }
@@ -66,6 +143,8 @@ open class MathExpressionView @JvmOverloads constructor(context: Context, attrs:
             resetExpressionLayout()
         }
     var cursor: MathCursor? = null
+        set(value) { field = value; invalidate() }
+    var cursorPresentation: MathCursorPresentation = MathCursorPresentation.Interior()
         set(value) { field = value; invalidate() }
     var onCursorRequested: ((MathCursor) -> Unit)? = null
     var showPlaceholders: Boolean = false
@@ -110,12 +189,21 @@ open class MathExpressionView @JvmOverloads constructor(context: Context, attrs:
         expressionPaint.color = textColor
         expressionLayout.draw(canvas, expressionPaint, expressionOriginX, expressionBaseline)
         cursor?.let { selected ->
-            expressionLayout.caretBounds(selected)?.let { bounds ->
+            val presentation = cursorPresentation
+            expressionLayout.presentationCaretBounds(selected, presentation)?.let { bounds ->
                 expressionPaint.color = caretColor
                 expressionPaint.style = Paint.Style.STROKE
-                expressionPaint.strokeWidth = max(resources.displayMetrics.density, textSizePx * .045f)
+                expressionPaint.strokeWidth = max(resources.displayMetrics.density, textSizePx * .045f) *
+                    if (presentation == MathCursorPresentation.Neutral || presentation is MathCursorPresentation.ParentBoundary) 1.35f else 1f
                 canvas.drawLine(expressionOriginX + bounds.left, expressionBaseline + bounds.top,
                     expressionOriginX + bounds.left, expressionBaseline + bounds.bottom, expressionPaint)
+                if (presentation is MathCursorPresentation.ChildBoundary || presentation is MathCursorPresentation.ParentBoundary) {
+                    val inside = bounds.left - textSizePx * .07f
+                    canvas.drawLine(expressionOriginX + bounds.left, expressionBaseline + bounds.top,
+                        expressionOriginX + inside, expressionBaseline + bounds.top, expressionPaint)
+                    canvas.drawLine(expressionOriginX + bounds.left, expressionBaseline + bounds.bottom,
+                        expressionOriginX + inside, expressionBaseline + bounds.bottom, expressionPaint)
+                }
                 expressionPaint.style = Paint.Style.FILL
             }
         }
@@ -136,8 +224,20 @@ open class MathExpressionView @JvmOverloads constructor(context: Context, attrs:
     override fun performClick(): Boolean { super.performClick(); return true }
 }
 
-private data class ExpressionCaret(val cursor: MathCursor, val x: Float, val top: Float, val bottom: Float) {
-    fun translated(dx: Float, dy: Float) = copy(x = x + dx, top = top + dy, bottom = bottom + dy)
+private data class ExpressionCaret(val cursor: MathCursor, val x: Float, val top: Float, val bottom: Float,
+    val leafTextOffset: Int? = null, val leafLeft: Float? = null, val leafRight: Float? = null) {
+    fun translated(dx: Float, dy: Float) = copy(x = x + dx, top = top + dy, bottom = bottom + dy,
+        leafLeft = leafLeft?.plus(dx), leafRight = leafRight?.plus(dx))
+}
+
+private data class ExpressionSequenceBounds(val path: List<MathCursorStep>, val left: Float, val top: Float,
+    val right: Float, val bottom: Float) {
+    fun translated(dx: Float, dy: Float) = copy(left = left + dx, top = top + dy, right = right + dx, bottom = bottom + dy)
+}
+
+private data class ExpressionChildBounds(val path: List<MathCursorStep>, val index: Int, val left: Float,
+    val top: Float, val right: Float, val bottom: Float) {
+    fun translated(dx: Float, dy: Float) = copy(left = left + dx, top = top + dy, right = right + dx, bottom = bottom + dy)
 }
 
 private interface ExpressionInk { fun draw(canvas: Canvas, paint: Paint, x: Float, baseline: Float) }
@@ -172,7 +272,9 @@ private class ExpressionPlaced(private val child: ExpressionBox, private val dx:
 }
 
 private data class ExpressionBox(val width: Float, val ascent: Float, val descent: Float,
-    val ink: List<ExpressionInk>, val carets: List<ExpressionCaret> = emptyList()) {
+    val ink: List<ExpressionInk>, val carets: List<ExpressionCaret> = emptyList(),
+    val sequences: List<ExpressionSequenceBounds> = emptyList(),
+    val childrenBounds: List<ExpressionChildBounds> = emptyList()) {
     fun draw(canvas: Canvas, paint: Paint, x: Float, baseline: Float) { ink.forEach { it.draw(canvas, paint, x, baseline) } }
 }
 
@@ -214,7 +316,8 @@ private class ExpressionLayoutBuilder(
                             -size * .8f,
                             size * .2f
                         )
-                    )
+                    ),
+                    listOf(ExpressionSequenceBounds(path, 0f, -size * .8f, 0f, size * .2f))
                 )
             }
 
@@ -286,7 +389,8 @@ private class ExpressionLayoutBuilder(
                         top,
                         bottom
                     )
-                )
+                ),
+                listOf(ExpressionSequenceBounds(path, 0f, top, width, bottom))
             )
         }
         val boxes = sequence.children.mapIndexed { index, child -> node(child, size, path, index) }
@@ -294,15 +398,21 @@ private class ExpressionLayoutBuilder(
         val descent = boxes.maxOf { it.descent }
         val ink = mutableListOf<ExpressionInk>()
         val carets = mutableListOf<ExpressionCaret>()
+        val sequences = mutableListOf<ExpressionSequenceBounds>()
+        val childrenBounds = mutableListOf<ExpressionChildBounds>()
         var x = 0f
         boxes.forEachIndexed { index, child ->
             carets += ExpressionCaret(MathCursor(path, index), x, ascent, descent)
             ink += ExpressionPlaced(child, x, 0f)
             carets += child.carets.map { it.translated(x, 0f) }
+            sequences += child.sequences.map { it.translated(x, 0f) }
+            childrenBounds += ExpressionChildBounds(path, index, x, child.ascent, x + child.width, child.descent)
+            childrenBounds += child.childrenBounds.map { it.translated(x, 0f) }
             x += child.width
         }
         carets += ExpressionCaret(MathCursor(path, boxes.size), x, ascent, descent)
-        return ExpressionBox(x, ascent, descent, ink, carets)
+        sequences += ExpressionSequenceBounds(path, 0f, ascent, x, descent)
+        return ExpressionBox(x, ascent, descent, ink, carets, sequences, childrenBounds)
     }
 
     private fun text(value: String, size: Float, italic: Boolean = false, gap: Float = 0f): ExpressionBox {
@@ -315,13 +425,27 @@ private class ExpressionLayoutBuilder(
 
     private fun node(node: MathExpression, size: Float, path: List<MathCursorStep>, index: Int): ExpressionBox {
         fun child(value: MathExpression.Sequence, slot: String, scale: Float = 1f) = sequence(value, size * scale, path + MathCursorStep(index, slot))
+        fun leaf(value: String, rendered: String = value, italic: Boolean = false, gap: Float = 0f): ExpressionBox {
+            val box = text(rendered, size, italic, gap)
+            val widths = FloatArray(rendered.length)
+            paint.getTextWidths(rendered, widths)
+            val carets = mutableListOf<ExpressionCaret>()
+            var advance = gap
+            for (offset in 0..value.length) {
+                if (offset > 0) advance += widths[offset - 1]
+                if (offset > 0 && offset < value.length && Character.isHighSurrogate(value[offset - 1]) && Character.isLowSurrogate(value[offset])) continue
+                carets += ExpressionCaret(MathCursor(path, index), advance,
+                    box.ascent, box.descent, leafTextOffset = offset, leafLeft = gap, leafRight = box.width - gap)
+            }
+            return box.copy(carets = carets)
+        }
         return when (node) {
             is MathExpression.Sequence -> sequence(node, size, path + MathCursorStep(index, "content"))
-            is MathExpression.Number -> text(node.value.replace('-', '−'), size)
-            is MathExpression.Variable -> text(node.name, size, true)
-            is MathExpression.Symbol -> text(node.value, size)
-            is MathExpression.Operator -> text(node.value.replace('-', '−'), size, gap = size * .1f)
-            is MathExpression.Relation -> text(node.value, size, gap = size * .14f)
+            is MathExpression.Number -> leaf(node.value, node.value.replace('-', '−'))
+            is MathExpression.Variable -> leaf(node.name, italic = true)
+            is MathExpression.Symbol -> leaf(node.value)
+            is MathExpression.Operator -> leaf(node.value, node.value.replace('-', '−'), gap = size * .1f)
+            is MathExpression.Relation -> leaf(node.value, gap = size * .14f)
             is MathExpression.Fraction -> fraction(child(node.numerator, "numerator", .82f), child(node.denominator, "denominator", .82f), size)
             is MathExpression.Scripts -> scripts(child(node.base, "base"), node.upper?.let { child(it, "upper", .68f) }, node.lower?.let { child(it, "lower", .68f) }, size)
             is MathExpression.Root -> root(child(node.radicand, "radicand"), node.index?.let { child(it, "index", .56f) }, size)
@@ -349,7 +473,8 @@ private class ExpressionLayoutBuilder(
                 val body = child(node.body, "body", .82f)
                 val numerator = compose(listOf(Triple(topD, 0f, 0f), Triple(body, topD.width + size * .04f, 0f)))
                 val variable = child(node.variable, "variable", .82f)
-                val variablePower = if (orderTop == null) variable else scripts(variable, orderTop.copy(carets = emptyList()), null, size * .82f)
+                val variablePower = if (orderTop == null) variable else scripts(variable, orderTop.copy(carets = emptyList(),
+                    sequences = emptyList(), childrenBounds = emptyList()), null, size * .82f)
                 val denominator = compose(listOf(Triple(d, 0f, 0f), Triple(variablePower, d.width, 0f)))
                 fraction(numerator, denominator, size)
             }
@@ -363,7 +488,9 @@ private class ExpressionLayoutBuilder(
             children.minOfOrNull { it.third + it.first.ascent } ?: 0f,
             children.maxOfOrNull { it.third + it.first.descent } ?: 0f,
             children.map { ExpressionPlaced(it.first, it.second, it.third) } + ink,
-            children.flatMap { item -> item.first.carets.map { it.translated(item.second, item.third) } })
+            children.flatMap { item -> item.first.carets.map { it.translated(item.second, item.third) } },
+            children.flatMap { item -> item.first.sequences.map { it.translated(item.second, item.third) } },
+            children.flatMap { item -> item.first.childrenBounds.map { it.translated(item.second, item.third) } })
 
     private fun fraction(top: ExpressionBox, bottom: ExpressionBox, size: Float): ExpressionBox {
         val axis = -size * .29f

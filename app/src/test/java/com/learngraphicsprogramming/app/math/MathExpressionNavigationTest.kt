@@ -16,29 +16,16 @@ class MathExpressionNavigationTest {
         model.cursor = MathCursor(listOf(MathCursorStep(0, slot)), offset)
     }
 
-    @Test fun rightAndImeNavigationExhaustBothScriptsBeforeTheFieldBoundary() {
+    @Test fun fastImeNavigationExhaustsScriptsInDeclaredOrderBeforeTheFieldBoundary() {
         val model = model("x_1^2")
         model.cursor = MathCursor()
-        assertTrue(model.moveRight())
-        assertEquals("base", active(model))
+        listOf("base","upper","lower").forEach { assertTrue(model.nextSlot()); assertEquals(it, active(model)) }
         assertTrue(model.nextSlot())
-        assertEquals("upper", active(model))
-        assertTrue(model.nextSlot())
-        assertEquals("lower", active(model))
-        assertTrue(model.moveRight())
-        assertEquals("lower", active(model))
-        assertTrue(model.moveRight())
-        assertEquals(MathCursor(offset = 1), model.cursor)
-        assertFalse(model.moveRight())
+        assertEquals(MathCursor(offset=1),model.cursor)
         assertFalse(model.nextSlot())
+        listOf("lower","upper","base").forEach { assertTrue(model.previousSlot()); assertEquals(it,active(model)) }
         assertTrue(model.previousSlot())
-        assertEquals("lower", active(model))
-        assertTrue(model.previousSlot())
-        assertEquals("upper", active(model))
-        assertTrue(model.previousSlot())
-        assertEquals("base", active(model))
-        assertTrue(model.previousSlot())
-        assertEquals(MathCursor(), model.cursor)
+        assertEquals(MathCursor(),model.cursor)
         assertFalse(model.previousSlot())
     }
 
@@ -84,112 +71,70 @@ class MathExpressionNavigationTest {
         assertTrue(model.isComplete())
     }
 
-    @Test fun scriptActionsFromInsideEitherScriptShareOneBase() {
+    @Test fun scriptActionsInsideAnotherScriptCreateADeeperChild() {
         val model = MathExpressionModel()
-        assertTrue(model.insertText("x"))
-        assertTrue(model.addScript(upper = true))
-        assertTrue(model.insertText("2"))
-        assertTrue(model.addScript(upper = false))
-        assertEquals("lower", active(model))
-        assertTrue(model.insertText("1"))
-        assertTrue(model.addScript(upper = true))
-        assertEquals("upper", active(model))
-        assertTrue(model.insertText("3"))
-        assertTrue(model.addScript(upper = false))
-        assertTrue(model.insertText("4"))
-        val scripts = model.expression.children.single() as MathExpression.Scripts
-        assertEquals(parse("x"), scripts.base)
-        assertEquals(parse("23"), scripts.upper)
-        assertEquals(parse("14"), scripts.lower)
-        assertEquals("{x}_{14}^{23}", latex(model))
+        assertTrue(model.insertText("x")); assertTrue(model.addScript(true)); assertTrue(model.insertText("2"))
+        assertTrue(model.addScript(false)); assertTrue(model.insertText("1"))
+        assertEquals(listOf(MathCursorStep(0,"upper"),MathCursorStep(0,"lower")),model.cursor.path)
+        assertEquals(parse("x^{2_{1}}"),model.expression)
     }
 
-    @Test fun typedScriptOperatorsUseTheSameStructuralMergeAsToolbarActions() {
+    @Test fun typedScriptOperatorsUseTheSameDirectContextAsToolbarActions() {
         val model = MathExpressionModel()
-        listOf("x", "^", "2", "_", "1").forEach { assertTrue(model.insertText(it)) }
-        assertEquals("{x}_{1}^{2}", latex(model))
-        assertEquals("lower", active(model))
-        val scripts = model.expression.children.single() as MathExpression.Scripts
-        assertEquals(parse("x"), scripts.base)
-        assertFalse(scripts.base.children.single() is MathExpression.Scripts)
+        listOf("x","^","2","_","1").forEach { assertTrue(model.insertText(it)) }
+        assertEquals(parse("x^{2_{1}}"),model.expression)
+        assertEquals(listOf(MathCursorStep(0,"upper"),MathCursorStep(0,"lower")),model.cursor.path)
     }
 
-    @Test fun aNewScriptStartsAtItsEmptyBaseAndKeepsEverySlotReachable() {
+    @Test fun aNewScriptStartsAtItsFreshChildAndKeepsTheBaseReachable() {
         val model = MathExpressionModel()
-        assertTrue(model.addScript(upper = false))
-        assertEquals("base", active(model))
-        assertTrue(model.insertText("x"))
-        assertTrue(model.nextSlot())
-        assertEquals("lower", active(model))
-        assertTrue(model.insertText("1"))
-        assertEquals("{x}_{1}", latex(model))
+        assertTrue(model.addScript(false)); assertEquals("lower",active(model))
+        assertTrue(model.insertText("1")); enter(model,"base",0); assertTrue(model.insertText("x"))
+        assertEquals("{x}_{1}",latex(model))
+        assertTrue(model.nextSlot()); assertEquals("lower",active(model))
     }
 
-    @Test fun deletingEmptyOptionalScriptsPreservesTheBaseAndOtherScript() {
-        val model = model("x_1^2")
-        enter(model, "lower", 1)
-        model.deleteBackward()
-        assertEquals("{x}_{}^{2}", latex(model))
-        model.deleteBackward()
-        assertEquals("{x}^{2}", latex(model))
-        assertEquals("upper", active(model))
-        model.deleteBackward()
-        assertEquals("{x}^{}", latex(model))
-        model.deleteBackward()
-        assertEquals("x", latex(model))
-        assertEquals(MathCursor(offset = 1), model.cursor)
-        model.deleteBackward()
-        assertEquals("", latex(model))
+    @Test fun deletingInsideAnEmptyOptionalScriptRetainsItUntilItsFrontierIsDeleted() {
+        val model=model("x_1^2")
+        enter(model,"lower",1); model.deleteBackward(); assertEquals("{x}_{}^{2}",latex(model))
+        model.deleteBackward(); assertEquals("{x}_{}^{2}",latex(model))
+        assertTrue(model.stepRight()); model.deleteBackward(); assertEquals("{x}^{2}",latex(model))
+        enter(model,"upper",1); model.deleteBackward(); assertEquals("{x}^{}",latex(model))
+        assertTrue(model.stepRight()); model.deleteBackward(); assertEquals("x",latex(model))
+        model.deleteBackward(); assertEquals("",latex(model))
     }
 
-    @Test fun removingTheUpperScriptLeavesALowerScriptEditable() {
-        val model = model("x_1^2")
-        enter(model, "upper", 1)
-        model.deleteBackward()
-        model.deleteBackward()
-        assertEquals("{x}_{1}", latex(model))
-        assertEquals("base", active(model))
-        assertTrue(model.nextSlot())
-        assertEquals("lower", active(model))
-        assertTrue(model.insertText("3"))
-        assertEquals("{x}_{31}", latex(model))
-        assertTrue(model.addScript(upper = true))
-        assertTrue(model.insertText("4"))
-        assertEquals("{x}_{31}^{4}", latex(model))
+    @Test fun removingTheUpperFrontierLeavesALowerScriptEditable() {
+        val model=model("x_1^2")
+        enter(model,"upper",1); model.deleteBackward(); assertTrue(model.stepRight()); model.deleteBackward()
+        assertEquals("{x}_{1}",latex(model))
+        enter(model,"lower",0); assertTrue(model.insertText("3")); assertEquals("{x}_{31}",latex(model))
+        enter(model,"base",1); assertTrue(model.addScript(true)); assertTrue(model.insertText("4"))
+        assertEquals("{x}_{31}^{4}",latex(model))
     }
 
-    @Test fun clearingAFractionDenominatorUnwrapsItsNumeratorOnTheNextBackspace() {
-        val model = model("\\frac{x+1}{2}")
-        enter(model, "denominator", 1)
-        model.deleteBackward()
-        assertEquals("\\frac{x+1}{}", latex(model))
-        model.deleteBackward()
-        assertEquals("x+1", latex(model))
-        assertEquals(MathCursor(offset = 3), model.cursor)
-        repeat(3) { model.deleteBackward() }
-        assertEquals("", latex(model))
+    @Test fun clearingARequiredDenominatorRetainsItsPlaceholderUntilNeutralOwnerDeletion() {
+        val model=model("\\frac{x+1}{2}")
+        enter(model,"denominator",1); model.deleteBackward(); assertEquals("\\frac{x+1}{}",latex(model))
+        model.deleteBackward(); assertEquals("\\frac{x+1}{}",latex(model))
+        assertTrue(model.stepRight()); model.deleteBackward(); assertEquals("\\frac{x+1}{}",latex(model))
+        model.cursor=MathCursor(offset=1); model.deleteBackward()
+        assertEquals("",latex(model)); assertEquals(MathCursor(),model.cursor)
     }
 
-    @Test fun deletingARootIndexRetainsTheRadicandThenAllowsUnwrapping() {
-        val model = model("\\sqrt[3]{x+1}")
-        enter(model, "index", 1)
-        model.deleteBackward()
-        model.deleteBackward()
-        assertEquals("\\sqrt{x+1}", latex(model))
-        assertEquals("radicand", active(model))
-        model.deleteBackward()
-        assertEquals("x+1", latex(model))
+    @Test fun deletingARootIndexFrontierRetainsTheRadicandUntilNeutralOwnerDeletion() {
+        val model=model("\\sqrt[3]{x+1}")
+        enter(model,"index",1); model.deleteBackward(); model.deleteBackward()
+        assertEquals("\\sqrt[]{x+1}",latex(model))
+        assertTrue(model.stepRight()); model.deleteBackward(); assertEquals("\\sqrt{x+1}",latex(model))
+        model.deleteBackward(); assertEquals("",latex(model))
     }
 
-    @Test fun deletingALogarithmBaseKeepsItsArgumentAndNoInaccessibleSlot() {
-        val model = model("\\log_2{x+1}")
-        enter(model, "base", 1)
-        model.deleteBackward()
-        model.deleteBackward()
-        assertEquals("\\log{x+1}", latex(model))
-        assertEquals("argument", active(model))
-        model.deleteBackward()
-        assertEquals("x+1", latex(model))
+    @Test fun deletingALogarithmBaseFrontierKeepsItsArgumentUntilNeutralOwnerDeletion() {
+        val model=model("\\log_2{x+1}")
+        enter(model,"base",1); model.deleteBackward(); model.deleteBackward(); assertEquals("\\log_{}{x+1}",latex(model))
+        assertTrue(model.stepRight()); model.deleteBackward(); assertEquals("\\log{x+1}",latex(model))
+        model.deleteBackward(); assertEquals("",latex(model))
     }
 
     @Test fun matricesAndCasesVisitEveryCellBeforeExiting() {

@@ -139,6 +139,16 @@ sealed class MathKeyboardAction {
     data class Function(val name: String) : Structure("$name()", "Insertar función $name", "$name()")
     data object MoveLeft : Structure("←", "Mover cursor atrás", "")
     data object MoveRight : Structure("→", "Mover cursor adelante", "")
+    data object PreviousSlot : MathKeyboardAction() {
+        override val label = ""
+        override val contentDescription = "Slot anterior"
+        override fun apply(target: EditText, minusInsertion: String) = Unit
+    }
+    data object NextSlot : MathKeyboardAction() {
+        override val label = ""
+        override val contentDescription = "Slot siguiente"
+        override fun apply(target: EditText, minusInsertion: String) = Unit
+    }
 
     companion object {
 
@@ -178,6 +188,8 @@ sealed class MathKeyboardAction {
                 "DERIVATIVE" -> Derivative
                 "MOVE_LEFT" -> MoveLeft
                 "MOVE_RIGHT" -> MoveRight
+                "PREVIOUS_SLOT" -> PreviousSlot
+                "NEXT_SLOT" -> NextSlot
 
                 else ->
                     if (shortcut.startsWith("FUNCTION:")) Function(shortcut.substringAfter(':')) else Symbol(shortcut)
