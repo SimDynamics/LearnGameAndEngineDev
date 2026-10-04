@@ -283,7 +283,12 @@ private class ExpressionLayoutBuilder(
     private val placeholders: Boolean,
     private val rootSize: Float
 ) {
-    fun sequence(sequence: MathExpression.Sequence, size: Float, path: List<MathCursorStep>): ExpressionBox {
+    fun sequence(
+        sequence: MathExpression.Sequence,
+        size: Float,
+        path: List<MathCursorStep>
+    ): ExpressionBox {
+
         if (
             sequence.children.isEmpty()
         ) {
@@ -317,18 +322,20 @@ private class ExpressionLayoutBuilder(
                             size * .2f
                         )
                     ),
-                    listOf(ExpressionSequenceBounds(path, 0f, -size * .8f, 0f, size * .2f))
+                    listOf(
+                        ExpressionSequenceBounds(
+                            path,
+                            0f,
+                            -size * .8f,
+                            0f,
+                            size * .2f
+                        )
+                    )
                 )
             }
 
             /*
              * Un slot vacío necesita ser cómodo para touch.
-             *
-             * Nunca queda microscópico aunque pertenezca
-             * a un exponente o subíndice.
-             *
-             * Como depende de rootSize, crecerá
-             * proporcionalmente con la escala matemática.
              */
             val slotSize =
                 max(
@@ -390,29 +397,261 @@ private class ExpressionLayoutBuilder(
                         bottom
                     )
                 ),
-                listOf(ExpressionSequenceBounds(path, 0f, top, width, bottom))
+                listOf(
+                    ExpressionSequenceBounds(
+                        path,
+                        0f,
+                        top,
+                        width,
+                        bottom
+                    )
+                )
             )
         }
-        val boxes = sequence.children.mapIndexed { index, child -> node(child, size, path, index) }
-        val ascent = boxes.minOf { it.ascent }
-        val descent = boxes.maxOf { it.descent }
-        val ink = mutableListOf<ExpressionInk>()
-        val carets = mutableListOf<ExpressionCaret>()
-        val sequences = mutableListOf<ExpressionSequenceBounds>()
-        val childrenBounds = mutableListOf<ExpressionChildBounds>()
-        var x = 0f
+
+        val boxes =
+            sequence.children.mapIndexed { index, child ->
+                node(
+                    child,
+                    size,
+                    path,
+                    index
+                )
+            }
+
+        /*
+         * Si el último padre es un operador grande,
+         * mostramos una posición de continuación.
+         *
+         * IMPORTANTE:
+         *
+         * Este cuadro NO pertenece al LargeOperator.
+         * No es "body".
+         * No existe dentro del AST.
+         *
+         * Representa solamente la posición normal:
+         *
+         * MathCursor(path, sequence.children.size)
+         *
+         * Es decir, el lugar donde aparecerá el siguiente
+         * hermano de la Sequence.
+         */
+        val showLargeOperatorContinuation =
+            placeholders &&
+                    (sequence.children.lastOrNull() is MathExpression.LargeOperator)
+
+        val continuationSlotSize =
+            max(
+                size,
+                rootSize * 1.05f
+            )
+
+        val continuationWidth =
+            continuationSlotSize * 1.05f
+
+        val continuationTop =
+            -continuationSlotSize * .88f
+
+        val continuationBottom =
+            continuationSlotSize * .28f
+
+        val normalAscent =
+            boxes.minOf {
+                it.ascent
+            }
+
+        val normalDescent =
+            boxes.maxOf {
+                it.descent
+            }
+
+        val ascent =
+            if (showLargeOperatorContinuation) {
+                min(
+                    normalAscent,
+                    continuationTop
+                )
+            } else {
+                normalAscent
+            }
+
+        val descent =
+            if (showLargeOperatorContinuation) {
+                max(
+                    normalDescent,
+                    continuationBottom
+                )
+            } else {
+                normalDescent
+            }
+
+        val ink =
+            mutableListOf<ExpressionInk>()
+
+        val carets =
+            mutableListOf<ExpressionCaret>()
+
+        val sequences =
+            mutableListOf<ExpressionSequenceBounds>()
+
+        val childrenBounds =
+            mutableListOf<ExpressionChildBounds>()
+
+        var x =
+            0f
+
         boxes.forEachIndexed { index, child ->
-            carets += ExpressionCaret(MathCursor(path, index), x, ascent, descent)
-            ink += ExpressionPlaced(child, x, 0f)
-            carets += child.carets.map { it.translated(x, 0f) }
-            sequences += child.sequences.map { it.translated(x, 0f) }
-            childrenBounds += ExpressionChildBounds(path, index, x, child.ascent, x + child.width, child.descent)
-            childrenBounds += child.childrenBounds.map { it.translated(x, 0f) }
-            x += child.width
+
+            carets +=
+                ExpressionCaret(
+                    MathCursor(
+                        path,
+                        index
+                    ),
+                    x,
+                    ascent,
+                    descent
+                )
+
+            ink +=
+                ExpressionPlaced(
+                    child,
+                    x,
+                    0f
+                )
+
+            carets +=
+                child.carets.map {
+                    it.translated(
+                        x,
+                        0f
+                    )
+                }
+
+            sequences +=
+                child.sequences.map {
+                    it.translated(
+                        x,
+                        0f
+                    )
+                }
+
+            childrenBounds +=
+                ExpressionChildBounds(
+                    path,
+                    index,
+                    x,
+                    child.ascent,
+                    x + child.width,
+                    child.descent
+                )
+
+            childrenBounds +=
+                child.childrenBounds.map {
+                    it.translated(
+                        x,
+                        0f
+                    )
+                }
+
+            x +=
+                child.width
         }
-        carets += ExpressionCaret(MathCursor(path, boxes.size), x, ascent, descent)
-        sequences += ExpressionSequenceBounds(path, 0f, ascent, x, descent)
-        return ExpressionBox(x, ascent, descent, ink, carets, sequences, childrenBounds)
+
+        /*
+         * Éste sigue siendo el cursor REAL de la Sequence.
+         *
+         * Si hay un LargeOperator al final, queda justo
+         * al comienzo del cuadro visual de continuación.
+         */
+        carets +=
+            ExpressionCaret(
+                MathCursor(
+                    path,
+                    boxes.size
+                ),
+                x,
+                ascent,
+                descent
+            )
+
+        if (showLargeOperatorContinuation) {
+
+            val horizontalInset =
+                continuationSlotSize * .08f
+
+            val corner =
+                continuationSlotSize * .10f
+
+            val placeholder =
+                ExpressionBox(
+                    continuationWidth,
+                    continuationTop,
+                    continuationBottom,
+                    listOf(
+                        ExpressionStroke(
+                            Path().apply {
+
+                                addRoundRect(
+                                    RectF(
+                                        horizontalInset,
+                                        continuationTop,
+                                        continuationWidth -
+                                                horizontalInset,
+                                        continuationBottom
+                                    ),
+                                    corner,
+                                    corner,
+                                    Path.Direction.CW
+                                )
+                            },
+                            continuationSlotSize,
+                            true
+                        )
+                    )
+                )
+
+            /*
+             * Sólo presentación.
+             *
+             * NO añadimos:
+             *
+             * - childrenBounds
+             * - Sequence
+             * - MathExpression
+             * - slot
+             *
+             * Por tanto el AST continúa intacto.
+             */
+            ink +=
+                ExpressionPlaced(
+                    placeholder,
+                    x,
+                    0f
+                )
+
+            x +=
+                continuationWidth
+        }
+
+        sequences +=
+            ExpressionSequenceBounds(
+                path,
+                0f,
+                ascent,
+                x,
+                descent
+            )
+
+        return ExpressionBox(
+            x,
+            ascent,
+            descent,
+            ink,
+            carets,
+            sequences,
+            childrenBounds
+        )
     }
 
     private fun text(value: String, size: Float, italic: Boolean = false, gap: Float = 0f): ExpressionBox {
