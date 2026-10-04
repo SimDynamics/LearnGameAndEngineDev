@@ -15,9 +15,11 @@ fun MathKeyboardAction.previewExpression(
     }
     fun operator(kind: MathLargeOperator): MathExpression.LargeOperator {
         val template = expected { it is MathExpression.LargeOperator && it.kind == kind } as? MathExpression.LargeOperator
-        return MathExpression.LargeOperator(kind, empty,
+        return MathExpression.LargeOperator(
+            kind = kind,
             lower = if (template == null || template.lower != null) empty else null,
-            upper = if (template == null || template.upper != null) empty else null)
+            upper = if (template == null || template.upper != null) empty else null
+        )
     }
     val node = when (this) {
         MathKeyboardAction.Fraction -> MathExpression.Fraction(empty, empty)

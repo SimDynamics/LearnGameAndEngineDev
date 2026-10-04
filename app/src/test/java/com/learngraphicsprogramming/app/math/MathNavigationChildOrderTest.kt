@@ -20,7 +20,11 @@ class MathNavigationChildOrderTest {
 
     @Test fun everyLargeOperatorDeclaresUpperBeforeLowerWhileLeftOpensItsBodyFirst() {
         for (kind in MathLargeOperator.entries) {
-            val node = MathExpression.LargeOperator(kind, atom("p"), lower = atom("c"), upper = atom("a"))
+            val node = MathExpression.LargeOperator(
+                kind = kind,
+                lower = atom("c"),
+                upper = atom("a")
+            )
             assertEquals(listOf("upper", "lower", "body"), node.navigationChildren().map { it.id })
             val model = MathExpressionModel(MathExpression.Sequence(listOf(node)))
             assertTrue(model.stepLeft())

@@ -102,7 +102,7 @@ class MathProgressiveSlotNavigationTest {
         step(m,true,false)
     }
     @Test fun rightFromHomeVisitsOnlyTheNearestParentThenTheNextParent() {
-        val integral=MathExpression.LargeOperator(MathLargeOperator.INTEGRAL,MathExpression.Sequence(),parse("0"),parse("1"))
+        val integral=MathExpression.LargeOperator(MathLargeOperator.INTEGRAL, lower = parse("0"), upper = parse("1"))
         val m=MathExpressionModel(MathExpression.Sequence(listOf(integral,parse("x^2").children.single())))
         m.cursor=MathCursor()
         step(m,true);assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),0),m.cursorPresentation)
@@ -118,7 +118,7 @@ class MathProgressiveSlotNavigationTest {
             if(phase==2)step(m,false)
             val tree=m.expression;step(m,true);assertSame(tree,m.expression);assertNull(m.selectionRange)
             assertEquals(if(slot=="base")MathCursorPresentation.ParentBoundary(emptyList(),0)
-                else MathCursorPresentation.ChildBoundary(p),m.cursorPresentation)
+            else MathCursorPresentation.ChildBoundary(p),m.cursorPresentation)
             if(slot!="base"){step(m,true);assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),0),m.cursorPresentation)}
         } }
         val middle=model("x_{12}");middle.placeTextCursor(MathCursor(path("lower"),0),1)
@@ -155,7 +155,7 @@ class MathProgressiveSlotNavigationTest {
         val nodes=listOf<MathExpression>(MathExpression.Fraction(v,v),MathExpression.Root(v,v),MathExpression.Group(v),
             MathExpression.Function("log",v,v),MathExpression.Limit(v,v),MathExpression.Derivative(v,v,v),
             MathExpression.Matrix(List(2){List(2){v}}),MathExpression.Cases(listOf(MathExpression.Case(v,v))))+
-            MathLargeOperator.entries.map{MathExpression.LargeOperator(it,v,v,v)}
+                MathLargeOperator.entries.map{MathExpression.LargeOperator(it, lower = v, upper = v)}
         nodes.forEach { node ->
             val children=node.navigationChildren();val parent=children.firstOrNull{it.role==MathNavigationRole.PARENT_CONTENT}
             val states=walkLeft(MathExpressionModel(MathExpression.Sequence(listOf(node))))
@@ -169,22 +169,49 @@ class MathProgressiveSlotNavigationTest {
         val states=walkLeft(model("\\frac{x+\\sqrt[3]{12}}{34}"))
         assertTrue(states.any{it.cursor.path==path("numerator")&&it.cursor.level==MathCursorLevel.NEUTRAL})
         assertTrue(states.any{(it.presentation as? MathCursorPresentation.ChildBoundary)?.slotPath==
-            listOf(MathCursorStep(0,"numerator"),MathCursorStep(2,"index"))})
+                listOf(MathCursorStep(0,"numerator"),MathCursorStep(2,"index"))})
         val denominator=states.indexOfFirst{(it.presentation as? MathCursorPresentation.ChildBoundary)?.slotPath==path("denominator")}
         val index=states.indexOfFirst{(it.presentation as? MathCursorPresentation.ChildBoundary)?.slotPath==
-            listOf(MathCursorStep(0,"numerator"),MathCursorStep(2,"index"))}
+                listOf(MathCursorStep(0,"numerator"),MathCursorStep(2,"index"))}
         assertTrue(index in 0 until denominator)
     }
-    @Test fun integralAndPowerRemainIndependentParentsWhileLeftOpensEachBodyFirst() {
-        val integral=MathExpression.LargeOperator(MathLargeOperator.INTEGRAL,MathExpression.Sequence(),parse("0"),parse("1"))
-        val m=MathExpressionModel(MathExpression.Sequence(listOf(integral,parse("x^2").children.single())))
+    @Test fun integralAndPowerRemainIndependentParentsWhileLeftVisitsIntegralChildren() {
+        val integral=MathExpression.LargeOperator(
+            MathLargeOperator.INTEGRAL,
+            lower = parse("0"),
+            upper = parse("1")
+        )
+        val m=MathExpressionModel(
+            MathExpression.Sequence(
+                listOf(
+                    integral,
+                    parse("x^2").children.single()
+                )
+            )
+        )
         val states=walkLeft(m)
+
+        // x^2 is the independent parent to the right of the integral.
         assertEquals(listOf(MathCursorStep(1,"base")),states[1].cursor.path)
-        val body=states.indexOfFirst{it.cursor.path==listOf(MathCursorStep(0,"body"))}
-        val lower=states.indexOfFirst{(it.presentation as? MathCursorPresentation.ChildBoundary)?.slotPath==listOf(MathCursorStep(0,"lower"))}
-        assertTrue(body>0&&body<lower)
-        m.cursor=MathCursor(offset=2);m.deleteBackward();assertEquals(MathExpression.Sequence(listOf(integral)),m.expression)
-        m.deleteBackward();assertEquals(MathExpression.Sequence(),m.expression)
+
+        // LargeOperator no longer owns a "body" slot. Its structural children are upper/lower.
+        assertFalse(states.any { state -> state.cursor.path.any { it.slot == "body" } })
+
+        val integralChildren=states.mapNotNull { state ->
+            val boundary=state.presentation as? MathCursorPresentation.ChildBoundary
+                ?: return@mapNotNull null
+            val step=boundary.slotPath.lastOrNull()
+                ?: return@mapNotNull null
+            if(step.nodeIndex==0) step.slot else null
+        }
+        assertEquals(listOf("upper","lower"),integralChildren)
+
+        // The independent integrand and the integral remain separate parents for deletion.
+        m.cursor=MathCursor(offset=2)
+        m.deleteBackward()
+        assertEquals(MathExpression.Sequence(listOf(integral)),m.expression)
+        m.deleteBackward()
+        assertEquals(MathExpression.Sequence(),m.expression)
     }
     @Test fun emptyChildrenHaveOneInteriorStateAndNoEmptySelectionOrLeftBoundary() {
         val m=model("x^{}");frontier(m,path("upper"));step(m,false)
@@ -244,7 +271,7 @@ class MathProgressiveSlotNavigationTest {
         val v=parse("12")
         val nodes=listOf<MathExpression>(MathExpression.Scripts(v,v,v),MathExpression.Root(v,v),MathExpression.Fraction(v,v),
             MathExpression.Function("log",v,v),MathExpression.Derivative(v,v,v),MathExpression.Matrix(List(2){List(2){v}})) +
-            MathLargeOperator.entries.map { MathExpression.LargeOperator(it,v,v,v) }
+                MathLargeOperator.entries.map { MathExpression.LargeOperator(it, lower = v, upper = v) }
         nodes.forEach { node -> node.navigationChildren().filter{it.role==MathNavigationRole.CHILD}.forEach { child ->
             val m=MathExpressionModel(MathExpression.Sequence(listOf(MathExpression.Variable("a"),node,MathExpression.Variable("b"))))
             frontier(m,listOf(MathCursorStep(1,child.id))); m.deleteBackward()

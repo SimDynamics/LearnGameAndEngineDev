@@ -80,8 +80,11 @@ class MathStructuralNavigationDeviceTest {
         }
         assertEquals("The traversal exits x² into the parent Sequence before its previous sibling", MathCursor(offset = 1), editor.model.cursor)
         editor.perform(MathKeyboardAction.PreviousSlot)
-        assertEquals("Only now does the previous independent Integral group become active",
-            MathCursor(listOf(MathCursorStep(0, "body")), 0), editor.model.cursor)
+        assertEquals(
+            "Integral has no body slot; LEFT now reaches its first declared child, upper",
+            MathCursorPresentation.ChildBoundary(listOf(MathCursorStep(0, "upper")), true),
+            editor.model.cursorPresentation
+        )
         assertSame(original, editor.model.expression)
     }
 
@@ -504,10 +507,15 @@ class MathStructuralNavigationDeviceTest {
 
     private fun integralAndPower() = MathExpressionEditor(context).also {
         it.model.setExpression(MathExpression.Sequence(listOf(
-            MathExpression.LargeOperator(MathLargeOperator.INTEGRAL, MathExpression.Sequence(),
-                MathExpression.Sequence(listOf(MathExpression.Number("0"))), MathExpression.Sequence(listOf(MathExpression.Number("1")))),
-            MathExpression.Scripts(MathExpression.Sequence(listOf(MathExpression.Variable("x"))),
-                upper = MathExpression.Sequence(listOf(MathExpression.Number("2"))))
+            MathExpression.LargeOperator(
+                kind = MathLargeOperator.INTEGRAL,
+                lower = MathExpression.Sequence(listOf(MathExpression.Number("0"))),
+                upper = MathExpression.Sequence(listOf(MathExpression.Number("1")))
+            ),
+            MathExpression.Scripts(
+                MathExpression.Sequence(listOf(MathExpression.Variable("x"))),
+                upper = MathExpression.Sequence(listOf(MathExpression.Number("2")))
+            )
         )), MathCursor(offset = 2))
     }
 

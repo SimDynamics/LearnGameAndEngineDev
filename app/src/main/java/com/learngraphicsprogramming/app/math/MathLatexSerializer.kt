@@ -22,7 +22,20 @@ object MathLatexSerializer {
             "\\left${delimiters.first}${serialize(expression.content)}\\right${delimiters.second}"
         }
         is MathExpression.Function -> "${if (expression.name in functions) "\\${expression.name}" else "\\operatorname{${escape(expression.name)}}"}${expression.base?.let { "_${braces(it)}" }.orEmpty()}${braces(expression.argument)}"
-        is MathExpression.LargeOperator -> "\\${expression.kind.name.lowercase().let { if (it == "integral") "int" else if (it == "product") "prod" else it }}${expression.lower?.let { "_${braces(it)}" }.orEmpty()}${expression.upper?.let { "^${braces(it)}" }.orEmpty()}${braces(expression.body)}"
+        is MathExpression.LargeOperator ->
+            "\\${expression.kind.name.lowercase().let {
+                if (it == "integral") {
+                    "int"
+                } else if (it == "product") {
+                    "prod"
+                } else {
+                    it
+                }
+            }}${expression.lower?.let {
+                "_${braces(it)}"
+            }.orEmpty()}${expression.upper?.let {
+                "^${braces(it)}"
+            }.orEmpty()}"
         is MathExpression.Limit -> "\\lim_${braces(expression.condition)}${braces(expression.body)}"
         is MathExpression.Derivative -> {
             val order = expression.order?.let { "^${braces(it)}" }.orEmpty()

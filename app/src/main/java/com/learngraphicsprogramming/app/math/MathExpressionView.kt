@@ -456,7 +456,28 @@ private class ExpressionLayoutBuilder(
                 val argument = delimit(child(node.argument, "argument"), MathDelimiter.PARENTHESES, size)
                 compose(listOf(Triple(function, 0f, 0f), Triple(argument, function.width + size * .08f, 0f)))
             }
-            is MathExpression.LargeOperator -> largeOperator(node.kind, child(node.body, "body"), node.lower?.let { child(it, "lower", .62f) }, node.upper?.let { child(it, "upper", .62f) }, size)
+            is MathExpression.LargeOperator ->
+                largeOperator(
+                    node.kind,
+
+                    node.lower?.let {
+                        child(
+                            it,
+                            "lower",
+                            .62f
+                        )
+                    },
+
+                    node.upper?.let {
+                        child(
+                            it,
+                            "upper",
+                            .62f
+                        )
+                    },
+
+                    size
+                )
             is MathExpression.Limit -> {
                 val label = text("lim", size)
                 val condition = child(node.condition, "condition", .62f)
@@ -559,7 +580,12 @@ private class ExpressionLayoutBuilder(
         }
     }
 
-    private fun largeOperator(kind: MathLargeOperator, body: ExpressionBox, lower: ExpressionBox?, upper: ExpressionBox?, size: Float): ExpressionBox {
+    private fun largeOperator(
+        kind: MathLargeOperator,
+        lower: ExpressionBox?,
+        upper: ExpressionBox?,
+        size: Float
+    ): ExpressionBox {
         val symbol = text(when (kind) { MathLargeOperator.INTEGRAL -> "∫"; MathLargeOperator.SUM -> "∑"; MathLargeOperator.PRODUCT -> "∏" }, size * 1.5f)
         val symbolY = -size * .29f - (symbol.ascent + symbol.descent) / 2f
         val items = mutableListOf<Triple<ExpressionBox, Float, Float>>()
@@ -575,8 +601,22 @@ private class ExpressionLayoutBuilder(
             upper?.let { items += Triple(it, (headWidth - it.width) / 2f, symbolY + symbol.ascent - size * .08f - it.descent) }
             lower?.let { items += Triple(it, (headWidth - it.width) / 2f, symbolY + symbol.descent + size * .08f - it.ascent) }
         }
-        items += Triple(body, headWidth + size * .2f, 0f)
-        return compose(items)
+        val head =
+            compose(items)
+
+        /*
+         * El contenido matemático situado a la derecha
+         * ya no forma parte del LargeOperator.
+         *
+         * Dejamos solamente una pequeña separación visual
+         * para que el siguiente padre de la Sequence
+         * aparezca junto al operador.
+         */
+        return head.copy(
+            width =
+                head.width +
+                        size * .2f
+        )
     }
 
     private fun grid(rows: List<List<ExpressionBox>>, size: Float, cases: Boolean): ExpressionBox {

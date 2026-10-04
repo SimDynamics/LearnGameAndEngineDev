@@ -173,10 +173,29 @@ object MathLatexParser {
                 }
                 "left" -> leftGroup()
                 "int", "sum", "prod" -> {
-                    val bounds = operatorBounds()
-                    whitespace()
-                    val body = if (source.getOrNull(index) == '{') requiredGroup() else sequence(stop)
-                    MathExpression.LargeOperator(when (name) { "int" -> MathLargeOperator.INTEGRAL; "sum" -> MathLargeOperator.SUM; else -> MathLargeOperator.PRODUCT }, body, bounds.second, bounds.first)
+
+                    val bounds =
+                        operatorBounds()
+
+                    MathExpression.LargeOperator(
+                        kind =
+                            when (name) {
+                                "int" ->
+                                    MathLargeOperator.INTEGRAL
+
+                                "sum" ->
+                                    MathLargeOperator.SUM
+
+                                else ->
+                                    MathLargeOperator.PRODUCT
+                            },
+
+                        lower =
+                            bounds.second,
+
+                        upper =
+                            bounds.first
+                    )
                 }
                 "lim" -> {
                     val bounds = operatorBounds()

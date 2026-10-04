@@ -307,15 +307,38 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 NavigationTarget(cursor.copy(level = MathCursorLevel.NEUTRAL, scope = null))
                 else afterSlotEditingTarget(cursor.path)
         }
-        val index = cursor.offset - 1
-        val node = sequence.children.getOrNull(index)
+        val index =
+            cursor.offset - 1
+
+        val node =
+            sequence.children
+                .getOrNull(index)
+
         if (node != null) {
-            val children = node.navigationChildren()
-            val content = children.firstOrNull { it.role == MathNavigationRole.PARENT_CONTENT }
-            if (content != null) return enterSlotTarget(cursor.path + MathCursorStep(index, content.id), forward = false)
-            val child = children.firstOrNull()
-            if (child != null) return boundaryTarget(cursor.path + MathCursorStep(index, child.id))
-            return NavigationTarget(MathCursor(cursor.path, cursor.offset, MathCursorLevel.INTERIOR, MathContentScope.Atom(index, index + 1)))
+
+            val first =
+                node.navigationChildren()
+                    .firstOrNull()
+
+            if (first != null) {
+                return declaredNavigationTarget(
+                    cursor.path,
+                    index,
+                    first
+                )
+            }
+
+            return NavigationTarget(
+                MathCursor(
+                    cursor.path,
+                    cursor.offset,
+                    MathCursorLevel.INTERIOR,
+                    MathContentScope.Atom(
+                        index,
+                        index + 1
+                    )
+                )
+            )
         }
         return if (cursor.path.isEmpty()) null else afterSlotEditingTarget(cursor.path)
     }
@@ -343,18 +366,108 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         return NavigationTarget(outside, boundary = NavigationBoundary(path.toList(), true, expression, outside))
     }
 
+    private fun declaredNavigationTarget(
+        parentPath: List<MathCursorStep>,
+        nodeIndex: Int,
+        child: MathNavigationChild
+    ): NavigationTarget? {
+
+        val path =
+            parentPath +
+                    MathCursorStep(
+                        nodeIndex,
+                        child.id
+                    )
+
+        return if (
+            child.role ==
+            MathNavigationRole.PARENT_CONTENT
+        ) {
+            /*
+             * El contenido del padre se abre
+             * directamente en modo edición.
+             */
+            enterSlotTarget(
+                path,
+                forward = false
+            )
+        } else {
+            /*
+             * Un hijo primero presenta
+             * su BordeHijo.
+             */
+            boundaryTarget(path)
+        }
+    }
+
     /** LEFT visits a parent's declared children after its content, then continues before that parent. */
-    private fun afterSlotEditingTarget(path: List<MathCursorStep>): NavigationTarget? {
-        if (path.isEmpty() || sequenceAt(path) == null) return null
-        val step = path.last()
-        val parentPath = path.dropLast(1)
-        val children = sequenceAt(parentPath)?.children?.getOrNull(step.nodeIndex)?.navigationChildren() ?: return null
-        val edited = children.firstOrNull { it.id == step.slot } ?: return null
-        val childSlots = children.filter { it.role == MathNavigationRole.CHILD }
-        val next = if (edited.role == MathNavigationRole.PARENT_CONTENT) childSlots.firstOrNull()
-            else childSlots.getOrNull(childSlots.indexOfFirst { it.id == step.slot } + 1)
-        return if (next != null) boundaryTarget(parentPath + step.copy(slot = next.id))
-            else NavigationTarget(MathCursor(parentPath, step.nodeIndex, MathCursorLevel.NEUTRAL, null))
+    private fun afterSlotEditingTarget(
+        path: List<MathCursorStep>
+    ): NavigationTarget? {
+
+        if (
+            path.isEmpty() ||
+            sequenceAt(path) == null
+        ) {
+            return null
+        }
+
+        val step =
+            path.last()
+
+        val parentPath =
+            path.dropLast(1)
+
+        val parentNode =
+            sequenceAt(parentPath)
+                ?.children
+                ?.getOrNull(step.nodeIndex)
+                ?: return null
+
+        val children =
+            parentNode.navigationChildren()
+
+        val currentIndex =
+            children.indexOfFirst {
+                it.id == step.slot
+            }
+
+        if (currentIndex < 0) {
+            return null
+        }
+
+        /*
+         * Continuamos exactamente con
+         * el siguiente cuadro declarado
+         * en el orden canónico.
+         */
+        val next =
+            children.getOrNull(
+                currentIndex + 1
+            )
+
+        if (next != null) {
+            return declaredNavigationTarget(
+                parentPath,
+                step.nodeIndex,
+                next
+            )
+        }
+
+        /*
+         * Ya recorrimos todos los cuadros
+         * de este padre.
+         *
+         * Salimos por su izquierda.
+         */
+        return NavigationTarget(
+            MathCursor(
+                parentPath,
+                step.nodeIndex,
+                MathCursorLevel.NEUTRAL,
+                null
+            )
+        )
     }
 
     /** AST shape chooses a local Sequence level; no mathematical meaning is consulted. */
@@ -898,7 +1011,52 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         fun child(name: String) = decode(json.getJSONObject(name), depth + 1) as MathExpression.Sequence
         fun optional(name: String) = json.optJSONObject(name)?.let { decode(it, depth + 1) as MathExpression.Sequence }
         return when (json.getString("type")) {
-            "sequence" -> json.getJSONArray("children").let { array -> require(array.length() <= 4_096); MathExpression.Sequence((0 until array.length()).map { decode(array.getJSONObject(it), depth + 1) }) }
+            "sequence" -> {
+
+                val array =
+                    json.getJSONArray(
+                        "children"
+                    )
+
+                require(
+                    array.length() <= 4_096
+                )
+
+                val decoded =
+                    (0 until array.length())
+                        .map {
+                            decode(
+                                array.getJSONObject(it),
+                                depth + 1
+                            )
+                        }
+
+                /*
+                 * La migración de un LargeOperator antiguo
+                 * puede producir:
+                 *
+                 * Sequence(
+                 *     LargeOperator,
+                 *     body...
+                 * )
+                 *
+                 * Al restaurarlo dentro de su Sequence padre
+                 * lo aplanamos para convertir body en hermanos
+                 * reales del operador.
+                 */
+                MathExpression.Sequence(
+                    decoded.flatMap { node ->
+
+                        if (
+                            node is MathExpression.Sequence
+                        ) {
+                            node.children
+                        } else {
+                            listOf(node)
+                        }
+                    }
+                )
+            }
             "number" -> MathExpression.Number(json.getString("value"))
             "variable" -> MathExpression.Variable(json.getString("value"))
             "symbol" -> MathExpression.Symbol(json.getString("value"))
@@ -909,7 +1067,65 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             "root" -> MathExpression.Root(child("radicand"), optional("index"))
             "group" -> MathExpression.Group(child("content"), MathDelimiter.valueOf(json.getString("delimiter")))
             "function" -> MathExpression.Function(json.getString("name"), child("argument"), optional("base"))
-            "largeOperator" -> MathExpression.LargeOperator(MathLargeOperator.valueOf(json.getString("kind")), child("body"), optional("lower"), optional("upper"))
+            "largeOperator" -> {
+
+                val operator =
+                    MathExpression.LargeOperator(
+                        kind =
+                            MathLargeOperator.valueOf(
+                                json.getString(
+                                    "kind"
+                                )
+                            ),
+
+                        lower =
+                            optional(
+                                "lower"
+                            ),
+
+                        upper =
+                            optional(
+                                "upper"
+                            )
+                    )
+
+                /*
+                 * Compatibilidad con drafts antiguos.
+                 *
+                 * Antes:
+                 *
+                 * LargeOperator(body = x)
+                 *
+                 * Ahora:
+                 *
+                 * Sequence(
+                 *     LargeOperator(),
+                 *     x
+                 * )
+                 */
+                val legacyBody =
+                    json.optJSONObject(
+                        "body"
+                    )?.let {
+
+                        decode(
+                            it,
+                            depth + 1
+                        ) as MathExpression.Sequence
+                    }
+
+                if (legacyBody != null) {
+
+                    MathExpression.Sequence(
+                        listOf(operator) +
+                                legacyBody.children
+                    )
+
+                } else {
+
+                    operator
+                }
+            }
             "limit" -> MathExpression.Limit(child("body"), child("condition"))
             "derivative" -> MathExpression.Derivative(child("body"), child("variable"), optional("order"))
             "matrix" -> {

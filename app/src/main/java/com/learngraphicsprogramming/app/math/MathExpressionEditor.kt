@@ -161,13 +161,55 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
         val previousDraft = model.saveDraft()
         var accepted = true
         val empty = MathExpression.Sequence()
-        fun structure(node: MathExpression, slot: String) { accepted = model.insert(node, slot) }
-        fun largeOperator(kind: MathLargeOperator) {
-            val expected = template { it is MathExpression.LargeOperator && it.kind == kind } as? MathExpression.LargeOperator
-            val lower = if (expected == null || expected.lower != null) empty else null
-            val upper = if (expected == null || expected.upper != null) empty else null
-            structure(MathExpression.LargeOperator(kind, empty, lower, upper), when { lower != null -> "lower"; upper != null -> "upper"; else -> "body" })
+        fun structure(
+            node: MathExpression,
+            slot: String? = null
+        ) {
+            accepted =
+                model.insert(
+                    node,
+                    slot
+                )
         }
+        fun largeOperator(
+            kind: MathLargeOperator
+        ) {
+
+            val expected =
+                template {
+                    it is MathExpression.LargeOperator &&
+                            it.kind == kind
+                } as? MathExpression.LargeOperator
+
+            val lower =
+                if (
+                    expected == null ||
+                    expected.lower != null
+                ) {
+                    empty
+                } else {
+                    null
+                }
+
+            val upper =
+                if (
+                    expected == null ||
+                    expected.upper != null
+                ) {
+                    empty
+                } else {
+                    null
+                }
+
+            structure(
+                MathExpression.LargeOperator(
+                    kind = kind,
+                    lower = lower,
+                    upper = upper
+                )
+            )
+        }
+
         when (action) {
             MathKeyboardAction.Fraction -> {
                 val selected = model.takeSelection()

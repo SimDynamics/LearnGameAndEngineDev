@@ -160,9 +160,11 @@ sealed class MathKeyboardAction {
          */
         fun fromShortcut(shortcut: String): MathKeyboardAction =
             when (shortcut) {
-                "a/b",
-                "/" ->
+                "a/b" ->
                     Fraction
+
+                "/" ->
+                    Symbol("/")
 
                 "()" ->
                     Parentheses
@@ -192,7 +194,11 @@ sealed class MathKeyboardAction {
                 "NEXT_SLOT" -> NextSlot
 
                 else ->
-                    if (shortcut.startsWith("FUNCTION:")) Function(shortcut.substringAfter(':')) else Symbol(shortcut)
+                    if (shortcut.startsWith("FUNCTION:")) {
+                        Function(shortcut.substringAfter(':'))
+                    } else {
+                        Symbol(shortcut)
+                    }
             }
 
         private fun replaceSelection(
