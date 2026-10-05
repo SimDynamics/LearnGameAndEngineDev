@@ -23,61 +23,305 @@ class MathProgressiveSlotNavigationDeviceTest {
 
     private enum class DeleteTransport { TEXT, CODE_POINTS, KEY_EVENT }
 
-    @Test fun fractionRightFromNumeratorReachesItsRealEmptyDenominatorBeforeParent() = onMain {
+    @Test fun fractionToolbarAndNativeArrowsReverseAllLeftSnapshotsAfterEveryDraftRestore() = onMain {
+        val numerator = listOf(MathCursorStep(0, "numerator"))
+        val denominator = listOf(MathCursorStep(0, "denominator"))
+        val interior = MathCursorPresentation.Interior(MathContentScope.Slot)
+        val expected = listOf(
+            Triple(MathCursor(), null, MathCursorPresentation.Neutral),
+            Triple(MathCursor(denominator, 0), null, interior),
+            Triple(MathCursor(denominator, 1), MathSelection(denominator, 0, 1), interior),
+            Triple(MathCursor(denominator, 1), null, interior),
+            Triple(MathCursor(offset = 1, level = MathCursorLevel.CHILD_BOUNDARY), null, MathCursorPresentation.ChildBoundary(denominator)),
+            Triple(MathCursor(numerator, 0), null, interior),
+            Triple(MathCursor(numerator, 3), MathSelection(numerator, 0, 3), interior),
+            Triple(MathCursor(numerator, 3), null, interior),
+            Triple(MathCursor(offset = 1, level = MathCursorLevel.CHILD_BOUNDARY), null, MathCursorPresentation.ChildBoundary(numerator)),
+            Triple(MathCursor(offset = 1), null, MathCursorPresentation.ParentBoundary(emptyList(), 0))
+        )
         for (native in listOf(false, true)) {
-            val editor = editorAt("\\frac{x+1}{}", "numerator", atEnd = true)
+            val editor = MathExpressionEditor(context)
+            assertTrue(editor.setLatex("\\frac{x+1}{2}"))
             val original = editor.model.expression
-            val fraction = original.children.single() as MathExpression.Fraction
-            val denominator = fraction.denominator
-            val toolbar = toolbar(editor)
-            fun right() {
-                if (native) {
-                    val input = connection(editor)
-                    assertTrue(input.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT)))
-                    input.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_RIGHT))
-                } else assertTrue(navigation(toolbar, "Slot siguiente").performClick())
-                assertSame("Navigation preserves the existing AST", original, editor.model.expression)
-                assertSame("The denominator remains the actual declared child", denominator,
-                    editor.model.sequenceAt(listOf(MathCursorStep(0, "denominator"))))
-                assertEquals(listOf("numerator", "denominator"), fraction.navigationChildren().map { it.id })
+            val leftStates = mutableListOf(navigationSnapshot(editor))
+            while (editor.model.canNavigatePrevious) {
+                assertTrue("LEFT has exactly nine transitions", leftStates.size < expected.size)
+                navigationPress(editor, forward = false, native = native)
+                leftStates += navigationSnapshot(editor)
+                assertSame("Structural navigation cannot rebuild the fraction", original, editor.model.expression)
             }
-            right()
-            assertBoundary(editor, "numerator", after = true)
-            right()
-            assertAt(editor, "denominator", 0)
-            assertEquals(MathCursorPresentation.Interior(MathContentScope.Slot), editor.model.cursorPresentation)
-            editor.perform(MathKeyboardAction.PreviousSlot)
-            assertBoundary(editor, "numerator", after = true)
-            right()
-            assertAt(editor, "denominator", 0)
-            right()
-            assertBoundary(editor, "denominator", after = true)
-            right()
-            assertParentBoundary(editor)
-            editor.perform(MathKeyboardAction.PreviousSlot)
-            assertBoundary(editor, "denominator", after = true)
-            assertSame(original, editor.model.expression)
-            assertTrue(denominator.children.isEmpty())
+            assertEquals("LEFT establishes every canonical fraction checkpoint", expected.asReversed(), leftStates)
+            val rightStates = mutableListOf(navigationSnapshot(editor))
+            while (editor.model.canNavigateNext) {
+                assertTrue("RIGHT cannot add a shortcut or extra endpoint", rightStates.size < expected.size)
+                navigationPress(editor, forward = true, native = native)
+                rightStates += navigationSnapshot(editor)
+                assertSame(original, editor.model.expression)
+            }
+            assertEquals("RIGHT must be exactly the inverse of LEFT", leftStates.asReversed(), rightStates)
+            for (index in expected.indices.reversed()) {
+                assertEquals(expected[index], navigationSnapshot(editor))
+                val draft = editor.saveDraft()
+                for (forward in listOf(false, true)) {
+                    val restored = MathExpressionEditor(context)
+                    restored.restoreDraft(draft)
+                    assertEquals("Restore includes cursor, real selection and presentation", expected[index], navigationSnapshot(restored))
+                    assertEquals(original, restored.model.expression)
+                    val restoredAst = restored.model.expression
+                    val target = index + if (forward) 1 else -1
+                    assertEquals("Availability follows the restored checkpoint alone", target in expected.indices,
+                        if (forward) restored.model.canNavigateNext else restored.model.canNavigatePrevious)
+                    navigationPress(restored, forward, native)
+                    assertEquals("A fresh editor cannot rely on a last edge in memory",
+                        expected[target.coerceIn(expected.indices)], navigationSnapshot(restored))
+                    assertSame(restoredAst, restored.model.expression)
+                }
+                if (index > 0) navigationPress(editor, forward = false, native = native)
+            }
         }
     }
 
-    @Test fun rightPreservesEverySubscriptCheckpointThenReachesItsParent() = onMain {
-        val editor = editorAt("x_{12}", "lower", atEnd = false)
-        val original = editor.model.expression
-        assertAt(editor, "lower", 0)
-        editor.perform(MathKeyboardAction.NextSlot)
-        assertFullSelection(editor, "lower", "12")
-        editor.perform(MathKeyboardAction.NextSlot)
-        assertAtEnd(editor, "lower")
-        editor.perform(MathKeyboardAction.NextSlot)
-        assertBoundary(editor, "lower", after = true)
-        editor.perform(MathKeyboardAction.NextSlot)
-        assertParentBoundary(editor)
-        assertFalse(editor.model.canNavigateNext)
-        editor.perform(MathKeyboardAction.NextSlot)
-        assertParentBoundary(editor)
-        assertEquals(original, editor.model.expression)
-    }
+    @Test
+    fun fractionRightFromHomeVisitsEmptyDenominatorBeforeNumeratorAndParent() =
+        onMain {
+
+            for (
+            native in listOf(
+                false,
+                true
+            )
+            ) {
+                val editor =
+                    MathExpressionEditor(context)
+
+                assertTrue(
+                    editor.setLatex(
+                        "\\frac{x+1}{}"
+                    )
+                )
+
+                val original =
+                    editor.model.expression
+
+                val fraction =
+                    original.children.single()
+                            as MathExpression.Fraction
+
+                val denominator =
+                    fraction.denominator
+
+                /*
+                 * HOME es el extremo izquierdo.
+                 */
+                editor.model.cursor =
+                    MathCursor()
+
+                navigationPress(
+                    editor,
+                    forward = true,
+                    native = native
+                )
+
+                assertAt(
+                    editor,
+                    "denominator",
+                    0
+                )
+
+                assertSame(
+                    denominator,
+                    editor.model.sequenceAt(
+                        listOf(
+                            MathCursorStep(
+                                0,
+                                "denominator"
+                            )
+                        )
+                    )
+                )
+
+                navigationPress(
+                    editor,
+                    forward = true,
+                    native = native
+                )
+
+                assertBoundary(
+                    editor,
+                    "denominator",
+                    after = true
+                )
+
+                navigationPress(
+                    editor,
+                    forward = true,
+                    native = native
+                )
+
+                assertAt(
+                    editor,
+                    "numerator",
+                    0
+                )
+
+                navigationPress(
+                    editor,
+                    forward = true,
+                    native = native
+                )
+
+                assertFullSelection(
+                    editor,
+                    "numerator",
+                    "x+1"
+                )
+
+                navigationPress(
+                    editor,
+                    forward = true,
+                    native = native
+                )
+
+                assertAtEnd(
+                    editor,
+                    "numerator"
+                )
+
+                navigationPress(
+                    editor,
+                    forward = true,
+                    native = native
+                )
+
+                assertBoundary(
+                    editor,
+                    "numerator",
+                    after = true
+                )
+
+                navigationPress(
+                    editor,
+                    forward = true,
+                    native = native
+                )
+
+                assertParentBoundary(editor)
+
+                assertSame(
+                    original,
+                    editor.model.expression
+                )
+            }
+        }
+
+    @Test
+    fun rightPreservesEverySubscriptCheckpointThenTraversesBaseBeforeParent() =
+        onMain {
+
+            val editor =
+                editorAt(
+                    "x_{12}",
+                    "lower",
+                    atEnd = false
+                )
+
+            val original =
+                editor.model.expression
+
+            assertAt(
+                editor,
+                "lower",
+                0
+            )
+
+            editor.perform(
+                MathKeyboardAction.NextSlot
+            )
+
+            assertFullSelection(
+                editor,
+                "lower",
+                "12"
+            )
+
+            editor.perform(
+                MathKeyboardAction.NextSlot
+            )
+
+            assertAtEnd(
+                editor,
+                "lower"
+            )
+
+            editor.perform(
+                MathKeyboardAction.NextSlot
+            )
+
+            assertBoundary(
+                editor,
+                "lower",
+                after = true
+            )
+
+            /*
+             * LEFT recorre:
+             *
+             * Parent
+             * base
+             * lower
+             * HOME
+             *
+             * Por lo tanto RIGHT debe recorrer:
+             *
+             * HOME
+             * lower
+             * base
+             * Parent
+             */
+            editor.perform(
+                MathKeyboardAction.NextSlot
+            )
+
+            assertAt(
+                editor,
+                "base",
+                0
+            )
+
+            editor.perform(
+                MathKeyboardAction.NextSlot
+            )
+
+            assertFullSelection(
+                editor,
+                "base",
+                "x"
+            )
+
+            editor.perform(
+                MathKeyboardAction.NextSlot
+            )
+
+            assertAtEnd(
+                editor,
+                "base"
+            )
+
+            editor.perform(
+                MathKeyboardAction.NextSlot
+            )
+
+            assertParentBoundary(editor)
+
+            assertFalse(
+                editor.model.canNavigateNext
+            )
+
+            assertSame(
+                original,
+                editor.model.expression
+            )
+        }
 
     @Test fun leftFollowsTheDeclaredChildBeforeParentContentAndFinishesAtHome() = onMain {
         val editor = MathExpressionEditor(context)
@@ -158,80 +402,485 @@ class MathProgressiveSlotNavigationDeviceTest {
         }
     }
 
-    @Test fun emptySlotsReachEveryDeclaredChildBeforeTheParentWithoutInventingSelection() = onMain {
-        val editor = editorAt("\\frac{}{}", "numerator", atEnd = false)
-        val original = editor.model.expression
-        val toolbar = toolbar(editor)
-        val next = navigation(toolbar, "Slot siguiente")
-        val previous = navigation(toolbar, "Slot anterior")
-        next.performClick()
-        assertOutside(editor, forward = true)
-        assertTrue("The next declared child is still reachable", next.isEnabled)
-        next.performClick()
-        assertAt(editor, "denominator", 0)
-        next.performClick()
-        assertBoundary(editor, "denominator", after = true)
-        next.performClick()
-        assertParentBoundary(editor)
-        assertFalse(next.isEnabled)
-        editor.model.cursor = MathCursor(offset = 1)
-        previous.performClick()
-        assertBoundary(editor, "numerator", after = true)
-        previous.performClick()
-        assertAt(editor, "numerator", 0)
-        previous.performClick()
-        assertBoundary(editor, "denominator", after = true)
-        previous.performClick()
-        assertAt(editor, "denominator", 0)
-        previous.performClick()
-        assertEquals(MathCursor(offset = 0), editor.model.cursor)
-        assertNull(editor.model.selectionRange)
-        assertFalse(previous.isEnabled)
-        next.performClick()
-        assertParentBoundary(editor)
-        assertNull(editor.model.selectionRange)
-        assertFalse(next.isEnabled)
-        assertEquals(original, editor.model.expression)
-    }
+    @Test
+    fun emptySlotsRemainReciprocalWithoutInventingSelection() =
+        onMain {
 
-    @Test fun navigationButtonsIncludePendingSelectionAndCollapseStatesAtTheLastSlot() = onMain {
-        val editor = editorAt("x_{12}", "lower", atEnd = true)
-        val toolbar = toolbar(editor)
-        val previous = navigation(toolbar, "Slot anterior")
-        val next = navigation(toolbar, "Slot siguiente")
-        val original = editor.model.expression
-        assertNavigation(toolbar, editor, previous, next)
-        assertTrue("Left from END still has a pending selection state", previous.isEnabled)
-        previous.performClick()
-        assertFullSelection(editor, "lower", "12")
-        assertTrue("Selection can collapse toward either edge", previous.isEnabled && next.isEnabled)
-        assertNavigation(toolbar, editor, previous, next)
-        previous.performClick()
-        assertAt(editor, "lower", 0)
-        assertTrue(next.isEnabled)
-        next.performClick()
-        assertFullSelection(editor, "lower", "12")
-        next.performClick()
-        assertAtEnd(editor, "lower")
-        next.performClick()
-        assertBoundary(editor, "lower", after = true)
-        assertTrue("The last child's boundary can still reach the whole parent", next.isEnabled)
-        next.performClick()
-        assertParentBoundary(editor)
-        assertFalse(next.isEnabled)
-        assertNavigation(toolbar, editor, previous, next)
-        previous.performClick()
-        assertBoundary(editor, "lower", after = true)
-        previous.performClick()
-        assertAtEnd(editor, "lower")
-        previous.performClick()
-        assertFullSelection(editor, "lower", "12")
-        next.performClick()
-        assertAtEnd(editor, "lower")
-        next.performClick()
-        assertBoundary(editor, "lower", after = true)
-        assertEquals(original, editor.model.expression)
-    }
+            val editor =
+                MathExpressionEditor(context)
+
+            assertTrue(
+                editor.setLatex(
+                    "\\frac{}{}"
+                )
+            )
+
+            val original =
+                editor.model.expression
+
+            val toolbar =
+                toolbar(editor)
+
+            val next =
+                navigation(
+                    toolbar,
+                    "Slot siguiente"
+                )
+
+            val previous =
+                navigation(
+                    toolbar,
+                    "Slot anterior"
+                )
+
+            editor.model.cursor =
+                MathCursor()
+
+
+            /*
+             * RIGHT, desde HOME:
+             *
+             * denominator
+             * BordeHijo denominator
+             * numerator
+             * BordeHijo numerator
+             * Parent
+             */
+
+            assertTrue(
+                next.performClick()
+            )
+
+            assertAt(
+                editor,
+                "denominator",
+                0
+            )
+
+            assertNull(
+                editor.model.selectionRange
+            )
+
+
+            assertTrue(
+                next.performClick()
+            )
+
+            assertBoundary(
+                editor,
+                "denominator",
+                after = true
+            )
+
+
+            assertTrue(
+                next.performClick()
+            )
+
+            assertAt(
+                editor,
+                "numerator",
+                0
+            )
+
+            assertNull(
+                editor.model.selectionRange
+            )
+
+
+            assertTrue(
+                next.performClick()
+            )
+
+            assertBoundary(
+                editor,
+                "numerator",
+                after = true
+            )
+
+
+            assertTrue(
+                next.performClick()
+            )
+
+            assertParentBoundary(editor)
+
+            assertFalse(
+                next.isEnabled
+            )
+
+
+            /*
+             * LEFT debe deshacer exactamente
+             * esos estados.
+             */
+
+            assertTrue(
+                previous.performClick()
+            )
+
+            assertBoundary(
+                editor,
+                "numerator",
+                after = true
+            )
+
+
+            assertTrue(
+                previous.performClick()
+            )
+
+            assertAt(
+                editor,
+                "numerator",
+                0
+            )
+
+
+            assertTrue(
+                previous.performClick()
+            )
+
+            assertBoundary(
+                editor,
+                "denominator",
+                after = true
+            )
+
+
+            assertTrue(
+                previous.performClick()
+            )
+
+            assertAt(
+                editor,
+                "denominator",
+                0
+            )
+
+
+            assertTrue(
+                previous.performClick()
+            )
+
+            assertEquals(
+                MathCursor(),
+                editor.model.cursor
+            )
+
+            assertEquals(
+                MathCursorPresentation.Neutral,
+                editor.model.cursorPresentation
+            )
+
+            assertNull(
+                editor.model.selectionRange
+            )
+
+            assertFalse(
+                previous.isEnabled
+            )
+
+            assertSame(
+                original,
+                editor.model.expression
+            )
+        }
+
+    @Test
+    fun navigationButtonsIncludePendingSelectionAndCollapseStatesAtTheLastSlot() =
+        onMain {
+
+            val editor =
+                MathExpressionEditor(context)
+
+            assertTrue(
+                editor.setLatex(
+                    "x_{12}"
+                )
+            )
+
+            val original =
+                editor.model.expression
+
+            /*
+             * Colocamos el modelo en HOME antes de
+             * enlazar el toolbar.
+             *
+             * Así sus botones nacen con el estado
+             * correcto de canNavigatePrevious/Next.
+             */
+            editor.model.cursor =
+                MathCursor()
+
+            val toolbar =
+                toolbar(editor)
+
+            val previous =
+                navigation(
+                    toolbar,
+                    "Slot anterior"
+                )
+
+            val next =
+                navigation(
+                    toolbar,
+                    "Slot siguiente"
+                )
+
+            val lower =
+                listOf(
+                    MathCursorStep(
+                        0,
+                        "lower"
+                    )
+                )
+
+            val base =
+                listOf(
+                    MathCursorStep(
+                        0,
+                        "base"
+                    )
+                )
+
+            val interior =
+                MathCursorPresentation.Interior(
+                    MathContentScope.Slot
+                )
+
+            /*
+             * Recorrido canónico RIGHT:
+             *
+             * HOME
+             * lower izquierda
+             * lower seleccionado
+             * lower derecha
+             * borde lower
+             * base izquierda
+             * base seleccionado
+             * base derecha
+             * Parent
+             *
+             * LEFT debe ser exactamente
+             * esta lista al revés.
+             */
+            val expected =
+                listOf(
+                    Triple(
+                        MathCursor(),
+                        null,
+                        MathCursorPresentation.Neutral
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            lower,
+                            0
+                        ),
+                        null,
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            lower,
+                            1
+                        ),
+                        MathSelection(
+                            lower,
+                            0,
+                            1
+                        ),
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            lower,
+                            1
+                        ),
+                        null,
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            offset = 1,
+                            level =
+                                MathCursorLevel.CHILD_BOUNDARY
+                        ),
+                        null,
+                        MathCursorPresentation.ChildBoundary(
+                            lower
+                        )
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            base,
+                            0
+                        ),
+                        null,
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            base,
+                            1
+                        ),
+                        MathSelection(
+                            base,
+                            0,
+                            1
+                        ),
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            base,
+                            1
+                        ),
+                        null,
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            offset = 1
+                        ),
+                        null,
+                        MathCursorPresentation.ParentBoundary(
+                            emptyList(),
+                            0
+                        )
+                    )
+                )
+
+
+            assertEquals(
+                expected.first(),
+                navigationSnapshot(editor)
+            )
+
+            assertFalse(
+                previous.isEnabled
+            )
+
+            assertTrue(
+                next.isEnabled
+            )
+
+
+            /*
+             * RIGHT consume exactamente
+             * un checkpoint por pulsación.
+             */
+            for (
+            index in 1 until expected.size
+            ) {
+                assertTrue(
+                    "RIGHT debe estar disponible antes del checkpoint $index",
+                    next.isEnabled
+                )
+
+                assertTrue(
+                    next.performClick()
+                )
+
+                assertEquals(
+                    "RIGHT checkpoint $index",
+                    expected[index],
+                    navigationSnapshot(editor)
+                )
+
+                assertSame(
+                    "La navegación no modifica el AST",
+                    original,
+                    editor.model.expression
+                )
+
+                assertNavigation(
+                    toolbar,
+                    editor,
+                    previous,
+                    next
+                )
+            }
+
+            assertFalse(
+                next.isEnabled
+            )
+
+            assertParentBoundary(editor)
+
+
+            /*
+             * LEFT deshace exactamente
+             * los mismos checkpoints.
+             */
+            for (
+            index in
+            expected.size - 2 downTo 0
+            ) {
+                assertTrue(
+                    "LEFT debe estar disponible antes del checkpoint $index",
+                    previous.isEnabled
+                )
+
+                assertTrue(
+                    previous.performClick()
+                )
+
+                assertEquals(
+                    "LEFT checkpoint $index",
+                    expected[index],
+                    navigationSnapshot(editor)
+                )
+
+                assertSame(
+                    "La navegación inversa no modifica el AST",
+                    original,
+                    editor.model.expression
+                )
+
+                assertNavigation(
+                    toolbar,
+                    editor,
+                    previous,
+                    next
+                )
+            }
+
+            assertFalse(
+                previous.isEnabled
+            )
+
+            assertTrue(
+                next.isEnabled
+            )
+
+            assertEquals(
+                MathCursor(),
+                editor.model.cursor
+            )
+
+            assertNull(
+                editor.model.selectionRange
+            )
+
+            assertEquals(
+                MathCursorPresentation.Neutral,
+                editor.model.cursorPresentation
+            )
+
+            assertSame(
+                original,
+                editor.model.expression
+            )
+        }
 
     @Test fun progressivelySelectedSubscriptIsDeletedOnceByEveryImeBackspaceTransport() = onMain {
         DeleteTransport.entries.forEach { transport ->
@@ -455,20 +1104,86 @@ class MathProgressiveSlotNavigationDeviceTest {
         }
     }
 
-    @Test fun leftAndRightReenterTheSameAdjacentChildCheckpoint() = onMain {
-        val editor = editorAt("x_{1}^{2}", "upper", atEnd = true)
-        val original = editor.model.expression
-        editor.perform(MathKeyboardAction.NextSlot)
-        assertOutside(editor, forward = true)
-        editor.perform(MathKeyboardAction.PreviousSlot)
-        assertAtEnd(editor, "upper")
-        editor.onCursorRequested?.invoke(MathCursor(listOf(MathCursorStep(0, "lower")), 0))
-        editor.perform(MathKeyboardAction.PreviousSlot)
-        assertEquals(MathCursor(), editor.model.cursor)
-        editor.perform(MathKeyboardAction.NextSlot)
-        assertParentBoundary(editor)
-        assertEquals(original, editor.model.expression)
-    }
+    @Test
+    fun leftAndRightReenterTheSameAdjacentChildCheckpoint() =
+        onMain {
+
+            val editor =
+                editorAt(
+                    "x_{1}^{2}",
+                    "upper",
+                    atEnd = true
+                )
+
+            val original =
+                editor.model.expression
+
+
+            /*
+             * upper END
+             * RIGHT -> boundary upper
+             * LEFT  -> upper END
+             */
+            editor.perform(
+                MathKeyboardAction.NextSlot
+            )
+
+            assertOutside(
+                editor,
+                forward = true
+            )
+
+            editor.perform(
+                MathKeyboardAction.PreviousSlot
+            )
+
+            assertAtEnd(
+                editor,
+                "upper"
+            )
+
+
+            /*
+             * lower LEFT edge
+             * LEFT  -> HOME
+             * RIGHT -> lower LEFT edge
+             */
+            editor.onCursorRequested?.invoke(
+                MathCursor(
+                    listOf(
+                        MathCursorStep(
+                            0,
+                            "lower"
+                        )
+                    ),
+                    0
+                )
+            )
+
+            editor.perform(
+                MathKeyboardAction.PreviousSlot
+            )
+
+            assertEquals(
+                MathCursor(),
+                editor.model.cursor
+            )
+
+            editor.perform(
+                MathKeyboardAction.NextSlot
+            )
+
+            assertAt(
+                editor,
+                "lower",
+                0
+            )
+
+            assertEquals(
+                original,
+                editor.model.expression
+            )
+        }
 
     @Test fun backspaceAfterExitingAScriptRemovesThatScriptAndPreservesItsBaseAndSibling() = onMain {
         val fixtures = listOf(
@@ -621,73 +1336,216 @@ class MathProgressiveSlotNavigationDeviceTest {
         }
     }
 
-    private fun assertToolbarWalk(latex: String, slots: List<Pair<String, String>>) {
-        val editor = MathExpressionEditor(context)
-        assertTrue(editor.setLatex(latex))
-        val original = editor.model.expression
-        val toolbar = toolbar(editor)
-        val previous = navigation(toolbar, "Slot anterior")
-        val next = navigation(toolbar, "Slot siguiente")
-        assertParentBoundary(editor)
-        fun left() {
-            previous.performClick()
-        }
-        val descriptors = original.children.single().navigationChildren()
-        assertEquals("The descriptors declare traversal order, including parent content at its declared position",
-            slots.map { it.first }, descriptors.map { it.id })
-        for (descriptor in descriptors) {
-            val name = descriptor.id
-            val text = slots.single { it.first == name }.second
-            left()
-            if (descriptor.role == MathNavigationRole.CHILD) {
-                assertBoundary(editor, name, after = true)
-                assertNavigation(toolbar, editor, previous, next)
-                left()
-            }
-            assertAtEnd(editor, name)
-            assertNavigation(toolbar, editor, previous, next)
-            left()
-            assertFullSelection(editor, name, text)
-            assertNavigation(toolbar, editor, previous, next)
-            left()
-            assertAt(editor, name, 0)
-            assertNavigation(toolbar, editor, previous, next)
-        }
-        left()
-        assertEquals(MathCursor(offset = 0), editor.model.cursor)
-        assertFalse(previous.isEnabled)
-        next.performClick()
-        assertParentBoundary(editor)
+    private fun assertToolbarWalk(
+        latex: String,
+        slots: List<Pair<String, String>>
+    ) {
+        val editor =
+            MathExpressionEditor(context)
 
-        val first = descriptors.first()
-        editor.onCursorRequested?.invoke(MathCursor(listOf(MathCursorStep(0, first.id)), 0))
-        fun right() {
-            val origin = Triple(editor.model.cursor, editor.model.selectionRange, editor.model.cursorPresentation)
-            assertTrue(next.isEnabled)
-            next.performClick()
-            val target = Triple(editor.model.cursor, editor.model.selectionRange, editor.model.cursorPresentation)
-            assertSame("Declared-child progression never mutates the AST", original, editor.model.expression)
-            previous.performClick()
-            assertEquals("LEFT returns coherently across the immediately traversed edge", origin,
-                Triple(editor.model.cursor, editor.model.selectionRange, editor.model.cursorPresentation))
-            next.performClick()
-            assertEquals(target, Triple(editor.model.cursor, editor.model.selectionRange, editor.model.cursorPresentation))
-            assertNavigation(toolbar, editor, previous, next)
-        }
+        assertTrue(
+            editor.setLatex(latex)
+        )
+
+        val original =
+            editor.model.expression
+
+        val toolbar =
+            toolbar(editor)
+
+        val previous =
+            navigation(
+                toolbar,
+                "Slot anterior"
+            )
+
+        val next =
+            navigation(
+                toolbar,
+                "Slot siguiente"
+            )
+
+        val descriptors =
+            original.children
+                .single()
+                .navigationChildren()
+
+        assertEquals(
+            "Los descriptores conservan el orden canónico declarado",
+            slots.map { it.first },
+            descriptors.map { it.id }
+        )
+
         descriptors.forEach { descriptor ->
-            assertAt(editor, descriptor.id, 0)
-            right()
-            assertFullSelection(editor, descriptor.id, slots.single { it.first == descriptor.id }.second)
-            right()
-            assertAtEnd(editor, descriptor.id)
-            right()
-            if (descriptor.role == MathNavigationRole.CHILD) {
-                assertBoundary(editor, descriptor.id, after = true)
-                right()
-            }
+            val path =
+                listOf(
+                    MathCursorStep(
+                        0,
+                        descriptor.id
+                    )
+                )
+
+            val sequence =
+                requireNotNull(
+                    editor.model.sequenceAt(path)
+                )
+
+            assertEquals(
+                slots.single {
+                    it.first == descriptor.id
+                }.second,
+                MathLatexSerializer.serialize(
+                    sequence
+                )
+            )
         }
-        assertParentBoundary(editor)
-        assertEquals(original, editor.model.expression)
+
+
+        /*
+         * Llegamos primero al checkpoint
+         * más a la derecha.
+         *
+         * Normalmente ya estamos en
+         * BordePadre.
+         *
+         * Si la Sequence termina en un
+         * LargeOperator existe además su
+         * checkpoint independiente de
+         * continuación.
+         */
+        var terminalSteps =
+            0
+
+        while (
+            editor.model.canNavigateNext
+        ) {
+            assertTrue(
+                "El extremo derecho debe alcanzarse en pocos pasos",
+                terminalSteps++ < 10
+            )
+
+            assertTrue(
+                next.performClick()
+            )
+
+            assertSame(
+                "Buscar el extremo derecho no modifica el AST",
+                original,
+                editor.model.expression
+            )
+        }
+
+        val terminalState =
+            navigationSnapshot(editor)
+
+
+        /*
+         * Recorremos LEFT completo desde
+         * el extremo derecho hasta HOME.
+         */
+        val leftStates =
+            mutableListOf(
+                navigationSnapshot(editor)
+            )
+
+        var leftSteps =
+            0
+
+        while (
+            editor.model.canNavigatePrevious
+        ) {
+            assertTrue(
+                "LEFT debe terminar en un número finito de checkpoints",
+                leftSteps++ < 100
+            )
+
+            assertTrue(
+                previous.performClick()
+            )
+
+            leftStates +=
+                navigationSnapshot(editor)
+
+            assertSame(
+                "LEFT nunca reconstruye el AST",
+                original,
+                editor.model.expression
+            )
+        }
+
+        assertEquals(
+            MathCursor(),
+            editor.model.cursor
+        )
+
+        assertEquals(
+            MathCursorPresentation.Neutral,
+            editor.model.cursorPresentation
+        )
+
+        assertNull(
+            editor.model.selectionRange
+        )
+
+        assertFalse(
+            editor.model.canNavigatePrevious
+        )
+
+
+        /*
+         * RIGHT debe recorrer exactamente
+         * los mismos estados al revés.
+         */
+        val rightStates =
+            mutableListOf(
+                navigationSnapshot(editor)
+            )
+
+        var rightSteps =
+            0
+
+        while (
+            editor.model.canNavigateNext
+        ) {
+            assertTrue(
+                "RIGHT no puede inventar checkpoints",
+                rightSteps++ < 100
+            )
+
+            assertTrue(
+                next.performClick()
+            )
+
+            rightStates +=
+                navigationSnapshot(editor)
+
+            assertSame(
+                "RIGHT nunca reconstruye el AST",
+                original,
+                editor.model.expression
+            )
+        }
+
+        assertEquals(
+            "RIGHT debe ser exactamente LEFT recorrido al revés",
+            leftStates.asReversed(),
+            rightStates
+        )
+
+        assertEquals(
+            "RIGHT debe terminar exactamente en el mismo extremo derecho",
+            terminalState,
+            navigationSnapshot(editor)
+        )
+
+        assertFalse(
+            editor.model.canNavigateNext
+        )
+
+        assertSame(
+            original,
+            editor.model.expression
+        )
     }
 
     private fun advanceToParentBoundary(editor: MathExpressionEditor) {
@@ -803,6 +1661,23 @@ class MathProgressiveSlotNavigationDeviceTest {
     }
 
     private fun connection(editor: MathExpressionEditor) = requireNotNull(editor.onCreateInputConnection(EditorInfo()))
+
+    private fun navigationSnapshot(editor: MathExpressionEditor) =
+        Triple(editor.model.cursor, editor.model.selectionRange, editor.model.cursorPresentation)
+
+    private fun navigationPress(editor: MathExpressionEditor, forward: Boolean, native: Boolean) {
+        if (native) {
+            val input = connection(editor)
+            val key = if (forward) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT
+            assertTrue(input.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, key)))
+            val afterDown = navigationSnapshot(editor)
+            input.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, key))
+            assertEquals("Arrow key-up cannot consume another checkpoint", afterDown, navigationSnapshot(editor))
+        } else {
+            val controls = toolbar(editor)
+            navigation(controls, if (forward) "Slot siguiente" else "Slot anterior").performClick()
+        }
+    }
 
     private fun canonical(latex: String) = MathLatexSerializer.serialize(
         (MathLatexParser.parse(latex) as MathLatexParser.Result.Success).expression)

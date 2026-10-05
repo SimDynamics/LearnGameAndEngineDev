@@ -346,4 +346,5 @@ object MathLatexParser {
         private fun expect(char: Char) { whitespace(); if (source.getOrNull(index) != char) fail("Expected '$char'"); index++ }
         private fun fail(message: String): Nothing = throw ParseFailure(message, index)
     }
+
 }

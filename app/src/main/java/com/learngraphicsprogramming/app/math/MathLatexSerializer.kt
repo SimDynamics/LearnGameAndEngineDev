@@ -59,5 +59,28 @@ object MathLatexSerializer {
     private fun braces(expression: MathExpression) = "{${serialize(expression)}}"
     private fun escape(value: String) = value.replace("\\", "\\backslash{}").replace("{", "\\{").replace("}", "\\}")
     internal val functions = setOf("sin", "cos", "tan", "sec", "csc", "cot", "arcsin", "arccos", "arctan", "sinh", "cosh", "tanh", "log", "ln", "exp")
-    internal val symbols = mapOf("π" to "\\pi", "∞" to "\\infty", "→" to "\\to", "≤" to "\\le", "≥" to "\\ge", "≠" to "\\ne", "≈" to "\\approx", "∂" to "\\partial", "α" to "\\alpha", "β" to "\\beta", "γ" to "\\gamma", "θ" to "\\theta", "λ" to "\\lambda", "μ" to "\\mu", "σ" to "\\sigma", "Δ" to "\\Delta", "∪" to "\\cup", "∩" to "\\cap", "∈" to "\\in")
+    internal val symbols = mapOf(
+        "π" to "\\pi",
+        "∞" to "\\infty",
+        "→" to "\\to",
+        "≤" to "\\le",
+        "≥" to "\\ge",
+        "≠" to "\\ne",
+        "≈" to "\\approx",
+        "∂" to "\\partial",
+        "α" to "\\alpha",
+        "β" to "\\beta",
+        "γ" to "\\gamma",
+        "θ" to "\\theta",
+        "λ" to "\\lambda",
+        "μ" to "\\mu",
+        "σ" to "\\sigma",
+        "Δ" to "\\Delta",
+        "∪" to "\\cup",
+        "∩" to "\\cap",
+        "∈" to "\\in",
+        "{" to "\\{",
+        "}" to "\\}"
+    )
+
 }

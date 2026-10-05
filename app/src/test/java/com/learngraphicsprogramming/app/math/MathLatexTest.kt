@@ -114,6 +114,46 @@ class MathLatexTest {
         assertTrue(MathLatexParser.parse("x".repeat(40_000)) is MathLatexParser.Result.Failure)
     }
 
+    @Test
+    fun symjaLatexOutputsParseAndRoundTrip()
+    {
+        val outputs = listOf(
+            "\\frac{x}{\\sqrt{5}}",
+            "x",
+            "3 \\cdot {x}^{2}",
+            "\\frac{{x}^{3}}{3}",
+            "\\{\\{x\\to -2\\},\\{x\\to 2\\}\\}"
+        )
+
+        outputs.forEach { source ->
+            println()
+            println("SOURCE:")
+            println(source)
+
+            val tree = parse(source)
+
+            println("AST:")
+            println(tree)
+
+            val serialized =
+                MathLatexSerializer.serialize(tree)
+
+            println("SERIALIZED:")
+            println(serialized)
+
+            val reparsed =
+                parse(serialized)
+
+            println("ROUND TRIP TREE EQUAL:")
+            println(tree == reparsed)
+
+            assertEquals(
+                tree,
+                reparsed
+            )
+        }
+    }
+
     @Test fun fractionEditingNavigatesStructuralSlotsAndRetainsCursor() {
         val model = MathExpressionModel()
         model.insert(MathExpression.Fraction(MathExpression.Sequence(), MathExpression.Sequence()), "numerator")
