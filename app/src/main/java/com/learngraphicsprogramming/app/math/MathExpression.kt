@@ -137,6 +137,7 @@ data class MathCursorStep(
 
 enum class MathCursorLevel {
     NEUTRAL,
+    PARENT_BOUNDARY,
     CHILD_BOUNDARY,
     INTERIOR
 }
@@ -224,27 +225,253 @@ enum class MathSlotRequirement {
  *
  * La estructura en sí nunca se edita directamente.
  */
+/**
+ * Papel estructural de una parte matemática.
+ *
+ * PARENT:
+ * región matemática principal de una estructura.
+ *
+ * CHILD:
+ * región matemática subordinada:
+ * índice, exponente, subíndice,
+ * límite, base auxiliar, etc.
+ *
+ * PARENT y CHILD solamente dicen QUÉ ES
+ * una parte dentro de una STRUCTURE.
+ *
+ * No indican si puede editarse,
+ * seleccionarse o eliminarse.
+ */
+/**
+ * Papel de una región navegable dentro de una STRUCTURE.
+ *
+ * SUBSTRUCTURE:
+ * región obligatoria que posee su propio recorrido interno.
+ *
+ * Ejemplos:
+ * - numerador
+ * - denominador
+ *
+ * PARENT:
+ * unidad matemática normal contenida dentro de una región.
+ *
+ * Ejemplos:
+ * - x
+ * - 2
+ * - +
+ *
+ * CHILD:
+ * modificador subordinado.
+ *
+ * Ejemplos:
+ * - índice de raíz
+ * - exponente
+ * - subíndice
+ * - límites
+ *
+ * STRUCTURE y DECORATION no aparecen aquí:
+ *
+ * STRUCTURE es el MathExpression completo.
+ * DECORATION no participa en navegación.
+ */
 enum class MathNavigationRole {
+    SUBSTRUCTURE,
     PARENT,
     CHILD
 }
 
+/**
+ * Capacidades de interacción de un elemento matemático.
+ *
+ * Son completamente independientes
+ * de su papel estructural.
+ *
+ * editable:
+ * el usuario puede entrar dentro del elemento
+ * y modificar su contenido.
+ *
+ * selectable:
+ * el elemento posee un checkpoint navegable
+ * en su borde derecho.
+ *
+ * No existe borde izquierdo.
+ *
+ * deletable:
+ * el elemento puede eliminarse desde
+ * su estado estructural correspondiente.
+ */
+data class MathInteractionCapabilities(
+    val editable: Boolean,
+    val selectable: Boolean,
+    val deletable: Boolean
+)
+
+/**
+ * Papel estructural de un MathExpression cuando vive
+ * directamente dentro de una Sequence.
+ *
+ * Los átomos matemáticos son PARENT.
+ *
+ * Las STRUCTURE no reciben aquí un papel PARENT/CHILD,
+ * porque administran sus propias partes mediante
+ * navigationParts().
+ */
+val MathExpression.navigationRole: MathNavigationRole?
+    get() =
+        when (this) {
+
+            is MathExpression.Number,
+            is MathExpression.Variable,
+            is MathExpression.Symbol,
+            is MathExpression.Operator,
+            is MathExpression.Relation ->
+                MathNavigationRole.PARENT
+
+            is MathExpression.Sequence,
+            is MathExpression.Fraction,
+            is MathExpression.Scripts,
+            is MathExpression.Root,
+            is MathExpression.Group,
+            is MathExpression.Function,
+            is MathExpression.LargeOperator,
+            is MathExpression.Limit,
+            is MathExpression.Derivative,
+            is MathExpression.Matrix,
+            is MathExpression.Cases ->
+                null
+        }
+
+/**
+ * Parte navegable inmediata de una STRUCTURE.
+ *
+ * role describe:
+ *
+ * PARENT / CHILD
+ *
+ * interaction describe:
+ *
+ * editable / selectable / deletable
+ *
+ * Ambos conceptos son independientes.
+ */
 data class MathNavigationPart(
     val id: String,
     val content: MathExpression.Sequence,
     val requirement: MathSlotRequirement,
     val update: (MathExpression.Sequence) -> MathExpression,
     val remove: () -> List<MathExpression>,
-    val role: MathNavigationRole
+    val role: MathNavigationRole,
+    val interaction: MathInteractionCapabilities =
+        MathInteractionCapabilities(
+            editable = true,
+            selectable = true,
+            deletable =
+                requirement == MathSlotRequirement.OPTIONAL
+        )
 )
 
 /**
  * Alias temporal para no romper código antiguo que todavía
  * use el nombre MathNavigationChild.
  *
- * El concepto nuevo correcto es MathNavigationPart.
+ * El concepto correcto es MathNavigationPart.
  */
 typealias MathNavigationChild = MathNavigationPart
+
+/**
+ * Capacidades de un MathExpression completo.
+ *
+ * Estas capacidades pertenecen al bloque matemático
+ * completo y NO a sus PARENT o CHILD internos.
+ *
+ * Ejemplo:
+ *
+ * log₂(x)
+ *
+ * STRUCTURE Function:
+ *
+ * editable   = false
+ * selectable = true
+ * deletable  = true
+ */
+val MathExpression.interactionCapabilities: MathInteractionCapabilities
+    get() =
+        when (this) {
+
+            /*
+             * Sequence organiza elementos.
+             *
+             * No representa por sí misma
+             * una unidad matemática seleccionable.
+             */
+            is MathExpression.Sequence ->
+                MathInteractionCapabilities(
+                    editable = false,
+                    selectable = false,
+                    deletable = false
+                )
+
+            /*
+             * Operadores y relaciones.
+             *
+             * Son unidades matemáticas atómicas.
+             *
+             * No se entra dentro de ellas.
+             *
+             * Sí poseen borde derecho navegable
+             * y sí pueden eliminarse.
+             *
+             * Ejemplo:
+             *
+             * x + ] y
+             */
+            is MathExpression.Operator,
+            is MathExpression.Relation ->
+                MathInteractionCapabilities(
+                    editable = false,
+                    selectable = true,
+                    deletable = true
+                )
+
+            /*
+             * Hojas matemáticas normales.
+             *
+             * Conservamos de momento
+             * su comportamiento editable.
+             */
+            is MathExpression.Number,
+            is MathExpression.Variable,
+            is MathExpression.Symbol ->
+                MathInteractionCapabilities(
+                    editable = true,
+                    selectable = true,
+                    deletable = true
+                )
+
+            /*
+             * Toda STRUCTURE matemática completa
+             * funciona como un bloque.
+             *
+             * La estructura no se edita directamente.
+             * Sus PARENT y CHILD administran
+             * la navegación interna.
+             */
+            is MathExpression.Fraction,
+            is MathExpression.Scripts,
+            is MathExpression.Root,
+            is MathExpression.Group,
+            is MathExpression.Function,
+            is MathExpression.LargeOperator,
+            is MathExpression.Limit,
+            is MathExpression.Derivative,
+            is MathExpression.Matrix,
+            is MathExpression.Cases ->
+                MathInteractionCapabilities(
+                    editable = false,
+                    selectable = true,
+                    deletable = true
+                )
+        }
 
 /**
  * Partes navegables inmediatas de una estructura.
@@ -255,11 +482,11 @@ typealias MathNavigationChild = MathNavigationPart
  *
  * ORDEN CANÓNICO:
  *
- * 1. Arriba -> abajo.
- * 2. A la misma altura: izquierda -> derecha.
+ * Primero todos los PARENT.
+ * Después todos los CHILD.
  *
- * LEFT recorre este orden.
- * RIGHT lo recorre exactamente al revés.
+ * Dentro de cada grupo se conserva
+ * el orden declarado.
  */
 fun MathExpression.navigationParts(): List<MathNavigationPart> {
 
@@ -267,6 +494,12 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
         id: String,
         content: MathExpression.Sequence,
         role: MathNavigationRole,
+        interaction: MathInteractionCapabilities =
+            MathInteractionCapabilities(
+                editable = true,
+                selectable = true,
+                deletable = false
+            ),
         update: (MathExpression.Sequence) -> MathExpression
     ): MathNavigationPart =
         MathNavigationPart(
@@ -281,13 +514,20 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                     )
                 )
             },
-            role = role
+            role = role,
+            interaction = interaction
         )
 
     fun optional(
         id: String,
         content: MathExpression.Sequence?,
         role: MathNavigationRole,
+        interaction: MathInteractionCapabilities =
+            MathInteractionCapabilities(
+                editable = true,
+                selectable = true,
+                deletable = true
+            ),
         update: (MathExpression.Sequence) -> MathExpression,
         remove: () -> List<MathExpression>
     ): MathNavigationPart? =
@@ -298,7 +538,8 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                 requirement = MathSlotRequirement.OPTIONAL,
                 update = update,
                 remove = remove,
-                role = role
+                role = role,
+                interaction = interaction
             )
         }
 
@@ -317,22 +558,21 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
     return when (this) {
 
         /*
-         *      numerator
-         *     -----------
-         *     denominator
+         * STRUCTURE Fraction
          *
-         * La fracción es la estructura.
-         * El guion no se edita.
+         * numerator y denominator son SUBSTRUCTURE
+         * obligatorias.
          *
-         * Numerador y denominador son dos
-         * expresiones principales.
+         * La raya es DECORATION:
+         * no aparece aquí porque no participa
+         * en navegación.
          */
         is MathExpression.Fraction ->
             listOf(
                 required(
                     id = "numerator",
                     content = numerator,
-                    role = MathNavigationRole.PARENT
+                    role = MathNavigationRole.SUBSTRUCTURE
                 ) {
                     copy(
                         numerator = it
@@ -342,7 +582,7 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                 required(
                     id = "denominator",
                     content = denominator,
-                    role = MathNavigationRole.PARENT
+                    role = MathNavigationRole.SUBSTRUCTURE
                 ) {
                     copy(
                         denominator = it
@@ -351,12 +591,10 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
             )
 
         /*
-         *        upper
-         * base
-         *        lower
+         * STRUCTURE Scripts
          *
-         * base es la expresión principal.
-         * upper y lower modifican a la base.
+         * base es la región matemática principal.
+         * upper y lower son CHILD.
          */
         is MathExpression.Scripts ->
             listOfNotNull(
@@ -406,10 +644,16 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
             )
 
         /*
-         * index √ radicand
+         * STRUCTURE Root
          *
-         * radicand es la expresión principal.
-         * index modifica a la raíz.
+         * La casita/√ es DECORATION.
+         *
+         * radicand es PARENT obligatorio:
+         * seleccionable
+         * editable
+         * no eliminable.
+         *
+         * index es CHILD opcional.
          */
         is MathExpression.Root ->
             listOfNotNull(
@@ -442,8 +686,8 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
             )
 
         /*
-         * Los delimitadores forman la estructura.
-         * El contenido es la expresión principal.
+         * Los delimitadores son DECORATION.
+         * content es PARENT obligatorio.
          */
         is MathExpression.Group ->
             listOf(
@@ -459,15 +703,11 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
             )
 
         /*
-         * argument es la expresión principal.
-         * base, cuando existe, es auxiliar.
+         * Function todavía conserva la definición
+         * actual hasta que implementemos su head "log".
          *
-         * Ejemplo:
-         *
-         * log₂(x + 1)
-         *
-         * PARENT = x + 1
-         * CHILD  = 2
+         * argument es PARENT obligatorio.
+         * base es CHILD opcional.
          */
         is MathExpression.Function ->
             listOfNotNull(
@@ -500,14 +740,12 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
             )
 
         /*
-         * Integral, sumatoria y producto.
+         * LargeOperator sigue SIN body.
          *
-         * upper y lower son hijos.
+         * upper y lower son CHILD.
          *
-         * El operando principal NO pertenece
-         * al LargeOperator en el AST.
-         * Permanece como siguiente sibling
-         * dentro de Sequence.
+         * Su expresión de la derecha continúa siendo
+         * sibling dentro de la Sequence contenedora.
          */
         is MathExpression.LargeOperator ->
             listOfNotNull(
@@ -546,12 +784,6 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                 }
             )
 
-        /*
-         * lim condition body
-         *
-         * body es la expresión principal.
-         * condition funciona como anotación inferior.
-         */
         is MathExpression.Limit ->
             listOf(
                 required(
@@ -575,12 +807,6 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                 }
             )
 
-        /*
-         * La expresión derivada es principal.
-         *
-         * order y variable describen/modifican
-         * la operación derivada.
-         */
         is MathExpression.Derivative ->
             listOfNotNull(
                 optional(
@@ -621,13 +847,6 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                 }
             )
 
-        /*
-         * Cada celda es una región matemática
-         * principal independiente.
-         *
-         * No es un índice ni un modificador
-         * de otra celda.
-         */
         is MathExpression.Matrix ->
             rows.flatMapIndexed { r, row ->
 
@@ -636,7 +855,7 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                     required(
                         id = "r${r}c$c",
                         content = cell,
-                        role = MathNavigationRole.PARENT
+                        role = MathNavigationRole.SUBSTRUCTURE
                     ) { value ->
 
                         copy(
@@ -660,16 +879,6 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                 }
             }
 
-        /*
-         * Cada fila de Cases posee dos regiones
-         * matemáticas completas:
-         *
-         * expresión
-         * condición
-         *
-         * Ninguna es un índice, exponente
-         * o modificador tipográfico de la otra.
-         */
         is MathExpression.Cases ->
             rows.flatMapIndexed { index, row ->
 
@@ -677,7 +886,7 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                     required(
                         id = "expression$index",
                         content = row.expression,
-                        role = MathNavigationRole.PARENT
+                        role = MathNavigationRole.SUBSTRUCTURE
                     ) { value ->
 
                         copy(
@@ -698,7 +907,7 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                     required(
                         id = "condition$index",
                         content = row.condition,
-                        role = MathNavigationRole.PARENT
+                        role = MathNavigationRole.SUBSTRUCTURE
                     ) { value ->
 
                         copy(
@@ -765,15 +974,83 @@ fun MathExpression.navigationChildren(): List<MathNavigationPart> =
  *     CHILD upper
  *     CHILD lower
  */
+/**
+ * Orden semántico inmediato dentro de una STRUCTURE.
+ *
+ * IMPORTANTE:
+ *
+ * Esto solamente organiza las partes inmediatas.
+ * La recursión profunda la controla MathExpressionModel.
+ *
+ * Orden:
+ *
+ * 1. SUBSTRUCTURE
+ * 2. PARENT
+ * 3. CHILD
+ *
+ * Dentro de cada grupo se conserva el orden visual
+ * declarado por navigationParts():
+ *
+ * arriba -> abajo
+ * izquierda -> derecha
+ *
+ * Cuando una región contiene otra STRUCTURE,
+ * esa STRUCTURE administra completamente
+ * su propio recorrido antes de continuar.
+ */
 fun MathExpression.navigationTraversalParts(): List<MathNavigationPart> {
 
     val parts =
         navigationParts()
 
-    return parts.filter {
-        it.role == MathNavigationRole.PARENT
-    } + parts.filter {
-        it.role == MathNavigationRole.CHILD
+    /*
+     * Orden de LEFT:
+     *
+     * 1. arriba -> abajo
+     * 2. a la misma altura: derecha -> izquierda
+     *
+     * Cada parte conserva después su propia jerarquía interna.
+     */
+    return when (this) {
+
+        is MathExpression.Fraction,
+        is MathExpression.Scripts,
+        is MathExpression.Root,
+        is MathExpression.Group,
+        is MathExpression.Function,
+        is MathExpression.LargeOperator,
+        is MathExpression.Limit,
+        is MathExpression.Derivative ->
+            parts
+
+        is MathExpression.Matrix ->
+            rows.indices.flatMap { row ->
+
+                rows[row].indices
+                    .reversed()
+                    .mapNotNull { column ->
+
+                        parts.firstOrNull {
+                            it.id == "r${row}c$column"
+                        }
+                    }
+            }
+
+        is MathExpression.Cases ->
+            rows.indices.flatMap { row ->
+
+                listOfNotNull(
+                    parts.firstOrNull {
+                        it.id == "condition$row"
+                    },
+                    parts.firstOrNull {
+                        it.id == "expression$row"
+                    }
+                )
+            }
+
+        else ->
+            parts
     }
 }
 
