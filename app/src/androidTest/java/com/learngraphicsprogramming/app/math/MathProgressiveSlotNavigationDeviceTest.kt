@@ -23,63 +23,329 @@ class MathProgressiveSlotNavigationDeviceTest {
 
     private enum class DeleteTransport { TEXT, CODE_POINTS, KEY_EVENT }
 
-    @Test fun fractionToolbarAndNativeArrowsReverseAllLeftSnapshotsAfterEveryDraftRestore() = onMain {
-        val numerator = listOf(MathCursorStep(0, "numerator"))
-        val denominator = listOf(MathCursorStep(0, "denominator"))
-        val interior = MathCursorPresentation.Interior(MathContentScope.Slot)
-        val expected = listOf(
-            Triple(MathCursor(), null, MathCursorPresentation.Neutral),
-            Triple(MathCursor(denominator, 0), null, interior),
-            Triple(MathCursor(denominator, 1), MathSelection(denominator, 0, 1), interior),
-            Triple(MathCursor(denominator, 1), null, interior),
-            Triple(MathCursor(offset = 1, level = MathCursorLevel.CHILD_BOUNDARY), null, MathCursorPresentation.ChildBoundary(denominator)),
-            Triple(MathCursor(numerator, 0), null, interior),
-            Triple(MathCursor(numerator, 3), MathSelection(numerator, 0, 3), interior),
-            Triple(MathCursor(numerator, 3), null, interior),
-            Triple(MathCursor(offset = 1, level = MathCursorLevel.CHILD_BOUNDARY), null, MathCursorPresentation.ChildBoundary(numerator)),
-            Triple(MathCursor(offset = 1), null, MathCursorPresentation.ParentBoundary(emptyList(), 0))
-        )
-        for (native in listOf(false, true)) {
-            val editor = MathExpressionEditor(context)
-            assertTrue(editor.setLatex("\\frac{x+1}{2}"))
-            val original = editor.model.expression
-            val leftStates = mutableListOf(navigationSnapshot(editor))
-            while (editor.model.canNavigatePrevious) {
-                assertTrue("LEFT has exactly nine transitions", leftStates.size < expected.size)
-                navigationPress(editor, forward = false, native = native)
-                leftStates += navigationSnapshot(editor)
-                assertSame("Structural navigation cannot rebuild the fraction", original, editor.model.expression)
-            }
-            assertEquals("LEFT establishes every canonical fraction checkpoint", expected.asReversed(), leftStates)
-            val rightStates = mutableListOf(navigationSnapshot(editor))
-            while (editor.model.canNavigateNext) {
-                assertTrue("RIGHT cannot add a shortcut or extra endpoint", rightStates.size < expected.size)
-                navigationPress(editor, forward = true, native = native)
-                rightStates += navigationSnapshot(editor)
-                assertSame(original, editor.model.expression)
-            }
-            assertEquals("RIGHT must be exactly the inverse of LEFT", leftStates.asReversed(), rightStates)
-            for (index in expected.indices.reversed()) {
-                assertEquals(expected[index], navigationSnapshot(editor))
-                val draft = editor.saveDraft()
-                for (forward in listOf(false, true)) {
-                    val restored = MathExpressionEditor(context)
-                    restored.restoreDraft(draft)
-                    assertEquals("Restore includes cursor, real selection and presentation", expected[index], navigationSnapshot(restored))
-                    assertEquals(original, restored.model.expression)
-                    val restoredAst = restored.model.expression
-                    val target = index + if (forward) 1 else -1
-                    assertEquals("Availability follows the restored checkpoint alone", target in expected.indices,
-                        if (forward) restored.model.canNavigateNext else restored.model.canNavigatePrevious)
-                    navigationPress(restored, forward, native)
-                    assertEquals("A fresh editor cannot rely on a last edge in memory",
-                        expected[target.coerceIn(expected.indices)], navigationSnapshot(restored))
-                    assertSame(restoredAst, restored.model.expression)
+    @Test
+    fun fractionToolbarAndNativeArrowsReverseAllLeftSnapshotsAfterEveryDraftRestore() =
+        onMain {
+
+            val numerator =
+                listOf(
+                    MathCursorStep(
+                        0,
+                        "numerator"
+                    )
+                )
+
+            val denominator =
+                listOf(
+                    MathCursorStep(
+                        0,
+                        "denominator"
+                    )
+                )
+
+            val interior =
+                MathCursorPresentation.Interior(
+                    MathContentScope.Slot
+                )
+
+            /*
+             * Fraction:
+             *
+             * STRUCTURE
+             * ├── PARENT numerator
+             * └── PARENT denominator
+             *
+             * Ninguno necesita ChildBoundary.
+             */
+            val expected =
+                listOf(
+                    Triple(
+                        MathCursor(),
+                        null,
+                        MathCursorPresentation.Neutral
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            denominator,
+                            0
+                        ),
+                        null,
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            denominator,
+                            1
+                        ),
+                        MathSelection(
+                            denominator,
+                            0,
+                            1
+                        ),
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            denominator,
+                            1
+                        ),
+                        null,
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            numerator,
+                            0
+                        ),
+                        null,
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            numerator,
+                            3
+                        ),
+                        MathSelection(
+                            numerator,
+                            0,
+                            3
+                        ),
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            numerator,
+                            3
+                        ),
+                        null,
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            offset = 1
+                        ),
+                        null,
+                        MathCursorPresentation.ParentBoundary(
+                            emptyList(),
+                            0
+                        )
+                    )
+                )
+
+            for (
+            native in listOf(
+                false,
+                true
+            )
+            ) {
+
+                val editor =
+                    MathExpressionEditor(
+                        context
+                    )
+
+                assertTrue(
+                    editor.setLatex(
+                        "\\frac{x+1}{2}"
+                    )
+                )
+
+                val original =
+                    editor.model.expression
+
+                val leftStates =
+                    mutableListOf(
+                        navigationSnapshot(
+                            editor
+                        )
+                    )
+
+                while (
+                    editor.model
+                        .canNavigatePrevious
+                ) {
+
+                    assertTrue(
+                        "LEFT has exactly seven transitions",
+                        leftStates.size <
+                                expected.size
+                    )
+
+                    navigationPress(
+                        editor,
+                        forward = false,
+                        native = native
+                    )
+
+                    leftStates +=
+                        navigationSnapshot(
+                            editor
+                        )
+
+                    assertSame(
+                        "Structural navigation cannot rebuild the fraction",
+                        original,
+                        editor.model.expression
+                    )
                 }
-                if (index > 0) navigationPress(editor, forward = false, native = native)
+
+                assertEquals(
+                    "LEFT establishes every canonical fraction checkpoint",
+                    expected.asReversed(),
+                    leftStates
+                )
+
+                val rightStates =
+                    mutableListOf(
+                        navigationSnapshot(
+                            editor
+                        )
+                    )
+
+                while (
+                    editor.model
+                        .canNavigateNext
+                ) {
+
+                    assertTrue(
+                        "RIGHT cannot add a shortcut or extra endpoint",
+                        rightStates.size <
+                                expected.size
+                    )
+
+                    navigationPress(
+                        editor,
+                        forward = true,
+                        native = native
+                    )
+
+                    rightStates +=
+                        navigationSnapshot(
+                            editor
+                        )
+
+                    assertSame(
+                        original,
+                        editor.model.expression
+                    )
+                }
+
+                assertEquals(
+                    "RIGHT must be exactly the inverse of LEFT",
+                    leftStates.asReversed(),
+                    rightStates
+                )
+
+                for (
+                index in
+                expected.indices.reversed()
+                ) {
+
+                    assertEquals(
+                        expected[index],
+                        navigationSnapshot(
+                            editor
+                        )
+                    )
+
+                    val draft =
+                        editor.saveDraft()
+
+                    for (
+                    forward in
+                    listOf(
+                        false,
+                        true
+                    )
+                    ) {
+
+                        val restored =
+                            MathExpressionEditor(
+                                context
+                            )
+
+                        restored.restoreDraft(
+                            draft
+                        )
+
+                        assertEquals(
+                            "Restore includes cursor, real selection and presentation",
+                            expected[index],
+                            navigationSnapshot(
+                                restored
+                            )
+                        )
+
+                        assertEquals(
+                            original,
+                            restored.model.expression
+                        )
+
+                        val restoredAst =
+                            restored.model.expression
+
+                        val target =
+                            index +
+                                    if (forward) {
+                                        1
+                                    } else {
+                                        -1
+                                    }
+
+                        assertEquals(
+                            "Availability follows the restored checkpoint alone",
+                            target in expected.indices,
+                            if (forward) {
+                                restored.model
+                                    .canNavigateNext
+                            } else {
+                                restored.model
+                                    .canNavigatePrevious
+                            }
+                        )
+
+                        navigationPress(
+                            restored,
+                            forward,
+                            native
+                        )
+
+                        assertEquals(
+                            "A fresh editor cannot rely on a last edge in memory",
+                            expected[
+                                target.coerceIn(
+                                    expected.indices
+                                )
+                            ],
+                            navigationSnapshot(
+                                restored
+                            )
+                        )
+
+                        assertSame(
+                            restoredAst,
+                            restored.model.expression
+                        )
+                    }
+
+                    if (index > 0) {
+
+                        navigationPress(
+                            editor,
+                            forward = false,
+                            native = native
+                        )
+                    }
+                }
             }
         }
-    }
 
     @Test
     fun fractionRightFromHomeVisitsEmptyDenominatorBeforeNumeratorAndParent() =
@@ -91,8 +357,11 @@ class MathProgressiveSlotNavigationDeviceTest {
                 true
             )
             ) {
+
                 val editor =
-                    MathExpressionEditor(context)
+                    MathExpressionEditor(
+                        context
+                    )
 
                 assertTrue(
                     editor.setLatex(
@@ -111,7 +380,7 @@ class MathProgressiveSlotNavigationDeviceTest {
                     fraction.denominator
 
                 /*
-                 * HOME es el extremo izquierdo.
+                 * HOME.
                  */
                 editor.model.cursor =
                     MathCursor()
@@ -122,6 +391,10 @@ class MathProgressiveSlotNavigationDeviceTest {
                     native = native
                 )
 
+                /*
+                 * Primer PARENT:
+                 * denominator.
+                 */
                 assertAt(
                     editor,
                     "denominator",
@@ -140,18 +413,12 @@ class MathProgressiveSlotNavigationDeviceTest {
                     )
                 )
 
-                navigationPress(
-                    editor,
-                    forward = true,
-                    native = native
-                )
-
-                assertBoundary(
-                    editor,
-                    "denominator",
-                    after = true
-                )
-
+                /*
+                 * denominator está vacío.
+                 *
+                 * Al ser PARENT no existe
+                 * ChildBoundary intermedio.
+                 */
                 navigationPress(
                     editor,
                     forward = true,
@@ -193,19 +460,14 @@ class MathProgressiveSlotNavigationDeviceTest {
                     native = native
                 )
 
-                assertBoundary(
-                    editor,
-                    "numerator",
-                    after = true
+                /*
+                 * Terminados ambos PARENT,
+                 * llegamos al borde derecho
+                 * de Fraction.
+                 */
+                assertParentBoundary(
+                    editor
                 )
-
-                navigationPress(
-                    editor,
-                    forward = true,
-                    native = native
-                )
-
-                assertParentBoundary(editor)
 
                 assertSame(
                     original,
@@ -403,11 +665,13 @@ class MathProgressiveSlotNavigationDeviceTest {
     }
 
     @Test
-    fun emptySlotsRemainReciprocalWithoutInventingSelection() =
+    fun emptyFractionParentsRemainReciprocalWithoutInventingSelection() =
         onMain {
 
             val editor =
-                MathExpressionEditor(context)
+                MathExpressionEditor(
+                    context
+                )
 
             assertTrue(
                 editor.setLatex(
@@ -418,8 +682,78 @@ class MathProgressiveSlotNavigationDeviceTest {
             val original =
                 editor.model.expression
 
+            val denominator =
+                listOf(
+                    MathCursorStep(
+                        0,
+                        "denominator"
+                    )
+                )
+
+            val numerator =
+                listOf(
+                    MathCursorStep(
+                        0,
+                        "numerator"
+                    )
+                )
+
+            val interior =
+                MathCursorPresentation.Interior(
+                    MathContentScope.Slot
+                )
+
+            val expected =
+                listOf(
+                    Triple(
+                        MathCursor(),
+                        null,
+                        MathCursorPresentation.Neutral
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            denominator,
+                            0
+                        ),
+                        null,
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            numerator,
+                            0
+                        ),
+                        null,
+                        interior
+                    ),
+
+                    Triple(
+                        MathCursor(
+                            offset = 1
+                        ),
+                        null,
+                        MathCursorPresentation.ParentBoundary(
+                            emptyList(),
+                            0
+                        )
+                    )
+                )
+
+            /*
+             * IMPORTANTE:
+             * establecemos HOME antes de crear
+             * la toolbar para que sus estados
+             * enabled nazcan sincronizados.
+             */
+            editor.model.cursor =
+                MathCursor()
+
             val toolbar =
-                toolbar(editor)
+                toolbar(
+                    editor
+                )
 
             val next =
                 navigation(
@@ -433,157 +767,71 @@ class MathProgressiveSlotNavigationDeviceTest {
                     "Slot anterior"
                 )
 
-            editor.model.cursor =
-                MathCursor()
-
-
-            /*
-             * RIGHT, desde HOME:
-             *
-             * denominator
-             * BordeHijo denominator
-             * numerator
-             * BordeHijo numerator
-             * Parent
-             */
-
-            assertTrue(
-                next.performClick()
+            assertEquals(
+                expected[0],
+                navigationSnapshot(
+                    editor
+                )
             )
 
-            assertAt(
-                editor,
-                "denominator",
-                0
-            )
+            for (
+            index in
+            1 until expected.size
+            ) {
 
-            assertNull(
-                editor.model.selectionRange
-            )
+                assertTrue(
+                    next.performClick()
+                )
 
+                assertEquals(
+                    expected[index],
+                    navigationSnapshot(
+                        editor
+                    )
+                )
 
-            assertTrue(
-                next.performClick()
-            )
+                assertNull(
+                    editor.model.selectionRange
+                )
 
-            assertBoundary(
-                editor,
-                "denominator",
-                after = true
-            )
-
-
-            assertTrue(
-                next.performClick()
-            )
-
-            assertAt(
-                editor,
-                "numerator",
-                0
-            )
-
-            assertNull(
-                editor.model.selectionRange
-            )
-
-
-            assertTrue(
-                next.performClick()
-            )
-
-            assertBoundary(
-                editor,
-                "numerator",
-                after = true
-            )
-
-
-            assertTrue(
-                next.performClick()
-            )
-
-            assertParentBoundary(editor)
+                assertSame(
+                    original,
+                    editor.model.expression
+                )
+            }
 
             assertFalse(
-                next.isEnabled
+                editor.model.canNavigateNext
             )
 
+            for (
+            index in
+            expected.lastIndex - 1 downTo 0
+            ) {
 
-            /*
-             * LEFT debe deshacer exactamente
-             * esos estados.
-             */
+                assertTrue(
+                    previous.performClick()
+                )
 
-            assertTrue(
-                previous.performClick()
-            )
+                assertEquals(
+                    expected[index],
+                    navigationSnapshot(
+                        editor
+                    )
+                )
 
-            assertBoundary(
-                editor,
-                "numerator",
-                after = true
-            )
+                assertNull(
+                    editor.model.selectionRange
+                )
 
-
-            assertTrue(
-                previous.performClick()
-            )
-
-            assertAt(
-                editor,
-                "numerator",
-                0
-            )
-
-
-            assertTrue(
-                previous.performClick()
-            )
-
-            assertBoundary(
-                editor,
-                "denominator",
-                after = true
-            )
-
-
-            assertTrue(
-                previous.performClick()
-            )
-
-            assertAt(
-                editor,
-                "denominator",
-                0
-            )
-
-
-            assertTrue(
-                previous.performClick()
-            )
-
-            assertEquals(
-                MathCursor(),
-                editor.model.cursor
-            )
-
-            assertEquals(
-                MathCursorPresentation.Neutral,
-                editor.model.cursorPresentation
-            )
-
-            assertNull(
-                editor.model.selectionRange
-            )
+                assertSame(
+                    original,
+                    editor.model.expression
+                )
+            }
 
             assertFalse(
-                previous.isEnabled
-            )
-
-            assertSame(
-                original,
-                editor.model.expression
+                editor.model.canNavigatePrevious
             )
         }
 
@@ -1590,11 +1838,27 @@ class MathProgressiveSlotNavigationDeviceTest {
         assertAt(editor, name, requireNotNull(editor.model.sequenceAt(path)).children.size)
     }
 
-    private fun assertOutside(editor: MathExpressionEditor, forward: Boolean) {
-        require(forward) { "An exterior fixture can only represent the RIGHT side" }
-        assertEquals("Leaving a slot exposes a real parent-sequence cursor", MathCursor(offset = 1,
-            level = MathCursorLevel.CHILD_BOUNDARY), editor.model.cursor)
-        assertNull("The exterior cursor is never represented by an artificial IME/math selection", editor.model.selectionRange)
+    private fun assertOutside(
+        editor: MathExpressionEditor,
+        forward: Boolean
+    ) {
+        require(forward) {
+            "An exterior fixture can only represent the RIGHT side"
+        }
+
+        assertEquals(
+            "Leaving a child exposes its right boundary",
+            MathCursor(
+                offset = 1,
+                level = MathCursorLevel.CHILD_BOUNDARY
+            ),
+            editor.model.cursor
+        )
+
+        assertNull(
+            "The exterior cursor is never represented by an artificial IME/math selection",
+            editor.model.selectionRange
+        )
     }
 
     private fun assertBoundary(editor: MathExpressionEditor, name: String, after: Boolean) {
@@ -1603,10 +1867,28 @@ class MathProgressiveSlotNavigationDeviceTest {
         assertEquals(MathCursorPresentation.ChildBoundary(listOf(MathCursorStep(0, name)), after), editor.model.cursorPresentation)
     }
 
-    private fun assertParentBoundary(editor: MathExpressionEditor, nodeIndex: Int = 0) {
-        assertEquals(MathCursor(offset = nodeIndex + 1), editor.model.cursor)
-        assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), nodeIndex), editor.model.cursorPresentation)
-        assertNull(editor.model.selectionRange)
+    private fun assertParentBoundary(
+        editor: MathExpressionEditor,
+        nodeIndex: Int = 0
+    ) {
+        assertEquals(
+            MathCursor(
+                offset = nodeIndex + 1
+            ),
+            editor.model.cursor
+        )
+
+        assertEquals(
+            MathCursorPresentation.ParentBoundary(
+                emptyList(),
+                nodeIndex
+            ),
+            editor.model.cursorPresentation
+        )
+
+        assertNull(
+            editor.model.selectionRange
+        )
     }
 
     private fun assertLowerAndUpper(editor: MathExpressionEditor, lower: String, upper: String) {

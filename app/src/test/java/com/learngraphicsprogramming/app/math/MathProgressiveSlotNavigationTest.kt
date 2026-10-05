@@ -207,7 +207,7 @@ class MathProgressiveSlotNavigationTest {
     @Test fun descriptorsDeclareParentContentIndependentlyFromLegacySlotOrder() {
         val m=model("x_1^2")
         assertEquals(listOf("upper","base","lower"),m.expression.children.single().navigationChildren().map { it.id })
-        assertEquals(listOf(MathNavigationRole.CHILD,MathNavigationRole.PARENT_CONTENT,MathNavigationRole.CHILD),
+        assertEquals(listOf(MathNavigationRole.CHILD,MathNavigationRole.PARENT,MathNavigationRole.CHILD),
             m.expression.children.single().navigationChildren().map { it.role })
         val states=walkLeft(m)
         assertEquals(MathCursorPresentation.ChildBoundary(path("upper")),states[1].presentation)
@@ -224,7 +224,7 @@ class MathProgressiveSlotNavigationTest {
             val children=node.navigationChildren();val first=children.first()
             val candidate=MathExpressionModel(MathExpression.Sequence(listOf(node)))
             val states=walkLeft(candidate)
-            if(first.role==MathNavigationRole.PARENT_CONTENT)assertEquals(path(first.id),states[1].cursor.path)
+            if(first.role==MathNavigationRole.PARENT)assertEquals(path(first.id),states[1].cursor.path)
             else assertEquals(MathCursorPresentation.ChildBoundary(path(first.id)),states[1].presentation)
             assertEquals(children.filter{it.role==MathNavigationRole.CHILD}.map{it.id},states.mapNotNull{
                 (it.presentation as? MathCursorPresentation.ChildBoundary)?.slotPath?.last()?.slot})

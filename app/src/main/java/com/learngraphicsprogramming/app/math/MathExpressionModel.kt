@@ -306,12 +306,38 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     }
 
     /** Both availability and execution use this pure transition function. */
-    private fun progressiveNavigationTarget(forward: Boolean): NavigationTarget? {
-        if (isAtSequenceInsertion) return if (forward) {
-            if (cursor.path.isEmpty()) null else slotExitRightTarget(cursor.path)
-        } else NavigationTarget(cursor)
+    private fun progressiveNavigationTarget(
+        forward: Boolean
+    ): NavigationTarget? {
+
+        if (isAtSequenceInsertion) {
+            return if (forward) {
+
+                if (cursor.path.isEmpty()) {
+                    null
+                } else {
+                    slotExitRightTarget(
+                        cursor.path
+                    )
+                }
+
+            } else {
+                NavigationTarget(
+                    cursor
+                )
+            }
+        }
+
+        /*
+         * RIGHT
+         *
+         * Recorre exactamente los estados
+         * inversos establecidos por LEFT.
+         */
         if (forward) {
+
             selectionRange?.let {
+
                 return NavigationTarget(
                     cursor.copy(
                         path = it.path,
@@ -321,6 +347,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             }
 
             activeNavigationBoundary()?.let {
+
                 return previousSlotEditingTarget(
                     it.slotPath
                 )
@@ -330,13 +357,21 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 navigationLevel ==
                 MathCursorLevel.INTERIOR
             ) {
+
                 val (start, end) =
                     contentScopeBounds()
 
+                /*
+                 * Inicio del contenido:
+                 *
+                 * primero seleccionamos toda
+                 * la región editable.
+                 */
                 if (
                     end > start &&
                     cursor.offset == start
                 ) {
+
                     return NavigationTarget(
                         cursor.copy(
                             offset = end
@@ -349,7 +384,12 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     )
                 }
 
+                /*
+                 * Selección ya colapsada:
+                 * avanzamos hasta el extremo derecho.
+                 */
                 if (cursor.offset < end) {
+
                     return NavigationTarget(
                         cursor.copy(
                             offset = end
@@ -357,11 +397,16 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     )
                 }
 
+                /*
+                 * Hemos terminado de editar
+                 * la región actual.
+                 */
                 return if (
                     cursor.scope
                             is MathContentScope.Atom ||
                     cursor.path.isEmpty()
                 ) {
+
                     NavigationTarget(
                         cursor.copy(
                             level =
@@ -369,7 +414,9 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                             scope = null
                         )
                     )
+
                 } else {
+
                     slotExitRightTarget(
                         cursor.path
                     )
@@ -389,21 +436,34 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     .getOrNull(index)
 
             if (node != null) {
-                val lastChild =
-                    node.navigationChildren()
+
+                /*
+                 * Una estructura administra
+                 * solamente sus partes inmediatas.
+                 *
+                 * RIGHT entra por la última parte
+                 * porque es el inverso de LEFT.
+                 */
+                val lastPart =
+                    node.navigationTraversalParts()
                         .lastOrNull()
 
-                if (lastChild != null) {
+                if (lastPart != null) {
+
                     return enterSlotTarget(
                         cursor.path +
                                 MathCursorStep(
                                     index,
-                                    lastChild.id
+                                    lastPart.id
                                 ),
                         forward = true
                     )
                 }
 
+                /*
+                 * Un átomo simple se edita
+                 * directamente.
+                 */
                 return NavigationTarget(
                     MathCursor(
                         cursor.path,
@@ -422,36 +482,109 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             ) ?: if (
                 cursor.path.isNotEmpty()
             ) {
+
                 slotExitRightTarget(
                     cursor.path
                 )
+
             } else {
                 null
             }
         }
+
+        /*
+         * LEFT
+         */
+
         selectionRange?.let { selection ->
-            if (sequenceAt(selection.path) != null) {
-                return NavigationTarget(cursor.copy(path = selection.path, offset = selection.start))
+
+            if (
+                sequenceAt(
+                    selection.path
+                ) != null
+            ) {
+
+                return NavigationTarget(
+                    cursor.copy(
+                        path = selection.path,
+                        offset = selection.start
+                    )
+                )
             }
         }
+
         activeNavigationBoundary()?.let { boundary ->
-            return enterSlotTarget(boundary.slotPath, forward = false)
+
+            return enterSlotTarget(
+                boundary.slotPath,
+                forward = false
+            )
         }
-        val sequence = sequenceAt(cursor.path) ?: return null
-        if (navigationLevel == MathCursorLevel.INTERIOR) {
-            val (start, end) = contentScopeBounds()
+
+        val sequence =
+            sequenceAt(
+                cursor.path
+            ) ?: return null
+
+        if (
+            navigationLevel ==
+            MathCursorLevel.INTERIOR
+        ) {
+
+            val (start, end) =
+                contentScopeBounds()
+
             if (end > start) {
+
                 if (cursor.offset == end) {
-                    return NavigationTarget(cursor.copy(offset = end), MathSelection(cursor.path.toList(), start, end))
+
+                    return NavigationTarget(
+                        cursor.copy(
+                            offset = end
+                        ),
+                        MathSelection(
+                            cursor.path.toList(),
+                            start,
+                            end
+                        )
+                    )
                 }
-                if (cursor.offset in (start + 1) until end) {
-                    return NavigationTarget(cursor.copy(offset = start))
+
+                if (
+                    cursor.offset in
+                    (start + 1) until end
+                ) {
+
+                    return NavigationTarget(
+                        cursor.copy(
+                            offset = start
+                        )
+                    )
                 }
             }
-            return if (cursor.scope is MathContentScope.Atom || cursor.path.isEmpty())
-                NavigationTarget(cursor.copy(level = MathCursorLevel.NEUTRAL, scope = null))
-                else afterSlotEditingTarget(cursor.path)
+
+            return if (
+                cursor.scope
+                        is MathContentScope.Atom ||
+                cursor.path.isEmpty()
+            ) {
+
+                NavigationTarget(
+                    cursor.copy(
+                        level =
+                            MathCursorLevel.NEUTRAL,
+                        scope = null
+                    )
+                )
+
+            } else {
+
+                afterSlotEditingTarget(
+                    cursor.path
+                )
+            }
         }
+
         val index =
             cursor.offset - 1
 
@@ -461,18 +594,29 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
         if (node != null) {
 
-            val first =
-                node.navigationChildren()
+            /*
+             * El nodo es una estructura
+             * si declara partes navegables.
+             *
+             * LEFT entra por la primera
+             * parte declarada.
+             */
+            val firstPart =
+                node.navigationTraversalParts()
                     .firstOrNull()
 
-            if (first != null) {
+            if (firstPart != null) {
+
                 return declaredNavigationTarget(
                     cursor.path,
                     index,
-                    first
+                    firstPart
                 )
             }
 
+            /*
+             * Átomo simple.
+             */
             return NavigationTarget(
                 MathCursor(
                     cursor.path,
@@ -485,65 +629,119 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 )
             )
         }
-        return if (cursor.path.isEmpty()) null else afterSlotEditingTarget(cursor.path)
+
+        return if (
+            cursor.path.isEmpty()
+        ) {
+            null
+        } else {
+            afterSlotEditingTarget(
+                cursor.path
+            )
+        }
     }
 
-    private fun navigationChild(path: List<MathCursorStep>): MathNavigationChild? {
-        val step = path.lastOrNull() ?: return null
-        return sequenceAt(path.dropLast(1))?.children?.getOrNull(step.nodeIndex)?.navigationChildren()?.firstOrNull { it.id == step.slot }
+    private fun navigationPart(
+        path: List<MathCursorStep>
+    ): MathNavigationPart? {
+
+        val step =
+            path.lastOrNull()
+                ?: return null
+
+        return sequenceAt(
+            path.dropLast(1)
+        )
+            ?.children
+            ?.getOrNull(
+                step.nodeIndex
+            )
+            ?.navigationParts()
+            ?.firstOrNull {
+                it.id == step.slot
+            }
     }
 
-    private fun parentAfterTarget(path: List<MathCursorStep>): NavigationTarget? {
-        val step = path.lastOrNull() ?: return null
-        return NavigationTarget(MathCursor(path.dropLast(1), step.nodeIndex + 1, MathCursorLevel.NEUTRAL, null))
+    private fun parentAfterTarget(
+        path: List<MathCursorStep>
+    ): NavigationTarget? {
+
+        val step =
+            path.lastOrNull()
+                ?: return null
+
+        return NavigationTarget(
+            MathCursor(
+                path.dropLast(1),
+                step.nodeIndex + 1,
+                MathCursorLevel.NEUTRAL,
+                null
+            )
+        )
     }
 
+    /**
+     * Cuando terminamos una región por la derecha:
+     *
+     * PARENT:
+     * no necesita BordeHijo.
+     * Continuamos directamente con la siguiente
+     * parte del recorrido inverso.
+     *
+     * CHILD:
+     * conserva su BordeHijo derecho.
+     */
     private fun slotExitRightTarget(
         path: List<MathCursorStep>
     ): NavigationTarget? =
+
         if (
-            navigationChild(path)?.role ==
-            MathNavigationRole.PARENT_CONTENT
+            navigationPart(path)?.role ==
+            MathNavigationRole.PARENT
         ) {
+
             previousSlotEditingTarget(
                 path
             )
+
         } else {
+
             boundaryTarget(
                 path
             )
         }
 
-
     /**
-     * RIGHT recorre los hijos declarados
+     * RIGHT recorre las partes declaradas
      * en orden inverso a LEFT.
      *
-     * Así cada transición de RIGHT
-     * deshace exactamente una transición
-     * de LEFT sin depender del historial.
+     * Cada transición de RIGHT deshace
+     * exactamente una transición de LEFT.
      */
     private fun previousSlotEditingTarget(
         path: List<MathCursorStep>
     ): NavigationTarget? {
+
         val step =
             path.lastOrNull()
                 ?: return null
 
-        val parentPath =
+        val structurePath =
             path.dropLast(1)
 
-        val children =
-            sequenceAt(parentPath)
+        val parts =
+            sequenceAt(
+                structurePath
+            )
                 ?.children
                 ?.getOrNull(
                     step.nodeIndex
                 )
-                ?.navigationChildren()
+                ?.navigationTraversalParts()
                 ?: return null
 
         val index =
-            children.indexOfFirst {
+            parts.indexOfFirst {
                 it.id == step.slot
             }
 
@@ -552,74 +750,136 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         }
 
         val previous =
-            children.getOrNull(
+            parts.getOrNull(
                 index - 1
             )
 
         return if (previous != null) {
+
             enterSlotTarget(
-                parentPath +
+                structurePath +
                         step.copy(
-                            slot =
-                                previous.id
+                            slot = previous.id
                         ),
                 forward = true
             )
+
         } else {
+
             parentAfterTarget(
                 path
             )
         }
     }
 
-    private fun continuationTarget(path: List<MathCursorStep>): NavigationTarget? {
-        val sequence = sequenceAt(path) ?: return null
-        if (!sequence.hasContinuationInsertion()) return null
-        return NavigationTarget(MathCursor(path, sequence.children.size, MathCursorLevel.NEUTRAL, null), insertion = true)
+    private fun continuationTarget(
+        path: List<MathCursorStep>
+    ): NavigationTarget? {
+
+        val sequence =
+            sequenceAt(path)
+                ?: return null
+
+        if (
+            !sequence.hasContinuationInsertion()
+        ) {
+            return null
+        }
+
+        return NavigationTarget(
+            MathCursor(
+                path,
+                sequence.children.size,
+                MathCursorLevel.NEUTRAL,
+                null
+            ),
+            insertion = true
+        )
     }
 
-    private fun boundaryTarget(path: List<MathCursorStep>): NavigationTarget? {
-        if (path.isEmpty() || sequenceAt(path) == null) return null
-        val step = path.last()
-        val outside = MathCursor(path.dropLast(1), step.nodeIndex + 1, MathCursorLevel.CHILD_BOUNDARY, null)
-        return NavigationTarget(outside, boundary = NavigationBoundary(path.toList(), true, expression, outside))
+    /**
+     * Borde derecho de un CHILD.
+     */
+    private fun boundaryTarget(
+        path: List<MathCursorStep>
+    ): NavigationTarget? {
+
+        if (
+            path.isEmpty() ||
+            sequenceAt(path) == null
+        ) {
+            return null
+        }
+
+        val step =
+            path.last()
+
+        val outside =
+            MathCursor(
+                path.dropLast(1),
+                step.nodeIndex + 1,
+                MathCursorLevel.CHILD_BOUNDARY,
+                null
+            )
+
+        return NavigationTarget(
+            outside,
+            boundary =
+                NavigationBoundary(
+                    path.toList(),
+                    true,
+                    expression,
+                    outside
+                )
+        )
     }
 
+    /**
+     * Decide cómo se entra en una parte
+     * declarada por una estructura.
+     *
+     * PARENT:
+     * entra directamente en edición.
+     *
+     * CHILD:
+     * presenta primero su borde derecho
+     * cuando se recorre desde la estructura.
+     */
     private fun declaredNavigationTarget(
-        parentPath: List<MathCursorStep>,
+        structurePath: List<MathCursorStep>,
         nodeIndex: Int,
-        child: MathNavigationChild
+        part: MathNavigationPart
     ): NavigationTarget? {
 
         val path =
-            parentPath +
+            structurePath +
                     MathCursorStep(
                         nodeIndex,
-                        child.id
+                        part.id
                     )
 
         return if (
-            child.role ==
-            MathNavigationRole.PARENT_CONTENT
+            part.role ==
+            MathNavigationRole.PARENT
         ) {
-            /*
-             * El contenido del padre se abre
-             * directamente en modo edición.
-             */
+
             enterSlotTarget(
                 path,
                 forward = false
             )
+
         } else {
-            /*
-             * Un hijo primero presenta
-             * su BordeHijo.
-             */
-            boundaryTarget(path)
+
+            boundaryTarget(
+                path
+            )
         }
     }
 
-    /** LEFT visits children in their declared order, then continues before their parent. */
+    /**
+     * LEFT visita las partes de la estructura
+     * según el orden matemático declarado.
+     */
     private fun afterSlotEditingTarget(
         path: List<MathCursorStep>
     ): NavigationTarget? {
@@ -634,20 +894,35 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         val step =
             path.last()
 
-        val parentPath =
+        val structurePath =
             path.dropLast(1)
 
-        val parentNode =
-            sequenceAt(parentPath)
+        val structure =
+            sequenceAt(
+                structurePath
+            )
                 ?.children
-                ?.getOrNull(step.nodeIndex)
+                ?.getOrNull(
+                    step.nodeIndex
+                )
                 ?: return null
 
-        val children =
-            parentNode.navigationChildren()
+        /*
+         * IMPORTANTE:
+         *
+         * La navegación no sigue simplemente
+         * el orden visual de navigationParts().
+         *
+         * Dentro de una STRUCTURE siempre:
+         *
+         * 1. PARENT
+         * 2. CHILD
+         */
+        val parts =
+            structure.navigationTraversalParts()
 
         val currentIndex =
-            children.indexOfFirst {
+            parts.indexOfFirst {
                 it.id == step.slot
             }
 
@@ -655,33 +930,27 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             return null
         }
 
-        /*
-         * Continuamos exactamente con
-         * el siguiente cuadro declarado
-         * en el orden canónico.
-         */
         val next =
-            children.getOrNull(
+            parts.getOrNull(
                 currentIndex + 1
             )
 
         if (next != null) {
+
             return declaredNavigationTarget(
-                parentPath,
+                structurePath,
                 step.nodeIndex,
                 next
             )
         }
 
         /*
-         * Ya recorrimos todos los cuadros
-         * de este padre.
-         *
-         * Salimos por su izquierda.
+         * No quedan PARENT ni CHILD
+         * dentro de esta estructura.
          */
         return NavigationTarget(
             MathCursor(
-                parentPath,
+                structurePath,
                 step.nodeIndex,
                 MathCursorLevel.NEUTRAL,
                 null
@@ -689,14 +958,63 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         )
     }
 
-    /** AST shape chooses a local Sequence level; no mathematical meaning is consulted. */
-    private fun enterSlotTarget(path: List<MathCursorStep>, forward: Boolean): NavigationTarget? {
-        val sequence = sequenceAt(path) ?: return null
-        if (!forward) continuationTarget(path)?.let { return it }
-        val structural = sequence.hasContinuationInsertion() || sequence.children.any { it.navigationChildren().isNotEmpty() }
-        return NavigationTarget(MathCursor(path, if (forward) 0 else sequence.children.size,
-            if (structural) MathCursorLevel.NEUTRAL else MathCursorLevel.INTERIOR,
-            if (structural) null else MathContentScope.Slot))
+    /**
+     * Entra en una región editable.
+     *
+     * Si esa región contiene otra estructura,
+     * no aplana sus partes.
+     *
+     * La navegación queda en nivel NEUTRAL
+     * para que esa estructura interior
+     * administre sus propios PARENT y CHILD.
+     */
+    private fun enterSlotTarget(
+        path: List<MathCursorStep>,
+        forward: Boolean
+    ): NavigationTarget? {
+
+        val sequence =
+            sequenceAt(path)
+                ?: return null
+
+        if (!forward) {
+
+            continuationTarget(path)
+                ?.let {
+                    return it
+                }
+        }
+
+        val containsStructure =
+            sequence.hasContinuationInsertion() ||
+                    sequence.children.any {
+                        it.navigationParts()
+                            .isNotEmpty()
+                    }
+
+        return NavigationTarget(
+            MathCursor(
+                path = path,
+                offset =
+                    if (forward) {
+                        0
+                    } else {
+                        sequence.children.size
+                    },
+                level =
+                    if (containsStructure) {
+                        MathCursorLevel.NEUTRAL
+                    } else {
+                        MathCursorLevel.INTERIOR
+                    },
+                scope =
+                    if (containsStructure) {
+                        null
+                    } else {
+                        MathContentScope.Slot
+                    }
+            )
+        )
     }
 
     fun stepRight(): Boolean = navigateNext()
@@ -1101,7 +1419,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             // Old symmetric navigation trails are intentionally ignored by directional navigation.
             setExpression(tree, restoredCursor)
             if (selection != null) select(selection.path, selection.start, selection.end)
-            if (selectionRange == null && boundary != null && navigationChild(boundary)?.role == MathNavigationRole.CHILD) {
+            if (selectionRange == null && boundary != null && navigationPart(boundary)?.role == MathNavigationRole.CHILD) {
                 val step = boundary.last()
                 val outside = MathCursor(boundary.dropLast(1), step.nodeIndex + 1, MathCursorLevel.CHILD_BOUNDARY, null)
                 if (cursor.path == outside.path && cursor.offset == outside.offset) {
