@@ -322,9 +322,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 }
 
             } else {
-                NavigationTarget(
-                    cursor
-                )
+                continuationEditingTarget(cursor.path)
             }
         }
 
@@ -360,6 +358,15 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
                 val (start, end) =
                     contentScopeBounds()
+
+                // This empty region inserts the next Sequence sibling. Its right edge
+                // remains the existing continuation frontier; it is never an operator child.
+                if (start == end && cursor.scope is MathContentScope.Atom &&
+                    sequenceAt(cursor.path)?.let {
+                        cursor.offset == it.children.size && it.hasContinuationInsertion()
+                    } == true) {
+                    return continuationTarget(cursor.path)
+                }
 
                 /*
                  * Inicio del contenido:
@@ -477,7 +484,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 )
             }
 
-            return continuationTarget(
+            return continuationEditingTarget(
                 cursor.path
             ) ?: if (
                 cursor.path.isNotEmpty()
@@ -770,6 +777,13 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 path
             )
         }
+    }
+
+    private fun continuationEditingTarget(path: List<MathCursorStep>): NavigationTarget? {
+        val sequence = sequenceAt(path) ?: return null
+        if (!sequence.hasContinuationInsertion()) return null
+        val end = sequence.children.size
+        return NavigationTarget(MathCursor(path, end, MathCursorLevel.INTERIOR, MathContentScope.Atom(end, end)))
     }
 
     private fun continuationTarget(

@@ -40,6 +40,7 @@ android {
         }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -57,6 +58,12 @@ android {
     }
     packaging {
         jniLibs.useLegacyPackaging = true
+        resources {
+            // Retain notices from every mathematical dependency in the packaged app.
+            merges += setOf("META-INF/LICENSE*", "META-INF/NOTICE*", "META-INF/DEPENDENCIES")
+            // Symja external and JGraphT contain byte-identical copies of these schemas.
+            pickFirsts += setOf("graphml.xsd", "xlink.xsd", "viz.xsd", "gexf.xsd")
+        }
     }
 }
 
@@ -162,6 +169,8 @@ tasks.configureEach {
 }
 
 dependencies {
+    implementation("org.matheclipse:matheclipse-core:3.2.0")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.constraintlayout)

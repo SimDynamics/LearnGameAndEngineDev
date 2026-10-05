@@ -398,6 +398,10 @@ class LessonActivity : AppCompatActivity() {
             ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
 
         updateSwipeToggle()
+        findViewById<Button>(R.id.buttonShowCalculator).apply {
+            visibility = if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) View.VISIBLE else View.GONE
+            setOnClickListener { startActivity(Intent(this@LessonActivity, CalculatorActivity::class.java)) }
+        }
         if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
             lessonContent.setPadding(0, dp(24), 0, dp(16))
             mathKeyboardHost = MathKeyboardHost.install(this)

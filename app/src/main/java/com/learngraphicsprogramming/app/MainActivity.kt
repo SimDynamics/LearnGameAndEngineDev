@@ -17,6 +17,7 @@ class MainActivity : AppCompatActivity() {
         binding.buttonMathPhysics.setOnClickListener { openCourses(AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) }
         binding.buttonOptions.setOnClickListener { startActivity(Intent(this, OptionsActivity::class.java)) }
         binding.buttonCppPrototype.setOnClickListener { startActivity(Intent(this, CppPrototypeActivity::class.java)) }
+        binding.buttonCalculator.setOnClickListener { startActivity(Intent(this, CalculatorActivity::class.java)) }
 
         if (savedInstanceState == null) restoreNavigationState()
     }
