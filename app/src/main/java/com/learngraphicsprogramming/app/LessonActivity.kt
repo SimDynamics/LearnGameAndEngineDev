@@ -48,8 +48,63 @@ import com.learngraphicsprogramming.app.math.MathInputFocusOrder
 import com.learngraphicsprogramming.app.math.MathKeyboardHost
 import com.learngraphicsprogramming.app.math.MathTextRenderer
 import com.learngraphicsprogramming.app.math.MathDevelopmentMode
+import com.learngraphicsprogramming.app.math.MathExpressionEditor
 
 class LessonActivity : AppCompatActivity() {
+
+    private var calculatorResultTarget:
+            View? =
+        null
+
+    private val calculatorResultLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+
+            val target =
+                calculatorResultTarget
+
+            calculatorResultTarget =
+                null
+
+            if (
+                result.resultCode !=
+                RESULT_OK ||
+                target == null
+            ) {
+                return@registerForActivityResult
+            }
+
+            val resultLatex =
+                result.data
+                    ?.getStringExtra(
+                        CalculatorActivity.EXTRA_RESULT_LATEX
+                    )
+                    ?: return@registerForActivityResult
+
+            when (
+                target
+            ) {
+
+                is EditText -> {
+
+                    target.setText(
+                        resultLatex
+                    )
+
+                    target.setSelection(
+                        target.text.length
+                    )
+                }
+
+                is MathExpressionEditor -> {
+
+                    target.setLatex(
+                        resultLatex
+                    )
+                }
+            }
+        }
 
     private val lessonOptionsLauncher =
         registerForActivityResult(
@@ -398,10 +453,6 @@ class LessonActivity : AppCompatActivity() {
             ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
 
         updateSwipeToggle()
-        findViewById<Button>(R.id.buttonShowCalculator).apply {
-            visibility = if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) View.VISIBLE else View.GONE
-            setOnClickListener { startActivity(Intent(this@LessonActivity, CalculatorActivity::class.java)) }
-        }
         if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
             lessonContent.setPadding(0, dp(24), 0, dp(16))
             mathKeyboardHost = MathKeyboardHost.install(this)
@@ -825,26 +876,187 @@ class LessonActivity : AppCompatActivity() {
         if (currentRouteId != AppearanceSettingsRepository.ROUTE_PROGRAMMING) return
 
         updateProgrammingFullscreenResize()
-        val compact = isCompactProgrammingFullscreen() && shouldShow
-        val available = programmingAvailableViewport()
-        val barHeight = if (compact) minOf(normalProgrammingBarHeight,
-            (available.height() / 2).coerceAtLeast(1)) else normalProgrammingBarHeight
-        if (programmingKeyboardBar.layoutParams.height != barHeight) {
-            programmingKeyboardBar.layoutParams = programmingKeyboardBar.layoutParams.apply { height = barHeight }
-        }
-        programmingKeySizes.forEach { (button, normal) ->
-            val keyHeight = if (compact) minOf(normal.height, barHeight) else normal.height
-            if (button.layoutParams.height != keyHeight) {
-                button.layoutParams = button.layoutParams.apply { height = keyHeight }
+
+        val compact =
+            isCompactProgrammingFullscreen() &&
+                    shouldShow
+
+        /*
+         * Las TECLAS se compactan siempre que:
+         *
+         * - estamos en horizontal
+         * - el IME está mostrando esta barra
+         *
+         * No exigimos fullscreen para reducir
+         * solamente la geometría de las teclas.
+         */
+        val compactKeys =
+            resources.configuration.orientation ==
+                    Configuration.ORIENTATION_LANDSCAPE &&
+                    shouldShow
+
+        val available =
+            programmingAvailableViewport()
+
+        /*
+         * Altura responsiva de la barra.
+         *
+         * 70% de su tamaño normal,
+         * pero nunca más de la mitad
+         * del viewport real disponible.
+         */
+        /*
+         * La barra debe tener exactamente la altura
+         * de su tecla compacta más alta.
+         *
+         * Si usamos el 70% de la barra normal:
+         *
+         * barra: 52 -> 36
+         * tecla:  40 -> 28
+         *
+         * quedarían 8 px/dp equivalentes de aire.
+         *
+         * Calculamos por tanto desde las TECLAS.
+         */
+        val responsiveKeyHeight =
+            programmingKeySizes
+                .values
+                .map {
+                    (
+                            it.height *
+                                    0.70f
+                            )
+                        .toInt()
+                        .coerceAtLeast(1)
+                }
+                .maxOrNull()
+                ?: normalProgrammingBarHeight
+
+        val responsiveBarHeight =
+            minOf(
+                responsiveKeyHeight,
+
+                (
+                        available.height() /
+                                2
+                        )
+                    .coerceAtLeast(1)
+            )
+
+        val barHeight =
+            if (compactKeys) {
+                responsiveBarHeight
+            } else {
+                normalProgrammingBarHeight
             }
-            val minimumHeight = if (compact) 0 else normal.minimumHeight
-            if (button.minimumHeight != minimumHeight) button.minimumHeight = minimumHeight
-            val top = if (compact) 0 else normal.top
-            val bottom = if (compact) 0 else normal.bottom
-            if (button.paddingTop != top || button.paddingBottom != bottom) {
-                button.setPadding(button.paddingLeft, top, button.paddingRight, bottom)
-            }
+
+        if (
+            programmingKeyboardBar
+                .layoutParams
+                .height !=
+            barHeight
+        ) {
+
+            programmingKeyboardBar.layoutParams =
+                programmingKeyboardBar
+                    .layoutParams
+                    .apply {
+                        height =
+                            barHeight
+                    }
         }
+
+        programmingKeySizes
+            .forEach {
+                    (button, normal) ->
+
+                /*
+                 * 70% de SU tamaño normal real.
+                 *
+                 * No usamos dp absolutos.
+                 */
+                val responsiveKeyHeight =
+                    minOf(
+                        (
+                                normal.height *
+                                        0.70f
+                                )
+                            .toInt()
+                            .coerceAtLeast(1),
+
+                        barHeight
+                    )
+
+                val keyHeight =
+                    if (compactKeys) {
+                        responsiveKeyHeight
+                    } else {
+                        normal.height
+                    }
+
+                if (
+                    button.layoutParams.height !=
+                    keyHeight
+                ) {
+
+                    button.layoutParams =
+                        button.layoutParams
+                            .apply {
+                                height =
+                                    keyHeight
+                            }
+                }
+
+                val minimumHeight =
+                    if (compactKeys) {
+                        0
+                    } else {
+                        normal.minimumHeight
+                    }
+
+                if (
+                    button.minimumHeight !=
+                    minimumHeight
+                ) {
+                    button.minimumHeight =
+                        minimumHeight
+                }
+
+                /*
+                 * Horizontal:
+                 *
+                 * padding vertical = 0
+                 *
+                 * padding horizontal permanece
+                 * EXACTAMENTE como estaba.
+                 */
+                val top =
+                    if (compactKeys) {
+                        0
+                    } else {
+                        normal.top
+                    }
+
+                val bottom =
+                    if (compactKeys) {
+                        0
+                    } else {
+                        normal.bottom
+                    }
+
+                if (
+                    button.paddingTop != top ||
+                    button.paddingBottom != bottom
+                ) {
+
+                    button.setPadding(
+                        button.paddingLeft,
+                        top,
+                        button.paddingRight,
+                        bottom
+                    )
+                }
+            }
 
         // Configuration can change before the resized content receives its new height.
         // Restoring the header into the old landscape viewport would clear focus again.
@@ -2513,6 +2725,25 @@ class LessonActivity : AppCompatActivity() {
             false
         }
     }
+
+    internal fun openCalculatorFor(
+        target: View
+    ) {
+
+        calculatorResultTarget =
+            target
+
+        calculatorResultLauncher.launch(
+            Intent(
+                this,
+                CalculatorActivity::class.java
+            ).putExtra(
+                CalculatorActivity.EXTRA_RETURN_RESULT,
+                true
+            )
+        )
+    }
+
 
     override fun onPause() {
 
