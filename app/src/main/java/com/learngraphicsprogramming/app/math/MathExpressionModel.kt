@@ -3612,24 +3612,237 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         return result
     }
 
-    private fun safeCursor(value: MathCursor): MathCursor {
-        if (expression.children.isEmpty() && value.path.isEmpty()) return MathCursor()
-        var sequence = expression
-        val validPath = mutableListOf<MathCursorStep>()
-        for (step in value.path) {
-            val node = sequence.children.getOrNull(step.nodeIndex)
-            val child = node?.childSlots()?.firstOrNull { it.first == step.slot }?.second
-                ?: return MathCursor(validPath.toList(), (step.nodeIndex + if (node != null) 1 else 0).coerceIn(0, sequence.children.size))
-            validPath += step
-            sequence = child
+    private fun safeCursor(
+        value: MathCursor
+    ): MathCursor {
+
+        if (
+            expression.children.isEmpty() &&
+            value.path.isEmpty()
+        ) {
+            return MathCursor()
         }
-        val scope = (value.scope as? MathContentScope.Atom)?.let {
-            val start = it.start.coerceIn(0, sequence.children.size)
-            MathContentScope.Atom(start, it.end.coerceIn(start, sequence.children.size))
-        } ?: value.scope
-        val offset = if (value.level == MathCursorLevel.INTERIOR && scope is MathContentScope.Atom)
-            value.offset.coerceIn(scope.start, scope.end) else value.offset.coerceIn(0, sequence.children.size)
-        return value.copy(path = validPath.toList(), offset = offset, scope = scope)
+
+        var sequence =
+            expression
+
+        val validPath =
+            mutableListOf<MathCursorStep>()
+
+        for (
+        step in value.path
+        ) {
+
+            val node =
+                sequence.children
+                    .getOrNull(
+                        step.nodeIndex
+                    )
+
+            val child =
+                node
+                    ?.childSlots()
+                    ?.firstOrNull {
+                        it.first ==
+                                step.slot
+                    }
+                    ?.second
+                    ?: return MathCursor(
+                        validPath.toList(),
+                        (
+                                step.nodeIndex +
+                                        if (
+                                            node != null
+                                        ) {
+                                            1
+                                        } else {
+                                            0
+                                        }
+                                )
+                            .coerceIn(
+                                0,
+                                sequence.children.size
+                            )
+                    )
+
+            validPath +=
+                step
+
+            sequence =
+                child
+        }
+
+        val scope =
+            (
+                    value.scope as?
+                            MathContentScope.Atom
+                    )?.let {
+
+                    val start =
+                        it.start.coerceIn(
+                            0,
+                            sequence.children.size
+                        )
+
+                    MathContentScope.Atom(
+                        start,
+                        it.end.coerceIn(
+                            start,
+                            sequence.children.size
+                        )
+                    )
+
+                } ?: value.scope
+
+        var offset =
+            if (
+                value.level ==
+                MathCursorLevel.INTERIOR &&
+                scope is MathContentScope.Atom
+            ) {
+
+                value.offset.coerceIn(
+                    scope.start,
+                    scope.end
+                )
+
+            } else {
+
+                value.offset.coerceIn(
+                    0,
+                    sequence.children.size
+                )
+            }
+
+        /*
+         * leafTextOffset solo tiene sentido
+         * mientras editamos el interior de
+         * una hoja textual real.
+         */
+        var leafTextOffset =
+            if (
+                value.level ==
+                MathCursorLevel.INTERIOR
+            ) {
+
+                value.leafTextOffset
+
+            } else {
+
+                null
+            }
+
+        if (
+            leafTextOffset != null
+        ) {
+
+            val node =
+                sequence.children
+                    .getOrNull(
+                        offset
+                    )
+
+            val text =
+                node?.let {
+                    leafText(it)
+                }
+
+            if (
+                text == null ||
+                text.isEmpty()
+            ) {
+
+                leafTextOffset =
+                    null
+
+            } else {
+
+                var internal =
+                    leafTextOffset.coerceIn(
+                        0,
+                        text.length
+                    )
+
+                /*
+                 * Nunca dejamos el caret
+                 * entre las dos unidades UTF-16
+                 * de un surrogate pair.
+                 */
+                if (
+                    internal > 0 &&
+                    internal < text.length &&
+                    Character.isHighSurrogate(
+                        text[internal - 1]
+                    ) &&
+                    Character.isLowSurrogate(
+                        text[internal]
+                    )
+                ) {
+
+                    internal++
+                }
+
+                when {
+
+                    /*
+                     * |22
+                     *
+                     * Una frontera exterior usa
+                     * leafTextOffset = null.
+                     */
+                    internal <= 0 -> {
+
+                        leafTextOffset =
+                            null
+                    }
+
+                    /*
+                     * 22|
+                     *
+                     * También normalizamos la
+                     * frontera derecha al siguiente
+                     * offset del AST.
+                     */
+                    internal >=
+                            text.length -> {
+
+                        offset =
+                            (
+                                    offset + 1
+                                    )
+                                .coerceAtMost(
+                                    sequence.children.size
+                                )
+
+                        leafTextOffset =
+                            null
+                    }
+
+                    /*
+                     * 2|2
+                     */
+                    else -> {
+
+                        leafTextOffset =
+                            internal
+                    }
+                }
+            }
+        }
+
+        return value.copy(
+            path =
+                validPath.toList(),
+
+            offset =
+                offset,
+
+            scope =
+                scope,
+
+            leafTextOffset =
+                leafTextOffset
+        )
     }
 
     private fun replaceSequence(path: List<MathCursorStep>, value: MathExpression.Sequence) {
