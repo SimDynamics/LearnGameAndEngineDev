@@ -1461,93 +1461,18 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             )
         }
 
-        val part =
-            navigationPart(
-                path
-            )
-
         /*
-         * PARENT / CHILD compuesto por una única STRUCTURE.
+         * Toda STRUCTURE real conserva su propio ].
          *
-         * Su borde exterior ya fue visitado.
+         * Ejemplo:
          *
-         * Saltamos el borde duplicado de la STRUCTURE
-         * y entramos directamente en su jerarquía.
-         */
-        if (
-            part != null &&
-            part.role !=
-            MathNavigationRole.SUBSTRUCTURE &&
-            sequence.children.size == 1
-        ) {
-
-            val node =
-                sequence.children[0]
-
-            val parts =
-                node.navigationTraversalParts()
-
-            if (
-                parts.isNotEmpty()
-            ) {
-
-                /*
-                 * Si un PARENT exterior contiene
-                 * únicamente Scripts, ese PARENT
-                 * ya recorrió visualmente la base.
-                 *
-                 * Ejemplo:
-                 *
-                 * x²|
-                 * |x²
-                 *
-                 * No repetimos:
-                 *
-                 * x|
-                 * |x
-                 *
-                 * Continuamos directamente con:
-                 *
-                 * ²]
-                 */
-                if (
-                    node is MathExpression.Scripts
-                ) {
-
-                    val modifier =
-                        parts.firstOrNull {
-                            it.id != "base"
-                        }
-
-                    if (
-                        modifier != null
-                    ) {
-
-                        return declaredNavigationTarget(
-                            structurePath = path,
-                            nodeIndex = 0,
-                            part = modifier
-                        )
-                    }
-
-                    return afterSlotEditingTarget(
-                        path
-                    )
-                }
-
-                return declaredNavigationTarget(
-                    structurePath = path,
-                    nodeIndex = 0,
-                    part = parts.first()
-                )
-            }
-        }
-
-        /*
-         * Caso normal.
+         * x²]
          *
-         * LEFT empieza por el elemento situado
-         * más a la derecha de esta Sequence.
+         * Aunque Scripts sea el único contenido
+         * de un PARENT exterior.
+         *
+         * Ese borde es necesario para poder
+         * eliminar la estructura completa.
          */
         return nodeBoundaryTarget(
             path,
@@ -1790,21 +1715,41 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             )
         }
 
-        /*
-         * Terminamos los PARENT internos.
-         *
-         * En reversa regresamos a:
-         *
-         * |numerator
-         */
         if (
             path.isNotEmpty()
         ) {
 
-            return slotEditingTarget(
-                path,
-                atRight = false
-            )
+            /*
+             * Si esta región contiene una STRUCTURE,
+             * LEFT entró directamente por su ].
+             *
+             * Por reciprocidad, RIGHT también debe
+             * salir directamente de la región después
+             * de ese mismo ].
+             *
+             * No creamos un |estructura fantasma.
+             */
+            val containsStructure =
+                sequence.children.any {
+                    it.navigationParts()
+                        .isNotEmpty()
+                }
+
+            return if (
+                containsStructure
+            ) {
+
+                previousSlotEditingTarget(
+                    path
+                )
+
+            } else {
+
+                slotEditingTarget(
+                    path,
+                    atRight = false
+                )
+            }
         }
 
         /*
@@ -1935,49 +1880,6 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             previous != null
         ) {
 
-            /*
-             * Inverso exacto del caso especial
-             * de Scripts dentro de un PARENT.
-             *
-             * LEFT:
-             *
-             * |x² -> ²]
-             *
-             * RIGHT:
-             *
-             * ²] -> |x²
-             */
-            if (
-                structure is MathExpression.Scripts &&
-                previous.id == "base"
-            ) {
-
-                val outerPart =
-                    navigationPart(
-                        structurePath
-                    )
-
-                val outerSequence =
-                    sequenceAt(
-                        structurePath
-                    )
-
-                if (
-                    outerPart != null &&
-                    outerPart.role !=
-                    MathNavigationRole.SUBSTRUCTURE &&
-                    outerSequence
-                        ?.children
-                        ?.size == 1
-                ) {
-
-                    return slotEditingTarget(
-                        structurePath,
-                        atRight = false
-                    )
-                }
-            }
-
             return enterSlotTarget(
                 structurePath +
                         MathCursorStep(
@@ -1989,12 +1891,12 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         }
 
         /*
- * LargeOperator:
- *
- * La región situada inmediatamente
- * antes del primer límite es el
- * integrando obligatorio.
- */
+         * LargeOperator:
+         *
+         * La región situada inmediatamente
+         * antes del primer límite es el
+         * integrando obligatorio.
+         */
         if (
             structure is
                     MathExpression.LargeOperator
@@ -2007,9 +1909,12 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         }
 
         /*
-         * Caso normal:
-         * volvemos al borde derecho
+         * Volvemos al borde derecho
          * de la STRUCTURE completa.
+         *
+         * Ejemplo:
+         *
+         * x²]
          */
         return nodeBoundaryTarget(
             structurePath,
@@ -2354,22 +2259,31 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             sequenceAt(path)
                 ?: return null
 
-        val structural =
-            requiresStructuralTraversal(
-                path,
-                part
-            )
+        /*
+         * Si el slot contiene una STRUCTURE real,
+         * navegamos su árbol.
+         *
+         * Si contiene solamente texto,
+         * conservamos la navegación textual normal.
+         *
+         * Esto evita romper:
+         *
+         * x+1|
+         * x+|1
+         * x|+1
+         * |x+1
+         */
+        val containsStructure =
+            sequence.hasContinuationInsertion() ||
+                    sequence.children.any {
+                        it.navigationParts()
+                            .isNotEmpty()
+                    }
 
         return if (forward) {
 
-            /*
-             * RIGHT reproduce LEFT al revés.
-             *
-             * Si hay PARENT internos, comienza
-             * por el extremo izquierdo interno.
-             */
             if (
-                structural &&
+                containsStructure &&
                 sequence.children.isNotEmpty()
             ) {
 
@@ -2387,15 +2301,22 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
         } else {
 
-            /*
-             * LEFT entra primero por:
-             *
-             * numerator|
-             */
-            slotEditingTarget(
-                path,
-                atRight = true
-            )
+            if (
+                containsStructure &&
+                sequence.children.isNotEmpty()
+            ) {
+
+                firstSemanticTargetInSequence(
+                    path
+                )
+
+            } else {
+
+                slotEditingTarget(
+                    path,
+                    atRight = true
+                )
+            }
         }
     }
 
