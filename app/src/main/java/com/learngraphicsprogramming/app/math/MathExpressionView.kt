@@ -17,8 +17,12 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** An editing touch may identify a UTF-16 boundary inside one AST leaf. */
-internal data class MathExpressionTouchTarget(val cursor: MathCursor, val leafTextOffset: Int? = null,
-    val sequenceInsertion: Boolean = false)
+internal data class MathExpressionTouchTarget(
+    val cursor: MathCursor,
+    val leafTextOffset: Int? = null,
+    val sequenceInsertion: Boolean = false,
+    val prefixOffset: Int? = null
+)
 
 /** The same layout is used by editable expressions and formula spans in lesson prose. */
 class MathExpressionLayout private constructor(private val box: ExpressionBox, private val textSize: Float) {
@@ -423,26 +427,62 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
     internal fun hitTestForEditing(x: Float, y: Float): MathExpressionTouchTarget {
         continuationTouchTarget(x, y)?.let { return it }
         rootExteriorTouchCursor(x)?.let { return MathExpressionTouchTarget(it) }
-        return box.carets.filter {
+        return box.carets
+            .filter {
 
-            it.prefixOffset == null &&
-                    (
-                            it.leafTextOffset == null ||
-                                    x in
-                                    requireNotNull(
-                                        it.leafLeft
-                                    )..
-                                    requireNotNull(
-                                        it.leafRight
-                                    ) &&
-                                    y in
-                                    it.top..
-                                    it.bottom
-                            )
+                it.prefixOffset != null ||
+                        it.leafTextOffset == null ||
+                        (
+                                x in
+                                        requireNotNull(
+                                            it.leafLeft
+                                        )..
+                                        requireNotNull(
+                                            it.leafRight
+                                        ) &&
+                                        y in
+                                        it.top..
+                                        it.bottom
+                                )
+            }
+            .minWithOrNull(
+                compareBy<ExpressionCaret> {
+                    distance(
+                        it,
+                        x,
+                        y
+                    )
+                }
+                    .thenBy {
+                        if (
+                            it.prefixOffset != null
+                        ) {
+                            0
+                        } else if (
+                            it.leafTextOffset != null
+                        ) {
+                            1
+                        } else {
+                            2
+                        }
+                    }
+            )
+            ?.let {
 
-        }.minWithOrNull(
-            compareBy<ExpressionCaret> { distance(it, x, y) }.thenBy { if (it.leafTextOffset == null) 1 else 0 }
-        )?.let { MathExpressionTouchTarget(it.cursor, it.leafTextOffset) } ?: MathExpressionTouchTarget(MathCursor())
+                MathExpressionTouchTarget(
+                    cursor =
+                        it.cursor,
+
+                    leafTextOffset =
+                        it.leafTextOffset,
+
+                    prefixOffset =
+                        it.prefixOffset
+                )
+            }
+            ?: MathExpressionTouchTarget(
+                MathCursor()
+            )
     }
 
     internal fun continuationBounds(cursor: MathCursor): RectF? = box.carets.firstOrNull {

@@ -3174,13 +3174,62 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     fun placeTextCursor(
         position: MathCursor,
         leafTextOffset: Int? = null,
-        sequenceInsertion: Boolean = false
+        sequenceInsertion: Boolean = false,
+        prefixOffset: Int? = null
     ): Boolean {
 
         val sequence =
             sequenceAt(
                 position.path
             ) ?: return false
+
+        if (
+            prefixOffset != null
+        ) {
+
+            val prefixLength =
+                largeOperatorPrefixLength(
+                    position.path
+                ) ?: return false
+
+            if (
+                prefixOffset !in
+                0 until prefixLength
+            ) {
+                return false
+            }
+
+            cursor =
+                position.copy(
+                    offset = 0,
+                    level =
+                        MathCursorLevel.INTERIOR,
+                    scope =
+                        MathContentScope.Slot,
+                    leafTextOffset =
+                        null
+                )
+
+            selectionRange =
+                null
+
+            navigationPrefix =
+                NavigationPrefix(
+                    slotPath =
+                        position.path.toList(),
+
+                    offset =
+                        prefixOffset,
+
+                    expression =
+                        expression,
+
+                    cursor =
+                        cursor
+                )
+
+            return true
+        }
 
         /*
          * Touch dentro del cuadro de continuación.
