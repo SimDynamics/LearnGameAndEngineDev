@@ -2254,6 +2254,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         var position = 0
         var cursorOffset = 0
         var removedText = false
+        var removedBeforeCaret = 0
         fun retain(node: MathExpression, start: Int, end: Int, value: String? = null) {
             if (start == end) return
             if (value == null) children.add(node) else children.add(withLeafText(node, value))
@@ -2272,7 +2273,39 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     val cutEnd = end.coerceAtMost(nodeEnd)
                     if (cutStart > retainedFrom) retain(node, retainedFrom, cutStart,
                         value.substring(retainedFrom - position, cutStart - position))
-                    if (cutEnd > cutStart) removedText = true
+                    if (
+                        cutEnd > cutStart
+                    ) {
+
+                        removedText = true
+
+                        /*
+                         * Contamos únicamente el texto eliminado
+                         * situado ANTES del cursor.
+                         *
+                         * 2|2
+                         * ^
+                         * al borrar el 2 izquierdo:
+                         *
+                         * caret = 1
+                         * removedBeforeCaret = 1
+                         * nuevo caret = 0
+                         */
+                        if (
+                            cutStart < caret
+                        ) {
+
+                            removedBeforeCaret +=
+                                (
+                                        minOf(
+                                            cutEnd,
+                                            caret
+                                        ) -
+                                                cutStart
+                                        )
+                                    .coerceAtLeast(0)
+                        }
+                    }
                     retainedFrom = cutEnd
                 }
                 if (retainedFrom < nodeEnd) retain(node, retainedFrom, nodeEnd, value.substring(retainedFrom - position))
@@ -2286,9 +2319,25 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         val scope = (cursor.scope as? MathContentScope.Atom)?.let {
             it.copy(end = maxOf(it.start, it.end + children.size - sequence.children.size))
         } ?: cursor.scope
-        cursor = cursor.copy(offset = cursorOffset, scope = scope)
-        selectionRange = null
-        return true
+        cursor =
+            cursor.copy(
+                scope = scope,
+                leafTextOffset = null
+            )
+
+        selectionRange =
+            null
+
+        val newCaret =
+            (
+                    caret -
+                            removedBeforeCaret
+                    )
+                .coerceAtLeast(0)
+
+        return setTextCursorInCurrentSlot(
+            newCaret
+        )
     }
 
     private fun wellFormedUtf16(value: String, start: Int, end: Int): Boolean {
