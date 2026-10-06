@@ -999,31 +999,13 @@ fun MathExpression.navigationChildren(): List<MathNavigationPart> =
  *
  * La recursión profunda la controla MathExpressionModel.
  *
- * Regla especial para Scripts:
+ * El orden declarado por navigationParts() y el orden
+ * de navegación pueden ser diferentes.
  *
- * El base NO se vuelve a recorrer internamente.
+ * Una región REQUIRED se recorre como contenido editable
+ * sin crear un borde estructural propio.
  *
- * Ejemplo:
- *
- * x²
- *
- * El PARENT exterior ya recorrió:
- *
- * x²]
- * x²|
- * {x²}
- * |x²
- *
- * Al entrar en Scripts recorremos únicamente
- * sus modificadores CHILD:
- *
- * ²]
- * ²|
- * {²}
- * |²
- *
- * Después salimos de Scripts y continuamos
- * con la siguiente región de la estructura exterior.
+ * Una región OPTIONAL eliminable puede exponer su borde ].
  */
 fun MathExpression.navigationTraversalParts(): List<MathNavigationPart> {
 
@@ -1033,16 +1015,40 @@ fun MathExpression.navigationTraversalParts(): List<MathNavigationPart> {
     return when (this) {
 
         /*
-         * Scripts representa un PARENT ya recorrido
-         * más sus modificadores.
-         *
-         * No repetimos base.
-         */
+ * Scripts:
+ *
+ * LEFT desde el borde de la estructura recorre:
+ *
+ * scripts]
+ * base
+ * upper]
+ * upper
+ * lower]
+ * lower
+ *
+ * base es obligatorio:
+ * se edita, pero NO posee borde ].
+ *
+ * upper y lower son opcionales:
+ * sí poseen borde estructural eliminable.
+ */
         is MathExpression.Scripts ->
-            parts.filter {
-                it.role ==
-                        MathNavigationRole.CHILD
-            }
+            listOfNotNull(
+                parts.firstOrNull {
+                    it.id ==
+                            "base"
+                },
+
+                parts.firstOrNull {
+                    it.id ==
+                            "upper"
+                },
+
+                parts.firstOrNull {
+                    it.id ==
+                            "lower"
+                }
+            )
 
         /*
  * Root:
