@@ -516,15 +516,38 @@ open class MathExpressionView @JvmOverloads constructor(context: Context, attrs:
                                     1f
                                 }
 
+                    val globalHomeOrEnd =
+                        presentation ==
+                                MathCursorPresentation.Neutral &&
+                                selected.path.isEmpty()
+
+                    val caretTop =
+                        if (
+                            globalHomeOrEnd
+                        ) {
+                            0f
+                        } else {
+                            expressionBaseline +
+                                    bounds.top
+                        }
+
+                    val caretBottom =
+                        if (
+                            globalHomeOrEnd
+                        ) {
+                            height.toFloat()
+                        } else {
+                            expressionBaseline +
+                                    bounds.bottom
+                        }
+
                     canvas.drawLine(
                         expressionOriginX +
                                 bounds.left,
-                        expressionBaseline +
-                                bounds.top,
+                        caretTop,
                         expressionOriginX +
                                 bounds.left,
-                        expressionBaseline +
-                                bounds.bottom,
+                        caretBottom,
                         expressionPaint
                     )
 
