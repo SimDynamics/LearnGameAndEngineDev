@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.InsetDrawable
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
@@ -49,31 +51,197 @@ class MathKeyboardView(
     private var renderedTemplate: MathExpression.Sequence? = null
     private val previews = mutableListOf<Pair<MathKeyboardAction, MathKeyboardActionPreviewView>>()
     private val symbolKeys = mutableListOf<Button>()
-    private data class KeyGeometry(val height: Int, val minimumHeight: Int, val textMinimumHeight: Int?,
-        val paddingTop: Int, val paddingBottom: Int, val textSize: Float?)
+    private data class KeyGeometry(
+        val height: Int,
+        val minimumHeight: Int,
+        val textMinimumHeight: Int?,
+        val paddingTop: Int,
+        val paddingBottom: Int,
+        val textSize: Float?,
+        val background: Drawable?
+    )
     private val normalKeys = mutableMapOf<View, KeyGeometry>()
     private var compactHeight: Int? = null
 
+    /*
+ * Altura compacta RESPONSIVA.
+ *
+ * Landscape usa el 70% de la altura
+ * normal real de las teclas.
+ */
+    internal fun responsiveCompactHeight(
+        availableHeight: Int
+    ): Int {
+
+        val normalHeight =
+            normalKeys
+                .values
+                .map { it.height }
+                .filter { it > 0 }
+                .maxOrNull()
+                ?: availableHeight
+
+        return minOf(
+            (normalHeight * 0.70f)
+                .toInt()
+                .coerceAtLeast(1),
+
+            availableHeight.coerceAtLeast(1)
+        )
+    }
+
+    /*
+     * El botón MaterialComponents original tiene
+     * mtrl_btn_inset arriba y abajo.
+     *
+     * No sustituimos su diseño.
+     *
+     * Envolvemos SU MISMO drawable desplazándolo
+     * exactamente -mtrl_btn_inset en vertical.
+     *
+     * Resultado:
+     *
+     * horizontal = intacto
+     * vertical   = sin hueco
+     * esquinas   = originales
+     * ripple     = original
+     */
+    private fun compactBackground(
+        background: Drawable?
+    ): Drawable? {
+
+        val original =
+            background
+                ?.constantState
+                ?.newDrawable()
+                ?.mutate()
+                ?: background
+                ?: return null
+
+        val verticalInset =
+            resources.getDimensionPixelSize(
+                com.google.android.material.R.dimen.mtrl_btn_inset
+            )
+
+        return InsetDrawable(
+            original,
+            0,
+            -verticalInset,
+            0,
+            -verticalInset
+        )
+    }
+
     /** Only the host's real landscape/IME viewport enables this temporary geometry. */
-    internal fun setCompactHeight(height: Int?) {
-        if (compactHeight == height) return
-        compactHeight = height
-        normalKeys.forEach { (key, normal) ->
-            key.layoutParams = key.layoutParams.apply { this.height = height ?: normal.height }
-            key.minimumHeight = if (height == null) normal.minimumHeight else 0
+    internal fun setCompactHeight(
+        height: Int?
+    ) {
+
+        if (compactHeight == height) {
+            return
+        }
+
+        compactHeight =
+            height
+
+        normalKeys.forEach {
+                (key, normal) ->
+
+            key.layoutParams =
+                key.layoutParams.apply {
+                    this.height =
+                        height
+                            ?: normal.height
+                }
+
+            key.minimumHeight =
+                if (height == null) {
+                    normal.minimumHeight
+                } else {
+                    0
+                }
+
+            /*
+             * Vertical:
+             *
+             * restauramos el background original
+             * en portrait;
+             *
+             * en landscape usamos exactamente
+             * el mismo background, pero anulando
+             * únicamente mtrl_btn_inset.
+             */
+            key.background =
+                if (height == null) {
+                    normal.background
+                } else {
+                    compactBackground(
+                        normal.background
+                    )
+                }
+
             if (key is Button) {
-                key.minHeight = if (height == null) normal.textMinimumHeight ?: 0 else 0
-                if (key !is MathKeyboardActionPreviewView) {
-                    val size = requireNotNull(normal.textSize)
-                    key.setTextSize(TypedValue.COMPLEX_UNIT_PX,
-                        if (height == null) size else minOf(size, height * .48f))
+
+                key.minHeight =
+                    if (height == null) {
+                        normal.textMinimumHeight
+                            ?: 0
+                    } else {
+                        0
+                    }
+
+                if (
+                    key !is
+                            MathKeyboardActionPreviewView
+                ) {
+
+                    val size =
+                        requireNotNull(
+                            normal.textSize
+                        )
+
+                    key.setTextSize(
+                        TypedValue.COMPLEX_UNIT_PX,
+                        if (height == null) {
+                            size
+                        } else {
+                            minOf(
+                                size,
+                                height * .48f
+                            )
+                        }
+                    )
                 }
             }
-            if (key is MathKeyboardActionPreviewView) key.setCompactHeight(height)
-            else key.setPadding(key.paddingLeft,
-                if (height == null) normal.paddingTop else 0, key.paddingRight,
-                if (height == null) normal.paddingBottom else 0)
+
+            if (
+                key is
+                        MathKeyboardActionPreviewView
+            ) {
+
+                key.setCompactHeight(
+                    height
+                )
+
+            } else {
+
+                key.setPadding(
+                    key.paddingLeft,
+                    if (height == null) {
+                        normal.paddingTop
+                    } else {
+                        0
+                    },
+                    key.paddingRight,
+                    if (height == null) {
+                        normal.paddingBottom
+                    } else {
+                        0
+                    }
+                )
+            }
         }
+
         requestLayout()
     }
 
@@ -223,7 +391,12 @@ class MathKeyboardView(
                 (key as? Button)?.minHeight,
                 key.paddingTop,
                 key.paddingBottom,
-                (key as? Button)?.textSize
+                (key as? Button)?.textSize,
+                key.background
+                    ?.constantState
+                    ?.newDrawable()
+                    ?.mutate()
+                    ?: key.background
             )
 
         key.isFocusable =

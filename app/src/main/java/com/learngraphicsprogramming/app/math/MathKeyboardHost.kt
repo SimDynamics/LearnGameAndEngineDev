@@ -684,9 +684,30 @@ class MathKeyboardHost private constructor(
         bar.visibility =
             View.VISIBLE
 
-        val compact = activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        val toolbarHeightLimit = if (compact) (frame.height() / 2).coerceAtLeast(1) else frame.height()
-        bar.setCompactHeight(toolbarHeightLimit.takeIf { compact })
+        val compact =
+            activity.resources.configuration.orientation ==
+                    Configuration.ORIENTATION_LANDSCAPE
+
+        val toolbarHeightLimit =
+            if (compact) {
+                (frame.height() / 2)
+                    .coerceAtLeast(1)
+            } else {
+                frame.height()
+            }
+
+        val compactKeyHeight =
+            if (compact) {
+                bar.responsiveCompactHeight(
+                    toolbarHeightLimit
+                )
+            } else {
+                null
+            }
+
+        bar.setCompactHeight(
+            compactKeyHeight
+        )
 
         bar.measure(
             View.MeasureSpec

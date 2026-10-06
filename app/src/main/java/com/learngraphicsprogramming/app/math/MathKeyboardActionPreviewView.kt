@@ -7,7 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.util.TypedValue
-import android.widget.Button
+import androidx.appcompat.widget.AppCompatButton
 import kotlin.math.ceil
 import kotlin.math.max
 
@@ -18,7 +18,7 @@ class MathKeyboardActionPreviewView(
     expression: MathExpression.Sequence,
     accentColor: Int,
     textSizePx: Float
-) : Button(context) {
+) : AppCompatButton(context) {
     private val previewPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var cachedPreviewLayout: MathExpressionLayout? = null
     private var compactHeight: Int? = null
@@ -58,7 +58,8 @@ class MathKeyboardActionPreviewView(
         if (normalVerticalPadding == null) normalVerticalPadding = paddingTop to paddingBottom
         compactHeight = height
         val normal = requireNotNull(normalVerticalPadding)
-        val compactPadding = MathWidgetUi.dp(context, 2).coerceAtMost((height ?: Int.MAX_VALUE) / 8)
+        val compactPadding =
+            0
         setPadding(paddingLeft, if (height == null) normal.first else compactPadding,
             paddingRight, if (height == null) normal.second else compactPadding)
         invalidatePreviewLayout()
