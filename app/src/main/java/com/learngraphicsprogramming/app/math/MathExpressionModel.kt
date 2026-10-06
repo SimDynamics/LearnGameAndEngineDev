@@ -826,11 +826,6 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                                         offset = end,
                                         scope =
                                             MathContentScope.Slot
-                                    ),
-                                    MathSelection(
-                                        cursor.path.toList(),
-                                        start,
-                                        end
                                     )
                                 )
                             }
@@ -865,14 +860,9 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
                                 NavigationTarget(
                                     cursor.copy(
-                                        offset = end,
+                                        offset = start,
                                         scope =
                                             MathContentScope.Slot
-                                    ),
-                                    MathSelection(
-                                        cursor.path.toList(),
-                                        start,
-                                        end
                                     )
                                 )
                             }
