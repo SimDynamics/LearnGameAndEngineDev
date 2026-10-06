@@ -55,9 +55,23 @@ object MathExpandableRepresentation {
             addView(controls)
             addView(holder, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
             holder.addView(visual, FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
-            if (MathFullscreenGesturePolicy.allowEdgeSwipeToDismiss(visual) || visual is android.widget.ImageView ||
-                (visual is MathTextView && !visual.isTextSelectable && visual.movementMethod == null)) {
-                holder.onDoubleTap = { expand(accentColor) }
+            /*
+             * Toda representación expandible puede abrir
+             * fullscreen con doble toque.
+             *
+             * Esto incluye:
+             *
+             * - gráficas estáticas
+             * - gráficas dinámicas
+             * - gráficas editables
+             * - rectas numéricas
+             * - demás representaciones
+             *
+             * El doble toque no habilita ningún swipe
+             * de salida. Eso sigue siendo independiente.
+             */
+            holder.onDoubleTap = {
+                expand(accentColor)
             }
         }
 
