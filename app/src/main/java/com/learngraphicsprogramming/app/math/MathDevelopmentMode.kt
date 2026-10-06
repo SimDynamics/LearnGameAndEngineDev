@@ -11,7 +11,7 @@ import android.content.pm.ApplicationInfo
  */
 internal object MathDevelopmentMode {
 
-    const val ENABLE_SANDBOX_AUTO_SOLVE = true
+    const val ENABLE_SANDBOX_AUTO_SOLVE = false
 
     // Cantidad de páginas iniciales que no queremos
     // responder manualmente durante cada prueba.
@@ -21,7 +21,7 @@ internal object MathDevelopmentMode {
     // directamente a la primera página no automática:
     //
     // 16 páginas automáticas -> abrir página 17.
-    const val OPEN_FIRST_MANUAL_PAGE = true
+    const val OPEN_FIRST_MANUAL_PAGE = false
 
     private const val SANDBOX_LESSON_ID =
         "math_course_01__arithmetic_fundamentals__math_puzzle_sandbox"
