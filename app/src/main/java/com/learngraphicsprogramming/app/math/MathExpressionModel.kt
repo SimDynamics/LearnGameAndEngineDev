@@ -688,17 +688,10 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                             cursor.offset <= start
                         ) {
 
-                            /*
-                             * |x -> {x}
-                             */
                             NavigationTarget(
                                 cursor.copy(
-                                    offset = end
-                                ),
-                                MathSelection(
-                                    cursor.path.toList(),
-                                    start,
-                                    end
+                                    offset = end,
+                                    leafTextOffset = null
                                 )
                             )
 
@@ -719,17 +712,10 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                             cursor.offset >= end
                         ) {
 
-                            /*
-                             * x| -> {x}
-                             */
                             NavigationTarget(
                                 cursor.copy(
-                                    offset = end
-                                ),
-                                MathSelection(
-                                    cursor.path.toList(),
-                                    start,
-                                    end
+                                    offset = start,
+                                    leafTextOffset = null
                                 )
                             )
 
