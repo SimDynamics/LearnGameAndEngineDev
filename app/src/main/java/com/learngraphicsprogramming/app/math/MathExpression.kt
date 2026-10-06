@@ -1045,6 +1045,35 @@ fun MathExpression.navigationTraversalParts(): List<MathNavigationPart> {
             }
 
         /*
+ * Root:
+ *
+ * LEFT desde el borde de la raíz recorre:
+ *
+ * raíz]
+ * radicando
+ * índice]
+ * índice
+ *
+ * El radicando es obligatorio y por tanto
+ * no posee borde estructural propio.
+ *
+ * El índice es opcional y sí puede
+ * poseer borde eliminable.
+ */
+        is MathExpression.Root ->
+            listOfNotNull(
+                parts.firstOrNull {
+                    it.id ==
+                            "radicand"
+                },
+
+                parts.firstOrNull {
+                    it.id ==
+                            "index"
+                }
+            )
+
+        /*
          * Matriz:
          *
          * arriba -> abajo
