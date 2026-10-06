@@ -3955,6 +3955,12 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         }
 
         if (
+            activeNavigationPrefix() != null
+        ) {
+            return true
+        }
+
+        if (
             navigationLevel ==
             MathCursorLevel.INTERIOR
         ) {
