@@ -1,6 +1,7 @@
 package com.learngraphicsprogramming.app
 
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -79,7 +80,26 @@ class CalculatorActivity : AppCompatActivity() {
         binding.calculatorResultHost.addView(resultView, ViewGroup.LayoutParams(-2, -2))
         buildKeypad()
         arrangePanels()
+
+        binding.calculatorPasteResult.visibility =
+            if (
+                intent.getBooleanExtra(
+                    EXTRA_RETURN_RESULT,
+                    false
+                )
+            ) {
+                View.VISIBLE
+            } else {
+                View.GONE
+            }
+
+        binding.calculatorPasteResult.setOnClickListener {
+            returnResultToLesson()
+        }
+
         restoreCalculator(savedInstanceState)
+        updatePasteResultButton()
+
         observedExpression = editor.model.expression
         editor.onExpressionChanged = {
             val expression = editor.model.expression
@@ -229,6 +249,7 @@ class CalculatorActivity : AppCompatActivity() {
         resultView.expression = MathExpression.Sequence()
         binding.calculatorResultHost.visibility = View.GONE
         binding.calculatorEvaluate.isEnabled = true
+        updatePasteResultButton()
         showMessage(getString(R.string.calculator_empty_result))
     }
 
@@ -255,17 +276,46 @@ class CalculatorActivity : AppCompatActivity() {
                         resultMode = mode
                         resultView.expression = result.expression
                         binding.calculatorResultHost.visibility = View.VISIBLE
+                        updatePasteResultButton()
                         showMessage("")
                     }
                     is CalculatorResult.Failure -> {
                         resultLatex = null
                         resultInput = null
                         resultMode = null
+                        updatePasteResultButton()
                         showMessage(result.message, error = true)
                     }
                 }
             }
         }
+    }
+
+    private fun updatePasteResultButton() {
+
+        binding.calculatorPasteResult.isEnabled =
+            intent.getBooleanExtra(
+                EXTRA_RETURN_RESULT,
+                false
+            ) &&
+                    !resultLatex.isNullOrBlank()
+    }
+
+    private fun returnResultToLesson() {
+
+        val result =
+            resultLatex
+                ?: return
+
+        setResult(
+            RESULT_OK,
+            Intent().putExtra(
+                EXTRA_RESULT_LATEX,
+                result
+            )
+        )
+
+        finish()
     }
 
     private fun showMessage(message: String, error: Boolean = false) {
@@ -338,7 +388,14 @@ class CalculatorActivity : AppCompatActivity() {
     private fun sp(value: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, value.toFloat(), resources.displayMetrics)
 
     companion object {
-        private const val PREFERENCES = "scientific_calculator"
+        const val EXTRA_RETURN_RESULT =
+            "calculator_return_result"
+
+        const val EXTRA_RESULT_LATEX =
+            "calculator_result_latex"
+
+        private const val PREFERENCES =
+            "scientific_calculator"
         private const val STATE_DRAFT = "calculator_draft"
         private const val STATE_MODE = "calculator_mode"
         private const val STATE_RESULT = "calculator_result"
