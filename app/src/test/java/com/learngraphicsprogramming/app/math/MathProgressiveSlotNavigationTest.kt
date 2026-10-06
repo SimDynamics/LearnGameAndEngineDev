@@ -144,6 +144,24 @@ class MathProgressiveSlotNavigationTest {
             listOf(
                 State(
                     MathCursor(
+                        path("base"),
+                        1
+                    ),
+                    null,
+                    interior
+                ),
+
+                State(
+                    MathCursor(
+                        path("base"),
+                        0
+                    ),
+                    null,
+                    interior
+                ),
+
+                State(
+                    MathCursor(
                         offset = 1,
                         level =
                             MathCursorLevel.CHILD_BOUNDARY,
@@ -167,24 +185,6 @@ class MathProgressiveSlotNavigationTest {
                 State(
                     MathCursor(
                         path("upper"),
-                        0
-                    ),
-                    null,
-                    interior
-                ),
-
-                State(
-                    MathCursor(
-                        path("base"),
-                        1
-                    ),
-                    null,
-                    interior
-                ),
-
-                State(
-                    MathCursor(
-                        path("base"),
                         0
                     ),
                     null,
