@@ -817,7 +817,7 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                     interaction =
                         MathInteractionCapabilities(
                             editable = true,
-                            selectable = false,
+                            selectable = true,
                             deletable = true
                         ),
 
@@ -852,7 +852,7 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                     interaction =
                         MathInteractionCapabilities(
                             editable = true,
-                            selectable = false,
+                            selectable = true,
                             deletable = true
                         ),
 

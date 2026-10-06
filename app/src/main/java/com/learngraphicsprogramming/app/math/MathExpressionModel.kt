@@ -1575,6 +1575,37 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             previousIndex >= 0
         ) {
 
+            val previousNode =
+                sequence.children[
+                    previousIndex
+                ]
+
+            if (
+                previousNode is
+                        MathExpression.LargeOperator
+            ) {
+
+                val parts =
+                    previousNode
+                        .navigationTraversalParts()
+
+                if (
+                    parts.isNotEmpty()
+                ) {
+
+                    return declaredNavigationTarget(
+                        structurePath =
+                            path,
+
+                        nodeIndex =
+                            previousIndex,
+
+                        part =
+                            parts.first()
+                    )
+                }
+            }
+
             return nodeBoundaryTarget(
                 path,
                 previousIndex
@@ -1811,11 +1842,10 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     MathExpression.LargeOperator
         ) {
 
-            continuationEditingTarget(
-                structurePath
-            )?.let {
-                return it
-            }
+            return previousSemanticBeforeNodeBoundary(
+                structurePath,
+                step.nodeIndex
+            )
         }
 
         /*
