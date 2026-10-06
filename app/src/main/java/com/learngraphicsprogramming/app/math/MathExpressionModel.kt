@@ -4061,7 +4061,36 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 )
             }
         }
-        .apply { if (isAtSequenceInsertion) put("sequenceInsertion", true) }
+        .apply {
+            activeNavigationPrefix()?.let {
+
+                put(
+                    "navigationPrefix",
+
+                    JSONObject()
+                        .put(
+                            "path",
+                            encodePath(
+                                it.slotPath
+                            )
+                        )
+                        .put(
+                            "offset",
+                            it.offset
+                        )
+                )
+            }
+        }
+        .apply {
+            if (
+                isAtSequenceInsertion
+            ) {
+                put(
+                    "sequenceInsertion",
+                    true
+                )
+            }
+        }
         .toString()
 
     /** Invalid or unsupported drafts leave the current tree unchanged. */
@@ -4158,6 +4187,26 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                         null
                     }
                 }
+
+            val prefixJson =
+                json.optJSONObject(
+                    "navigationPrefix"
+                )
+
+            val prefixPath =
+                prefixJson?.let {
+
+                    decodePath(
+                        it.getJSONArray(
+                            "path"
+                        )
+                    )
+                }
+
+            val prefixOffset =
+                prefixJson?.getInt(
+                    "offset"
+                )
 
             /*
              * Compatibilidad con drafts anteriores:
@@ -4308,6 +4357,41 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                                 outside,
                             kind =
                                 boundaryKind
+                        )
+                }
+            }
+
+            if (
+                selectionRange == null &&
+                navigationBoundary == null &&
+                prefixPath != null &&
+                prefixOffset != null
+            ) {
+
+                val prefixLength =
+                    largeOperatorPrefixLength(
+                        prefixPath
+                    )
+
+                if (
+                    prefixLength != null &&
+                    prefixOffset in
+                    0 until prefixLength &&
+                    cursor.path ==
+                    prefixPath &&
+                    cursor.offset == 0
+                ) {
+
+                    navigationPrefix =
+                        NavigationPrefix(
+                            slotPath =
+                                prefixPath,
+                            offset =
+                                prefixOffset,
+                            expression =
+                                expression,
+                            cursor =
+                                cursor
                         )
                 }
             }
