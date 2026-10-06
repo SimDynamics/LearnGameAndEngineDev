@@ -2190,7 +2190,16 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         val sequence = sequenceAt(cursor.path) ?: return false
         val texts = sequence.children.map { leafText(it) ?: "\uFFFC" }
         val text = texts.joinToString("")
-        val caret = texts.take(cursor.offset).sumOf { it.length }
+        val caret =
+            texts.take(
+                cursor.offset
+            ).sumOf {
+                it.length
+            } +
+                    (
+                            cursor.leafTextOffset
+                                ?: 0
+                            )
         val scope = if (navigationLevel == MathCursorLevel.INTERIOR) contentScopeBounds() else 0 to sequence.children.size
         val scopeStart = texts.take(scope.first).sumOf { it.length }
         val scopeEnd = texts.take(scope.second).sumOf { it.length }
@@ -2231,7 +2240,16 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             } else intervals.add(interval)
         }
         if (intervals.isEmpty()) return true
-        val caret = texts.take(cursor.offset).sumOf { it.length }
+        val caret =
+            texts.take(
+                cursor.offset
+            ).sumOf {
+                it.length
+            } +
+                    (
+                            cursor.leafTextOffset
+                                ?: 0
+                            )
         val children = mutableListOf<MathExpression>()
         var position = 0
         var cursorOffset = 0
