@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.util.TypedValue
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -210,14 +211,146 @@ class MathKeyboardView(
         addKey(this, action)
     }
 
-    private fun addKey(key: View, action: MathKeyboardAction) {
-        normalKeys[key] = KeyGeometry(key.layoutParams.height, key.minimumHeight,
-            (key as? Button)?.minHeight, key.paddingTop, key.paddingBottom, (key as? Button)?.textSize)
-        key.isFocusable = false
-        (key.layoutParams as LinearLayout.LayoutParams).marginEnd = MathWidgetUi.dp(context, 2)
-        key.tag = MathInputFocusOrder.GESTURE_OWNER_TAG
-        if (key !is MathKeyboardActionPreviewView) key.contentDescription = action.contentDescription
-        key.setOnClickListener { execute(action) }
+    private fun addKey(
+        key: View,
+        action: MathKeyboardAction
+    ) {
+
+        normalKeys[key] =
+            KeyGeometry(
+                key.layoutParams.height,
+                key.minimumHeight,
+                (key as? Button)?.minHeight,
+                key.paddingTop,
+                key.paddingBottom,
+                (key as? Button)?.textSize
+            )
+
+        key.isFocusable =
+            false
+
+        /*
+         * Dejamos un poco más de aire entre botones.
+         *
+         * Antes:
+         * 2 dp
+         *
+         * Ahora:
+         * 6 dp
+         */
+        (
+                key.layoutParams as
+                        LinearLayout.LayoutParams
+                ).marginEnd =
+            MathWidgetUi.dp(
+                context,
+                6
+            )
+
+        key.tag =
+            MathInputFocusOrder.GESTURE_OWNER_TAG
+
+        if (
+            key !is
+                    MathKeyboardActionPreviewView
+        ) {
+
+            key.contentDescription =
+                action.contentDescription
+        }
+
+        key.setOnClickListener {
+            execute(action)
+        }
+
+        /*
+         * LEFT / RIGHT estructurales:
+         *
+         * una pulsación solamente es válida
+         * si el dedo TERMINA estrictamente
+         * dentro del botón.
+         *
+         * No usamos aquí la tolerancia táctil
+         * normal de View porque durante navegación
+         * muy rápida podría aceptar un gesto que
+         * terminó ligeramente fuera del botón.
+         */
+        if (
+            action ==
+            MathKeyboardAction.PreviousSlot ||
+            action ==
+            MathKeyboardAction.NextSlot
+        ) {
+
+            key.setOnTouchListener {
+                    view,
+                    event ->
+
+                when (
+                    event.actionMasked
+                ) {
+
+                    MotionEvent.ACTION_DOWN -> {
+
+                        view.isPressed =
+                            true
+
+                        true
+                    }
+
+                    MotionEvent.ACTION_MOVE -> {
+
+                        val inside =
+                            event.x >= 0f &&
+                                    event.x <
+                                    view.width &&
+                                    event.y >= 0f &&
+                                    event.y <
+                                    view.height
+
+                        view.isPressed =
+                            inside
+
+                        true
+                    }
+
+                    MotionEvent.ACTION_UP -> {
+
+                        val inside =
+                            event.x >= 0f &&
+                                    event.x <
+                                    view.width &&
+                                    event.y >= 0f &&
+                                    event.y <
+                                    view.height
+
+                        view.isPressed =
+                            false
+
+                        if (
+                            inside &&
+                            view.isEnabled
+                        ) {
+                            view.performClick()
+                        }
+
+                        true
+                    }
+
+                    MotionEvent.ACTION_CANCEL -> {
+
+                        view.isPressed =
+                            false
+
+                        true
+                    }
+
+                    else ->
+                        true
+                }
+            }
+        }
+
         keys.addView(key)
     }
 
