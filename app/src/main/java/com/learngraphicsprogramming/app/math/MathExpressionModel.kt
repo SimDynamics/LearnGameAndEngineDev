@@ -3657,21 +3657,186 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         return replace(expression, 0)
     }
 
-    private fun encodeCursor(value: MathCursor) = JSONObject().put("path", encodePath(value.path)).put("offset", value.offset)
-        .put("level", value.level.name).apply {
-            when (val scope = value.scope) {
-                is MathContentScope.Atom -> put("scope", JSONObject().put("kind", "atom").put("start", scope.start).put("end", scope.end))
-                MathContentScope.Slot -> put("scope", JSONObject().put("kind", "slot"))
-                null -> Unit
+    private fun encodeCursor(
+        value: MathCursor
+    ): JSONObject =
+        JSONObject()
+            .put(
+                "path",
+                encodePath(
+                    value.path
+                )
+            )
+            .put(
+                "offset",
+                value.offset
+            )
+            .put(
+                "level",
+                value.level.name
+            )
+            .apply {
+
+                value.leafTextOffset?.let {
+
+                    put(
+                        "leafTextOffset",
+                        it
+                    )
+                }
+
+                when (
+                    val scope =
+                        value.scope
+                ) {
+
+                    is MathContentScope.Atom -> {
+
+                        put(
+                            "scope",
+                            JSONObject()
+                                .put(
+                                    "kind",
+                                    "atom"
+                                )
+                                .put(
+                                    "start",
+                                    scope.start
+                                )
+                                .put(
+                                    "end",
+                                    scope.end
+                                )
+                        )
+                    }
+
+                    MathContentScope.Slot -> {
+
+                        put(
+                            "scope",
+                            JSONObject()
+                                .put(
+                                    "kind",
+                                    "slot"
+                                )
+                        )
+                    }
+
+                    null -> Unit
+                }
             }
-        }
     private fun encodePath(path: List<MathCursorStep>) = JSONArray().apply { path.forEach { put(JSONObject().put("node", it.nodeIndex).put("slot", it.slot)) } }
-    private fun decodeCursor(value: JSONObject): MathCursor {
-        val path = decodePath(value.getJSONArray("path"))
-        val level = if (value.has("level")) MathCursorLevel.valueOf(value.getString("level")) else if (path.isEmpty()) MathCursorLevel.NEUTRAL else MathCursorLevel.INTERIOR
-        val scope = value.optJSONObject("scope")?.let { if (it.getString("kind") == "atom") MathContentScope.Atom(it.getInt("start"), it.getInt("end")) else MathContentScope.Slot }
-            ?: if (level == MathCursorLevel.INTERIOR && path.isNotEmpty()) MathContentScope.Slot else null
-        return MathCursor(path, value.getInt("offset"), level, scope)
+    private fun decodeCursor(
+        value: JSONObject
+    ): MathCursor {
+
+        val path =
+            decodePath(
+                value.getJSONArray(
+                    "path"
+                )
+            )
+
+        val level =
+            if (
+                value.has(
+                    "level"
+                )
+            ) {
+
+                MathCursorLevel.valueOf(
+                    value.getString(
+                        "level"
+                    )
+                )
+
+            } else if (
+                path.isEmpty()
+            ) {
+
+                MathCursorLevel.NEUTRAL
+
+            } else {
+
+                MathCursorLevel.INTERIOR
+            }
+
+        val scope =
+            value.optJSONObject(
+                "scope"
+            )?.let {
+
+                if (
+                    it.getString(
+                        "kind"
+                    ) ==
+                    "atom"
+                ) {
+
+                    MathContentScope.Atom(
+                        it.getInt(
+                            "start"
+                        ),
+                        it.getInt(
+                            "end"
+                        )
+                    )
+
+                } else {
+
+                    MathContentScope.Slot
+                }
+
+            } ?: if (
+                level ==
+                MathCursorLevel.INTERIOR &&
+                path.isNotEmpty()
+            ) {
+
+                MathContentScope.Slot
+
+            } else {
+
+                null
+            }
+
+        /*
+         * Los borradores anteriores no poseen
+         * leafTextOffset.
+         *
+         * Por eso el campo es opcional y
+         * seguimos siendo compatibles con ellos.
+         */
+        val leafTextOffset =
+            if (
+                value.has(
+                    "leafTextOffset"
+                ) &&
+                !value.isNull(
+                    "leafTextOffset"
+                )
+            ) {
+
+                value.getInt(
+                    "leafTextOffset"
+                )
+
+            } else {
+
+                null
+            }
+
+        return MathCursor(
+            path = path,
+            offset =
+                value.getInt(
+                    "offset"
+                ),
+            level = level,
+            scope = scope,
+            leafTextOffset =
+                leafTextOffset
+        )
     }
     private fun decodePath(value: JSONArray): List<MathCursorStep> {
         require(value.length() <= 64)
