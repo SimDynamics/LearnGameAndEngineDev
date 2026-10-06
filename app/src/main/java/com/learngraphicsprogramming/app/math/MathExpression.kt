@@ -155,12 +155,14 @@ sealed interface MathContentScope {
 data class MathCursor(
     val path: List<MathCursorStep> = emptyList(),
     val offset: Int = 0,
+
     val level: MathCursorLevel =
         if (path.isEmpty()) {
             MathCursorLevel.NEUTRAL
         } else {
             MathCursorLevel.INTERIOR
         },
+
     val scope: MathContentScope? =
         if (
             level == MathCursorLevel.INTERIOR &&
@@ -169,19 +171,51 @@ data class MathCursor(
             MathContentScope.Slot
         } else {
             null
-        }
+        },
+
+    /*
+     * Posición exacta dentro del texto
+     * de un nodo hoja.
+     *
+     * null:
+     * el cursor está en una frontera
+     * normal del AST.
+     *
+     * Ejemplo:
+     *
+     * Number("22")
+     *
+     * leafTextOffset = 0
+     * |22
+     *
+     * leafTextOffset = 1
+     * 2|2
+     *
+     * leafTextOffset = 2
+     * 22|
+     *
+     * Mover LEFT/RIGHT NO necesita
+     * dividir Number("22") en dos nodos.
+     */
+    val leafTextOffset: Int? = null
 )
 
 sealed interface MathCursorPresentation {
 
     data class Interior(
-        val scope: MathContentScope? = null
+        val scope: MathContentScope? = null,
+        val leafTextOffset: Int? = null
     ) : MathCursorPresentation
 
-    data object Neutral : MathCursorPresentation
+    data object Neutral :
+        MathCursorPresentation
 
     /**
-     * Borde derecho de una estructura matemática.
+     * Borde derecho de un MathExpression real:
+     *
+     * x ]
+     * Fraction ]
+     * Integral ]
      */
     data class ParentBoundary(
         val path: List<MathCursorStep>,
@@ -189,9 +223,12 @@ sealed interface MathCursorPresentation {
     ) : MathCursorPresentation
 
     /**
-     * Borde derecho de un hijo.
+     * Borde derecho de una parte declarada
+     * dentro de una STRUCTURE.
      *
-     * No existe un borde izquierdo equivalente.
+     * Ejemplo:
+     *
+     * ^1 ]
      */
     data class ChildBoundary(
         val slotPath: List<MathCursorStep>,
@@ -199,11 +236,27 @@ sealed interface MathCursorPresentation {
     ) : MathCursorPresentation {
 
         init {
+
             require(after) {
                 "A child boundary exists only to its right"
             }
         }
     }
+
+    /**
+     * Borde derecho del PARENT virtual situado
+     * después de un LargeOperator.
+     *
+     * El cuadro no pertenece al AST.
+     *
+     * LargeOperator tampoco obtiene body.
+     *
+     * Visualmente:
+     *
+     * □ ]
+     */
+    data object ContinuationBoundary :
+        MathCursorPresentation
 }
 
 enum class MathSlotRequirement {
@@ -942,87 +995,61 @@ fun MathExpression.navigationChildren(): List<MathNavigationPart> =
     navigationParts()
 
 /**
- * Orden semántico de recorrido dentro de una STRUCTURE.
+ * Orden inmediato de recorrido dentro de una STRUCTURE.
  *
- * La posición visual NO decide por dónde entra la navegación.
- *
- * Regla:
- *
- * 1. Primero todos los PARENT.
- * 2. Después todos los CHILD.
- *
- * Dentro de cada grupo se conserva el orden declarado
- * por navigationParts().
- *
- * Ejemplos:
- *
- * Root:
- *     PARENT radicand
- *     CHILD  index
- *
- * Scripts:
- *     PARENT base
- *     CHILD  upper
- *     CHILD  lower
- *
- * Fraction:
- *     PARENT numerator
- *     PARENT denominator
- *
- * LargeOperator:
- *     no tiene PARENT propios
- *     CHILD upper
- *     CHILD lower
- */
-/**
- * Orden semántico inmediato dentro de una STRUCTURE.
- *
- * IMPORTANTE:
- *
- * Esto solamente organiza las partes inmediatas.
  * La recursión profunda la controla MathExpressionModel.
  *
- * Orden:
+ * Regla especial para Scripts:
  *
- * 1. SUBSTRUCTURE
- * 2. PARENT
- * 3. CHILD
+ * El base NO se vuelve a recorrer internamente.
  *
- * Dentro de cada grupo se conserva el orden visual
- * declarado por navigationParts():
+ * Ejemplo:
  *
- * arriba -> abajo
- * izquierda -> derecha
+ * x²
  *
- * Cuando una región contiene otra STRUCTURE,
- * esa STRUCTURE administra completamente
- * su propio recorrido antes de continuar.
+ * El PARENT exterior ya recorrió:
+ *
+ * x²]
+ * x²|
+ * {x²}
+ * |x²
+ *
+ * Al entrar en Scripts recorremos únicamente
+ * sus modificadores CHILD:
+ *
+ * ²]
+ * ²|
+ * {²}
+ * |²
+ *
+ * Después salimos de Scripts y continuamos
+ * con la siguiente región de la estructura exterior.
  */
 fun MathExpression.navigationTraversalParts(): List<MathNavigationPart> {
 
     val parts =
         navigationParts()
 
-    /*
-     * Orden de LEFT:
-     *
-     * 1. arriba -> abajo
-     * 2. a la misma altura: derecha -> izquierda
-     *
-     * Cada parte conserva después su propia jerarquía interna.
-     */
     return when (this) {
 
-        is MathExpression.Fraction,
-        is MathExpression.Scripts,
-        is MathExpression.Root,
-        is MathExpression.Group,
-        is MathExpression.Function,
-        is MathExpression.LargeOperator,
-        is MathExpression.Limit,
-        is MathExpression.Derivative ->
-            parts
+        /*
+         * Scripts representa un PARENT ya recorrido
+         * más sus modificadores.
+         *
+         * No repetimos base.
+         */
+        is MathExpression.Scripts ->
+            parts.filter {
+                it.role ==
+                        MathNavigationRole.CHILD
+            }
 
+        /*
+         * Matriz:
+         *
+         * arriba -> abajo
+         * derecha -> izquierda dentro de cada fila.
+         */
         is MathExpression.Matrix ->
             rows.indices.flatMap { row ->
 
@@ -1031,24 +1058,38 @@ fun MathExpression.navigationTraversalParts(): List<MathNavigationPart> {
                     .mapNotNull { column ->
 
                         parts.firstOrNull {
-                            it.id == "r${row}c$column"
+                            it.id ==
+                                    "r${row}c$column"
                         }
                     }
             }
 
+        /*
+         * Cases:
+         *
+         * arriba -> abajo
+         * derecha -> izquierda.
+         */
         is MathExpression.Cases ->
             rows.indices.flatMap { row ->
 
                 listOfNotNull(
                     parts.firstOrNull {
-                        it.id == "condition$row"
+                        it.id ==
+                                "condition$row"
                     },
+
                     parts.firstOrNull {
-                        it.id == "expression$row"
+                        it.id ==
+                                "expression$row"
                     }
                 )
             }
 
+        /*
+         * Las demás estructuras conservan
+         * por ahora su orden declarado.
+         */
         else ->
             parts
     }

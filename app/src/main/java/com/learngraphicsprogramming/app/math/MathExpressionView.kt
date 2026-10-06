@@ -34,32 +34,272 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
         RectF(it.x, it.top, it.x, it.bottom)
     }
 
-    /** Visualizes the model's level; geometry never chooses or changes a navigation state. */
-    fun presentationCaretBounds(cursor: MathCursor, presentation: MathCursorPresentation): RectF? = when (presentation) {
-        is MathCursorPresentation.Interior -> {
-            val caret = caretBounds(cursor)
-            val atom = presentation.scope as? MathContentScope.Atom
-            val content = atom?.let { contentBounds(cursor.path, it.start, it.end) }
-            if (caret == null || content == null) caret else RectF(caret.left, content.top, caret.left, content.bottom)
+    /**
+     * Visualiza el estado lógico del modelo.
+     *
+     * La geometría nunca decide la navegación.
+     */
+    fun presentationCaretBounds(
+        cursor: MathCursor,
+        presentation: MathCursorPresentation
+    ): RectF? =
+        when (presentation) {
+
+            /*
+             * EDICIÓN.
+             */
+            is MathCursorPresentation.Interior -> {
+
+                /*
+                 * Si existe una posición interna
+                 * de texto, utilizamos el caret
+                 * que el layout ya calcula para
+                 * cada frontera UTF-16 del nodo.
+                 *
+                 * Así Number("22") puede mostrar:
+                 *
+                 * |22
+                 * 2|2
+                 * 22|
+                 *
+                 * sin modificar el AST.
+                 */
+                val textOffset =
+                    presentation.leafTextOffset
+
+                if (textOffset != null) {
+
+                    textCaretBounds(
+                        cursor,
+                        textOffset
+                    )
+
+                } else {
+
+                    val caret =
+                        caretBounds(
+                            cursor
+                        )
+
+                    val atom =
+                        presentation.scope
+                                as? MathContentScope.Atom
+
+                    val content =
+                        atom?.let {
+
+                            contentBounds(
+                                cursor.path,
+                                it.start,
+                                it.end
+                            )
+                        }
+
+                    if (
+                        caret == null ||
+                        content == null
+                    ) {
+                        caret
+                    } else {
+                        RectF(
+                            caret.left,
+                            content.top,
+                            caret.left,
+                            content.bottom
+                        )
+                    }
+                }
+            }
+
+            /*
+             * FIN REAL.
+             *
+             * FIN pertenece a la expresión completa,
+             * por lo tanto su cursor debe ser GRANDE.
+             *
+             * Si existe el PARENT virtual después
+             * de LargeOperator:
+             *
+             * ∫ □ |
+             *
+             * X está después del cuadro,
+             * pero la altura corresponde a TODA
+             * la Sequence.
+             */
+            MathCursorPresentation.Neutral -> {
+
+                val caret =
+                    caretBounds(
+                        cursor
+                    )
+
+                val continuation =
+                    continuationBounds(
+                        cursor
+                    )
+
+                val sequence =
+                    sequenceBounds(
+                        cursor.path
+                    )
+
+                if (
+                    continuation != null &&
+                    sequence != null
+                ) {
+
+                    val gap =
+                        max(
+                            1f,
+                            textSize * .08f
+                        )
+
+                    val x =
+                        continuation.right +
+                                gap
+
+                    RectF(
+                        x,
+                        sequence.top -
+                                textSize * .06f,
+                        x,
+                        sequence.bottom +
+                                textSize * .06f
+                    )
+
+                } else if (
+                    caret != null &&
+                    sequence != null
+                ) {
+
+                    /*
+                     * FIN normal sin continuación.
+                     *
+                     * También es grande.
+                     */
+                    RectF(
+                        caret.left,
+                        sequence.top -
+                                textSize * .06f,
+                        caret.left,
+                        sequence.bottom +
+                                textSize * .06f
+                    )
+
+                } else {
+
+                    caret
+                }
+            }
+
+            /*
+             * BORDE DERECHO DEL PARENT VIRTUAL:
+             *
+             * □ ]
+             *
+             * Este sí conserva solamente
+             * la altura del cuadro.
+             */
+            MathCursorPresentation.ContinuationBoundary -> {
+
+                val continuation =
+                    continuationBounds(
+                        cursor
+                    )
+
+                if (
+                    continuation != null
+                ) {
+
+                    val gap =
+                        max(
+                            1f,
+                            textSize * .05f
+                        )
+
+                    val x =
+                        continuation.right +
+                                gap
+
+                    RectF(
+                        x,
+                        continuation.top,
+                        x,
+                        continuation.bottom
+                    )
+
+                } else {
+
+                    caretBounds(
+                        cursor
+                    )
+                }
+            }
+
+            /*
+             * Borde derecho de una parte interna.
+             */
+            is MathCursorPresentation.ChildBoundary -> {
+
+                sequenceBounds(
+                    presentation.slotPath
+                )?.let { scope ->
+
+                    val gap =
+                        max(
+                            1f,
+                            textSize * .05f
+                        )
+
+                    val x =
+                        scope.right +
+                                gap
+
+                    RectF(
+                        x,
+                        scope.top,
+                        x,
+                        scope.bottom
+                    )
+
+                } ?: caretBounds(
+                    cursor
+                )
+            }
+
+            /*
+             * Borde derecho de un PARENT
+             * o STRUCTURE real.
+             */
+            is MathCursorPresentation.ParentBoundary -> {
+
+                childBounds(
+                    presentation.path,
+                    presentation.nodeIndex
+                )?.let { parent ->
+
+                    val gap =
+                        max(
+                            1f,
+                            textSize * .05f
+                        )
+
+                    val x =
+                        parent.right +
+                                gap
+
+                    RectF(
+                        x,
+                        parent.top,
+                        x,
+                        parent.bottom
+                    )
+
+                } ?: caretBounds(
+                    cursor
+                )
+            }
         }
-        MathCursorPresentation.Neutral -> {
-            val caret = caretBounds(cursor)
-            val continuation = continuationBounds(cursor)
-            val scope = sequenceBounds(cursor.path)
-            if (caret != null && continuation != null) RectF(caret.left, continuation.top, caret.left, continuation.bottom)
-            else if (caret == null || scope == null) caret else RectF(caret.left, scope.top - textSize * .06f,
-                caret.left, scope.bottom + textSize * .06f)
-        }
-        is MathCursorPresentation.ChildBoundary -> sequenceBounds(presentation.slotPath)?.let { scope ->
-            val gap = max(1f, textSize * .05f)
-            val x = scope.right + gap
-            RectF(x, scope.top, x, scope.bottom)
-        } ?: caretBounds(cursor)
-        is MathCursorPresentation.ParentBoundary -> childBounds(presentation.path, presentation.nodeIndex)?.let { parent ->
-            val x = parent.right + max(1f, textSize * .05f)
-            RectF(x, parent.top, x, parent.bottom)
-        } ?: caretBounds(cursor)
-    }
 
     /** Bounds of an actual Sequence, including its empty placeholder when shown. */
     internal fun sequenceBounds(path: List<MathCursorStep>): RectF? = box.sequences.firstOrNull { it.path == path }?.let {
@@ -217,28 +457,117 @@ open class MathExpressionView @JvmOverloads constructor(context: Context, attrs:
         setMeasuredDimension(resolveSize(desiredWidth, widthMeasureSpec), resolveSize(desiredHeight, heightMeasureSpec))
     }
 
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        expressionPaint.color = textColor
-        expressionLayout.draw(canvas, expressionPaint, expressionOriginX, expressionBaseline)
+    override fun onDraw(
+        canvas: Canvas
+    ) {
+
+        super.onDraw(
+            canvas
+        )
+
+        expressionPaint.color =
+            textColor
+
+        expressionLayout.draw(
+            canvas,
+            expressionPaint,
+            expressionOriginX,
+            expressionBaseline
+        )
+
         cursor?.let { selected ->
-            val presentation = cursorPresentation
-            expressionLayout.presentationCaretBounds(selected, presentation)?.let { bounds ->
-                expressionPaint.color = caretColor
-                expressionPaint.style = Paint.Style.STROKE
-                expressionPaint.strokeWidth = max(resources.displayMetrics.density, textSizePx * .045f) *
-                    if (presentation == MathCursorPresentation.Neutral || presentation is MathCursorPresentation.ParentBoundary) 1.35f else 1f
-                canvas.drawLine(expressionOriginX + bounds.left, expressionBaseline + bounds.top,
-                    expressionOriginX + bounds.left, expressionBaseline + bounds.bottom, expressionPaint)
-                if (presentation is MathCursorPresentation.ChildBoundary || presentation is MathCursorPresentation.ParentBoundary) {
-                    val inside = bounds.left - textSizePx * .07f
-                    canvas.drawLine(expressionOriginX + bounds.left, expressionBaseline + bounds.top,
-                        expressionOriginX + inside, expressionBaseline + bounds.top, expressionPaint)
-                    canvas.drawLine(expressionOriginX + bounds.left, expressionBaseline + bounds.bottom,
-                        expressionOriginX + inside, expressionBaseline + bounds.bottom, expressionPaint)
+
+            val presentation =
+                cursorPresentation
+
+            expressionLayout
+                .presentationCaretBounds(
+                    selected,
+                    presentation
+                )
+                ?.let { bounds ->
+
+                    expressionPaint.color =
+                        caretColor
+
+                    expressionPaint.style =
+                        Paint.Style.STROKE
+
+                    val structuralBoundary =
+                        presentation is
+                                MathCursorPresentation.ParentBoundary ||
+                                presentation is
+                                        MathCursorPresentation.ChildBoundary ||
+                                presentation ==
+                                MathCursorPresentation.ContinuationBoundary
+
+                    expressionPaint.strokeWidth =
+                        max(
+                            resources.displayMetrics.density,
+                            textSizePx * .045f
+                        ) *
+                                if (
+                                    presentation ==
+                                    MathCursorPresentation.Neutral ||
+                                    structuralBoundary
+                                ) {
+                                    1.35f
+                                } else {
+                                    1f
+                                }
+
+                    canvas.drawLine(
+                        expressionOriginX +
+                                bounds.left,
+                        expressionBaseline +
+                                bounds.top,
+                        expressionOriginX +
+                                bounds.left,
+                        expressionBaseline +
+                                bounds.bottom,
+                        expressionPaint
+                    )
+
+                    /*
+                     * Únicamente los checkpoints ]
+                     * reciben las dos patitas.
+                     */
+                    if (
+                        structuralBoundary
+                    ) {
+
+                        val inside =
+                            bounds.left -
+                                    textSizePx * .07f
+
+                        canvas.drawLine(
+                            expressionOriginX +
+                                    bounds.left,
+                            expressionBaseline +
+                                    bounds.top,
+                            expressionOriginX +
+                                    inside,
+                            expressionBaseline +
+                                    bounds.top,
+                            expressionPaint
+                        )
+
+                        canvas.drawLine(
+                            expressionOriginX +
+                                    bounds.left,
+                            expressionBaseline +
+                                    bounds.bottom,
+                            expressionOriginX +
+                                    inside,
+                            expressionBaseline +
+                                    bounds.bottom,
+                            expressionPaint
+                        )
+                    }
+
+                    expressionPaint.style =
+                        Paint.Style.FILL
                 }
-                expressionPaint.style = Paint.Style.FILL
-            }
         }
     }
 

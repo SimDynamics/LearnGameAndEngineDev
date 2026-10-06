@@ -369,7 +369,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 isAtSequenceInsertion
             ) {
 
-                MathCursorPresentation.Neutral
+                MathCursorPresentation.ContinuationBoundary
 
             } else if (
                 cursor.level ==
@@ -387,7 +387,11 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             ) {
 
                 MathCursorPresentation.Interior(
-                    cursor.scope
+                    scope =
+                        cursor.scope,
+
+                    leafTextOffset =
+                        cursor.leafTextOffset
                 )
 
             } else {
@@ -443,15 +447,56 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         forward: Boolean
     ): NavigationTarget? {
 
-        if (isAtSequenceInsertion) {
+        /*
+         * BORDE DERECHO DEL PARENT VIRTUAL
+         *
+         * LEFT:
+         *
+         * □ ] -> □ |
+         *
+         * RIGHT:
+         *
+         * □ ] -> FIN |
+         */
+        if (
+            isAtSequenceInsertion
+        ) {
+
+            val sequence =
+                sequenceAt(
+                    cursor.path
+                ) ?: return null
 
             return if (forward) {
 
-                if (cursor.path.isEmpty()) {
-                    null
+                if (
+                    cursor.path.isEmpty()
+                ) {
+
+                    /*
+                     * FIN derecho de la expresión completa.
+                     *
+                     * Tiene exactamente el mismo offset físico,
+                     * pero ya NO conserva navigationInsertion.
+                     */
+                    NavigationTarget(
+                        MathCursor(
+                            path = cursor.path,
+                            offset = sequence.children.size,
+                            level = MathCursorLevel.NEUTRAL,
+                            scope = null
+                        )
+                    )
+
                 } else {
-                    slotExitRightTarget(
-                        cursor.path
+
+                    /*
+                     * Dentro de una región estructural,
+                     * regresamos a su extremo derecho editable.
+                     */
+                    slotEditingTarget(
+                        cursor.path,
+                        atRight = true
                     )
                 }
 
@@ -464,16 +509,13 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         }
 
         /*
-         * La selección SÍ forma parte del recorrido
-         * de un elemento editable.
+         * SELECCIÓN MATEMÁTICA REAL.
          *
          * LEFT:
          *
          * x| -> {x} -> |x
          *
-         * RIGHT:
-         *
-         * |x -> {x} -> x|
+         * RIGHT hace lo mismo en reversa.
          */
         selectionRange?.let { selection ->
 
@@ -482,8 +524,11 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     ?: if (
                         selection.path.isNotEmpty()
                     ) {
+
                         MathContentScope.Slot
+
                     } else {
+
                         MathContentScope.Atom(
                             selection.start,
                             selection.end
@@ -506,6 +551,9 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             )
         }
 
+        /*
+         * BORDE DE PARENT / CHILD DECLARADO.
+         */
         activeNavigationBoundary()?.let { boundary ->
 
             return if (forward) {
@@ -523,6 +571,9 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             }
         }
 
+        /*
+         * EDICIÓN.
+         */
         if (
             navigationLevel ==
             MathCursorLevel.INTERIOR
@@ -541,8 +592,10 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 is MathContentScope.Atom -> {
 
                     /*
-                     * LargeOperator:
-                     * continuación vacía independiente.
+                     * PARENT virtual vacío situado
+                     * después de LargeOperator.
+                     *
+                     * □ |
                      */
                     if (
                         scope.start ==
@@ -554,12 +607,22 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
                         return if (forward) {
 
+                            /*
+                             * RIGHT:
+                             *
+                             * □ | -> □ ]
+                             */
                             continuationTarget(
                                 cursor.path
                             )
 
                         } else {
 
+                            /*
+                             * LEFT:
+                             *
+                             * □ | -> Integral ]
+                             */
                             val lastIndex =
                                 sequence.children.lastIndex
 
@@ -622,8 +685,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     return if (forward) {
 
                         if (
-                            cursor.offset <=
-                            start
+                            cursor.offset <= start
                         ) {
 
                             /*
@@ -654,8 +716,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     } else {
 
                         if (
-                            cursor.offset >=
-                            end
+                            cursor.offset >= end
                         ) {
 
                             /*
@@ -676,7 +737,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
                             /*
                              * |x -> siguiente elemento
-                             * situado a la izquierda.
+                             * situado hacia la izquierda.
                              */
                             nextSemanticAfterNode(
                                 cursor.path,
@@ -689,11 +750,14 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 else -> {
 
                     /*
-                     * Región completa editable:
+                     * Región editable completa:
                      *
                      * numerator|
                      * {numerator}
                      * |numerator
+                     *
+                     * También se usa para CHILD editables
+                     * como upper/lower.
                      */
                     val start =
                         0
@@ -773,12 +837,6 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                             cursor.offset <=
                                     start -> {
 
-                                /*
-                                 * |numerator
-                                 *
-                                 * Ahora entramos en sus PARENT
-                                 * internos desde la derecha.
-                                 */
                                 if (
                                     requiresStructuralTraversal(
                                         cursor.path,
@@ -817,9 +875,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         }
 
         /*
-         * node] es explícito.
-         *
-         * Ya no se confunde con FIN.
+         * BORDE DERECHO DE MathExpression REAL.
          */
         if (
             cursor.level ==
@@ -883,8 +939,10 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         }
 
         /*
-         * NEUTRAL solamente representa FIN
-         * o una frontera libre.
+         * NEUTRAL.
+         *
+         * Aquí viven únicamente los FIN reales
+         * y fronteras libres.
          */
         val sequence =
             sequenceAt(
@@ -910,7 +968,26 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
         } else {
 
+            /*
+             * Caso crítico de LargeOperator.
+             *
+             * FIN derecho
+             *
+             * LEFT
+             *
+             * □ ]
+             */
             if (
+                cursor.offset ==
+                sequence.children.size &&
+                sequence.hasContinuationInsertion()
+            ) {
+
+                continuationTarget(
+                    cursor.path
+                )
+
+            } else if (
                 cursor.offset <= 0
             ) {
 
@@ -1141,14 +1218,42 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     }
 
     /**
-     * Primer estado semántico dentro de una Sequence.
+     * Primer estado semántico al continuar LEFT
+     * dentro de una Sequence.
      *
-     * LEFT recorre:
+     * LEFT recorre los siblings de derecha -> izquierda.
      *
-     * izquierda -> derecha
+     * Regla importante:
      *
-     * independientemente de que físicamente el botón
-     * se llame LEFT.
+     * Si estamos dentro de un PARENT / CHILD editable
+     * que contiene UNA única STRUCTURE ocupando todo
+     * su contenido, el borde del PARENT ya representó
+     * visualmente a esa estructura.
+     *
+     * Ejemplo:
+     *
+     * body = x²
+     *
+     * Ya recorrimos:
+     *
+     * x²]
+     * x²|
+     * {x²}
+     * |x²
+     *
+     * Por tanto NO repetimos:
+     *
+     * x²]
+     *
+     * Entramos directamente en la primera parte
+     * interna de Scripts:
+     *
+     * ²]
+     *
+     * SUBSTRUCTURE queda excluida de esta regla,
+     * porque dentro de numeradores, denominadores,
+     * matrices, etc. sí queremos descubrir las
+     * STRUCTURE que contiene.
      */
     private fun firstSemanticTargetInSequence(
         path: List<MathCursorStep>
@@ -1177,9 +1282,49 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             )
         }
 
+        val part =
+            navigationPart(
+                path
+            )
+
         /*
-         * LEFT:
-         * misma altura = derecha -> izquierda.
+         * PARENT / CHILD compuesto por una única STRUCTURE.
+         *
+         * Su borde exterior ya fue visitado.
+         *
+         * Saltamos el borde duplicado de la STRUCTURE
+         * y entramos directamente en su jerarquía.
+         */
+        if (
+            part != null &&
+            part.role !=
+            MathNavigationRole.SUBSTRUCTURE &&
+            sequence.children.size == 1
+        ) {
+
+            val node =
+                sequence.children[0]
+
+            val parts =
+                node.navigationTraversalParts()
+
+            if (
+                parts.isNotEmpty()
+            ) {
+
+                return declaredNavigationTarget(
+                    structurePath = path,
+                    nodeIndex = 0,
+                    part = parts.first()
+                )
+            }
+        }
+
+        /*
+         * Caso normal.
+         *
+         * LEFT empieza por el elemento situado
+         * más a la derecha de esta Sequence.
          */
         return nodeBoundaryTarget(
             path,
@@ -1558,13 +1703,58 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         )
     }
 
-    private fun continuationEditingTarget(path: List<MathCursorStep>): NavigationTarget? {
-        val sequence = sequenceAt(path) ?: return null
-        if (!sequence.hasContinuationInsertion()) return null
-        val end = sequence.children.size
-        return NavigationTarget(MathCursor(path, end, MathCursorLevel.INTERIOR, MathContentScope.Atom(end, end)))
+    /**
+     * Estado editable del PARENT virtual situado
+     * a la derecha de LargeOperator.
+     *
+     * No añade ningún nodo al AST.
+     *
+     * Visualmente:
+     *
+     * □ |
+     */
+    private fun continuationEditingTarget(
+        path: List<MathCursorStep>
+    ): NavigationTarget? {
+
+        val sequence =
+            sequenceAt(path)
+                ?: return null
+
+        if (
+            !sequence.hasContinuationInsertion()
+        ) {
+            return null
+        }
+
+        val end =
+            sequence.children.size
+
+        return NavigationTarget(
+            MathCursor(
+                path = path,
+                offset = end,
+                level = MathCursorLevel.INTERIOR,
+                scope =
+                    MathContentScope.Atom(
+                        end,
+                        end
+                    )
+            )
+        )
     }
 
+    /**
+     * Borde derecho del PARENT virtual
+     * de continuación.
+     *
+     * Visualmente:
+     *
+     * □ ]
+     *
+     * El estado se distingue de FIN mediante
+     * navigationInsertion.
+     */
     private fun continuationTarget(
         path: List<MathCursorStep>
     ): NavigationTarget? {
@@ -1580,12 +1770,13 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         }
 
         return NavigationTarget(
-            MathCursor(
-                path,
-                sequence.children.size,
-                MathCursorLevel.NEUTRAL,
-                null
-            ),
+            cursor =
+                MathCursor(
+                    path = path,
+                    offset = sequence.children.size,
+                    level = MathCursorLevel.NEUTRAL,
+                    scope = null
+                ),
             insertion = true
         )
     }
@@ -2101,27 +2292,158 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         return true
     }
 
-    /** Touch chooses text editing explicitly; IME caret echoes never choose a structural level. */
-    fun placeTextCursor(position: MathCursor, leafTextOffset: Int? = null, sequenceInsertion: Boolean = false): Boolean {
-        val sequence = sequenceAt(position.path) ?: return false
-        if (sequenceInsertion && position.offset == sequence.children.size && sequence.hasContinuationInsertion()) {
-            cursor = position.copy(level = MathCursorLevel.NEUTRAL, scope = null)
-            selectionRange = null
-            navigationInsertion = NavigationInsertion(expression, cursor)
+    /**
+     * Touch elige edición explícitamente.
+     *
+     * El cuadro virtual después de LargeOperator
+     * funciona como un PARENT editable obligatorio.
+     */
+    fun placeTextCursor(
+        position: MathCursor,
+        leafTextOffset: Int? = null,
+        sequenceInsertion: Boolean = false
+    ): Boolean {
+
+        val sequence =
+            sequenceAt(
+                position.path
+            ) ?: return false
+
+        /*
+         * Touch dentro del cuadro de continuación.
+         *
+         * Entramos DIRECTAMENTE en edición:
+         *
+         * □ |
+         *
+         * No en:
+         *
+         * □ ]
+         */
+        if (
+            sequenceInsertion &&
+            position.offset ==
+            sequence.children.size &&
+            sequence.hasContinuationInsertion()
+        ) {
+
+            val end =
+                sequence.children.size
+
+            cursor =
+                position.copy(
+                    offset = end,
+                    level =
+                        MathCursorLevel.INTERIOR,
+                    scope =
+                        MathContentScope.Atom(
+                            end,
+                            end
+                        )
+                )
+
+            selectionRange =
+                null
+
+            navigationInsertion =
+                null
+
             return true
         }
-        if (leafTextOffset == null && (position.path.isEmpty() || sequence.children.any { it.navigationChildren().isNotEmpty() })) {
-            cursor = position.copy(level = MathCursorLevel.NEUTRAL, scope = null)
-            selectionRange = null
+
+        if (
+            leafTextOffset == null &&
+            (
+                    position.path.isEmpty() ||
+                            sequence.children.any {
+                                it.navigationChildren()
+                                    .isNotEmpty()
+                            }
+                    )
+        ) {
+
+            cursor =
+                position.copy(
+                    level =
+                        MathCursorLevel.NEUTRAL,
+                    scope = null
+                )
+
+            selectionRange =
+                null
+
             return true
         }
-        val index = if (leafTextOffset != null) position.offset else (position.offset - 1).coerceAtLeast(0)
-        cursor = position.copy(level = MathCursorLevel.INTERIOR,
-            scope = if (position.path.isEmpty()) MathContentScope.Atom(index.coerceAtMost(sequence.children.size), (index + 1).coerceAtMost(sequence.children.size)) else MathContentScope.Slot)
-        selectionRange = null
-        if (leafTextOffset == null) return true
-        val offset = sequence.children.take(position.offset).sumOf { (leafText(it) ?: "\uFFFC").length } + leafTextOffset
-        return setTextCursorInCurrentSlot(offset)
+
+        val index =
+            if (
+                leafTextOffset != null
+            ) {
+
+                position.offset
+
+            } else {
+
+                (
+                        position.offset - 1
+                        )
+                    .coerceAtLeast(
+                        0
+                    )
+            }
+
+        cursor =
+            position.copy(
+                level =
+                    MathCursorLevel.INTERIOR,
+
+                scope =
+                    if (
+                        position.path.isEmpty()
+                    ) {
+
+                        MathContentScope.Atom(
+                            index.coerceAtMost(
+                                sequence.children.size
+                            ),
+                            (
+                                    index + 1
+                                    ).coerceAtMost(
+                                    sequence.children.size
+                                )
+                        )
+
+                    } else {
+
+                        MathContentScope.Slot
+                    }
+            )
+
+        selectionRange =
+            null
+
+        if (
+            leafTextOffset == null
+        ) {
+            return true
+        }
+
+        val offset =
+            sequence.children
+                .take(
+                    position.offset
+                )
+                .sumOf {
+                    (
+                            leafText(it)
+                                ?: "\uFFFC"
+                            ).length
+                } +
+                    leafTextOffset
+
+        return setTextCursorInCurrentSlot(
+            offset
+        )
     }
 
     /**
