@@ -596,6 +596,94 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     ): NavigationTarget? {
 
         /*
+         * CURSOR DENTRO DEL PREFIJO VIRTUAL.
+         *
+         * upper:
+         *
+         * |^1
+         *
+         * lower:
+         *
+         * |^^0
+         * ^|^0
+         */
+        activeNavigationPrefix()?.let { prefix ->
+
+            val length =
+                largeOperatorPrefixLength(
+                    prefix.slotPath
+                ) ?: return null
+
+            return if (forward) {
+
+                /*
+                 * RIGHT avanza dentro
+                 * del prefijo.
+                 */
+                if (
+                    prefix.offset <
+                    length - 1
+                ) {
+
+                    largeOperatorPrefixTarget(
+                        prefix.slotPath,
+                        prefix.offset + 1
+                    )
+
+                } else {
+
+                    /*
+                     * Último punto virtual:
+                     *
+                     * |^1
+                     * RIGHT
+                     * ^|1
+                     *
+                     * o:
+                     *
+                     * ^|^0
+                     * RIGHT
+                     * ^^|0
+                     */
+                    slotEditingTarget(
+                        prefix.slotPath,
+                        atRight = false
+                    )
+                }
+
+            } else {
+
+                /*
+                 * LEFT retrocede dentro
+                 * del prefijo.
+                 */
+                if (
+                    prefix.offset > 0
+                ) {
+
+                    largeOperatorPrefixTarget(
+                        prefix.slotPath,
+                        prefix.offset - 1
+                    )
+
+                } else {
+
+                    /*
+                     * Ya estamos a la izquierda
+                     * de todo el prefijo.
+                     *
+                     * Continuamos con la siguiente
+                     * parte semántica.
+                     */
+                    afterSlotEditingTarget(
+                        prefix.slotPath,
+                        includePrefix = false
+                    )
+                }
+            }
+        }
+
+        /*
  * Lado derecho del integrando virtual obligatorio.
  *
  * Visualmente:
@@ -2310,6 +2398,122 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     }
 
     /**
+     * Longitud del prefijo virtual usado por
+     * los límites de LargeOperator.
+     *
+     * upper:
+     *
+     * ^1
+     *
+     * prefijo = "^"
+     * longitud = 1
+     *
+     * lower:
+     *
+     * ^^0
+     *
+     * prefijo = "^^"
+     * longitud = 2
+     */
+    private fun largeOperatorPrefixLength(
+        path: List<MathCursorStep>
+    ): Int? {
+
+        val step =
+            path.lastOrNull()
+                ?: return null
+
+        if (
+            step.slot != "upper" &&
+            step.slot != "lower"
+        ) {
+            return null
+        }
+
+        val operator =
+            sequenceAt(
+                path.dropLast(1)
+            )
+                ?.children
+                ?.getOrNull(
+                    step.nodeIndex
+                ) as?
+                    MathExpression.LargeOperator
+                ?: return null
+
+        val exists =
+            if (
+                step.slot == "upper"
+            ) {
+
+                operator.upper != null
+
+            } else {
+
+                operator.lower != null
+            }
+
+        if (
+            !exists
+        ) {
+            return null
+        }
+
+        return if (
+            step.slot == "upper"
+        ) {
+
+            1
+
+        } else {
+
+            2
+        }
+    }
+
+    /**
+     * Crea una posición dentro del prefijo virtual.
+     *
+     * El cursor AST permanece en el comienzo
+     * real del slot.
+     *
+     * Lo único virtual es offset.
+     */
+    private fun largeOperatorPrefixTarget(
+        path: List<MathCursorStep>,
+        offset: Int
+    ): NavigationTarget? {
+
+        val length =
+            largeOperatorPrefixLength(
+                path
+            ) ?: return null
+
+        if (
+            offset !in
+            0 until length
+        ) {
+            return null
+        }
+
+        val editing =
+            slotEditingTarget(
+                path,
+                atRight = false
+            ) ?: return null
+
+        return editing.copy(
+            prefix =
+                NavigationPrefixPosition(
+                    slotPath =
+                        path.toList(),
+                    offset =
+                        offset
+                )
+        )
+    }
+
+    /**
      * LEFT terminó completamente una parte.
      *
      * Continúa con la siguiente parte declarada.
@@ -2320,7 +2524,8 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
      * siguiente sibling exterior.
      */
     private fun afterSlotEditingTarget(
-        path: List<MathCursorStep>
+        path: List<MathCursorStep>,
+        includePrefix: Boolean = true
     ): NavigationTarget? {
 
         if (
@@ -2328,6 +2533,45 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             sequenceAt(path) == null
         ) {
             return null
+        }
+
+        /*
+         * Antes de abandonar realmente
+         * upper/lower, recorremos su prefijo.
+         *
+         * upper:
+         *
+         * ^|1
+         * LEFT
+         * |^1
+         *
+         * lower:
+         *
+         * ^^|0
+         * LEFT
+         * ^|^0
+         */
+        if (
+            includePrefix
+        ) {
+
+            val prefixLength =
+                largeOperatorPrefixLength(
+                    path
+                )
+
+            if (
+                prefixLength != null &&
+                prefixLength > 0
+            ) {
+
+                largeOperatorPrefixTarget(
+                    path,
+                    prefixLength - 1
+                )?.let {
+                    return it
+                }
+            }
         }
 
         val step =
@@ -2439,6 +2683,34 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 afterSlotEditingTarget(
                     path
                 )
+            }
+        }
+
+        /*
+ * RIGHT entra desde el extremo
+ * semántico izquierdo.
+ *
+ * En límites de LargeOperator,
+ * ese extremo está ANTES
+ * del prefijo virtual.
+ *
+ * upper:
+ *
+ * |^1
+ *
+ * lower:
+ *
+ * |^^0
+ */
+        if (
+            forward
+        ) {
+
+            largeOperatorPrefixTarget(
+                path,
+                0
+            )?.let {
+                return it
             }
         }
 
