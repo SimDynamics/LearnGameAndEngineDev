@@ -17,12 +17,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** An editing touch may identify a UTF-16 boundary inside one AST leaf. */
-internal data class MathExpressionTouchTarget(
-    val cursor: MathCursor,
-    val leafTextOffset: Int? = null,
-    val sequenceInsertion: Boolean = false,
-    val prefixOffset: Int? = null
-)
+internal data class MathExpressionTouchTarget(val cursor: MathCursor, val leafTextOffset: Int? = null,
+    val sequenceInsertion: Boolean = false)
 
 /** The same layout is used by editable expressions and formula spans in lesson prose. */
 class MathExpressionLayout private constructor(private val box: ExpressionBox, private val textSize: Float) {
@@ -34,21 +30,8 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
     fun draw(canvas: Canvas, paint: Paint, x: Float, baseline: Float) = box.draw(canvas, paint, x, baseline)
 
     /** Coordinates are relative to the expression's origin and baseline. */
-    fun caretBounds(cursor: MathCursor): RectF? = box.carets.firstOrNull {
-        sameLocation(
-            it.cursor,
-            cursor
-        ) &&
-                it.leafTextOffset == null &&
-                it.prefixOffset == null
-    }?.let {
-
-        RectF(
-            it.x,
-            it.top,
-            it.x,
-            it.bottom
-        )
+    fun caretBounds(cursor: MathCursor): RectF? = box.carets.firstOrNull { sameLocation(it.cursor, cursor) && it.leafTextOffset == null }?.let {
+        RectF(it.x, it.top, it.x, it.bottom)
     }
 
     /**
@@ -126,18 +109,6 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
                         )
                     }
                 }
-            }
-
-            /*
- * Cursor dentro del prefijo
- * virtual ^ / ^^.
- */
-            is MathCursorPresentation.Prefix -> {
-
-                prefixCaretBounds(
-                    presentation.slotPath,
-                    presentation.offset
-                )
             }
 
             /*
@@ -297,71 +268,6 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
             }
 
             /*
- * Único borde del grupo
- * upper + lower.
- */
-            is MathCursorPresentation.LimitsBoundary -> {
-
-                val upper =
-                    sequenceBounds(
-                        presentation.path +
-                                MathCursorStep(
-                                    presentation.nodeIndex,
-                                    "upper"
-                                )
-                    )
-
-                val lower =
-                    sequenceBounds(
-                        presentation.path +
-                                MathCursorStep(
-                                    presentation.nodeIndex,
-                                    "lower"
-                                )
-                    )
-
-                val bounds =
-                    listOfNotNull(
-                        upper,
-                        lower
-                    )
-
-                if (
-                    bounds.isEmpty()
-                ) {
-
-                    caretBounds(
-                        cursor
-                    )
-
-                } else {
-
-                    val gap =
-                        max(
-                            1f,
-                            textSize * .05f
-                        )
-
-                    val x =
-                        bounds.maxOf {
-                            it.right
-                        } +
-                                gap
-
-                    RectF(
-                        x,
-                        bounds.minOf {
-                            it.top
-                        },
-                        x,
-                        bounds.maxOf {
-                            it.bottom
-                        }
-                    )
-                }
-            }
-
-            /*
              * Borde derecho de un PARENT
              * o STRUCTURE real.
              */
@@ -415,10 +321,7 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
     fun hitTest(x: Float, y: Float): MathCursor {
         continuationTouchTarget(x, y)?.let { return it.cursor }
         rootExteriorTouchCursor(x)?.let { return it }
-        return box.carets.filter {
-            it.leafTextOffset == null &&
-                    it.prefixOffset == null
-        }.minByOrNull {
+        return box.carets.filter { it.leafTextOffset == null }.minByOrNull {
             distance(it, x, y)
         }?.cursor ?: MathCursor()
     }
@@ -427,62 +330,11 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
     internal fun hitTestForEditing(x: Float, y: Float): MathExpressionTouchTarget {
         continuationTouchTarget(x, y)?.let { return it }
         rootExteriorTouchCursor(x)?.let { return MathExpressionTouchTarget(it) }
-        return box.carets
-            .filter {
-
-                it.prefixOffset != null ||
-                        it.leafTextOffset == null ||
-                        (
-                                x in
-                                        requireNotNull(
-                                            it.leafLeft
-                                        )..
-                                        requireNotNull(
-                                            it.leafRight
-                                        ) &&
-                                        y in
-                                        it.top..
-                                        it.bottom
-                                )
-            }
-            .minWithOrNull(
-                compareBy<ExpressionCaret> {
-                    distance(
-                        it,
-                        x,
-                        y
-                    )
-                }
-                    .thenBy {
-                        if (
-                            it.prefixOffset != null
-                        ) {
-                            0
-                        } else if (
-                            it.leafTextOffset != null
-                        ) {
-                            1
-                        } else {
-                            2
-                        }
-                    }
-            )
-            ?.let {
-
-                MathExpressionTouchTarget(
-                    cursor =
-                        it.cursor,
-
-                    leafTextOffset =
-                        it.leafTextOffset,
-
-                    prefixOffset =
-                        it.prefixOffset
-                )
-            }
-            ?: MathExpressionTouchTarget(
-                MathCursor()
-            )
+        return box.carets.filter {
+            it.leafTextOffset == null || x in requireNotNull(it.leafLeft)..requireNotNull(it.leafRight) && y in it.top..it.bottom
+        }.minWithOrNull(
+            compareBy<ExpressionCaret> { distance(it, x, y) }.thenBy { if (it.leafTextOffset == null) 1 else 0 }
+        )?.let { MathExpressionTouchTarget(it.cursor, it.leafTextOffset) } ?: MathExpressionTouchTarget(MathCursor())
     }
 
     internal fun continuationBounds(cursor: MathCursor): RectF? = box.carets.firstOrNull {
@@ -502,62 +354,11 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
         return null
     }
 
-    internal fun textCaretBounds(
-        cursor: MathCursor,
-        leafTextOffset: Int
-    ): RectF? =
+    internal fun textCaretBounds(cursor: MathCursor, leafTextOffset: Int): RectF? = box.carets.firstOrNull {
+        sameLocation(it.cursor, cursor) && it.leafTextOffset == leafTextOffset
+    }?.let { RectF(it.x, it.top, it.x, it.bottom) }
 
-        box.carets
-            .firstOrNull {
-
-                sameLocation(
-                    it.cursor,
-                    cursor
-                ) &&
-                        it.leafTextOffset ==
-                        leafTextOffset
-            }
-            ?.let {
-
-                RectF(
-                    it.x,
-                    it.top,
-                    it.x,
-                    it.bottom
-                )
-            }
-
-    internal fun prefixCaretBounds(
-        slotPath: List<MathCursorStep>,
-        prefixOffset: Int
-    ): RectF? =
-
-        box.carets
-            .firstOrNull {
-
-                it.cursor.path ==
-                        slotPath &&
-                        it.prefixOffset ==
-                        prefixOffset
-            }
-            ?.let {
-
-                RectF(
-                    it.x,
-                    it.top,
-                    it.x,
-                    it.bottom
-                )
-            }
-
-    private fun sameLocation(
-        first: MathCursor,
-        second: MathCursor
-    ): Boolean =
-        first.path ==
-                second.path &&
-                first.offset ==
-                second.offset
+    private fun sameLocation(first: MathCursor, second: MathCursor) = first.path == second.path && first.offset == second.offset
 
     private fun distance(caret: ExpressionCaret, x: Float, y: Float): Float {
         val dx = abs(x - caret.x)
@@ -697,8 +498,8 @@ open class MathExpressionView @JvmOverloads constructor(context: Context, attrs:
                                 MathCursorPresentation.ParentBoundary ||
                                 presentation is
                                         MathCursorPresentation.ChildBoundary ||
-                                presentation is
-                                        MathCursorPresentation.LimitsBoundary
+                                presentation ==
+                                MathCursorPresentation.ContinuationBoundary
 
                     expressionPaint.strokeWidth =
                         max(
@@ -785,17 +586,9 @@ open class MathExpressionView @JvmOverloads constructor(context: Context, attrs:
     override fun performClick(): Boolean { super.performClick(); return true }
 }
 
-private data class ExpressionCaret(
-    val cursor: MathCursor,
-    val x: Float,
-    val top: Float,
-    val bottom: Float,
-    val leafTextOffset: Int? = null,
-    val leafLeft: Float? = null,
-    val leafRight: Float? = null,
-    val continuationBounds: RectF? = null,
-    val prefixOffset: Int? = null
-) {
+private data class ExpressionCaret(val cursor: MathCursor, val x: Float, val top: Float, val bottom: Float,
+    val leafTextOffset: Int? = null, val leafLeft: Float? = null, val leafRight: Float? = null,
+    val continuationBounds: RectF? = null) {
     fun translated(dx: Float, dy: Float) = copy(x = x + dx, top = top + dy, bottom = bottom + dy,
         leafLeft = leafLeft?.plus(dx), leafRight = leafRight?.plus(dx),
         continuationBounds = continuationBounds?.let { RectF(it).apply { offset(dx, dy) } })
@@ -1275,52 +1068,18 @@ private class ExpressionLayoutBuilder(
                     node.kind,
 
                     node.lower?.let {
-
-                        largeOperatorBound(
-                            content =
-                                child(
-                                    it,
-                                    "lower",
-                                    .62f
-                                ),
-
-                            prefix =
-                                "^^",
-
-                            path =
-                                path +
-                                        MathCursorStep(
-                                            index,
-                                            "lower"
-                                        ),
-
-                            size =
-                                size * .62f
+                        child(
+                            it,
+                            "lower",
+                            .62f
                         )
                     },
 
                     node.upper?.let {
-
-                        largeOperatorBound(
-                            content =
-                                child(
-                                    it,
-                                    "upper",
-                                    .62f
-                                ),
-
-                            prefix =
-                                "^",
-
-                            path =
-                                path +
-                                        MathCursorStep(
-                                            index,
-                                            "upper"
-                                        ),
-
-                            size =
-                                size * .62f
+                        child(
+                            it,
+                            "upper",
+                            .62f
                         )
                     },
 
@@ -1428,126 +1187,13 @@ private class ExpressionLayoutBuilder(
         }
     }
 
-    private fun largeOperatorBound(
-        content: ExpressionBox,
-        prefix: String,
-        path: List<MathCursorStep>,
-        size: Float
-    ): ExpressionBox {
-
-        val prefixBox =
-            text(
-                prefix,
-                size
-            )
-
-        val result =
-            compose(
-                listOf(
-                    Triple(
-                        prefixBox,
-                        0f,
-                        0f
-                    ),
-
-                    Triple(
-                        content,
-                        prefixBox.width,
-                        0f
-                    )
-                )
-            )
-
-        paint.textSize =
-            size
-
-        paint.typeface =
-            Typeface.create(
-                "serif",
-                Typeface.NORMAL
-            )
-
-        val widths =
-            FloatArray(
-                prefix.length
-            )
-
-        paint.getTextWidths(
-            prefix,
-            widths
-        )
-
-        val prefixCarets =
-            mutableListOf<ExpressionCaret>()
-
-        var x =
-            0f
-
-        for (
-        offset in prefix.indices
-        ) {
-
-            prefixCarets +=
-                ExpressionCaret(
-                    cursor =
-                        MathCursor(
-                            path = path,
-                            offset = 0,
-                            level =
-                                MathCursorLevel.INTERIOR,
-                            scope =
-                                MathContentScope.Slot
-                        ),
-
-                    x =
-                        x,
-
-                    top =
-                        result.ascent,
-
-                    bottom =
-                        result.descent,
-
-                    prefixOffset =
-                        offset
-                )
-
-            x +=
-                widths[offset]
-        }
-
-        return result.copy(
-            carets =
-                prefixCarets +
-                        result.carets
-        )
-    }
-
     private fun largeOperator(
         kind: MathLargeOperator,
         lower: ExpressionBox?,
         upper: ExpressionBox?,
         size: Float
     ): ExpressionBox {
-
-        val symbol =
-            text(
-                when (
-                    kind
-                ) {
-
-                    MathLargeOperator.INTEGRAL ->
-                        "∫"
-
-                    MathLargeOperator.SUM ->
-                        "∑"
-
-                    MathLargeOperator.PRODUCT ->
-                        "∏"
-                },
-
-                size * 1.5f
-            )
+        val symbol = text(when (kind) { MathLargeOperator.INTEGRAL -> "∫"; MathLargeOperator.SUM -> "∑"; MathLargeOperator.PRODUCT -> "∏" }, size * 1.5f)
         val symbolY = -size * .29f - (symbol.ascent + symbol.descent) / 2f
         val items = mutableListOf<Triple<ExpressionBox, Float, Float>>()
         val headWidth: Float

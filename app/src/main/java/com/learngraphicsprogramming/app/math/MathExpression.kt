@@ -244,30 +244,6 @@ sealed interface MathCursorPresentation {
     }
 
     /**
-     * Cursor situado dentro del prefijo
-     * virtual de un límite.
-     */
-    data class Prefix(
-        val slotPath: List<MathCursorStep>,
-        val offset: Int
-    ) : MathCursorPresentation
-
-
-    /**
-     * Borde estructural único del grupo
-     * de límites de un LargeOperator.
-     *
-     * upper y lower siguen siendo slots
-     * reales e independientes para edición,
-     * pero estructuralmente se eliminan juntos.
-     */
-    data class LimitsBoundary(
-        val path: List<MathCursorStep>,
-        val nodeIndex: Int
-    ) : MathCursorPresentation
-
-
-    /**
      * Borde derecho del PARENT virtual situado
      * después de un LargeOperator.
      *

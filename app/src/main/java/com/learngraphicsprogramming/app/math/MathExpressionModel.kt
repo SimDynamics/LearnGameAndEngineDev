@@ -11,13 +11,11 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         private set
     private var navigationBoundary: NavigationBoundary? = null
     private var navigationInsertion: NavigationInsertion? = null
-    private var navigationPrefix: NavigationPrefix? = null
     private var navigationEdge: NavigationEdge? = null
     var cursor: MathCursor = MathCursor(offset = initialExpression.children.size)
         set(value) {
             navigationBoundary = null
             navigationInsertion = null
-            navigationPrefix = null
             navigationEdge = null
             field = safeCursor(value)
         }
@@ -340,54 +338,17 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     fun navigateNext(): Boolean = navigateProgressively(forward = true)
     fun navigatePrevious(): Boolean = navigateProgressively(forward = false)
 
-    private enum class NavigationBoundaryKind {
-        PART,
-        LARGE_OPERATOR_LIMITS
-    }
-
     private data class NavigationBoundary(
-        val slotPath: List<MathCursorStep>,
-        val after: Boolean,
-        val expression: MathExpression.Sequence,
-        val cursor: MathCursor,
-        val kind: NavigationBoundaryKind =
-            NavigationBoundaryKind.PART
-    ) {
-        init {
-            require(after)
-        }
-    }
-    private data class NavigationPrefixPosition(
-        val slotPath: List<MathCursorStep>,
-        val offset: Int
-    )
-
+        val slotPath: List<MathCursorStep>, val after: Boolean,
+        val expression: MathExpression.Sequence, val cursor: MathCursor
+    ) { init { require(after) } }
     private data class NavigationTarget(
-        val cursor: MathCursor,
-        val selection: MathSelection? = null,
-        val boundary: NavigationBoundary? = null,
-        val insertion: Boolean = false,
-        val prefix: NavigationPrefixPosition? = null
+        val cursor: MathCursor, val selection: MathSelection? = null, val boundary: NavigationBoundary? = null,
+        val insertion: Boolean = false
     )
-
-    private data class NavigationInsertion(
-        val expression: MathExpression.Sequence,
-        val cursor: MathCursor
-    )
-
-    private data class NavigationPrefix(
-        val slotPath: List<MathCursorStep>,
-        val offset: Int,
-        val expression: MathExpression.Sequence,
-        val cursor: MathCursor
-    )
-
-    private data class NavigationEdge(
-        val expression: MathExpression.Sequence,
-        val forward: Boolean,
-        val from: NavigationTarget,
-        val to: NavigationTarget
-    )
+    private data class NavigationInsertion(val expression: MathExpression.Sequence, val cursor: MathCursor)
+    private data class NavigationEdge(val expression: MathExpression.Sequence, val forward: Boolean,
+        val from: NavigationTarget, val to: NavigationTarget)
 
     /** Exterior navigation is anchored to a real parent AST cursor, never an IME selection. */
     val isAtNavigationBoundary: Boolean get() = activeNavigationBoundary() != null
@@ -399,39 +360,9 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         get() =
             activeNavigationBoundary()?.let {
 
-                when (
-                    it.kind
-                ) {
-
-                    NavigationBoundaryKind.PART -> {
-
-                        MathCursorPresentation.ChildBoundary(
-                            it.slotPath,
-                            it.after
-                        )
-                    }
-
-                    NavigationBoundaryKind.LARGE_OPERATOR_LIMITS -> {
-
-                        val step =
-                            it.slotPath.last()
-
-                        MathCursorPresentation.LimitsBoundary(
-                            path =
-                                it.slotPath.dropLast(1),
-                            nodeIndex =
-                                step.nodeIndex
-                        )
-                    }
-                }
-
-            } ?: activeNavigationPrefix()?.let {
-
-                MathCursorPresentation.Prefix(
-                    slotPath =
-                        it.slotPath,
-                    offset =
-                        it.offset
+                MathCursorPresentation.ChildBoundary(
+                    it.slotPath,
+                    it.after
                 )
 
             } ?: if (
@@ -481,111 +412,23 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         it.expression === expression && it.cursor == cursor && sequenceAt(it.slotPath) != null
     }
 
-    private fun activeNavigationInsertion(): NavigationInsertion? =
-        navigationInsertion?.takeIf {
+    private fun activeNavigationInsertion(): NavigationInsertion? = navigationInsertion?.takeIf {
+        it.expression === expression && it.cursor == cursor && selectionRange == null &&
+            sequenceAt(cursor.path)?.let { sequence ->
+                cursor.offset == sequence.children.size && sequence.hasContinuationInsertion()
+            } == true
+    }
 
-            it.expression === expression &&
-                    it.cursor == cursor &&
-                    selectionRange == null &&
-                    sequenceAt(
-                        cursor.path
-                    )?.let { sequence ->
-
-                        cursor.offset ==
-                                sequence.children.size &&
-                                sequence.hasContinuationInsertion()
-                    } == true
-        }
-
-    private fun activeNavigationPrefix(): NavigationPrefix? =
-        navigationPrefix?.takeIf {
-
-            it.expression === expression &&
-                    it.cursor == cursor &&
-                    selectionRange == null &&
-                    sequenceAt(
-                        it.slotPath
-                    ) != null
-        }
-
-    private fun navigationState(): NavigationTarget =
-        NavigationTarget(
-            cursor =
-                cursor,
-
-            selection =
-                selectionRange,
-
-            boundary =
-                activeNavigationBoundary(),
-
-            insertion =
-                isAtSequenceInsertion,
-
-            prefix =
-                activeNavigationPrefix()?.let {
-
-                    NavigationPrefixPosition(
-                        slotPath =
-                            it.slotPath,
-                        offset =
-                            it.offset
-                    )
-                }
-        )
+    private fun navigationState() = NavigationTarget(cursor, selectionRange, activeNavigationBoundary(), isAtSequenceInsertion)
 
     private fun navigateProgressively(forward: Boolean): Boolean {
         val target = progressiveNavigationTarget(forward) ?: return false
         val previous = navigationState()
-        cursor =
-            target.cursor
-
-        selectionRange =
-            target.selection
-
-        navigationBoundary =
-            target.boundary
-
-        navigationInsertion =
-            if (
-                target.insertion
-            ) {
-
-                NavigationInsertion(
-                    expression,
-                    cursor
-                )
-
-            } else {
-
-                null
-            }
-
-        navigationPrefix =
-            target.prefix?.let {
-
-                NavigationPrefix(
-                    slotPath =
-                        it.slotPath,
-
-                    offset =
-                        it.offset,
-
-                    expression =
-                        expression,
-
-                    cursor =
-                        cursor
-                )
-            }
-
-        navigationEdge =
-            NavigationEdge(
-                expression,
-                forward,
-                previous,
-                navigationState()
-            )
+        cursor = target.cursor
+        selectionRange = target.selection
+        navigationBoundary = target.boundary
+        navigationInsertion = if (target.insertion) NavigationInsertion(expression, cursor) else null
+        navigationEdge = NavigationEdge(expression, forward, previous, navigationState())
         return true
     }
 
@@ -603,94 +446,6 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     private fun progressiveNavigationTarget(
         forward: Boolean
     ): NavigationTarget? {
-
-        /*
-         * CURSOR DENTRO DEL PREFIJO VIRTUAL.
-         *
-         * upper:
-         *
-         * |^1
-         *
-         * lower:
-         *
-         * |^^0
-         * ^|^0
-         */
-        activeNavigationPrefix()?.let { prefix ->
-
-            val length =
-                largeOperatorPrefixLength(
-                    prefix.slotPath
-                ) ?: return null
-
-            return if (forward) {
-
-                /*
-                 * RIGHT avanza dentro
-                 * del prefijo.
-                 */
-                if (
-                    prefix.offset <
-                    length - 1
-                ) {
-
-                    largeOperatorPrefixTarget(
-                        prefix.slotPath,
-                        prefix.offset + 1
-                    )
-
-                } else {
-
-                    /*
-                     * Último punto virtual:
-                     *
-                     * |^1
-                     * RIGHT
-                     * ^|1
-                     *
-                     * o:
-                     *
-                     * ^|^0
-                     * RIGHT
-                     * ^^|0
-                     */
-                    slotEditingTarget(
-                        prefix.slotPath,
-                        atRight = false
-                    )
-                }
-
-            } else {
-
-                /*
-                 * LEFT retrocede dentro
-                 * del prefijo.
-                 */
-                if (
-                    prefix.offset > 0
-                ) {
-
-                    largeOperatorPrefixTarget(
-                        prefix.slotPath,
-                        prefix.offset - 1
-                    )
-
-                } else {
-
-                    /*
-                     * Ya estamos a la izquierda
-                     * de todo el prefijo.
-                     *
-                     * Continuamos con la siguiente
-                     * parte semántica.
-                     */
-                    afterSlotEditingTarget(
-                        prefix.slotPath,
-                        includePrefix = false
-                    )
-                }
-            }
-        }
 
         /*
  * Lado derecho del integrando virtual obligatorio.
@@ -785,39 +540,6 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
          */
         activeNavigationBoundary()?.let { boundary ->
 
-            if (
-                boundary.kind ==
-                NavigationBoundaryKind.LARGE_OPERATOR_LIMITS
-            ) {
-
-                return if (forward) {
-
-                    /*
-                     * RIGHT:
-                     *
-                     * límites] -> | □
-                     */
-                    continuationEditingTarget(
-                        boundary.slotPath.dropLast(1)
-                    )
-
-                } else {
-
-                    /*
-                     * LEFT:
-                     *
-                     * límites] -> upper
-                     *
-                     * El slot guardado en slotPath
-                     * es el primer límite existente.
-                     */
-                    enterSlotTarget(
-                        boundary.slotPath,
-                        forward = false
-                    )
-                }
-            }
-
             return if (forward) {
 
                 previousSlotEditingTarget(
@@ -904,10 +626,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
                                 parts.isNotEmpty() -> {
 
-                                    largeOperatorLimitsBoundaryTarget(
-                                        cursor.path,
-                                        lastIndex
-                                    ) ?: declaredNavigationTarget(
+                                    declaredNavigationTarget(
                                         cursor.path,
                                         lastIndex,
                                         parts.first()
@@ -2092,25 +1811,6 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     MathExpression.LargeOperator
         ) {
 
-            /*
-             * RIGHT después de terminar
-             * el primer límite:
-             *
-             * upper -> límites]
-             */
-            largeOperatorLimitsBoundaryTarget(
-                structurePath,
-                step.nodeIndex
-            )?.let {
-                return it
-            }
-
-            /*
-             * LargeOperator sin límites:
-             *
-             * volvemos directamente
-             * al integrando obligatorio.
-             */
             continuationEditingTarget(
                 structurePath
             )?.let {
@@ -2245,83 +1945,6 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     }
 
     /**
-     * Único checkpoint estructural de
-     * upper + lower.
-     *
-     * El slot usado como ancla sigue siendo
-     * un slot real del AST, pero la presentación
-     * representa ambos límites.
-     */
-    private fun largeOperatorLimitsBoundaryTarget(
-        path: List<MathCursorStep>,
-        nodeIndex: Int
-    ): NavigationTarget? {
-
-        val sequence =
-            sequenceAt(
-                path
-            ) ?: return null
-
-        val operator =
-            sequence.children
-                .getOrNull(
-                    nodeIndex
-                ) as?
-                    MathExpression.LargeOperator
-                ?: return null
-
-        val slot =
-            when {
-
-                operator.upper != null ->
-                    "upper"
-
-                operator.lower != null ->
-                    "lower"
-
-                else ->
-                    return null
-            }
-
-        val slotPath =
-            path +
-                    MathCursorStep(
-                        nodeIndex,
-                        slot
-                    )
-
-        val outside =
-            MathCursor(
-                path = path,
-                offset =
-                    nodeIndex + 1,
-                level =
-                    MathCursorLevel.CHILD_BOUNDARY,
-                scope = null
-            )
-
-        return NavigationTarget(
-            cursor =
-                outside,
-
-            boundary =
-                NavigationBoundary(
-                    slotPath =
-                        slotPath,
-                    after = true,
-                    expression =
-                        expression,
-                    cursor =
-                        outside,
-                    kind =
-                        NavigationBoundaryKind
-                            .LARGE_OPERATOR_LIMITS
-                )
-        )
-    }
-
-
-    /**
      * Decide cómo comienza el recorrido de una parte
      * declarada dentro de una STRUCTURE.
      *
@@ -2407,122 +2030,6 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     }
 
     /**
-     * Longitud del prefijo virtual usado por
-     * los límites de LargeOperator.
-     *
-     * upper:
-     *
-     * ^1
-     *
-     * prefijo = "^"
-     * longitud = 1
-     *
-     * lower:
-     *
-     * ^^0
-     *
-     * prefijo = "^^"
-     * longitud = 2
-     */
-    private fun largeOperatorPrefixLength(
-        path: List<MathCursorStep>
-    ): Int? {
-
-        val step =
-            path.lastOrNull()
-                ?: return null
-
-        if (
-            step.slot != "upper" &&
-            step.slot != "lower"
-        ) {
-            return null
-        }
-
-        val operator =
-            sequenceAt(
-                path.dropLast(1)
-            )
-                ?.children
-                ?.getOrNull(
-                    step.nodeIndex
-                ) as?
-                    MathExpression.LargeOperator
-                ?: return null
-
-        val exists =
-            if (
-                step.slot == "upper"
-            ) {
-
-                operator.upper != null
-
-            } else {
-
-                operator.lower != null
-            }
-
-        if (
-            !exists
-        ) {
-            return null
-        }
-
-        return if (
-            step.slot == "upper"
-        ) {
-
-            1
-
-        } else {
-
-            2
-        }
-    }
-
-    /**
-     * Crea una posición dentro del prefijo virtual.
-     *
-     * El cursor AST permanece en el comienzo
-     * real del slot.
-     *
-     * Lo único virtual es offset.
-     */
-    private fun largeOperatorPrefixTarget(
-        path: List<MathCursorStep>,
-        offset: Int
-    ): NavigationTarget? {
-
-        val length =
-            largeOperatorPrefixLength(
-                path
-            ) ?: return null
-
-        if (
-            offset !in
-            0 until length
-        ) {
-            return null
-        }
-
-        val editing =
-            slotEditingTarget(
-                path,
-                atRight = false
-            ) ?: return null
-
-        return editing.copy(
-            prefix =
-                NavigationPrefixPosition(
-                    slotPath =
-                        path.toList(),
-                    offset =
-                        offset
-                )
-        )
-    }
-
-    /**
      * LEFT terminó completamente una parte.
      *
      * Continúa con la siguiente parte declarada.
@@ -2533,8 +2040,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
      * siguiente sibling exterior.
      */
     private fun afterSlotEditingTarget(
-        path: List<MathCursorStep>,
-        includePrefix: Boolean = true
+        path: List<MathCursorStep>
     ): NavigationTarget? {
 
         if (
@@ -2542,45 +2048,6 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             sequenceAt(path) == null
         ) {
             return null
-        }
-
-        /*
-         * Antes de abandonar realmente
-         * upper/lower, recorremos su prefijo.
-         *
-         * upper:
-         *
-         * ^|1
-         * LEFT
-         * |^1
-         *
-         * lower:
-         *
-         * ^^|0
-         * LEFT
-         * ^|^0
-         */
-        if (
-            includePrefix
-        ) {
-
-            val prefixLength =
-                largeOperatorPrefixLength(
-                    path
-                )
-
-            if (
-                prefixLength != null &&
-                prefixLength > 0
-            ) {
-
-                largeOperatorPrefixTarget(
-                    path,
-                    prefixLength - 1
-                )?.let {
-                    return it
-                }
-            }
         }
 
         val step =
@@ -2692,34 +2159,6 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 afterSlotEditingTarget(
                     path
                 )
-            }
-        }
-
-        /*
- * RIGHT entra desde el extremo
- * semántico izquierdo.
- *
- * En límites de LargeOperator,
- * ese extremo está ANTES
- * del prefijo virtual.
- *
- * upper:
- *
- * |^1
- *
- * lower:
- *
- * |^^0
- */
-        if (
-            forward
-        ) {
-
-            largeOperatorPrefixTarget(
-                path,
-                0
-            )?.let {
-                return it
             }
         }
 
@@ -3174,62 +2613,13 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     fun placeTextCursor(
         position: MathCursor,
         leafTextOffset: Int? = null,
-        sequenceInsertion: Boolean = false,
-        prefixOffset: Int? = null
+        sequenceInsertion: Boolean = false
     ): Boolean {
 
         val sequence =
             sequenceAt(
                 position.path
             ) ?: return false
-
-        if (
-            prefixOffset != null
-        ) {
-
-            val prefixLength =
-                largeOperatorPrefixLength(
-                    position.path
-                ) ?: return false
-
-            if (
-                prefixOffset !in
-                0 until prefixLength
-            ) {
-                return false
-            }
-
-            cursor =
-                position.copy(
-                    offset = 0,
-                    level =
-                        MathCursorLevel.INTERIOR,
-                    scope =
-                        MathContentScope.Slot,
-                    leafTextOffset =
-                        null
-                )
-
-            selectionRange =
-                null
-
-            navigationPrefix =
-                NavigationPrefix(
-                    slotPath =
-                        position.path.toList(),
-
-                    offset =
-                        prefixOffset,
-
-                    expression =
-                        expression,
-
-                    cursor =
-                        cursor
-                )
-
-            return true
-        }
 
         /*
          * Touch dentro del cuadro de continuación.
@@ -3955,12 +3345,6 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         }
 
         if (
-            activeNavigationPrefix() != null
-        ) {
-            return true
-        }
-
-        if (
             navigationLevel ==
             MathCursorLevel.INTERIOR
         ) {
@@ -4043,60 +3427,10 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         .put("expression", encode(expression))
         .put("cursor", encodeCursor(cursor))
         .apply { selectionRange?.let { put("selection", JSONObject().put("path", encodePath(it.path)).put("start", it.start).put("end", it.end)) } }
-        .apply {
-            activeNavigationBoundary()?.let {
-
-                put(
-                    "navigationBoundary",
-
-                    JSONObject()
-                        .put(
-                            "path",
-                            encodePath(
-                                it.slotPath
-                            )
-                        )
-                        .put(
-                            "after",
-                            it.after
-                        )
-                        .put(
-                            "kind",
-                            it.kind.name
-                        )
-                )
-            }
-        }
-        .apply {
-            activeNavigationPrefix()?.let {
-
-                put(
-                    "navigationPrefix",
-
-                    JSONObject()
-                        .put(
-                            "path",
-                            encodePath(
-                                it.slotPath
-                            )
-                        )
-                        .put(
-                            "offset",
-                            it.offset
-                        )
-                )
-            }
-        }
-        .apply {
-            if (
-                isAtSequenceInsertion
-            ) {
-                put(
-                    "sequenceInsertion",
-                    true
-                )
-            }
-        }
+        .apply { activeNavigationBoundary()?.let {
+            put("navigationBoundary", JSONObject().put("path", encodePath(it.slotPath)).put("after", it.after))
+        } }
+        .apply { if (isAtSequenceInsertion) put("sequenceInsertion", true) }
         .toString()
 
     /** Invalid or unsupported drafts leave the current tree unchanged. */
@@ -4168,13 +3502,10 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     )
                 }
 
-            val boundaryJson =
+            val boundary =
                 json.optJSONObject(
                     "navigationBoundary"
-                )
-
-            val boundary =
-                boundaryJson?.let {
+                )?.let {
 
                     if (
                         it.getBoolean(
@@ -4193,45 +3524,6 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                         null
                     }
                 }
-
-            val prefixJson =
-                json.optJSONObject(
-                    "navigationPrefix"
-                )
-
-            val prefixPath =
-                prefixJson?.let {
-
-                    decodePath(
-                        it.getJSONArray(
-                            "path"
-                        )
-                    )
-                }
-
-            val prefixOffset =
-                prefixJson?.getInt(
-                    "offset"
-                )
-
-            /*
-             * Compatibilidad con drafts anteriores:
-             *
-             * si "kind" no existía,
-             * era un borde PART normal.
-             */
-            val boundaryKind =
-                boundaryJson?.let {
-
-                    NavigationBoundaryKind.valueOf(
-                        it.optString(
-                            "kind",
-                            NavigationBoundaryKind
-                                .PART
-                                .name
-                        )
-                    )
-                } ?: NavigationBoundaryKind.PART
 
             /*
              * Old symmetric navigation trails are
@@ -4254,81 +3546,24 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             }
 
             /*
-             * Restauramos tanto:
+             * Cualquier parte seleccionable puede poseer
+             * ahora un borde derecho persistente:
              *
-             * - fronteras normales PART
-             * - el único borde agrupado límites]
+             * SUBSTRUCTURE
+             * PARENT
+             * CHILD
              */
             val restoredBoundaryPart =
                 boundary?.let {
                     navigationPart(it)
                 }
 
-            val restoredLimitsBoundary =
-                if (
-                    boundary != null &&
-                    boundaryKind ==
-                    NavigationBoundaryKind
-                        .LARGE_OPERATOR_LIMITS
-                ) {
-
-                    val step =
-                        boundary.lastOrNull()
-
-                    val operator =
-                        step?.let {
-
-                            sequenceAt(
-                                boundary.dropLast(1)
-                            )
-                                ?.children
-                                ?.getOrNull(
-                                    it.nodeIndex
-                                ) as?
-                                    MathExpression.LargeOperator
-                        }
-
-                    step != null &&
-                            (
-                                    step.slot ==
-                                            "upper" ||
-                                            step.slot ==
-                                            "lower"
-                                    ) &&
-                            operator != null &&
-                            (
-                                    operator.upper != null ||
-                                            operator.lower != null
-                                    )
-
-                } else {
-
-                    false
-                }
-
-            val canRestoreBoundary =
-                when (
-                    boundaryKind
-                ) {
-
-                    NavigationBoundaryKind.PART -> {
-
-                        restoredBoundaryPart
-                            ?.interaction
-                            ?.selectable == true
-                    }
-
-                    NavigationBoundaryKind
-                        .LARGE_OPERATOR_LIMITS -> {
-
-                        restoredLimitsBoundary
-                    }
-                }
-
             if (
                 selectionRange == null &&
                 boundary != null &&
-                canRestoreBoundary
+                restoredBoundaryPart
+                    ?.interaction
+                    ?.selectable == true
             ) {
 
                 val step =
@@ -4354,50 +3589,10 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
                     navigationBoundary =
                         NavigationBoundary(
-                            slotPath =
-                                boundary,
-                            after = true,
-                            expression =
-                                expression,
-                            cursor =
-                                outside,
-                            kind =
-                                boundaryKind
-                        )
-                }
-            }
-
-            if (
-                selectionRange == null &&
-                navigationBoundary == null &&
-                prefixPath != null &&
-                prefixOffset != null
-            ) {
-
-                val prefixLength =
-                    largeOperatorPrefixLength(
-                        prefixPath
-                    )
-
-                if (
-                    prefixLength != null &&
-                    prefixOffset in
-                    0 until prefixLength &&
-                    cursor.path ==
-                    prefixPath &&
-                    cursor.offset == 0
-                ) {
-
-                    navigationPrefix =
-                        NavigationPrefix(
-                            slotPath =
-                                prefixPath,
-                            offset =
-                                prefixOffset,
-                            expression =
-                                expression,
-                            cursor =
-                                cursor
+                            boundary,
+                            true,
+                            expression,
+                            outside
                         )
                 }
             }
