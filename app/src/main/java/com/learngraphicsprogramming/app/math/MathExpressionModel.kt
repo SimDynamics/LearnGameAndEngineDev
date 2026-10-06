@@ -425,6 +425,15 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     }
                 }
 
+            } ?: activeNavigationPrefix()?.let {
+
+                MathCursorPresentation.Prefix(
+                    slotPath =
+                        it.slotPath,
+                    offset =
+                        it.offset
+                )
+
             } ?: if (
                 isAtSequenceInsertion
             ) {
