@@ -373,10 +373,31 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         get() =
             activeNavigationBoundary()?.let {
 
-                MathCursorPresentation.ChildBoundary(
-                    it.slotPath,
-                    it.after
-                )
+                when (
+                    it.kind
+                ) {
+
+                    NavigationBoundaryKind.PART -> {
+
+                        MathCursorPresentation.ChildBoundary(
+                            it.slotPath,
+                            it.after
+                        )
+                    }
+
+                    NavigationBoundaryKind.LARGE_OPERATOR_LIMITS -> {
+
+                        val step =
+                            it.slotPath.last()
+
+                        MathCursorPresentation.LimitsBoundary(
+                            path =
+                                it.slotPath.dropLast(1),
+                            nodeIndex =
+                                step.nodeIndex
+                        )
+                    }
+                }
 
             } ?: if (
                 isAtSequenceInsertion
