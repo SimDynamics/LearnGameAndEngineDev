@@ -1080,6 +1080,41 @@ fun MathExpression.navigationTraversalParts(): List<MathNavigationPart> {
             )
 
         /*
+ * Derivative:
+ *
+ * LEFT desde el borde de la derivada recorre:
+ *
+ * derivada]
+ * body
+ * variable
+ * order]
+ * order
+ *
+ * body y variable son obligatorios:
+ * no poseen borde estructural propio.
+ *
+ * order es opcional:
+ * sí posee borde eliminable.
+ */
+        is MathExpression.Derivative ->
+            listOfNotNull(
+                parts.firstOrNull {
+                    it.id ==
+                            "body"
+                },
+
+                parts.firstOrNull {
+                    it.id ==
+                            "variable"
+                },
+
+                parts.firstOrNull {
+                    it.id ==
+                            "order"
+                }
+            )
+
+        /*
          * Matriz:
          *
          * arriba -> abajo
