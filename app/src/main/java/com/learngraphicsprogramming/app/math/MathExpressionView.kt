@@ -268,6 +268,71 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
             }
 
             /*
+ * Único borde del grupo
+ * upper + lower.
+ */
+            is MathCursorPresentation.LimitsBoundary -> {
+
+                val upper =
+                    sequenceBounds(
+                        presentation.path +
+                                MathCursorStep(
+                                    presentation.nodeIndex,
+                                    "upper"
+                                )
+                    )
+
+                val lower =
+                    sequenceBounds(
+                        presentation.path +
+                                MathCursorStep(
+                                    presentation.nodeIndex,
+                                    "lower"
+                                )
+                    )
+
+                val bounds =
+                    listOfNotNull(
+                        upper,
+                        lower
+                    )
+
+                if (
+                    bounds.isEmpty()
+                ) {
+
+                    caretBounds(
+                        cursor
+                    )
+
+                } else {
+
+                    val gap =
+                        max(
+                            1f,
+                            textSize * .05f
+                        )
+
+                    val x =
+                        bounds.maxOf {
+                            it.right
+                        } +
+                                gap
+
+                    RectF(
+                        x,
+                        bounds.minOf {
+                            it.top
+                        },
+                        x,
+                        bounds.maxOf {
+                            it.bottom
+                        }
+                    )
+                }
+            }
+
+            /*
              * Borde derecho de un PARENT
              * o STRUCTURE real.
              */
@@ -498,8 +563,8 @@ open class MathExpressionView @JvmOverloads constructor(context: Context, attrs:
                                 MathCursorPresentation.ParentBoundary ||
                                 presentation is
                                         MathCursorPresentation.ChildBoundary ||
-                                presentation ==
-                                MathCursorPresentation.ContinuationBoundary
+                                presentation is
+                                        MathCursorPresentation.LimitsBoundary
 
                     expressionPaint.strokeWidth =
                         max(

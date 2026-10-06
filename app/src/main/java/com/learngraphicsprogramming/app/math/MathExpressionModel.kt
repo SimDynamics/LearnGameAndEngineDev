@@ -338,10 +338,23 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     fun navigateNext(): Boolean = navigateProgressively(forward = true)
     fun navigatePrevious(): Boolean = navigateProgressively(forward = false)
 
+    private enum class NavigationBoundaryKind {
+        PART,
+        LARGE_OPERATOR_LIMITS
+    }
+
     private data class NavigationBoundary(
-        val slotPath: List<MathCursorStep>, val after: Boolean,
-        val expression: MathExpression.Sequence, val cursor: MathCursor
-    ) { init { require(after) } }
+        val slotPath: List<MathCursorStep>,
+        val after: Boolean,
+        val expression: MathExpression.Sequence,
+        val cursor: MathCursor,
+        val kind: NavigationBoundaryKind =
+            NavigationBoundaryKind.PART
+    ) {
+        init {
+            require(after)
+        }
+    }
     private data class NavigationTarget(
         val cursor: MathCursor, val selection: MathSelection? = null, val boundary: NavigationBoundary? = null,
         val insertion: Boolean = false
@@ -540,6 +553,39 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
          */
         activeNavigationBoundary()?.let { boundary ->
 
+            if (
+                boundary.kind ==
+                NavigationBoundaryKind.LARGE_OPERATOR_LIMITS
+            ) {
+
+                return if (forward) {
+
+                    /*
+                     * RIGHT:
+                     *
+                     * límites] -> | □
+                     */
+                    continuationEditingTarget(
+                        boundary.slotPath.dropLast(1)
+                    )
+
+                } else {
+
+                    /*
+                     * LEFT:
+                     *
+                     * límites] -> upper
+                     *
+                     * El slot guardado en slotPath
+                     * es el primer límite existente.
+                     */
+                    enterSlotTarget(
+                        boundary.slotPath,
+                        forward = false
+                    )
+                }
+            }
+
             return if (forward) {
 
                 previousSlotEditingTarget(
@@ -626,7 +672,10 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
                                 parts.isNotEmpty() -> {
 
-                                    declaredNavigationTarget(
+                                    largeOperatorLimitsBoundaryTarget(
+                                        cursor.path,
+                                        lastIndex
+                                    ) ?: declaredNavigationTarget(
                                         cursor.path,
                                         lastIndex,
                                         parts.first()
@@ -1811,6 +1860,25 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     MathExpression.LargeOperator
         ) {
 
+            /*
+             * RIGHT después de terminar
+             * el primer límite:
+             *
+             * upper -> límites]
+             */
+            largeOperatorLimitsBoundaryTarget(
+                structurePath,
+                step.nodeIndex
+            )?.let {
+                return it
+            }
+
+            /*
+             * LargeOperator sin límites:
+             *
+             * volvemos directamente
+             * al integrando obligatorio.
+             */
             continuationEditingTarget(
                 structurePath
             )?.let {
@@ -1943,6 +2011,83 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 )
         )
     }
+
+    /**
+     * Único checkpoint estructural de
+     * upper + lower.
+     *
+     * El slot usado como ancla sigue siendo
+     * un slot real del AST, pero la presentación
+     * representa ambos límites.
+     */
+    private fun largeOperatorLimitsBoundaryTarget(
+        path: List<MathCursorStep>,
+        nodeIndex: Int
+    ): NavigationTarget? {
+
+        val sequence =
+            sequenceAt(
+                path
+            ) ?: return null
+
+        val operator =
+            sequence.children
+                .getOrNull(
+                    nodeIndex
+                ) as?
+                    MathExpression.LargeOperator
+                ?: return null
+
+        val slot =
+            when {
+
+                operator.upper != null ->
+                    "upper"
+
+                operator.lower != null ->
+                    "lower"
+
+                else ->
+                    return null
+            }
+
+        val slotPath =
+            path +
+                    MathCursorStep(
+                        nodeIndex,
+                        slot
+                    )
+
+        val outside =
+            MathCursor(
+                path = path,
+                offset =
+                    nodeIndex + 1,
+                level =
+                    MathCursorLevel.CHILD_BOUNDARY,
+                scope = null
+            )
+
+        return NavigationTarget(
+            cursor =
+                outside,
+
+            boundary =
+                NavigationBoundary(
+                    slotPath =
+                        slotPath,
+                    after = true,
+                    expression =
+                        expression,
+                    cursor =
+                        outside,
+                    kind =
+                        NavigationBoundaryKind
+                            .LARGE_OPERATOR_LIMITS
+                )
+        )
+    }
+
 
     /**
      * Decide cómo comienza el recorrido de una parte

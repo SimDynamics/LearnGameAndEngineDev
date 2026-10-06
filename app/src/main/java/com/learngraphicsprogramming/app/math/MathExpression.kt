@@ -244,6 +244,20 @@ sealed interface MathCursorPresentation {
     }
 
     /**
+     * Borde estructural único del grupo
+     * de límites de un LargeOperator.
+     *
+     * upper y lower siguen siendo slots
+     * reales e independientes para edición,
+     * pero estructuralmente se eliminan juntos.
+     */
+    data class LimitsBoundary(
+        val path: List<MathCursorStep>,
+        val nodeIndex: Int
+    ) : MathCursorPresentation
+
+
+    /**
      * Borde derecho del PARENT virtual situado
      * después de un LargeOperator.
      *
