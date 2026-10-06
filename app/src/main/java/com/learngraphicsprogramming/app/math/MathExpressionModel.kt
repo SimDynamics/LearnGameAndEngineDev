@@ -3572,9 +3572,30 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         .put("expression", encode(expression))
         .put("cursor", encodeCursor(cursor))
         .apply { selectionRange?.let { put("selection", JSONObject().put("path", encodePath(it.path)).put("start", it.start).put("end", it.end)) } }
-        .apply { activeNavigationBoundary()?.let {
-            put("navigationBoundary", JSONObject().put("path", encodePath(it.slotPath)).put("after", it.after))
-        } }
+        .apply {
+            activeNavigationBoundary()?.let {
+
+                put(
+                    "navigationBoundary",
+
+                    JSONObject()
+                        .put(
+                            "path",
+                            encodePath(
+                                it.slotPath
+                            )
+                        )
+                        .put(
+                            "after",
+                            it.after
+                        )
+                        .put(
+                            "kind",
+                            it.kind.name
+                        )
+                )
+            }
+        }
         .apply { if (isAtSequenceInsertion) put("sequenceInsertion", true) }
         .toString()
 
@@ -3647,10 +3668,13 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     )
                 }
 
-            val boundary =
+            val boundaryJson =
                 json.optJSONObject(
                     "navigationBoundary"
-                )?.let {
+                )
+
+            val boundary =
+                boundaryJson?.let {
 
                     if (
                         it.getBoolean(
@@ -3669,6 +3693,25 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                         null
                     }
                 }
+
+            /*
+             * Compatibilidad con drafts anteriores:
+             *
+             * si "kind" no existía,
+             * era un borde PART normal.
+             */
+            val boundaryKind =
+                boundaryJson?.let {
+
+                    NavigationBoundaryKind.valueOf(
+                        it.optString(
+                            "kind",
+                            NavigationBoundaryKind
+                                .PART
+                                .name
+                        )
+                    )
+                } ?: NavigationBoundaryKind.PART
 
             /*
              * Old symmetric navigation trails are
@@ -3691,24 +3734,81 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             }
 
             /*
-             * Cualquier parte seleccionable puede poseer
-             * ahora un borde derecho persistente:
+             * Restauramos tanto:
              *
-             * SUBSTRUCTURE
-             * PARENT
-             * CHILD
+             * - fronteras normales PART
+             * - el único borde agrupado límites]
              */
             val restoredBoundaryPart =
                 boundary?.let {
                     navigationPart(it)
                 }
 
+            val restoredLimitsBoundary =
+                if (
+                    boundary != null &&
+                    boundaryKind ==
+                    NavigationBoundaryKind
+                        .LARGE_OPERATOR_LIMITS
+                ) {
+
+                    val step =
+                        boundary.lastOrNull()
+
+                    val operator =
+                        step?.let {
+
+                            sequenceAt(
+                                boundary.dropLast(1)
+                            )
+                                ?.children
+                                ?.getOrNull(
+                                    it.nodeIndex
+                                ) as?
+                                    MathExpression.LargeOperator
+                        }
+
+                    step != null &&
+                            (
+                                    step.slot ==
+                                            "upper" ||
+                                            step.slot ==
+                                            "lower"
+                                    ) &&
+                            operator != null &&
+                            (
+                                    operator.upper != null ||
+                                            operator.lower != null
+                                    )
+
+                } else {
+
+                    false
+                }
+
+            val canRestoreBoundary =
+                when (
+                    boundaryKind
+                ) {
+
+                    NavigationBoundaryKind.PART -> {
+
+                        restoredBoundaryPart
+                            ?.interaction
+                            ?.selectable == true
+                    }
+
+                    NavigationBoundaryKind
+                        .LARGE_OPERATOR_LIMITS -> {
+
+                        restoredLimitsBoundary
+                    }
+                }
+
             if (
                 selectionRange == null &&
                 boundary != null &&
-                restoredBoundaryPart
-                    ?.interaction
-                    ?.selectable == true
+                canRestoreBoundary
             ) {
 
                 val step =
@@ -3734,10 +3834,15 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
                     navigationBoundary =
                         NavigationBoundary(
-                            boundary,
-                            true,
-                            expression,
-                            outside
+                            slotPath =
+                                boundary,
+                            after = true,
+                            expression =
+                                expression,
+                            cursor =
+                                outside,
+                            kind =
+                                boundaryKind
                         )
                 }
             }
