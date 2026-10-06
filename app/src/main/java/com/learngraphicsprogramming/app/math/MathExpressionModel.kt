@@ -448,16 +448,14 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     ): NavigationTarget? {
 
         /*
-         * BORDE DERECHO DEL PARENT VIRTUAL
-         *
-         * LEFT:
-         *
-         * □ ] -> □ |
-         *
-         * RIGHT:
-         *
-         * □ ] -> FIN |
-         */
+ * Lado derecho del integrando virtual obligatorio.
+ *
+ * Visualmente:
+ *
+ * □ |
+ *
+ * No es un borde eliminable.
+ */
         if (
             isAtSequenceInsertion
         ) {
@@ -469,35 +467,21 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
             return if (forward) {
 
+                val lastIndex =
+                    sequence.children.lastIndex
+
                 if (
-                    cursor.path.isEmpty()
+                    lastIndex >= 0
                 ) {
 
-                    /*
-                     * FIN derecho de la expresión completa.
-                     *
-                     * Tiene exactamente el mismo offset físico,
-                     * pero ya NO conserva navigationInsertion.
-                     */
-                    NavigationTarget(
-                        MathCursor(
-                            path = cursor.path,
-                            offset = sequence.children.size,
-                            level = MathCursorLevel.NEUTRAL,
-                            scope = null
-                        )
+                    nodeBoundaryTarget(
+                        cursor.path,
+                        lastIndex
                     )
 
                 } else {
 
-                    /*
-                     * Dentro de una región estructural,
-                     * regresamos a su extremo derecho editable.
-                     */
-                    slotEditingTarget(
-                        cursor.path,
-                        atRight = true
-                    )
+                    null
                 }
 
             } else {
@@ -619,42 +603,64 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                         } else {
 
                             /*
-                             * LEFT:
-                             *
-                             * □ | -> Integral ]
+                             * LEFT desde el lado izquierdo
+                             * del integrando continúa hacia
+                             * los límites del LargeOperator.
                              */
                             val lastIndex =
                                 sequence.children.lastIndex
 
-                            if (
-                                lastIndex >= 0
-                            ) {
+                            val operator =
+                                sequence.children
+                                    .getOrNull(
+                                        lastIndex
+                                    ) as?
+                                        MathExpression.LargeOperator
 
-                                nodeBoundaryTarget(
-                                    cursor.path,
-                                    lastIndex
-                                )
+                            val parts =
+                                operator
+                                    ?.navigationTraversalParts()
+                                    .orEmpty()
 
-                            } else if (
-                                cursor.path.isNotEmpty()
-                            ) {
+                            when {
 
-                                afterSlotEditingTarget(
-                                    cursor.path
-                                )
+                                parts.isNotEmpty() -> {
 
-                            } else {
-
-                                NavigationTarget(
-                                    MathCursor(
-                                        path =
-                                            emptyList(),
-                                        offset = 0,
-                                        level =
-                                            MathCursorLevel.NEUTRAL,
-                                        scope = null
+                                    declaredNavigationTarget(
+                                        cursor.path,
+                                        lastIndex,
+                                        parts.first()
                                     )
-                                )
+                                }
+
+                                lastIndex >= 0 -> {
+
+                                    nextSemanticAfterNode(
+                                        cursor.path,
+                                        lastIndex
+                                    )
+                                }
+
+                                cursor.path.isNotEmpty() -> {
+
+                                    afterSlotEditingTarget(
+                                        cursor.path
+                                    )
+                                }
+
+                                else -> {
+
+                                    NavigationTarget(
+                                        MathCursor(
+                                            path =
+                                                emptyList(),
+                                            offset = 0,
+                                            level =
+                                                MathCursorLevel.NEUTRAL,
+                                            scope = null
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
@@ -933,6 +939,58 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                         nodeIndex
                     ) ?: return null
 
+            /*
+ * LargeOperator al final de la Sequence:
+ *
+ * FIN
+ * integral]
+ * □ |
+ * | □
+ *
+ * El cuadro obligatorio de continuación
+ * vive entre el borde de la estructura
+ * y sus límites.
+ */
+            if (
+                node is MathExpression.LargeOperator &&
+                nodeIndex ==
+                sequence.children.lastIndex &&
+                sequence.hasContinuationInsertion()
+            ) {
+
+                return if (forward) {
+
+                    if (
+                        cursor.path.isEmpty()
+                    ) {
+
+                        NavigationTarget(
+                            MathCursor(
+                                path =
+                                    cursor.path,
+                                offset =
+                                    sequence.children.size,
+                                level =
+                                    MathCursorLevel.NEUTRAL,
+                                scope = null
+                            )
+                        )
+
+                    } else {
+
+                        slotExitRightTarget(
+                            cursor.path
+                        )
+                    }
+
+                } else {
+
+                    continuationTarget(
+                        cursor.path
+                    )
+                }
+            }
+
             if (forward) {
 
                 return previousSemanticBeforeNodeBoundary(
@@ -1020,9 +1078,22 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 sequence.hasContinuationInsertion()
             ) {
 
-                continuationTarget(
-                    cursor.path
-                )
+                val lastIndex =
+                    sequence.children.lastIndex
+
+                if (
+                    lastIndex >= 0
+                ) {
+
+                    nodeBoundaryTarget(
+                        cursor.path,
+                        lastIndex
+                    )
+
+                } else {
+
+                    null
+                }
 
             } else if (
                 cursor.offset <= 0
@@ -1729,10 +1800,28 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         }
 
         /*
-         * Era la primera parte.
-         *
-         * Volvemos al checkpoint de la
-         * STRUCTURE completa.
+ * LargeOperator:
+ *
+ * La región situada inmediatamente
+ * antes del primer límite es el
+ * integrando obligatorio.
+ */
+        if (
+            structure is
+                    MathExpression.LargeOperator
+        ) {
+
+            continuationEditingTarget(
+                structurePath
+            )?.let {
+                return it
+            }
+        }
+
+        /*
+         * Caso normal:
+         * volvemos al borde derecho
+         * de la STRUCTURE completa.
          */
         return nodeBoundaryTarget(
             structurePath,
@@ -3238,6 +3327,19 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
 
         if (
             deleteBackwardAtNavigationBoundary()
+        ) {
+            return true
+        }
+
+        /*
+ * El lado derecho del integrando vacío
+ * es editable, no eliminable.
+ *
+ * Backspace aquí no elimina
+ * el LargeOperator.
+ */
+        if (
+            isAtSequenceInsertion
         ) {
             return true
         }
