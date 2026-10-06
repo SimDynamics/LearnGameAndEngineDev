@@ -11,11 +11,13 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         private set
     private var navigationBoundary: NavigationBoundary? = null
     private var navigationInsertion: NavigationInsertion? = null
+    private var navigationPrefix: NavigationPrefix? = null
     private var navigationEdge: NavigationEdge? = null
     var cursor: MathCursor = MathCursor(offset = initialExpression.children.size)
         set(value) {
             navigationBoundary = null
             navigationInsertion = null
+            navigationPrefix = null
             navigationEdge = null
             field = safeCursor(value)
         }
@@ -355,13 +357,37 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             require(after)
         }
     }
-    private data class NavigationTarget(
-        val cursor: MathCursor, val selection: MathSelection? = null, val boundary: NavigationBoundary? = null,
-        val insertion: Boolean = false
+    private data class NavigationPrefixPosition(
+        val slotPath: List<MathCursorStep>,
+        val offset: Int
     )
-    private data class NavigationInsertion(val expression: MathExpression.Sequence, val cursor: MathCursor)
-    private data class NavigationEdge(val expression: MathExpression.Sequence, val forward: Boolean,
-        val from: NavigationTarget, val to: NavigationTarget)
+
+    private data class NavigationTarget(
+        val cursor: MathCursor,
+        val selection: MathSelection? = null,
+        val boundary: NavigationBoundary? = null,
+        val insertion: Boolean = false,
+        val prefix: NavigationPrefixPosition? = null
+    )
+
+    private data class NavigationInsertion(
+        val expression: MathExpression.Sequence,
+        val cursor: MathCursor
+    )
+
+    private data class NavigationPrefix(
+        val slotPath: List<MathCursorStep>,
+        val offset: Int,
+        val expression: MathExpression.Sequence,
+        val cursor: MathCursor
+    )
+
+    private data class NavigationEdge(
+        val expression: MathExpression.Sequence,
+        val forward: Boolean,
+        val from: NavigationTarget,
+        val to: NavigationTarget
+    )
 
     /** Exterior navigation is anchored to a real parent AST cursor, never an IME selection. */
     val isAtNavigationBoundary: Boolean get() = activeNavigationBoundary() != null
@@ -446,23 +472,111 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         it.expression === expression && it.cursor == cursor && sequenceAt(it.slotPath) != null
     }
 
-    private fun activeNavigationInsertion(): NavigationInsertion? = navigationInsertion?.takeIf {
-        it.expression === expression && it.cursor == cursor && selectionRange == null &&
-            sequenceAt(cursor.path)?.let { sequence ->
-                cursor.offset == sequence.children.size && sequence.hasContinuationInsertion()
-            } == true
-    }
+    private fun activeNavigationInsertion(): NavigationInsertion? =
+        navigationInsertion?.takeIf {
 
-    private fun navigationState() = NavigationTarget(cursor, selectionRange, activeNavigationBoundary(), isAtSequenceInsertion)
+            it.expression === expression &&
+                    it.cursor == cursor &&
+                    selectionRange == null &&
+                    sequenceAt(
+                        cursor.path
+                    )?.let { sequence ->
+
+                        cursor.offset ==
+                                sequence.children.size &&
+                                sequence.hasContinuationInsertion()
+                    } == true
+        }
+
+    private fun activeNavigationPrefix(): NavigationPrefix? =
+        navigationPrefix?.takeIf {
+
+            it.expression === expression &&
+                    it.cursor == cursor &&
+                    selectionRange == null &&
+                    sequenceAt(
+                        it.slotPath
+                    ) != null
+        }
+
+    private fun navigationState(): NavigationTarget =
+        NavigationTarget(
+            cursor =
+                cursor,
+
+            selection =
+                selectionRange,
+
+            boundary =
+                activeNavigationBoundary(),
+
+            insertion =
+                isAtSequenceInsertion,
+
+            prefix =
+                activeNavigationPrefix()?.let {
+
+                    NavigationPrefixPosition(
+                        slotPath =
+                            it.slotPath,
+                        offset =
+                            it.offset
+                    )
+                }
+        )
 
     private fun navigateProgressively(forward: Boolean): Boolean {
         val target = progressiveNavigationTarget(forward) ?: return false
         val previous = navigationState()
-        cursor = target.cursor
-        selectionRange = target.selection
-        navigationBoundary = target.boundary
-        navigationInsertion = if (target.insertion) NavigationInsertion(expression, cursor) else null
-        navigationEdge = NavigationEdge(expression, forward, previous, navigationState())
+        cursor =
+            target.cursor
+
+        selectionRange =
+            target.selection
+
+        navigationBoundary =
+            target.boundary
+
+        navigationInsertion =
+            if (
+                target.insertion
+            ) {
+
+                NavigationInsertion(
+                    expression,
+                    cursor
+                )
+
+            } else {
+
+                null
+            }
+
+        navigationPrefix =
+            target.prefix?.let {
+
+                NavigationPrefix(
+                    slotPath =
+                        it.slotPath,
+
+                    offset =
+                        it.offset,
+
+                    expression =
+                        expression,
+
+                    cursor =
+                        cursor
+                )
+            }
+
+        navigationEdge =
+            NavigationEdge(
+                expression,
+                forward,
+                previous,
+                navigationState()
+            )
         return true
     }
 
