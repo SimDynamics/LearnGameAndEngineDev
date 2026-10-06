@@ -709,6 +709,14 @@ class MathKeyboardHost private constructor(
             compactKeyHeight
         )
 
+        val measuredBarHeight =
+            if (compact) {
+                compactKeyHeight
+                    ?: toolbarHeightLimit
+            } else {
+                toolbarHeightLimit
+            }
+
         bar.measure(
             View.MeasureSpec
                 .makeMeasureSpec(
@@ -717,13 +725,27 @@ class MathKeyboardHost private constructor(
                 ),
             View.MeasureSpec
                 .makeMeasureSpec(
-                    toolbarHeightLimit,
-                    View.MeasureSpec.AT_MOST
+                    measuredBarHeight,
+                    if (compact) {
+                        View.MeasureSpec.EXACTLY
+                    } else {
+                        View.MeasureSpec.AT_MOST
+                    }
                 )
         )
 
-        val barHeight = if (compact) bar.measuredHeight.coerceAtMost(toolbarHeightLimit)
-            else bar.measuredHeight.coerceAtLeast(MathWidgetUi.dp(activity, 48))
+        val barHeight =
+            if (compact) {
+                measuredBarHeight
+            } else {
+                bar.measuredHeight
+                    .coerceAtLeast(
+                        MathWidgetUi.dp(
+                            activity,
+                            48
+                        )
+                    )
+            }
 
         setEditorViewport(input as? MathExpressionEditor, (frame.height() - barHeight).takeIf { compact })
 

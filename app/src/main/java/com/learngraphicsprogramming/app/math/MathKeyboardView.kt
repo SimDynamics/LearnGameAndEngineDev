@@ -81,8 +81,32 @@ class MathKeyboardView(
                 .maxOrNull()
                 ?: availableHeight
 
+        /*
+         * El Button normal reserva mtrl_btn_inset
+         * arriba y abajo.
+         *
+         * Como en landscape ya eliminamos esos
+         * insets del background, el 70% debe
+         * calcularse sobre la zona VISUAL normal,
+         * no sobre los 48 dp completos de la View.
+         */
+        val verticalInset =
+            resources.getDimensionPixelSize(
+                com.google.android.material.R.dimen.mtrl_btn_inset
+            )
+
+        val normalVisibleHeight =
+            (
+                    normalHeight -
+                            verticalInset * 2
+                    )
+                .coerceAtLeast(1)
+
         return minOf(
-            (normalHeight * 0.70f)
+            (
+                    normalVisibleHeight *
+                            0.80f
+                    )
                 .toInt()
                 .coerceAtLeast(1),
 
