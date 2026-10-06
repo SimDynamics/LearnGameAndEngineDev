@@ -211,6 +211,12 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
                     continuation != null
                 ) {
 
+                    val operator =
+                        childBounds(
+                            cursor.path,
+                            cursor.offset - 1
+                        )
+
                     val gap =
                         max(
                             1f,
@@ -223,9 +229,17 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
 
                     RectF(
                         x,
-                        continuation.top,
+                        min(
+                            continuation.top,
+                            operator?.top
+                                ?: continuation.top
+                        ),
                         x,
-                        continuation.bottom
+                        max(
+                            continuation.bottom,
+                            operator?.bottom
+                                ?: continuation.bottom
+                        )
                     )
 
                 } else {
@@ -278,6 +292,21 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
                     presentation.nodeIndex
                 )?.let { parent ->
 
+                    val previous =
+                        if (
+                            presentation.includePrevious
+                        ) {
+
+                            childBounds(
+                                presentation.path,
+                                presentation.nodeIndex - 1
+                            )
+
+                        } else {
+
+                            null
+                        }
+
                     val gap =
                         max(
                             1f,
@@ -290,9 +319,17 @@ class MathExpressionLayout private constructor(private val box: ExpressionBox, p
 
                     RectF(
                         x,
-                        parent.top,
+                        min(
+                            parent.top,
+                            previous?.top
+                                ?: parent.top
+                        ),
                         x,
-                        parent.bottom
+                        max(
+                            parent.bottom,
+                            previous?.bottom
+                                ?: parent.bottom
+                        )
                     )
 
                 } ?: caretBounds(
@@ -957,7 +994,14 @@ private class ExpressionLayoutBuilder(
                     path,
                     boxes.size
                 ),
-                x,
+                if (
+                    showLargeOperatorContinuation
+                ) {
+                    x +
+                            continuationWidth / 2f
+                } else {
+                    x
+                },
                 if (showLargeOperatorContinuation) continuationTop else ascent,
                 if (showLargeOperatorContinuation) continuationBottom else descent,
                 continuationBounds = if (showLargeOperatorContinuation) RectF(

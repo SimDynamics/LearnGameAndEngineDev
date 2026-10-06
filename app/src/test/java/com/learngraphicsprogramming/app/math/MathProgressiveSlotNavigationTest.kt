@@ -140,15 +140,63 @@ class MathProgressiveSlotNavigationTest {
         val m=model("x^2")
         assertEquals(MathCursorPresentation.ParentBoundary(emptyList(),0),m.cursorPresentation)
         val interior=MathCursorPresentation.Interior(MathContentScope.Slot)
-        val expected=listOf(
-            State(MathCursor(offset=1,level=MathCursorLevel.CHILD_BOUNDARY,scope=null),null,MathCursorPresentation.ChildBoundary(path("upper"))),
-            State(MathCursor(path("upper"),1),null,interior),
-            State(MathCursor(path("upper"),1),MathSelection(path("upper"),0,1),interior),
-            State(MathCursor(path("upper"),0),null,interior),
-            State(MathCursor(path("base"),1),null,interior),
-            State(MathCursor(path("base"),1),MathSelection(path("base"),0,1),interior),
-            State(MathCursor(path("base"),0),null,interior),
-            State(MathCursor(),null,MathCursorPresentation.Neutral))
+        val expected =
+            listOf(
+                State(
+                    MathCursor(
+                        offset = 1,
+                        level =
+                            MathCursorLevel.CHILD_BOUNDARY,
+                        scope = null
+                    ),
+                    null,
+                    MathCursorPresentation.ChildBoundary(
+                        path("upper")
+                    )
+                ),
+
+                State(
+                    MathCursor(
+                        path("upper"),
+                        1
+                    ),
+                    null,
+                    interior
+                ),
+
+                State(
+                    MathCursor(
+                        path("upper"),
+                        0
+                    ),
+                    null,
+                    interior
+                ),
+
+                State(
+                    MathCursor(
+                        path("base"),
+                        1
+                    ),
+                    null,
+                    interior
+                ),
+
+                State(
+                    MathCursor(
+                        path("base"),
+                        0
+                    ),
+                    null,
+                    interior
+                ),
+
+                State(
+                    MathCursor(),
+                    null,
+                    MathCursorPresentation.Neutral
+                )
+            )
         expected.forEach { step(m,false);assertEquals(it,state(m)) }
         step(m,false,false)
         visitRootParentBorders(m)

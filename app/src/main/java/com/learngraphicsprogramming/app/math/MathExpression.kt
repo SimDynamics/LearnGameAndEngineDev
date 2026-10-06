@@ -219,7 +219,8 @@ sealed interface MathCursorPresentation {
      */
     data class ParentBoundary(
         val path: List<MathCursorStep>,
-        val nodeIndex: Int
+        val nodeIndex: Int,
+        val includePrevious: Boolean = false
     ) : MathCursorPresentation
 
     /**

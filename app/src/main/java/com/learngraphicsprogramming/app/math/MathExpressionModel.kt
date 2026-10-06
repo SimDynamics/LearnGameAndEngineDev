@@ -376,9 +376,28 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 MathCursorLevel.PARENT_BOUNDARY
             ) {
 
-                MathCursorPresentation.ParentBoundary(
-                    cursor.path.toList(),
+                val nodeIndex =
                     cursor.offset - 1
+
+                val sequence =
+                    sequenceAt(
+                        cursor.path
+                    )
+
+                MathCursorPresentation.ParentBoundary(
+                    path =
+                        cursor.path.toList(),
+
+                    nodeIndex =
+                        nodeIndex,
+
+                    includePrevious =
+                        nodeIndex > 0 &&
+                                sequence
+                                    ?.children
+                                    ?.getOrNull(
+                                        nodeIndex - 1
+                                    ) is MathExpression.LargeOperator
                 )
 
             } else if (
@@ -465,23 +484,31 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     cursor.path
                 ) ?: return null
 
-            return if (forward) {
-
-                val lastIndex =
-                    sequence.children.lastIndex
+            return if (
+                forward
+            ) {
 
                 if (
-                    lastIndex >= 0
+                    cursor.path.isEmpty()
                 ) {
 
-                    nodeBoundaryTarget(
-                        cursor.path,
-                        lastIndex
+                    NavigationTarget(
+                        MathCursor(
+                            path =
+                                emptyList(),
+                            offset =
+                                sequence.children.size,
+                            level =
+                                MathCursorLevel.NEUTRAL,
+                            scope = null
+                        )
                     )
 
                 } else {
 
-                    null
+                    slotExitRightTarget(
+                        cursor.path
+                    )
                 }
 
             } else {
@@ -1195,6 +1222,60 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             sequence.children
                 .getOrNull(nodeIndex)
                 ?: return null
+
+        /*
+         * LargeOperator sin integrando real todavía.
+         *
+         * El cuadro virtual obligatorio forma parte
+         * del borde de la integral completa.
+         *
+         * FIN
+         * integral]
+         * |□
+         */
+        if (
+            node is
+                    MathExpression.LargeOperator &&
+            nodeIndex ==
+            sequence.children.lastIndex &&
+            sequence.hasContinuationInsertion()
+        ) {
+
+            return continuationTarget(
+                path
+            )
+        }
+
+        /*
+         * El sibling inmediatamente posterior
+         * a LargeOperator es su integrando.
+         *
+         * Por tanto su borde derecho representa:
+         *
+         * integral]
+         *
+         * no:
+         *
+         * x]
+         */
+        if (
+            nodeIndex > 0 &&
+            sequence.children[
+                nodeIndex - 1
+            ] is MathExpression.LargeOperator
+        ) {
+
+            return NavigationTarget(
+                MathCursor(
+                    path = path,
+                    offset =
+                        nodeIndex + 1,
+                    level =
+                        MathCursorLevel.PARENT_BOUNDARY,
+                    scope = null
+                )
+            )
+        }
 
         if (
             !node.interactionCapabilities.selectable
@@ -3361,6 +3442,29 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         if (
             isAtSequenceInsertion
         ) {
+
+            val sequence =
+                sequenceAt(
+                    cursor.path
+                ) ?: return true
+
+            val lastIndex =
+                sequence.children.lastIndex
+
+            if (
+                lastIndex >= 0 &&
+                sequence.children[
+                    lastIndex
+                ] is MathExpression.LargeOperator
+            ) {
+
+                replaceNodeAt(
+                    cursor.path,
+                    lastIndex,
+                    emptyList()
+                )
+            }
+
             return true
         }
 
@@ -3395,6 +3499,48 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                     nodeIndex
                 )
                 ?: return true
+
+        val largeOperatorIndex =
+            nodeIndex - 1
+
+        if (
+            cursor.level ==
+            MathCursorLevel.PARENT_BOUNDARY &&
+            largeOperatorIndex >= 0 &&
+            sequence.children[
+                largeOperatorIndex
+            ] is MathExpression.LargeOperator
+        ) {
+
+            replaceSequence(
+                cursor.path,
+
+                sequence.copy(
+                    children =
+                        sequence.children
+                            .take(
+                                largeOperatorIndex
+                            ) +
+                                sequence.children
+                                    .drop(
+                                        nodeIndex + 1
+                                    )
+                )
+            )
+
+            cursor =
+                MathCursor(
+                    path =
+                        cursor.path,
+                    offset =
+                        largeOperatorIndex,
+                    level =
+                        MathCursorLevel.NEUTRAL,
+                    scope = null
+                )
+
+            return true
+        }
 
         /*
          * Estamos en el borde derecho del
