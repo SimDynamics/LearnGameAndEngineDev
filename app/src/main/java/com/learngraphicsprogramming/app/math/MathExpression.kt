@@ -806,15 +806,36 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                     id = "upper",
                     content = upper,
                     role = MathNavigationRole.CHILD,
+
+                    /*
+                     * upper sigue siendo editable,
+                     * pero ya NO posee su propio ].
+                     *
+                     * La eliminación estructural
+                     * pertenecerá al grupo "límites".
+                     */
+                    interaction =
+                        MathInteractionCapabilities(
+                            editable = true,
+                            selectable = false,
+                            deletable = true
+                        ),
+
                     update = {
                         copy(
                             upper = it
                         )
                     }
                 ) {
+
+                    /*
+                     * Si alguna ruta elimina upper,
+                     * desaparecen ambos límites.
+                     */
                     listOf(
                         copy(
-                            upper = null
+                            upper = null,
+                            lower = null
                         )
                     )
                 },
@@ -823,14 +844,32 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
                     id = "lower",
                     content = lower,
                     role = MathNavigationRole.CHILD,
+
+                    /*
+                     * lower tampoco posee
+                     * checkpoint individual ].
+                     */
+                    interaction =
+                        MathInteractionCapabilities(
+                            editable = true,
+                            selectable = false,
+                            deletable = true
+                        ),
+
                     update = {
                         copy(
                             lower = it
                         )
                     }
                 ) {
+
+                    /*
+                     * Si alguna ruta elimina lower,
+                     * desaparecen ambos límites.
+                     */
                     listOf(
                         copy(
+                            upper = null,
                             lower = null
                         )
                     )
