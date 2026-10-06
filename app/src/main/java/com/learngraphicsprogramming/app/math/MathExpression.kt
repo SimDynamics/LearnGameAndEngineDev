@@ -482,7 +482,7 @@ val MathExpression.interactionCapabilities: MathInteractionCapabilities
             is MathExpression.Relation ->
                 MathInteractionCapabilities(
                     editable = false,
-                    selectable = true,
+                    selectable = false,
                     deletable = true
                 )
 
@@ -497,7 +497,7 @@ val MathExpression.interactionCapabilities: MathInteractionCapabilities
             is MathExpression.Symbol ->
                 MathInteractionCapabilities(
                     editable = true,
-                    selectable = true,
+                    selectable = false,
                     deletable = true
                 )
 
@@ -550,7 +550,7 @@ fun MathExpression.navigationParts(): List<MathNavigationPart> {
         interaction: MathInteractionCapabilities =
             MathInteractionCapabilities(
                 editable = true,
-                selectable = true,
+                selectable = false,
                 deletable = false
             ),
         update: (MathExpression.Sequence) -> MathExpression

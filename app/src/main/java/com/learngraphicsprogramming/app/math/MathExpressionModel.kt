@@ -770,6 +770,57 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                             cursor.path
                         )
 
+                    /*
+ * Una región formada únicamente por
+ * texto se recorre carácter por carácter.
+ *
+ * Ya NO existe:
+ *
+ * {x+1}
+ *
+ * ni ninguna selección automática.
+ */
+                    val isPlainText =
+                        sequence.children
+                            .subList(
+                                start,
+                                end
+                            )
+                            .all {
+                                leafText(it) != null
+                            }
+
+                    if (isPlainText) {
+
+                        return textNavigationTarget(
+                            sequence =
+                                sequence,
+
+                            start =
+                                start,
+
+                            end =
+                                end,
+
+                            forward =
+                                forward,
+
+                            exitLeft = {
+
+                                afterSlotEditingTarget(
+                                    cursor.path
+                                )
+                            },
+
+                            exitRight = {
+
+                                slotExitRightTarget(
+                                    cursor.path
+                                )
+                            }
+                        )
+                    }
+
                     return if (forward) {
 
                         when {
@@ -2523,6 +2574,358 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             else MathCursor(originalCursor.path, before.size, MathCursorLevel.NEUTRAL, null)
         if (nodeCount(expression) > 4_096 || !insertText(replacement)) return rollback()
         return true
+    }
+
+    private fun nextTextBoundary(
+        value: String,
+        offset: Int
+    ): Int {
+
+        val position =
+            offset.coerceIn(
+                0,
+                value.length
+            )
+
+        if (
+            position >=
+            value.length
+        ) {
+            return value.length
+        }
+
+        return if (
+            Character.isHighSurrogate(
+                value[position]
+            ) &&
+            position + 1 <
+            value.length &&
+            Character.isLowSurrogate(
+                value[position + 1]
+            )
+        ) {
+            position + 2
+        } else {
+            position + 1
+        }
+    }
+
+    private fun previousTextBoundary(
+        value: String,
+        offset: Int
+    ): Int {
+
+        val position =
+            offset.coerceIn(
+                0,
+                value.length
+            )
+
+        if (
+            position <= 0
+        ) {
+            return 0
+        }
+
+        return if (
+            position >= 2 &&
+            Character.isHighSurrogate(
+                value[position - 2]
+            ) &&
+            Character.isLowSurrogate(
+                value[position - 1]
+            )
+        ) {
+            position - 2
+        } else {
+            position - 1
+        }
+    }
+
+    /*
+     * Navega carácter por carácter dentro
+     * de una Sequence formada solamente
+     * por hojas de texto.
+     *
+     * Ejemplos:
+     *
+     * x+1|
+     * x+|1
+     * x|+1
+     * |x+1
+     *
+     * y:
+     *
+     * 22|
+     * 2|2
+     * |22
+     *
+     * No crea MathSelection.
+     * No modifica el AST.
+     */
+    private fun textNavigationTarget(
+        sequence: MathExpression.Sequence,
+        start: Int,
+        end: Int,
+        forward: Boolean,
+        exitLeft: () -> NavigationTarget?,
+        exitRight: () -> NavigationTarget?
+    ): NavigationTarget? {
+
+        if (
+            start > end ||
+            start < 0 ||
+            end > sequence.children.size
+        ) {
+            return null
+        }
+
+        /*
+         * Este helper se utiliza solamente
+         * para regiones puramente textuales.
+         */
+        if (
+            sequence.children
+                .subList(
+                    start,
+                    end
+                )
+                .any {
+                    leafText(it) == null
+                }
+        ) {
+            return null
+        }
+
+        val internalOffset =
+            cursor.leafTextOffset
+
+        /*
+         * Estamos DENTRO de una hoja.
+         *
+         * Ejemplo:
+         *
+         * 2|2
+         */
+        if (
+            internalOffset != null
+        ) {
+
+            val node =
+                sequence.children
+                    .getOrNull(
+                        cursor.offset
+                    )
+                    ?: return null
+
+            val text =
+                leafText(node)
+                    ?: return null
+
+            if (forward) {
+
+                val next =
+                    nextTextBoundary(
+                        text,
+                        internalOffset
+                    )
+
+                /*
+                 * Seguimos dentro de la
+                 * misma hoja.
+                 */
+                if (
+                    next <
+                    text.length
+                ) {
+
+                    return NavigationTarget(
+                        cursor.copy(
+                            leafTextOffset =
+                                next
+                        )
+                    )
+                }
+
+                /*
+                 * Salimos por la derecha
+                 * de la hoja.
+                 *
+                 * 2|2 -> 22|
+                 */
+                return NavigationTarget(
+                    cursor.copy(
+                        offset =
+                            cursor.offset + 1,
+
+                        leafTextOffset =
+                            null
+                    )
+                )
+
+            } else {
+
+                val previous =
+                    previousTextBoundary(
+                        text,
+                        internalOffset
+                    )
+
+                /*
+                 * Seguimos dentro de la
+                 * misma hoja.
+                 */
+                if (
+                    previous > 0
+                ) {
+
+                    return NavigationTarget(
+                        cursor.copy(
+                            leafTextOffset =
+                                previous
+                        )
+                    )
+                }
+
+                /*
+                 * Salimos por la izquierda.
+                 *
+                 * 2|2 -> |22
+                 */
+                return NavigationTarget(
+                    cursor.copy(
+                        leafTextOffset =
+                            null
+                    )
+                )
+            }
+        }
+
+        /*
+         * Estamos en una frontera normal
+         * entre nodos.
+         */
+        if (forward) {
+
+            if (
+                cursor.offset >= end
+            ) {
+                return exitRight()
+            }
+
+            val nodeIndex =
+                cursor.offset.coerceAtLeast(
+                    start
+                )
+
+            val text =
+                leafText(
+                    sequence.children[
+                        nodeIndex
+                    ]
+                ) ?: return null
+
+            val next =
+                nextTextBoundary(
+                    text,
+                    0
+                )
+
+            /*
+             * Hoja con varios caracteres.
+             *
+             * |22 -> 2|2
+             */
+            if (
+                next <
+                text.length
+            ) {
+
+                return NavigationTarget(
+                    cursor.copy(
+                        offset =
+                            nodeIndex,
+
+                        leafTextOffset =
+                            next
+                    )
+                )
+            }
+
+            /*
+             * Hoja de un carácter.
+             *
+             * |x -> x|
+             */
+            return NavigationTarget(
+                cursor.copy(
+                    offset =
+                        nodeIndex + 1,
+
+                    leafTextOffset =
+                        null
+                )
+            )
+
+        } else {
+
+            if (
+                cursor.offset <= start
+            ) {
+                return exitLeft()
+            }
+
+            val nodeIndex =
+                cursor.offset - 1
+
+            val text =
+                leafText(
+                    sequence.children[
+                        nodeIndex
+                    ]
+                ) ?: return null
+
+            val previous =
+                previousTextBoundary(
+                    text,
+                    text.length
+                )
+
+            /*
+             * Hoja con varios caracteres.
+             *
+             * 22| -> 2|2
+             */
+            if (
+                previous > 0
+            ) {
+
+                return NavigationTarget(
+                    cursor.copy(
+                        offset =
+                            nodeIndex,
+
+                        leafTextOffset =
+                            previous
+                    )
+                )
+            }
+
+            /*
+             * Hoja de un carácter.
+             *
+             * x+1| -> x+|1
+             */
+            return NavigationTarget(
+                cursor.copy(
+                    offset =
+                        nodeIndex,
+
+                    leafTextOffset =
+                        null
+                )
+            )
+        }
     }
 
     private fun leafText(node: MathExpression): String? = when (node) {
