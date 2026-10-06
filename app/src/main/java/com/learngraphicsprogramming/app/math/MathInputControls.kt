@@ -9,6 +9,7 @@ import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.view.Gravity
+import android.view.MotionEvent
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.CheckBox
@@ -19,6 +20,10 @@ import android.widget.RadioButton
 import android.widget.TextView
 import org.json.JSONObject
 import androidx.appcompat.widget.AppCompatSpinner
+import android.content.Intent
+import com.learngraphicsprogramming.app.CalculatorActivity
+import com.learngraphicsprogramming.app.LessonActivity
+import com.learngraphicsprogramming.app.R
 
 internal object MathInputControls {
     fun create(context: Context, spec: MathResponseSpec, accent: Int, onChange: () -> Unit): MathResponseControl? =
@@ -155,8 +160,122 @@ private class TextControl(
             }
 
         if (edit != null) MathKeyboardContext.configure(edit, spec.validator, keyboardMode, spec.config.optJSONArray("keyboardSymbols"))
-        view.addView(if (structured != null) structuredContainer(context, structured) else surface)
-        view.addView(keyboard)
+        /*
+         * Conservamos la misma jerarquía que tenía
+         * el campo antes de integrar la calculadora.
+         *
+         * Esto es importante porque la rotación y
+         * MathKeyboardHost ya estaban comprobados
+         * con esta estructura.
+         */
+        view.addView(
+            if (
+                structured != null
+            ) {
+                structuredContainer(
+                    context,
+                    structured
+                )
+            } else {
+                surface
+            }
+        )
+
+        /*
+         * Si este campo permite calculadora,
+         * colocamos el acceso dentro del propio
+         * EditText como drawable derecho.
+         *
+         * No añadimos otro View ni otro padre.
+         */
+        if (
+            spec.config.optBoolean(
+                "calculator",
+                false
+            ) &&
+            edit != null
+        ) {
+
+            edit.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                0,
+                0,
+                R.drawable.ic_calculator,
+                0
+            )
+
+            edit.compoundDrawableTintList =
+                ColorStateList.valueOf(
+                    accent
+                )
+
+            edit.compoundDrawablePadding =
+                MathWidgetUi.dp(
+                    context,
+                    8
+                )
+
+            edit.setOnTouchListener {
+                    view,
+                    event ->
+
+                val drawable =
+                    edit.compoundDrawablesRelative[
+                        2
+                    ]
+
+                val drawableWidth =
+                    drawable
+                        ?.bounds
+                        ?.width()
+                        ?: 0
+
+                val calculatorStart =
+                    edit.width -
+                            edit.paddingRight -
+                            drawableWidth -
+                            edit.compoundDrawablePadding
+
+                if (
+                    event.actionMasked ==
+                    MotionEvent.ACTION_UP &&
+                    event.x >=
+                    calculatorStart
+                ) {
+
+                    val lessonActivity =
+                        context as?
+                                LessonActivity
+
+                    if (
+                        lessonActivity != null
+                    ) {
+
+                        lessonActivity.openCalculatorFor(
+                            surface
+                        )
+
+                    } else {
+
+                        context.startActivity(
+                            Intent(
+                                context,
+                                CalculatorActivity::class.java
+                            )
+                        )
+                    }
+
+                    true
+
+                } else {
+
+                    false
+                }
+            }
+        }
+
+        view.addView(
+            keyboard
+        )
 
         surface.setOnFocusChangeListener { _, focused ->
             if (focused) {
