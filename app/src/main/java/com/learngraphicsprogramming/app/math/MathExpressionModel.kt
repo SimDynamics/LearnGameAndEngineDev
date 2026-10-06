@@ -2289,43 +2289,162 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     }
 
     /** Native collapsed selection becomes an exact AST boundary inside the active slot. */
-    fun setTextCursorInCurrentSlot(offsetUtf16: Int): Boolean {
-        if (offsetUtf16 < 0) return false
-        val sequence = sequenceAt(cursor.path) ?: return false
-        val texts = sequence.children.map { leafText(it) ?: "\uFFFC" }
-        val text = texts.joinToString("")
-        var target = offsetUtf16.coerceAtMost(text.length)
-        if (target > 0 && target < text.length && Character.isHighSurrogate(text[target - 1]) && Character.isLowSurrogate(text[target])) target++
-        if (texts.take(cursor.offset).sumOf { it.length } == target && selectionRange == null) return true
-        var offset = 0
-        sequence.children.forEachIndexed { index, node ->
-            val value = texts[index]
-            val end = offset + value.length
-            val position = when {
-                target == offset -> index
-                target == end -> index + 1
-                target in (offset + 1) until end -> {
-                    if (leafText(node) == null || nodeCount(expression) >= 4_096) return false
-                    val split = target - offset
-                    replaceSequence(cursor.path, sequence.copy(children = sequence.children.take(index) +
-                        listOf(withLeafText(node, value.take(split)), withLeafText(node, value.drop(split))) + sequence.children.drop(index + 1)))
-                    index + 1
-                }
-                else -> null
-            }
-            if (position != null) {
-                // A native selection update may add only private IME metadata at the same
-                // AST caret. Preserve its exterior slot intent until the cursor really moves.
-                val targetCursor = cursor.copy(offset = position)
-                if (targetCursor != cursor) cursor = targetCursor
-                selectionRange = null
-                return true
-            }
-            offset = end
+    fun setTextCursorInCurrentSlot(
+        offsetUtf16: Int
+    ): Boolean {
+
+        if (offsetUtf16 < 0) {
+            return false
         }
-        val targetCursor = cursor.copy(offset = sequence.children.size)
-        if (targetCursor != cursor) cursor = targetCursor
-        selectionRange = null
+
+        val sequence =
+            sequenceAt(
+                cursor.path
+            ) ?: return false
+
+        val texts =
+            sequence.children.map {
+                leafText(it)
+                    ?: "\uFFFC"
+            }
+
+        val text =
+            texts.joinToString("")
+
+        var target =
+            offsetUtf16.coerceAtMost(
+                text.length
+            )
+
+        /*
+         * Nunca dejamos el cursor en mitad
+         * de un par surrogate UTF-16.
+         */
+        if (
+            target > 0 &&
+            target < text.length &&
+            Character.isHighSurrogate(
+                text[target - 1]
+            ) &&
+            Character.isLowSurrogate(
+                text[target]
+            )
+        ) {
+            target++
+        }
+
+        var textPosition =
+            0
+
+        sequence.children.forEachIndexed {
+                index,
+                node ->
+
+            val value =
+                texts[index]
+
+            val end =
+                textPosition +
+                        value.length
+
+            when {
+
+                /*
+                 * |22
+                 *
+                 * Frontera izquierda normal
+                 * del nodo.
+                 */
+                target ==
+                        textPosition -> {
+
+                    cursor =
+                        cursor.copy(
+                            offset = index,
+                            leafTextOffset = null
+                        )
+
+                    selectionRange =
+                        null
+
+                    return true
+                }
+
+                /*
+                 * 22|
+                 *
+                 * Frontera derecha normal
+                 * del nodo.
+                 */
+                target ==
+                        end -> {
+
+                    cursor =
+                        cursor.copy(
+                            offset = index + 1,
+                            leafTextOffset = null
+                        )
+
+                    selectionRange =
+                        null
+
+                    return true
+                }
+
+                /*
+                 * 2|2
+                 *
+                 * El cursor vive DENTRO de
+                 * la hoja.
+                 *
+                 * NO dividimos Number("22").
+                 * NO modificamos el AST.
+                 */
+                target in
+                        (textPosition + 1) until end -> {
+
+                    if (
+                        leafText(node) ==
+                        null
+                    ) {
+                        return false
+                    }
+
+                    cursor =
+                        cursor.copy(
+                            offset = index,
+
+                            leafTextOffset =
+                                target -
+                                        textPosition
+                        )
+
+                    selectionRange =
+                        null
+
+                    return true
+                }
+            }
+
+            textPosition =
+                end
+        }
+
+        /*
+         * Final absoluto de la Sequence.
+         */
+        cursor =
+            cursor.copy(
+                offset =
+                    sequence.children.size,
+
+                leafTextOffset =
+                    null
+            )
+
+        selectionRange =
+            null
+
         return true
     }
 
