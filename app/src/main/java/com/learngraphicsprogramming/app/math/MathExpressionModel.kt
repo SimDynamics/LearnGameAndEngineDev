@@ -1491,6 +1491,50 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 parts.isNotEmpty()
             ) {
 
+                /*
+                 * Si un PARENT exterior contiene
+                 * únicamente Scripts, ese PARENT
+                 * ya recorrió visualmente la base.
+                 *
+                 * Ejemplo:
+                 *
+                 * x²|
+                 * |x²
+                 *
+                 * No repetimos:
+                 *
+                 * x|
+                 * |x
+                 *
+                 * Continuamos directamente con:
+                 *
+                 * ²]
+                 */
+                if (
+                    node is MathExpression.Scripts
+                ) {
+
+                    val modifier =
+                        parts.firstOrNull {
+                            it.id != "base"
+                        }
+
+                    if (
+                        modifier != null
+                    ) {
+
+                        return declaredNavigationTarget(
+                            structurePath = path,
+                            nodeIndex = 0,
+                            part = modifier
+                        )
+                    }
+
+                    return afterSlotEditingTarget(
+                        path
+                    )
+                }
+
                 return declaredNavigationTarget(
                     structurePath = path,
                     nodeIndex = 0,
@@ -1890,6 +1934,49 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         if (
             previous != null
         ) {
+
+            /*
+             * Inverso exacto del caso especial
+             * de Scripts dentro de un PARENT.
+             *
+             * LEFT:
+             *
+             * |x² -> ²]
+             *
+             * RIGHT:
+             *
+             * ²] -> |x²
+             */
+            if (
+                structure is MathExpression.Scripts &&
+                previous.id == "base"
+            ) {
+
+                val outerPart =
+                    navigationPart(
+                        structurePath
+                    )
+
+                val outerSequence =
+                    sequenceAt(
+                        structurePath
+                    )
+
+                if (
+                    outerPart != null &&
+                    outerPart.role !=
+                    MathNavigationRole.SUBSTRUCTURE &&
+                    outerSequence
+                        ?.children
+                        ?.size == 1
+                ) {
+
+                    return slotEditingTarget(
+                        structurePath,
+                        atRight = false
+                    )
+                }
+            }
 
             return enterSlotTarget(
                 structurePath +
