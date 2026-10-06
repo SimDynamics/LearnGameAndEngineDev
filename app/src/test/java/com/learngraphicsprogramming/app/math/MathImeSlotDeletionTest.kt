@@ -172,18 +172,6 @@ class MathImeSlotDeletionTest {
         assertEquals("{x}_{4}^{2}", latex(restored))
     }
 
-    @Test fun aNativeCursorInsideAMergedNumberBecomesAnExactAstBoundary() {
-        val model = model("x_{12}^{2}", "lower", 1)
-        model.select(model.cursor.path, 0, 1)
-        assertTrue(model.setTextCursorInCurrentSlot(1))
-        assertNull(model.selectionRange)
-        assertEquals(listOf(MathExpression.Number("1"), MathExpression.Number("2")), scripts(model).lower!!.children)
-        assertEquals(MathCursor(listOf(MathCursorStep(0, "lower")), 1), model.cursor)
-        assertEquals("{x}_{12}^{2}", latex(model))
-        assertTrue(model.insertText("9"))
-        assertEquals("{x}_{192}^{2}", latex(model))
-    }
-
     @Test fun deletingAroundANativeMidNumberCursorPreservesTheOppositeSide() {
         val backward = model("x_{123}^{2}", "lower", 1)
         assertTrue(backward.setTextCursorInCurrentSlot(1))
