@@ -139,18 +139,60 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
         if (!isEnabled) return
         if (action == MathKeyboardAction.PreviousSlot || action == MathKeyboardAction.NextSlot ||
             action == MathKeyboardAction.MoveLeft || action == MathKeyboardAction.MoveRight) {
-            val forward = action == MathKeyboardAction.NextSlot || action == MathKeyboardAction.MoveRight
-            val moved = if (forward) model.stepRight() else model.stepLeft()
+
+            val previousCursorPath =
+                model.cursor.path.toList()
+
+            val previousLevel =
+                model.navigationLevel
+
+            val forward =
+                action == MathKeyboardAction.NextSlot ||
+                        action == MathKeyboardAction.MoveRight
+
+            finishImeCompositionForExternalAction()
+
+            val moved =
+                if (forward) {
+                    model.stepRight()
+                } else {
+                    model.stepLeft()
+                }
+
             if (moved) {
-                finishImeCompositionForExternalAction()
+
                 refresh()
-                // Explicit navigation also changes same-slot selection/caret states. Retire the
-                // old predictive context while preserving the model's genuine MathSelection.
-                restartIme()
-            } else if (action == MathKeyboardAction.MoveRight &&
-                imeOptions and EditorInfo.IME_MASK_ACTION == EditorInfo.IME_ACTION_NEXT) {
-                onImeAction?.invoke(EditorInfo.IME_ACTION_NEXT)
+
+                /*
+                 * Dentro del mismo slot y nivel,
+                 * refresh() ya actualiza la posición
+                 * lógica del IME.
+                 *
+                 * Reiniciar InputConnection en cada
+                 * pequeño movimiento añade trabajo
+                 * innecesario cuando navegamos rápido.
+                 */
+                if (
+                    previousCursorPath !=
+                    model.cursor.path ||
+                    previousLevel !=
+                    model.navigationLevel
+                ) {
+                    restartIme()
+                }
+
+            } else if (
+                action == MathKeyboardAction.MoveRight &&
+                imeOptions and
+                EditorInfo.IME_MASK_ACTION ==
+                EditorInfo.IME_ACTION_NEXT
+            ) {
+
+                onImeAction?.invoke(
+                    EditorInfo.IME_ACTION_NEXT
+                )
             }
+
             return
         }
         finishImeCompositionForExternalAction()
