@@ -28,6 +28,11 @@ class CourseActivity : AppCompatActivity() {
                 R.id.buttonBack
             )
 
+        val buttonHome =
+            findViewById<ImageButton>(
+                R.id.buttonHome
+            )
+
         val textCourseNumber =
             findViewById<TextView>(
                 R.id.textCourseNumber
@@ -94,6 +99,37 @@ class CourseActivity : AppCompatActivity() {
         buttonBack.setOnClickListener {
 
             finish()
+        }
+
+        buttonHome.setOnClickListener {
+
+            /*
+             * El usuario decidió volver
+             * explícitamente al inicio.
+             *
+             * Actualizamos únicamente la
+             * persistencia de navegación.
+             *
+             * El progreso académico permanece
+             * intacto en ProgressRepository.
+             */
+            NavigationStateRepository.saveRoutes(
+                this
+            )
+
+            val intent =
+                Intent(
+                    this,
+                    MainActivity::class.java
+                )
+
+            intent.flags =
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+            startActivity(
+                intent
+            )
         }
 
         val buttonCourseSettings =
