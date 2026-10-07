@@ -7,9 +7,11 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import com.learngraphicsprogramming.app.AppearanceSettingsRepository
 import com.learngraphicsprogramming.app.AppearanceUi
+import com.learngraphicsprogramming.app.ExerciseAnswerIdentity
 import com.learngraphicsprogramming.app.ProgressRepository
 import com.learngraphicsprogramming.app.R
 import org.json.JSONObject
+import org.json.JSONArray
 
 /** One host for any combination of representations, tools and independent responses. */
 class MathPuzzleRenderer(
@@ -19,6 +21,7 @@ class MathPuzzleRenderer(
     private val pageIndex: Int,
     private val blockIndex: Int,
     block: JSONObject,
+    private val attemptEvaluation: ((String, () -> List<MathValidationResult>) -> List<MathValidationResult>?)? = null,
     private val onCompletionChanged: (Boolean) -> Unit
 ) {
     val view = MathWidgetUi.column(context)
@@ -245,11 +248,29 @@ class MathPuzzleRenderer(
 
     private fun check() {
         if (isCorrect || !hasResponseChanges()) return
-        val results = spec.responses.map { response ->
-            val control = responses.getValue(response.id)
-            response to (control.draftError()?.let { MathValidationResult(false, it) }
-                ?: MathValidators.validate(response.validator, control.answer()))
+        val validations = try {
+            // Capture one deliberate submission. Cursor, selection, IME metadata and
+            // auxiliary tools are not part of an answer's identity.
+            val answers = spec.responses.associate { response -> response.id to responses.getValue(response.id).answer() }
+            val draftErrors = spec.responses.associate { response -> response.id to responses.getValue(response.id).draftError() }
+            val identity = ExerciseAnswerIdentity.of(JSONArray().apply {
+                spec.responses.sortedBy { it.id }.forEach { response ->
+                    put(JSONObject().put("id", response.id).put("answer", MathAnswerJson.encode(answers.getValue(response.id))))
+                }
+            })
+            val evaluate = {
+                spec.responses.map { response ->
+                    draftErrors[response.id]?.let { MathValidationResult(false, it, evaluable = false) }
+                        ?: MathValidators.validate(response.validator, answers.getValue(response.id))
+                }
+            }
+            val checked = if (attemptEvaluation == null) evaluate() else attemptEvaluation.invoke(identity, evaluate) ?: return
+            require(checked.size == spec.responses.size) { "La evaluación debe devolver un resultado por respuesta." }
+            checked
+        } catch (_: Exception) {
+            spec.responses.map { MathValidationResult(false, "No se pudo evaluar esta respuesta. Inténtalo de nuevo.", evaluable = false) }
         }
+        val results = spec.responses.zip(validations)
         if (results.all { it.second.correct }) {
             isCorrect = true
             showCorrect()

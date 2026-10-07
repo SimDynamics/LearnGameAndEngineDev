@@ -9,7 +9,8 @@ import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.max
 
-data class MathValidationResult(val correct: Boolean, val message: String)
+/** Only complete, supported answers produce an evaluated correct/incorrect result. */
+data class MathValidationResult(val correct: Boolean, val message: String, val evaluable: Boolean = true)
 
 interface MathAnswerValidator {
     fun validate(spec: JSONObject, answer: MathAnswer): MathValidationResult
@@ -60,7 +61,9 @@ object MathValidators {
     fun validate(spec: JSONObject, answer: MathAnswer): MathValidationResult = try {
         val type = spec.optString("type")
         val validator = registry[type]
-        if (validator == null) fail("Validador no soportado: $type") else validator.validate(spec, answer)
+        if (validator == null) fail("Validador no soportado: $type")
+        else if (answer is MathAnswer.Text && answer.value.isBlank()) fail("Completa la respuesta.")
+        else validator.validate(spec, answer)
     } catch (exception: IllegalArgumentException) {
         fail(exception.message ?: "No se pudo validar esta respuesta.")
     } catch (_: Exception) {
@@ -167,16 +170,69 @@ object MathValidators {
         return result(actual == expected)
     }
 
-    private fun literal(spec: JSONObject, answer: MathAnswer): MathValidationResult =
-        result((answer as? MathAnswer.Text)?.value == spec.getString("expected"))
+    private fun literal(spec: JSONObject, answer: MathAnswer): MathValidationResult {
+        val text = (answer as? MathAnswer.Text)?.value ?: return wrongKind()
+        return result(text == spec.getString("expected"))
+    }
 
     private fun latex(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val text = (answer as? MathAnswer.Text)?.value ?: return wrongKind()
-        return result(MathExpressionSemantics.canonical(text) == MathExpressionSemantics.canonical(spec.getString("expected")))
+        val actual = MathExpressionSemantics.canonical(text)
+        val expected = MathExpressionSemantics.canonical(spec.getString("expected"))
+        val actualTree = (MathLatexParser.parse(actual) as MathLatexParser.Result.Success).expression
+        val expectedTree = (MathLatexParser.parse(expected) as MathLatexParser.Result.Success).expression
+        // A puzzle may deliberately request a single sign. For ordinary formulas,
+        // structural slots alone cannot detect an unfinished input such as x+.
+        if (!operatorLiteral(expectedTree) && !completeOperands(actualTree)) return fail("Completa los operandos de la expresión matemática.")
+        return result(actual == expected)
+    }
+
+    private fun operatorLiteral(expression: MathExpression.Sequence): Boolean = expression.children.singleOrNull().let {
+        it is MathExpression.Operator || it is MathExpression.Relation ||
+            it is MathExpression.Symbol && it.value in setOf("%", "!", "∪", "∩", "∈")
+    }
+
+    /** Checks missing operands in notation; this is not a new evaluator or parser. */
+    private fun completeOperands(expression: MathExpression): Boolean {
+        if (expression !is MathExpression.Sequence) return expression.childSlots().all { completeOperands(it.second) }
+        var needsOperand = true
+        for (child in expression.children) {
+            val operator = when (child) {
+                is MathExpression.Operator -> child.value
+                is MathExpression.Relation -> "relation"
+                is MathExpression.Symbol -> child.value.takeIf { it == "%" || it == "!" }
+                else -> null
+            }
+            when (operator) {
+                "+", "-", "−" -> needsOperand = true // Also allow unary signs.
+                "*", "×", "·", "/", "÷", "^", "nCr", "nPr", "relation" -> {
+                    if (needsOperand) return false
+                    needsOperand = true
+                }
+                "%", "!" -> if (needsOperand) return false
+                else -> {
+                    // A postfix's superscript is attached to its punctuation leaf in
+                    // LaTeX (5!^2), while the preceding value supplies its operand.
+                    val postfix = (child as? MathExpression.Scripts)?.base?.children?.singleOrNull()
+                    val postfixPower = postfix is MathExpression.Operator && postfix.value in setOf("%", "!") ||
+                        postfix is MathExpression.Symbol && postfix.value in setOf("%", "!")
+                    if (postfixPower) {
+                        if (needsOperand) return false
+                        val scripts = child as MathExpression.Scripts
+                        if (listOfNotNull(scripts.upper, scripts.lower).any { !completeOperands(it) }) return false
+                    } else {
+                        if (!completeOperands(child)) return false
+                        needsOperand = false
+                    }
+                }
+            }
+        }
+        return !needsOperand
     }
 
     private fun choice(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val selected = (answer as? MathAnswer.Choice)?.selected ?: return wrongKind()
+        if (selected.isEmpty() || selected.any { it.isBlank() }) return fail("Selecciona una respuesta.")
         return result(selected == stringList(spec.getJSONArray("expected")).toSet())
     }
 
@@ -185,21 +241,31 @@ object MathValidators {
         val expected = spec.getJSONObject("fields")
         val keys = expected.keys().asSequence().toSet()
         if (values.keys != keys) return fail("Completa todos los campos de respuesta.")
-        for (key in keys) {
-            val checked = validate(expected.getJSONObject(key), MathAnswer.Text(values.getValue(key)))
-            if (!checked.correct) return fail("$key: ${checked.message}")
+        val results = keys.map { key ->
+            key to validate(expected.getJSONObject(key), MathAnswer.Text(values.getValue(key)))
         }
-        return result(true)
+        return combinedResults(results)
     }
 
-    private fun order(spec: JSONObject, answer: MathAnswer): MathValidationResult =
-        result((answer as? MathAnswer.Order)?.ids == stringList(spec.getJSONArray("expected")))
+    private fun order(spec: JSONObject, answer: MathAnswer): MathValidationResult {
+        val ids = (answer as? MathAnswer.Order)?.ids ?: return wrongKind()
+        val expected = stringList(spec.getJSONArray("expected"))
+        if (ids.size != expected.size || ids.toSet() != expected.toSet()) return fail("Coloca todas las tarjetas una vez.")
+        return result(ids == expected)
+    }
 
-    private fun matching(spec: JSONObject, answer: MathAnswer): MathValidationResult =
-        result((answer as? MathAnswer.Matching)?.pairs == stringMap(spec.getJSONObject("expected")))
+    private fun matching(spec: JSONObject, answer: MathAnswer): MathValidationResult {
+        val pairs = (answer as? MathAnswer.Matching)?.pairs ?: return wrongKind()
+        val expected = stringMap(spec.getJSONObject("expected"))
+        if (pairs.keys != expected.keys || pairs.values.any { it.isBlank() } || pairs.values.toSet().size != pairs.size) {
+            return fail("Relaciona todas las fichas con destinos distintos.")
+        }
+        return result(pairs == expected)
+    }
 
     private fun numberLine(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val value = answer as? MathAnswer.NumberLine ?: return wrongKind()
+        if (!value.value.isFinite() || value.direction !in setOf("left", "right", "none")) return fail("Revisa la posición y la dirección de la recta.")
         val expected = number(spec, if (spec.has("value")) "value" else "expected")
         return result(
             value.value.isFinite() && near(value.value, expected, tolerance(spec)) &&
@@ -213,38 +279,51 @@ object MathValidators {
         val expected = spec.getJSONObject("values")
         val keys = expected.keys().asSequence().toSet()
         if (values.keys != keys || values.values.any { !it.isFinite() }) return fail("Revisa todos los controles.")
-        for (key in keys) {
+        val results = keys.map { key ->
             val itemValidator = JSONObject(expected.getJSONObject(key).toString())
             // Sliders compute Double values, so their internal roundoff is expected. Text
             // numeric inputs remain exact; a slider author can explicitly choose tolerance: 0.
             if (itemValidator.optString("type") == "numeric" && !itemValidator.has("tolerance")) itemValidator.put("tolerance", 1e-6)
-            val checked = validate(itemValidator, MathAnswer.Text(values.getValue(key).toString()))
-            if (!checked.correct) return fail("$key: ${checked.message}")
+            key to validate(itemValidator, MathAnswer.Text(values.getValue(key).toString()))
         }
-        return result(true)
+        return combinedResults(results)
     }
 
     private fun coordinates(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val actual = (answer as? MathAnswer.Graph)?.points ?: return wrongKind()
         if (actual.any { !it.x.isFinite() || !it.y.isFinite() }) return fail("Las coordenadas deben ser finitas.")
         val expected = points(spec.getJSONArray("expected"))
+        if (actual.size < expected.size) return fail("Completa todos los puntos de la gráfica.")
         val tolerance = tolerance(spec)
         val mode = spec.optString("mode", "point")
         val correct = when (mode) {
             "point" -> actual.size == 1 && expected.size == 1 && closePoint(actual[0], expected[0], tolerance)
             "line" -> {
-                if (actual.size != 2 || expected.size != 2 || distance(actual[0], actual[1]) <= 1e-12) false
+                if (actual.size != 2 || expected.size != 2) false
                 else {
+                    val actualSpan = distance(actual[0], actual[1])
                     val span = distance(expected[0], expected[1])
-                    span > 1e-12 && actual.all { abs(cross(expected[0], expected[1], it)) / span <= tolerance }
+                    require(actualSpan.isFinite() && span.isFinite()) { "No se pudo evaluar esta recta con coordenadas finitas." }
+                    actualSpan > 1e-12 && span > 1e-12 && actual.all {
+                        val offset = abs(cross(expected[0], expected[1], it)) / span
+                        require(offset.isFinite()) { "No se pudo evaluar esta recta con coordenadas finitas." }
+                        offset <= tolerance
+                    }
                 }
             }
             "scatter" -> unorderedPoints(actual, expected, tolerance)
-            "polygon" -> cyclicPoints(actual, expected, tolerance)
+            "polygon" -> {
+                require(MathGeometry.area(actual).isFinite() && MathGeometry.area(expected).isFinite()) { "No se pudo evaluar el área de esta figura." }
+                cyclicPoints(actual, expected, tolerance)
+            }
             "parabola" -> {
                 if (actual.size != 2 || expected.size != 2 || !closePoint(actual[0], expected[0], tolerance)) false
                 else {
                     val expectedA = parabolaCoefficient(expected, 1e-12)
+                    val dx = actual[1].x - actual[0].x
+                    val dy = actual[1].y - actual[0].y
+                    require(dx.isFinite() && dy.isFinite() && (dx * dx).isFinite()) { "No se pudo evaluar la curvatura de esta parábola." }
+                    if (abs(dx) > 1e-12) require((dy / (dx * dx)).isFinite()) { "No se pudo evaluar la curvatura de esta parábola." }
                     val actualA = try { parabolaCoefficient(actual, 1e-12) } catch (_: IllegalArgumentException) { null }
                     actualA != null && near(actualA, expectedA, tolerance)
                 }
@@ -256,11 +335,15 @@ object MathValidators {
 
     private fun geometry(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val points = (answer as? MathAnswer.Graph)?.points ?: return wrongKind()
-        if (!MathGeometry.isSimplePolygon(points)) return fail("Construye un polígono sin cruces ni lados de longitud cero.")
+        if (points.size < 3) return fail("Completa todos los vértices del polígono.")
+        if (points.size > 100 || points.any { !it.x.isFinite() || !it.y.isFinite() } || !MathGeometry.area(points).isFinite()) {
+            return fail("No se pudo evaluar esta figura con coordenadas finitas.")
+        }
+        if (!MathGeometry.isSimplePolygon(points)) return result(false).copy(message = "Construye un polígono sin cruces ni lados de longitud cero.")
         val expected = number(spec, if (spec.has("expected")) "expected" else "area")
         val tolerance = tolerance(spec)
         if (spec.optString("shape", "polygon") == "rectangle" && !MathGeometry.isRectangle(points, tolerance)) {
-            return fail("La figura debe ser un rectángulo.")
+            return result(false).copy(message = "La figura debe ser un rectángulo.")
         }
         return result(near(MathGeometry.area(points), expected, tolerance))
     }
@@ -346,8 +429,13 @@ object MathValidators {
         return (a - b).absolute() <= exactTolerance
     }
     private fun closePoint(a: MathPoint, b: MathPoint, tolerance: Double) = near(a.x, b.x, tolerance) && near(a.y, b.y, tolerance)
+    private fun combinedResults(results: List<Pair<String, MathValidationResult>>): MathValidationResult {
+        // An earlier wrong field must not hide another field's parser/internal error.
+        val failure = results.firstOrNull { !it.second.evaluable } ?: results.firstOrNull { !it.second.correct }
+        return failure?.let { (key, checked) -> checked.copy(message = "$key: ${checked.message}") } ?: result(true)
+    }
     private fun result(correct: Boolean) = MathValidationResult(correct, if (correct) "¡Correcto!" else "Revisa tu respuesta e inténtalo de nuevo.")
-    private fun fail(message: String) = MathValidationResult(false, message)
+    private fun fail(message: String) = MathValidationResult(false, message, evaluable = false)
     private fun wrongKind() = fail("El mecanismo de respuesta no coincide con el validador.")
 }
 

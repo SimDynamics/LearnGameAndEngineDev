@@ -149,6 +149,8 @@ class LessonActivity : AppCompatActivity() {
 
                     pageCompletedExercises.clear()
 
+                    exerciseAttempts.clear()
+
                     currentPage =
                         0
 
@@ -186,6 +188,10 @@ class LessonActivity : AppCompatActivity() {
         null
 
     private var swipeNavigationEnabled = true
+
+    // Keep penalty history separate from visual feedback and persistent course progress.
+    // Cached or rebuilt pages retain it until the lesson is explicitly restarted.
+    private val exerciseAttempts = ExerciseAttemptLedger()
 
     /*
      * Conserva las Views exactas de cada página.
@@ -611,6 +617,14 @@ class LessonActivity : AppCompatActivity() {
         }
 
         loadLesson(currentLessonId)
+        savedInstanceState?.getString(ATTEMPT_HISTORY_STATE)?.let { saved ->
+            runCatching { exerciseAttempts.restore(JSONObject(saved)) }
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(ATTEMPT_HISTORY_STATE, exerciseAttempts.save().toString())
+        super.onSaveInstanceState(outState)
     }
 
     override fun onResume() {
@@ -821,6 +835,32 @@ class LessonActivity : AppCompatActivity() {
         refreshAttemptIndicator()
     }
 
+    private fun <T : Any> evaluateExerciseAttempt(
+        pageIndex: Int,
+        blockIndex: Int,
+        answer: Any,
+        evaluation: () -> T,
+        verdict: (T) -> Boolean?
+    ): T? = try {
+        exerciseAttempts.evaluate(
+            ExerciseAttemptKey(currentRouteId, currentLessonId, pageIndex, blockIndex),
+            ExerciseAnswerIdentity.of(answer),
+            canEvaluate = ::canEvaluateAttempt,
+            evaluation = evaluation,
+            // Unlimited practice never creates a previously paid penalty.
+            verdict = { evaluated -> if (AttemptRepository.isUnlimited(this)) null else verdict(evaluated) },
+            consumeIncorrect = { registerEvaluatedResult(false) }
+        )
+    } catch (exception: Exception) {
+        android.util.Log.w("LessonAttempts", "Could not evaluate an exercise", exception)
+        Toast.makeText(this, R.string.attempt_evaluation_error, Toast.LENGTH_SHORT).show()
+        null
+    }
+
+    private fun showIncompleteAttempt() {
+        Toast.makeText(this, R.string.attempt_response_incomplete, Toast.LENGTH_SHORT).show()
+    }
+
     private fun toggleAttemptDetails() {
 
         val currentPopup =
@@ -889,9 +929,16 @@ class LessonActivity : AppCompatActivity() {
             FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT,
                 FrameLayout.LayoutParams.MATCH_PARENT,
-                Gravity.CENTER
+                Gravity.START or
+                        Gravity.CENTER_VERTICAL
             )
         )
+
+        scroll.post {
+
+            content.minimumWidth =
+                scroll.width
+        }
 
         attemptDetailsContent =
             content
@@ -4091,6 +4138,8 @@ class LessonActivity : AppCompatActivity() {
         blockIndex: Int
     ) {
 
+        val exercisePage = currentPage
+
         requiredExercises++
 
         var answeredCorrectly =
@@ -4660,34 +4709,19 @@ class LessonActivity : AppCompatActivity() {
                     input.text.toString()
                 )
 
-            val answers =
-                block.getJSONArray(
-                    "answers"
-                )
-
-            var correct =
-                false
-
-            for (
-            i in 0 until
-                    answers.length()
-            ) {
-
-                if (
-                    userAnswer ==
-                    normalizeAnswer(
-                        answers.getString(
-                            i
-                        )
-                    )
-                ) {
-
-                    correct =
-                        true
-
-                    break
-                }
+            if (answeredCorrectly) return@setOnClickListener
+            if (userAnswer.isBlank()) {
+                showIncompleteAttempt()
+                return@setOnClickListener
             }
+
+            val correct = evaluateExerciseAttempt(exercisePage, blockIndex, userAnswer,
+                evaluation = {
+                    val answers = block.getJSONArray("answers")
+                    require(answers.length() > 0) { "Missing accepted answers" }
+                    val expected = List(answers.length()) { normalizeAnswer(answers.getString(it)) }
+                    userAnswer in expected
+                }, verdict = { it }) ?: return@setOnClickListener
 
             val state =
                 JSONObject()
@@ -4770,6 +4804,8 @@ class LessonActivity : AppCompatActivity() {
         block: JSONObject,
         blockIndex: Int
     ) {
+
+        val exercisePage = currentPage
 
         requiredExercises++
 
@@ -5315,32 +5351,19 @@ class LessonActivity : AppCompatActivity() {
                     .toString()
                     .trim()
 
-            val answers =
-                block.getJSONArray(
-                    "answers"
-                )
-
-            var correct =
-                false
-
-            for (
-            i in 0 until
-                    answers.length()
-            ) {
-
-                if (
-                    userAnswer ==
-                    answers
-                        .getString(i)
-                        .trim()
-                ) {
-
-                    correct =
-                        true
-
-                    break
-                }
+            if (answeredCorrectly) return@setOnClickListener
+            if (userAnswer.isBlank()) {
+                showIncompleteAttempt()
+                return@setOnClickListener
             }
+
+            val correct = evaluateExerciseAttempt(exercisePage, blockIndex, userAnswer,
+                evaluation = {
+                    val answers = block.getJSONArray("answers")
+                    require(answers.length() > 0) { "Missing accepted outputs" }
+                    val expected = List(answers.length()) { answers.getString(it).trim() }
+                    userAnswer in expected
+                }, verdict = { it }) ?: return@setOnClickListener
 
             val state =
                 JSONObject()
@@ -5423,6 +5446,8 @@ class LessonActivity : AppCompatActivity() {
         block: JSONObject,
         blockIndex: Int
     ) {
+
+        val exercisePage = currentPage
 
         requiredExercises++
 
@@ -6519,39 +6544,21 @@ class LessonActivity : AppCompatActivity() {
 
         checkButton.setOnClickListener {
 
-            var correct =
-                true
-
-            for (
-            i in 0 until
-                    orderContainer.childCount
-            ) {
-
-                val row =
-                    orderContainer.getChildAt(i)
-
-                val actualText =
-                    (row as TextView)
-                        .text
-                        .toString()
-
-                val expectedFragmentIndex =
-                    correctOrder.getInt(i)
-
-                val expectedText =
-                    fragments.getString(
-                        expectedFragmentIndex
-                    )
-
-                if (
-                    actualText !=
-                    expectedText
-                ) {
-
-                    correct = false
-                    break
-                }
+            if (answeredCorrectly || !puzzleStarted) return@setOnClickListener
+            val actual = List(orderContainer.childCount) {
+                (orderContainer.getChildAt(it) as TextView).text.toString()
             }
+            val correct = evaluateExerciseAttempt(exercisePage, blockIndex, org.json.JSONArray(actual),
+                evaluation = {
+                    require(actual.isNotEmpty() && actual.size == fragments.length() &&
+                        actual.size == correctOrder.length()) { "Invalid ordering configuration" }
+                    val expected = List(actual.size) {
+                        val index = correctOrder.getInt(it)
+                        require(index in 0 until fragments.length()) { "Invalid fragment index" }
+                        fragments.getString(index)
+                    }
+                    actual == expected
+                }, verdict = { it }) ?: return@setOnClickListener
 
             saveOrderState(
                 correct
@@ -9637,6 +9644,8 @@ class LessonActivity : AppCompatActivity() {
 
         pageCompletedExercises.clear()
 
+        exerciseAttempts.clear()
+
         requiredExercises =
             0
 
@@ -10643,7 +10652,14 @@ class LessonActivity : AppCompatActivity() {
         val puzzlePage = currentPage
         try {
             val renderer = MathPuzzleRenderer(
-                this, currentRouteId, currentLessonId, puzzlePage, blockIndex, block
+                this, currentRouteId, currentLessonId, puzzlePage, blockIndex, block,
+                attemptEvaluation = { identity, evaluate ->
+                    evaluateExerciseAttempt(puzzlePage, blockIndex, identity,
+                        evaluation = evaluate,
+                        verdict = { results ->
+                            if (results.all { it.evaluable }) results.all { it.correct } else null
+                        })
+                }
             ) { correct ->
                 val count = if (currentPage == puzzlePage) completedExercises
                     else pageCompletedExercises[puzzlePage] ?: 0
@@ -10927,6 +10943,8 @@ class LessonActivity : AppCompatActivity() {
         block: JSONObject,
         blockIndex: Int
     ) {
+
+        val exercisePage = currentPage
 
         requiredExercises++
 
@@ -12880,10 +12898,7 @@ class LessonActivity : AppCompatActivity() {
 
         checkButton.setOnClickListener {
 
-            val correctOrder =
-                block.getJSONArray(
-                    "correctOrder"
-                )
+            if (answeredCorrectly) return@setOnClickListener
 
             /*
              * Primero verificamos que todos
@@ -12906,39 +12921,20 @@ class LessonActivity : AppCompatActivity() {
                 }
             }
 
-            var correct =
-                true
-
-            for (
-            i in slots.indices
-            ) {
-
-                val token =
-                    slots[i]
-                        .getChildAt(0)
-                            as TextView
-
-                val actualText =
-                    token.text
-                        .toString()
-
-                val expectedChoiceIndex =
-                    correctOrder.getInt(i)
-
-                val expectedText =
-                    choices.getString(
-                        expectedChoiceIndex
-                    )
-
-                if (
-                    actualText !=
-                    expectedText
-                ) {
-
-                    correct = false
-                    break
-                }
-            }
+            val actual = slots.map { (it.getChildAt(0) as TextView).text.toString() }
+            val correct = evaluateExerciseAttempt(exercisePage, blockIndex, org.json.JSONArray(actual),
+                evaluation = {
+                    val correctOrder = block.getJSONArray("correctOrder")
+                    require(actual.isNotEmpty() && actual.size == correctOrder.length()) {
+                        "Invalid fill configuration"
+                    }
+                    val expected = List(actual.size) {
+                        val index = correctOrder.getInt(it)
+                        require(index in 0 until choices.length()) { "Invalid choice index" }
+                        choices.getString(index)
+                    }
+                    actual == expected
+                }, verdict = { it }) ?: return@setOnClickListener
 
             saveDragState(
                 correct
@@ -14355,6 +14351,8 @@ class LessonActivity : AppCompatActivity() {
         blockIndex: Int
     ) {
 
+        val exercisePage = currentPage
+
         requiredExercises++
 
         var answeredCorrectly =
@@ -14963,6 +14961,8 @@ class LessonActivity : AppCompatActivity() {
             val checkedId =
                 radioGroup.checkedRadioButtonId
 
+            if (answeredCorrectly) return@setOnClickListener
+
             if (
                 checkedId == -1
             ) {
@@ -14991,23 +14991,14 @@ class LessonActivity : AppCompatActivity() {
                 }
             }
 
-            val correctIndex =
-                block.getInt(
-                    "correctIndex"
-                )
-
-            if (
-                !canEvaluateAttempt()
-            ) {
-                return@setOnClickListener
-            }
-
-            val correct =
-                selectedIndex == correctIndex
-
-            registerEvaluatedResult(
-                correct
-            )
+            val correct = evaluateExerciseAttempt(exercisePage, blockIndex, selectedIndex,
+                evaluation = {
+                    val correctIndex = block.getInt("correctIndex")
+                    require(selectedIndex in optionButtons.indices && correctIndex in optionButtons.indices) {
+                        "Invalid answer index"
+                    }
+                    selectedIndex == correctIndex
+                }, verdict = { it }) ?: return@setOnClickListener
 
             val state =
                 JSONObject()
@@ -15104,6 +15095,8 @@ class LessonActivity : AppCompatActivity() {
         block: JSONObject,
         blockIndex: Int
     ) {
+
+        val exercisePage = currentPage
 
         requiredExercises++
 
@@ -16331,45 +16324,20 @@ class LessonActivity : AppCompatActivity() {
 
         checkButton.setOnClickListener {
 
-            val expectedAnswers =
-                block.getJSONArray(
-                    "answers"
-                )
-
-            var correct =
-                inputs.size ==
-                        expectedAnswers.length()
-
-            if (correct) {
-
-                for (
-                i in inputs.indices
-                ) {
-
-                    val actual =
-                        normalizeAnswer(
-                            inputs[i]
-                                .text
-                                .toString()
-                        )
-
-                    val expected =
-                        normalizeAnswer(
-                            expectedAnswers
-                                .getString(i)
-                        )
-
-                    if (
-                        actual != expected
-                    ) {
-
-                        correct =
-                            false
-
-                        break
-                    }
-                }
+            if (answeredCorrectly) return@setOnClickListener
+            val actual = inputs.map { normalizeAnswer(it.text.toString()) }
+            if (actual.isEmpty() || actual.any { it.isBlank() }) {
+                showIncompleteAttempt()
+                return@setOnClickListener
             }
+
+            val correct = evaluateExerciseAttempt(exercisePage, blockIndex, org.json.JSONArray(actual),
+                evaluation = {
+                    val expectedAnswers = block.getJSONArray("answers")
+                    require(actual.size == expectedAnswers.length()) { "Invalid inline fill configuration" }
+                    val expected = List(expectedAnswers.length()) { normalizeAnswer(expectedAnswers.getString(it)) }
+                    actual == expected
+                }, verdict = { it }) ?: return@setOnClickListener
 
             /*
              * Guardamos TODOS los campos.
@@ -16719,6 +16687,8 @@ class LessonActivity : AppCompatActivity() {
         return view
     }
     private companion object {
+
+        const val ATTEMPT_HISTORY_STATE = "exercise_attempt_history"
 
         const val CODE_INPUT_TAG =
             "cpp_code_input"
