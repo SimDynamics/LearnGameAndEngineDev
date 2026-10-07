@@ -463,15 +463,12 @@ class LessonActivity : AppCompatActivity() {
                 "routeId"
             ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
 
-        val maxAttempts =
-            if (
-                currentRouteId ==
-                AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
-            ) {
-                12
-            } else {
-                8
-            }
+        val attemptState =
+            AttemptRepository
+                .getState(
+                    this,
+                    currentRouteId
+                )
 
         val attemptColor =
             AppearanceSettingsRepository
@@ -496,10 +493,16 @@ class LessonActivity : AppCompatActivity() {
         )
 
         imageAttemptRoute.contentDescription =
-            "$maxAttempts de $maxAttempts intentos disponibles"
+            "${attemptState.available} de ${attemptState.maximum} intentos disponibles"
 
         textAttemptCount.text =
-            maxAttempts.toString()
+            if (
+                attemptState.unlimited
+            ) {
+                "∞"
+            } else {
+                attemptState.available.toString()
+            }
 
         textAttemptCount.setTextColor(
             attemptColor
