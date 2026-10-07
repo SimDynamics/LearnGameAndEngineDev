@@ -848,8 +848,8 @@ class LessonActivity : AppCompatActivity() {
             ExerciseAnswerIdentity.of(answer),
             canEvaluate = ::canEvaluateAttempt,
             evaluation = evaluation,
-            // Unlimited practice never creates a previously paid penalty.
-            verdict = { evaluated -> if (AttemptRepository.isUnlimited(this)) null else verdict(evaluated) },
+            // Premium nunca genera una penalización de intentos.
+            verdict = { evaluated -> if (PremiumRepository.isPremium(this)) null else verdict(evaluated) },
             consumeIncorrect = { registerEvaluatedResult(false) }
         )
     } catch (exception: Exception) {

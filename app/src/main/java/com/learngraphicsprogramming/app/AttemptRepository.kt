@@ -24,9 +24,6 @@ object AttemptRepository {
     private const val PREFS_NAME =
         "attempt_reserve_seconds_test"
 
-    private const val KEY_UNLIMITED =
-        "unlimited"
-
     private const val PREFIX_RESERVE =
         "reserve_"
 
@@ -146,7 +143,7 @@ object AttemptRepository {
             totalReserveProgress =
                 totalReserveProgress,
             unlimited =
-                isUnlimited(
+                PremiumRepository.isPremium(
                     context
                 )
         )
@@ -199,34 +196,5 @@ object AttemptRepository {
             routeId,
             now
         )
-    }
-
-    fun setUnlimited(
-        context: Context,
-        unlimited: Boolean
-    ) {
-
-        preferences(
-            context
-        )
-            .edit()
-            .putBoolean(
-                KEY_UNLIMITED,
-                unlimited
-            )
-            .apply()
-    }
-
-    fun isUnlimited(
-        context: Context
-    ): Boolean {
-
-        return preferences(
-            context
-        )
-            .getBoolean(
-                KEY_UNLIMITED,
-                false
-            )
     }
 }
