@@ -50,6 +50,7 @@ import com.learngraphicsprogramming.app.math.MathKeyboardHost
 import com.learngraphicsprogramming.app.math.MathTextRenderer
 import com.learngraphicsprogramming.app.math.MathDevelopmentMode
 import com.learngraphicsprogramming.app.math.MathExpressionEditor
+import com.google.android.material.button.MaterialButton
 
 class LessonActivity : AppCompatActivity() {
 
@@ -4462,13 +4463,16 @@ class LessonActivity : AppCompatActivity() {
          * COMPROBAR.
          */
         val button =
-            Button(this)
+            MaterialButton(this)
 
         button.text =
             "Comprobar"
 
         button.isAllCaps =
             false
+
+        button.textSize =
+            18f
 
         button.isEnabled =
             savedAnswer.isNotEmpty() &&
@@ -5103,13 +5107,16 @@ class LessonActivity : AppCompatActivity() {
         )
 
         val button =
-            Button(this)
+            MaterialButton(this)
 
         button.text =
             "Comprobar"
 
         button.isAllCaps =
             false
+
+        button.textSize =
+            18f
 
         button.isEnabled =
             input.text
@@ -5731,13 +5738,16 @@ class LessonActivity : AppCompatActivity() {
                         }
 
         val checkButton =
-            Button(this)
+            MaterialButton(this)
 
         checkButton.text =
             "Comprobar"
 
         checkButton.isAllCaps =
             false
+
+        checkButton.textSize =
+            18f
 
         checkButton.isEnabled =
             puzzleStarted &&
@@ -8540,13 +8550,16 @@ class LessonActivity : AppCompatActivity() {
          * BOTÓN COMPILAR.
          */
         val runButton =
-            Button(this)
+            MaterialButton(this)
 
         runButton.text =
             "Compilar y ejecutar"
 
         runButton.isAllCaps =
             false
+
+        runButton.textSize =
+            18f
 
         runButton.isEnabled =
             true
@@ -10725,7 +10738,7 @@ class LessonActivity : AppCompatActivity() {
             Typeface.MONOSPACE
 
         token.textSize =
-            16f
+            18f
 
         token.includeFontPadding =
             false
@@ -10783,11 +10796,33 @@ class LessonActivity : AppCompatActivity() {
         token.background =
             background
 
-        DirectDragTouch.bind(token, { token.isEnabled }, { target ->
-            target.alpha = 0.55f
-            target.startDragAndDrop(ClipData.newPlainText("code_fragment", text),
-                View.DragShadowBuilder(target), target, 0)
-        }, { ignoreCurrentSwipe = true })
+        DirectDragTouch.bind(
+            token,
+            {
+                token.isEnabled
+            },
+            { target ->
+
+                target.alpha =
+                    0.55f
+
+                target.startDragAndDrop(
+                    ClipData.newPlainText(
+                        "code_fragment",
+                        text
+                    ),
+                    View.DragShadowBuilder(
+                        target
+                    ),
+                    target,
+                    0
+                )
+            },
+            {
+                ignoreCurrentSwipe =
+                    true
+            }
+        )
 
         return token
     }
@@ -11408,13 +11443,16 @@ class LessonActivity : AppCompatActivity() {
          * coloque o retire un bloque.
          */
         val checkButton =
-            Button(this)
+            MaterialButton(this)
 
         checkButton.text =
             "Comprobar"
 
         checkButton.isAllCaps =
             false
+
+        checkButton.textSize =
+            18f
 
         checkButton.isEnabled =
             false
@@ -14671,13 +14709,16 @@ class LessonActivity : AppCompatActivity() {
          * BOTÓN COMPROBAR
          */
         val button =
-            Button(this)
+            MaterialButton(this)
 
         button.text =
             "Comprobar"
 
         button.isAllCaps =
             false
+
+        button.textSize =
+            18f
 
         button.isEnabled =
             radioGroup.checkedRadioButtonId != -1 &&
@@ -15920,13 +15961,16 @@ class LessonActivity : AppCompatActivity() {
          * inmediatamente al empezar a escribir.
          */
         val checkButton =
-            Button(this)
+            MaterialButton(this)
 
         checkButton.text =
             "Comprobar"
 
         checkButton.isAllCaps =
             false
+
+        checkButton.textSize =
+            18f
 
         checkButton.isEnabled =
             inputs.any {
@@ -16658,7 +16702,7 @@ class LessonActivity : AppCompatActivity() {
             Typeface.MONOSPACE
 
         view.textSize =
-            16f
+            18f
 
         view.includeFontPadding =
             false
