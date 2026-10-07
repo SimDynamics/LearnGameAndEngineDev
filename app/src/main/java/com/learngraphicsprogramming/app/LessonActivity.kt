@@ -4941,7 +4941,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         languageLabel.textSize =
-            15f
+            18f
 
         /*
          * REINICIAR TEXTO.
@@ -5065,7 +5065,7 @@ class LessonActivity : AppCompatActivity() {
             Typeface.MONOSPACE
 
         input.textSize =
-            17f
+            18f
 
         input.setPadding(
             dp(18),
@@ -5125,7 +5125,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         result.textSize =
-            16f
+            18f
 
         result.setPadding(
             0,
@@ -5491,7 +5491,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         instruction.textSize =
-            15f
+            18f
 
         instruction.setPadding(
             0,
@@ -5573,7 +5573,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         languageLabel.textSize =
-            15f
+            18f
 
 
         val resetButton =
@@ -5792,7 +5792,7 @@ class LessonActivity : AppCompatActivity() {
                 Typeface.MONOSPACE
 
             number.textSize =
-                16f
+                18f
 
             number.includeFontPadding =
                 false
@@ -6056,7 +6056,7 @@ class LessonActivity : AppCompatActivity() {
                 Typeface.MONOSPACE
 
             row.textSize =
-                16f
+                18f
 
             row.setTextColor(
                 Color.rgb(225, 230, 235)
@@ -6486,7 +6486,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         result.textSize =
-            16f
+            18f
 
         result.setPadding(
             0,
@@ -6708,7 +6708,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         languageLabel.textSize =
-            15f
+            18f
 
         /*
          * REINICIAR.
@@ -6891,7 +6891,7 @@ class LessonActivity : AppCompatActivity() {
             Typeface.MONOSPACE
 
         lineNumbers.textSize =
-            16f
+            18f
 
         lineNumbers.includeFontPadding =
             false
@@ -6975,7 +6975,7 @@ class LessonActivity : AppCompatActivity() {
             Typeface.MONOSPACE
 
         sourceCode.textSize =
-            16f
+            18f
 
         sourceCode.includeFontPadding =
             false
@@ -8581,7 +8581,7 @@ class LessonActivity : AppCompatActivity() {
             "Listo para ejecutar."
 
         statusText.textSize =
-            15f
+            18f
 
         statusText.setTextColor(
             Color.rgb(
@@ -8612,7 +8612,7 @@ class LessonActivity : AppCompatActivity() {
             Typeface.MONOSPACE
 
         outputText.textSize =
-            15f
+            18f
 
         outputText.setTextColor(
             Color.rgb(
@@ -10985,7 +10985,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         instruction.textSize =
-            15f
+            18f
 
         instruction.setPadding(
             0,
@@ -11095,7 +11095,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         languageLabel.textSize =
-            15f
+            18f
 
         languageLabel.layoutParams =
             LinearLayout.LayoutParams(
@@ -11509,7 +11509,7 @@ class LessonActivity : AppCompatActivity() {
                 Typeface.MONOSPACE
 
             number.textSize =
-                16f
+                18f
 
             number.includeFontPadding =
                 false
@@ -11718,7 +11718,7 @@ class LessonActivity : AppCompatActivity() {
                     " "
 
                 empty.textSize =
-                    16f
+                    18f
 
                 row.addView(
                     empty
@@ -12752,7 +12752,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         result.textSize =
-            16f
+            18f
 
         result.setPadding(
             0,
@@ -13830,7 +13830,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         languageLabel.textSize =
-            15f
+            18f
 
         languageLabel.setTypeface(
             null,
@@ -14070,7 +14070,7 @@ class LessonActivity : AppCompatActivity() {
             Typeface.MONOSPACE
 
         lineNumbers.textSize =
-            16f
+            18f
 
         lineNumbers.includeFontPadding =
             false
@@ -14147,7 +14147,7 @@ class LessonActivity : AppCompatActivity() {
             Typeface.MONOSPACE
 
         codeView.textSize =
-            16f
+            18f
 
         codeView.includeFontPadding =
             false
@@ -14480,7 +14480,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         languageLabel.textSize =
-            15f
+            18f
 
         val resetButton =
             TextView(this)
@@ -14624,7 +14624,7 @@ class LessonActivity : AppCompatActivity() {
             )
 
             radioButton.textSize =
-                16f
+                18f
 
             radioButton.setPadding(
                 0,
@@ -14694,7 +14694,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         result.textSize =
-            16f
+            18f
 
         result.setPadding(
             0,
@@ -15218,7 +15218,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         languageLabel.textSize =
-            15f
+            18f
 
         languageLabel.layoutParams =
             LinearLayout.LayoutParams(
@@ -15580,7 +15580,7 @@ class LessonActivity : AppCompatActivity() {
                 Typeface.MONOSPACE
 
             lineNumber.textSize =
-                16f
+                18f
 
             lineNumber.includeFontPadding =
                 false
@@ -15751,7 +15751,7 @@ class LessonActivity : AppCompatActivity() {
                     Typeface.MONOSPACE
 
                 input.textSize =
-                    16f
+                    18f
 
                 input.setTextColor(
                     Color.WHITE
@@ -16188,7 +16188,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         result.textSize =
-            16f
+            18f
 
         result.setPadding(
             0,
