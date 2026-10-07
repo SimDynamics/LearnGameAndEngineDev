@@ -30,6 +30,7 @@ import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import android.content.Intent
 import android.widget.ImageButton
+import android.widget.ImageView
 import androidx.activity.result.contract.ActivityResultContracts
 import android.text.Editable
 import android.text.TextWatcher
@@ -383,6 +384,16 @@ class LessonActivity : AppCompatActivity() {
                 R.id.buttonLessonSettings
             )
 
+        val imageAttemptRoute =
+            findViewById<ImageView>(
+                R.id.imageAttemptRoute
+            )
+
+        val textAttemptCount =
+            findViewById<TextView>(
+                R.id.textAttemptCount
+            )
+
         val buttonContinue =
             findViewById<Button>(R.id.buttonContinue)
 
@@ -451,6 +462,48 @@ class LessonActivity : AppCompatActivity() {
             intent.getStringExtra(
                 "routeId"
             ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
+
+        val maxAttempts =
+            if (
+                currentRouteId ==
+                AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
+            ) {
+                12
+            } else {
+                8
+            }
+
+        val attemptColor =
+            AppearanceSettingsRepository
+                .getRouteAccentColor(
+                    this,
+                    currentRouteId
+                )
+
+        imageAttemptRoute.setImageResource(
+            if (
+                currentRouteId ==
+                AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
+            ) {
+                R.drawable.ic_attempt_math
+            } else {
+                R.drawable.ic_attempt_programming
+            }
+        )
+
+        imageAttemptRoute.setColorFilter(
+            attemptColor
+        )
+
+        imageAttemptRoute.contentDescription =
+            "$maxAttempts de $maxAttempts intentos disponibles"
+
+        textAttemptCount.text =
+            maxAttempts.toString()
+
+        textAttemptCount.setTextColor(
+            attemptColor
+        )
 
         updateSwipeToggle()
         if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
