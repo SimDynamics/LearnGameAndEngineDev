@@ -107,9 +107,26 @@ class CppPrototypeActivity : AppCompatActivity() {
                 override fun afterTextChanged(
                     text: Editable?
                 ) {
+
+                    if (
+                        text == null
+                    ) {
+                        return
+                    }
+
+                    CppSyntaxHighlighter.applyTo(
+                        text
+                    )
                 }
             }
         )
+
+        binding.sourceCode.text?.let { editable ->
+
+            CppSyntaxHighlighter.applyTo(
+                editable
+            )
+        }
 
         updateLineNumbers()
 
