@@ -170,6 +170,21 @@ class LessonActivity : AppCompatActivity() {
 
     private lateinit var buttonSwipeToggle: TextView
 
+    private lateinit var imageAttemptRoute: ImageView
+    private lateinit var imageAttemptFill: ImageView
+    private lateinit var attemptFillClip: FrameLayout
+    private lateinit var textAttemptCount: TextView
+    private lateinit var textAttemptPercent: TextView
+    private lateinit var attemptIndicator: FrameLayout
+
+    private var attemptDetailsPopup:
+            android.widget.PopupWindow? =
+        null
+
+    private var attemptDetailsContent:
+            LinearLayout? =
+        null
+
     private var swipeNavigationEnabled = true
 
     /*
@@ -335,8 +350,28 @@ class LessonActivity : AppCompatActivity() {
     private var touchStartX = 0f
     private var touchStartY = 0f
 
+    private val attemptIndicatorRefreshRunnable =
+        object : Runnable {
+
+            override fun run() {
+
+                refreshAttemptIndicator()
+
+                findViewById<View>(
+                    R.id.attemptIndicator
+                ).postDelayed(
+                    this,
+                    1_000L
+                )
+            }
+        }
+
     override fun onDestroy() {
+
+        attemptDetailsPopup?.dismiss()
+
         mathKeyboardHost?.close()
+
         super.onDestroy()
     }
 
@@ -384,15 +419,40 @@ class LessonActivity : AppCompatActivity() {
                 R.id.buttonLessonSettings
             )
 
-        val imageAttemptRoute =
-            findViewById<ImageView>(
+        imageAttemptRoute =
+            findViewById(
                 R.id.imageAttemptRoute
             )
 
-        val textAttemptCount =
-            findViewById<TextView>(
+        imageAttemptFill =
+            findViewById(
+                R.id.imageAttemptFill
+            )
+
+        attemptFillClip =
+            findViewById(
+                R.id.attemptFillClip
+            )
+
+        textAttemptCount =
+            findViewById(
                 R.id.textAttemptCount
             )
+
+        textAttemptPercent =
+            findViewById(
+                R.id.textAttemptPercent
+            )
+
+        attemptIndicator =
+            findViewById(
+                R.id.attemptIndicator
+            )
+
+        attemptIndicator.setOnClickListener {
+
+            toggleAttemptDetails()
+        }
 
         val buttonContinue =
             findViewById<Button>(R.id.buttonContinue)
@@ -463,50 +523,7 @@ class LessonActivity : AppCompatActivity() {
                 "routeId"
             ) ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
 
-        val attemptState =
-            AttemptRepository
-                .getState(
-                    this,
-                    currentRouteId
-                )
-
-        val attemptColor =
-            AppearanceSettingsRepository
-                .getRouteAccentColor(
-                    this,
-                    currentRouteId
-                )
-
-        imageAttemptRoute.setImageResource(
-            if (
-                currentRouteId ==
-                AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
-            ) {
-                R.drawable.ic_attempt_math
-            } else {
-                R.drawable.ic_attempt_programming
-            }
-        )
-
-        imageAttemptRoute.setColorFilter(
-            attemptColor
-        )
-
-        imageAttemptRoute.contentDescription =
-            "${attemptState.available} de ${attemptState.maximum} intentos disponibles"
-
-        textAttemptCount.text =
-            if (
-                attemptState.unlimited
-            ) {
-                "∞"
-            } else {
-                attemptState.available.toString()
-            }
-
-        textAttemptCount.setTextColor(
-            attemptColor
-        )
+        refreshAttemptIndicator()
 
         updateSwipeToggle()
         if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
@@ -620,6 +637,472 @@ class LessonActivity : AppCompatActivity() {
                 this,
                 currentLessonId,
                 currentRouteId
+            )
+        }
+
+        refreshAttemptIndicator()
+
+        findViewById<View>(
+            R.id.attemptIndicator
+        ).removeCallbacks(
+            attemptIndicatorRefreshRunnable
+        )
+
+        findViewById<View>(
+            R.id.attemptIndicator
+        ).postDelayed(
+            attemptIndicatorRefreshRunnable,
+            1_000L
+        )
+    }
+
+    private fun refreshAttemptIndicator() {
+
+        val attemptState =
+            AttemptRepository
+                .getState(
+                    this,
+                    currentRouteId
+                )
+
+        val attemptColor =
+            AppearanceSettingsRepository
+                .getRouteAccentColor(
+                    this,
+                    currentRouteId
+                )
+
+        val iconResource =
+            if (
+                currentRouteId ==
+                AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
+            ) {
+                R.drawable.ic_attempt_math
+            } else {
+                R.drawable.ic_attempt_programming
+            }
+
+        imageAttemptRoute.setImageResource(
+            iconResource
+        )
+
+        imageAttemptFill.setImageResource(
+            iconResource
+        )
+
+        imageAttemptRoute.setColorFilter(
+            Color.WHITE
+        )
+
+        imageAttemptFill.setColorFilter(
+            attemptColor
+        )
+
+        val fillProgress =
+            if (
+                attemptState.unlimited
+            ) {
+                1f
+            } else {
+                attemptState.totalReserveProgress
+            }
+
+        val fullSize =
+            dp(
+                43
+            )
+
+        val fillWidth =
+            (
+                    fullSize *
+                            fillProgress
+                    )
+                .toInt()
+                .coerceIn(
+                    0,
+                    fullSize
+                )
+
+        attemptFillClip.layoutParams =
+            attemptFillClip.layoutParams
+                .apply {
+                    width =
+                        fullSize
+
+                    height =
+                        fullSize
+                }
+
+        imageAttemptFill.clipBounds =
+            Rect(
+                0,
+                0,
+                fillWidth,
+                fullSize
+            )
+
+        imageAttemptRoute.contentDescription =
+            "${attemptState.available} de ${attemptState.maximum} intentos disponibles"
+
+        textAttemptCount.text =
+            if (
+                attemptState.unlimited
+            ) {
+                "∞"
+            } else {
+                attemptState.available.toString()
+            }
+
+        textAttemptCount.setTextColor(
+            attemptColor
+        )
+
+        val percentage =
+            (
+                    fillProgress *
+                            100f
+                    )
+                .toInt()
+                .coerceIn(
+                    0,
+                    100
+                )
+
+        textAttemptPercent.text =
+            "$percentage%"
+
+        textAttemptPercent.setTextColor(
+            attemptColor
+        )
+
+        refreshAttemptDetails()
+    }
+
+    private fun canEvaluateAttempt(): Boolean {
+
+        val state =
+            AttemptRepository.getState(
+                this,
+                currentRouteId
+            )
+
+        if (
+            state.canEvaluate
+        ) {
+            return true
+        }
+
+        Toast.makeText(
+            this,
+            "No tienes intentos disponibles.",
+            Toast.LENGTH_SHORT
+        ).show()
+
+        refreshAttemptIndicator()
+
+        return false
+    }
+
+    private fun registerEvaluatedResult(
+        correct: Boolean
+    ) {
+
+        if (
+            correct
+        ) {
+            return
+        }
+
+        AttemptRepository.consumeIncorrect(
+            this,
+            currentRouteId
+        )
+
+        refreshAttemptIndicator()
+    }
+
+    private fun toggleAttemptDetails() {
+
+        val currentPopup =
+            attemptDetailsPopup
+
+        if (
+            currentPopup != null &&
+            currentPopup.isShowing
+        ) {
+
+            currentPopup.dismiss()
+
+            return
+        }
+
+        val scroll =
+            HorizontalScrollView(
+                this
+            )
+
+        scroll.isHorizontalScrollBarEnabled =
+            false
+
+        scroll.isFillViewport =
+            true
+
+        scroll.overScrollMode =
+            View.OVER_SCROLL_NEVER
+
+        scroll.setBackgroundColor(
+            Color.rgb(
+                24,
+                26,
+                31
+            )
+        )
+
+        val content =
+            LinearLayout(
+                this
+            )
+
+        content.orientation =
+            LinearLayout.HORIZONTAL
+
+        content.gravity =
+            Gravity.CENTER
+
+        val verticalPadding =
+            (
+                    0.24f *
+                            resources.displayMetrics.density +
+                            0.24f
+                    )
+                .toInt()
+
+        content.setPadding(
+            0,
+            verticalPadding,
+            0,
+            verticalPadding
+        )
+
+        scroll.addView(
+            content,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                Gravity.CENTER
+            )
+        )
+
+        attemptDetailsContent =
+            content
+
+        val popup =
+            android.widget.PopupWindow(
+                scroll,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                dp(43),
+                false
+            )
+
+        popup.setBackgroundDrawable(
+            android.graphics.drawable.ColorDrawable(
+                Color.TRANSPARENT
+            )
+        )
+
+        popup.isOutsideTouchable =
+            true
+
+        popup.elevation =
+            dp(8).toFloat()
+
+        popup.setOnDismissListener {
+
+            attemptDetailsPopup =
+                null
+
+            attemptDetailsContent =
+                null
+        }
+
+        attemptDetailsPopup =
+            popup
+
+        refreshAttemptDetails()
+
+        popup.showAsDropDown(
+            findViewById(
+                R.id.lessonHeader
+            )
+        )
+    }
+
+    private fun refreshAttemptDetails() {
+
+        val content =
+            attemptDetailsContent
+                ?: return
+
+        val state =
+            AttemptRepository.getState(
+                this,
+                currentRouteId
+            )
+
+        val attemptColor =
+            AppearanceSettingsRepository
+                .getRouteAccentColor(
+                    this,
+                    currentRouteId
+                )
+
+        val iconResource =
+            if (
+                currentRouteId ==
+                AppearanceSettingsRepository.ROUTE_MATH_PHYSICS
+            ) {
+                R.drawable.ic_attempt_math
+            } else {
+                R.drawable.ic_attempt_programming
+            }
+
+        content.removeAllViews()
+
+        for (
+        index in
+        0 until state.maximum
+        ) {
+
+            val progress =
+                if (
+                    state.unlimited
+                ) {
+                    1f
+                } else {
+                    (
+                            state.reserveUnits -
+                                    index.toFloat()
+                            )
+                        .coerceIn(
+                            0f,
+                            1f
+                        )
+                }
+
+            val slot =
+                FrameLayout(
+                    this
+                )
+
+            val slotParams =
+                LinearLayout.LayoutParams(
+                    dp(43),
+                    dp(43)
+                )
+
+            slotParams.marginEnd =
+                (
+                        0.24f *
+                                resources.displayMetrics.density +
+                                0.24f
+                        )
+                    .toInt()
+
+            slot.layoutParams =
+                slotParams
+
+            val base =
+                ImageView(
+                    this
+                )
+
+            base.setImageResource(
+                iconResource
+            )
+
+            base.setColorFilter(
+                Color.WHITE
+            )
+
+            slot.addView(
+                base,
+                FrameLayout.LayoutParams(
+                    dp(43),
+                    dp(43),
+                    Gravity.CENTER
+                )
+            )
+
+            val fillWidth =
+                (
+                        dp(43) *
+                                progress
+                        )
+                    .toInt()
+                    .coerceIn(
+                        0,
+                        dp(43)
+                    )
+
+            val fillClip =
+                FrameLayout(
+                    this
+                )
+
+            fillClip.clipChildren =
+                true
+
+            fillClip.clipBounds =
+                Rect(
+                    0,
+                    0,
+                    fillWidth,
+                    dp(43)
+                )
+
+            slot.addView(
+                fillClip,
+                FrameLayout.LayoutParams(
+                    dp(43),
+                    dp(43),
+                    Gravity.CENTER
+                )
+            )
+
+            val fill =
+                ImageView(
+                    this
+                )
+
+            fill.setImageResource(
+                iconResource
+            )
+
+            fill.setColorFilter(
+                attemptColor
+            )
+
+            fillClip.addView(
+                fill,
+                FrameLayout.LayoutParams(
+                    dp(43),
+                    dp(43),
+                    Gravity.CENTER
+                )
+            )
+
+            slot.contentDescription =
+                if (
+                    progress >=
+                    1f
+                ) {
+                    "Intento disponible"
+                } else {
+                    "Intento cargado al ${(progress * 100f).toInt()} por ciento"
+                }
+
+            content.addView(
+                slot
             )
         }
     }
@@ -2802,6 +3285,12 @@ class LessonActivity : AppCompatActivity() {
 
 
     override fun onPause() {
+
+        findViewById<View>(
+            R.id.attemptIndicator
+        ).removeCallbacks(
+            attemptIndicatorRefreshRunnable
+        )
 
         saveCurrentPageProgress()
 
@@ -14507,8 +14996,18 @@ class LessonActivity : AppCompatActivity() {
                     "correctIndex"
                 )
 
+            if (
+                !canEvaluateAttempt()
+            ) {
+                return@setOnClickListener
+            }
+
             val correct =
                 selectedIndex == correctIndex
+
+            registerEvaluatedResult(
+                correct
+            )
 
             val state =
                 JSONObject()

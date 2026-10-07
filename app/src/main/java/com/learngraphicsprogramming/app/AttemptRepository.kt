@@ -5,8 +5,8 @@ import android.content.Context
 data class AttemptState(
     val available: Int,
     val maximum: Int,
-    val nextRecoveryAt: Long?,
-    val nextRecoveryProgress: Float,
+    val reserveUnits: Float,
+    val totalReserveProgress: Float,
     val unlimited: Boolean
 ) {
 
@@ -19,16 +19,19 @@ data class AttemptState(
 object AttemptRepository {
 
     const val RECOVERY_MILLIS =
-        60L * 60L * 1000L
+        60L * 1000L
 
     private const val PREFS_NAME =
-        "attempt_state"
+        "attempt_reserve_seconds_test"
 
     private const val KEY_UNLIMITED =
         "unlimited"
 
-    private const val PREFIX_PENDING =
-        "pending_"
+    private const val PREFIX_RESERVE =
+        "reserve_"
+
+    private const val PREFIX_UPDATED_AT =
+        "updated_at_"
 
     private fun preferences(
         context: Context
@@ -63,78 +66,85 @@ object AttemptRepository {
                 routeId
             )
 
-        val savedPending =
-            loadPending(
-                context,
-                routeId
+        val prefs =
+            preferences(
+                context
             )
 
-        val pending =
-            savedPending
-                .filter {
-                    it > now
-                }
-                .sorted()
-                .take(
-                    maximum
+        val reserveKey =
+            PREFIX_RESERVE +
+                    routeId
+
+        val updatedAtKey =
+            PREFIX_UPDATED_AT +
+                    routeId
+
+        val savedReserve =
+            prefs.getFloat(
+                reserveKey,
+                maximum.toFloat()
+            )
+                .coerceIn(
+                    0f,
+                    maximum.toFloat()
                 )
 
-        if (
-            pending != savedPending
-        ) {
-            savePending(
-                context,
-                routeId,
-                pending
+        val updatedAt =
+            prefs.getLong(
+                updatedAtKey,
+                now
             )
-        }
+
+        val elapsed =
+            (
+                    now -
+                            updatedAt
+                    )
+                .coerceAtLeast(
+                    0L
+                )
+
+        val recoveredUnits =
+            elapsed.toFloat() /
+                    RECOVERY_MILLIS.toFloat()
+
+        val reserveUnits =
+            (
+                    savedReserve +
+                            recoveredUnits
+                    )
+                .coerceIn(
+                    0f,
+                    maximum.toFloat()
+                )
 
         val available =
-            (
-                    maximum -
-                            pending.size
-                    )
+            reserveUnits
+                .toInt()
                 .coerceIn(
                     0,
                     maximum
                 )
 
-        val nextRecoveryAt =
-            pending.firstOrNull()
-
-        val nextRecoveryProgress =
-            if (
-                nextRecoveryAt == null
-            ) {
-                1f
-            } else {
-
-                val recoveryStartedAt =
-                    nextRecoveryAt -
-                            RECOVERY_MILLIS
-
-                (
-                        (
-                                now -
-                                        recoveryStartedAt
-                                ).toFloat() /
-                                RECOVERY_MILLIS.toFloat()
-                        )
-                    .coerceIn(
-                        0f,
-                        1f
+        val totalReserveProgress =
+            (
+                    reserveUnits /
+                            maximum.toFloat()
                     )
-            }
+                .coerceIn(
+                    0f,
+                    1f
+                )
 
         return AttemptState(
             available =
                 available,
             maximum =
                 maximum,
-            nextRecoveryAt =
-                nextRecoveryAt,
-            nextRecoveryProgress =
-                nextRecoveryProgress,
+            reserveUnits =
+                reserveUnits,
+            totalReserveProgress =
+                totalReserveProgress,
             unlimited =
                 isUnlimited(
                     context
@@ -162,26 +172,27 @@ object AttemptRepository {
             return state
         }
 
-        val pending =
-            loadPending(
-                context,
-                routeId
+        preferences(
+            context
+        )
+            .edit()
+            .putFloat(
+                PREFIX_RESERVE +
+                        routeId,
+                (
+                        state.reserveUnits -
+                                1f
+                        )
+                    .coerceAtLeast(
+                        0f
+                    )
             )
-                .filter {
-                    it > now
-                }
-                .toMutableList()
-
-        pending.add(
-            now +
-                    RECOVERY_MILLIS
-        )
-
-        savePending(
-            context,
-            routeId,
-            pending.sorted()
-        )
+            .putLong(
+                PREFIX_UPDATED_AT +
+                        routeId,
+                now
+            )
+            .apply()
 
         return getState(
             context,
@@ -217,55 +228,5 @@ object AttemptRepository {
                 KEY_UNLIMITED,
                 false
             )
-    }
-
-    private fun loadPending(
-        context: Context,
-        routeId: String
-    ): List<Long> {
-
-        val raw =
-            preferences(
-                context
-            )
-                .getString(
-                    PREFIX_PENDING +
-                            routeId,
-                    ""
-                )
-                .orEmpty()
-
-        if (
-            raw.isBlank()
-        ) {
-            return emptyList()
-        }
-
-        return raw
-            .split(",")
-            .mapNotNull {
-                it.toLongOrNull()
-            }
-            .sorted()
-    }
-
-    private fun savePending(
-        context: Context,
-        routeId: String,
-        pending: List<Long>
-    ) {
-
-        preferences(
-            context
-        )
-            .edit()
-            .putString(
-                PREFIX_PENDING +
-                        routeId,
-                pending.joinToString(
-                    ","
-                )
-            )
-            .apply()
     }
 }
