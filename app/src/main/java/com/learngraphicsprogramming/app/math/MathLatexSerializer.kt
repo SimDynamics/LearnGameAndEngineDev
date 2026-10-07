@@ -18,7 +18,14 @@ object MathLatexSerializer {
         is MathExpression.Number -> expression.value
         is MathExpression.Variable -> expression.name
         is MathExpression.Symbol -> symbols[expression.value]?.let { "$it{}" } ?: "\\mathrm{${escape(expression.value)}}"
-        is MathExpression.Operator -> when (expression.value) { "×", "·" -> "\\cdot{}"; "÷" -> "\\div{}"; "−" -> "-"; else -> expression.value }
+        is MathExpression.Operator -> when (expression.value) {
+            "×", "·" -> "\\cdot{}"
+            "÷" -> "\\div{}"
+            "−" -> "-"
+            "%" -> "\\%"
+            "nCr", "nPr" -> "\\operatorname{${expression.value}}"
+            else -> expression.value
+        }
         is MathExpression.Relation -> symbols[expression.value]?.let { "$it{}" } ?: expression.value
         is MathExpression.Fraction -> "\\frac${braces(expression.numerator)}${braces(expression.denominator)}"
         is MathExpression.Scripts -> "${braces(expression.base)}${expression.lower?.let { "_${braces(it)}" }.orEmpty()}${expression.upper?.let { "^${braces(it)}" }.orEmpty()}"

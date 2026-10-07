@@ -87,6 +87,9 @@ class MathKeyboardActionPreviewView(
             max(minimumVerticalPadding, backgroundPadding.top + breathingRoom),
             max(minimumHorizontalPadding, backgroundPadding.right + breathingRoom),
             max(minimumVerticalPadding, backgroundPadding.bottom + breathingRoom))
+        // Save portrait padding before the toolbar replaces the background for landscape.
+        // Assigning that drawable may change padding before setCompactHeight is called.
+        normalVerticalPadding = paddingTop to paddingBottom
         setTextSize(TypedValue.COMPLEX_UNIT_PX, previewTextSizePx * COMPACT_TEXT_RATIO)
     }
 

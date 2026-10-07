@@ -30,6 +30,8 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
     val model = MathExpressionModel()
     var onExpressionChanged: (() -> Unit)? = null
     var onImeAction: ((Int) -> Boolean)? = null
+    /** Lessons open their IME on touch; calculator keypads can opt into explicit opening. */
+    var showSystemKeyboardOnTouch: Boolean = true
     var keyboardShortcuts: List<String> = emptyList()
     private var expectedTemplate: MathExpression.Sequence? = null
     internal val previewTemplate: MathExpression.Sequence? get() = expectedTemplate
@@ -99,6 +101,18 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
 
     fun getLatex(): String = MathLatexSerializer.serialize(model.expression)
     fun isComplete(): Boolean = model.isComplete()
+    /** Schedules an explicit native-keyboard request without replacing the cursor or draft. */
+    fun showSystemKeyboard(): Boolean {
+        if (!isEnabled || !isAttachedToWindow || !requestFocus()) return false
+        // A button can request focus before Android has finished serving this view.
+        // Defer its explicit show until that focus handoff has reached the UI queue.
+        return post {
+            if (isEnabled && isAttachedToWindow && hasFocus() && hasWindowFocus()) {
+                (context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                    .showSoftInput(this, 0)
+            }
+        }
+    }
     fun configureExpected(source: String) {
         expectedTemplate = (MathLatexParser.parse(source) as? MathLatexParser.Result.Success)?.expression
         notifyKeyboardState()
@@ -472,14 +486,11 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
 
                     performClick()
 
-                    (
-                            context.getSystemService(
-                                Context.INPUT_METHOD_SERVICE
-                            ) as InputMethodManager
-                            ).showSoftInput(
-                            this,
-                            InputMethodManager.SHOW_IMPLICIT
-                        )
+                    if (showSystemKeyboardOnTouch) {
+                        // Lesson touches retain their existing implicit-show semantics.
+                        (context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                            .showSoftInput(this, InputMethodManager.SHOW_IMPLICIT)
+                    }
                 }
 
                 pendingTouchCursor =
@@ -1012,18 +1023,30 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
         else -> super.performAccessibilityAction(action, arguments)
     }
 
-    override fun onSaveInstanceState(): Parcelable = SavedState(super.onSaveInstanceState()).apply { draft = model.saveDraft() }
+    override fun onSaveInstanceState(): Parcelable = SavedState(super.onSaveInstanceState()).apply {
+        draft = model.saveDraft()
+        showKeyboardOnTouch = showSystemKeyboardOnTouch
+    }
     override fun onRestoreInstanceState(state: Parcelable?) {
         if (state !is SavedState) { super.onRestoreInstanceState(state); return }
         super.onRestoreInstanceState(state.superState)
+        showSystemKeyboardOnTouch = state.showKeyboardOnTouch
         model.restoreDraft(state.draft)
         refresh(false)
     }
     private class SavedState : View.BaseSavedState {
         var draft = ""
+        var showKeyboardOnTouch = true
         constructor(state: Parcelable?) : super(state)
-        constructor(parcel: Parcel) : super(parcel) { draft = parcel.readString().orEmpty() }
-        override fun writeToParcel(out: Parcel, flags: Int) { super.writeToParcel(out, flags); out.writeString(draft) }
+        constructor(parcel: Parcel) : super(parcel) {
+            draft = parcel.readString().orEmpty()
+            showKeyboardOnTouch = parcel.readInt() != 0
+        }
+        override fun writeToParcel(out: Parcel, flags: Int) {
+            super.writeToParcel(out, flags)
+            out.writeString(draft)
+            out.writeInt(if (showKeyboardOnTouch) 1 else 0)
+        }
         companion object {
             @JvmField val CREATOR = object : Parcelable.Creator<SavedState> {
                 override fun createFromParcel(source: Parcel) = SavedState(source)

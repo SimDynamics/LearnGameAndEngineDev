@@ -1,193 +1,243 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ScrollView
+    <LinearLayout
         android:id="@+id/calculator_scroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#101114"
-        android:clipToPadding="false"
-        android:fillViewport="true">
+        android:orientation="vertical">
 
         <LinearLayout
+            android:id="@+id/calculator_header"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/calculator_back"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/calculator_back"
+                android:minWidth="0dp"
+                android:padding="0dp"
+                android:text="×"
+                android:textSize="24sp" />
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
                 android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/calculator_back"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:labelFor="@+id/calculator_advanced_mode"
+                    android:text="@string/calculator_basic_mode"
+                    android:textColor="#EBEFF5"
+                    android:textSize="11sp" />
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@id/calculator_advanced_mode"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
-                    android:contentDescription="@string/calculator_back"
-                    android:minWidth="0dp"
-                    android:padding="0dp"
-                    android:text="×"
-                    android:textSize="24sp" />
-
+                    android:contentDescription="@string/calculator_basic_mode_description"
+                    app:switchMinWidth="40dp" />
                 <TextView
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:text="@string/calculator_title"
+                    android:text="@string/calculator_advanced_mode"
                     android:textColor="#EBEFF5"
-                    android:textSize="22sp"
-                    android:textStyle="bold" />
-
-                <Button
-                    android:id="@+id/calculator_angle_mode"
-                    android:layout_width="64dp"
-                    android:layout_height="48dp"
-                    android:minWidth="0dp"
-                    android:padding="0dp"
-                    android:text="@string/calculator_rad"
-                    android:textAllCaps="false" />
+                    android:textSize="11sp" />
             </LinearLayout>
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/calculator_edit_keys"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/calculator_edit_keys_description"
+                android:minWidth="0dp"
+                android:padding="0dp"
+                android:text="@string/calculator_edit_keys"
+                android:textAllCaps="false"
+                android:textSize="10sp"
+                app:icon="@drawable/ic_calculator_edit"
+                app:iconGravity="textTop"
+                app:iconPadding="0dp"
+                app:iconSize="18dp" />
+
+            <Button
+                android:id="@+id/calculator_angle_mode"
+                android:layout_width="52dp"
+                android:layout_height="48dp"
+                android:minWidth="0dp"
+                android:padding="0dp"
+                android:text="@string/calculator_rad"
+                android:textAllCaps="false"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/calculator_panels"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
             <LinearLayout
-                android:id="@+id/calculator_panels"
+                android:id="@+id/calculator_expression_panel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
                 android:orientation="vertical">
 
                 <LinearLayout
-                    android:id="@+id/calculator_expression_panel"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/calculator_input_label"
+                        android:textColor="#AEB7C6"
+                        android:textSize="13sp" />
+                    <Button
+                        android:id="@+id/calculator_native_keyboard"
+                        android:layout_width="72dp"
+                        android:layout_height="48dp"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="@string/calculator_native_keyboard"
+                        android:textAllCaps="false"
+                        android:textSize="12sp" />
+                    <Button
+                        android:id="@+id/calculator_evaluate"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:contentDescription="@string/calculator_evaluate"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="="
+                        android:textSize="23sp" />
+                    <Button
+                        android:id="@+id/calculator_paste_result"
+                        android:layout_width="72dp"
+                        android:layout_height="48dp"
+                        android:contentDescription="@string/calculator_paste_result"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="@string/calculator_paste_result"
+                        android:textAllCaps="false"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <HorizontalScrollView
+                    android:id="@+id/calculator_input_host"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:fillViewport="true" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/calculator_input_label"
-                            android:textColor="#AEB7C6"
-                            android:textSize="15sp" />
-
-                        <Button
-                            android:id="@+id/calculator_native_keyboard"
-                            android:layout_width="wrap_content"
-                            android:layout_height="48dp"
-                            android:text="@string/calculator_native_keyboard"
-                            android:textAllCaps="false"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-
-                    <HorizontalScrollView
-                        android:id="@+id/calculator_input_host"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fillViewport="true" />
-
-                    <LinearLayout
-                        android:id="@+id/calculator_ime_navigation"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-
-                        <Button
-                            android:id="@+id/calculator_ime_left"
-                            android:layout_width="0dp"
-                            android:layout_height="48dp"
-                            android:layout_weight="1"
-                            android:text="←" />
-
-                        <Button
-                            android:id="@+id/calculator_ime_right"
-                            android:layout_width="0dp"
-                            android:layout_height="48dp"
-                            android:layout_weight="1"
-                            android:text="→" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/calculator_navigation_hint"
-                        android:textColor="#AEB7C6"
-                        android:textSize="12sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/calculator_result_label"
-                            android:textColor="#AEB7C6"
-                            android:textSize="15sp" />
-
-                        <Button
-                            android:id="@+id/calculator_evaluate"
-                            android:layout_width="72dp"
-                            android:layout_height="48dp"
-                            android:contentDescription="@string/calculator_evaluate"
-                            android:minWidth="0dp"
-                            android:text="="
-                            android:textSize="23sp" />
-
-                        <Button
-                            android:id="@+id/calculator_paste_result"
-                            android:layout_width="88dp"
-                            android:layout_height="48dp"
-                            android:layout_marginStart="6dp"
-                            android:contentDescription="@string/calculator_paste_result"
-                            android:minWidth="0dp"
-                            android:text="@string/calculator_paste_result"
-                            android:textAllCaps="false"
-                            android:visibility="gone" />
-                    </LinearLayout>
-
-                    <HorizontalScrollView
-                        android:id="@+id/calculator_result_host"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fillViewport="true"
-                        android:visibility="gone" />
-
-                    <TextView
-                        android:id="@+id/calculator_error"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:accessibilityLiveRegion="polite"
-                        android:minHeight="32dp"
-                        android:text="@string/calculator_empty_result"
-                        android:textColor="#AEB7C6"
-                        android:textSize="14sp" />
+                <LinearLayout
+                    android:id="@+id/calculator_ime_navigation"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+                    <Button
+                        android:id="@+id/calculator_ime_left"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="←" />
+                    <Button
+                        android:id="@+id/calculator_ime_right"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="→" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/calculator_keypad"
+                    android:id="@+id/calculator_result_row"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:orientation="vertical" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/calculator_result_label"
+                        android:textColor="#AEB7C6"
+                        android:textSize="13sp" />
+                    <HorizontalScrollView
+                        android:id="@+id/calculator_result_host"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fillViewport="true"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/calculator_error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:accessibilityLiveRegion="polite"
+                    android:textColor="#FFA6A6"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/calculator_keypad_area"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:id="@+id/calculator_edit_scroll_controls"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:gravity="end"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+                    <Button
+                        android:id="@+id/calculator_edit_scroll_up"
+                        android:layout_width="48dp"
+                        android:layout_height="40dp"
+                        android:contentDescription="@string/calculator_scroll_keys_up"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="↑" />
+                    <Button
+                        android:id="@+id/calculator_edit_scroll_down"
+                        android:layout_width="48dp"
+                        android:layout_height="40dp"
+                        android:contentDescription="@string/calculator_scroll_keys_down"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="↓" />
+                </LinearLayout>
+                <ScrollView
+                    android:id="@+id/calculator_keypad_scroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:fillViewport="false">
+                    <LinearLayout
+                        android:id="@+id/calculator_keypad"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                </ScrollView>
             </LinearLayout>
         </LinearLayout>
-    </ScrollView>
+    </LinearLayout>
 </FrameLayout>

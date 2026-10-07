@@ -62,7 +62,25 @@ object MathLatexParser {
                     index += 2
                     continue
                 }
-                val value = scripts(atom(stop))
+                val atom = atom(stop)
+                var value = scripts(atom)
+                if (atom is MathExpression.Operator && atom.value in setOf("%", "!") && value is MathExpression.Scripts) {
+                    // In 5!^2 the exponent belongs to 5!, not to the ! glyph.
+                    // Stop at the adjacent operand; never absorb a binary operator.
+                    var start = result.size
+                    while (start > 0 && (result[start - 1] as? MathExpression.Operator)?.value in setOf("%", "!")) start--
+                    val operand = result.getOrNull(start - 1)
+                    if (operand != null && operand !is MathExpression.Operator && operand !is MathExpression.Relation &&
+                        operand !is MathExpression.LargeOperator) {
+                        start--
+                        if (operand is MathExpression.Number) {
+                            while (start > 0 && result[start - 1] is MathExpression.Number) start--
+                        }
+                        val base = result.subList(start, result.size).toList() + atom
+                        result.subList(start, result.size).clear()
+                        value = value.copy(base = MathExpression.Sequence(base))
+                    }
+                }
                 if (value is MathExpression.Sequence) result.addAll(value.children) else result.add(value)
             }
             contentContext = previousContext
@@ -93,17 +111,22 @@ object MathLatexParser {
                 '[' -> plainGroup('[', ']', MathDelimiter.BRACKETS)
                 '|' -> plainGroup('|', '|', MathDelimiter.ABSOLUTE)
                 '\\' -> command(stop)
-                '+', '-', '−', '*', '/', '×', '÷', '·' -> { index++; MathExpression.Operator(char.toString()) }
+                '+', '-', '−', '*', '/', '×', '÷', '·', '%', '!' -> { index++; MathExpression.Operator(char.toString()) }
                 '=', '<', '>', '≤', '≥', '≠', '≈', '→' -> { index++; MathExpression.Relation(char.toString()) }
-                'π', '∞', '∂', '∪', '∩', '∈', '%' -> { index++; MathExpression.Symbol(char.toString()) }
+                'π', '∞', '∂', '∪', '∩', '∈' -> { index++; MathExpression.Symbol(char.toString()) }
                 'e' -> { index++; MathExpression.Symbol("e") }
                 '}', ')', ']', '^', '_', '&' -> fail("Unexpected '$char'")
                 else -> when {
                     char.isDigit() || char == '.' && index + 1 < source.length && source[index + 1].isDigit() -> number()
                     source.startsWith("pi", index) -> { index += 2; MathExpression.Symbol("π") }
+                    source.startsWith("nCr", index) || source.startsWith("nPr", index) -> {
+                        val operator = source.substring(index, index + 3)
+                        index += 3
+                        MathExpression.Operator(operator)
+                    }
                     char.toString() in MathLatexSerializer.symbols -> { index++; MathExpression.Symbol(char.toString()) }
                     char.isLetter() -> { index++; MathExpression.Variable(char.toString()) }
-                    char == ',' || char == ':' || char == ';' || char == '!' -> { index++; MathExpression.Symbol(char.toString()) }
+                    char == ',' || char == ':' || char == ';' -> { index++; MathExpression.Symbol(char.toString()) }
                     contentContext -> { index++; MathExpression.Symbol(char.toString()) }
                     else -> fail("Unsupported character '$char'")
                 }
@@ -207,7 +230,11 @@ object MathLatexParser {
                 "begin" -> environment(readTextGroup())
                 "mathrm", "text" -> MathExpression.Symbol(readTextGroup())
                 "quad", "qquad" -> if (contentContext) MathExpression.Symbol(if (name == "quad") "\u2003" else "\u2003\u2003") else MathExpression.Sequence()
-                "operatorname" -> function(readTextGroup())
+                "operatorname" -> {
+                    val operator = readTextGroup()
+                    if (operator == "nCr" || operator == "nPr") MathExpression.Operator(operator)
+                    else function(operator)
+                }
                 "cdot", "times" -> MathExpression.Operator("×")
                 "div" -> MathExpression.Operator("÷")
                 "le", "leq" -> MathExpression.Relation("≤")
@@ -215,7 +242,7 @@ object MathLatexParser {
                 "ne", "neq" -> MathExpression.Relation("≠")
                 "to", "rightarrow" -> MathExpression.Relation("→")
                 "approx" -> MathExpression.Relation("≈")
-                "%" -> MathExpression.Symbol("%")
+                "%" -> MathExpression.Operator("%")
                 "{" -> MathExpression.Symbol("{")
                 "}" -> MathExpression.Symbol("}")
                 else -> {

@@ -75,12 +75,28 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         val end = cursor.offset
         var start = end - 1
         val previous = current.children[start]
-        if (previous is MathExpression.Number && navigationLevel == MathCursorLevel.INTERIOR) {
+        val postfix = previous is MathExpression.Operator && previous.value in setOf("%", "!")
+        if (postfix) {
+            // A postfix chain belongs to its preceding operand in this same slot,
+            // even when the caret's current atom scope is just the final glyph.
+            while (start > 0 && (current.children[start - 1] as? MathExpression.Operator)?.value in setOf("%", "!")) start--
+            val operand = current.children.getOrNull(start - 1)
+            if (operand != null && operand !is MathExpression.Operator && operand !is MathExpression.Relation &&
+                operand !is MathExpression.LargeOperator) {
+                start--
+                if (operand is MathExpression.Number) {
+                    while (start > 0 && current.children[start - 1] is MathExpression.Number) start--
+                }
+            }
+        } else if (previous is MathExpression.Number && navigationLevel == MathCursorLevel.INTERIOR) {
             val first = contentScopeBounds().first
             while (start > first && current.children[start - 1] is MathExpression.Number) start--
         }
         val selected = current.children.subList(start, end)
-        val result = if (previous is MathExpression.Number) listOf(MathExpression.Number(selected.joinToString("") { (it as MathExpression.Number).value })) else selected.toList()
+        val numberLeaves = selected.takeWhile { it is MathExpression.Number }
+        val result = if (previous is MathExpression.Number || postfix && numberLeaves.isNotEmpty()) {
+            listOf(MathExpression.Number(numberLeaves.joinToString("") { (it as MathExpression.Number).value })) + selected.drop(numberLeaves.size)
+        } else selected.toList()
         replaceSequence(cursor.path, current.copy(children = current.children.take(start) + current.children.drop(end)))
         cursor = cursor.copy(offset = start)
         return MathExpression.Sequence(result)
@@ -111,6 +127,8 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             ?: if (node !is MathExpression.Sequence) editable.firstOrNull()?.id else null
         val retainedScope = cursor.scope.takeIf { numericScope != null }
         cursor = if (slot != null) enterSlotTarget(position.path + MathCursorStep(position.offset, slot), forward = true)!!.cursor
+            else if (added.lastOrNull()?.let(::isAtomicTextNode) == true)
+                MathCursor(position.path, position.offset + added.size, MathCursorLevel.NEUTRAL, null)
             else if (added.isNotEmpty() && added.all { it.navigationChildren().isEmpty() }) MathCursor(position.path, position.offset + added.size, MathCursorLevel.INTERIOR,
                 if (editingSlot) MathContentScope.Slot else retainedScope ?:
                     MathContentScope.Atom(position.offset + added.size - 1, position.offset + added.size))
@@ -196,7 +214,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 char.isDigit() || char == '.' || char == ',' -> insertNumericCharacter(if (char == ',') "." else char.toString())
                 (char.toString() in MathLatexSerializer.symbols && char !in "≤≥≠≈→") || char == 'e' -> insert(MathExpression.Symbol(char.toString()))
                 char.isLetter() -> insert(MathExpression.Variable(char.toString()))
-                char in "+-−*/×÷·" -> insert(MathExpression.Operator(char.toString()))
+                char in "+-−*/×÷·%!" -> insert(MathExpression.Operator(char.toString()))
                 char in "=<>≤≥≠≈→" -> insert(MathExpression.Relation(char.toString()))
                 char == '(' || char == '[' || char == '|' -> {
                     val delimiter = if (char == '(') MathDelimiter.PARENTHESES else if (char == '[') MathDelimiter.BRACKETS else MathDelimiter.ABSOLUTE
@@ -715,6 +733,15 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                             sequence.children.lastIndex
                         )
 
+                    if (sequence.children.subList(start, end).all { leafText(it) != null }) {
+                        return textNavigationTarget(sequence, start, end, forward,
+                            exitLeft = { nextSemanticAfterNode(cursor.path, start) },
+                            exitRight = {
+                                val lastIndex = end - 1
+                                nodeBoundaryTarget(cursor.path, lastIndex, afterEditing = true)
+                            })
+                    }
+
                     return if (forward) {
 
                         if (
@@ -733,10 +760,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                             /*
                              * x| -> x]
                              */
-                            nodeBoundaryTarget(
-                                cursor.path,
-                                nodeIndex
-                            )
+                            nodeBoundaryTarget(cursor.path, end - 1, afterEditing = true)
                         }
 
                     } else {
@@ -1211,7 +1235,8 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
      */
     private fun nodeBoundaryTarget(
         path: List<MathCursorStep>,
-        nodeIndex: Int
+        nodeIndex: Int,
+        afterEditing: Boolean = false
     ): NavigationTarget? {
 
         val sequence =
@@ -1298,6 +1323,11 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             if (
                 node.interactionCapabilities.editable
             ) {
+
+                // An editable leaf has no border of its own. After traversing its
+                // text, advance instead of entering the same right-hand edit state.
+                // The LargeOperator-owned border above still takes precedence.
+                if (afterEditing) return previousSemanticBeforeNodeBoundary(path, nodeIndex)
 
                 return nodeEditTarget(
                     path,
@@ -2430,6 +2460,17 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             if (start == end) return@mapNotNull null
             if (start > 0 && start < text.length && Character.isHighSurrogate(text[start - 1]) && Character.isLowSurrogate(text[start])) start--
             if (end > 0 && end < text.length && Character.isHighSurrogate(text[end - 1]) && Character.isLowSurrogate(text[end])) end++
+            // Native text offsets can intersect only part of a multi-letter operator.
+            // Its semantic node must be removed as a whole, never changed into nC/n.
+            var position = 0
+            sequence.children.forEachIndexed { index, node ->
+                val nodeEnd = position + texts[index].length
+                if (isAtomicTextNode(node) && start < nodeEnd && end > position) {
+                    start = minOf(start, position)
+                    end = maxOf(end, nodeEnd)
+                }
+                position = nodeEnd
+            }
             start to end
         }.sortedBy { it.first }.forEach { interval ->
             val previous = intervals.lastOrNull()
@@ -2517,11 +2558,9 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         val scope = (cursor.scope as? MathContentScope.Atom)?.let {
             it.copy(end = maxOf(it.start, it.end + children.size - sequence.children.size))
         } ?: cursor.scope
-        cursor =
-            cursor.copy(
-                scope = scope,
-                leafTextOffset = null
-            )
+        cursor = if (scope is MathContentScope.Atom && scope.start == scope.end)
+            MathCursor(cursor.path, cursor.offset, MathCursorLevel.NEUTRAL, null)
+        else cursor.copy(scope = scope, leafTextOffset = null)
 
         selectionRange =
             null
@@ -2907,6 +2946,20 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             if (startInsidePair) start--
             if (end > 0 && end < text.length && Character.isHighSurrogate(text[end - 1]) && Character.isLowSurrogate(text[end])) end++
         }
+        var textPosition = 0
+        sequence.children.forEach { node ->
+            val nodeEnd = textPosition + (leafText(node) ?: "\uFFFC").length
+            if (isAtomicTextNode(node)) {
+                if (start == end && start > textPosition && start < nodeEnd) {
+                    start = nodeEnd
+                    end = nodeEnd
+                } else if (start < nodeEnd && end > textPosition) {
+                    start = minOf(start, textPosition)
+                    end = maxOf(end, nodeEnd)
+                }
+            }
+            textPosition = nodeEnd
+        }
         val before = mutableListOf<MathExpression>()
         val after = mutableListOf<MathExpression>()
         var removedText = false
@@ -3196,7 +3249,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 ) ?: return null
 
             val next =
-                nextTextBoundary(
+                if (isAtomicTextNode(sequence.children[nodeIndex])) text.length else nextTextBoundary(
                     text,
                     0
                 )
@@ -3256,7 +3309,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
                 ) ?: return null
 
             val previous =
-                previousTextBoundary(
+                if (isAtomicTextNode(sequence.children[nodeIndex])) 0 else previousTextBoundary(
                     text,
                     text.length
                 )
@@ -3306,6 +3359,9 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
         is MathExpression.Relation -> node.value
         else -> null
     }
+
+    private fun isAtomicTextNode(node: MathExpression): Boolean =
+        leafText(node) != null && !node.interactionCapabilities.editable
 
     private fun withLeafText(node: MathExpression, value: String): MathExpression = when (node) {
         is MathExpression.Number -> node.copy(value = value)
@@ -3574,6 +3630,12 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             nodeIndex,
             emptyList()
         )
+
+        if (isAtomicTextNode(node)) {
+            // Continue ordinary text Backspace in the preceding editable leaf,
+            // rather than retaining an empty operator scope or deleting its whole number.
+            nodeEditTarget(cursor.path, nodeIndex - 1, atRight = true)?.let { cursor = it.cursor }
+        }
 
         return true
     }
@@ -4034,7 +4096,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
             } else {
 
                 var internal =
-                    leafTextOffset.coerceIn(
+                    if (isAtomicTextNode(node) && leafTextOffset > 0) text.length else leafTextOffset.coerceIn(
                         0,
                         text.length
                     )

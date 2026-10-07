@@ -6,6 +6,75 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MathLatexTest {
+    @Test fun scriptsAfterPostfixOperatorsOwnTheirCompleteOperandAndRoundTrip() {
+        for ((source, canonicalBase) in listOf(
+            "5!^2" to "{5!}^{2}",
+            "50%^2" to "{50\\%}^{2}",
+            "5!%^2" to "{5!\\%}^{2}",
+            "2+5!^2" to "2+{5!}^{2}",
+            "2(3+1)!^2" to "2{\\left(3+1\\right)!}^{2}"
+        )) {
+            assertEquals(parse(canonicalBase), roundTrip(source))
+        }
+        val incomplete = roundTrip("2+!^2")
+        assertEquals(listOf(MathExpression.Number("2"), MathExpression.Operator("+")), incomplete.children.take(2))
+        assertEquals(parse("!").children, (incomplete.children.last() as MathExpression.Scripts).base.children)
+    }
+
+    @Test fun keypadScriptsWrapPostfixChainsWithoutAbsorbingBinaryOperatorsOrSelections() {
+        val model = MathExpressionModel()
+        for (part in listOf("2", "+", "1", "2", "%", "!", "^", "2")) assertTrue(model.insertText(part))
+        assertEquals(parse("2+{12\\%!}^{2}"), model.expression)
+        assertEquals("upper", model.cursor.path.last().slot)
+        val restored = MathExpressionModel()
+        assertTrue(restored.restoreDraft(model.saveDraft()))
+        assertEquals(model.expression, restored.expression)
+        assertEquals(model.cursor, restored.cursor)
+
+        val selected = MathExpressionModel(parse("2+5!"))
+        selected.selectAll()
+        assertTrue(selected.addScript(upper = true))
+        assertTrue(selected.insertText("2"))
+        assertEquals(parse("{2+5!}^{2}"), selected.expression)
+
+        val incomplete = MathExpressionModel()
+        for (part in listOf("2", "+", "!", "^", "2")) assertTrue(incomplete.insertText(part))
+        assertEquals(parse("2+!^2"), incomplete.expression)
+    }
+
+    @Test fun postfixPowerInsideAFractionRetainsItsSlotAndWholeSplitNumber() {
+        val model = MathExpressionModel()
+        assertTrue(model.insert(MathExpression.Fraction(MathExpression.Sequence(), parse("2")), "numerator"))
+        for (part in listOf("1", "2", "%", "^", "2")) assertTrue(model.insertText(part))
+        assertEquals(parse("\\frac{{12\\%}^{2}}{2}"), model.expression)
+        assertEquals(listOf("numerator", "upper"), model.cursor.path.map { it.slot })
+        val restored = MathExpressionModel()
+        assertTrue(restored.restoreDraft(model.saveDraft()))
+        assertEquals(model.expression, restored.expression)
+        assertEquals(model.cursor, restored.cursor)
+    }
+
+    @Test fun calculatorOperatorsPreserveSemanticNodesAndDrafts() {
+        for (source in listOf("50%+5!", "5nCr2+5nPr2", "\\arcsin{0.5}+\\arccos{0.5}+\\arctan{1}")) {
+            roundTrip(source)
+        }
+        assertEquals(parse("50%"), parse("50\\%"))
+        assertEquals(parse("5nCr2"), parse("5\\operatorname{nCr}2"))
+        val model = MathExpressionModel()
+        for (part in listOf("5", "nCr", "2", "+", "5", "!", "+", "50", "%")) {
+            assertTrue(model.insertText(part))
+        }
+        assertEquals(parse("5nCr2+5!+50%"), model.expression)
+        val draft = model.saveDraft()
+        val restored = MathExpressionModel()
+        assertTrue(restored.restoreDraft(draft))
+        assertEquals(model.expression, restored.expression)
+        assertEquals(model.cursor, restored.cursor)
+        // Older drafts used generic symbols. Their representation remains importable.
+        val legacy = MathExpression.Sequence(listOf(MathExpression.Number("50"), MathExpression.Symbol("%")))
+        assertEquals(legacy, parse(MathLatexSerializer.serialize(legacy)))
+    }
+
     private fun parse(source: String): MathExpression.Sequence {
         val result = MathLatexParser.parse(source)
         assertTrue("$source: $result", result is MathLatexParser.Result.Success)

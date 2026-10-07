@@ -8,8 +8,10 @@ import android.content.res.Configuration
 import android.graphics.Rect
 import android.os.Parcel
 import android.os.ParcelFileDescriptor
+import android.os.Parcelable
 import android.os.SystemClock
 import android.provider.Settings
+import android.util.SparseArray
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -120,14 +122,21 @@ class MathExpressionEditorDeviceTest {
                 perform(MathKeyboardAction.Backspace)
                 assertEquals("Toolbar Backspace inside an empty slot also preserves its owner", "\\frac{}{}", editor.getLatex())
                 perform(MathKeyboardAction.NextSlot)
-                assertEquals(MathCursorPresentation.ChildBoundary(listOf(MathCursorStep(0, "numerator"))), editor.model.cursorPresentation)
-                perform(MathKeyboardAction.NextSlot)
+                assertEquals("A substructure exits to its owner's border, without a child border",
+                    MathCursorPresentation.ParentBoundary(emptyList(), 0), editor.model.cursorPresentation)
+                perform(MathKeyboardAction.PreviousSlot)
+                assertEquals(MathCursor(listOf(MathCursorStep(0, "numerator")), 0), editor.model.cursor)
+                perform(MathKeyboardAction.PreviousSlot)
                 assertEquals(MathCursor(listOf(MathCursorStep(0, "denominator")), 0), editor.model.cursor)
                 perform(MathKeyboardAction.NextSlot)
-                assertEquals(MathCursorPresentation.ChildBoundary(listOf(MathCursorStep(0, "denominator"))), editor.model.cursorPresentation)
+                assertEquals("RIGHT retraces the declared substructure order",
+                    MathCursor(listOf(MathCursorStep(0, "numerator")), 0), editor.model.cursor)
                 perform(MathKeyboardAction.NextSlot)
-                assertEquals(MathCursorLevel.NEUTRAL, editor.model.navigationLevel)
                 assertEquals(MathCursorPresentation.ParentBoundary(emptyList(), 0), editor.model.cursorPresentation)
+                perform(MathKeyboardAction.NextSlot)
+                assertEquals("Whole-owner removal requires leaving the owner border for the neutral Sequence",
+                    MathCursorLevel.NEUTRAL, editor.model.navigationLevel)
+                assertEquals(MathCursor(offset = 1), editor.model.cursor)
                 perform(MathKeyboardAction.Backspace)
                 // Whole-owner removal belongs to the neutral Sequence level.
                 assertEquals("", editor.getLatex())
@@ -258,6 +267,31 @@ class MathExpressionEditorDeviceTest {
                 assertTrue(linear.requestFocus())
                 linear.onEditorAction(EditorInfo.IME_ACTION_NEXT)
                 assertTrue("IME Next moves to the structured field", formula.hasFocus())
+            }
+        }
+    }
+
+    @Test fun explicitKeyboardPolicyRestoresWithTheMathematicalDraftAndCursor() {
+        ActivityScenario.launch<LessonActivity>(intent()).use { scenario ->
+            scenario.onActivity { activity ->
+                val editor = MathExpressionEditor(activity).apply { id = View.generateViewId() }
+                assertTrue("Lesson editors keep their current touch behavior by default", editor.showSystemKeyboardOnTouch)
+                editor.showSystemKeyboardOnTouch = false
+                editor.perform(MathKeyboardAction.Fraction)
+                editor.perform(MathKeyboardAction.Symbol("12"))
+                editor.perform(MathKeyboardAction.NextSlot)
+                val draft = editor.model.saveDraft()
+                val state = SparseArray<Parcelable>()
+                editor.saveHierarchyState(state)
+
+                val restored = MathExpressionEditor(activity).apply { id = editor.id }
+                restored.restoreHierarchyState(state)
+                assertFalse("An explicit-only editor keeps that policy after view restoration", restored.showSystemKeyboardOnTouch)
+                assertEquals(draft, restored.model.saveDraft())
+                assertEquals(editor.model.expression, restored.model.expression)
+                assertEquals(editor.model.cursor, restored.model.cursor)
+                assertTrue("Explicit-only policy retains the native editing connection", restored.onCheckIsTextEditor())
+                assertNotNull(restored.onCreateInputConnection(EditorInfo()))
             }
         }
     }
@@ -458,9 +492,9 @@ class MathExpressionEditorDeviceTest {
                 }
             }
             scenario.onActivity {
-                // LEFT follows the declared numerator→denominator order through the
-                // denominator's own border, rather than using an obsolete RIGHT shortcut.
-                editor.perform(MathKeyboardAction.PreviousSlot)
+                // Fraction slots are substructures: LEFT moves directly from the empty
+                // numerator to the empty denominator, without an intermediate child border.
+                assertEquals("numerator", editor.model.cursor.path.last().slot)
                 editor.perform(MathKeyboardAction.PreviousSlot)
                 assertEquals("denominator", editor.model.cursor.path.last().slot)
                 requireNotNull(editor.onCreateInputConnection(EditorInfo())).commitText("2", 1)
@@ -519,9 +553,12 @@ class MathExpressionEditorDeviceTest {
                     "scroll=${screenBounds(scroll)}, header=${header.visibility}, progress=${progress.isShown}, " +
                     "IMEvisible=${isImeVisible(activity)}, toolbar=${screenBounds(toolbar)}, " +
                     "toolbarAttached=${toolbar.isAttachedToWindow}, toolbarVisibility=${toolbar.visibility}, " +
+                    "normalToolbarHeight=$normalToolbarHeight, toolbarMeasuredHeight=${toolbar.measuredHeight}, " +
+                    "toolbarLayoutRequested=${toolbar.isLayoutRequested}, " +
                     "focus=${editor.hasFocus()}, currentFocus=${activity.currentFocus}, losses=$focusLosses"
                 isImeVisible(activity) && header.visibility == View.VISIBLE && progress.isShown &&
-                    toolbar.isAttachedToWindow && toolbar.visibility == View.VISIBLE
+                    toolbar.isAttachedToWindow && toolbar.visibility == View.VISIBLE &&
+                    toolbar.height == normalToolbarHeight && !toolbar.isLayoutRequested
             }
             scenario.onActivity { activity ->
                 assertTrue("The original structured field keeps focus when returning to portrait", editor.hasFocus())

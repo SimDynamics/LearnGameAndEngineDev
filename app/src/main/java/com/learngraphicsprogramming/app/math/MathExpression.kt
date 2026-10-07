@@ -483,7 +483,7 @@ val MathExpression.interactionCapabilities: MathInteractionCapabilities
             is MathExpression.Relation ->
                 MathInteractionCapabilities(
                     editable = false,
-                    selectable = false,
+                    selectable = true,
                     deletable = true
                 )
 
