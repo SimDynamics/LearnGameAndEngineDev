@@ -176,6 +176,15 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
+
+    /*
+     * Google Play Billing.
+     *
+     * Se utilizará para Premium mediante
+     * una compra única permanente.
+     */
+    implementation("com.android.billingclient:billing:9.1.0")
+
     testImplementation(libs.junit)
     // Android's org.json is a stub in local JVM tests; use its standalone implementation.
     testImplementation("org.json:json:20240303")
