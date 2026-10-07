@@ -28,6 +28,11 @@ class UnitActivity : AppCompatActivity() {
                 R.id.buttonBack
             )
 
+        val buttonHome =
+            findViewById<ImageButton>(
+                R.id.buttonHome
+            )
+
         val buttonUnitSettings =
             findViewById<ImageButton>(
                 R.id.buttonUnitSettings
@@ -91,6 +96,27 @@ class UnitActivity : AppCompatActivity() {
         buttonBack.setOnClickListener {
 
             finish()
+        }
+
+        buttonHome.setOnClickListener {
+
+            NavigationStateRepository.saveRoutes(
+                this
+            )
+
+            val intent =
+                Intent(
+                    this,
+                    MainActivity::class.java
+                )
+
+            intent.flags =
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+            startActivity(
+                intent
+            )
         }
 
         buttonUnitSettings.setOnClickListener {
