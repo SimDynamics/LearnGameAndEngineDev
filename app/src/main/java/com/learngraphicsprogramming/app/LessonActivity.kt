@@ -680,6 +680,34 @@ class LessonActivity : AppCompatActivity() {
                     currentRouteId
                 )
 
+        /*
+         * PREMIUM:
+         *
+         * Conservamos el corazón y el símbolo ∞,
+         * pero ocultamos el porcentaje de
+         * recuperación y desactivamos su panel.
+         */
+        if (
+            attemptState.unlimited
+        ) {
+
+            textAttemptPercent.visibility =
+                View.GONE
+
+            attemptIndicator.isClickable =
+                false
+
+            attemptDetailsPopup?.dismiss()
+
+        } else {
+
+            textAttemptPercent.visibility =
+                View.VISIBLE
+
+            attemptIndicator.isClickable =
+                true
+        }
+
         val attemptColor =
             AppearanceSettingsRepository
                 .getRouteAccentColor(
@@ -863,6 +891,19 @@ class LessonActivity : AppCompatActivity() {
     }
 
     private fun toggleAttemptDetails() {
+
+        /*
+         * Premium no necesita mostrar
+         * información de recuperación.
+         */
+        if (
+            PremiumRepository.isPremium(this)
+        ) {
+
+            attemptDetailsPopup?.dismiss()
+
+            return
+        }
 
         val currentPopup =
             attemptDetailsPopup
