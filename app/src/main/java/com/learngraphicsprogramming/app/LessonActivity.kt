@@ -47,6 +47,10 @@ import com.learngraphicsprogramming.app.math.MathPuzzleTypes
 import com.learngraphicsprogramming.app.math.MathTextScaleAware
 import com.learngraphicsprogramming.app.math.MathInputFocusOrder
 import com.learngraphicsprogramming.app.math.MathKeyboardHost
+import com.learngraphicsprogramming.app.narration.LessonNarrationController
+import com.learngraphicsprogramming.app.narration.LessonNarrationControls
+import com.learngraphicsprogramming.app.narration.LessonNarrationText
+import com.learngraphicsprogramming.app.narration.NarrationSettingsRepository
 import com.learngraphicsprogramming.app.math.MathTextRenderer
 import com.learngraphicsprogramming.app.math.MathDevelopmentMode
 import com.learngraphicsprogramming.app.math.MathExpressionEditor
@@ -354,6 +358,52 @@ class LessonActivity : AppCompatActivity() {
 
     private var mathKeyboardHost: MathKeyboardHost? = null
 
+    private var narrationController: LessonNarrationController? = null
+    private var narrationControls: LessonNarrationControls? = null
+
+    private fun setupLessonNarration() {
+        narrationController = LessonNarrationController(
+            this,
+            onState = { playing -> narrationControls?.refresh(playing) },
+            onError = { message -> Toast.makeText(this, message, Toast.LENGTH_LONG).show() }
+        )
+        narrationControls = LessonNarrationControls(
+            this,
+            onListen = {
+                if (::lessonJson.isInitialized) {
+                    val language = com.learngraphicsprogramming.app.narration.NarrationLanguage.forLesson(
+                        lessonJson, currentPage, NarrationSettingsRepository.get(this).language)
+                    narrationController?.toggle(
+                        LessonNarrationText.page(lessonJson, currentPage, language), language
+                    )
+                }
+            },
+            onRateChanged = { narrationController?.settingsChanged() },
+            onSeek = { seconds -> narrationController?.seekBy(seconds) },
+            onRestart = {
+                if (narrationController?.hasNarration == true) narrationController?.restart()
+                else if (::lessonJson.isInitialized) {
+                    val language = com.learngraphicsprogramming.app.narration.NarrationLanguage.forLesson(
+                        lessonJson, currentPage, NarrationSettingsRepository.get(this).language)
+                    narrationController?.toggle(LessonNarrationText.page(lessonJson, currentPage, language), language)
+                }
+            }
+        )
+        updateNarrationVisibility()
+    }
+
+    private fun updateNarrationVisibility() {
+        val enabled = NarrationSettingsRepository.get(this).enabled
+        narrationControls?.setVisible(enabled && !keyboardVisible && programmingImeAnimations.isEmpty() &&
+            mathKeyboardHost?.isKeyboardVisible != true && !compilerFullscreenActive &&
+            !exerciseFullscreenActive && hasWindowFocus())
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        updateNarrationVisibility()
+    }
+
     private var touchStartX = 0f
     private var touchStartY = 0f
 
@@ -375,6 +425,9 @@ class LessonActivity : AppCompatActivity() {
 
     override fun onDestroy() {
 
+        narrationController?.close()
+        narrationControls?.close()
+
         attemptDetailsPopup?.dismiss()
 
         mathKeyboardHost?.close()
@@ -386,6 +439,7 @@ class LessonActivity : AppCompatActivity() {
         super.onConfigurationChanged(newConfig)
         mathKeyboardHost?.onConfigurationChanged()
         updateProgrammingKeyboardBarVisibility()
+        updateNarrationVisibility()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -545,6 +599,8 @@ class LessonActivity : AppCompatActivity() {
                 "lessonId"
             ) ?: return
 
+        setupLessonNarration()
+
         appliedContentTextScale =
             LessonTextSizeSettingsRepository
                 .getEffectiveScale(
@@ -631,6 +687,10 @@ class LessonActivity : AppCompatActivity() {
     override fun onResume() {
 
         super.onResume()
+
+        narrationController?.settingsChanged()
+        narrationControls?.refresh(narrationController?.isPlaying == true)
+        updateNarrationVisibility()
 
         AppearanceUi.applyRoute(
             this,
@@ -1592,6 +1652,7 @@ class LessonActivity : AppCompatActivity() {
     }
 
     private fun updateProgrammingKeyboardBarVisibility() {
+        updateNarrationVisibility()
         if (!::programmingKeyboardBar.isInitialized) return
         val shouldShow =
             (keyboardVisible || programmingImeAnimations.isNotEmpty()) &&
@@ -3481,6 +3542,8 @@ class LessonActivity : AppCompatActivity() {
 
 
     override fun onPause() {
+
+        narrationController?.stop()
 
         findViewById<View>(
             R.id.attemptIndicator
@@ -9014,6 +9077,8 @@ class LessonActivity : AppCompatActivity() {
             compilerFullscreenActive =
                 true
 
+            updateNarrationVisibility()
+
             normalTopBarVisibility =
                 lessonTopBar.visibility
 
@@ -9116,6 +9181,8 @@ class LessonActivity : AppCompatActivity() {
 
             compilerFullscreenActive =
                 false
+
+            updateNarrationVisibility()
 
             /*
              * Recuperamos exactamente la visibilidad
@@ -10526,6 +10593,8 @@ class LessonActivity : AppCompatActivity() {
     }
 
     private fun renderCurrentPage() {
+
+        narrationController?.stop()
 
         lessonContent.removeAllViews()
 
@@ -13473,6 +13542,8 @@ class LessonActivity : AppCompatActivity() {
         exerciseFullscreenActive =
             true
 
+        updateNarrationVisibility()
+
         exerciseFullscreenUsesKeyboard =
             usesKeyboard
 
@@ -13793,6 +13864,8 @@ class LessonActivity : AppCompatActivity() {
 
         exerciseFullscreenActive =
             false
+
+        updateNarrationVisibility()
 
         exerciseFullscreenUsesKeyboard =
             false

@@ -1,0 +1,21 @@
+Misaki English G2P and English US/GB gold and silver dictionaries
+Copyright: hexgrad and Misaki contributors
+Source: https://github.com/hexgrad/misaki
+Pinned revision: fba1236595f2d2bf21d414ba6e57d25256afada3
+License: Apache License, Version 2.0; full text is included in LICENSE.txt.
+
+The Android adaptation ports Misaki's dictionary lookup, morphology, stress and
+right-to-left phonetic context to Kotlin. Dictionaries are optional installed
+language resources, not included in the base APK. Their exact sizes and SHA-256
+digests are recorded in EnglishMisakiResources.
+
+The native adaptation uses the original spaCy part-of-speech frontend and
+PeterReid US/GB BART fallback models, converted locally to full float32 ONNX.
+These resources are optional installations, not bundled into the base APK.
+Their separate MIT and Apache 2.0 notices are available in the reading licenses
+screen; static SHA-256 digests are recorded in EnglishAuxResources.
+
+No eSpeak NG, phonemizer-fork or num2words is distributed by this adaptation.
+Number expansion is independently implemented. Missing resources or unsupported
+input produce a controlled error and use the existing Android TextToSpeech
+alternative. The production runtime does not require Python or spaCy binaries.

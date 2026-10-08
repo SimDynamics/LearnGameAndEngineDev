@@ -89,6 +89,10 @@ class MathKeyboardHost private constructor(
 
     private var imeVisible = false
 
+    /** Share the existing IME/toolbar observation with lesson overlays. */
+    val isKeyboardVisible: Boolean
+        get() = imeVisible || runningImeAnimations.isNotEmpty() || popup?.isShowing == true
+
     private var paddedScroll:
             ScrollView? = null
 

@@ -17,9 +17,12 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
+import com.learngraphicsprogramming.app.narration.NarrationOptionsSection
 
 
 class OptionsActivity : AppCompatActivity() {
+
+    private var narrationOptions: NarrationOptionsSection? = null
 
     /*
      * Actualiza la interfaz cuando Google Play
@@ -49,6 +52,8 @@ class OptionsActivity : AppCompatActivity() {
         setContentView(
             R.layout.activity_options
         )
+
+        narrationOptions = NarrationOptionsSection(this)
 
         val buttonBack =
             findViewById<Button>(
@@ -2213,6 +2218,8 @@ class OptionsActivity : AppCompatActivity() {
 
         super.onResume()
 
+        narrationOptions?.onResume()
+
         AppearanceUi.apply(
             this
         )
@@ -2222,6 +2229,8 @@ class OptionsActivity : AppCompatActivity() {
 
     override fun onStop() {
 
+        narrationOptions?.onStop()
+
         getSharedPreferences(
             "premium_state",
             MODE_PRIVATE
@@ -2230,5 +2239,10 @@ class OptionsActivity : AppCompatActivity() {
         )
 
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        narrationOptions?.close()
+        super.onDestroy()
     }
 }
