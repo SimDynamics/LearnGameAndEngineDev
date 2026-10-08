@@ -2,6 +2,9 @@ package com.learngraphicsprogramming.app
 
 import android.app.Activity
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
@@ -50,16 +53,84 @@ object PremiumBillingManager {
                     billingResult,
                     purchases ->
 
-                if (
-                    billingResult.responseCode ==
-                    BillingClient.BillingResponseCode.OK
+                when (
+                    billingResult.responseCode
                 ) {
 
-                    processPurchases(
-                        context,
-                        purchases
-                            ?: emptyList()
-                    )
+                    BillingClient.BillingResponseCode.OK -> {
+
+                        /*
+                         * Detectamos pagos pendientes.
+                         * Todavía no activan Premium.
+                         */
+                        val pendingPremium =
+                            purchases.orEmpty().any {
+                                    purchase ->
+
+                                purchase.products.contains(
+                                    PREMIUM_PRODUCT_ID
+                                ) &&
+                                        purchase.purchaseState ==
+                                        Purchase.PurchaseState.PENDING
+                            }
+
+                        if (
+                            pendingPremium
+                        ) {
+
+                            Handler(
+                                Looper.getMainLooper()
+                            ).post {
+
+                                Toast.makeText(
+                                    context.applicationContext,
+                                    "El pago está pendiente. Premium se activará cuando Google Play lo confirme.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+
+                        /*
+                         * Consultamos las compras reales
+                         * antes de actualizar Premium.
+                         */
+                        refreshPurchases(
+                            context.applicationContext
+                        )
+                    }
+
+                    BillingClient.BillingResponseCode.USER_CANCELED -> {
+
+                        /*
+                         * El usuario canceló la compra.
+                         * No modificamos su estado Premium.
+                         */
+                    }
+
+                    BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
+
+                        /*
+                         * Google Play indica que el usuario
+                         * ya posee el producto.
+                         */
+                        refreshPurchases(
+                            context.applicationContext
+                        )
+                    }
+
+                    else -> {
+
+                        Handler(
+                            Looper.getMainLooper()
+                        ).post {
+
+                            Toast.makeText(
+                                context.applicationContext,
+                                "No se pudo completar la operación en Google Play.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
                 }
             }
 
@@ -125,8 +196,14 @@ object PremiumBillingManager {
         ) {
 
             connect(
-                activity
+                activity.applicationContext
             )
+
+            Toast.makeText(
+                activity,
+                "Google Play todavía no está disponible. Inténtalo nuevamente en un momento.",
+                Toast.LENGTH_LONG
+            ).show()
 
             return
         }
@@ -165,6 +242,49 @@ object PremiumBillingManager {
         ) {
                 billingResult,
                 queryResult ->
+
+            /*
+             * Google Play no pudo consultar
+             * los detalles del producto.
+             */
+            if (
+                billingResult.responseCode !=
+                BillingClient.BillingResponseCode.OK
+            ) {
+
+                activity.runOnUiThread {
+
+                    Toast.makeText(
+                        activity,
+                        "No se pudo consultar Premium en Google Play. Inténtalo nuevamente.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+
+                return@queryProductDetailsAsync
+            }
+
+            /*
+             * La consulta funcionó, pero
+             * premium_lifetime no está disponible.
+             */
+            if (
+                queryResult.productDetailsList.none {
+                    it.productId == PREMIUM_PRODUCT_ID
+                }
+            ) {
+
+                activity.runOnUiThread {
+
+                    Toast.makeText(
+                        activity,
+                        "Premium todavía no está disponible en Google Play.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+
+                return@queryProductDetailsAsync
+            }
 
             if (
                 billingResult.responseCode ==
@@ -235,10 +355,31 @@ object PremiumBillingManager {
                                     )
                                     .build()
 
-                            client.launchBillingFlow(
-                                activity,
-                                billingFlowParams
-                            )
+                            /*
+                             * Intentamos abrir la pantalla
+                             * de compra de Google Play.
+                             *
+                             * Si Google Play rechaza iniciar
+                             * la operación, informamos
+                             * al usuario.
+                             */
+                            val launchResult =
+                                client.launchBillingFlow(
+                                    activity,
+                                    billingFlowParams
+                                )
+
+                            if (
+                                launchResult.responseCode !=
+                                BillingClient.BillingResponseCode.OK
+                            ) {
+
+                                Toast.makeText(
+                                    activity,
+                                    "No se pudo iniciar la compra Premium. Inténtalo nuevamente.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
                         }
                     }
                 }
