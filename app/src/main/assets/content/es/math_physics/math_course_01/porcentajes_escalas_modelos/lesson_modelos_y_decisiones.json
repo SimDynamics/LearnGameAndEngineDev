@@ -1,0 +1,308 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__modelos_y_decisiones",
+  "title": "Modelos numéricos para decidir",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una cuenta comienza con una elección"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un modelo numérico representa una situación con cantidades y relaciones que decidimos conservar. No contiene todos sus detalles. Si usamos distancia = velocidad×tiempo, necesitamos saber qué significa la velocidad: puede ser constante, o una velocidad media correspondiente al intervalo completo. La fórmula no elimina las paradas ni convierte cualquier velocidad indicada en un promedio correcto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Llamemos d a una distancia en kilómetros, v a una velocidad en kilómetros por hora y t a un tiempo en horas. La abreviatura \\(d=v\\times t\\) permite comprobar unidades y elegir la operación. A 12 km/h durante 0,75 h se recorren 9 km si el ritmo es constante. Para recorrer 9 km a ese ritmo, el tiempo es 9/12 = 0,75 h, o 45 minutos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de calcular, separa los datos de los supuestos. «Hay 30 participantes» puede ser un dato. «Cada persona beberá 0,4 litros» puede ser una estimación de consumo. Multiplicar da una previsión que depende de esa estimación. Si quieres reserva, explica cómo se define: un porcentaje del consumo previsto no es lo mismo que un número fijo de botellas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar un presupuesto y una mezcla"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para planificar agua para 30 personas con 0,4 L por persona, el consumo previsto es 12 L. Si la reserva es el 25% de esa previsión, hace falta 12×1,25 = 15 L. Con recipientes de 2 L, siete aportan 14 y no alcanzan; se necesitan ocho, aunque eso entregue 16. Una cantidad continua calculada puede convertirse en una decisión sobre objetos enteros."
+        },
+        {
+          "type": "paragraph",
+          "text": "En un modelo ideal de mezcla podemos suponer que los volúmenes se suman sin contracción. Si se combinan 2 L de solución con 10% de un componente y 3 L con 20%, hay 0,2 L y 0,6 L de componente, para un total de 0,8 L en 5 L. El porcentaje final es 16%. No es el promedio simple 15% porque las cantidades mezcladas no son iguales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esa cuenta también supone que el componente se conserva y que todos los porcentajes son de volumen. Si ocurre una reacción, los porcentajes son de masa o los volúmenes no se suman, hace falta otro modelo. Declarar el supuesto limita la conclusión: un resultado puede ser correcto dentro de un modelo sin describir con exactitud todos los casos reales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al comparar decisiones, usa la misma necesidad. Si compras recipientes de tamaño distinto, compara la cantidad disponible y el pago total para satisfacer el objetivo. El menor precio por litro puede exigir un pago mayor o dejar sobrante. Revisa también la precisión: un resultado aproximado debe comunicar su margen, mientras que comprar ocho botellas es una decisión exacta bajo los datos elegidos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "movimiento",
+          "prompt": "Una bicicleta mantiene 16 km/h durante 45 minutos, sin paradas. Calcula la distancia y elige la conversión de tiempo que permite usar la velocidad dada.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "d",
+              "type": "math_numeric_input",
+              "label": "Distancia",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "12"
+              },
+              "unit": "km",
+              "calculator": true
+            },
+            {
+              "id": "tiempo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "45 h"
+                },
+                {
+                  "id": "b",
+                  "label": "0,75 h"
+                },
+                {
+                  "id": "c",
+                  "label": "0,45 h"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "45/60 = 0,75 h y 16×0,75 = 12 km. Las unidades de tiempo deben coincidir.",
+            "incorrect": "0,45 h trata los minutos como centésimos de hora; 45 h omite la conversión. Una hora tiene sesenta minutos, no cien."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir con los datos disponibles"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reserva",
+          "prompt": "Se prevén 0,5 L de agua por persona para 24 personas, más una reserva de 20% sobre el consumo previsto. Los envases contienen 2 L y solo se compran enteros. Calcula litros necesarios y número mínimo de envases.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "litros",
+              "type": "math_numeric_input",
+              "label": "Litros con reserva",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "14.4"
+              },
+              "unit": "L",
+              "calculator": true
+            },
+            {
+              "id": "envases",
+              "type": "math_numeric_input",
+              "label": "Envases completos",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El consumo previsto es 12 L; con reserva son 14,4 L. Siete envases aportan 14 L y ocho 16 L, por eso hacen falta ocho.",
+            "incorrect": "La reserva se aplica a 12 L. El cociente 14,4/2 = 7,2 no es una compra de envases enteros; hay que elegir el entero que cubra la necesidad."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mezcla",
+          "prompt": "Modelo ideal: los volúmenes se suman y el componente se conserva. Se mezclan 3 L de una solución al 10% en volumen y 2 L al 25%. Calcula los litros de componente y su porcentaje en la mezcla total.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "componente",
+              "type": "math_numeric_input",
+              "label": "Litros de componente",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "0.8"
+              },
+              "unit": "L",
+              "calculator": true
+            },
+            {
+              "id": "porcentaje",
+              "type": "math_numeric_input",
+              "label": "Porcentaje final",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "16"
+              },
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "Hay 3×0,10 + 2×0,25 = 0,8 L de componente. El total es 5 L: 0,8/5 = 16%.",
+            "incorrect": "El promedio simple de 10% y 25% es 17,5%, pero los volúmenes no son iguales. Calcula cantidades de componente y después compáralas con el total supuesto."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "supuesto",
+          "prompt": "Se propone usar una tabla de tiempo y producción para predecir cuántas piezas estarán listas al final de un turno. ¿Qué información justifica mejor extender una tasa constante?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "condicion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La máquina mantiene el mismo rendimiento y no hay pausas ni cambios de material."
+                },
+                {
+                  "id": "b",
+                  "label": "El último número de la tabla es mayor que el primero."
+                },
+                {
+                  "id": "c",
+                  "label": "Toda tabla con dos columnas es proporcional."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Mantener rendimiento y condiciones permite extender el mismo número de piezas por unidad de tiempo.",
+            "incorrect": "Que la producción aumente no prueba una tasa constante. Dos columnas solo organizan datos; no determinan qué relación siguen."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "compra",
+          "prompt": "Necesitas al menos 7 L. A vende envases de 2 L por 30 pesos; B vende envases de 3 L por 42 pesos. Se compran envases enteros y la calidad es comparable. Calcula el pago mínimo con cada oferta y elige el menor pago para cumplir la necesidad.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Pago con A",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "120"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "b",
+              "type": "math_numeric_input",
+              "label": "Pago con B",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "126"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "elegir",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Oferta A"
+                },
+                {
+                  "id": "b",
+                  "label": "Oferta B"
+                },
+                {
+                  "id": "igual",
+                  "label": "Mismo pago"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A requiere cuatro envases: 8 L y 120 pesos. B requiere tres: 9 L y 126 pesos. A satisface la necesidad con menor pago.",
+            "incorrect": "B tiene menor precio por litro, pero su tamaño obliga a comprar nueve litros. Tres envases A solo dan seis litros; dos B también. Compara compras que sí cubren siete."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "precision",
+          "prompt": "Una cinta de 10 m se divide en 6 tramos iguales, sin pérdida en los cortes. Aproxima la longitud de cada tramo en metros con error absoluto máximo de 0,005 m. La calculadora ayuda a comprobar tu precisión.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tramo",
+              "type": "math_numeric_input",
+              "label": "Longitud de un tramo",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "tolerance",
+                "expected": "5/3",
+                "tolerance": 0.005
+              },
+              "unit": "m",
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "Cada tramo mide exactamente 10/6 = 5/3 m. Una aproximación válida es 1,67 m, cuyo error es menor que 0,005 m.",
+            "incorrect": "1,6 m se aparta más de 0,005 m. No conviertas un decimal cortado en igualdad exacta. Divide el total entre seis y comprueba la cercanía al valor exacto."
+          }
+        }
+      ]
+    }
+  ]
+}

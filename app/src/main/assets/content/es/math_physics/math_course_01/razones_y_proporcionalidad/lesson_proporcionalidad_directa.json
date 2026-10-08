@@ -1,0 +1,318 @@
+{
+  "id": "math_course_01__razones_y_proporcionalidad__proporcionalidad_directa",
+  "title": "Proporcionalidad directa: tablas y gráficas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lo que permanece constante"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un rollo uniforme tiene masa de 3 gramos por metro. Para 2 metros la masa es 6 gramos; para 5 metros, 15. En cada caso dividimos masa entre longitud y obtenemos 3 g/m. Decimos que la masa es directamente proporcional a la longitud cuando esa tasa permanece constante. Si multiplicamos la longitud por un factor, la masa se multiplica por el mismo factor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Llamemos x a la longitud en metros e y a la masa en gramos. Estas letras son abreviaturas de cantidades, no objetos nuevos. La relación se escribe \\(y=3x\\). El número 3 es el factor que permite pasar de una cantidad a la otra. También puede encontrarse y con una tasa unitaria o con un factor entre dos filas de una tabla; ambos procedimientos conservan la misma relación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprobar dos filas no garantiza que todas las situaciones reales sigan una ley. Aquí el rollo es uniforme y no se añade embalaje a la masa. Si un problema afirma una proporcionalidad, podemos usarla dentro de sus condiciones. Si solo entrega datos, buscamos la razón constante y examinamos si existe una explicación que permita mantenerla."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Aprender a leer una gráfica"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una gráfica cartesiana hay un eje horizontal y uno vertical. Para este ejemplo, el horizontal mide metros y el vertical gramos. Un punto se escribe (x,y): primero se lee la cantidad horizontal y luego la vertical. El punto (2,6) significa que 2 metros tienen masa de 6 gramos. Para localizarlo, avanza hasta 2 en el eje horizontal y sube hasta 6 en el vertical."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los puntos de una proporcionalidad directa se alinean en una recta que pasa por el origen (0,0), porque cero metros aportan cero gramos. Pasar por el origen es una característica necesaria, pero un punto aislado en el origen no basta: debe mantenerse una recta con el mismo factor. Una curva también podría pasar por el origen sin representar proporcionalidad directa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un envío que cobra 4 pesos fijos y 2 pesos por kilogramo cuesta 8 pesos por 2 kg y 12 por 4 kg. El peso se duplicó, pero el precio no. El cociente precio/peso cambia y con cero kilogramos la fórmula da 4. Su gráfica es una recta, pero no pasa por el origen. Que una gráfica sea recta no basta para llamarla proporcional."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tablarollo",
+          "prompt": "Otro material uniforme pesa 4 g por metro y no incluye embalaje. Completa las masas de las longitudes indicadas. Comprueba el factor en cada fila.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "masas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "medio",
+                  "type": "numeric",
+                  "label": "Masa de 0,5 m"
+                },
+                {
+                  "id": "tres",
+                  "type": "numeric",
+                  "label": "Masa de 3 m"
+                },
+                {
+                  "id": "seis",
+                  "type": "numeric",
+                  "label": "Masa de 6 m"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "medio": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "tres": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "seis": {
+                    "type": "numeric",
+                    "expected": "24"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada masa es cuatro veces el número de metros: 2, 12 y 24 gramos. Al dividir por su longitud, las tres filas dan 4 g/m.",
+            "incorrect": "No sumes cuatro gramos a cada longitud. Una tasa por metro indica multiplicación. El factor también funciona para fracciones de metro."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Representar y distinguir relaciones"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "puntolectura",
+          "prompt": "La gráfica relaciona metros, en horizontal, y gramos, en vertical. Observa el punto marcado y responde: ¿qué masa corresponde a la longitud 3 m? La etiqueta usa el orden (metros, gramos).",
+          "representations": [
+            {
+              "type": "math_coordinate_graph",
+              "mode": "point",
+              "bounds": {
+                "xMin": 0,
+                "xMax": 5,
+                "yMin": 0,
+                "yMax": 16
+              },
+              "gridStep": 1,
+              "snap": 1,
+              "points": [
+                {
+                  "x": 3,
+                  "y": 12
+                }
+              ],
+              "showLabels": true
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "masa",
+              "type": "math_numeric_input",
+              "label": "Masa",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "12"
+              },
+              "unit": "g"
+            }
+          ],
+          "feedback": {
+            "correct": "El punto (3,12) indica 3 m y 12 g. La coordenada vertical responde a la masa.",
+            "incorrect": "No inviertas las coordenadas: el 3 corresponde al eje horizontal y representa longitud. Primero identifica qué mide cada eje."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construirrecta",
+          "prompt": "Construye la recta para un material que pesa 2 g por metro. El eje horizontal representa metros y el vertical gramos. Mueve los dos puntos a posiciones diferentes que cumplan la relación; puedes usar cero metros y otra longitud.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recta",
+              "type": "math_coordinate_graph_builder",
+              "mode": "line",
+              "bounds": {
+                "xMin": 0,
+                "xMax": 6,
+                "yMin": 0,
+                "yMax": 12
+              },
+              "gridStep": 1,
+              "snap": 1,
+              "showLabels": true,
+              "points": [
+                {
+                  "x": 1,
+                  "y": 1,
+                  "draggable": true
+                },
+                {
+                  "x": 3,
+                  "y": 3,
+                  "draggable": true
+                }
+              ],
+              "validator": {
+                "type": "coordinates",
+                "mode": "line",
+                "expected": [
+                  {
+                    "x": 0,
+                    "y": 0
+                  },
+                  {
+                    "x": 4,
+                    "y": 8
+                  }
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La recta tiene dos gramos por metro y pasa por el origen. Por ejemplo, (0,0) y (4,8) la determinan.",
+            "incorrect": "Los puntos deben ser distintos y cada coordenada vertical debe ser el doble de la horizontal. Una recta paralela desplazada conserva incrementos, pero no la razón masa/longitud."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegirmodelo",
+          "prompt": "Selecciona todas las tablas compatibles con proporcionalidad directa entre x e y. Las cantidades son positivas y cada tabla describe su propia situación.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tablas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "x: 1; 2; 4. y: 5; 10; 20."
+                },
+                {
+                  "id": "b",
+                  "label": "x: 1; 2; 4. y: 5; 7; 11."
+                },
+                {
+                  "id": "c",
+                  "label": "x: 2; 3; 6. y: 3; 4,5; 9."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A mantiene y/x = 5. C mantiene y/x = 1,5: sus valores de y son 3; 4,5; 9.",
+            "incorrect": "B aumenta dos unidades de y por cada unidad de x, pero tiene un cargo inicial de tres; sus cocientes cambian. En C, cada valor de y es 1,5 veces su correspondiente valor de x."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cargofijo",
+          "prompt": "Un servicio cobra 6 pesos fijos más 3 pesos por paquete. Dos paquetes cuestan 12 pesos. Calcula el costo de seis paquetes y elige la justificación correcta.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "costo",
+              "type": "math_numeric_input",
+              "label": "Costo",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "24"
+              },
+              "unit": "pesos"
+            },
+            {
+              "id": "razon",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Se multiplica 12 por 3 porque se triplican los paquetes."
+                },
+                {
+                  "id": "b",
+                  "label": "Se conserva el cargo fijo y se calculan 3 pesos por cada paquete."
+                },
+                {
+                  "id": "c",
+                  "label": "El precio es directamente proporcional porque aumenta."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Seis paquetes cuestan 6+3×6 = 24. Solo el costo variable se triplica; el cargo fijo se paga una vez.",
+            "incorrect": "36 pesos triplica también el cargo fijo. Aumentar no basta para ser proporcional. Comprueba qué costo daría el modelo con cero paquetes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "receta",
+          "prompt": "Para 5 porciones de una receta se utilizan 2/3 L de caldo. Se mantiene la composición y el tamaño de las porciones. ¿Cuánto caldo hace falta para 12 porciones? Acepta cualquier valor exacto equivalente.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "caldo",
+              "type": "math_numeric_input",
+              "label": "Caldo",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8/5"
+              },
+              "unit": "L"
+            }
+          ],
+          "feedback": {
+            "correct": "Cada porción requiere 2/15 L. Para doce son 24/15 = 8/5 L = 1,6 L.",
+            "incorrect": "La cantidad de porciones cambia por el factor 12/5: multiplica 2/3 por ese factor. No añadas siete litros por el aumento de siete porciones. Mantener el tamaño de porción es el supuesto decisivo."
+          }
+        }
+      ]
+    }
+  ]
+}

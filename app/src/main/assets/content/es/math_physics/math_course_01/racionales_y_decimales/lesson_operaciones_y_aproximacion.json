@@ -1,0 +1,278 @@
+{
+  "id": "math_course_01__racionales_y_decimales__operaciones_y_aproximacion",
+  "title": "Operaciones, redondeo y error de aproximación",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valor exacto y valor redondeado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una cuenta exacta conserva el número. Una aproximación lo sustituye por otro cercano para comunicarlo o trabajar con él. Siete doceavos son exactamente 7/12; su decimal continúa, y 0,58 es una aproximación. Usa el signo igual para equivalencias exactas y el signo ≈ cuando cambias el valor por uno próximo. Esa diferencia permite revisar si la precisión alcanza para la pregunta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Redondear a centésimas significa escoger el múltiplo de 0,01 más cercano. Para 2/7 = 0,285714…, los candidatos vecinos son 0,28 y 0,29. El número está más cerca de 0,29, que es su redondeo a centésimas. Mirar la tercera cifra, cinco, ayuda a decidir subir la segunda. En un empate exacto usaremos la convención de redondear cinco hacia arriba para valores positivos."
+        },
+        {
+          "type": "paragraph",
+          "text": "No es lo mismo pedir «el redondeo a centésimas» que pedir «una aproximación con cierto error máximo». La primera consigna determina un valor concreto, aunque pueda escribirse como 0,29 o 29/100. La segunda puede aceptar varios valores distintos si todos están suficientemente cerca. Debes leer qué condición se pide antes de decidir cuántos dígitos escribir."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "redondeo_concreto",
+          "prompt": "Redondea 2/7 a centésimas. Escribe el valor redondeado, no cualquier aproximación cercana.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "redondeado",
+              "type": "math_numeric_input",
+              "label": "Redondeo a centésimas",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "0.29"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2/7 = 0,285714… está más cerca de 0,29 que de 0,28. El redondeo a centésimas es 0,29, equivalente a 29/100.",
+            "incorrect": "0,28 trunca en lugar de redondear; 0,286 aproxima a milésimas, una precisión distinta. Aquí se pide exactamente el valor redondeado a centésimas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Medir cuánto se separa una aproximación"
+        },
+        {
+          "type": "paragraph",
+          "text": "El error absoluto es la distancia entre el valor usado y el valor exacto, sin signo. Si aproximas 7/12 por 0,58, escribe 0,58 = 29/50 y resta: \\(\\frac{7}{12}-\\frac{29}{50}=\\frac{1}{300}\\). El error es 1/300, aproximadamente 0,003333…. No importa cuál resta se haga primero al medir la distancia: si la diferencia sale negativa, se toma su magnitud."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una tolerancia describe el error permitido en la misma unidad que el dato. Error máximo de 0,001 m significa que la aproximación puede quedar como mucho un milímetro por encima o por debajo del valor exacto. No significa un error relativo del uno por ciento ni obliga a escribir exactamente tres decimales. El contexto y la condición explícita deciden si una aproximación sirve."
+        },
+        {
+          "type": "paragraph",
+          "text": "La calculadora es útil para generar dígitos, pero su pantalla no convierte un periódico en un decimal exacto. Si el resultado se repite sin terminar, conserva la fracción para el cálculo exacto y usa el decimal para la decisión de precisión. Si necesitas varias operaciones, normalmente conviene redondear al final; redondear cada paso puede acumular diferencias."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "error_exacto",
+          "prompt": "Se usa 0,58 para aproximar 7/12. ¿Cuál es el error absoluto exacto? Puedes responder con una fracción equivalente.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "error",
+              "type": "math_numeric_input",
+              "label": "Error absoluto",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/300"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El error es 7/12 − 29/50 = (175 − 174)/300 = 1/300. La aproximación queda por debajo del valor exacto.",
+            "incorrect": "Un error absoluto no lleva signo negativo. 0,01 confunde la separación entre centésimas con el error de este caso; la distancia real es 1/300."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "aproximacion_libre",
+          "prompt": "Encuentra una aproximación de 2/7 con error absoluto máximo de 0,0001. Aquí pueden servir varios números; usa la calculadora si te ayuda a obtener dígitos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "aproximacion",
+              "type": "math_numeric_input",
+              "label": "Aproximación de 2/7",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "tolerance",
+                "expected": "2/7",
+                "tolerance": 0.0001
+              },
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "Por ejemplo, 0,2857 se separa de 2/7 en 1/70000, menor que 0,0001. Una fracción exacta también cumple el error máximo cero.",
+            "incorrect": "0,29 tiene error mayor que 0,0001, aunque sea un redondeo correcto a centésimas. Escribe suficientes cifras para cumplir la distancia pedida y comprueba el error, no solo la apariencia del decimal."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Estimar antes de confiar en una cuenta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una estimación rápida permite detectar una coma mal situada. Si compras 4,95 kg a 23,80 pesos por kilogramo, puedes aproximar las cantidades a cinco y veinticuatro: el costo rondará 120 pesos. El cálculo exacto será algo menor porque ambos valores aproximados subieron. Una respuesta cercana a doce o a mil doscientos merece revisión antes de cualquier redondeo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Elegir precisión no permite inventar exactitud física. Una medición registrada como 0,9996 km puede comunicarse redondeada como 1,00 km, pero no se ha demostrado que la longitud real sea exactamente un kilómetro. El valor mostrado pierde detalle a propósito. Conserva el dato original si después necesitas comprobar diferencias pequeñas."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "compra_estimacion",
+          "prompt": "Se compran 4,95 kg a 23,80 pesos por kilogramo. Elige primero la estimación más razonable y calcula el importe exacto en pesos. Puedes usar la calculadora para el producto.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "estimacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Unos 12 pesos."
+                },
+                {
+                  "id": "b",
+                  "label": "Unos 120 pesos."
+                },
+                {
+                  "id": "c",
+                  "label": "Unos 1 200 pesos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            },
+            {
+              "id": "importe",
+              "type": "math_numeric_input",
+              "label": "Importe en pesos",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "117.81"
+              },
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "La estimación es unos 120 pesos y el producto es 117,81 pesos. El importe queda ligeramente por debajo de 24 × 5.",
+            "incorrect": "12 y 1 200 desplazan una posición decimal respecto de la escala esperada. No sumes precio y kilogramos: el costo se obtiene multiplicando precio por cantidad."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "precision_medida",
+          "prompt": "Se registra 0,9996 km y se comunica el valor redondeado a centésimas como 1,00 km. ¿Qué se puede concluir?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conclusion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La medición original era exactamente 1 km."
+                },
+                {
+                  "id": "b",
+                  "label": "La escritura 1,00 km es un redondeo; no prueba igualdad exacta con 1 km."
+                },
+                {
+                  "id": "c",
+                  "label": "La longitud aumentó físicamente al redondear."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El redondeo cambia el valor usado para comunicar la medición, no la longitud física. No demuestra que el dato original sea exactamente uno.",
+            "incorrect": "La igualdad exacta no se deduce de una escritura redondeada. Tampoco cambia físicamente el objeto por escribir menos cifras; cambió la precisión con que se informa."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "candidatos_error",
+          "prompt": "Obtén una aproximación de 13/17 con error absoluto máximo de 0,00001; la calculadora puede ayudar. Después selecciona todas las aproximaciones propuestas cuyo error absoluto es como máximo 0,002.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "referencia",
+              "type": "math_numeric_input",
+              "label": "Aproximación de referencia",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "tolerance",
+                "expected": "13/17",
+                "tolerance": 1e-05
+              },
+              "calculator": true
+            },
+            {
+              "id": "sirven",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,760"
+                },
+                {
+                  "id": "b",
+                  "label": "0,765"
+                },
+                {
+                  "id": "c",
+                  "label": "0,764"
+                },
+                {
+                  "id": "d",
+                  "label": "0,770"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "13/17 ≈ 0,76470588. 0,765 tiene error cercano a 0,00029412 y 0,764 a 0,00070588; ambos son menores que 0,002.",
+            "incorrect": "0,760 queda a unas 0,00470588 del valor y 0,770 a unas 0,00529412: ambos exceden la condición. No se exige que todos los candidatos redondeen al mismo número; se comprueba su distancia."
+          }
+        }
+      ]
+    }
+  ]
+}

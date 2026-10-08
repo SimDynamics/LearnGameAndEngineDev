@@ -1,0 +1,307 @@
+{
+  "id": "math_course_01__fracciones_y_equivalencia__sumar_y_restar_fracciones",
+  "title": "Sumar y restar unidades fraccionarias",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La suma conserva el tamaño de las partes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tres séptimos de una longitud más dos séptimos de esa misma longitud dan cinco séptimos. Sumamos la cantidad de partes y conservamos su tamaño: \\(\\frac{3}{7}+\\frac{2}{7}=\\frac{5}{7}\\). Si sumáramos los denominadores, escribiríamos cinco catorceavos y cambiaríamos cada parte a la mitad de su tamaño. Eso no describe reunir los segmentos originales."
+        },
+        {
+          "type": "paragraph",
+          "text": "La misma idea funciona con cantidades negativas. Menos cinco novenos más dos novenos da menos tres novenos: empiezas con un cambio negativo de cinco partes y compensas dos. El signo del resultado depende de los numeradores cuando las partes son iguales. Cero novenos equivale a cero, no a una división indeterminada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de sumar fracciones de cantidades físicas, revisa además la unidad de medida. Un cuarto de litro y un cuarto de metro no se suman como una sola cantidad. Aquí trabajaremos con medidas del mismo tipo y de la misma unidad, o con números sin unidad física. El denominador común resuelve tamaños de partes, pero no corrige una mezcla de magnitudes distintas."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "misma_particion",
+          "prompt": "Calcula 2/7 + 3/7. Se admite cualquier escritura numérica equivalente al resultado.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "suma",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/7"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dos séptimos más tres séptimos forman cinco séptimos. Las partes siguen siendo séptimos.",
+            "incorrect": "5/14 suma denominadores y cambia el tamaño de las partes. 6/49 multiplicaría las fracciones, que es una operación diferente. Aquí se reúnen cantidades."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una unidad común"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para sumar cinco doceavos y un octavo, hay que expresar ambos en partes iguales. Veinticuatroavos sirve: cinco doceavos son diez veinticuatroavos y un octavo son tres veinticuatroavos. Así, \\(\\frac{5}{12}+\\frac{1}{8}=\\frac{10}{24}+\\frac{3}{24}=\\frac{13}{24}\\). El resultado debe superar cinco doceavos, porque añadimos una cantidad positiva."
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes elegir un denominador común como el producto de los denominadores, o usar su mínimo común múltiplo para trabajar con números menores. En ambos casos multiplica arriba y abajo por el factor necesario. Cambiar solo el denominador no prepara la suma: altera el sumando. Si después aparecen factores comunes en el resultado, puedes reducir sin cambiar su valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "La fórmula general resume ese razonamiento: para denominadores no nulos, \\(\\frac{a}{b}+\\frac{c}{d}=\\frac{ad+bc}{bd}\\). Los productos ad y bc no son un truco desconectado: convierten cada sumando a partes de tamaño 1/(bd). Usar números concretos o un dibujo mental de particiones ayuda a conservar el sentido cuando el cálculo se vuelve más largo."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "denominador_veinte",
+          "prompt": "Suma 3/10 + 1/4 y escribe el resultado en forma reducida con denominador positivo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Suma reducida: numerador"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Suma reducida: denominador positivo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "20"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "3/10 = 6/20 y 1/4 = 5/20. La suma es 11/20, que ya está reducida.",
+            "incorrect": "4/14 mezcla numeradores y denominadores de partes distintas. 4/20 cambia los denominadores sin transformar los numeradores. Necesitas seis veinteavos y cinco veinteavos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnostico_denominadores",
+          "prompt": "Se propone 2/5 + 1/3 = 3/8. Elige la explicación que identifica el error y da el resultado correcto.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "explicacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "No son partes del mismo tamaño; convertir a quinceavos da 6/15 + 5/15 = 11/15."
+                },
+                {
+                  "id": "b",
+                  "label": "Solo falta reducir 3/8; al hacerlo aparece 11/15."
+                },
+                {
+                  "id": "c",
+                  "label": "Es correcto porque se sumó arriba y abajo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Quintos y tercios deben convertirse a una misma unidad fraccionaria. La suma correcta es 11/15, mayor que cada sumando positivo.",
+            "incorrect": "3/8 ya está reducida, pero representa otro número; simplificar no puede cambiarlo a 11/15. La opción que acepta sumar arriba y abajo confunde equivalencia con suma."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Restar es sumar el opuesto"
+        },
+        {
+          "type": "paragraph",
+          "text": "La resta conserva el significado aprendido con enteros. Restar un tercio significa sumar su opuesto, menos un tercio. Para \\(\\frac{7}{8}-\\frac{1}{3}\\), usa veinticuatroavos: 21/24 − 8/24 = 13/24. Restar una cantidad negativa es distinto: 1/4 − (−1/2) = 1/4 + 1/2 = 3/4. Los paréntesis aclaran qué número se está restando."
+        },
+        {
+          "type": "paragraph",
+          "text": "Controla el resultado antes de reducir. Al sumar una cantidad positiva a un número negativo puedes seguir bajo cero si el incremento no alcanza para compensarlo. Al restar dos fracciones positivas, decide cuál es mayor para prever el signo. Esa previsión puede revelar un numerador con signo equivocado aunque el denominador común esté bien calculado."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_negativa",
+          "prompt": "Calcula −5/6 + 1/4 y escribe su forma reducida. Comprueba primero si el incremento de un cuarto alcanza para llegar a cero.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Resultado reducido: numerador"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Resultado reducido: denominador positivo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "12"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "−5/6 = −10/12 y 1/4 = 3/12; quedan −7/12. Un cuarto no compensa cinco sextos, por eso el resultado es negativo.",
+            "incorrect": "−4/10 vuelve a sumar denominadores. 7/12 pierde el signo: el cambio negativo tiene mayor tamaño que el positivo. Conserva el signo de −10 al sumar tres."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ordenar_razonamiento",
+          "prompt": "Ordena los pasos para calcular 4/9 − 1/6. La decisión sobre partes comunes debe aparecer antes de restarlas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pasos",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "Elegir dieciochoavos, porque 18 es múltiplo de 9 y de 6."
+                },
+                {
+                  "id": "b",
+                  "label": "Escribir 4/9 = 8/18 y 1/6 = 3/18."
+                },
+                {
+                  "id": "c",
+                  "label": "Restar 8/18 − 3/18 = 5/18."
+                },
+                {
+                  "id": "d",
+                  "label": "Comprobar que el resultado es positivo y menor que 4/9."
+                }
+              ],
+              "initialOrder": [
+                "c",
+                "a",
+                "d",
+                "b"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Primero se elige el tamaño común, después se transforma cada fracción, se restan las partes y se revisa el resultado.",
+            "incorrect": "No puedes restar numeradores de novenos y sextos como si fueran la misma unidad. La comprobación de signo y tamaño evalúa un resultado ya calculado; no sustituye su construcción."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "medida_restante",
+          "prompt": "Un recipiente tenía 7/8 de litro y se retira 1/3 de litro. ¿Cuántos litros quedan? Todas las medidas se refieren al litro, no a fracciones del líquido restante.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "queda",
+              "type": "math_numeric_input",
+              "label": "Litros restantes",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "13/24"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7/8 − 1/3 = 21/24 − 8/24 = 13/24 L. Se retiró una cantidad fija de un tercio de litro.",
+            "incorrect": "No se calcula un tercio de 7/8: el enunciado dice un tercio de litro. La resta debe dejar menos de 7/8 L y una cantidad positiva."
+          }
+        }
+      ]
+    }
+  ]
+}

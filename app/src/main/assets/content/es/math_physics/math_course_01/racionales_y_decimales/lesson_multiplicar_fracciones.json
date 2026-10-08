@@ -1,0 +1,290 @@
+{
+  "id": "math_course_01__racionales_y_decimales__multiplicar_fracciones",
+  "title": "Multiplicar fracciones: tomar una parte y escalar",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una fracción de otra cantidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Multiplicar por una fracción puede significar tomar una parte de una cantidad. Si quedan tres cuartos de una hoja y usas dos tercios de lo que queda, no usas dos tercios de una hoja completa. La nueva referencia es la porción de tres cuartos. Dividir esa porción en tres partes iguales produce partes de un cuarto de hoja, y tomar dos da media hoja."
+        },
+        {
+          "type": "paragraph",
+          "text": "La cuenta expresa esa relación: \\(\\frac{2}{3}\\times\\frac{3}{4}=\\frac{6}{12}=\\frac{1}{2}\\). En general, multiplicar fracciones consiste en multiplicar numeradores y multiplicar denominadores. El denominador del producto cuenta la partición combinada, mientras que el numerador cuenta las partes seleccionadas. Ambos denominadores originales deben ser distintos de cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta interpretación corrige una idea frecuente: multiplicar no siempre aumenta. Para una cantidad positiva, multiplicar por un número entre cero y uno la reduce; por uno la conserva; por un número mayor que uno la aumenta. Tomar un cuarto de una botella es menos que tomar la botella completa, aunque la operación se llame multiplicación. Esa previsión ayuda a comprobar el tamaño del resultado."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "porcion_de_porcion",
+          "prompt": "Una lámina disponible equivale a 3/4 de una lámina completa. Se usa 2/3 de la porción disponible. ¿Qué fracción de la lámina completa se usa?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "usada",
+              "type": "math_numeric_input",
+              "label": "Fracción de la lámina completa",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se usa (2/3) × (3/4) = 1/2 de la lámina completa. Dos tercios describe la parte tomada de los tres cuartos disponibles.",
+            "incorrect": "2/3 toma la lámina completa como referencia en vez de la porción disponible. 5/7 suma numeradores y denominadores, que no representa tomar una parte de otra. El resultado debe ser menor que 3/4."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cancelar factores antes de multiplicar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los productos pueden simplificarse antes de formar números grandes. Para \\(\\frac{14}{15}\\times\\frac{9}{28}\\), divide catorce y veintiocho entre catorce, y nueve y quince entre tres. Queda \\(\\frac{1}{5}\\times\\frac{3}{2}=\\frac{3}{10}\\). No se han cancelado cifras aisladas: se han quitado factores comunes del numerador total y del denominador total."
+        },
+        {
+          "type": "paragraph",
+          "text": "La cancelación cruzada es válida porque los productos son conmutativos y asociativos. Puedes reagrupar catorce por nueve arriba y quince por veintiocho abajo, identificar sus factores y reducir. Si en lugar de productos hubiera una suma, no podrías trasladar esa receta sin revisar la expresión completa. Escribir la factorización permite ver por qué una cancelación conserva el valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "El signo se controla por separado, con las reglas de enteros. Un factor negativo y otro positivo dan un producto negativo; dos factores negativos dan positivo. Por ejemplo, \\(\\frac{-2}{5}\\times\\frac{-5}{6}=\\frac{1}{3}\\). Conviene prever el signo, simplificar factores y comprobar al final que el resultado tiene el signo esperado."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "prever_tamano",
+          "prompt": "Sin obtener primero un decimal, ¿qué afirmación es cierta sobre (4/5) × (7/8)?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tamano",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es mayor que ambos factores porque se multiplicó."
+                },
+                {
+                  "id": "b",
+                  "label": "Es positivo y menor que ambos factores porque cada uno está entre cero y uno."
+                },
+                {
+                  "id": "c",
+                  "label": "Es negativo porque ambos denominadores superan sus numeradores."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El producto es 28/40 = 7/10. Tomar siete octavos de cuatro quintos reduce cuatro quintos; tomar cuatro quintos de siete octavos también reduce siete octavos.",
+            "incorrect": "La multiplicación no siempre aumenta. Una fracción positiva menor que uno sigue siendo positiva: que su denominador sea mayor no crea un signo negativo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelar_antes",
+          "prompt": "Calcula (21/25) × (10/14) y escribe la forma reducida con denominador positivo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Producto reducido: numerador"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Producto reducido: denominador positivo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "21 y 14 comparten siete; 10 y 25 comparten cinco. Queda (3/5) × (2/2) = 3/5. El producto directo 210/350 da el mismo valor.",
+            "incorrect": "Cancela factores de los productos completos, no el numerador de una fracción con otro numerador. 210/350 es equivalente, pero aquí se pide reducir hasta 3/5."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "signos_productos",
+          "prompt": "Calcula (−4/9) × (3/−8). Se acepta cualquier escritura numérica equivalente.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto",
+              "type": "math_numeric_input",
+              "label": "Producto",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/6"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Ambos factores son negativos y el producto es positivo. Los factores dan 12/72 = 1/6.",
+            "incorrect": "Un solo signo negativo en 3/−8 hace negativo ese factor; al multiplicarlo por otro negativo, el producto es positivo. −1/6 conserva por error uno de los dos signos."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Productos de medidas y pasos sucesivos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Multiplicar también combina medidas. Un rectángulo de dos metros de ancho y un metro y medio de alto tiene área de tres metros cuadrados: contamos unidades cuadradas mediante el producto 2 × 3/2. No se suman longitudes para obtener área. La unidad final recuerda qué se ha medido y evita confundir el producto con una longitud."
+        },
+        {
+          "type": "paragraph",
+          "text": "En procesos sucesivos, cada fracción puede actuar sobre lo que queda. Si en cada ronda se conserva tres cuartos de una cantidad, después de dos rondas queda \\(\\frac{3}{4}\\times\\frac{3}{4}=\\frac{9}{16}\\) de la cantidad inicial. No se conserva tres cuartos dos veces de la cantidad inicial para sumarlos: la segunda ronda empieza con una cantidad ya reducida."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dimensiones_racionales",
+          "prompt": "Ajusta el ancho a 2 m y el alto a 3/2 m. Después escribe el área del rectángulo en metros cuadrados.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dimensiones",
+              "type": "math_slider_interaction",
+              "parameters": [
+                {
+                  "id": "ancho",
+                  "label": "Ancho en metros",
+                  "min": 0.5,
+                  "max": 4,
+                  "step": 0.5,
+                  "value": 1
+                },
+                {
+                  "id": "alto",
+                  "label": "Alto en metros",
+                  "min": 0.5,
+                  "max": 3,
+                  "step": 0.5,
+                  "value": 1
+                }
+              ],
+              "visual": {
+                "type": "rectangle",
+                "widthParameter": "ancho",
+                "heightParameter": "alto"
+              },
+              "validator": {
+                "type": "sliders",
+                "values": {
+                  "ancho": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "alto": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "area",
+              "type": "math_numeric_input",
+              "label": "Área en metros cuadrados",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Ancho 2 y alto 1,5 producen 2 × 3/2 = 3 m². El dibujo cambia con las dimensiones; la respuesta de área usa su producto.",
+            "incorrect": "Sumar 2 + 1,5 calcula 3,5 m de longitudes reunidas, no un área. Ajusta ambos controles: el área numérica correcta por sí sola no describe las dimensiones solicitadas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_rondas",
+          "prompt": "En cada ronda de un juego se conserva 3/4 de los puntos que había al empezar esa ronda. ¿Qué fracción de los puntos iniciales queda después de dos rondas?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_numeric_input",
+              "label": "Fracción restante",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "9/16"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Queda (3/4) × (3/4) = 9/16 de los puntos iniciales. La segunda fracción actúa sobre el resultado de la primera ronda.",
+            "incorrect": "3/2 sumaría las fracciones como si ambas fueran cantidades independientes de la misma base inicial. 1/2 resta dos cuartos de la base original y olvida que la segunda base es menor."
+          }
+        }
+      ]
+    }
+  ]
+}

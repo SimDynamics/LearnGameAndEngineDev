@@ -1,0 +1,350 @@
+{
+  "id": "math_course_01__fracciones_y_equivalencia__comparar_fracciones",
+  "title": "Comparar fracciones con una misma unidad",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mirar referencias antes de calcular"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comparar fracciones significa ordenar números sobre una misma unidad. Cero, un medio y uno son referencias útiles. Una fracción positiva con numerador menor que el denominador es menor que uno; si el numerador lo supera, es mayor que uno. Para decidir si 7/12 supera un medio, piensa que seis doceavos forman la mitad: siete doceavos quedan un doceavo por encima."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si las fracciones tienen el mismo denominador positivo, sus partes tienen el mismo tamaño y basta comparar numeradores. Cinco octavos superan tres octavos porque hay dos partes adicionales. Si tienen el mismo numerador positivo, la situación cambia: cinco sextos superan cinco novenos porque cada sexto es mayor que cada noveno. Un denominador mayor no implica un número mayor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas observaciones permiten elegir una estrategia económica. Para comparar 5/11 con 7/12, la primera es menor que un medio y la segunda es mayor. No hace falta calcular decimales ni un gran denominador común. La comparación debe explicar qué referencia o qué unidad compartida hace visible el orden."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "referencia_mitad",
+          "prompt": "Sin convertir a decimal, decide cuál afirmación compara correctamente 5/11 y 7/12.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "argumento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5/11 > 7/12 porque once es menor que doce."
+                },
+                {
+                  "id": "b",
+                  "label": "5/11 < 7/12 porque la primera está bajo 1/2 y la segunda sobre 1/2."
+                },
+                {
+                  "id": "c",
+                  "label": "5/11 = 7/12 porque ambas son menores que uno."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Al duplicar 5/11 obtienes 10/11, que es menor que 1; por eso 5/11 es menor que 1/2. Al duplicar 7/12 obtienes 14/12, que supera 1; así que 7/12 supera 1/2.",
+            "incorrect": "La opción del denominador menor solo serviría bajo otras condiciones, como numeradores positivos iguales. Ser menores que uno no hace iguales dos números; hay muchas posiciones distintas entre cero y uno."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convertir a partes de igual tamaño"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando una referencia no basta, busca un denominador común positivo. Para comparar 7/12 y 5/8, usa veinticuatroavos: \\(\\frac{7}{12}=\\frac{14}{24}\\) y \\(\\frac{5}{8}=\\frac{15}{24}\\). Catorce partes son menos que quince partes del mismo tamaño. La primera fracción es menor, aunque su numerador original siete sea mayor que cinco."
+        },
+        {
+          "type": "paragraph",
+          "text": "El producto de los denominadores siempre proporciona uno común, pero puede crear partes innecesariamente pequeñas. El mínimo común múltiplo suele reducir el trabajo. En el ejemplo, 24 basta; 96 también funcionaría. Lo decisivo es transformar ambas fracciones sin alterar su valor, no encontrar obligatoriamente el denominador más pequeño."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con denominadores positivos, los productos cruzados también permiten comparar. Para 7/12 y 5/8, compara 7 × 8 con 5 × 12: 56 < 60. Esto equivale a comparar numeradores después de llevar ambas a denominador 96. No apliques la regla de desigualdad sin revisar los signos de los denominadores: primero normalízalos a positivos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparacion_comun",
+          "prompt": "Completa el signo entre 7/12 y 5/8. Luego indica el denominador común más pequeño que usaste.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Signo",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<"
+                    },
+                    {
+                      "id": "igual",
+                      "label": "="
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">"
+                    }
+                  ]
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador común mínimo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "den": {
+                    "type": "numeric",
+                    "expected": "24"
+                  },
+                  "signo": {
+                    "type": "text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7/12 = 14/24 y 5/8 = 15/24. Por tanto, el signo es < y el denominador común mínimo es 24.",
+            "incorrect": "Comparar solo 7 con 5 ignora el tamaño de las partes. 96 es un denominador común, pero no el menor que se pide. Cada fracción debe conservar su valor al cambiar de denominador."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El orden de los negativos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una fracción negativa queda a la izquierda de cero. Cuanto mayor sea su distancia al cero, menor es el número. Por eso −5/6 es menor que −1/3. No es correcto copiar el orden de las fracciones positivas y añadir signos negativos sin cambiarlo: reflejar los puntos respecto de cero invierte cuál está a la izquierda."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para comparar −7/10 y −2/3, convierte a denominador treinta: son −21/30 y −20/30. Menos veintiuno es menor que menos veinte, así que −7/10 < −2/3. También puedes notar que 7/10 > 2/3 y después invertir el orden al tomar sus opuestos. El denominador común permite revisar el signo sin depender de una regla aislada."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden_con_signos",
+          "prompt": "Ordena de menor a mayor los cinco números. Todos usan la misma unidad y ninguno tiene el mismo valor que otro.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "orden",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "−5/6"
+                },
+                {
+                  "id": "b",
+                  "label": "−1/3"
+                },
+                {
+                  "id": "c",
+                  "label": "0"
+                },
+                {
+                  "id": "d",
+                  "label": "3/8"
+                },
+                {
+                  "id": "e",
+                  "label": "2/3"
+                }
+              ],
+              "initialOrder": [
+                "d",
+                "a",
+                "e",
+                "c",
+                "b"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−5/6 < −1/3 < 0 < 3/8 < 2/3. Los negativos quedan antes de cero; entre ellos, el de mayor distancia al cero es el menor.",
+            "incorrect": "No ordenes los negativos por sus numeradores como si fueran positivos. Entre 3/8 y 2/3 puedes usar veinticuatroavos: 9/24 < 16/24."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "negativos",
+          "prompt": "¿Qué razonamiento demuestra correctamente que −7/10 es menor que −2/3?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "razon",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−21/30 < −20/30 después de usar denominador común."
+                },
+                {
+                  "id": "b",
+                  "label": "Siete es mayor que dos, así que −7/10 también es mayor."
+                },
+                {
+                  "id": "c",
+                  "label": "Todo negativo con denominador diez es menor que uno con denominador tres."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La comparación −21 < −20 decide el orden porque las partes son treintaavos en ambas fracciones.",
+            "incorrect": "La opción del numerador ignora denominadores y signo. La afirmación sobre diez y tres no es general: −1/10 es mayor que −2/3. Es necesario considerar el número completo."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el método y comprobar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una respuesta razonada puede ser corta: señala la unidad común o una referencia que separa los números. Antes de terminar, comprueba el signo y el intervalo esperado. Un número negativo no puede quedar a la derecha de cero; una fracción positiva propia no puede superar uno. Estas comprobaciones detectan errores sin repetir todo el cálculo."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "entre_referencias",
+          "prompt": "Selecciona todos los números que están estrictamente entre 1/2 y 3/4. Los extremos no se incluyen.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dentro",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5/8"
+                },
+                {
+                  "id": "b",
+                  "label": "2/3"
+                },
+                {
+                  "id": "c",
+                  "label": "3/4"
+                },
+                {
+                  "id": "d",
+                  "label": "4/9"
+                },
+                {
+                  "id": "e",
+                  "label": "7/10"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5/8, 2/3 y 7/10 están entre ambas referencias. Con denominadores comunes puedes comprobar cada límite; 3/4 es un extremo y se excluye.",
+            "incorrect": "3/4 no cumple «estrictamente entre»: coincide con el extremo superior. 4/9 es menor que 1/2 porque 8 < 9. Comprueba dos condiciones para cada candidato, no solo una."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tramos",
+          "prompt": "Dos piezas de un mismo rollo miden 11/15 m y 3/4 m. ¿Cuál es más larga?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pieza",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La de 11/15 m."
+                },
+                {
+                  "id": "b",
+                  "label": "La de 3/4 m."
+                },
+                {
+                  "id": "c",
+                  "label": "Miden lo mismo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "11/15 = 44/60 y 3/4 = 45/60. La segunda pieza es un sesentavo de metro más larga.",
+            "incorrect": "Once partes de un tamaño y tres de otro no se comparan solo contando. Tampoco basta que ambas longitudes sean cercanas: 44/60 y 45/60 son distintas."
+          }
+        }
+      ]
+    }
+  ]
+}

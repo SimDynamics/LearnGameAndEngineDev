@@ -1,0 +1,297 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__factores_mcd_mcm",
+  "title": "Factorización prima, MCD y mcm",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Descomponer sin cambiar el producto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un número compuesto puede descomponerse en factores más pequeños. Para 60, un camino es \\(60=6\\times10=(2\\times3)\\times(2\\times5)=2\\times2\\times3\\times5\\). Otro camino empieza con \\(60=3\\times20\\) y termina en los mismos factores primos. Los paréntesis y el orden pueden cambiar gracias a asociatividad y conmutatividad."
+        },
+        {
+          "type": "paragraph",
+          "text": "La factorización prima termina cuando todos los factores son primos. Escribimos \\(60=2^2\\times3\\times5\\), donde el exponente recuerda que el 2 aparece dos veces. No se cuenta el 1 como primo; añadir factores uno no aporta una descomposición nueva. Para comprobar, vuelve a multiplicar los factores: la expresión debe recuperar 60."
+        },
+        {
+          "type": "paragraph",
+          "text": "La factorización sirve para ver qué factores están disponibles. Un divisor se forma con factores del número sin utilizar más copias de las que hay. Por ejemplo, 12 divide a 60 porque usa dos doses y un tres; 8 no lo divide porque necesitaría tres doses y solo hay dos. Este enfoque prepara la simplificación de fracciones sin reducirla a probar divisiones al azar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Máximo común divisor"
+        },
+        {
+          "type": "paragraph",
+          "text": "El máximo común divisor, abreviado MCD, es el mayor divisor positivo que comparten dos números positivos. Para 18 y 24, los divisores comunes son 1, 2, 3 y 6, así que su MCD es 6. Es útil cuando quieres formar grupos iguales utilizando completamente dos cantidades sin mezclarlas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con factores primos, \\(18=2\\times3^2\\) y \\(24=2^3\\times3\\). Un divisor común puede usar un dos y un tres: ambos números los contienen. No puede usar dos doses porque 18 solo tiene uno, ni dos treses porque 24 solo tiene uno. Por tanto el MCD es \\(2\\times3=6\\). En cada primo común tomamos la menor cantidad de copias disponible."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, si hay 18 fichas claras y 24 oscuras, el mayor número de paquetes idénticos que usan todo es seis. Cada paquete tendrá tres claras y cuatro oscuras. El MCD responde al número de paquetes, no a la cantidad total de fichas en cada paquete. La pregunta del contexto decide qué significado tendrá el factor común."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mínimo común múltiplo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El mínimo común múltiplo, abreviado mcm, es el menor múltiplo positivo compartido. Los múltiplos positivos de 6 son 6, 12, 18, 24 y los que siguen; los de 8 son 8, 16, 24 y los que siguen. Su primera coincidencia positiva es 24. El cero es múltiplo de ambos, pero no es la nueva coincidencia que buscamos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con factores, \\(6=2\\times3\\) y \\(8=2^3\\). Un múltiplo de los dos necesita tres doses para contener al 8 y un tres para contener al 6. El producto mínimo es \\(2^3\\times3=24\\). Para el mcm usamos todas las copias necesarias, tomando la mayor cantidad que aparece de cada primo; no basta usar solo los factores compartidos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Distingue los dos objetivos: el MCD cabe como factor dentro de cada número, mientras que cada número cabe como factor dentro del mcm. En ciclos que se repiten cada seis y ocho minutos, la próxima coincidencia llega a los veinticuatro minutos si ambos comienzan juntos. En fracciones, estos conceptos ayudarán a quitar factores comunes y a encontrar una partición compartida."
+        },
+        {
+          "type": "note",
+          "text": "Antes de elegir MCD o mcm, explica qué debe ser común: un divisor que permita agrupar, o un múltiplo que permita coincidir. No decidas solo por palabras sueltas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Hacer visibles los factores"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factorizar_72",
+          "prompt": "Escribe los exponentes que completan 72 = 2ᵃ × 3ᵇ. Aquí a y b indican cuántas veces aparece cada primo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factorizar_72__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Exponente de 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Exponente de 3",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "72 = 8 × 9 = 2³ × 3². Tres doses y dos treses dan 72.",
+            "incorrect": "Los exponentes cuentan factores repetidos. 2 × 3 no es 72, y el exponente no es el número de cifras."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mcd_28_42",
+          "prompt": "Encuentra el MCD de 28 y 42.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mcd_28_42__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "14"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "28 = 2² × 7 y 42 = 2 × 3 × 7; comparten un dos y un siete. El MCD es 14.",
+            "incorrect": "No incluyas el 3, que no está en 28, ni dos doses, porque 42 solo tiene uno."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mcm_9_12",
+          "prompt": "Encuentra el mcm de 9 y 12.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mcm_9_12__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9 = 3² y 12 = 2² × 3. Se necesitan dos doses y dos treses: 36.",
+            "incorrect": "El 3 es el MCD, pero no es múltiplo de 9 ni de 12. El 108 es un múltiplo común, aunque no el menor."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el objetivo adecuado"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "paquetes_modelo",
+          "prompt": "Hay 20 semillas de una variedad y 30 de otra. Se quieren formar el mayor número de sobres idénticos usando todas. ¿Qué operación responde al número de sobres?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "paquetes_modelo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Buscar el mcm de 20 y 30."
+                },
+                {
+                  "id": "b",
+                  "label": "Buscar el MCD de 20 y 30."
+                },
+                {
+                  "id": "c",
+                  "label": "Multiplicar 20 por 30."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El número de sobres debe dividir tanto 20 como 30, y queremos el mayor: MCD(20,30) = 10.",
+            "incorrect": "El mcm sirve para una cantidad que sea múltiplo de ambas. Aquí el número de grupos debe caber exactamente dentro de las dos cantidades."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sobres_completos",
+          "prompt": "Forma el mayor número de sobres idénticos con 20 semillas claras y 30 oscuras, usando todas. Escribe número de sobres y semillas de cada tipo por sobre.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sobres_completos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "s",
+                  "type": "numeric",
+                  "label": "Número de sobres",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Claras por sobre",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "o",
+                  "type": "numeric",
+                  "label": "Oscuras por sobre",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "s": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "o": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Diez sobres contienen 2 claras y 3 oscuras cada uno: 10 × 2 = 20 y 10 × 3 = 30.",
+            "incorrect": "El MCD da el número de sobres. Después divide cada cantidad entre ese número para obtener el contenido, no uses 10 como cantidad de cada tipo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ciclos",
+          "prompt": "Dos señales se encienden juntas al inicio. Una repite cada 12 minutos y otra cada 18. ¿Después de cuántos minutos vuelven a coincidir por primera vez?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "ciclos__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              },
+              "unit": "minutos"
+            }
+          ],
+          "feedback": {
+            "correct": "mcm(12,18) = 36; 36 ÷ 12 = 3 y 36 ÷ 18 = 2.",
+            "incorrect": "6 es divisor común, pero no permite completar ciclos enteros de 12 y 18. Se necesita un múltiplo común positivo mínimo."
+          }
+        }
+      ]
+    }
+  ]
+}

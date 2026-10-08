@@ -1,0 +1,319 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__escalas_y_dimensiones",
+  "title": "Escalas de longitud, área y volumen",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La misma forma con otro tamaño"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un factor de escala k indica cuántas veces mide cada longitud nueva respecto de la original. Si k = 3, cada lado se triplica. Si k = 1/2, cada lado se reduce a la mitad. Para comparar, usa la misma unidad antes de dividir longitud nueva entre longitud original. Cambiar el tamaño de forma uniforme exige aplicar el factor a todas las longitudes."
+        },
+        {
+          "type": "paragraph",
+          "text": "En un plano de escala 1:2000, un centímetro representa 2000 centímetros reales. Como 100 cm = 1 m, ese centímetro representa 20 metros. Un tramo de 3 cm representa 60 m. La razón 1:2000 compara longitudes en una misma unidad; no significa un centímetro por cada 2000 metros."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un modelo mide 8 cm y el objeto real 2 m, primero expresamos 2 m como 200 cm. La razón modelo:real es 8:200 = 1:25. El real tiene longitudes 25 veces mayores. Para ir del real al modelo dividimos por 25, y para ir del modelo al real multiplicamos. El sentido de la comparación decide cuál factor usamos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Por qué el área no cambia como el lado"
+        },
+        {
+          "type": "paragraph",
+          "text": "El área de un rectángulo se obtiene multiplicando largo por ancho. Un rectángulo de 5 m por 3 m tiene área 15 m². Si ambas longitudes se multiplican por 1,5, el nuevo largo es 7,5 y el ancho 4,5. Su área es 7,5×4,5 = 33,75 m². Aparecen dos factores 1,5 porque se cambiaron dos longitudes: 1,5×1,5 = 2,25."
+        },
+        {
+          "type": "paragraph",
+          "text": "En general, \\((k\\times l)\\times(k\\times a)=k^{2}\\times(l\\times a)\\). Esta fórmula resume los dos productos; no añade una regla sin explicación. Cuando k = 2, cada longitud se duplica y el área se cuadruplica. Cuando k = 1/2, el área queda en 1/4. Si solo se cambia el largo, el área recibe un solo factor k y la forma deja de escalarse uniformemente. En esa expresión, l representa el largo y a el ancho."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una caja rectangular tiene volumen largo×ancho×alto. Al multiplicar las tres longitudes por k, el producto contiene k tres veces: el volumen cambia por k³. Con k = 2 pasa a ocho veces el original. Esto también explica unidades: un cuadrado de 1 m por 1 m tiene 100×100 = 10000 cm², y un cubo de 1 m de lado tiene 100×100×100 = 1000000 cm³."
+        },
+        {
+          "type": "note",
+          "text": "Los dibujos esquemáticos no sirven para medir por su apariencia. Usa las medidas declaradas y distingue longitud, área y volumen; sus factores de cambio son diferentes."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mapa",
+          "prompt": "Un plano usa escala 1:5000. Un tramo del plano mide 2,4 cm. ¿Cuántos metros representa? Usa 100 cm = 1 m y expresa ambas longitudes primero en centímetros.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "real",
+              "type": "math_numeric_input",
+              "label": "Longitud real",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "120"
+              },
+              "unit": "m",
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "2,4×5000 = 12000 cm = 120 m. La escala compara centímetros del plano con centímetros reales.",
+            "incorrect": "12 metros omite un cero en el factor. 12000 metros olvida convertir centímetros a metros. Mantén la unidad durante cada paso."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Explorar y comprobar la escala"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "slider",
+          "prompt": "El rectángulo original tiene largo 3 unidades y ancho 2. Ajusta el factor uniforme para que su área sea 54 unidades cuadradas. Antes de moverlo, decide cuánto debe cambiar cada longitud: no basta multiplicar el área por el factor lineal.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escala",
+              "type": "math_slider_interaction",
+              "parameters": [
+                {
+                  "id": "k",
+                  "label": "Factor uniforme",
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "value": 1
+                }
+              ],
+              "visual": {
+                "type": "rectangle",
+                "scaleParameter": "k",
+                "baseWidth": 3,
+                "baseHeight": 2
+              },
+              "validator": {
+                "type": "sliders",
+                "values": {
+                  "k": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El área original es 6. Con factor 3, los lados son 9 y 6, y el área 54. El área cambia por 3² = 9.",
+            "incorrect": "Elegir factor 9 confundiría el factor del área con el de las longitudes y está fuera del intervalo. Factor 2 da área 24 y factor 4 da 96; compara productos de los nuevos lados."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "area",
+          "prompt": "Un rectángulo de 4 m por 6 m se reduce uniformemente por factor 1/2. Calcula las nuevas longitudes y el área nueva.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Nuevo primer lado, m"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Nuevo segundo lado, m"
+                },
+                {
+                  "id": "area",
+                  "type": "numeric",
+                  "label": "Área nueva, m²"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "area": {
+                    "type": "numeric",
+                    "expected": "6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los lados quedan en 2 m y 3 m. Su área es 6 m², un cuarto de 24 m².",
+            "incorrect": "Reducir cada lado a la mitad introduce dos factores 1/2. El área no es 12 m²: ese sería el efecto de reducir un solo lado."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "volumen",
+          "prompt": "El esquema representa una caja rectangular: lee largo 2 cm, ancho 3 cm y alto 4 cm en sus rótulos. La perspectiva solo orienta; no midas la imagen. Si se amplía uniformemente por factor 2, determina su volumen original y el nuevo.",
+          "representations": [
+            {
+              "type": "geometry_3d_diagram",
+              "shape": "prism",
+              "labels": [
+                "Largo: 2 cm",
+                "Ancho: 3 cm",
+                "Alto: 4 cm"
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cajas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "viejo",
+                  "type": "numeric",
+                  "label": "Volumen original, cm³"
+                },
+                {
+                  "id": "nuevo",
+                  "type": "numeric",
+                  "label": "Volumen nuevo, cm³"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "viejo": {
+                    "type": "numeric",
+                    "expected": "24"
+                  },
+                  "nuevo": {
+                    "type": "numeric",
+                    "expected": "192"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El original es 2×3×4 = 24 cm³. Los lados nuevos son 4, 6 y 8; el volumen es 192 cm³, ocho veces 24.",
+            "incorrect": "48 cm³ usa solo un factor 2; 96 usa dos. Hay tres longitudes cambiadas, así que el factor del volumen es 2×2×2 = 8."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conversionarea",
+          "prompt": "¿Cuántos centímetros cuadrados contiene un cuadrado de un metro de lado? Calcula el área usando 1 m = 100 cm y elige la explicación.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cm2",
+              "type": "math_numeric_input",
+              "label": "Área",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "10000"
+              },
+              "unit": "cm²"
+            },
+            {
+              "id": "producto",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Hay que multiplicar 100 por 100 porque cambian dos longitudes."
+                },
+                {
+                  "id": "b",
+                  "label": "Basta cambiar el nombre de la unidad sin cambiar el número."
+                },
+                {
+                  "id": "c",
+                  "label": "Se multiplica por 100 porque toda conversión es lineal."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cuadrado mide 100 cm por 100 cm, así que contiene 10000 cm².",
+            "incorrect": "100 cm² aplica el factor solo a una dimensión. El producto de longitudes determina la unidad cuadrada; no todas las conversiones usan el mismo factor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "unlado",
+          "prompt": "Un cartel rectangular mide 8 cm por 5 cm. Se duplica solo el largo y el ancho se conserva. Selecciona la afirmación correcta.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "efecto",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El área se cuadruplica porque aparece el número dos."
+                },
+                {
+                  "id": "b",
+                  "label": "El área se duplica, pero no es una ampliación uniforme."
+                },
+                {
+                  "id": "c",
+                  "label": "El volumen se multiplica por ocho."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El área pasa de 40 a 80 cm²: 16×5. Solo una longitud cambió, así que aparece un factor 2.",
+            "incorrect": "La regla k² supone que ambas longitudes reciben el mismo factor. Aquí el ancho no cambia. El cartel descrito es una región plana, no un volumen."
+          }
+        }
+      ]
+    }
+  ]
+}

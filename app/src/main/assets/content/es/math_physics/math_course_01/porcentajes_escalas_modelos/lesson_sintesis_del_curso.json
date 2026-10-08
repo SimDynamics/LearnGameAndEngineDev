@@ -1,0 +1,416 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__sintesis_del_curso",
+  "title": "Síntesis del curso: resolver y justificar",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una estrategia que puedas explicar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Estos retos combinan números, equivalencia, unidades, proporciones, porcentajes y escala. No se anuncia la operación en el título de cada problema. Antes de calcular, escribe para ti qué representa cada dato y qué debe conservarse. Después elige una relación que responda a la pregunta y revisa si sus condiciones están declaradas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las herramientas de cálculo pueden ayudarte cuando la cuenta no es el objetivo. La decisión sigue siendo tuya: qué cantidad es la base, cuáles unidades comparar, cómo interpretar una gráfica y si un resultado aproximado basta. Una verificación útil rehace la relación con tu respuesta: las partes recuperan el total, el factor recupera el cambio y las longitudes producen el área o volumen."
+        },
+        {
+          "type": "paragraph",
+          "text": "No toda respuesta se obtiene con una regla de tres. Un cargo fijo se paga una vez; una pérdida constante se resta; una escala uniforme cambia varias longitudes; una compra de envases completos requiere una decisión entera. Identificar estas diferencias es parte del dominio de los números, no un paso añadido después de calcular."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Problemas en contextos nuevos"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mosaico",
+          "prompt": "Un diseño de mosaico utiliza piezas claras y oscuras en razón 7:5 y tendrá 96 piezas. Calcula cuántas serán claras y qué porcentaje del total serán oscuras. Da el porcentaje con error absoluto máximo de 0,01 punto porcentual.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "claras",
+              "type": "math_numeric_input",
+              "label": "Piezas claras",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "56"
+              }
+            },
+            {
+              "id": "oscuras",
+              "type": "math_numeric_input",
+              "label": "Porcentaje de oscuras",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "tolerance",
+                "expected": "125/3",
+                "tolerance": 0.01
+              },
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "Cada una de las doce partes contiene ocho piezas: 56 claras y 40 oscuras. 40/96×100 = 125/3%, aproximadamente 41,67%.",
+            "incorrect": "7:5 compara partes; el total tiene doce partes. El porcentaje oscuro usa 96 como base, no 56. Es una aproximación con margen explícito porque el decimal es periódico."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "feria",
+          "prompt": "Para una feria se necesitan 18 m de cable. El proveedor A cobra 25 pesos de preparación más 8 por metro; B cobra 9,5 pesos por metro sin preparación. Calcula ambos pagos y elige el menor, suponiendo misma calidad y disponibilidad.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Pago A",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "169"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "b",
+              "type": "math_numeric_input",
+              "label": "Pago B",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "171"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "elegir",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A"
+                },
+                {
+                  "id": "b",
+                  "label": "B"
+                },
+                {
+                  "id": "igual",
+                  "label": "Son iguales"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A: 25+8×18 = 169; B: 9,5×18 = 171. A tiene menor pago para este encargo concreto.",
+            "incorrect": "Comparar solo 8 con 9,5 omite la preparación. Multiplicar todo el precio de un metro A por dieciocho repite el cargo fijo y cambia el modelo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "descuentoregreso",
+          "prompt": "Una entrada termina costando 324 pesos después de un descuento del 10% sobre su precio original. Después se cobra una gestión del 5% sobre los 324. Calcula el precio original y el pago final con gestión.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "original",
+              "type": "math_numeric_input",
+              "label": "Precio original",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "360"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "final",
+              "type": "math_numeric_input",
+              "label": "Pago con gestión",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "340.2"
+              },
+              "unit": "pesos",
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "El original es 324/0,90 = 360. La gestión da 324×1,05 = 340,2. Las dos operaciones tienen referencias y propósitos diferentes.",
+            "incorrect": "Añadir 10% a 324 no invierte el descuento. La gestión se aplica a 324, no a 360. Comprueba que descontar el 10% del original recupere 324."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "caja",
+          "prompt": "Un prototipo de caja rectangular mide 4 cm por 5 cm por 6 cm. La caja final tendrá todas sus longitudes multiplicadas por 1,5. Calcula el volumen original y el final, y elige el factor que explica el cambio de volumen.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "viejo",
+              "type": "math_numeric_input",
+              "label": "Volumen original",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "120"
+              },
+              "unit": "cm³"
+            },
+            {
+              "id": "nuevo",
+              "type": "math_numeric_input",
+              "label": "Volumen final",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "405"
+              },
+              "unit": "cm³",
+              "calculator": true
+            },
+            {
+              "id": "factor",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "1,5"
+                },
+                {
+                  "id": "b",
+                  "label": "2,25"
+                },
+                {
+                  "id": "c",
+                  "label": "3,375"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El original es 120 cm³. Los lados finales son 6; 7,5; 9 cm y su producto es 405. El factor es 1,5³ = 3,375.",
+            "incorrect": "1,5 es el factor de las longitudes; 2,25 sería el del área de una cara. El volumen contiene tres longitudes y por eso tres factores."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "agua",
+          "prompt": "Una bomba de caudal constante llena un depósito de 90 L en 15 minutos. Otra llena el mismo depósito en 10. Calcula ambos caudales y selecciona lo que se conserva al compararlas. No hay pérdidas de agua.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "caudales",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Caudal primera, L/min"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Caudal segunda, L/min"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            },
+            {
+              "id": "invariante",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Caudal dividido entre tiempo."
+                },
+                {
+                  "id": "b",
+                  "label": "Caudal multiplicado por tiempo."
+                },
+                {
+                  "id": "c",
+                  "label": "La diferencia entre caudal y tiempo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los caudales son 90/15 = 6 y 90/10 = 9 L/min. Caudal×tiempo recupera los 90 L fijos.",
+            "incorrect": "El depósito es el mismo y su volumen se conserva. La comparación entre caudales y tiempos es inversa bajo las condiciones indicadas; no se conserva su cociente."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "grafica",
+          "prompt": "La gráfica describe una tarifa: horizontal, horas de uso; vertical, unidades monetarias. Lee el costo de 3 horas y decide si la tarifa es directamente proporcional al tiempo. Usa el origen como parte de tu comprobación.",
+          "representations": [
+            {
+              "type": "math_coordinate_graph",
+              "mode": "line",
+              "bounds": {
+                "xMin": 0,
+                "xMax": 5,
+                "yMin": 0,
+                "yMax": 12
+              },
+              "gridStep": 1,
+              "snap": 1,
+              "points": [
+                {
+                  "x": 0,
+                  "y": 2
+                },
+                {
+                  "x": 3,
+                  "y": 8
+                }
+              ],
+              "showLabels": true
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pago",
+              "type": "math_numeric_input",
+              "label": "Costo de 3 horas",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8"
+              }
+            },
+            {
+              "id": "modelo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "si",
+                  "label": "Sí, porque la gráfica es una recta."
+                },
+                {
+                  "id": "no",
+                  "label": "No, porque a cero horas la tarifa marca 2."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "no"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El punto (3,8) da costo 8. La recta marca 2 en cero horas: tiene cargo fijo, así que no conserva costo/tiempo.",
+            "incorrect": "La forma recta no basta. El término fijo hace que el costo no sea cero cuando el tiempo es cero; tres horas y seis horas no duplican todo el pago."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "error",
+          "prompt": "Una estudiante escribe: «Como 1/2 es menor que uno, dividir 3 entre 1/2 debe dar menos que 3». Elige la corrección completa.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "corregir",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Dividir siempre disminuye; el resultado es 1,5."
+                },
+                {
+                  "id": "b",
+                  "label": "Caben seis mitades en tres unidades; el resultado es 6."
+                },
+                {
+                  "id": "c",
+                  "label": "No se puede dividir por una fracción."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/(1/2) = 6 porque cada unidad contiene dos mitades. Dividir por un número positivo menor que uno puede aumentar el valor.",
+            "incorrect": "1,5 corresponde a multiplicar por 1/2. Las fracciones no nulas sí admiten inverso y división. El significado de la división importa más que la regla falsa «siempre disminuye»."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lo que llevas al siguiente curso"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya puedes explicar operaciones con números, cambiar entre representaciones equivalentes y reconocer relaciones entre magnitudes. Esas ideas volverán cuando uses letras para expresar relaciones generales y cuando estudies geometría y funciones. La siguiente etapa se apoyará en que aquí puedas justificar tus decisiones, comprobar unidades y distinguir un resultado exacto de una aproximación."
+        }
+      ]
+    }
+  ]
+}

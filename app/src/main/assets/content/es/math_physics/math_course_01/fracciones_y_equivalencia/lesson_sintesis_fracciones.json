@@ -1,0 +1,319 @@
+{
+  "id": "math_course_01__fracciones_y_equivalencia__sintesis_fracciones",
+  "title": "Síntesis: elegir y justificar con fracciones",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Resolver antes de elegir un procedimiento"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta síntesis debes decidir qué relación une los datos. Dos cantidades pueden sumarse, compararse o describir el mismo número con escrituras diferentes. Mira primero la pregunta y la unidad: conocer varios denominadores no implica que siempre haya que buscar uno común. El denominador común sirve cuando conviene contar partes del mismo tamaño; los factores comunes sirven para reducir una sola fracción."
+        },
+        {
+          "type": "paragraph",
+          "text": "Trabaja en tres momentos. Primero interpreta qué se conoce y qué se busca. Después elige una representación y conserva el valor en cada transformación. Al final revisa signo, tamaño y unidad. Puedes expresar el resultado de distintas formas equivalentes cuando no se exige reducción. Si se pide la forma reducida, el denominador debe ser positivo y no quedar un divisor común mayor que uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un argumento breve debe conectar los datos con la conclusión. «Porque hice la cuenta» no explica por qué esa cuenta responde al problema. En las decisiones siguientes podrás seleccionar una justificación o un método: usa esa oportunidad para detectar errores aunque una respuesta numérica parezca plausible. No se necesita calculadora; las cantidades están elegidas para que las relaciones y la comprobación sean visibles."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "presupuesto_cinta",
+          "prompt": "Hay 5/3 m de cinta. Se usan 7/12 m para una etiqueta y 3/4 m para otra. ¿Cuántos metros quedan?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resto",
+              "type": "math_numeric_input",
+              "label": "Cinta restante",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/3"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5/3 = 20/12, y se usan 7/12 + 9/12 = 16/12. Quedan 4/12 = 1/3 m. Ambas cantidades utilizadas se restan del total.",
+            "incorrect": "No restes solo la segunda etiqueta ni sumes denominadores. La cinta usada es 4/3 m, menor que 5/3 m, así que queda una cantidad positiva."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar y controlar signos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los números de una lista pueden usar distintas particiones. Para ordenarlos, reconoce primero negativos, cero y positivos. Después elige referencias o denominadores comunes dentro de cada grupo. Si encuentras dos escrituras equivalentes, no hay un orden estricto entre ellas; aquí se han elegido valores distintos para que cada tarjeta tenga un lugar."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden_acumulativo",
+          "prompt": "Ordena de menor a mayor. No compares únicamente los números escritos encima de la barra.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "orden",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "−7/8"
+                },
+                {
+                  "id": "b",
+                  "label": "−2/3"
+                },
+                {
+                  "id": "c",
+                  "label": "1/6"
+                },
+                {
+                  "id": "d",
+                  "label": "5/12"
+                },
+                {
+                  "id": "e",
+                  "label": "4/3"
+                }
+              ],
+              "initialOrder": [
+                "d",
+                "b",
+                "e",
+                "a",
+                "c"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−7/8 < −2/3 < 1/6 < 5/12 < 4/3. Entre los negativos, −21/24 es menor que −16/24; entre los positivos, 2/12 < 5/12 y 4/3 supera uno.",
+            "incorrect": "Un negativo de mayor distancia al cero es menor. 4/3 no puede ir entre fracciones propias positivas, pues es mayor que una unidad."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "saldo_racional",
+          "prompt": "Un registro parte de −5/12 unidades y recibe un incremento de 7/18 unidades. Escribe el nuevo valor y elige por qué su signo es razonable.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Nuevo valor",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "-1/36"
+              }
+            },
+            {
+              "id": "signo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es negativo: 5/12 es mayor que 7/18, así que el incremento no compensa todo."
+                },
+                {
+                  "id": "b",
+                  "label": "Es positivo porque siempre que sumamos aumentamos hasta superar cero."
+                },
+                {
+                  "id": "c",
+                  "label": "Es cero porque numeradores y denominadores se compensan."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−5/12 + 7/18 = −15/36 + 14/36 = −1/36. El incremento acerca el valor a cero, pero falta un treintaiseisavo para alcanzarlo.",
+            "incorrect": "Aumentar un número negativo no garantiza hacerlo positivo. Tampoco se compensan cifras de numeradores y denominadores: aquí solo se compensan catorce de los quince treintaiseisavos negativos."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Equivalencia y cambio de unidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una equivalencia describe un valor, mientras que una fracción de una cantidad depende de la unidad tomada como entero. Mantén esa diferencia al leer envases, repartos o medidas. Una igualdad puede ser correcta aunque la escritura sea incómoda; una interpretación puede ser falsa aunque la operación aislada se haya calculado bien."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reducir_con_factor",
+          "prompt": "Reduce 84/126 con denominador positivo e indica el mayor divisor común usado. Los tres campos pertenecen a la misma reducción.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "forma",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Fracción reducida: numerador"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Fracción reducida: denominador positivo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            },
+            {
+              "id": "mcd",
+              "type": "math_numeric_input",
+              "label": "Mayor divisor común",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "42"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "84 = 42 × 2 y 126 = 42 × 3. El MCD es 42 y la forma reducida es 2/3; dos y tres no comparten ningún divisor mayor que uno.",
+            "incorrect": "Dividir entre seis produce 14/21, equivalente pero no reducida. Un factor solo se cancela si divide a todo el numerador y a todo el denominador."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparto_nuevo",
+          "prompt": "Siete metros de cuerda se distribuyen por igual entre seis equipos. ¿Qué longitud recibe cada equipo? No se exige una escritura reducida concreta.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "porcion",
+              "type": "math_numeric_input",
+              "label": "Metros por equipo",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "7/6"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada equipo recibe 7/6 m. Seis equipos reciben primero un metro cada uno y comparten el metro sobrante en sextos.",
+            "incorrect": "6/7 invierte el reparto. 1/6 reparte únicamente el metro sobrante y olvida el metro ya entregado a cada equipo. La porción correcta supera un metro."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "metodo_valido",
+          "prompt": "Selecciona todas las afirmaciones que conservan el significado de una fracción.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "validas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "12/18 y 2/3 señalan el mismo número."
+                },
+                {
+                  "id": "b",
+                  "label": "Para sumar 1/4 y 1/6, puedo usar doceavos."
+                },
+                {
+                  "id": "c",
+                  "label": "En (4 + 8)/4 puedo tachar el primer cuatro y dejar 1 + 8."
+                },
+                {
+                  "id": "d",
+                  "label": "La mitad de 8 m y la mitad de 10 m tienen igual longitud."
+                },
+                {
+                  "id": "e",
+                  "label": "−6/9 y 6/−9 representan el mismo número negativo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12/18 se reduce a 2/3; doceavos permite reunir cuartos y sextos; un único signo negativo puede escribirse en numerador o denominador.",
+            "incorrect": "En (4 + 8)/4 se divide toda la suma: 1 + 2 = 3, no 9. Las mitades de longitudes distintas son 4 m y 5 m: misma fracción no implica igual cantidad física."
+          }
+        },
+        {
+          "type": "note",
+          "text": "Si una respuesta no pasa tu comprobación, identifica qué cambió: el valor, el signo, la unidad o la forma pedida. Corregir ese punto es más útil que repetir mecánicamente la misma cuenta."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,323 @@
+{
+  "id": "math_course_01__razones_y_proporcionalidad__proporcionalidad_inversa",
+  "title": "Proporcionalidad inversa y sus supuestos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una cantidad sube y la otra baja"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un recorrido fijo mide 120 kilómetros. A velocidad constante de 40 km/h tarda 3 horas; a 60 km/h tarda 2. El producto velocidad por tiempo siempre es 120 km. Cuando la velocidad se multiplica por 1,5, el tiempo se divide por 1,5. Decimos que son inversamente proporcionales porque su producto permanece constante, bajo la condición de que la distancia sea la misma."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si v representa la velocidad positiva y t el tiempo, la relación es \\(v\\times t=120\\). Podemos encontrar t dividiendo 120 entre v. No se usa una velocidad cero para terminar el recorrido: dividir entre cero no da un tiempo de viaje. La relación es válida para velocidades constantes en este modelo; con paradas o cambios de velocidad hay que revisar la interpretación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Que una cantidad disminuya mientras otra aumenta no basta para afirmar proporcionalidad inversa. En un depósito que comienza con 30 litros y pierde 2 litros cada minuto, el tiempo aumenta y el agua restante disminuye. Pero el producto tiempo×agua no es constante: a los 5 minutos quedan 20 L; a los 10 quedan 10 L; a los 12 quedan 6 L."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Repartir un trabajo fijo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una tarea necesita 24 horas-persona. Si cada persona trabaja al mismo rendimiento y puede hacerlo sin estorbar a las demás, tres personas tardan ocho horas y seis personas cuatro. El producto personas×horas es 24. Estos supuestos son parte del problema: muchas tareas reales requieren coordinación, herramientas limitadas o pasos que no pueden hacerse a la vez."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para elegir un modelo, nombra primero la cantidad fija. En un recorrido puede ser la distancia; en un reparto, el total de material; en un trabajo ideal, las horas-persona. Después comprueba el producto en una tabla. Si no hay razón para fijar ese total, no puedes concluir una proporcionalidad inversa solo por observar que más personas suelen terminar antes."
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación con proporcionalidad directa evita confusiones. A caudal fijo, más tiempo entrega más agua: se conserva litros/minuto. Para llenar un depósito de volumen fijo, más caudal necesita menos tiempo: se conserva caudal×tiempo. La misma magnitud, tiempo, aparece en ambos modelos; lo que cambia es qué se mantiene constante y qué se compara."
+        },
+        {
+          "type": "note",
+          "text": "En una tabla inversa, multiplicar una cantidad por un factor obliga a dividir la otra por ese mismo factor. Comprueba el producto y las condiciones; no inviertas números por costumbre."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recorrido",
+          "prompt": "La distancia es siempre 180 km, sin paradas y a velocidad constante. Completa el tiempo para 45, 60 y 90 km/h. Calcula primero qué producto debe permanecer fijo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tiempos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Horas a 45 km/h"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Horas a 60 km/h"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Horas a 90 km/h"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "180/45 = 4 h; 180/60 = 3 h; 180/90 = 2 h. Los productos velocidad×tiempo dan 180 km.",
+            "incorrect": "Si la velocidad aumenta, un mismo recorrido requiere menos tiempo. No uses una razón tiempo/velocidad constante; aquí se conserva su producto."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Practica la elección del modelo"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tabla",
+          "prompt": "¿Cuál tabla es compatible con proporcionalidad inversa entre cantidades positivas? Cada tabla presenta su propio modelo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "x: 2; 4; 8. y: 12; 6; 3."
+                },
+                {
+                  "id": "b",
+                  "label": "x: 2; 4; 8. y: 12; 10; 6."
+                },
+                {
+                  "id": "c",
+                  "label": "x: 2; 4; 8. y: 3; 6; 12."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A mantiene los productos 24, 24 y 24. Al duplicar x, y se reduce a la mitad.",
+            "incorrect": "B disminuye, pero sus productos son 24, 40 y 48. C conserva y/x = 1,5 y es directa. La dirección del cambio no reemplaza al invariante."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "trabajofijo",
+          "prompt": "Cuatro personas empacan una colección en 9 horas. Todas mantienen igual rendimiento y el trabajo se puede dividir sin interferencias. ¿Cuántas horas tardarían seis personas bajo esos mismos supuestos?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "horas",
+              "type": "math_numeric_input",
+              "label": "Duración",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              },
+              "unit": "h"
+            }
+          ],
+          "feedback": {
+            "correct": "El trabajo equivale a 4×9 = 36 horas-persona. Con seis personas: 36/6 = 6 h.",
+            "incorrect": "Aumentar de cuatro a seis no significa restar dos horas. Conserva personas×horas. La predicción depende de los supuestos de rendimiento y reparto indicados."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "supuestos",
+          "prompt": "Se afirma que duplicar el número de operarios reduce a la mitad la duración. Selecciona todos los supuestos necesarios para usar el modelo de trabajo fijo descrito en la lección.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "condiciones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La cantidad de trabajo permanece igual."
+                },
+                {
+                  "id": "b",
+                  "label": "Cada persona mantiene el mismo rendimiento."
+                },
+                {
+                  "id": "c",
+                  "label": "Todas las personas comparten una única herramienta y deben turnarse."
+                },
+                {
+                  "id": "d",
+                  "label": "El trabajo puede repartirse sin interferencias relevantes."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El trabajo fijo, el rendimiento igual y la posibilidad de reparto permiten conservar horas-persona.",
+            "incorrect": "Una herramienta única compartida puede impedir trabajar en paralelo; no justifica reducir el tiempo a la mitad. Más personas, por sí solo, no establece el producto constante."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "deposito",
+          "prompt": "Un depósito comienza con 30 L y pierde exactamente 2 L/min. Completa el agua que queda a los 5 y a los 12 minutos. Después decide si tiempo y agua restante son inversamente proporcionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "agua",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cinco",
+                  "type": "numeric",
+                  "label": "Litros a los 5 min"
+                },
+                {
+                  "id": "doce",
+                  "type": "numeric",
+                  "label": "Litros a los 12 min"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cinco": {
+                    "type": "numeric",
+                    "expected": "20"
+                  },
+                  "doce": {
+                    "type": "numeric",
+                    "expected": "6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "inversa",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "si",
+                  "label": "Sí: una cantidad aumenta y la otra disminuye."
+                },
+                {
+                  "id": "no",
+                  "label": "No: el producto tiempo×agua cambia."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "no"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Quedan 30−2×5 = 20 L y 30−2×12 = 6 L. Los productos son 100 y 72; no hay proporcionalidad inversa.",
+            "incorrect": "No confundas agua que queda con agua que ha salido. La cantidad restante se obtiene restando al inicio. Disminuir no basta: el producto debe ser constante."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "llenado",
+          "prompt": "Dos bombas llenan por separado el mismo depósito de 72 L, cada una con caudal constante. La primera da 6 L/min y la segunda 9 L/min. ¿Cuánto tarda cada una? No se considera pérdida de agua.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "bombas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Tiempo primera bomba"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Tiempo segunda bomba"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los tiempos son 72/6 = 12 min y 72/9 = 8 min. Caudal×tiempo = 72 L para ambas.",
+            "incorrect": "La referencia fija es el volumen del depósito. Un mayor caudal necesita menos minutos. Multiplicar 72 por el caudal no da un tiempo y no conserva las unidades."
+          }
+        }
+      ]
+    }
+  ]
+}

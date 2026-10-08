@@ -1,0 +1,393 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__sintesis_estructura_divisibilidad",
+  "title": "Síntesis: estructura, factores y decisiones",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer relaciones, no solo símbolos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una expresión bien leída conserva la relación entre las cantidades: grupos y piezas sueltas, cambios repetidos y estado inicial, factores y múltiplos. Antes de calcular, interpreta la agrupación. Los paréntesis pueden cambiar esa relación; las propiedades permiten algunos cambios, pero no todos. Una transformación válida debe conservar el valor de la expresión completa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si encuentras \\(5\\times(12+8)\\), puedes sumar dentro del paréntesis y obtener cien, o distribuir para sumar sesenta y cuarenta. En cambio, \\(5\\times12+8\\) vale sesenta y ocho: el ocho no forma parte de los cinco grupos. Tener los mismos números no garantiza representar la misma cantidad."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para una potencia, identifica la base y cuenta sus factores. Para una suma con signos, conserva cada signo unido a su término. Para una división, comprueba el divisor y recupera el dividendo con un producto. Estas acciones sirven aunque el problema cambie de contexto y ya no te diga qué regla debes usar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos maneras de que algo sea común"
+        },
+        {
+          "type": "paragraph",
+          "text": "En problemas de grupos iguales, un número de grupos debe dividir exactamente cada cantidad disponible. El mayor posible es un máximo común divisor. En problemas de coincidencia de ciclos, un tiempo debe ser múltiplo de cada duración. El primer tiempo positivo que sirve es un mínimo común múltiplo. No intercambies ambas ideas por el hecho de que comparten la palabra común."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, con 16 piezas rojas y 24 azules podemos formar ocho paquetes idénticos, de dos rojas y tres azules. El número ocho divide ambas cantidades. Si dos avisos se repiten cada 16 y 24 minutos y comienzan juntos, coinciden después de 48 minutos; ese tiempo contiene tres ciclos del primero y dos del segundo."
+        },
+        {
+          "type": "paragraph",
+          "text": "La factorización hace visibles esas condiciones. Busca factores primos, revisa cuántas copias hay de cada uno y vuelve a multiplicar como comprobación. Los factores comunes no pueden usar más copias de las que hay en cualquiera de los números. Un múltiplo común necesita suficientes copias para contenerlos a todos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las actividades siguientes exigen elegir, calcular y detectar errores. En algunas hay datos de la unidad anterior para recuperar lo aprendido. No hace falta usar un procedimiento largo si una observación sencilla justifica el resultado. Sin embargo, una coincidencia en un ejemplo no prueba por sí sola que una regla funcione siempre; expresa qué propiedad o representación respalda tu decisión."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Expresiones y equivalencia"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "expresion_integrada",
+          "prompt": "Calcula 2 × (9 - 5)² - 7.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "expresion_integrada__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "25"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9 - 5 = 4; 4² = 16; 2 × 16 = 32; 32 - 7 = 25.",
+            "incorrect": "La potencia pertenece al resultado del paréntesis. Si multiplicas 2 × 4 antes de elevar al cuadrado, cambias la base."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "equivalencia_sintesis",
+          "prompt": "Selecciona todas las expresiones equivalentes a 18 × 11.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "equivalencia_sintesis__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "18 × 10 + 18"
+                },
+                {
+                  "id": "b",
+                  "label": "18 × 10 + 1"
+                },
+                {
+                  "id": "c",
+                  "label": "11 × 18"
+                },
+                {
+                  "id": "d",
+                  "label": "18 + 11"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distribuir 18 × (10 + 1) da 180 + 18; conmutar intercambia los factores. Ambas expresiones valen 198.",
+            "incorrect": "La segunda opción olvida multiplicar el 1 por 18. La cuarta sustituye el producto por una suma sin justificación."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparacion_signos",
+          "prompt": "Una persona cambia (-3) × (8 - 2) por -24 - 6. ¿Qué evaluación corresponde?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparacion_signos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es correcto porque cada número aparece una vez."
+                },
+                {
+                  "id": "b",
+                  "label": "Falta considerar que se resta el producto (-3) × 2, que es -6; queda -24 - (-6) = -18."
+                },
+                {
+                  "id": "c",
+                  "label": "Solo hay que quitar todos los signos negativos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La distributividad conserva la resta: (-3) × 8 - [(-3) × 2] = -24 - (-6) = -18.",
+            "incorrect": "El segundo producto es negativo y se está restando. Contar apariciones de cifras o eliminar signos no conserva el valor."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Primos, factores y paridad"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "primos_sintesis",
+          "prompt": "Selecciona todos los primos de la lista.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "primos_sintesis__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "1"
+                },
+                {
+                  "id": "b",
+                  "label": "2"
+                },
+                {
+                  "id": "c",
+                  "label": "21"
+                },
+                {
+                  "id": "d",
+                  "label": "31"
+                },
+                {
+                  "id": "e",
+                  "label": "49"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2 y 31 son primos. 1 solo tiene un divisor; 21 = 3 × 7 y 49 = 7 × 7 son compuestos.",
+            "incorrect": "Ser impar no garantiza ser primo. Para 31, un factor no trivial tendría que ser 2, 3, 4 o 5: dos factores de al menos 6 superarían 31, y ninguno de esos cuatro divide a 31."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_faltante",
+          "prompt": "Completa 84 = 2² × 3 × ? con un primo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_faltante__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2² × 3 = 12 y 84 ÷ 12 = 7. El 7 es primo.",
+            "incorrect": "El exponente 2 repite el factor dos: 2² vale 4, no 2 × el número que falta."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "generalizar_paridad",
+          "prompt": "¿Cuál afirmación es verdadera para cualquier entero par y cualquier entero impar?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "generalizar_paridad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Su suma siempre es par."
+                },
+                {
+                  "id": "b",
+                  "label": "Su producto siempre es impar."
+                },
+                {
+                  "id": "c",
+                  "label": "Su suma es impar y su producto es par."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La suma deja la pieza suelta del impar. El producto contiene el factor dos del número par, por lo que es par.",
+            "incorrect": "En la suma de par e impar queda una pieza sin pareja. En el producto, conservar un factor dos asegura divisibilidad por dos."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir y aplicar un modelo"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "kits_sintesis",
+          "prompt": "Hay 42 tarjetas verdes y 70 naranjas. Forma el mayor número de kits idénticos usando todas. Escribe número de kits y tarjetas de cada color por kit.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "kits_sintesis__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "k",
+                  "type": "numeric",
+                  "label": "Número de kits",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "v",
+                  "type": "numeric",
+                  "label": "Verdes por kit",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "n",
+                  "type": "numeric",
+                  "label": "Naranjas por kit",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "k": {
+                    "type": "numeric",
+                    "expected": "14"
+                  },
+                  "v": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "n": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "MCD(42,70) = 14; cada kit lleva 42 ÷ 14 = 3 verdes y 70 ÷ 14 = 5 naranjas.",
+            "incorrect": "El número de kits debe dividir a 42 y 70. Después de hallarlo, divide cada cantidad para obtener el contenido. No uses el mcm, que excedería las cantidades disponibles."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "avisos_sintesis",
+          "prompt": "Dos avisos se emiten juntos al comenzar. Uno se repite cada 15 minutos y otro cada 20. ¿Cuánto falta para la siguiente coincidencia?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "avisos_sintesis__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "60"
+              },
+              "unit": "minutos"
+            }
+          ],
+          "feedback": {
+            "correct": "mcm(15,20) = 60; hay cuatro ciclos de 15 y tres de 20.",
+            "incorrect": "5 es divisor común, pero no duración de ciclos completos de ambos avisos. El tiempo buscado debe ser múltiplo de cada periodo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_estado",
+          "prompt": "Un registro comienza en -8 puntos y recibe cinco cambios de +3 puntos. ¿Cuál es el estado final?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_estado__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              },
+              "unit": "puntos"
+            }
+          ],
+          "feedback": {
+            "correct": "El cambio total es 5 × 3 = 15; el estado final es -8 + 15 = 7 puntos.",
+            "incorrect": "15 es el cambio total y -8 es el inicio. La respuesta debe combinar ambos y no repetir cinco veces el estado inicial."
+          }
+        }
+      ]
+    }
+  ]
+}

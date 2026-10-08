@@ -1,0 +1,405 @@
+{
+  "id": "math_course_01__razones_y_proporcionalidad__sintesis_proporcionalidad",
+  "title": "Síntesis: elegir una relación y comprobarla",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "De la situación al modelo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora no se indica de antemano qué procedimiento usar. Lee qué pregunta el problema, identifica las magnitudes y nombra sus unidades. Una razón parte-parte, una parte del total y una tasa responden a preguntas diferentes. Una tabla organiza los datos, pero el contexto determina qué relaciones se pueden extender a casos nuevos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes comparar con una unidad, buscar un factor común o conservar un producto. También puedes decidir que ninguna proporcionalidad sirve. Un cargo fijo, una pérdida constante o un cambio de condiciones pueden exigir una cuenta diferente. Explica tu decisión con la relación que se conserva; comprobar solo que la respuesta «parece razonable» no es suficiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "En las actividades con varios campos, las respuestas pertenecen a una misma situación. Comprueba que sean compatibles entre sí: las partes deben sumar el total, una tasa multiplicada por su referencia debe recuperar la cantidad y los productos de una relación inversa deben coincidir. Si una cuenta requiere estimación, revisa primero si el valor debería aumentar o disminuir."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retos de transferencia"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "huerto",
+          "prompt": "Un huerto coloca plantas de hoja y de flor en razón hoja:flor = 5:3. Hay 64 plantas. Determina las cantidades y la fracción del total que corresponde a las de flor. Se conserva la composición de todo el huerto.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "plantas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "hoja",
+                  "type": "numeric",
+                  "label": "Plantas de hoja"
+                },
+                {
+                  "id": "flor",
+                  "type": "numeric",
+                  "label": "Plantas de flor"
+                },
+                {
+                  "id": "parte",
+                  "type": "numeric",
+                  "label": "Fracción de flor dentro del total"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "hoja": {
+                    "type": "numeric",
+                    "expected": "40"
+                  },
+                  "flor": {
+                    "type": "numeric",
+                    "expected": "24"
+                  },
+                  "parte": {
+                    "type": "numeric",
+                    "expected": "3/8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Hay ocho partes de ocho plantas: 40 de hoja y 24 de flor. Las de flor son 24/64 = 3/8 del total.",
+            "incorrect": "5:3 compara dos partes. Para el total se suman ocho partes; 3/5 compararía flor con hoja. Verifica que 40+24 sea 64."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cinta",
+          "prompt": "Una cinta uniforme de 6 m tiene masa de 150 g. Sin añadir embalaje, calcula la masa de 2,4 m y la tasa en g/m. Elige la condición que permite extender los datos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "masa",
+              "type": "math_numeric_input",
+              "label": "Masa",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "60"
+              },
+              "unit": "g",
+              "calculator": true
+            },
+            {
+              "id": "tasa",
+              "type": "math_numeric_input",
+              "label": "Tasa",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "25"
+              },
+              "unit": "g/m"
+            },
+            {
+              "id": "condicion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La cinta tiene la misma masa por metro en todo el tramo."
+                },
+                {
+                  "id": "b",
+                  "label": "Toda cinta pesa siempre 150 gramos."
+                },
+                {
+                  "id": "c",
+                  "label": "La longitud y la masa deben ser números enteros."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La tasa es 150/6 = 25 g/m y la masa es 25×2,4 = 60 g. La uniformidad permite conservar esa tasa.",
+            "incorrect": "150 g es la masa de seis metros, no de cualquier tramo. Las fracciones de metro también siguen la relación cuando el material es uniforme."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "viaje",
+          "prompt": "Dos trayectos tienen la misma distancia de 96 km, sin paradas. Uno se recorre a 32 km/h y otro a 48 km/h, con velocidad constante. Calcula ambos tiempos y decide qué se conserva.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tiempo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Horas a 32 km/h"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Horas a 48 km/h"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "fijo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El cociente tiempo/velocidad."
+                },
+                {
+                  "id": "b",
+                  "label": "El producto velocidad×tiempo."
+                },
+                {
+                  "id": "c",
+                  "label": "La suma velocidad+tiempo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se tarda 3 h y 2 h. Ambos productos velocidad×tiempo son 96 km, la distancia fijada.",
+            "incorrect": "La distancia es la referencia fija. Una suma de km/h y horas no representa una distancia; el cociente tampoco conserva el recorrido."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tarifa",
+          "prompt": "Un taller cobra 20 pesos de preparación más 12 por cada pieza. Otro cobra únicamente 17 por pieza. Para cinco piezas, calcula ambos pagos y elige el menor. Se supone igual calidad y que ambos aceptan el encargo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Pago primer taller",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "80"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "b",
+              "type": "math_numeric_input",
+              "label": "Pago segundo taller",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "85"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "menor",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Primer taller"
+                },
+                {
+                  "id": "b",
+                  "label": "Segundo taller"
+                },
+                {
+                  "id": "igual",
+                  "label": "Pagos iguales"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El primero cobra 20+12×5 = 80; el segundo 17×5 = 85. Para este encargo conviene el primero por pago total.",
+            "incorrect": "La menor tasa variable no decide sola cuando hay cargo fijo. 160 pesos repetiría el cargo de preparación en cada pieza: (20+12)×5. Ese cargo se paga una sola vez. Compara el total para la misma cantidad de piezas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "leerplano",
+          "prompt": "Esta gráfica representa cajas iguales: horizontal, número de cajas; vertical, cantidad de botellas. Identifica las botellas de tres cajas y el número de botellas por caja. La etiqueta del punto está en el orden (cajas, botellas).",
+          "representations": [
+            {
+              "type": "math_coordinate_graph",
+              "mode": "scatter",
+              "bounds": {
+                "xMin": 0,
+                "xMax": 5,
+                "yMin": 0,
+                "yMax": 20
+              },
+              "gridStep": 1,
+              "snap": 1,
+              "points": [
+                {
+                  "x": 0,
+                  "y": 0
+                },
+                {
+                  "x": 1,
+                  "y": 4
+                },
+                {
+                  "x": 2,
+                  "y": 8
+                },
+                {
+                  "x": 3,
+                  "y": 12
+                },
+                {
+                  "x": 4,
+                  "y": 16
+                }
+              ],
+              "showLabels": true
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "lectura",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "q",
+                  "type": "numeric",
+                  "label": "Botellas de 3 cajas"
+                },
+                {
+                  "id": "k",
+                  "type": "numeric",
+                  "label": "Botellas por caja"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "q": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "k": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El punto (3,12) indica 12 botellas. Como las cajas son iguales, 12/3 = 4 botellas por caja.",
+            "incorrect": "No leas la coordenada horizontal como botellas. La gráfica conserva el orden de las cantidades; la tasa se obtiene después de interpretar el punto."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modeloerroneo",
+          "prompt": "Una vela tiene 20 cm al encenderse y pierde 1 cm cada hora, mientras dura. A las 2 h mide 18 cm y a las 4 h mide 16 cm. Selecciona la justificación que describe correctamente la relación entre tiempo y longitud restante.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "argumento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es directa porque el tiempo se duplica."
+                },
+                {
+                  "id": "b",
+                  "label": "Es inversa porque la vela se hace más corta."
+                },
+                {
+                  "id": "c",
+                  "label": "Ninguna: no se mantiene ni longitud/tiempo ni tiempo×longitud."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "18/2 y 16/4 son distintos; 2×18 y 4×16 también. La pérdida constante exige restar al valor inicial.",
+            "incorrect": "Duplicar solo una cantidad no establece proporcionalidad directa. Disminuir no establece la inversa. Hay que comprobar el invariante pertinente, no elegir por la dirección del cambio."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobación final"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de dar una respuesta, vuelve a la pregunta. Una misma situación puede pedir cantidad, tasa, parte del total o tiempo. Cambiar la referencia cambia la cuenta. Si puedes explicar qué permanece constante, verificarlo con los datos y conservar las unidades, estás preparado para usar porcentajes y escalas con el mismo criterio."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,320 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__cambios_porcentuales",
+  "title": "Cambios porcentuales y operaciones inversas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Del porcentaje al multiplicador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un aumento del 18% deja la cantidad inicial completa y añade el 18% de ella. El factor es 1+0,18 = 1,18. Un descuento del 18% conserva 1−0,18 = 0,82. Los factores muestran de una vez lo que queda: \\(\\text{final}=\\text{inicial}\\times\\text{factor}\\). La referencia del cambio es la cantidad que había antes de aplicarlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un precio de 500 pesos aumenta 18%, el aumento es 90 y el precio nuevo 590. También obtenemos 500×1,18 = 590. Si baja 18%, queda en 410. No confundir la cantidad del cambio con la cantidad final: 90 describe el aumento o descuento, mientras que 590 y 410 describen los resultados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para recuperar el inicio, deshacemos la multiplicación mediante una división. Si 590 es el precio después de un aumento de 18%, el inicio es 590/1,18 = 500. Restar el 18% de 590 daría 483,8 porque tomaría una base distinta. El inverso del factor 1,18 es 1/1,18, no 0,82."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambios sucesivos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera 1000 pesos con un descuento del 25% y después un aumento del 8% sobre el precio descontado. El primer resultado es 750. El segundo es 750×1,08 = 810. El factor total es 0,75×1,08 = 0,81: la cantidad final equivale al 81% de la inicial, una reducción total del 19%."
+        },
+        {
+          "type": "paragraph",
+          "text": "No se pueden sumar automáticamente −25% y +8% para obtener −17%. El segundo porcentaje se calcula sobre 750, no sobre 1000. Se pueden sumar las cantidades monetarias de los cambios una vez calculadas correctamente: se restaron 250 y se añadieron 60. Los porcentajes de bases distintas requieren conservar sus referencias."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un aumento del 20% seguido de una disminución del 20% tampoco devuelve el inicio. Con 100 unidades: 100×1,20 = 120, y 120×0,80 = 96. El factor total 0,96 muestra una reducción del 4%. Para volver de 120 a 100 necesitamos dividir entre 1,20. Comparar el resultado con una estimación evita aceptar una conclusión basada solo en los nombres de los porcentajes."
+        },
+        {
+          "type": "note",
+          "text": "Una diferencia entre porcentajes se mide en puntos porcentuales. Pasar de 40% a 50% son diez puntos porcentuales, pero un aumento relativo de 10/40 = 25% sobre el valor 40."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "multiplicadores",
+          "prompt": "Relaciona cada cambio con el factor que transforma la cantidad inicial en la final. Cada destino se usa una vez.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cambios",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "a",
+                  "label": "Aumento del 12%"
+                },
+                {
+                  "id": "b",
+                  "label": "Descuento del 12%"
+                },
+                {
+                  "id": "c",
+                  "label": "Aumento del 5%"
+                },
+                {
+                  "id": "d",
+                  "label": "Descuento del 5%"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "t1",
+                  "label": "0,95"
+                },
+                {
+                  "id": "t2",
+                  "label": "1,12"
+                },
+                {
+                  "id": "t3",
+                  "label": "0,88"
+                },
+                {
+                  "id": "t4",
+                  "label": "1,05"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "a": "t2",
+                  "b": "t3",
+                  "c": "t4",
+                  "d": "t1"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los aumentos usan 1,12 y 1,05; los descuentos 0,88 y 0,95. Se suma o resta el factor del cambio a la unidad inicial.",
+            "incorrect": "0,12 y 0,05 describen solo la parte que cambia. La cantidad final incluye lo que ya había: suma al uno para aumentar y resta del uno para descontar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Componer y recuperar"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sucesivos",
+          "prompt": "Un artículo cuesta 800 pesos. Se descuenta el 20% y después se añade un recargo del 10% sobre el precio descontado. Calcula el pago final y el porcentaje total de reducción respecto de 800.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "final",
+              "type": "math_numeric_input",
+              "label": "Pago final",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "704"
+              },
+              "unit": "pesos",
+              "calculator": true
+            },
+            {
+              "id": "reduccion",
+              "type": "math_numeric_input",
+              "label": "Porcentaje total de reducción",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "12"
+              },
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "800×0,80×1,10 = 704. La diferencia es 96 y 96/800 = 0,12: reducción del 12%.",
+            "incorrect": "720 pesos resulta de sumar porcentajes con bases distintas. El recargo se aplica a 640, no a 800. La reducción total usa como base el precio inicial."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "volver",
+          "prompt": "Una cantidad de 200 aumenta 20% y luego disminuye 20% de su nuevo valor. Calcula el resultado y elige el argumento que explica por qué no vuelve al inicio.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cantidad",
+              "type": "math_numeric_input",
+              "label": "Cantidad final",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "192"
+              }
+            },
+            {
+              "id": "argumento",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Los cambios tienen igual porcentaje pero distinta base."
+                },
+                {
+                  "id": "b",
+                  "label": "Los cambios se cancelan porque tienen signos opuestos."
+                },
+                {
+                  "id": "c",
+                  "label": "Toda disminución borra el aumento anterior."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "200×1,20×0,80 = 192. Se añadieron 40 y se quitaron 48, porque la segunda base era 240.",
+            "incorrect": "Los signos opuestos no bastan para cancelar porcentajes. El descuento se calcula respecto del valor aumentado y por eso su cantidad es mayor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inicial",
+          "prompt": "Una tarifa quedó en 936 pesos después de aumentar el 17%. ¿Cuál era la tarifa inicial? Puedes usar la calculadora para comprobar la operación inversa.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "antes",
+              "type": "math_numeric_input",
+              "label": "Tarifa inicial",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "800"
+              },
+              "unit": "pesos",
+              "calculator": true
+            }
+          ],
+          "feedback": {
+            "correct": "La tarifa final es 1,17 veces la inicial: 936/1,17 = 800. Comprobar 800×1,17 recupera 936.",
+            "incorrect": "Restar el 17% de 936 usa la tarifa final como referencia y no invierte el aumento. Divide por el factor completo 1,17."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden",
+          "prompt": "Una cantidad final de 960 se obtuvo al aumentar 20% una cantidad desconocida. Ordena los pasos para recuperar y comprobar el valor inicial.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pasos",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "factor",
+                  "label": "Convertir el aumento en factor 1,20."
+                },
+                {
+                  "id": "dividir",
+                  "label": "Dividir la cantidad final entre 1,20."
+                },
+                {
+                  "id": "comprobar",
+                  "label": "Multiplicar el resultado por 1,20 para recuperar 960."
+                }
+              ],
+              "initialOrder": [
+                "comprobar",
+                "factor",
+                "dividir"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "factor",
+                  "dividir",
+                  "comprobar"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Primero se identifica la multiplicación aplicada, después se deshace y al final se comprueba. El valor inicial es 960/1,20 = 800.",
+            "incorrect": "No se puede escoger la división antes de identificar el factor. Comprobar significa rehacer el aumento con el resultado encontrado, no descontar el mismo porcentaje."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "puntos",
+          "prompt": "La participación pasa del 40% al 50%. Indica cuántos puntos porcentuales aumenta y cuál es el porcentaje de aumento relativo respecto del 40 inicial.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diferencias",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "puntos",
+                  "type": "numeric",
+                  "label": "Puntos porcentuales"
+                },
+                {
+                  "id": "relativo",
+                  "type": "numeric",
+                  "label": "Porcentaje de aumento relativo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "puntos": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "relativo": {
+                    "type": "numeric",
+                    "expected": "25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La diferencia es 50−40 = 10 puntos porcentuales. Respecto de 40, el aumento relativo es 10/40 = 25%.",
+            "incorrect": "10 puntos porcentuales no significa aumento relativo del 10%. Para la comparación relativa debes dividir el cambio entre la referencia inicial."
+          }
+        }
+      ]
+    }
+  ]
+}
