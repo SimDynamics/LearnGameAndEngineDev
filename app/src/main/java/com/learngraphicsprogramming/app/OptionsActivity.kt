@@ -2166,10 +2166,30 @@ class OptionsActivity : AppCompatActivity() {
         ).visibility =
             if (isPremium) View.GONE else View.VISIBLE
 
-        findViewById<TextView>(
-            R.id.textPremiumStatus
-        ).visibility =
+        val premiumStatusButton =
+            findViewById<Button>(
+                R.id.buttonPremiumStatus
+            )
+
+        premiumStatusButton.visibility =
             if (isPremium) View.VISIBLE else View.GONE
+
+        premiumStatusButton.background =
+            androidx.appcompat.content.res.AppCompatResources.getDrawable(
+                this,
+                R.drawable.bg_premium_gold
+            )
+
+        premiumStatusButton.backgroundTintList =
+            null
+
+        premiumStatusButton.setTextColor(
+            Color.rgb(
+                32,
+                22,
+                0
+            )
+        )
 
         findViewById<TextView>(
             R.id.textPremiumPaymentNote

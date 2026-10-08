@@ -248,7 +248,7 @@ class CalculatorActivity : AppCompatActivity() {
                     tag = name
                     text = key.label
                     isAllCaps = false
-                    textSize = if (compact) 15f else 17f
+                    textSize = 18f
                     minimumWidth = 0
                     minimumHeight = keyHeight
                     insetTop /= 4

@@ -41,7 +41,7 @@ internal object MathWidgetUi {
 
     fun text(context: Context, value: String, bold: Boolean = false, mathMode: String = "auto"): TextView = MathTextView(context).apply {
         setMathContent(value, mathMode)
-        textSize = if (bold) 18f else 16f
+        textSize = 18f
         setTextColor(MathWidgetUi.foreground)
         if (bold) setTypeface(typeface, Typeface.BOLD)
         setPadding(0, dp(context, 6), 0, dp(context, 6))
@@ -74,7 +74,7 @@ internal object MathWidgetUi {
     fun button(context: Context, label: String, accent: Int): Button = Button(context).apply {
         text = label
         isAllCaps = false
-        textSize = 14f
+        textSize = 18f
         minHeight = dp(context, 48)
         val brightness = (Color.red(accent) * 299 + Color.green(accent) * 587 + Color.blue(accent) * 114) / 1000
         setTextColor(if (brightness >= 160) Color.rgb(20, 23, 29) else Color.WHITE)

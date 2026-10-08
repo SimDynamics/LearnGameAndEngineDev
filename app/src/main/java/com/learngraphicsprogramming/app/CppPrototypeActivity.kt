@@ -117,6 +117,10 @@ class CppPrototypeActivity : AppCompatActivity() {
                     CppSyntaxHighlighter.applyTo(
                         text
                     )
+
+                    compactEditorSpaces(
+                        text
+                    )
                 }
             }
         )
@@ -124,6 +128,10 @@ class CppPrototypeActivity : AppCompatActivity() {
         binding.sourceCode.text?.let { editable ->
 
             CppSyntaxHighlighter.applyTo(
+                editable
+            )
+
+            compactEditorSpaces(
                 editable
             )
         }
@@ -153,6 +161,40 @@ class CppPrototypeActivity : AppCompatActivity() {
         binding.runButton.setOnClickListener {
 
             runPrototype()
+        }
+    }
+
+    private fun compactEditorSpaces(
+        text: Editable
+    ) {
+
+        val previousSpans =
+            text.getSpans(
+                0,
+                text.length,
+                android.text.style.ScaleXSpan::class.java
+            )
+
+        for (span in previousSpans) {
+
+            text.removeSpan(
+                span
+            )
+        }
+
+        for (i in 0 until text.length) {
+
+            if (text[i] == ' ') {
+
+                text.setSpan(
+                    android.text.style.ScaleXSpan(
+                        0.80f
+                    ),
+                    i,
+                    i + 1,
+                    android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
         }
     }
 

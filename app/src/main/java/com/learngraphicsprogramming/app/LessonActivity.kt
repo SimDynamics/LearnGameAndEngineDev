@@ -784,8 +784,50 @@ class LessonActivity : AppCompatActivity() {
                 fullSize
             )
 
+        val premiumGold =
+            Color.rgb(
+                212,
+                175,
+                55
+            )
+
         imageAttemptRoute.contentDescription =
-            "${attemptState.available} de ${attemptState.maximum} intentos disponibles"
+            if (
+                attemptState.unlimited
+            ) {
+                "Intentos ilimitados"
+            } else {
+                "${attemptState.available} de ${attemptState.maximum} intentos disponibles"
+            }
+
+        /*
+         * Premium necesita más espacio para
+         * mostrar el infinito a 32sp.
+         *
+         * Gratis conserva sus dimensiones
+         * y posición originales.
+         */
+        textAttemptCount.layoutParams =
+            textAttemptCount.layoutParams.apply {
+
+                width =
+                    if (
+                        attemptState.unlimited
+                    ) {
+                        dp(48)
+                    } else {
+                        dp(22)
+                    }
+            }
+
+        textAttemptCount.translationX =
+            if (
+                attemptState.unlimited
+            ) {
+                dp(18).toFloat()
+            } else {
+                dp(12).toFloat()
+            }
 
         textAttemptCount.text =
             if (
@@ -796,9 +838,74 @@ class LessonActivity : AppCompatActivity() {
                 attemptState.available.toString()
             }
 
-        textAttemptCount.setTextColor(
-            attemptColor
-        )
+        if (
+            attemptState.unlimited
+        ) {
+
+            textAttemptCount.setTextColor(
+                premiumGold
+            )
+
+            textAttemptCount.setTextSize(
+                TypedValue.COMPLEX_UNIT_SP,
+                32f
+            )
+
+            textAttemptCount.setTypeface(
+                null,
+                Typeface.BOLD
+            )
+
+        } else {
+
+            textAttemptCount.setTextColor(
+                attemptColor
+            )
+
+            textAttemptCount.setTextSize(
+                TypedValue.COMPLEX_UNIT_SP,
+                15f
+            )
+
+            textAttemptCount.setTypeface(
+                null,
+                Typeface.BOLD
+            )
+        }
+
+        /*
+         * INDICADOR PREMIUM.
+         *
+         * Gratis: muestra el contador numérico.
+         * Premium: muestra el icono de infinito
+         * con degradado dorado definido en XML.
+         */
+        val imageAttemptInfinity =
+            findViewById<ImageView>(
+                R.id.imageAttemptInfinity
+            )
+
+        if (
+            attemptState.unlimited
+        ) {
+
+            textAttemptCount.visibility =
+                View.GONE
+
+            imageAttemptInfinity.visibility =
+                View.VISIBLE
+
+        } else {
+
+            textAttemptCount.visibility =
+                View.VISIBLE
+
+            imageAttemptInfinity.visibility =
+                View.GONE
+
+            textAttemptCount.text =
+                attemptState.available.toString()
+        }
 
         val percentage =
             (
@@ -4324,7 +4431,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         languageLabel.textSize =
-            15f
+            18f
 
         /*
          * REINICIAR.
@@ -6096,7 +6203,7 @@ class LessonActivity : AppCompatActivity() {
                 fragments.getString(i)
 
             row.text =
-                CppSyntaxHighlighter.highlight(
+                compactCodeSpaces(
                     fragmentText
                 )
 
@@ -7022,9 +7129,6 @@ class LessonActivity : AppCompatActivity() {
             sourceCode
         )
 
-        sourceCode.typeface =
-            Typeface.MONOSPACE
-
         sourceCode.textSize =
             18f
 
@@ -7051,6 +7155,9 @@ class LessonActivity : AppCompatActivity() {
             android.text.InputType.TYPE_CLASS_TEXT or
                     android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
                     android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+
+        sourceCode.typeface =
+            Typeface.MONOSPACE
 
         /*
  * Impide que Android/SwiftKey sustituya
@@ -7112,6 +7219,41 @@ class LessonActivity : AppCompatActivity() {
                 1f
             )
 
+        /*
+         * Compacta visualmente los espacios al 80 %.
+         * No elimina ni modifica caracteres del código.
+         */
+        fun compactCompilerSpaces(
+            editable: Editable
+        ) {
+
+            val previousSpans =
+                editable.getSpans(
+                    0,
+                    editable.length,
+                    android.text.style.ScaleXSpan::class.java
+                )
+
+            for (span in previousSpans) {
+                editable.removeSpan(span)
+            }
+
+            for (i in 0 until editable.length) {
+
+                if (editable[i] == ' ') {
+
+                    editable.setSpan(
+                        android.text.style.ScaleXSpan(
+                            0.80f
+                        ),
+                        i,
+                        i + 1,
+                        android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                }
+            }
+        }
+
         sourceCode.setText(
             initialCode
         )
@@ -7119,6 +7261,10 @@ class LessonActivity : AppCompatActivity() {
         sourceCode.text?.let { editable ->
 
             CppSyntaxHighlighter.applyTo(
+                editable
+            )
+
+            compactCompilerSpaces(
                 editable
             )
         }
@@ -8581,6 +8727,10 @@ class LessonActivity : AppCompatActivity() {
                     }
 
                     CppSyntaxHighlighter.applyTo(
+                        s
+                    )
+
+                    compactCompilerSpaces(
                         s
                     )
                 }
@@ -10762,14 +10912,9 @@ class LessonActivity : AppCompatActivity() {
         val token =
             TextView(this)
 
-        val compactText =
+        token.text =
             compactCodeSpaces(
                 text
-            ).toString()
-
-        token.text =
-            CppSyntaxHighlighter.highlight(
-                compactText
             )
 
         token.tag =
@@ -14205,7 +14350,7 @@ class LessonActivity : AppCompatActivity() {
                 )
             ) {
 
-                CppSyntaxHighlighter.highlight(
+                compactCodeSpaces(
                     code
                 )
 
@@ -16696,7 +16841,7 @@ class LessonActivity : AppCompatActivity() {
     ): CharSequence {
 
         val result =
-            android.text.SpannableString(
+            CppSyntaxHighlighter.highlight(
                 text
             )
 
@@ -16710,7 +16855,7 @@ class LessonActivity : AppCompatActivity() {
 
                 result.setSpan(
                     android.text.style.ScaleXSpan(
-                        0.55f
+                        0.80f
                     ),
                     i,
                     i + 1,
@@ -16729,14 +16874,9 @@ class LessonActivity : AppCompatActivity() {
         val view =
             TextView(this)
 
-        val compactText =
+        view.text =
             compactCodeSpaces(
                 text
-            ).toString()
-
-        view.text =
-            CppSyntaxHighlighter.highlight(
-                compactText
             )
 
         view.typeface =

@@ -403,7 +403,7 @@ object MathVisualControls {
     private fun label(context: Context, value: String): TextView = TextView(context).apply {
         MathTextRenderer.apply(this, value)
         setTextColor(Color.WHITE)
-        textSize = 15f
+        textSize = 18f
         setPadding(dp(context, 4), dp(context, 8), dp(context, 4), dp(context, 8))
     }
     private fun numberInput(context: Context, description: String, value: Double, accent: Int): EditText = EditText(context).apply {
@@ -417,7 +417,7 @@ object MathVisualControls {
         contentDescription = description
         tag = "math_gesture_owner"
         setText(MathCartesianView.formatCoordinate(value))
-        textSize = 16f
+        textSize = 18f
         minimumHeight = dp(context, 48)
     }
     private fun parse(value: String): Double? = value.trim().replace(',', '.').toDoubleOrNull()?.takeIf(Double::isFinite)
