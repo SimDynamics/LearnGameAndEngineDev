@@ -1,7 +1,9 @@
 package com.learngraphicsprogramming.app
 
 import android.app.AlertDialog
+import android.content.SharedPreferences
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.Switch
 import android.widget.Toast
@@ -16,7 +18,25 @@ import android.text.TextWatcher
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 
+
 class OptionsActivity : AppCompatActivity() {
+
+    /*
+     * Actualiza la interfaz cuando Google Play
+     * confirma un cambio en el estado Premium.
+     */
+    private val premiumStateListener =
+        SharedPreferences.OnSharedPreferenceChangeListener {
+                _,
+                key ->
+
+            if (key == "state") {
+
+                runOnUiThread {
+                    updatePremiumUi()
+                }
+            }
+        }
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -33,6 +53,11 @@ class OptionsActivity : AppCompatActivity() {
         val buttonBack =
             findViewById<Button>(
                 R.id.buttonBack
+            )
+
+        val buttonPremiumPurchase =
+            findViewById<Button>(
+                R.id.buttonPremiumPurchase
             )
 
         val switchBetweenLessons =
@@ -1766,6 +1791,32 @@ class OptionsActivity : AppCompatActivity() {
         }
 
         /*
+         * COMPRA PREMIUM.
+         *
+         * Si el usuario ya tiene Premium,
+         * no necesita volver a comprarlo.
+         */
+        buttonPremiumPurchase.setOnClickListener {
+
+            if (
+                PremiumRepository.isPremium(this)
+            ) {
+
+                Toast.makeText(
+                    this,
+                    "Premium ya está activo",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+            } else {
+
+                PremiumBillingManager.launchPremiumPurchase(
+                    this
+                )
+            }
+        }
+
+        /*
          * REINICIO DE PROGRESO.
          *
          * Es una acción inmediata.
@@ -2103,6 +2154,41 @@ class OptionsActivity : AppCompatActivity() {
         }
     }
 
+    private fun updatePremiumUi() {
+
+        val isPremium =
+            PremiumRepository.isPremium(
+                this
+            )
+
+        findViewById<Button>(
+            R.id.buttonPremiumPurchase
+        ).visibility =
+            if (isPremium) View.GONE else View.VISIBLE
+
+        findViewById<TextView>(
+            R.id.textPremiumStatus
+        ).visibility =
+            if (isPremium) View.VISIBLE else View.GONE
+
+        findViewById<TextView>(
+            R.id.textPremiumPaymentNote
+        ).visibility =
+            if (isPremium) View.GONE else View.VISIBLE
+    }
+
+    override fun onStart() {
+
+        super.onStart()
+
+        getSharedPreferences(
+            "premium_state",
+            MODE_PRIVATE
+        ).registerOnSharedPreferenceChangeListener(
+            premiumStateListener
+        )
+    }
+
     override fun onResume() {
 
         super.onResume()
@@ -2110,5 +2196,19 @@ class OptionsActivity : AppCompatActivity() {
         AppearanceUi.apply(
             this
         )
+
+        updatePremiumUi()
+    }
+
+    override fun onStop() {
+
+        getSharedPreferences(
+            "premium_state",
+            MODE_PRIVATE
+        ).unregisterOnSharedPreferenceChangeListener(
+            premiumStateListener
+        )
+
+        super.onStop()
     }
 }
