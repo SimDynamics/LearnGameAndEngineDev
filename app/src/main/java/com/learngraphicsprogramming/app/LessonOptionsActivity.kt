@@ -122,14 +122,14 @@ class LessonOptionsActivity : AppCompatActivity() {
             findViewById<View>(id).visibility = programmingVisibility
         }
         findViewById<TextView>(R.id.textLessonOptionsDescription).text =
-            if (isProgramming) "Configura la experiencia de esta lección y las herramientas de programación."
-            else "Configura el tamaño del contenido y el progreso de esta lección."
+            if (isProgramming) getString(R.string.lesson_settings_programming_description)
+            else getString(R.string.lesson_settings_math_description)
 
         /*
          * CABECERA.
          */
         textLessonNumber.text =
-            "Lección $lessonNumber"
+            getString(R.string.nav_lesson_number, lessonNumber)
 
         textLessonNumber.setTextColor(
             AppearanceSettingsRepository
@@ -238,11 +238,11 @@ class LessonOptionsActivity : AppCompatActivity() {
                     pendingUseGlobal
                 ) {
 
-                    "Tamaño del curso · $visibleScale % · Global"
+                    getString(R.string.lesson_settings_course_size_global, visibleScale)
 
                 } else {
 
-                    "Tamaño del curso · $visibleScale %"
+                    getString(R.string.lesson_settings_course_size, visibleScale)
                 }
 
             textLessonTextSizePreview.textSize =
@@ -426,7 +426,7 @@ class LessonOptionsActivity : AppCompatActivity() {
 
                 Toast.makeText(
                     this,
-                    "Ajustes del curso guardados",
+                    getString(R.string.course_settings_saved),
                     Toast.LENGTH_SHORT
                 ).show()
 
@@ -475,21 +475,17 @@ class LessonOptionsActivity : AppCompatActivity() {
                 this
             )
                 .setTitle(
-                    "Reiniciar lección"
+                    getString(R.string.lesson_settings_reset)
                 )
                 .setMessage(
-                    "Se eliminarán todas las respuestas, " +
-                            "los ejercicios completados, " +
-                            "la página guardada y el progreso " +
-                            "de esta lección.\n\n" +
-                            "Esta acción no se puede deshacer."
+                    getString(R.string.lesson_settings_reset_confirmation)
                 )
                 .setNegativeButton(
-                    "Cancelar",
+                    getString(R.string.settings_cancel),
                     null
                 )
                 .setPositiveButton(
-                    "Reiniciar"
+                    getString(R.string.settings_reset)
                 ) { _, _ ->
 
                     ProgressRepository.resetLesson(
@@ -500,7 +496,7 @@ class LessonOptionsActivity : AppCompatActivity() {
 
                     Toast.makeText(
                         this,
-                        "Lección reiniciada",
+                        getString(R.string.lesson_settings_reset_success),
                         Toast.LENGTH_SHORT
                     ).show()
 
@@ -562,9 +558,7 @@ class LessonOptionsActivity : AppCompatActivity() {
             TextView(this)
 
         description.text =
-            "TAB permanece fijo y equivale a 4 espacios.\n\n" +
-                    "Puedes modificar las demás teclas. " +
-                    "Deja una posición vacía para ocultarla."
+            getString(R.string.lesson_settings_shortcuts_help)
 
         description.setTextColor(
             Color.rgb(
@@ -595,7 +589,7 @@ class LessonOptionsActivity : AppCompatActivity() {
             Button(this)
 
         buttonDefaults.text =
-            "Restaurar predeterminados"
+            getString(R.string.lesson_settings_shortcuts_defaults)
 
         buttonDefaults.isAllCaps =
             false
@@ -702,17 +696,17 @@ class LessonOptionsActivity : AppCompatActivity() {
                 this
             )
                 .setTitle(
-                    "Atajos de programación"
+                    getString(R.string.lesson_settings_shortcuts_title)
                 )
                 .setView(
                     scroll
                 )
                 .setNegativeButton(
-                    "Cancelar",
+                    getString(R.string.settings_cancel),
                     null
                 )
                 .setPositiveButton(
-                    "Guardar",
+                    getString(R.string.lesson_settings_shortcuts_save),
                     null
                 )
                 .create()
@@ -747,7 +741,7 @@ class LessonOptionsActivity : AppCompatActivity() {
 
                     Toast.makeText(
                         this,
-                        "Atajos guardados",
+                        getString(R.string.lesson_settings_shortcuts_saved),
                         Toast.LENGTH_SHORT
                     ).show()
 

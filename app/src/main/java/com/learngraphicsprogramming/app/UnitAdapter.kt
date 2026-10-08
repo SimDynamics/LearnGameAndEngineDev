@@ -112,7 +112,10 @@ class UnitAdapter(
                 )
 
         holder.binding.textUnitNumber.text =
-            "Unidad ${unit.number}"
+            context.getString(
+                R.string.nav_unit_number,
+                unit.number
+            )
 
         holder.binding.textUnitTitle.text =
             unit.title
@@ -120,11 +123,16 @@ class UnitAdapter(
         /*
          * El contador sigue expresando
          * LECCIONES realmente terminadas.
+         *
+         * El texto se adapta al idioma
+         * seleccionado en Opciones globales.
          */
         holder.binding.textUnitProgress.text =
-            "${completionProgress.completed} de " +
-                    "${completionProgress.total} " +
-                    "lecciones completadas"
+            context.getString(
+                R.string.nav_completed_lessons,
+                completionProgress.completed,
+                completionProgress.total
+            )
 
         /*
          * El porcentaje visible ahora

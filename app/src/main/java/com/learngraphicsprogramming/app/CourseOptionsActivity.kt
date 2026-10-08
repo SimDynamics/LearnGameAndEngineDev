@@ -107,7 +107,7 @@ class CourseOptionsActivity : AppCompatActivity() {
             }
 
         textCourseNumber.text =
-            "Curso $courseNumber de $totalCourses"
+            getString(R.string.nav_course_number, courseNumber, totalCourses)
 
         textCourseNumber.setTextColor(
             AppearanceSettingsRepository
@@ -326,20 +326,17 @@ class CourseOptionsActivity : AppCompatActivity() {
                 this
             )
                 .setTitle(
-                    "Reiniciar curso"
+                    getString(R.string.course_settings_reset)
                 )
                 .setMessage(
-                    "Se eliminarán el progreso y las respuestas " +
-                            "de todas las unidades y lecciones " +
-                            "de este curso.\n\n" +
-                            "Esta acción no se puede deshacer."
+                    getString(R.string.course_settings_reset_confirmation)
                 )
                 .setNegativeButton(
-                    "Cancelar",
+                    getString(R.string.settings_cancel),
                     null
                 )
                 .setPositiveButton(
-                    "Reiniciar"
+                    getString(R.string.settings_reset)
                 ) { _, _ ->
 
                     ProgressRepository.resetCourse(
@@ -350,7 +347,7 @@ class CourseOptionsActivity : AppCompatActivity() {
 
                     Toast.makeText(
                         this,
-                        "Curso reiniciado",
+                        getString(R.string.course_settings_reset_success),
                         Toast.LENGTH_SHORT
                     ).show()
 
@@ -406,7 +403,7 @@ class CourseOptionsActivity : AppCompatActivity() {
 
             Toast.makeText(
                 this,
-                "Ajustes del curso guardados",
+                getString(R.string.course_settings_saved),
                 Toast.LENGTH_SHORT
             ).show()
 

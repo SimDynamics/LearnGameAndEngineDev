@@ -83,7 +83,11 @@ class CourseActivity : AppCompatActivity() {
             }
 
         textCourseNumber.text =
-            "Curso $courseNumber de $totalCourses"
+            getString(
+                R.string.nav_course_number,
+                courseNumber,
+                totalCourses
+            )
 
         textCourseNumber.setTextColor(
             AppearanceSettingsRepository

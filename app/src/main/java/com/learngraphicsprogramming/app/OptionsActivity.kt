@@ -55,6 +55,106 @@ class OptionsActivity : AppCompatActivity() {
 
         narrationOptions = NarrationOptionsSection(this)
 
+        /*
+         * SELECTOR DE IDIOMA DE LA APLICACIÓN.
+         *
+         * Los nombres se obtienen de strings.xml
+         * según el idioma actual de Android.
+         */
+        val spinnerAppLanguage =
+            findViewById<android.widget.Spinner>(
+                R.id.spinnerAppLanguage
+            )
+
+        val appLanguageLabels =
+            listOf(
+                getString(R.string.settings_language_auto),
+                getString(R.string.settings_language_spanish),
+                getString(R.string.settings_language_english),
+                getString(R.string.settings_language_french)
+            )
+
+        val languageAdapter =
+            android.widget.ArrayAdapter(
+                this,
+                android.R.layout.simple_spinner_item,
+                appLanguageLabels
+            )
+
+        languageAdapter.setDropDownViewResource(
+            android.R.layout.simple_spinner_dropdown_item
+        )
+
+        spinnerAppLanguage.adapter =
+            languageAdapter
+
+        /*
+         * Recuperamos el idioma elegido.
+         *
+         * Una cadena vacía significa:
+         * Automático (idioma del dispositivo).
+         */
+        val currentLanguage =
+            androidx.appcompat.app.AppCompatDelegate
+                .getApplicationLocales()
+                .toLanguageTags()
+
+        val languageIndex =
+            when (currentLanguage) {
+                "es" -> 1
+                "en" -> 2
+                "fr" -> 3
+                else -> 0
+            }
+
+        spinnerAppLanguage.setSelection(
+            languageIndex
+        )
+
+        /*
+         * Cambiamos el idioma al seleccionar
+         * una opción diferente.
+         */
+        spinnerAppLanguage.onItemSelectedListener =
+            object : android.widget.AdapterView.OnItemSelectedListener {
+
+                override fun onItemSelected(
+                    parent: android.widget.AdapterView<*>?,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
+
+                    val languageCode =
+                        when (position) {
+                            1 -> "es"
+                            2 -> "en"
+                            3 -> "fr"
+                            else -> ""
+                        }
+
+                    val activeLanguage =
+                        androidx.appcompat.app.AppCompatDelegate
+                            .getApplicationLocales()
+                            .toLanguageTags()
+
+                    if (languageCode == activeLanguage) {
+                        return
+                    }
+
+                    androidx.appcompat.app.AppCompatDelegate
+                        .setApplicationLocales(
+                            androidx.core.os.LocaleListCompat
+                                .forLanguageTags(languageCode)
+                        )
+                }
+
+                override fun onNothingSelected(
+                    parent: android.widget.AdapterView<*>?
+                ) {
+                }
+            }
+
         val buttonBack =
             findViewById<Button>(
                 R.id.buttonBack
@@ -732,7 +832,7 @@ class OptionsActivity : AppCompatActivity() {
                         LessonTextSizeSettingsRepository.MIN_SCALE
 
             textGlobalTextSize.text =
-                "Tamaño del contenido · $scale %"
+                getString(R.string.settings_content_size_value, scale)
 
             textGlobalTextSizePreview.textSize =
                 LessonTextSizeSettingsRepository
@@ -763,13 +863,13 @@ class OptionsActivity : AppCompatActivity() {
                 seekAccentBlue.progress
 
             textAccentRed.text =
-                "Rojo · $red"
+                getString(R.string.settings_red_value, red)
 
             textAccentGreen.text =
-                "Verde · $green"
+                getString(R.string.settings_green_value, green)
 
             textAccentBlue.text =
-                "Azul · $blue"
+                getString(R.string.settings_blue_value, blue)
 
 
             if (
@@ -853,13 +953,13 @@ class OptionsActivity : AppCompatActivity() {
                 seekProgrammingAccentBlue.progress
 
             textProgrammingAccentRed.text =
-                "Rojo · $red"
+                getString(R.string.settings_red_value, red)
 
             textProgrammingAccentGreen.text =
-                "Verde · $green"
+                getString(R.string.settings_green_value, green)
 
             textProgrammingAccentBlue.text =
-                "Azul · $blue"
+                getString(R.string.settings_blue_value, blue)
 
 
             if (
@@ -944,13 +1044,13 @@ class OptionsActivity : AppCompatActivity() {
                 seekMathPhysicsAccentBlue.progress
 
             textMathPhysicsAccentRed.text =
-                "Rojo · $red"
+                getString(R.string.settings_red_value, red)
 
             textMathPhysicsAccentGreen.text =
-                "Verde · $green"
+                getString(R.string.settings_green_value, green)
 
             textMathPhysicsAccentBlue.text =
-                "Azul · $blue"
+                getString(R.string.settings_blue_value, blue)
 
             if (
                 !updatingMathPhysicsAccentInputs
@@ -1809,7 +1909,7 @@ class OptionsActivity : AppCompatActivity() {
 
                 Toast.makeText(
                     this,
-                    "Premium ya está activo",
+                    getString(R.string.settings_premium_already_active),
                     Toast.LENGTH_SHORT
                 ).show()
 
@@ -1834,22 +1934,17 @@ class OptionsActivity : AppCompatActivity() {
                     this
                 )
                     .setTitle(
-                        "Reiniciar progreso de Programación"
+                        getString(R.string.settings_programming_progress_reset)
                     )
                     .setMessage(
-                        "Se eliminarán el progreso, las respuestas " +
-                                "y las páginas guardadas de todos los cursos " +
-                                "de la ruta de Programación.\n\n" +
-                                "Los ajustes generales y las configuraciones " +
-                                "particulares de los cursos se conservarán.\n\n" +
-                                "Esta acción no se puede deshacer."
+                        getString(R.string.settings_programming_progress_confirmation)
                     )
                     .setNegativeButton(
-                        "Cancelar",
+                        getString(R.string.settings_cancel),
                         null
                     )
                     .setPositiveButton(
-                        "Reiniciar"
+                        getString(R.string.settings_reset)
                     ) { _, _ ->
 
                         ProgressRepository
@@ -1859,7 +1954,7 @@ class OptionsActivity : AppCompatActivity() {
 
                         Toast.makeText(
                             this,
-                            "Progreso de Programación reiniciado",
+                            getString(R.string.settings_programming_progress_reset_success),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -1880,21 +1975,17 @@ class OptionsActivity : AppCompatActivity() {
                     this
                 )
                     .setTitle(
-                        "Restablecer excepciones de Programación"
+                        getString(R.string.settings_programming_wrap_reset)
                     )
                     .setMessage(
-                        "Todos los cursos de Programación volverán a permitir " +
-                                "que las Opciones globales sobrescriban su ajuste " +
-                                "de línea.\n\n" +
-                                "Además, todos recibirán inmediatamente el ajuste " +
-                                "de línea predeterminado actualmente guardado."
+                        getString(R.string.settings_programming_wrap_confirmation)
                     )
                     .setNegativeButton(
-                        "Cancelar",
+                        getString(R.string.settings_cancel),
                         null
                     )
                     .setPositiveButton(
-                        "Restablecer"
+                        getString(R.string.settings_restore)
                     ) { _, _ ->
 
                         val programmingCourseIds =
@@ -1915,7 +2006,7 @@ class OptionsActivity : AppCompatActivity() {
 
                         Toast.makeText(
                             this,
-                            "Excepciones de Programación restablecidas",
+                            getString(R.string.settings_programming_wrap_reset_success),
                             Toast.LENGTH_SHORT
                         ).show()
                     }
@@ -1936,15 +2027,13 @@ class OptionsActivity : AppCompatActivity() {
                     this
                 )
                     .setTitle(
-                        "Matemáticas y Física"
+                        getString(R.string.math_physics)
                     )
                     .setMessage(
-                        "Todavía no hay cursos disponibles en esta ruta.\n\n" +
-                                "Cuando se agreguen cursos, este botón permitirá " +
-                                "restablecer sus excepciones de ajuste de línea."
+                        getString(R.string.settings_math_wrap_unavailable)
                     )
                     .setPositiveButton(
-                        "Aceptar",
+                        getString(R.string.settings_accept),
                         null
                     )
                     .show()
@@ -2151,7 +2240,7 @@ class OptionsActivity : AppCompatActivity() {
 
             Toast.makeText(
                 this,
-                "Configuración guardada",
+                getString(R.string.settings_saved),
                 Toast.LENGTH_SHORT
             ).show()
 

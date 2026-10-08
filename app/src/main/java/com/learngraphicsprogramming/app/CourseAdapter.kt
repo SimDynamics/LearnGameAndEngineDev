@@ -81,8 +81,18 @@ class CourseAdapter(
                 accentColor
             )
 
+        /*
+         * INFORMACIÓN DEL CURSO.
+         *
+         * Utilizamos los recursos traducidos
+         * sin modificar los datos de progreso.
+         */
         holder.binding.textCourseNumber.text =
-            "Curso ${course.number} de ${courses.size}"
+            context.getString(
+                R.string.nav_course_number,
+                course.number,
+                courses.size
+            )
 
         holder.binding.textCourseTitle.text =
             course.title
@@ -92,7 +102,9 @@ class CourseAdapter(
         ) {
 
             holder.binding.textCourseProgress.text =
-                "En desarrollo · Próximamente disponible"
+                context.getString(
+                    R.string.nav_coming_soon
+                )
 
             holder.binding.textCoursePercentage.text =
                 ""
@@ -103,8 +115,11 @@ class CourseAdapter(
         } else {
 
             holder.binding.textCourseProgress.text =
-                "${progress.completed} de " +
-                        "${progress.total} lecciones completadas"
+                context.getString(
+                    R.string.nav_completed_lessons,
+                    progress.completed,
+                    progress.total
+                )
 
             holder.binding.textCoursePercentage.text =
                 "${progress.percentage} %"

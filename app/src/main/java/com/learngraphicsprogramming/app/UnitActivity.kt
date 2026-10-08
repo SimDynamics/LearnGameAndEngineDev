@@ -80,7 +80,10 @@ class UnitActivity : AppCompatActivity() {
             ) ?: ""
 
         textUnitNumber.text =
-            "Unidad $unitNumber"
+            getString(
+                R.string.nav_unit_number,
+                unitNumber
+            )
 
         textUnitNumber.setTextColor(
             AppearanceSettingsRepository

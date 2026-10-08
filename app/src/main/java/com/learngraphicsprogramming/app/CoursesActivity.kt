@@ -38,6 +38,9 @@ class CoursesActivity : AppCompatActivity() {
 
         /*
          * ENCABEZADO SEGÚN LA RUTA.
+         *
+         * Los títulos y descripciones se obtienen
+         * de los recursos del idioma seleccionado.
          */
         if (
             routeId ==
@@ -45,18 +48,26 @@ class CoursesActivity : AppCompatActivity() {
         ) {
 
             binding.textCoursesTitle.text =
-                "Matemáticas y Física"
+                getString(
+                    R.string.math_physics
+                )
 
             binding.textCoursesDescription.text =
-                "Ruta progresiva de matemáticas y física."
+                getString(
+                    R.string.nav_math_route_description
+                )
 
         } else {
 
             binding.textCoursesTitle.text =
-                "Programación Avanzada y Arquitectura de Motores"
+                getString(
+                    R.string.programming
+                )
 
             binding.textCoursesDescription.text =
-                "Ruta de programación, sistemas, gráficos y motores."
+                getString(
+                    R.string.nav_programming_route_description
+                )
         }
 
         binding.buttonBack.setOnClickListener {
@@ -152,7 +163,7 @@ class CoursesActivity : AppCompatActivity() {
 
                     Toast.makeText(
                         this,
-                        "En desarrollo · Próximamente disponible",
+                        getString(R.string.nav_coming_soon),
                         Toast.LENGTH_SHORT
                     ).show()
                 }

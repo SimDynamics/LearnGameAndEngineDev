@@ -302,7 +302,7 @@ class CppPrototypeActivity : AppCompatActivity() {
                 )
 
             binding.alignCodeButton.contentDescription =
-                "Ajuste de línea activado"
+                getString(R.string.exercise_wrap_enabled)
 
         } else {
 
@@ -319,7 +319,7 @@ class CppPrototypeActivity : AppCompatActivity() {
                 )
 
             binding.alignCodeButton.contentDescription =
-                "Ajuste de línea desactivado"
+                getString(R.string.exercise_wrap_disabled)
         }
     }
 
@@ -332,7 +332,7 @@ class CppPrototypeActivity : AppCompatActivity() {
 
         clipboard.setPrimaryClip(
             ClipData.newPlainText(
-                "Código C++",
+                getString(R.string.exercise_cpp_code),
                 binding.sourceCode.text.toString()
             )
         )

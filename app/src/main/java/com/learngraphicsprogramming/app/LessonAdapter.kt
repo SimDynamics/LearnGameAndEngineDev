@@ -98,7 +98,10 @@ class LessonAdapter(
                 )
 
         holder.textLessonNumber.text =
-            "Lección ${lesson.number}"
+            context.getString(
+                R.string.nav_lesson_number,
+                lesson.number
+            )
 
         holder.textLessonNumber
             .setTextColor(
@@ -117,8 +120,11 @@ class LessonAdapter(
                 )
 
         holder.textLessonProgress.text =
-            "${progress.completed} de " +
-                    "${progress.total} páginas completadas"
+            context.getString(
+                R.string.nav_completed_pages,
+                progress.completed,
+                progress.total
+            )
 
         holder.textLessonPercentage.text =
             "${progress.percentage} %"

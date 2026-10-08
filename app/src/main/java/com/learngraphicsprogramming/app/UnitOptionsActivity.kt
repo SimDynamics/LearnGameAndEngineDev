@@ -68,7 +68,7 @@ class UnitOptionsActivity : AppCompatActivity() {
             )
 
         textUnitNumber.text =
-            "Unidad $unitNumber"
+            getString(R.string.nav_unit_number, unitNumber)
 
         textUnitNumber.setTextColor(
             AppearanceSettingsRepository
@@ -92,19 +92,17 @@ class UnitOptionsActivity : AppCompatActivity() {
                 this
             )
                 .setTitle(
-                    "Reiniciar unidad"
+                    getString(R.string.unit_settings_reset)
                 )
                 .setMessage(
-                    "Se eliminarán el progreso y las respuestas " +
-                            "de todas las lecciones de esta unidad.\n\n" +
-                            "Esta acción no se puede deshacer."
+                    getString(R.string.unit_settings_reset_confirmation)
                 )
                 .setNegativeButton(
-                    "Cancelar",
+                    getString(R.string.settings_cancel),
                     null
                 )
                 .setPositiveButton(
-                    "Reiniciar"
+                    getString(R.string.settings_reset)
                 ) { _, _ ->
 
                     ProgressRepository.resetUnit(
@@ -116,7 +114,7 @@ class UnitOptionsActivity : AppCompatActivity() {
 
                     Toast.makeText(
                         this,
-                        "Unidad reiniciada",
+                        getString(R.string.unit_settings_reset_success),
                         Toast.LENGTH_SHORT
                     ).show()
 
