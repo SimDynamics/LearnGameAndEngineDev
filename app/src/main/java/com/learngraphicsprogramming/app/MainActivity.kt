@@ -13,6 +13,18 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        /*
+         * Al iniciar la aplicación consultamos
+         * las compras existentes de Google Play.
+         *
+         * Si Premium ya fue comprado,
+         * PremiumRepository se actualizará.
+         */
+        PremiumBillingManager.connect(
+            this
+        )
+
         binding.buttonProgramming.setOnClickListener { openCourses(AppearanceSettingsRepository.ROUTE_PROGRAMMING) }
         binding.buttonMathPhysics.setOnClickListener { openCourses(AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) }
         binding.buttonOptions.setOnClickListener { startActivity(Intent(this, OptionsActivity::class.java)) }
