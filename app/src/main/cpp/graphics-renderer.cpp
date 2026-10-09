@@ -256,6 +256,10 @@ struct VulkanRenderer final : Renderer {
     uint32_t queue_family = 0;
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkRenderPass render_pass = VK_NULL_HANDLE;
+    VkImage depth_image = VK_NULL_HANDLE;
+    VkDeviceMemory depth_memory = VK_NULL_HANDLE;
+    VkImageView depth_view = VK_NULL_HANDLE;
+    VkFormat depth_format = VK_FORMAT_UNDEFINED;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkCommandPool command_pool = VK_NULL_HANDLE;
@@ -281,6 +285,9 @@ struct VulkanRenderer final : Renderer {
             if (pipeline_layout) vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
             for (auto framebuffer : framebuffers) vkDestroyFramebuffer(device, framebuffer, nullptr);
             if (render_pass) vkDestroyRenderPass(device, render_pass, nullptr);
+            if (depth_view) vkDestroyImageView(device, depth_view, nullptr);
+            if (depth_image) vkDestroyImage(device, depth_image, nullptr);
+            if (depth_memory) vkFreeMemory(device, depth_memory, nullptr);
             for (auto view : views) vkDestroyImageView(device, view, nullptr);
             if (swapchain) vkDestroySwapchainKHR(device, swapchain, nullptr);
             vkDestroyDevice(device, nullptr);
@@ -388,6 +395,21 @@ struct VulkanRenderer final : Renderer {
             selected.format = VK_FORMAT_R8G8B8A8_UNORM;
         }
         format = selected.format;
+        // Select a supported hardware depth format for hidden-surface removal.
+        for (const auto candidate : {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D16_UNORM,
+                                     VK_FORMAT_D24_UNORM_S8_UINT}) {
+            VkFormatProperties depth_properties{};
+            vkGetPhysicalDeviceFormatProperties(physical_device, candidate, &depth_properties);
+            if (depth_properties.optimalTilingFeatures &
+                    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+                depth_format = candidate;
+                break;
+            }
+        }
+        if (depth_format == VK_FORMAT_UNDEFINED) {
+            error = "Vulkan: la GPU no ofrece un formato de profundidad.";
+            return false;
+        }
         if (capabilities.currentExtent.width != UINT32_MAX) {
             extent = capabilities.currentExtent;
         } else {
@@ -450,6 +472,59 @@ struct VulkanRenderer final : Renderer {
             }
             views.push_back(view);
         }
+        // A real depth buffer enables perspective 3D rendering.
+        VkImageCreateInfo depth_info{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+        depth_info.imageType = VK_IMAGE_TYPE_2D;
+        depth_info.extent = {extent.width, extent.height, 1};
+        depth_info.mipLevels = 1;
+        depth_info.arrayLayers = 1;
+        depth_info.format = depth_format;
+        depth_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        depth_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depth_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        depth_info.samples = VK_SAMPLE_COUNT_1_BIT;
+        depth_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        if (vkCreateImage(device, &depth_info, nullptr, &depth_image) != VK_SUCCESS) {
+            error = "Vulkan: no se pudo reservar la imagen de profundidad.";
+            return false;
+        }
+        VkMemoryRequirements depth_requirements{};
+        vkGetImageMemoryRequirements(device, depth_image, &depth_requirements);
+        VkPhysicalDeviceMemoryProperties memory_properties{};
+        vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
+        uint32_t memory_index = UINT32_MAX;
+        for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
+            const bool supported = (depth_requirements.memoryTypeBits & (1u << i)) != 0;
+            const bool local = (memory_properties.memoryTypes[i].propertyFlags &
+                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0;
+            if (supported && local) {
+                memory_index = i;
+                break;
+            }
+        }
+        if (memory_index == UINT32_MAX) {
+            error = "Vulkan: no se encontró memoria GPU para profundidad.";
+            return false;
+        }
+        VkMemoryAllocateInfo memory_info{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+        memory_info.allocationSize = depth_requirements.size;
+        memory_info.memoryTypeIndex = memory_index;
+        if (vkAllocateMemory(device, &memory_info, nullptr, &depth_memory) != VK_SUCCESS ||
+            vkBindImageMemory(device, depth_image, depth_memory, 0) != VK_SUCCESS) {
+            error = "Vulkan: no se pudo asociar memoria a la imagen de profundidad.";
+            return false;
+        }
+        VkImageViewCreateInfo depth_view_info{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+        depth_view_info.image = depth_image;
+        depth_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        depth_view_info.format = depth_format;
+        depth_view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        depth_view_info.subresourceRange.levelCount = 1;
+        depth_view_info.subresourceRange.layerCount = 1;
+        if (vkCreateImageView(device, &depth_view_info, nullptr, &depth_view) != VK_SUCCESS) {
+            error = "Vulkan: no se pudo crear la vista de profundidad.";
+            return false;
+        }
         VkAttachmentDescription attachment{};
         attachment.format = format;
         attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -459,20 +534,35 @@ struct VulkanRenderer final : Renderer {
         attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        VkAttachmentDescription depth_attachment{};
+        depth_attachment.format = depth_format;
+        depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        VkAttachmentDescription attachments[] = {attachment, depth_attachment};
         VkAttachmentReference color_ref{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+        VkAttachmentReference depth_ref{1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL};
         VkSubpassDescription subpass{};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &color_ref;
+        subpass.pDepthStencilAttachment = &depth_ref;
         VkSubpassDependency dependency{};
         dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
         dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                                  VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                                   VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
         VkRenderPassCreateInfo pass_info{VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
-        pass_info.attachmentCount = 1;
-        pass_info.pAttachments = &attachment;
+        pass_info.attachmentCount = 2;
+        pass_info.pAttachments = attachments;
         pass_info.subpassCount = 1;
         pass_info.pSubpasses = &subpass;
         pass_info.dependencyCount = 1;
@@ -506,7 +596,7 @@ struct VulkanRenderer final : Renderer {
         VkPushConstantRange time_range{};
         time_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         time_range.offset = 0;
-        time_range.size = sizeof(float);
+        time_range.size = sizeof(float) * 2;
         VkPipelineLayoutCreateInfo layout_info{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
         layout_info.pushConstantRangeCount = 1;
         layout_info.pPushConstantRanges = &time_range;
@@ -550,6 +640,12 @@ struct VulkanRenderer final : Renderer {
             VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
         multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
+        VkPipelineDepthStencilStateCreateInfo depth_state{
+            VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+        depth_state.depthTestEnable = VK_TRUE;
+        depth_state.depthWriteEnable = VK_TRUE;
+        depth_state.depthCompareOp = VK_COMPARE_OP_LESS;
+
         VkPipelineColorBlendAttachmentState attachment_blend{};
         attachment_blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
             VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -576,6 +672,7 @@ struct VulkanRenderer final : Renderer {
         graphics_info.pViewportState = &viewport_state;
         graphics_info.pRasterizationState = &rasterization;
         graphics_info.pMultisampleState = &multisampling;
+        graphics_info.pDepthStencilState = &depth_state;
         graphics_info.pColorBlendState = &blending;
         graphics_info.pDynamicState = &dynamic_info;
         graphics_info.layout = pipeline_layout;
@@ -593,9 +690,10 @@ struct VulkanRenderer final : Renderer {
         framebuffers.reserve(views.size());
         for (auto view : views) {
             VkFramebufferCreateInfo fb_info{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
+            VkImageView frame_attachments[] = {view, depth_view};
             fb_info.renderPass = render_pass;
-            fb_info.attachmentCount = 1;
-            fb_info.pAttachments = &view;
+            fb_info.attachmentCount = 2;
+            fb_info.pAttachments = frame_attachments;
             fb_info.width = extent.width;
             fb_info.height = extent.height;
             fb_info.layers = 1;
@@ -657,15 +755,18 @@ struct VulkanRenderer final : Renderer {
         }
         VkClearValue clear{};
         clear.color.float32[0] = 0.055f;
-        clear.color.float32[1] = 0.11f + 0.05f * std::sin(elapsed_seconds);
+        clear.color.float32[1] = 0.105f;
         clear.color.float32[2] = 0.19f;
         clear.color.float32[3] = 1.0f;
+        VkClearValue clears[2]{};
+        clears[0] = clear;
+        clears[1].depthStencil.depth = 1.0f;
         VkRenderPassBeginInfo pass{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
         pass.renderPass = render_pass;
         pass.framebuffer = framebuffers[index];
         pass.renderArea.extent = extent;
-        pass.clearValueCount = 1;
-        pass.pClearValues = &clear;
+        pass.clearValueCount = 2;
+        pass.pClearValues = clears;
         vkCmdBeginRenderPass(commands[index], &pass, VK_SUBPASS_CONTENTS_INLINE);
 
         const VkViewport viewport{
@@ -677,9 +778,14 @@ struct VulkanRenderer final : Renderer {
         vkCmdSetViewport(commands[index], 0, 1, &viewport);
         vkCmdSetScissor(commands[index], 0, 1, &scissor);
         vkCmdBindPipeline(commands[index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        const float camera_state[2] = {
+            elapsed_seconds,
+            static_cast<float>(extent.width) /
+                static_cast<float>(std::max(1u, extent.height))
+        };
         vkCmdPushConstants(commands[index], pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
-                           0, sizeof(float), &elapsed_seconds);
-        vkCmdDraw(commands[index], 3, 1, 0, 0);
+                           0, sizeof(camera_state), camera_state);
+        vkCmdDraw(commands[index], 36, 1, 0, 0);
 
         vkCmdEndRenderPass(commands[index]);
         if (vkEndCommandBuffer(commands[index]) != VK_SUCCESS) {
