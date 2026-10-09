@@ -109,8 +109,20 @@ class GraphicsDemoActivity : AppCompatActivity(), SurfaceHolder.Callback {
             }
 
             MotionEvent.ACTION_MOVE -> {
-                velocityTracker?.addMovement(event)
-                pendingTouches.add(TouchCommand(GraphicsNative.TOUCH_MOVE, x, y))
+                val tracker = velocityTracker
+                if (tracker != null) {
+                    tracker.addMovement(event)
+                    tracker.computeCurrentVelocity(1000, 8000f)
+                    pendingTouches.add(
+                        TouchCommand(
+                            GraphicsNative.TOUCH_MOVE, x, y,
+                            tracker.xVelocity / width,
+                            tracker.yVelocity / height
+                        )
+                    )
+                } else {
+                    pendingTouches.add(TouchCommand(GraphicsNative.TOUCH_MOVE, x, y))
+                }
             }
 
             MotionEvent.ACTION_UP -> {
