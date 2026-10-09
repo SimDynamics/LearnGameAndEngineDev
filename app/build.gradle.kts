@@ -356,14 +356,41 @@ val prepareWasiSdk34Reference by tasks.registering {
         val root = sdkDirectory.get().asFile
         root.deleteRecursively()
         root.mkdirs()
-        val process = ProcessBuilder(
-            "tar", "-xf", archive.absolutePath, "-C", root.absolutePath
-        ).inheritIO().start()
-        check(process.waitFor() == 0) { "No se pudo extraer la distribución oficial de WASI." }
 
-        val sysroot = root.walkTopDown().firstOrNull {
-            it.isDirectory && it.name == "wasi-sysroot"
-        } ?: error("WASI SDK 34 oficial: no se encontró share/wasi-sysroot.")
+        // The Android app needs the WASI target sysroot, not Linux-host
+        // executables. Gradle's archive reader avoids Windows tar.exe stalls
+        // and allows us to extract only the required files.
+        val sdkFolderName = "wasi-sdk-34.0-x86_64-linux"
+        val sysrootPath = "$sdkFolderName/share/wasi-sysroot"
+        var extractedFiles = 0
+        var extractedBytes = 0L
+        logger.lifecycle("Extrayendo solamente $sysrootPath mediante Gradle...")
+        copy {
+            from(tarTree(resources.gzip(archive))) {
+                include("$sysrootPath/**")
+                includeEmptyDirs = false
+                eachFile {
+                    extractedFiles++
+                    extractedBytes += size
+                    if (extractedFiles == 1 || extractedFiles % 25 == 0) {
+                        logger.lifecycle(
+                            "WASI SDK 34: $extractedFiles archivos del sysroot " +
+                                "(${(extractedBytes / 1048576.0).toInt()} MiB de datos)"
+                        )
+                    }
+                }
+            }
+            into(root)
+        }
+        logger.lifecycle("Extracción finalizada: $extractedFiles archivos del sysroot.")
+        check(extractedFiles > 0) {
+            "WASI SDK 34: no se encontraron archivos en $sysrootPath."
+        }
+
+        val sysroot = File(root, sysrootPath)
+        check(sysroot.isDirectory) {
+            "WASI SDK 34 oficial: no se encontró share/wasi-sysroot."
+        }
 
         val unwind = sysroot.walkTopDown().firstOrNull {
             it.isFile && it.name == "libunwind.a"
