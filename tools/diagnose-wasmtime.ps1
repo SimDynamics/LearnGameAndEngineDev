@@ -24,6 +24,10 @@ $gradleLog = Join-Path $logDirectory "gradle-test-output.txt"
 $liveLog = Join-Path $logDirectory "android-live-logcat.txt"
 $liveErrors = Join-Path $logDirectory "android-live-errors.txt"
 $phaseLog = Join-Path $logDirectory "cpp-runtime-phase.txt"
+$packageStateFile = Join-Path $logDirectory "android-package-state.txt"
+$instrumentLog = Join-Path $logDirectory "instrumentation-output.txt"
+$targetPackage = "com.learngraphicsprogramming.app"
+$testPackage = "$targetPackage.test"
 
 Write-Host "Limpiando logcat para reproducir el cierre..." -ForegroundColor Cyan
 & $adb logcat -c
@@ -41,6 +45,9 @@ $gradleExit = -1
 $logcatExit = -1
 $collectionError = $null
 $liveCollector = $null
+$instrumentationResult = "NOT_RUN"
+$packageState = New-Object 'System.Collections.Generic.List[string]'
+$packageState.Add("Package availability during direct ADB instrumentation")
 
 # Start continuous logcat BEFORE Gradle starts instrumentation.
 # Gradle's own log retrieval can fail when the Android process crashes.
@@ -59,13 +66,53 @@ try {
     Write-Host "Ejecutando una sola prueba de Wasmtime..." -ForegroundColor Cyan
     try {
         $ErrorActionPreference = "Continue"
-        & .\gradlew.bat :app:connectedDebugAndroidTest "-Plgp.wasmtime=true" $testArgument --no-configuration-cache 2>&1 |
+        # Install both APKs but DO NOT use connectedDebugAndroidTest: its
+        # cleanup can remove the app/test package before run-as inspects files.
+        & .\gradlew.bat :app:installDebug :app:installDebugAndroidTest "-Plgp.wasmtime=true" --no-configuration-cache 2>&1 |
             Tee-Object -FilePath $gradleLog
         $gradleExit = $LASTEXITCODE
+        $packageState.Add("Gradle APK install exit: $gradleExit")
+        if ($gradleExit -eq 0) {
+            $targetBefore = (& $adb shell pm path $targetPackage 2>&1 | Out-String).Trim()
+            $testBefore = (& $adb shell pm path $testPackage 2>&1 | Out-String).Trim()
+            $packageState.Add("Target APK before test: $targetBefore")
+            $packageState.Add("Test APK before test: $testBefore")
+
+            if ($targetBefore -notmatch "package:" -or $testBefore -notmatch "package:") {
+                $instrumentationResult = "ERROR: expected test and target APKs were not installed"
+                Write-Host $instrumentationResult -ForegroundColor Red
+                $gradleExit = 1
+            } else {
+                Write-Host "Ejecutando instrumentacion directamente con ADB..." -ForegroundColor Cyan
+                $runner = "$testPackage/androidx.test.runner.AndroidJUnitRunner"
+                $selectedTest = "$testClass#$NdkTestName"
+                $instrumentLines = @(
+                    & $adb shell am instrument -w -r -e class $selectedTest $runner 2>&1 |
+                        Tee-Object -FilePath $instrumentLog
+                )
+                $adbRunCode = $LASTEXITCODE
+                $instrumentText = $instrumentLines | Out-String
+                $packageState.Add("ADB instrument exit: $adbRunCode")
+                if ($instrumentText -match "OK \(" -and
+                    $instrumentText -notmatch "FAILURES!!!|Process crashed|INSTRUMENTATION_FAILED|shortMsg=") {
+                    $instrumentationResult = "PASS (ADB runner)"
+                } elseif ($instrumentText -match "FAILURES!!!|Process crashed|INSTRUMENTATION_FAILED|shortMsg=|INSTRUMENTATION_STATUS_CODE: -2") {
+                    $instrumentationResult = "FAILED (ADB runner)"
+                } else {
+                    $instrumentationResult = "UNKNOWN: inspect instrumentation-output.txt"
+                }
+                if ($adbRunCode -ne 0 -or $instrumentationResult -eq "FAILED (ADB runner)") {
+                    $gradleExit = 1
+                }
+            }
+        } else {
+            $instrumentationResult = "NOT RUN (Gradle APK installation failed)"
+        }
     } catch {
         # A failed test must not prevent gathering evidence of the crash.
         $collectionError = $_.Exception.Message
-        Write-Host "Gradle informó un error; continuamos con logcat." -ForegroundColor Yellow
+        $instrumentationResult = "ERROR: $collectionError"
+        Write-Host "Error de instalacion o instrumentacion; continuamos con logcat." -ForegroundColor Yellow
     } finally {
         $ErrorActionPreference = $previousErrorPreference
     }
@@ -95,14 +142,22 @@ try {
         $ErrorActionPreference = $previousErrorPreference
     }
 
+    # Confirm whether the package is still installed when the runner returns.
+    $targetAfter = (& $adb shell pm path $targetPackage 2>&1 | Out-String).Trim()
+    $testAfter = (& $adb shell pm path $testPackage 2>&1 | Out-String).Trim()
+    $packageState.Add("Target APK after test: $targetAfter")
+    $packageState.Add("Test APK after test: $testAfter")
+    $packageState.Add("Instrumentation result: $instrumentationResult")
+    $packageState | Set-Content -Path $packageStateFile -Encoding UTF8
+
     # When logcat is missing, retrieve persistent checkpoints from app-private storage.
     # These markers contain stages only, no source code or standard input.
     try {
         $ErrorActionPreference = "Continue"
-        $checkpointOutput = & $adb exec-out run-as com.learngraphicsprogramming.app `
+        $checkpointOutput = & $adb exec-out run-as $targetPackage `
             cat files/cpp-runtime-phase.txt 2>&1
         $checkpointExit = $LASTEXITCODE
-        if ($checkpointExit -eq 0 -and $checkpointOutput) {
+        if ($checkpointExit -eq 0 -and $checkpointOutput -and ($checkpointOutput -match "K00|K01|K02|K03|K04|JNI execute|constructing|compiling WASM|calling _start")) {
             $checkpointOutput | Set-Content -Path $phaseLog -Encoding UTF8
         } else {
             @(
@@ -142,7 +197,11 @@ try {
     # often absent from Android logcat and still explain a failed test.
     $summary = New-Object 'System.Collections.Generic.List[string]'
     $summary.Add("Wasmtime diagnostic: native traces, Gradle, instrumentation XML")
-    $summary.Add("Gradle exit code: $gradleExit")
+    $summary.Add("Install/instrumentation exit code: $gradleExit")
+    $summary.Add("Instrumentation result: $instrumentationResult")
+    $summary.Add("=== PACKAGE STATE ===")
+    $stateText = Get-Content -Path $packageStateFile -Raw -ErrorAction SilentlyContinue
+    if ($stateText) { $summary.Add($stateText) }
     $liveBytes = if (Test-Path $liveLog) { (Get-Item $liveLog).Length } else { 0 }
     $rawBytes = if (Test-Path $rawLog) { (Get-Item $rawLog).Length } else { 0 }
     $summary.Add("Live logcat bytes: $liveBytes; final snapshot bytes: $rawBytes")
@@ -190,18 +249,20 @@ try {
     $summary | Set-Content -Path $filteredLog -Encoding UTF8
 
     Write-Host ""
-    Write-Host "Gradle exit code: $gradleExit"
+    Write-Host "Instalacion/instrumentacion exit code: $gradleExit"
     Write-Host "ADB logcat exit code: $logcatExit"
     Write-Host "Diagnóstico filtrado: $filteredLog" -ForegroundColor Green
     Write-Host "Logcat completo: $rawLog"
     Write-Host "Logcat en vivo: $liveLog"
     Write-Host "Etapas privadas de C++/JNI: $phaseLog"
     Write-Host "Salida Gradle: $gradleLog"
+    Write-Host "Salida ADB instrument: $instrumentLog"
+    Write-Host "Estado de paquetes Android: $packageStateFile"
     if ($collectionError) {
         Write-Host "Detalle adicional: $collectionError" -ForegroundColor Yellow
     }
     Write-Host "Revisa los archivos antes de compartirlos: podrían contener rutas privadas."
-    if ($gradleExit -ne 0) {
-        Write-Host "La prueba falló, pero se conservaron los archivos de diagnóstico." -ForegroundColor Yellow
+    if ($gradleExit -ne 0 -or $instrumentationResult -ne "PASS (ADB runner)") {
+        Write-Host "La instrumentacion no se confirmó exitosa; se guardaron los registros." -ForegroundColor Yellow
     }
 }
