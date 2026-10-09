@@ -170,7 +170,7 @@ foreach ($name in @("liblgp_clang23.so","liblgp_lld23.so")) {
     if ($dynamic -match "libc\.so\.6|libstdc\+\+\.so\.6|ld-linux") {
         throw "Se detectaron dependencias GNU/Linux, incompatibles con Android."
     }
-    Write-Host "$name: ELF ARM64 verificado" -ForegroundColor Green
+    Write-Host "$($name): ELF ARM64 verificado" -ForegroundColor Green
 }
 $shaLines = foreach ($name in @("liblgp_clang23.so","liblgp_lld23.so")) {
     $sha = (Get-FileHash (Join-Path $dist $name) -Algorithm SHA256).Hash.ToLowerInvariant()
