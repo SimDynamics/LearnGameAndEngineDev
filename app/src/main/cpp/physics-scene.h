@@ -126,6 +126,21 @@ public:
         body.velocity = {};
     }
 
+    // Preserve the selected sphere's measured drag velocity so its
+    // collisions transfer momentum even before the finger is released.
+    void drag_velocity(float velocity_u, float velocity_v) {
+        if (selected < 0 || !std::isfinite(velocity_u) || !std::isfinite(velocity_v)) return;
+        Body &body = bodies[selected];
+        const float depth = -body.position.z;
+        body.velocity = {
+            2.0f * velocity_u * depth * drag_aspect / kFocal,
+            -2.0f * velocity_v * depth / kFocal,
+            0.0f
+        };
+        const float speed = norm(body.velocity);
+        if (speed > 13.0f) body.velocity = body.velocity * (13.0f / speed);
+    }
+
     void release(float velocity_u, float velocity_v) {
         if (selected < 0) return;
         Body &body = bodies[selected];
