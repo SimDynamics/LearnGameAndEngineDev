@@ -68,7 +68,7 @@ try {
         $ErrorActionPreference = "Continue"
         # Install both APKs but DO NOT use connectedDebugAndroidTest: its
         # cleanup can remove the app/test package before run-as inspects files.
-        & .\gradlew.bat :app:installDebug :app:installDebugAndroidTest "-Plgp.wasmtime=true" --no-configuration-cache 2>&1 |
+        & .\gradlew.bat :app:installDebug :app:installDebugAndroidTest "-Plgp.wasmtime=true" "-Plgp.wasmtimeDiagnostics=true" --no-configuration-cache 2>&1 |
             Tee-Object -FilePath $gradleLog
         $gradleExit = $LASTEXITCODE
         $packageState.Add("Gradle APK install exit: $gradleExit")
