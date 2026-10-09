@@ -128,6 +128,12 @@ $targetArgs = @("-S",$llvmDir,"-B",$android) + $common + @(
     "-DCMAKE_TOOLCHAIN_FILE=$(UnixPath $toolchain)",
     "-DANDROID_ABI=arm64-v8a",
     "-DANDROID_PLATFORM=android-28",
+    # LLVM's GetHostTriple cannot infer an Android triple when configuring
+    # from a native Windows CMake host; specify the TARGET host explicitly.
+    # Otherwise LLVM_TARGET_ARCH=host resolves from an empty triple and CMake
+    # stops in cmake/config-ix.cmake with 'Unknown architecture host'.
+    "-DLLVM_HOST_TRIPLE=aarch64-unknown-linux-android",
+    "-DLLVM_TARGET_ARCH=AArch64",
     "-DANDROID_STL=c++_static",
     "-DCMAKE_BUILD_TYPE=MinSizeRel",
     "-DLLVM_ENABLE_PROJECTS=clang;lld",
