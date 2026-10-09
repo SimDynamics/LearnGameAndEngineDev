@@ -76,7 +76,7 @@ if ($vsPath) {
     $ninjaPaths += (Join-Path $vsPath "Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja\ninja.exe")
 }
 if (Test-Path (Join-Path $sdk "cmake")) {
-    foreach ($folder in (Get-ChildItem (Join-Path $sdk "cmake") -Directory | Sort-Object Name -Descending)) {
+    foreach ($folder in (Get-ChildItem (Join-Path $sdk "cmake") -Directory | Sort-Object { [version]$_.Name } -Descending)) {
         $cmakePaths += (Join-Path $folder.FullName "bin\cmake.exe")
         $ninjaPaths += (Join-Path $folder.FullName "bin\ninja.exe")
     }
