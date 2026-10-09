@@ -47,7 +47,10 @@ internal class CppCompiler(private val context: Context) {
             "-resource-dir=${resourceDirectory.absolutePath}",
             "-isystem",
             File(sysroot, "include/wasm32-wasip1/c++/v1").absolutePath,
-            "-std=c++20",
+            // Current Clang 21 supports the C++23 language mode. Full C++23
+            // library and wasm exceptions need the future verified Clang 23
+            // Android host build plus the official exception-enabled sysroot.
+            "-std=c++23",
             // The packaged WASI C++ sysroot uses libraries built without exception handling.
             // Keep code generation consistent with that runtime until an EH-capable
             // sysroot and a compatible WebAssembly executor are integrated.
