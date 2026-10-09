@@ -15,15 +15,17 @@
 #include <string>
 #include <vector>
 
+#include "physics-scene.h"
+
 namespace {
 
 // glslc generates SPIR-V bytecode at build time, not on the phone.
-static const uint32_t kCubeVertexSpirv[] =
-#include "cube.vert.inc"
+static const uint32_t kPhysicsVertexSpirv[] =
+#include "physics.vert.inc"
 ;
 
-static const uint32_t kCubeFragmentSpirv[] =
-#include "cube.frag.inc"
+static const uint32_t kPhysicsFragmentSpirv[] =
+#include "physics.frag.inc"
 ;
 
 thread_local std::string last_error;
@@ -32,7 +34,8 @@ struct Renderer {
     explicit Renderer(ANativeWindow *native_window) : window(native_window) {}
     virtual ~Renderer() = default;
     virtual bool initialize(std::string &error) = 0;
-    virtual bool draw(float elapsed_seconds, std::string &error) = 0;
+    virtual bool draw(float elapsed_seconds, const lgp::PhysicsScene &scene,
+                      std::string &error) = 0;
     virtual std::string describe() const = 0;
     ANativeWindow *window;
 };
@@ -43,8 +46,9 @@ struct GlesRenderer final : Renderer {
     EGLSurface surface = EGL_NO_SURFACE;
     EGLContext context = EGL_NO_CONTEXT;
     GLuint shader_program = 0;
-    GLint time_uniform = -1;
     GLint aspect_uniform = -1;
+    GLint transform_uniform = -1;
+    GLint material_uniform = -1;
     std::string gpu;
 
     ~GlesRenderer() override {
@@ -105,88 +109,95 @@ struct GlesRenderer final : Renderer {
             error = "EGL: no se pudo usar la superficie Android.";
             return false;
         }
-        // Match the Vulkan cube mathematically, using gl_VertexID instead
-        // of uploading a static vertex buffer. Both backends own GPU shaders.
+        // Both renderers receive identical positions from the CPU simulation.
+        // Objects are real 3D spheres, built procedurally on the GPU.
         static const char *vertex_source = R"(#version 300 es
             precision highp float;
-            uniform float elapsed;
             uniform float aspectRatio;
+            uniform vec4 transform; // center.xyz and sphere radius
+            uniform vec4 material;  // RGB and object kind (0/1/2)
+
             out vec3 worldNormal;
             out vec3 baseColor;
+            out vec3 worldPosition;
+            flat out int objectKind;
 
             void main() {
-                const vec2 corners[6] = vec2[6](
-                    vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(1.0, 1.0),
-                    vec2(-1.0, -1.0), vec2(1.0, 1.0), vec2(-1.0, 1.0)
-                );
-                const vec3 normals[6] = vec3[6](
-                    vec3(0, 0, 1), vec3(0, 0, -1),
-                    vec3(1, 0, 0), vec3(-1, 0, 0),
-                    vec3(0, 1, 0), vec3(0, -1, 0)
-                );
-                const vec3 tangents[6] = vec3[6](
-                    vec3(1, 0, 0), vec3(-1, 0, 0),
-                    vec3(0, 0, -1), vec3(0, 0, 1),
-                    vec3(1, 0, 0), vec3(1, 0, 0)
-                );
-                const vec3 bitangents[6] = vec3[6](
-                    vec3(0, 1, 0), vec3(0, 1, 0),
-                    vec3(0, 1, 0), vec3(0, 1, 0),
-                    vec3(0, 0, -1), vec3(0, 0, 1)
-                );
-                int face = gl_VertexID / 6;
-                vec2 uv = corners[gl_VertexID % 6];
-                vec3 normal = normals[face];
-                vec3 point = 0.72 * (
-                    normal + tangents[face] * uv.x + bitangents[face] * uv.y
-                );
+                int kind = int(material.w + 0.5);
+                vec3 normal;
+                vec3 world;
 
-                float yaw = elapsed * 0.65;
-                float cy = cos(yaw);
-                float sy = sin(yaw);
-                mat3 rotateY = mat3(
-                    vec3(cy, 0.0, -sy),
-                    vec3(0.0, 1.0, 0.0),
-                    vec3(sy, 0.0, cy)
-                );
-                float pitch = 0.42 + elapsed * 0.32;
-                float cx = cos(pitch);
-                float sx = sin(pitch);
-                mat3 rotateX = mat3(
-                    vec3(1.0, 0.0, 0.0),
-                    vec3(0.0, cx, sx),
-                    vec3(0.0, -sx, cx)
-                );
-                mat3 rotation = rotateX * rotateY;
-                vec3 cameraPoint = rotation * point + vec3(0.0, 0.0, -4.0);
+                if (kind == 1) {
+                    const vec2 corners[6] = vec2[6](
+                        vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(1.0, 1.0),
+                        vec2(-1.0, -1.0), vec2(1.0, 1.0), vec2(-1.0, 1.0)
+                    );
+                    vec2 uv = corners[gl_VertexID];
+                    world = vec3(uv.x * 2.25, -1.90, -5.95 + uv.y * 2.35);
+                    normal = vec3(0.0, 1.0, 0.0);
+                } else {
+                    int cell = gl_VertexID / 6;
+                    int longitudeCell = cell % 16;
+                    int latitudeCell = cell / 16;
+                    int corner = gl_VertexID % 6;
+                    float u = float(
+                        longitudeCell + (
+                            (corner == 1 || corner == 2 || corner == 4) ? 1 : 0)
+                    ) / 16.0;
+                    float v = float(
+                        latitudeCell + (
+                            (corner == 2 || corner == 4 || corner == 5) ? 1 : 0)
+                    ) / 12.0;
+                    float longitude = u * 6.28318530718;
+                    float latitude = v * 3.14159265359;
+                    normal = vec3(
+                        sin(latitude) * cos(longitude),
+                        cos(latitude),
+                        sin(latitude) * sin(longitude)
+                    );
+                    world = transform.xyz + normal * transform.w;
+                }
 
+                float aspect = max(aspectRatio, 0.2);
                 float focal = 1.8;
-                float aspect = max(aspectRatio, 0.25);
-                float z = -1.002002 * cameraPoint.z - 0.2002002;
+                float z = -1.002002 * world.z - 0.2002002;
                 gl_Position = vec4(
-                    focal * cameraPoint.x / aspect,
-                    focal * cameraPoint.y,
+                    focal * world.x / aspect,
+                    focal * world.y,
                     z,
-                    -cameraPoint.z
+                    -world.z
                 );
-                worldNormal = rotation * normal;
-                baseColor = vec3(0.19, 0.52, 0.91)
-                          + abs(normal) * vec3(0.56, 0.28, 0.05);
+                worldNormal = normal;
+                baseColor = material.rgb;
+                worldPosition = world;
+                objectKind = kind;
             }
         )";
         static const char *fragment_source = R"(#version 300 es
             precision highp float;
             in vec3 worldNormal;
             in vec3 baseColor;
+            in vec3 worldPosition;
+            flat in int objectKind;
             out vec4 color;
 
             void main() {
-                vec3 lightDirection = normalize(vec3(-0.55, 0.8, 1.0));
+                vec3 lightDirection = normalize(vec3(-0.55, 0.9, 0.75));
                 float diffuse = max(
-                    dot(normalize(worldNormal), lightDirection),
-                    0.0
+                    dot(normalize(worldNormal), lightDirection), 0.0
                 );
-                color = vec4(baseColor * (0.26 + diffuse * 0.74), 1.0);
+                vec3 shaded = baseColor * (0.28 + 0.72 * diffuse);
+                if (objectKind == 1) {
+                    vec2 grid = abs(fract(worldPosition.xz * 1.35) - 0.5);
+                    float line = 1.0 - smoothstep(
+                        0.465, 0.495, max(grid.x, grid.y)
+                    );
+                    shaded = mix(vec3(0.09, 0.17, 0.23),
+                                 vec3(0.14, 0.23, 0.31), line);
+                } else if (objectKind == 2) {
+                    shaded += vec3(0.25, 0.22, 0.06);
+                }
+                color = vec4(shaded, 1.0);
             }
         )";
         const GLuint vert = compile_shader(GL_VERTEX_SHADER, vertex_source);
@@ -209,8 +220,9 @@ struct GlesRenderer final : Renderer {
             error = "OpenGL ES: fallo al enlazar el programa de shaders.";
             return false;
         }
-        time_uniform = glGetUniformLocation(shader_program, "elapsed");
         aspect_uniform = glGetUniformLocation(shader_program, "aspectRatio");
+        transform_uniform = glGetUniformLocation(shader_program, "transform");
+        material_uniform = glGetUniformLocation(shader_program, "material");
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         glClearDepthf(1.0f);
@@ -221,7 +233,8 @@ struct GlesRenderer final : Renderer {
         return true;
     }
 
-    bool draw(float elapsed_seconds, std::string &error) override {
+    bool draw(float elapsed_seconds, const lgp::PhysicsScene &scene,
+              std::string &error) override {
         EGLint width = 0, height = 0;
         if (!eglQuerySurface(display, surface, EGL_WIDTH, &width) ||
             !eglQuerySurface(display, surface, EGL_HEIGHT, &height)) {
@@ -232,10 +245,23 @@ struct GlesRenderer final : Renderer {
         glClearColor(0.055f, 0.105f, 0.19f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(shader_program);
-        glUniform1f(time_uniform, elapsed_seconds);
         glUniform1f(aspect_uniform,
                     static_cast<float>(width) / static_cast<float>(std::max(1, height)));
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        glUniform4f(transform_uniform, 0.0f, 0.0f, 0.0f, 1.0f);
+        glUniform4f(material_uniform, 0.14f, 0.23f, 0.31f, 1.0f);
+        glDrawArrays(GL_TRIANGLES, 0, 6); // Floor.
+
+        const auto &bodies = scene.get_bodies();
+        for (int i = 0; i < lgp::PhysicsScene::kBodyCount; ++i) {
+            const lgp::Body &body = bodies[i];
+            glUniform4f(transform_uniform,
+                        body.position.x, body.position.y, body.position.z, body.radius);
+            glUniform4f(material_uniform,
+                        body.color.x, body.color.y, body.color.z,
+                        i == scene.selected_index() ? 2.0f : 0.0f);
+            glDrawArrays(GL_TRIANGLES, 0, 16 * 12 * 6);
+        }
         if (eglSwapBuffers(display, surface) != EGL_TRUE) {
             error = "OpenGL ES: falló eglSwapBuffers.";
             return false;
