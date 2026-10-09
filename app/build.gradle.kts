@@ -294,6 +294,7 @@ val prepareWasiEhRuntime by tasks.registering(Zip::class) {
     val officialSysroot = layout.buildDirectory.dir(
         "generated/wasiSdk34/wasi-sdk-34.0-x86_64-linux/share/wasi-sysroot"
     )
+    var includedEntries = 0
     from(officialSysroot) {
         include("include/**", "lib/wasm32-wasip1/**", "VERSION")
         exclude(
@@ -302,6 +303,18 @@ val prepareWasiEhRuntime by tasks.registering(Zip::class) {
             "include/wasm32-wasip1-threads/**",
             "lib/wasm32-wasip1/noeh/**",
             "**/llvm-lto/**"
+        )
+        eachFile {
+            includedEntries++
+            if (includedEntries == 1 || includedEntries % 500 == 0) {
+                logger.lifecycle("Empaquetando WASI EH: $includedEntries archivos...")
+            }
+        }
+    }
+    doLast {
+        logger.lifecycle(
+            "WASI EH preparado: $includedEntries archivos; " +
+                "${(archiveFile.get().asFile.length() / 1048576.0).toInt()} MiB comprimidos."
         )
     }
 }
