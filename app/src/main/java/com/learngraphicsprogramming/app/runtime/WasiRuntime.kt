@@ -11,18 +11,25 @@ internal object WasiRuntime {
         wasmBytes: ByteArray,
         workingDirectory: String,
         stdoutPath: String,
-        stderrPath: String
+        stderrPath: String,
+        stdinPath: String
     ): Int
 
-    fun run(wasmBytes: ByteArray, workingDirectory: File): WasiExecutionResult {
+    fun run(wasmBytes: ByteArray, workingDirectory: File, standardInput: String = ""): WasiExecutionResult {
         workingDirectory.mkdirs()
         val stdoutFile = File(workingDirectory, "stdout.txt")
         val stderrFile = File(workingDirectory, "stderr.txt")
+        // WASI receives a real stdin descriptor instead of an unavailable (-1) descriptor.
+        // A prepared input stream supports std::cin without changing existing callers.
+        val stdinFile = File(workingDirectory, "stdin.txt").apply {
+            writeText(standardInput, Charsets.UTF_8)
+        }
         val exitCode = execute(
             wasmBytes,
             workingDirectory.absolutePath,
             stdoutFile.absolutePath,
-            stderrFile.absolutePath
+            stderrFile.absolutePath,
+            stdinFile.absolutePath
         )
         return WasiExecutionResult(
             exitCode,
