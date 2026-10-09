@@ -62,6 +62,24 @@ int main()
         assertEquals("[hello C++ world]\n", result.execution?.stdout)
     }
 
+    @Test
+    fun compilesAndRunsCpp23LanguageMode() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val source = """
+consteval int square(int x) { return x * x; }
+static_assert(square(7) == 49);
+
+#include <iostream>
+int main() {
+    std::cout << square(7) << '\\n';
+}
+""".trimIndent()
+        val result = CppExecutionEngine(context).compileAndRun(source)
+        assertEquals(result.compilation.stderr, 0, result.compilation.exitCode)
+        assertEquals(result.execution?.stderr, 0, result.execution?.exitCode)
+        assertEquals("49\\n", result.execution?.stdout)
+    }
+
     private companion object {
         const val SOURCE = """#include <iostream>
 
