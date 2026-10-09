@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <dlfcn.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <memory>
@@ -31,6 +32,18 @@ void trace(const char *phase, const char *diagnostic_path = nullptr) {
     (void)write(fd, "\n", 1);
     (void)fsync(fd);
     close(fd);
+}
+// Verify that wasm-c-api entry points actually resolve to the Wasmtime
+// shared library. Never log raw process addresses or user-supplied data.
+void trace_origin(const char *name, const void *fn, const char *path) {
+    Dl_info info{};
+    const bool found = dladdr(fn, &info) != 0;
+    const bool own = found && info.dli_fname &&
+        strstr(info.dli_fname, "libwasmtime.so");
+    char message[128];
+    snprintf(message, sizeof(message), "JNI symbol %s from %s",
+             name, own ? "libwasmtime.so" : "OTHER/UNKNOWN LIBRARY");
+    trace(message, path);
 }
 constexpr jint kFailure = -1;
 constexpr size_t kMaxModuleBytes = 32 * 1024 * 1024;
@@ -152,9 +165,34 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
 #endif
     wasmtime_config_consume_fuel_set(config, true);
     wasmtime_config_wasm_exceptions_set(config, true);
+    if (stage.get() && stage.get()[0]) {
+        trace_origin("wasm_config_new",
+                     reinterpret_cast<const void *>(&wasm_config_new), stage.get());
+        trace_origin("wasm_engine_new_with_config",
+                     reinterpret_cast<const void *>(&wasm_engine_new_with_config), stage.get());
+        trace_origin("wasmtime_module_new",
+                     reinterpret_cast<const void *>(&wasmtime_module_new), stage.get());
+    }
     trace("03 constructing engine", stage.get());
     wasm_engine_t *engine = wasm_engine_new_with_config(config);
     trace("04 engine creation returned", stage.get());
+    if (engine && stage.get() && stage.get()[0]) {
+        // The official Wasmtime wasm_engine_t begins with Rust's Engine,
+        // whose first word is an Arc-backed address, never a tiny integer.
+        // Read exactly one pointer-sized word without dereferencing it.
+        uintptr_t first_word = 0;
+        memcpy(&first_word, engine, sizeof(first_word));
+        char message[120];
+        if (first_word < 4096) {
+            snprintf(message, sizeof(message),
+                     "04c WARNING: engine first word is near-null: 0x%llx",
+                     static_cast<unsigned long long>(first_word));
+        } else {
+            snprintf(message, sizeof(message),
+                     "04c engine first word looks like an address");
+        }
+        trace(message, stage.get());
+    }
 
     if (!engine) {
         fprintf(diagnostics, "Wasmtime: no se pudo crear el motor ARM64.\n");
