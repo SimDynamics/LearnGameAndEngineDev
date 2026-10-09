@@ -189,6 +189,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
 
             error = wasmtime_func_call(context, &function.of.func,
                                       nullptr, 0, nullptr, 0, &trap);
+            wasmtime_extern_delete(&function);
             if (error) {
                 int exit_status = 0;
                 if (wasmtime_error_exit_status(error, &exit_status)) {
