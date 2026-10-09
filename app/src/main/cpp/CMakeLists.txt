@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project("app")
 
+# Only one WebAssembly runtime is linked into libapp.so per APK build.
+# Both WAMR and Wasmtime implement wasm-c-api symbol names, which must
+# never be interposed across different opaque engine/config object types.
+option(LGP_ENABLE_WASMTIME "Enable native Wasmtime WebAssembly runtime" OFF)
+
 # The compiler prototype currently ships an Android ARM64 Clang toolchain.
 if (NOT ANDROID_ABI STREQUAL "arm64-v8a")
     message(FATAL_ERROR "The C++/WASM prototype currently supports arm64-v8a only")
@@ -26,9 +31,10 @@ set(WAMR_BUILD_REF_TYPES 1)
 # Software bounds checks avoid installing WAMR's process-wide SIGSEGV handler.
 set(WAMR_DISABLE_HW_BOUND_CHECK 1)
 
-include("${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake")
-
-add_library(wamr_runtime STATIC ${WAMR_RUNTIME_LIB_SOURCE})
+if (NOT LGP_ENABLE_WASMTIME)
+    include("${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake")
+    add_library(wamr_runtime STATIC ${WAMR_RUNTIME_LIB_SOURCE})
+endif ()
 
 
 # The Android NDK ships glslc. Compile GLSL to SPIR-V C initializers while
@@ -61,9 +67,15 @@ endforeach ()
 
 add_custom_target(lgp_vulkan_shaders DEPENDS ${LGP_GENERATED_SHADER_FILES})
 
+if (LGP_ENABLE_WASMTIME)
+    set(LGP_RUNTIME_JNI "wasmtime-runtime-jni.cpp")
+else ()
+    set(LGP_RUNTIME_JNI "wasi-runtime-jni.cpp")
+endif ()
+
 add_library(${CMAKE_PROJECT_NAME} SHARED
         native-lib.cpp
-        wasi-runtime-jni.cpp
+        ${LGP_RUNTIME_JNI}
         graphics-renderer.cpp)
 
 add_dependencies(${CMAKE_PROJECT_NAME} lgp_vulkan_shaders)
@@ -75,24 +87,27 @@ set_target_properties(lgp_wasm_ld PROPERTIES
         SUFFIX ".so")
 target_link_libraries(lgp_wasm_ld dl)
 
-target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
-        "${WAMR_ROOT_DIR}/core/iwasm/include")
+if (NOT LGP_ENABLE_WASMTIME)
+    target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+            "${WAMR_ROOT_DIR}/core/iwasm/include")
+endif ()
 
 find_library(LGP_VULKAN_LIBRARY vulkan REQUIRED)
 find_library(LGP_EGL_LIBRARY EGL REQUIRED)
 find_library(LGP_GLES_LIBRARY GLESv3 REQUIRED)
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
-        wamr_runtime
         android
         log
         ${LGP_VULKAN_LIBRARY}
         ${LGP_EGL_LIBRARY}
         ${LGP_GLES_LIBRARY})
+if (NOT LGP_ENABLE_WASMTIME)
+    target_link_libraries(${CMAKE_PROJECT_NAME} wamr_runtime)
+endif ()
 
 # Optional Wasmtime 49.0.2 Android ARM64 C API, kept separate from WAMR.
 # Activate with: gradlew :app:installDebug "-Plgp.wasmtime=true"
-option(LGP_ENABLE_WASMTIME "Enable native Wasmtime WebAssembly runtime" OFF)
 if (LGP_ENABLE_WASMTIME)
     set(LGP_WASMTIME_SHARED "${LGP_WASMTIME_ROOT}/lib/libwasmtime.so")
     set(LGP_WASMTIME_HEADER "${LGP_WASMTIME_ROOT}/include/wasmtime.h")
@@ -104,8 +119,6 @@ if (LGP_ENABLE_WASMTIME)
     # Linking it by absolute host path would write that Windows path
     # into libapp.so's DT_NEEDED and crash Android's dynamic loader.
     # -L + -lwasmtime forces DT_NEEDED to contain "libwasmtime.so".
-    target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-            wasmtime-runtime-jni.cpp)
     target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
             "${LGP_WASMTIME_ROOT}/include")
     target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
