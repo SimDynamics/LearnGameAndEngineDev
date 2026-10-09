@@ -94,20 +94,20 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 # Activate with: gradlew :app:installDebug "-Plgp.wasmtime=true"
 option(LGP_ENABLE_WASMTIME "Enable native Wasmtime WebAssembly runtime" OFF)
 if (LGP_ENABLE_WASMTIME)
-    set(LGP_WASMTIME_SHARED "\${LGP_WASMTIME_ROOT}/lib/libwasmtime.so")
-    set(LGP_WASMTIME_HEADER "\${LGP_WASMTIME_ROOT}/include/wasmtime.h")
-    if (NOT EXISTS "\${LGP_WASMTIME_SHARED}" OR NOT EXISTS "\${LGP_WASMTIME_HEADER}")
+    set(LGP_WASMTIME_SHARED "${LGP_WASMTIME_ROOT}/lib/libwasmtime.so")
+    set(LGP_WASMTIME_HEADER "${LGP_WASMTIME_ROOT}/include/wasmtime.h")
+    if (NOT EXISTS "${LGP_WASMTIME_SHARED}" OR NOT EXISTS "${LGP_WASMTIME_HEADER}")
         message(FATAL_ERROR "Wasmtime 49 ARM64 headers/library missing. Run prepareWasmtimeRuntime.")
     endif ()
 
     add_library(lgp_wasmtime SHARED IMPORTED)
     set_target_properties(lgp_wasmtime PROPERTIES
-            IMPORTED_LOCATION "\${LGP_WASMTIME_SHARED}")
+            IMPORTED_LOCATION "${LGP_WASMTIME_SHARED}")
 
-    target_sources(\${CMAKE_PROJECT_NAME} PRIVATE
+    target_sources(${CMAKE_PROJECT_NAME} PRIVATE
             wasmtime-runtime-jni.cpp)
-    target_include_directories(\${CMAKE_PROJECT_NAME} PRIVATE
-            "\${LGP_WASMTIME_ROOT}/include")
-    target_link_libraries(\${CMAKE_PROJECT_NAME}
+    target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+            "${LGP_WASMTIME_ROOT}/include")
+    target_link_libraries(${CMAKE_PROJECT_NAME}
             lgp_wasmtime)
 endif ()
