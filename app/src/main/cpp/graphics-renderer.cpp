@@ -601,8 +601,8 @@ struct VulkanRenderer final : Renderer {
         // gl_VertexIndex provides the three vertices; a push constant animates
         // their rotation without allocating a new buffer on every frame.
         VkShaderModuleCreateInfo vertex_module_info{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-        vertex_module_info.codeSize = sizeof(kCubeVertexSpirv);
-        vertex_module_info.pCode = kCubeVertexSpirv;
+        vertex_module_info.codeSize = sizeof(kPhysicsVertexSpirv);
+        vertex_module_info.pCode = kPhysicsVertexSpirv;
         VkShaderModule vertex_module = VK_NULL_HANDLE;
         if (vkCreateShaderModule(device, &vertex_module_info, nullptr, &vertex_module) != VK_SUCCESS) {
             error = "Vulkan: el controlador rechazó el shader de vértices SPIR-V.";
@@ -610,8 +610,8 @@ struct VulkanRenderer final : Renderer {
         }
 
         VkShaderModuleCreateInfo fragment_module_info{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-        fragment_module_info.codeSize = sizeof(kCubeFragmentSpirv);
-        fragment_module_info.pCode = kCubeFragmentSpirv;
+        fragment_module_info.codeSize = sizeof(kPhysicsFragmentSpirv);
+        fragment_module_info.pCode = kPhysicsFragmentSpirv;
         VkShaderModule fragment_module = VK_NULL_HANDLE;
         if (vkCreateShaderModule(device, &fragment_module_info, nullptr, &fragment_module) != VK_SUCCESS) {
             vkDestroyShaderModule(device, vertex_module, nullptr);
@@ -622,7 +622,8 @@ struct VulkanRenderer final : Renderer {
         VkPushConstantRange time_range{};
         time_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         time_range.offset = 0;
-        time_range.size = sizeof(float) * 2;
+        // Three vec4: camera / position and radius / material and selection.
+        time_range.size = sizeof(float) * 12;
         VkPipelineLayoutCreateInfo layout_info{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
         layout_info.pushConstantRangeCount = 1;
         layout_info.pPushConstantRanges = &time_range;
@@ -758,7 +759,8 @@ struct VulkanRenderer final : Renderer {
         return true;
     }
 
-    bool draw(float elapsed_seconds, std::string &error) override {
+    bool draw(float elapsed_seconds, const lgp::PhysicsScene &scene,
+              std::string &error) override {
         if (vkWaitForFences(device, 1, &fence, VK_TRUE, 1000000000ULL) != VK_SUCCESS) {
             error = "Vulkan: tiempo de espera de GPU agotado.";
             return false;
@@ -804,14 +806,35 @@ struct VulkanRenderer final : Renderer {
         vkCmdSetViewport(commands[index], 0, 1, &viewport);
         vkCmdSetScissor(commands[index], 0, 1, &scissor);
         vkCmdBindPipeline(commands[index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-        const float camera_state[2] = {
+        // glslc push constant layout uses three vec4 = 12 floats.
+        // Background/floor and all dynamic bodies share one GPU pipeline.
+        float object_state[12] = {
             elapsed_seconds,
             static_cast<float>(extent.width) /
-                static_cast<float>(std::max(1u, extent.height))
+                static_cast<float>(std::max(1u, extent.height)),
+            0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f,
+            0.14f, 0.23f, 0.31f, 1.0f
         };
         vkCmdPushConstants(commands[index], pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
-                           0, sizeof(camera_state), camera_state);
-        vkCmdDraw(commands[index], 36, 1, 0, 0);
+                           0, sizeof(object_state), object_state);
+        vkCmdDraw(commands[index], 6, 1, 0, 0);
+
+        const auto &bodies = scene.get_bodies();
+        for (int i = 0; i < lgp::PhysicsScene::kBodyCount; ++i) {
+            const lgp::Body &body = bodies[i];
+            object_state[4] = body.position.x;
+            object_state[5] = body.position.y;
+            object_state[6] = body.position.z;
+            object_state[7] = body.radius;
+            object_state[8] = body.color.x;
+            object_state[9] = body.color.y;
+            object_state[10] = body.color.z;
+            object_state[11] = i == scene.selected_index() ? 2.0f : 0.0f;
+            vkCmdPushConstants(commands[index], pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
+                               0, sizeof(object_state), object_state);
+            vkCmdDraw(commands[index], 16 * 12 * 6, 1, 0, 0);
+        }
 
         vkCmdEndRenderPass(commands[index]);
         if (vkEndCommandBuffer(commands[index]) != VK_SUCCESS) {
