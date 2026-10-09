@@ -66,93 +66,30 @@ class OptionsActivity : AppCompatActivity() {
                 R.id.spinnerAppLanguage
             )
 
-        val appLanguageLabels =
-            listOf(
-                getString(R.string.settings_language_auto),
-                getString(R.string.settings_language_spanish),
-                getString(R.string.settings_language_english),
-                getString(R.string.settings_language_french)
-            )
-
-        val languageAdapter =
-            android.widget.ArrayAdapter(
-                this,
-                android.R.layout.simple_spinner_item,
-                appLanguageLabels
-            )
-
-        languageAdapter.setDropDownViewResource(
-            android.R.layout.simple_spinner_dropdown_item
-        )
-
-        spinnerAppLanguage.adapter =
-            languageAdapter
-
-        /*
-         * Recuperamos el idioma elegido.
-         *
-         * Una cadena vacía significa:
-         * Automático (idioma del dispositivo).
-         */
-        val currentLanguage =
-            androidx.appcompat.app.AppCompatDelegate
-                .getApplicationLocales()
-                .toLanguageTags()
-
-        val languageIndex =
-            when (currentLanguage) {
-                "es" -> 1
-                "en" -> 2
-                "fr" -> 3
-                else -> 0
-            }
-
-        spinnerAppLanguage.setSelection(
-            languageIndex
-        )
-
-        /*
-         * Cambiamos el idioma al seleccionar
-         * una opción diferente.
-         */
+        val languageTags = listOf("") + UiLanguageSettings.supportedTags(this)
+        val appLanguageLabels = listOf(getString(R.string.settings_language_auto)) +
+            resources.getStringArray(R.array.ui_language_names).toList()
+        val languageAdapter = android.widget.ArrayAdapter(
+            this, android.R.layout.simple_spinner_item, appLanguageLabels
+        ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+        spinnerAppLanguage.adapter = languageAdapter
+        val selectedTag = UiLanguageSettings.selectedTag(this)
+        val selectedIndex = languageTags.indexOf(selectedTag).takeIf { it >= 0 }
+            ?: languageTags.indexOf(selectedTag.substringBefore('-')).coerceAtLeast(0)
+        spinnerAppLanguage.setSelection(selectedIndex)
         spinnerAppLanguage.onItemSelectedListener =
             object : android.widget.AdapterView.OnItemSelectedListener {
-
                 override fun onItemSelected(
-                    parent: android.widget.AdapterView<*>?,
-                    view: View?,
-                    position: Int,
-                    id: Long
+                    parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long
                 ) {
-
-                    val languageCode =
-                        when (position) {
-                            1 -> "es"
-                            2 -> "en"
-                            3 -> "fr"
-                            else -> ""
-                        }
-
-                    val activeLanguage =
-                        androidx.appcompat.app.AppCompatDelegate
-                            .getApplicationLocales()
-                            .toLanguageTags()
-
-                    if (languageCode == activeLanguage) {
-                        return
+                    // Ignore the initial binding callback, including a regional system selection.
+                    if (position == selectedIndex && UiLanguageSettings.selectedTag(this@OptionsActivity) == selectedTag) return
+                    val tag = languageTags[position]
+                    if (tag != UiLanguageSettings.selectedTag(this@OptionsActivity)) {
+                        UiLanguageSettings.select(this@OptionsActivity, tag)
                     }
-
-                    androidx.appcompat.app.AppCompatDelegate
-                        .setApplicationLocales(
-                            androidx.core.os.LocaleListCompat
-                                .forLanguageTags(languageCode)
-                        )
                 }
-
-                override fun onNothingSelected(
-                    parent: android.widget.AdapterView<*>?
-                ) {
-                }
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
             }
 
         val buttonBack =
@@ -1453,7 +1390,7 @@ class OptionsActivity : AppCompatActivity() {
             ) {
 
                 input.error =
-                    "Escribe tres valores RGB"
+                    getString(R.string.settings_rgb_incomplete)
 
                 return false
             }
@@ -1491,7 +1428,7 @@ class OptionsActivity : AppCompatActivity() {
              * el foco.
              */
             input.setText(
-                "RGB($red, $green, $blue)"
+                getString(R.string.settings_rgb_value, red, green, blue)
             )
 
             input.setSelection(

@@ -53,6 +53,9 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    androidResources {
+        generateLocaleConfig = true
+    }
     sourceSets {
         getByName("main").jniLibs.srcDir("build/generated/cppRuntime/jniLibs")
     }

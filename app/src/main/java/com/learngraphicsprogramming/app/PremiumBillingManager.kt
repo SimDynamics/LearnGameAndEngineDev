@@ -84,7 +84,7 @@ object PremiumBillingManager {
 
                                 Toast.makeText(
                                     context.applicationContext,
-                                    "El pago está pendiente. Premium se activará cuando Google Play lo confirme.",
+                                    UiLanguageSettings.localizedContext(context).getString(R.string.premium_payment_pending),
                                     Toast.LENGTH_LONG
                                 ).show()
                             }
@@ -126,7 +126,7 @@ object PremiumBillingManager {
 
                             Toast.makeText(
                                 context.applicationContext,
-                                "No se pudo completar la operación en Google Play.",
+                                UiLanguageSettings.localizedContext(context).getString(R.string.premium_operation_failed),
                                 Toast.LENGTH_LONG
                             ).show()
                         }
@@ -201,7 +201,7 @@ object PremiumBillingManager {
 
             Toast.makeText(
                 activity,
-                "Google Play todavía no está disponible. Inténtalo nuevamente en un momento.",
+                UiLanguageSettings.localizedContext(activity).getString(R.string.premium_play_unavailable),
                 Toast.LENGTH_LONG
             ).show()
 
@@ -256,7 +256,7 @@ object PremiumBillingManager {
 
                     Toast.makeText(
                         activity,
-                        "No se pudo consultar Premium en Google Play. Inténtalo nuevamente.",
+                        UiLanguageSettings.localizedContext(activity).getString(R.string.premium_query_failed),
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -278,7 +278,7 @@ object PremiumBillingManager {
 
                     Toast.makeText(
                         activity,
-                        "Premium todavía no está disponible en Google Play.",
+                        UiLanguageSettings.localizedContext(activity).getString(R.string.premium_product_unavailable),
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -376,7 +376,7 @@ object PremiumBillingManager {
 
                                 Toast.makeText(
                                     activity,
-                                    "No se pudo iniciar la compra Premium. Inténtalo nuevamente.",
+                                    UiLanguageSettings.localizedContext(activity).getString(R.string.premium_purchase_failed),
                                     Toast.LENGTH_LONG
                                 ).show()
                             }
