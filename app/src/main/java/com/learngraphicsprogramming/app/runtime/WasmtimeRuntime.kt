@@ -17,6 +17,7 @@ internal object WasmtimeRuntime {
         workingDirectory: String,
         stdoutPath: String,
         stderrPath: String,
-        stdinPath: String
+        stdinPath: String,
+        diagnosticPath: String
     ): Int
 }
