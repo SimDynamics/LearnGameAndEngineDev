@@ -84,6 +84,49 @@ try {
         ) | Set-Content -Path $filteredLog -Encoding UTF8
     }
 
+    # Include non-native failures. Java assertions and build errors are
+    # often absent from Android logcat and still explain a failed test.
+    $summary = New-Object 'System.Collections.Generic.List[string]'
+    $summary.Add("Wasmtime diagnostic: native traces, Gradle, instrumentation XML")
+    $summary.Add("Gradle exit code: $gradleExit")
+    $summary.Add("")
+    $summary.Add("=== ANDROID LOGCAT ===")
+    $nativeText = Get-Content -Path $filteredLog -Raw -ErrorAction SilentlyContinue
+    if ($nativeText) { $summary.Add($nativeText) }
+    $summary.Add("")
+    $summary.Add("=== GRADLE OUTPUT: LAST 150 LINES ===")
+    $gradleLines = @(Get-Content -Path $gradleLog -Tail 150 -ErrorAction SilentlyContinue)
+    if ($gradleLines.Count -gt 0) {
+        foreach ($line in $gradleLines) { $summary.Add([string]$line) }
+    } else {
+        $summary.Add("No Gradle output was recorded.")
+    }
+    $summary.Add("")
+    $summary.Add("=== TEST XML ERRORS ===")
+    $xmlDirectory = Join-Path $root "app\build\outputs\androidTest-results\connected"
+    if (Test-Path $xmlDirectory) {
+        $xmlReports = @(Get-ChildItem -Path $xmlDirectory -Recurse -File -Filter "*.xml" |
+            Sort-Object LastWriteTime -Descending | Select-Object -First 3)
+        foreach ($report in $xmlReports) {
+            $summary.Add("Report: $($report.FullName)")
+            $xmlContent = Get-Content -Path $report.FullName -Raw -ErrorAction SilentlyContinue
+            if ($xmlContent) {
+                $blocks = [regex]::Matches($xmlContent, "(?s)<(?:failure|error)\b.*?</(?:failure|error)>")
+                if ($blocks.Count -gt 0) {
+                    foreach ($block in @($blocks | Select-Object -First 3)) {
+                        $length = [Math]::Min(12000, $block.Value.Length)
+                        $summary.Add($block.Value.Substring(0, $length))
+                    }
+                } else {
+                    $summary.Add($xmlContent.Substring(0, [Math]::Min(2000, $xmlContent.Length)))
+                }
+            }
+        }
+    } else {
+        $summary.Add("No instrumentation XML reports were found.")
+    }
+    $summary | Set-Content -Path $filteredLog -Encoding UTF8
+
     Write-Host ""
     Write-Host "Gradle exit code: $gradleExit"
     Write-Host "ADB logcat exit code: $logcatExit"
