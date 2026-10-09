@@ -28,22 +28,23 @@ internal class CppCompiler(private val context: Context) {
             else "libfoldclang.so"
         )
         val lldCore = File(nativeDirectory, "libfoldlldcore.so")
+        val linkerExecutable = File(
+            nativeDirectory,
+            if (BuildConfig.LGP_CLANG23_ENABLED) "liblgp_lld23.so"
+            else "liblgp_wasm_ld.so"
+        )
         val linkerDirectory = File(runtimeDirectory, "bin").apply { mkdirs() }
         val linker = File(linkerDirectory, "wasm-ld")
 
         check(clang.isFile) { UiLanguageSettings.localizedContext(context).getString(R.string.math_ui_clang_missing) }
-        check(lldCore.isFile) { UiLanguageSettings.localizedContext(context).getString(R.string.math_ui_llvm_missing) }
+        check(linkerExecutable.isFile) { UiLanguageSettings.localizedContext(context).getString(R.string.math_ui_llvm_missing) }
+        // FoldCode's LLD core belongs to the Clang 21 linker wrapper only.
+        if (!BuildConfig.LGP_CLANG23_ENABLED) {
+            check(lldCore.isFile) { UiLanguageSettings.localizedContext(context).getString(R.string.math_ui_llvm_missing) }
+        }
 
         linker.delete()
-
-        Os.symlink(
-            File(
-                nativeDirectory,
-                if (BuildConfig.LGP_CLANG23_ENABLED) "liblgp_lld23.so"
-                else "liblgp_wasm_ld.so"
-            ).absolutePath,
-            linker.absolutePath
-        )
+        Os.symlink(linkerExecutable.absolutePath, linker.absolutePath)
 
         val sysroot = File(runtimeDirectory, "sysroot")
         val resourceDirectory = File(runtimeDirectory, "resource")
