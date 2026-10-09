@@ -24,13 +24,25 @@ internal object WasiRuntime {
         val stdinFile = File(workingDirectory, "stdin.txt").apply {
             writeText(standardInput, Charsets.UTF_8)
         }
-        val exitCode = execute(
-            wasmBytes,
-            workingDirectory.absolutePath,
-            stdoutFile.absolutePath,
-            stderrFile.absolutePath,
-            stdinFile.absolutePath
-        )
+        // The Gradle feature flag routes to the separately linked Wasmtime
+        // implementation without removing our validated WAMR fallback.
+        val exitCode = if (com.learngraphicsprogramming.app.BuildConfig.LGP_WASMTIME_ENABLED) {
+            WasmtimeRuntime.execute(
+                wasmBytes,
+                workingDirectory.absolutePath,
+                stdoutFile.absolutePath,
+                stderrFile.absolutePath,
+                stdinFile.absolutePath
+            )
+        } else {
+            execute(
+                wasmBytes,
+                workingDirectory.absolutePath,
+                stdoutFile.absolutePath,
+                stderrFile.absolutePath,
+                stdinFile.absolutePath
+            )
+        }
         return WasiExecutionResult(
             exitCode,
             stdoutFile.takeIf(File::isFile)?.readText().orEmpty(),
