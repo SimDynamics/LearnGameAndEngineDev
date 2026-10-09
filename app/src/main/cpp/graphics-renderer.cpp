@@ -35,7 +35,7 @@ struct Renderer {
     virtual ~Renderer() = default;
     virtual bool initialize(std::string &error) = 0;
     virtual bool draw(float elapsed_seconds, const lgp::PhysicsScene &scene,
-                      std::string &error) = 0;
+                      int simulation_mode, int stress_side, std::string &error) = 0;
     virtual std::string describe() const = 0;
     ANativeWindow *window;
 };
@@ -49,6 +49,8 @@ struct GlesRenderer final : Renderer {
     GLint aspect_uniform = -1;
     GLint transform_uniform = -1;
     GLint material_uniform = -1;
+    GLint benchmark_time_uniform = -1;
+    GLint benchmark_side_uniform = -1;
     std::string gpu;
 
     ~GlesRenderer() override {
@@ -114,6 +116,8 @@ struct GlesRenderer final : Renderer {
         static const char *vertex_source = R"(#version 300 es
             precision highp float;
             uniform float aspectRatio;
+            uniform float benchmarkTime;
+            uniform float benchmarkSide;
             uniform vec4 transform; // center.xyz and sphere radius
             uniform vec4 material;  // RGB and object kind (0/1/2)
 
@@ -155,6 +159,43 @@ struct GlesRenderer final : Renderer {
                         cos(latitude),
                         sin(latitude) * sin(longitude)
                     );
+                    if (kind == 3) {
+                        int side = max(1, int(benchmarkSide + 0.5));
+                        int column = gl_InstanceID % side;
+                        int row = gl_InstanceID / side;
+
+                        float phase = benchmarkTime * 0.85 +
+                                      float(gl_InstanceID) * 0.157;
+                        float cp = cos(phase);
+                        float sp = sin(phase);
+                        vec3 rotated = vec3(
+                            cp * normal.x + sp * normal.z,
+                            normal.y * cos(phase * 0.47) - normal.z * sin(phase * 0.47),
+                            -sp * normal.x + cp * normal.z
+                        );
+                        rotated = normalize(rotated);
+
+                        float gap = 0.85 / float(side);
+                        vec2 center = (
+                            (vec2(float(column), float(row)) + 0.5)
+                            / float(side) * 2.0 - 1.0
+                        ) * 0.94;
+                        gl_Position = vec4(
+                            center.x + rotated.x * gap,
+                            center.y + rotated.y * gap,
+                            0.0 - rotated.z * 0.24,
+                            1.0
+                        );
+                        worldNormal = rotated;
+                        baseColor = 0.28 + 0.62 * vec3(
+                            0.5 + 0.5 * sin(float(gl_InstanceID) * 0.21),
+                            0.5 + 0.5 * sin(float(gl_InstanceID) * 0.37 + 1.5),
+                            0.5 + 0.5 * cos(float(gl_InstanceID) * 0.13 + 0.6)
+                        );
+                        worldPosition = rotated;
+                        objectKind = 3;
+                        return;
+                    }
                     world = transform.xyz + normal * transform.w;
                 }
 
@@ -223,6 +264,8 @@ struct GlesRenderer final : Renderer {
         aspect_uniform = glGetUniformLocation(shader_program, "aspectRatio");
         transform_uniform = glGetUniformLocation(shader_program, "transform");
         material_uniform = glGetUniformLocation(shader_program, "material");
+        benchmark_time_uniform = glGetUniformLocation(shader_program, "benchmarkTime");
+        benchmark_side_uniform = glGetUniformLocation(shader_program, "benchmarkSide");
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
         glClearDepthf(1.0f);
@@ -234,7 +277,7 @@ struct GlesRenderer final : Renderer {
     }
 
     bool draw(float elapsed_seconds, const lgp::PhysicsScene &scene,
-              std::string &error) override {
+              int simulation_mode, int stress_side, std::string &error) override {
         EGLint width = 0, height = 0;
         if (!eglQuerySurface(display, surface, EGL_WIDTH, &width) ||
             !eglQuerySurface(display, surface, EGL_HEIGHT, &height)) {
@@ -248,6 +291,15 @@ struct GlesRenderer final : Renderer {
         glUniform1f(aspect_uniform,
                     static_cast<float>(width) / static_cast<float>(std::max(1, height)));
 
+        if (simulation_mode == 1) {
+            // One instanced draw call, 64/256/1024 GPU-animated spheres.
+            const int grid = std::clamp(stress_side, 8, 32);
+            glUniform1f(benchmark_time_uniform, elapsed_seconds);
+            glUniform1f(benchmark_side_uniform, static_cast<float>(grid));
+            glUniform4f(transform_uniform, 0.0f, 0.0f, -5.0f, 0.3f);
+            glUniform4f(material_uniform, 0.0f, 0.0f, 0.0f, 3.0f);
+            glDrawArraysInstanced(GL_TRIANGLES, 0, 16 * 12 * 6, grid * grid);
+        } else {
         glUniform4f(transform_uniform, 0.0f, 0.0f, 0.0f, 1.0f);
         glUniform4f(material_uniform, 0.14f, 0.23f, 0.31f, 1.0f);
         glDrawArrays(GL_TRIANGLES, 0, 6); // Floor.
@@ -261,6 +313,7 @@ struct GlesRenderer final : Renderer {
                         body.color.x, body.color.y, body.color.z,
                         i == scene.selected_index() ? 2.0f : 0.0f);
             glDrawArrays(GL_TRIANGLES, 0, 16 * 12 * 6);
+        }
         }
         if (eglSwapBuffers(display, surface) != EGL_TRUE) {
             error = "OpenGL ES: falló eglSwapBuffers.";
