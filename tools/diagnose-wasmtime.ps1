@@ -21,6 +21,8 @@ New-Item -ItemType Directory -Force -Path $logDirectory | Out-Null
 $rawLog = Join-Path $logDirectory "android-crash-complete.txt"
 $filteredLog = Join-Path $logDirectory "wasmtime-crash-filtered.txt"
 $gradleLog = Join-Path $logDirectory "gradle-test-output.txt"
+$liveLog = Join-Path $logDirectory "android-live-logcat.txt"
+$liveErrors = Join-Path $logDirectory "android-live-errors.txt"
 
 Write-Host "Limpiando logcat para reproducir el cierre..." -ForegroundColor Cyan
 & $adb logcat -c
@@ -37,6 +39,20 @@ $previousErrorPreference = $ErrorActionPreference
 $gradleExit = -1
 $logcatExit = -1
 $collectionError = $null
+$liveCollector = $null
+
+# Start continuous logcat BEFORE Gradle starts instrumentation.
+# Gradle's own log retrieval can fail when the Android process crashes.
+try {
+    $liveCollector = Start-Process -FilePath $adb -PassThru -WindowStyle Hidden `
+        -ArgumentList @("logcat", "-v", "threadtime", "-b", "main", "-b", "system", "-b", "crash", "-b", "events") `
+        -RedirectStandardOutput $liveLog -RedirectStandardError $liveErrors
+    Start-Sleep -Milliseconds 400
+    Write-Host "Captura continua de logcat iniciada." -ForegroundColor Cyan
+} catch {
+    $collectionError = "No se pudo iniciar logcat en vivo: $($_.Exception.Message)"
+    Write-Host $collectionError -ForegroundColor Yellow
+}
 
 try {
     Write-Host "Ejecutando una sola prueba de Wasmtime..." -ForegroundColor Cyan
@@ -53,6 +69,18 @@ try {
         $ErrorActionPreference = $previousErrorPreference
     }
 } finally {
+    # End continuous capture, but leave already written evidence on disk.
+    if ($null -ne $liveCollector) {
+        try {
+            $liveCollector.Refresh()
+            if (-not $liveCollector.HasExited) { $liveCollector.Kill() }
+            $null = $liveCollector.WaitForExit(5000)
+            $liveCollector.Dispose()
+        } catch {
+            $collectionError = "No se pudo cerrar el capturador: $($_.Exception.Message)"
+        }
+    }
+
     # Always collect after the test, even when Gradle reports failed tests.
     Write-Host "Extrayendo logcat completo y crash buffer..." -ForegroundColor Cyan
     $ErrorActionPreference = "Continue"
@@ -72,7 +100,9 @@ try {
             Set-Content -Path $rawLog -Encoding UTF8
     }
     $pattern = "LGP-Wasmtime|LGP-CppEngine|TestRunner|INSTRUMENTATION_STATUS|FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|SIGILL|crash_dump|tombstoned|Abort message|backtrace|libwasmtime|libapp.so|AndroidRuntime|DEBUG *:"
-    $matches = Select-String -Path $rawLog -Pattern $pattern -Context 7,24
+    $logFiles = @($rawLog)
+    if (Test-Path $liveLog) { $logFiles += $liveLog }
+    $matches = Select-String -Path $logFiles -Pattern $pattern -Context 7,24
     if ($matches) {
         $matches | Out-String -Width 220 |
             Set-Content -Path $filteredLog -Encoding UTF8
@@ -89,6 +119,10 @@ try {
     $summary = New-Object 'System.Collections.Generic.List[string]'
     $summary.Add("Wasmtime diagnostic: native traces, Gradle, instrumentation XML")
     $summary.Add("Gradle exit code: $gradleExit")
+    $liveBytes = if (Test-Path $liveLog) { (Get-Item $liveLog).Length } else { 0 }
+    $rawBytes = if (Test-Path $rawLog) { (Get-Item $rawLog).Length } else { 0 }
+    $summary.Add("Live logcat bytes: $liveBytes; final snapshot bytes: $rawBytes")
+    if ($collectionError) { $summary.Add("Collector warning: $collectionError") }
     $summary.Add("")
     $summary.Add("=== ANDROID LOGCAT ===")
     $nativeText = Get-Content -Path $filteredLog -Raw -ErrorAction SilentlyContinue
@@ -132,6 +166,7 @@ try {
     Write-Host "ADB logcat exit code: $logcatExit"
     Write-Host "Diagnóstico filtrado: $filteredLog" -ForegroundColor Green
     Write-Host "Logcat completo: $rawLog"
+    Write-Host "Logcat en vivo: $liveLog"
     Write-Host "Salida Gradle: $gradleLog"
     if ($collectionError) {
         Write-Host "Detalle adicional: $collectionError" -ForegroundColor Yellow
