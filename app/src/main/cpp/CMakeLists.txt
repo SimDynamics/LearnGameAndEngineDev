@@ -124,5 +124,6 @@ if (LGP_ENABLE_WASMTIME)
     target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
             "${LGP_WASMTIME_ROOT}/lib")
     target_link_libraries(${CMAKE_PROJECT_NAME}
-            wasmtime)
+            wasmtime
+            dl)
 endif ()
