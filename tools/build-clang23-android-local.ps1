@@ -12,7 +12,7 @@ if (-not $BuildRoot) {
 }
 $BuildRoot = [IO.Path]::GetFullPath($BuildRoot)
 $source = Join-Path $BuildRoot "llvm-project"
-$host = Join-Path $BuildRoot "host"
+$hostBuildDir = Join-Path $BuildRoot "host"
 $android = Join-Path $BuildRoot "android"
 $dist = Join-Path $BuildRoot "dist"
 $archive = Join-Path $BuildRoot "clang-23.1.3-android-arm64-EXPERIMENTAL.tar.gz"
@@ -113,13 +113,13 @@ $common = @(
 )
 $llvmDir = Join-Path $source "llvm"
 Write-Host "[2/5] Compilando generadores de Windows..." -ForegroundColor Cyan
-$hostArgs = @("-S",$llvmDir,"-B",$host) + $common + @("-DCMAKE_BUILD_TYPE=Release","-DLLVM_ENABLE_PROJECTS=clang")
+$hostArgs = @("-S",$llvmDir,"-B",$hostBuildDir) + $common + @("-DCMAKE_BUILD_TYPE=Release","-DLLVM_ENABLE_PROJECTS=clang")
 & $cmake @hostArgs
 Check "Configuración de generadores nativos"
-& $cmake --build $host --parallel $Jobs --target llvm-tblgen clang-tblgen
+& $cmake --build $hostBuildDir --parallel $Jobs --target llvm-tblgen clang-tblgen
 Check "Compilación de generadores nativos"
-$llvmTbl = Join-Path $host "bin\llvm-tblgen.exe"
-$clangTbl = Join-Path $host "bin\clang-tblgen.exe"
+$llvmTbl = Join-Path $hostBuildDir "bin\llvm-tblgen.exe"
+$clangTbl = Join-Path $hostBuildDir "bin\clang-tblgen.exe"
 if (-not (Test-Path $llvmTbl) -or -not (Test-Path $clangTbl)) { throw "Faltan los generadores TableGen de Windows." }
 
 Write-Host "[3/5] Configurando Clang 23 Android ARM64..." -ForegroundColor Cyan
@@ -131,7 +131,7 @@ $targetArgs = @("-S",$llvmDir,"-B",$android) + $common + @(
     "-DANDROID_STL=c++_static",
     "-DCMAKE_BUILD_TYPE=MinSizeRel",
     "-DLLVM_ENABLE_PROJECTS=clang;lld",
-    "-DLLVM_NATIVE_TOOL_DIR=$(UnixPath (Join-Path $host 'bin'))",
+    "-DLLVM_NATIVE_TOOL_DIR=$(UnixPath (Join-Path $hostBuildDir 'bin'))",
     "-DLLVM_TABLEGEN=$(UnixPath $llvmTbl)",
     "-DCLANG_TABLEGEN=$(UnixPath $clangTbl)",
     "-DLLVM_DEFAULT_TARGET_TRIPLE=wasm32-wasip1",
