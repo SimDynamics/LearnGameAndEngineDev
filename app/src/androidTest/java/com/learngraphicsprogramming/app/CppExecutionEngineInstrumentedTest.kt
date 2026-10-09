@@ -24,6 +24,44 @@ class CppExecutionEngineInstrumentedTest {
         assertEquals("Hola desde C++\n", result.execution?.stdout)
     }
 
+    @Test
+    fun readsTwoIntegersFromStandardInput() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val source = """#include <iostream>
+
+int main()
+{
+    int a = 0;
+    int b = 0;
+    if (!(std::cin >> a >> b)) return 2;
+    std::cout << (a + b) << '\\n';
+}
+"""
+        val result = CppExecutionEngine(context).compileAndRun(source, "7 8\n")
+        assertEquals(result.compilation.stderr, 0, result.compilation.exitCode)
+        assertEquals(result.execution?.stderr, 0, result.execution?.exitCode)
+        assertEquals("15\n", result.execution?.stdout)
+    }
+
+    @Test
+    fun readsLineWithSpacesFromStandardInput() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val source = """#include <iostream>
+#include <string>
+
+int main()
+{
+    std::string line;
+    if (!std::getline(std::cin, line)) return 2;
+    std::cout << "[" << line << "]" << '\\n';
+}
+"""
+        val result = CppExecutionEngine(context).compileAndRun(source, "hello C++ world\n")
+        assertEquals(result.compilation.stderr, 0, result.compilation.exitCode)
+        assertEquals(result.execution?.stderr, 0, result.execution?.exitCode)
+        assertEquals("[hello C++ world]\n", result.execution?.stdout)
+    }
+
     private companion object {
         const val SOURCE = """#include <iostream>
 
