@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <fcntl.h>
+#include <unistd.h>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -18,8 +20,17 @@ namespace {
 
 std::mutex s_runtime_mutex;
 constexpr const char *kTraceTag = "LGP-Wasmtime";
-void trace(const char *phase) {
+void trace(const char *phase, const char *diagnostic_path = nullptr) {
     __android_log_print(ANDROID_LOG_INFO, kTraceTag, "%s", phase);
+    // Persist small, source-free checkpoints outside logcat, which some
+    // vendor devices do not expose for a crashed instrumentation process.
+    if (!diagnostic_path || !diagnostic_path[0]) return;
+    const int fd = open(diagnostic_path, O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0600);
+    if (fd < 0) return;
+    (void)write(fd, phase, strlen(phase));
+    (void)write(fd, "\n", 1);
+    (void)fsync(fd);
+    close(fd);
 }
 constexpr jint kFailure = -1;
 constexpr size_t kMaxModuleBytes = 32 * 1024 * 1024;
@@ -77,13 +88,15 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
         jstring work_dir,
         jstring stdout_path,
         jstring stderr_path,
-        jstring stdin_path) {
-    trace("00 JNI execute entered");
+        jstring stdin_path,
+        jstring phase_path) {
     std::lock_guard<std::mutex> lock(s_runtime_mutex);
     JniString working(env, work_dir);
     JniString out(env, stdout_path);
     JniString err(env, stderr_path);
     JniString in(env, stdin_path);
+    JniString stage(env, phase_path);
+    trace("00 JNI execute entered", stage.get());
 
     if (!wasm_bytes || !working.get() || !out.get() || !err.get() || !in.get()) {
         return kFailure;
@@ -100,7 +113,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
         return kFailure;
     }
 
-    trace("01 WASM size accepted; acquiring bytes");
+    trace("01 WASM size accepted; acquiring bytes", stage.get());
     jbyte *bytes = env->GetByteArrayElements(wasm_bytes, nullptr);
     if (!bytes) {
         fclose(diagnostics);
@@ -114,7 +127,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
 
     // Wasmtime compiles the WebAssembly module and executes it inside
     // a new store, with limited memory and finite instruction fuel.
-    trace("02 constructing wasm_config");
+    trace("02 constructing wasm_config", stage.get());
     wasm_config_t *config = wasm_config_new();
     if (!config) {
         fprintf(diagnostics, "Wasmtime: error al crear wasm_config.\n");
@@ -124,15 +137,15 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
     }
     wasmtime_config_consume_fuel_set(config, true);
     wasmtime_config_wasm_exceptions_set(config, true);
-    trace("03 constructing engine");
+    trace("03 constructing engine", stage.get());
     wasm_engine_t *engine = wasm_engine_new_with_config(config);
-    trace("04 engine creation returned");
+    trace("04 engine creation returned", stage.get());
 
     if (!engine) {
         fprintf(diagnostics, "Wasmtime: no se pudo crear el motor ARM64.\n");
     } else {
         do {
-            trace("05 compiling WASM module");
+            trace("05 compiling WASM module", stage.get());
             wasmtime_error_t *error = wasmtime_module_new(
                 engine, reinterpret_cast<uint8_t *>(bytes),
                 static_cast<size_t>(byte_count), &module);
@@ -141,7 +154,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
-            trace("06 module compiled; constructing store");
+            trace("06 module compiled; constructing store", stage.get());
             store = wasmtime_store_new(engine, nullptr, nullptr);
             if (!store) {
                 fprintf(diagnostics, "Wasmtime: no se pudo crear el almacén.\n");
@@ -155,7 +168,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
-            trace("07 fuel/store ready; configuring WASI");
+            trace("07 fuel/store ready; configuring WASI", stage.get());
             wasi_config_t *wasi = wasi_config_new();
             if (!wasi) {
                 fprintf(diagnostics, "Wasmtime: error al crear wasi_config.\n");
@@ -176,7 +189,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
             fclose(diagnostics);
             diagnostics = nullptr;
 
-            trace("08 applying WASI config");
+            trace("08 applying WASI config", stage.get());
             error = wasmtime_context_set_wasi(context, wasi);
             // Ownership of wasi is transferred even if this call fails.
             if (error) {
@@ -185,7 +198,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
-            trace("09 creating WASI linker");
+            trace("09 creating WASI linker", stage.get());
             linker = wasmtime_linker_new(engine);
             error = wasmtime_linker_define_wasi(linker);
             if (error) {
@@ -194,7 +207,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
-            trace("10 instantiating WASM module");
+            trace("10 instantiating WASM module", stage.get());
             wasmtime_instance_t instance{};
             wasm_trap_t *trap = nullptr;
             error = wasmtime_linker_instantiate(linker, context, module, &instance, &trap);
@@ -205,7 +218,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
-            trace("11 WASM instantiated; resolving _start");
+            trace("11 WASM instantiated; resolving _start", stage.get());
             wasmtime_extern_t function{};
             if (!wasmtime_instance_export_get(context, &instance, "_start", 6, &function) ||
                 function.kind != WASMTIME_EXTERN_FUNC) {
@@ -214,10 +227,10 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
-            trace("12 calling _start");
+            trace("12 calling _start", stage.get());
             error = wasmtime_func_call(context, &function.of.func,
                                       nullptr, 0, nullptr, 0, &trap);
-            trace("13 _start call returned");
+            trace("13 _start call returned", stage.get());
             wasmtime_extern_delete(&function);
             if (error) {
                 int exit_status = 0;
@@ -239,13 +252,13 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
         } while (false);
     }
 
-    trace("14 cleanup started");
+    trace("14 cleanup started", stage.get());
     if (linker) wasmtime_linker_delete(linker);
     if (store) wasmtime_store_delete(store);
     if (module) wasmtime_module_delete(module);
     if (engine) wasm_engine_delete(engine);
     env->ReleaseByteArrayElements(wasm_bytes, bytes, JNI_ABORT);
     if (diagnostics) fclose(diagnostics);
-    trace("15 JNI execute completed");
+    trace("15 JNI execute completed", stage.get());
     return code;
 }
