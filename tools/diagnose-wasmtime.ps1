@@ -29,25 +29,72 @@ if ($LASTEXITCODE -ne 0) { throw "No se pudo limpiar logcat." }
 $testClass = "com.learngraphicsprogramming.app.CppExecutionEngineInstrumentedTest"
 $testArgument = "-Pandroid.testInstrumentationRunnerArguments.class=$testClass#$NdkTestName"
 
-Write-Host "Ejecutando una sola prueba de Wasmtime..." -ForegroundColor Cyan
-& .\gradlew :app:connectedDebugAndroidTest "-Plgp.wasmtime=true" $testArgument --no-configuration-cache 2>&1 |
-    Tee-Object -FilePath $gradleLog
-$gradleExit = $LASTEXITCODE
+# Gradle writes test failures to stderr. In Windows PowerShell 5.1,
+# redirecting native stderr (2>&1) turns it into NativeCommandError;
+# ErrorActionPreference=Stop would abort BEFORE collecting logcat.
+# The native failure is expected here: it is what we are diagnosing.
+$previousErrorPreference = $ErrorActionPreference
+$gradleExit = -1
+$logcatExit = -1
+$collectionError = $null
 
-Write-Host "Extrayendo logcat completo y crash buffer..." -ForegroundColor Cyan
-& $adb logcat -d -b main -b system -b crash -v threadtime > $rawLog
-if ($LASTEXITCODE -ne 0) { throw "ADB no pudo obtener logcat." }
+try {
+    Write-Host "Ejecutando una sola prueba de Wasmtime..." -ForegroundColor Cyan
+    try {
+        $ErrorActionPreference = "Continue"
+        & .\gradlew.bat :app:connectedDebugAndroidTest "-Plgp.wasmtime=true" $testArgument --no-configuration-cache 2>&1 |
+            Tee-Object -FilePath $gradleLog
+        $gradleExit = $LASTEXITCODE
+    } catch {
+        # A failed test must not prevent gathering evidence of the crash.
+        $collectionError = $_.Exception.Message
+        Write-Host "Gradle informó un error; continuamos con logcat." -ForegroundColor Yellow
+    } finally {
+        $ErrorActionPreference = $previousErrorPreference
+    }
+} finally {
+    # Always collect after the test, even when Gradle reports failed tests.
+    Write-Host "Extrayendo logcat completo y crash buffer..." -ForegroundColor Cyan
+    $ErrorActionPreference = "Continue"
+    try {
+        & $adb logcat -d -b main -b system -b crash -v threadtime 2>&1 |
+            Out-File -FilePath $rawLog -Encoding UTF8
+        $logcatExit = $LASTEXITCODE
+    } catch {
+        $collectionError = $_.Exception.Message
+    } finally {
+        $ErrorActionPreference = $previousErrorPreference
+    }
 
-# Context includes the signal, native backtrace, and our last JNI stage.
-$pattern = "LGP-Wasmtime|FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|crash_dump|tombstoned|Abort message|libwasmtime|libapp.so|DEBUG *:|AndroidRuntime"
-$matches = Select-String -Path $rawLog -Pattern $pattern -Context 5,15
-$matches | Out-String -Width 220 | Set-Content -Path $filteredLog -Encoding UTF8
+    # Always create the filtered artifact so its path is predictable.
+    if (-not (Test-Path $rawLog)) {
+        "ADB no pudo crear logcat. Error: $collectionError" |
+            Set-Content -Path $rawLog -Encoding UTF8
+    }
+    $pattern = "LGP-Wasmtime|FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|SIGILL|crash_dump|tombstoned|Abort message|backtrace|libwasmtime|libapp.so|AndroidRuntime|DEBUG *:"
+    $matches = Select-String -Path $rawLog -Pattern $pattern -Context 7,24
+    if ($matches) {
+        $matches | Out-String -Width 220 |
+            Set-Content -Path $filteredLog -Encoding UTF8
+    } else {
+        @(
+            "No se encontraron marcadores de caída o LGP-Wasmtime en logcat.",
+            "Revisa android-crash-complete.txt para más contexto.",
+            "Si el proceso se cerró, comprueba también los registros de Android Studio."
+        ) | Set-Content -Path $filteredLog -Encoding UTF8
+    }
 
-Write-Host ""
-Write-Host "Gradle exit code: $gradleExit"
-Write-Host "Diagnóstico filtrado: $filteredLog" -ForegroundColor Green
-Write-Host "Logcat completo: $rawLog"
-Write-Host "Revisa el archivo filtrado antes de compartirlo: puede contener rutas de archivos."
-if ($gradleExit -ne 0) {
-    Write-Host "La prueba falló, pero los registros de la caída quedaron guardados." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Gradle exit code: $gradleExit"
+    Write-Host "ADB logcat exit code: $logcatExit"
+    Write-Host "Diagnóstico filtrado: $filteredLog" -ForegroundColor Green
+    Write-Host "Logcat completo: $rawLog"
+    Write-Host "Salida Gradle: $gradleLog"
+    if ($collectionError) {
+        Write-Host "Detalle adicional: $collectionError" -ForegroundColor Yellow
+    }
+    Write-Host "Revisa los archivos antes de compartirlos: podrían contener rutas privadas."
+    if ($gradleExit -ne 0) {
+        Write-Host "La prueba falló, pero se conservaron los archivos de diagnóstico." -ForegroundColor Yellow
+    }
 }
