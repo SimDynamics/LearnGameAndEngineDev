@@ -7,13 +7,13 @@ import java.io.File
 
 internal class CppExecutionEngine(context: Context) {
     private val compiler = CppCompiler(context.applicationContext)
-    // App-private, persistent checkpoint survives a native process crash.
+    // Optional app-private crash checkpoints; disabled during normal execution.
     // Never store source code, standard input or user file paths here.
     private val diagnosticsFile =
         File(context.applicationContext.filesDir, "cpp-runtime-phase.txt")
 
     private fun checkpoint(message: String, reset: Boolean = false) {
-        if (!BuildConfig.DEBUG) return
+        if (!BuildConfig.DEBUG || !BuildConfig.LGP_WASMTIME_DIAGNOSTICS) return
         runCatching {
             if (reset) diagnosticsFile.writeText(message + "\n")
             else diagnosticsFile.appendText(message + "\n")
@@ -38,7 +38,9 @@ internal class CppExecutionEngine(context: Context) {
             wasmBytes,
             compilation.workspace,
             standardInput,
-            if (BuildConfig.DEBUG) diagnosticsFile.absolutePath else null
+            if (BuildConfig.DEBUG && BuildConfig.LGP_WASMTIME_DIAGNOSTICS)
+                diagnosticsFile.absolutePath
+            else null
         )
         checkpoint("K04 $backend returned: exit=${execution.exitCode}")
         return CppEngineResult(compilation, execution)
