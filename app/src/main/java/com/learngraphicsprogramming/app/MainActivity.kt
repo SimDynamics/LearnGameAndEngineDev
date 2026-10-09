@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.learngraphicsprogramming.app.databinding.ActivityMainBinding
+import com.learngraphicsprogramming.app.graphics.GraphicsDemoActivity
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -29,6 +30,7 @@ class MainActivity : AppCompatActivity() {
         binding.buttonMathPhysics.setOnClickListener { openCourses(AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) }
         binding.buttonOptions.setOnClickListener { startActivity(Intent(this, OptionsActivity::class.java)) }
         binding.buttonCppPrototype.setOnClickListener { startActivity(Intent(this, CppPrototypeActivity::class.java)) }
+        binding.buttonGraphicsDemo.setOnClickListener { startActivity(Intent(this, GraphicsDemoActivity::class.java)) }
         binding.buttonCalculator.setOnClickListener { startActivity(Intent(this, CalculatorActivity::class.java)) }
 
         if (savedInstanceState == null) restoreNavigationState()
