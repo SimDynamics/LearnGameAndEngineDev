@@ -99,11 +99,15 @@ android {
 val prepareCppRuntime by tasks.registering {
     group = "build setup"
     description = "Prepara las bibliotecas ARM64 de Clang/LLVM verificadas para el prototipo offline."
-    notCompatibleWithConfigurationCache("Descarga y extrae archivos ZIP verificados.")
+    // The task action captures only task-local paths/providers, not the Gradle script.
 
     val outputDirectory = layout.buildDirectory.dir("generated/cppRuntime/jniLibs/arm64-v8a")
     val experimentalDirectory =
         rootProject.layout.projectDirectory.dir(".gradle/clang23-android-arm64").asFile
+    // Read Gradle project properties during configuration, never inside doLast.
+    val cacheDirectoryPath =
+        rootProject.layout.projectDirectory.dir(".gradle/cpp-runtime-cache").asFile.absolutePath
+    val enableExperimentalCompiler = lgpEnableClang23
     val experimentalClang = File(experimentalDirectory, "liblgp_clang23.so")
     val experimentalLld = File(experimentalDirectory, "liblgp_lld23.so")
 
@@ -116,7 +120,7 @@ val prepareCppRuntime by tasks.registering {
     outputs.dir(outputDirectory)
 
     doLast {
-        val cacheDirectory = rootProject.layout.projectDirectory.dir(".gradle/cpp-runtime-cache").asFile
+        val cacheDirectory = File(cacheDirectoryPath)
         val nativeDirectory = outputDirectory.get().asFile
         cacheDirectory.mkdirs()
         nativeDirectory.mkdirs()
@@ -177,7 +181,7 @@ val prepareCppRuntime by tasks.registering {
 
         val clang23Output = File(nativeDirectory, "liblgp_clang23.so")
         val lld23Output = File(nativeDirectory, "liblgp_lld23.so")
-        if (lgpEnableClang23) {
+        if (enableExperimentalCompiler) {
             fun checkAndroidArm64Pie(file: File) {
                 check(file.isFile) {
                     "Falta el compilador ARM64 experimental: ${file.absolutePath}"
@@ -307,8 +311,16 @@ val prepareWasiSdk34Reference by tasks.registering {
 val prepareWasmtimeRuntime by tasks.registering {
     group = "build setup"
     description = "Download and verify the official Android ARM64 Wasmtime C API."
-    notCompatibleWithConfigurationCache("Uses verified downloads and tar extraction.")
-    onlyIf { lgpEnableWasmtime }
+    // Read Gradle project state while configuring, not from a cached task action.
+    val enableWasmtime = lgpEnableWasmtime
+    onlyIf { enableWasmtime }
+
+    val cacheDirectoryPath =
+        rootProject.layout.projectDirectory.dir(".gradle/cpp-runtime-cache").asFile.absolutePath
+    val extractionDirectory = layout.buildDirectory.dir("generated/wasmtime/unpacked")
+    val packagedLibraryFile = layout.buildDirectory.file(
+        "generated/cppRuntime/jniLibs/arm64-v8a/libwasmtime.so"
+    )
 
     val sdkDir = layout.buildDirectory.dir("generated/wasmtime/sdk")
     outputs.dir(sdkDir)
@@ -320,7 +332,7 @@ val prepareWasmtimeRuntime by tasks.registering {
         val expectedSha =
             "7d0fcac9a3533df910edfd0651990ba17161827485120d026f25859cf77df045"
 
-        val cacheDir = rootProject.layout.projectDirectory.dir(".gradle/cpp-runtime-cache").asFile
+        val cacheDir = File(cacheDirectoryPath)
         cacheDir.mkdirs()
         val archive = File(cacheDir, archiveName)
 
@@ -347,7 +359,7 @@ val prepareWasmtimeRuntime by tasks.registering {
             "El SHA256 de Wasmtime no coincide con la distribución oficial."
         }
 
-        val extraction = layout.buildDirectory.dir("generated/wasmtime/unpacked").get().asFile
+        val extraction = extractionDirectory.get().asFile
         extraction.deleteRecursively()
         extraction.mkdirs()
         val extract = ProcessBuilder(
@@ -372,9 +384,7 @@ val prepareWasmtimeRuntime by tasks.registering {
         library.copyTo(targetLibrary, overwrite = true)
 
         // Packaged alongside the already existing FoldCode/LLVM libraries.
-        val packagedLibrary = layout.buildDirectory.file(
-            "generated/cppRuntime/jniLibs/arm64-v8a/libwasmtime.so"
-        ).get().asFile
+        val packagedLibrary = packagedLibraryFile.get().asFile
         packagedLibrary.parentFile.mkdirs()
         library.copyTo(packagedLibrary, overwrite = true)
         logger.lifecycle("Wasmtime 49.0.2 ARM64 verificado y preparado.")
