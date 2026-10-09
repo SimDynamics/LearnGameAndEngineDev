@@ -17,6 +17,15 @@
 
 namespace {
 
+// glslc generates SPIR-V bytecode at build time, not on the phone.
+static const uint32_t kTriangleVertexSpirv[] =
+#include "triangle.vert.inc"
+;
+
+static const uint32_t kTriangleFragmentSpirv[] =
+#include "triangle.frag.inc"
+;
+
 thread_local std::string last_error;
 
 struct Renderer {
@@ -179,6 +188,8 @@ struct VulkanRenderer final : Renderer {
     uint32_t queue_family = 0;
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkRenderPass render_pass = VK_NULL_HANDLE;
+    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+    VkPipeline pipeline = VK_NULL_HANDLE;
     VkCommandPool command_pool = VK_NULL_HANDLE;
     VkSemaphore acquired = VK_NULL_HANDLE;
     VkSemaphore finished = VK_NULL_HANDLE;
@@ -198,6 +209,8 @@ struct VulkanRenderer final : Renderer {
             if (acquired) vkDestroySemaphore(device, acquired, nullptr);
             if (finished) vkDestroySemaphore(device, finished, nullptr);
             if (command_pool) vkDestroyCommandPool(device, command_pool, nullptr);
+            if (pipeline) vkDestroyPipeline(device, pipeline, nullptr);
+            if (pipeline_layout) vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
             for (auto framebuffer : framebuffers) vkDestroyFramebuffer(device, framebuffer, nullptr);
             if (render_pass) vkDestroyRenderPass(device, render_pass, nullptr);
             for (auto view : views) vkDestroyImageView(device, view, nullptr);
@@ -400,6 +413,115 @@ struct VulkanRenderer final : Renderer {
             error = "Vulkan: no se pudo crear VkRenderPass.";
             return false;
         }
+        // Real Vulkan graphics pipeline: vertex + fragment shaders.
+        // gl_VertexIndex provides the three vertices; a push constant animates
+        // their rotation without allocating a new buffer on every frame.
+        VkShaderModuleCreateInfo vertex_module_info{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
+        vertex_module_info.codeSize = sizeof(kTriangleVertexSpirv);
+        vertex_module_info.pCode = kTriangleVertexSpirv;
+        VkShaderModule vertex_module = VK_NULL_HANDLE;
+        if (vkCreateShaderModule(device, &vertex_module_info, nullptr, &vertex_module) != VK_SUCCESS) {
+            error = "Vulkan: el controlador rechazó el shader de vértices SPIR-V.";
+            return false;
+        }
+
+        VkShaderModuleCreateInfo fragment_module_info{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
+        fragment_module_info.codeSize = sizeof(kTriangleFragmentSpirv);
+        fragment_module_info.pCode = kTriangleFragmentSpirv;
+        VkShaderModule fragment_module = VK_NULL_HANDLE;
+        if (vkCreateShaderModule(device, &fragment_module_info, nullptr, &fragment_module) != VK_SUCCESS) {
+            vkDestroyShaderModule(device, vertex_module, nullptr);
+            error = "Vulkan: el controlador rechazó el shader de fragmentos SPIR-V.";
+            return false;
+        }
+
+        VkPushConstantRange time_range{};
+        time_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        time_range.offset = 0;
+        time_range.size = sizeof(float);
+        VkPipelineLayoutCreateInfo layout_info{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+        layout_info.pushConstantRangeCount = 1;
+        layout_info.pPushConstantRanges = &time_range;
+        if (vkCreatePipelineLayout(device, &layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
+            vkDestroyShaderModule(device, fragment_module, nullptr);
+            vkDestroyShaderModule(device, vertex_module, nullptr);
+            error = "Vulkan: no se pudo crear el layout de constantes de animación.";
+            return false;
+        }
+
+        VkPipelineShaderStageCreateInfo shader_stages[2] = {
+            {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO},
+            {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO}
+        };
+        shader_stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+        shader_stages[0].module = vertex_module;
+        shader_stages[0].pName = "main";
+        shader_stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        shader_stages[1].module = fragment_module;
+        shader_stages[1].pName = "main";
+
+        VkPipelineVertexInputStateCreateInfo vertex_input{
+            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+        VkPipelineInputAssemblyStateCreateInfo input_assembly{
+            VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
+        input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+        VkPipelineViewportStateCreateInfo viewport_state{
+            VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
+        viewport_state.viewportCount = 1;
+        viewport_state.scissorCount = 1;
+
+        VkPipelineRasterizationStateCreateInfo rasterization{
+            VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
+        rasterization.polygonMode = VK_POLYGON_MODE_FILL;
+        rasterization.cullMode = VK_CULL_MODE_NONE;
+        rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterization.lineWidth = 1.0f;
+
+        VkPipelineMultisampleStateCreateInfo multisampling{
+            VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
+        multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+        VkPipelineColorBlendAttachmentState attachment_blend{};
+        attachment_blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+            VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+        VkPipelineColorBlendStateCreateInfo blending{
+            VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
+        blending.attachmentCount = 1;
+        blending.pAttachments = &attachment_blend;
+
+        VkDynamicState dynamic_states[] = {
+            VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR
+        };
+        VkPipelineDynamicStateCreateInfo dynamic_info{
+            VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+        dynamic_info.dynamicStateCount = 2;
+        dynamic_info.pDynamicStates = dynamic_states;
+
+        VkGraphicsPipelineCreateInfo graphics_info{
+            VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+        graphics_info.stageCount = 2;
+        graphics_info.pStages = shader_stages;
+        graphics_info.pVertexInputState = &vertex_input;
+        graphics_info.pInputAssemblyState = &input_assembly;
+        graphics_info.pViewportState = &viewport_state;
+        graphics_info.pRasterizationState = &rasterization;
+        graphics_info.pMultisampleState = &multisampling;
+        graphics_info.pColorBlendState = &blending;
+        graphics_info.pDynamicState = &dynamic_info;
+        graphics_info.layout = pipeline_layout;
+        graphics_info.renderPass = render_pass;
+        graphics_info.subpass = 0;
+        const VkResult pipeline_result = vkCreateGraphicsPipelines(
+            device, VK_NULL_HANDLE, 1, &graphics_info, nullptr, &pipeline);
+        vkDestroyShaderModule(device, fragment_module, nullptr);
+        vkDestroyShaderModule(device, vertex_module, nullptr);
+        if (pipeline_result != VK_SUCCESS) {
+            error = "Vulkan: falló la creación del pipeline de triángulos.";
+            return false;
+        }
+
         framebuffers.reserve(views.size());
         for (auto view : views) {
             VkFramebufferCreateInfo fb_info{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
@@ -477,6 +599,20 @@ struct VulkanRenderer final : Renderer {
         pass.clearValueCount = 1;
         pass.pClearValues = &clear;
         vkCmdBeginRenderPass(commands[index], &pass, VK_SUBPASS_CONTENTS_INLINE);
+
+        const VkViewport viewport{
+            0.0f, 0.0f,
+            static_cast<float>(extent.width), static_cast<float>(extent.height),
+            0.0f, 1.0f
+        };
+        const VkRect2D scissor{{0, 0}, extent};
+        vkCmdSetViewport(commands[index], 0, 1, &viewport);
+        vkCmdSetScissor(commands[index], 0, 1, &scissor);
+        vkCmdBindPipeline(commands[index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        vkCmdPushConstants(commands[index], pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
+                           0, sizeof(float), &elapsed_seconds);
+        vkCmdDraw(commands[index], 3, 1, 0, 0);
+
         vkCmdEndRenderPass(commands[index]);
         if (vkEndCommandBuffer(commands[index]) != VK_SUCCESS) {
             error = "Vulkan: no se pudo terminar el comando.";
