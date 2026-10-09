@@ -63,7 +63,8 @@ void main() {
     // Near = 0.1, far = 100, perspective focal scale = 1.8.
     float focal = 1.8;
     float aspect = max(camera.aspectRatio, 0.25);
-    float z = -1.002002 * cameraPoint.z - 0.2002002;
+    // Vulkan expects depth in [0, 1], unlike OpenGL ES [-1, 1].
+    float z = -1.001001 * cameraPoint.z - 0.1001001;
 
     // Vulkan's viewport Y points down, so match the OpenGL ES orientation.
     gl_Position = vec4(
