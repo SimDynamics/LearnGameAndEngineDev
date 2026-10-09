@@ -7,6 +7,11 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+// Controlled migration: -Plgp.wasmtime=true activates the verified Android
+// Wasmtime C API. Without this property, existing WAMR/graphics remain intact.
+val lgpEnableWasmtime =
+    providers.gradleProperty("lgp.wasmtime").orNull.equals("true", ignoreCase = true)
+
 android {
     namespace = "com.learngraphicsprogramming.app"
     compileSdk {
@@ -28,8 +33,11 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags += "-std=c++17"
+                arguments += "-DLGP_ENABLE_WASMTIME=${if (lgpEnableWasmtime) "ON" else "OFF"}"
+                arguments += "-DLGP_WASMTIME_ROOT=${layout.buildDirectory.get().asFile.absolutePath.replace("\\", "/")}/generated/wasmtime/sdk"
             }
         }
+        buildConfigField("boolean", "LGP_WASMTIME_ENABLED", lgpEnableWasmtime.toString())
     }
 
     buildTypes {
@@ -52,6 +60,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
     androidResources {
         generateLocaleConfig = true
@@ -170,9 +179,92 @@ val prepareCppRuntime by tasks.registering {
     }
 }
 
+// Official Wasmtime 49.0.2 aarch64-android-c-api release, hash from GitHub.
+// Extracted headers are used by NDK CMake; shared library is packaged in APK.
+val prepareWasmtimeRuntime by tasks.registering {
+    group = "build setup"
+    description = "Download and verify the official Android ARM64 Wasmtime C API."
+    notCompatibleWithConfigurationCache("Uses verified downloads and tar extraction.")
+    onlyIf { lgpEnableWasmtime }
+
+    val sdkDir = layout.buildDirectory.dir("generated/wasmtime/sdk")
+    outputs.dir(sdkDir)
+
+    doLast {
+        val archiveName = "wasmtime-v49.0.2-aarch64-android-c-api.tar.xz"
+        val archiveUrl =
+            "https://github.com/bytecodealliance/wasmtime/releases/download/v49.0.2/$archiveName"
+        val expectedSha =
+            "7d0fcac9a3533df910edfd0651990ba17161827485120d026f25859cf77df045"
+
+        val cacheDir = rootProject.layout.projectDirectory.dir(".gradle/cpp-runtime-cache").asFile
+        cacheDir.mkdirs()
+        val archive = File(cacheDir, archiveName)
+
+        fun sha256(file: File): String {
+            val md = MessageDigest.getInstance("SHA-256")
+            file.inputStream().buffered().use { stream ->
+                val buffer = ByteArray(1024 * 1024)
+                while (true) {
+                    val count = stream.read(buffer)
+                    if (count < 0) break
+                    md.update(buffer, 0, count)
+                }
+            }
+            return md.digest().joinToString("") { "%02x".format(it) }
+        }
+        if (!archive.isFile || sha256(archive) != expectedSha) {
+            archive.delete()
+            logger.lifecycle("Descargando Wasmtime ARM64 oficial...")
+            URI(archiveUrl).toURL().openStream().buffered().use { src ->
+                archive.outputStream().buffered().use(src::copyTo)
+            }
+        }
+        check(sha256(archive) == expectedSha) {
+            "El SHA256 de Wasmtime no coincide con la distribución oficial."
+        }
+
+        val extraction = layout.buildDirectory.dir("generated/wasmtime/unpacked").get().asFile
+        extraction.deleteRecursively()
+        extraction.mkdirs()
+        val extract = ProcessBuilder(
+            "tar", "-xf", archive.absolutePath, "-C", extraction.absolutePath
+        ).inheritIO().start()
+        check(extract.waitFor() == 0) { "Falló la extracción tar.xz de Wasmtime." }
+
+        val library = extraction.walkTopDown().firstOrNull { it.isFile && it.name == "libwasmtime.so" }
+            ?: error("El archivo oficial no contiene libwasmtime.so")
+        val header = extraction.walkTopDown().firstOrNull { it.isFile && it.name == "wasmtime.h" }
+            ?: error("El archivo oficial no contiene wasmtime.h")
+        check(File(header.parentFile, "wasi.h").isFile) {
+            "No se encontró wasi.h junto a wasmtime.h."
+        }
+
+        val target = sdkDir.get().asFile
+        target.deleteRecursively()
+        File(target, "include").mkdirs()
+        header.parentFile.copyRecursively(File(target, "include"), overwrite = true)
+        val targetLibrary = File(target, "lib/libwasmtime.so")
+        targetLibrary.parentFile.mkdirs()
+        library.copyTo(targetLibrary, overwrite = true)
+
+        // Packaged alongside the already existing FoldCode/LLVM libraries.
+        val packagedLibrary = layout.buildDirectory.file(
+            "generated/cppRuntime/jniLibs/arm64-v8a/libwasmtime.so"
+        ).get().asFile
+        packagedLibrary.parentFile.mkdirs()
+        library.copyTo(packagedLibrary, overwrite = true)
+        logger.lifecycle("Wasmtime 49.0.2 ARM64 verificado y preparado.")
+    }
+}
+
 tasks.configureEach {
     if (name.startsWith("merge") && name.endsWith("JniLibFolders")) {
         dependsOn(prepareCppRuntime)
+        if (lgpEnableWasmtime) dependsOn(prepareWasmtimeRuntime)
+    }
+    if (lgpEnableWasmtime && name.startsWith("configureCMake")) {
+        dependsOn(prepareWasmtimeRuntime)
     }
 }
 
