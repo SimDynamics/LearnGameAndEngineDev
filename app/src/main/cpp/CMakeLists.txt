@@ -47,9 +47,9 @@ file(MAKE_DIRECTORY "${LGP_GENERATED_SHADERS}")
 
 foreach (LGP_SHADER_STAGE IN ITEMS vert frag)
     set(LGP_SHADER_SOURCE
-            "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.${LGP_SHADER_STAGE}")
+            "${CMAKE_CURRENT_SOURCE_DIR}/shaders/cube.${LGP_SHADER_STAGE}")
     set(LGP_SHADER_OUTPUT
-            "${LGP_GENERATED_SHADERS}/triangle.${LGP_SHADER_STAGE}.inc")
+            "${LGP_GENERATED_SHADERS}/cube.${LGP_SHADER_STAGE}.inc")
     add_custom_command(
             OUTPUT "${LGP_SHADER_OUTPUT}"
             COMMAND "${LGP_GLSLC}" -c -mfmt=c
