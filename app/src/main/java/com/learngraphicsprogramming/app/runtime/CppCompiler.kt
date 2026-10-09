@@ -48,6 +48,10 @@ internal class CppCompiler(private val context: Context) {
             "-isystem",
             File(sysroot, "include/wasm32-wasip1/c++/v1").absolutePath,
             "-std=c++20",
+            // The packaged WASI C++ sysroot uses libraries built without exception handling.
+            // Keep code generation consistent with that runtime until an EH-capable
+            // sysroot and a compatible WebAssembly executor are integrated.
+            "-fno-exceptions",
 
             /*
              * Diagnósticos compactos para aprendizaje.
