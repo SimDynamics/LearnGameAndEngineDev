@@ -32,7 +32,8 @@ add_library(wamr_runtime STATIC ${WAMR_RUNTIME_LIB_SOURCE})
 
 add_library(${CMAKE_PROJECT_NAME} SHARED
         native-lib.cpp
-        wasi-runtime-jni.cpp)
+        wasi-runtime-jni.cpp
+        graphics-renderer.cpp)
 
 add_executable(lgp_wasm_ld wasm-lld-wrapper.cpp)
 set_target_properties(lgp_wasm_ld PROPERTIES
@@ -43,7 +44,14 @@ target_link_libraries(lgp_wasm_ld dl)
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         "${WAMR_ROOT_DIR}/core/iwasm/include")
 
+find_library(LGP_VULKAN_LIBRARY vulkan REQUIRED)
+find_library(LGP_EGL_LIBRARY EGL REQUIRED)
+find_library(LGP_GLES_LIBRARY GLESv3 REQUIRED)
+
 target_link_libraries(${CMAKE_PROJECT_NAME}
         wamr_runtime
         android
-        log)
+        log
+        ${LGP_VULKAN_LIBRARY}
+        ${LGP_EGL_LIBRARY}
+        ${LGP_GLES_LIBRARY})
