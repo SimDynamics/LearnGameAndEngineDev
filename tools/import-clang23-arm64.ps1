@@ -12,7 +12,7 @@ $payload = Join-Path $temp "payload"
 New-Item -ItemType Directory -Force -Path $payload | Out-Null
 
 function Test-Arm64Pie([string]$path) {
-    $header = New-Object byte[] 20
+    $header = [byte[]]::new(20)
     $file = [System.IO.File]::OpenRead($path)
     try {
         if ($file.Read($header, 0, 20) -ne 20) { throw "Archivo ELF incompleto: $path" }
