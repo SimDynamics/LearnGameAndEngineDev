@@ -813,7 +813,7 @@ struct VulkanRenderer final : Renderer {
     }
 
     bool draw(float elapsed_seconds, const lgp::PhysicsScene &scene,
-              std::string &error) override {
+              int simulation_mode, int stress_side, std::string &error) override {
         if (vkWaitForFences(device, 1, &fence, VK_TRUE, 1000000000ULL) != VK_SUCCESS) {
             error = "Vulkan: tiempo de espera de GPU agotado.";
             return false;
@@ -871,6 +871,16 @@ struct VulkanRenderer final : Renderer {
         };
         vkCmdPushConstants(commands[index], pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
                            0, sizeof(object_state), object_state);
+        if (simulation_mode == 1) {
+            // A single instanced GPU draw renders the entire benchmark scene.
+            const int grid = std::clamp(stress_side, 8, 32);
+            object_state[2] = static_cast<float>(grid);
+            object_state[11] = 3.0f;
+            vkCmdPushConstants(commands[index], pipeline_layout,
+                               VK_SHADER_STAGE_VERTEX_BIT, 0,
+                               sizeof(object_state), object_state);
+            vkCmdDraw(commands[index], 16 * 12 * 6, grid * grid, 0, 0);
+        } else {
         vkCmdDraw(commands[index], 6, 1, 0, 0);
 
         const auto &bodies = scene.get_bodies();
@@ -887,6 +897,7 @@ struct VulkanRenderer final : Renderer {
             vkCmdPushConstants(commands[index], pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT,
                                0, sizeof(object_state), object_state);
             vkCmdDraw(commands[index], 16 * 12 * 6, 1, 0, 0);
+        }
         }
 
         vkCmdEndRenderPass(commands[index]);
@@ -983,7 +994,8 @@ Java_com_learngraphicsprogramming_app_graphics_GraphicsNative_create(
 
 extern "C" JNIEXPORT jboolean JNICALL
 Java_com_learngraphicsprogramming_app_graphics_GraphicsNative_draw(
-    JNIEnv *, jobject, jlong handle, jfloat seconds) {
+    JNIEnv *, jobject, jlong handle, jfloat seconds, jint simulation_mode,
+    jint benchmark_side) {
     if (!handle) return JNI_FALSE;
     auto *session = reinterpret_cast<Session *>(handle);
     last_error.clear();
@@ -991,8 +1003,9 @@ Java_com_learngraphicsprogramming_app_graphics_GraphicsNative_draw(
         std::max(1, ANativeWindow_getWidth(session->window))) /
         static_cast<float>(std::max(1, ANativeWindow_getHeight(session->window)));
     session->scene.set_aspect(aspect);
-    session->scene.update(seconds);
-    return session->renderer->draw(seconds, session->scene, last_error)
+    if (simulation_mode == 0) session->scene.update(seconds);
+    return session->renderer->draw(seconds, session->scene,
+                                   simulation_mode, benchmark_side, last_error)
         ? JNI_TRUE : JNI_FALSE;
 }
 
