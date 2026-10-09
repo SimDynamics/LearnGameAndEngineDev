@@ -575,8 +575,8 @@ struct VulkanRenderer final : Renderer {
         // gl_VertexIndex provides the three vertices; a push constant animates
         // their rotation without allocating a new buffer on every frame.
         VkShaderModuleCreateInfo vertex_module_info{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-        vertex_module_info.codeSize = sizeof(kTriangleVertexSpirv);
-        vertex_module_info.pCode = kTriangleVertexSpirv;
+        vertex_module_info.codeSize = sizeof(kCubeVertexSpirv);
+        vertex_module_info.pCode = kCubeVertexSpirv;
         VkShaderModule vertex_module = VK_NULL_HANDLE;
         if (vkCreateShaderModule(device, &vertex_module_info, nullptr, &vertex_module) != VK_SUCCESS) {
             error = "Vulkan: el controlador rechazó el shader de vértices SPIR-V.";
@@ -584,8 +584,8 @@ struct VulkanRenderer final : Renderer {
         }
 
         VkShaderModuleCreateInfo fragment_module_info{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-        fragment_module_info.codeSize = sizeof(kTriangleFragmentSpirv);
-        fragment_module_info.pCode = kTriangleFragmentSpirv;
+        fragment_module_info.codeSize = sizeof(kCubeFragmentSpirv);
+        fragment_module_info.pCode = kCubeFragmentSpirv;
         VkShaderModule fragment_module = VK_NULL_HANDLE;
         if (vkCreateShaderModule(device, &fragment_module_info, nullptr, &fragment_module) != VK_SUCCESS) {
             vkDestroyShaderModule(device, vertex_module, nullptr);
