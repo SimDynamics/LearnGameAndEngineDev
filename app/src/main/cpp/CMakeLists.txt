@@ -100,14 +100,16 @@ if (LGP_ENABLE_WASMTIME)
         message(FATAL_ERROR "Wasmtime 49 ARM64 headers/library missing. Run prepareWasmtimeRuntime.")
     endif ()
 
-    add_library(lgp_wasmtime SHARED IMPORTED)
-    set_target_properties(lgp_wasmtime PROPERTIES
-            IMPORTED_LOCATION "${LGP_WASMTIME_SHARED}")
-
+    # The official prebuilt does not provide a usable ELF SONAME.
+    # Linking it by absolute host path would write that Windows path
+    # into libapp.so's DT_NEEDED and crash Android's dynamic loader.
+    # -L + -lwasmtime forces DT_NEEDED to contain "libwasmtime.so".
     target_sources(${CMAKE_PROJECT_NAME} PRIVATE
             wasmtime-runtime-jni.cpp)
     target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
             "${LGP_WASMTIME_ROOT}/include")
-    target_link_libraries(${CMAKE_PROJECT_NAME}
-            lgp_wasmtime)
+    target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
+            "${LGP_WASMTIME_ROOT}/lib")
+    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
+            wasmtime)
 endif ()
