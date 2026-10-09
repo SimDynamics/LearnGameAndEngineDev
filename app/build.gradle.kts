@@ -166,19 +166,22 @@ val prepareCppRuntime by tasks.registering {
             }
         }
 
-        val base = acquire(
-            "foldcode-base-native-arm64-v1.zip",
-            "https://github.com/FifiLeih/FoldCode/releases/download/v1.0.0/foldcode-base-native-arm64-v1.zip",
-            "5215289fdab11c43b8d762c788357ee3eb98d1b91e0c46ae53c80528f04970f1"
+        // FoldCode libraries are required only by the Clang 21 fallback.
+        // Keep this list explicit to remove stale artifacts on variant switches.
+        val foldcodeLibraries = listOf(
+            "libc++_shared.so",
+            "libfoldclang.so",
+            "libLLVM.so",
+            "libclang-cpp.so",
+            "libffi.so",
+            "libfoldlldcore.so",
+            "libiconv.so",
+            "libicudataxxx.so",
+            "libicuucxxx.so",
+            "libxml2xxx.so",
+            "libzstdxx.so",
+            "libzzz.so"
         )
-        val cppExtension = acquire(
-            "foldcode-cpp-1.0.0-3.fcex",
-            "https://github.com/FifiLeih/FoldCode/releases/download/v1.0.0/foldcode-cpp-1.0.0-3.fcex",
-            "82677ce2d912127896a75a113d522455c773f905849e0e56d49c9b71c2930407"
-        )
-
-        extractSelected(base, "native/", listOf("libc++_shared.so", "libfoldclang.so"))
-
         val clang23Output = File(nativeDirectory, "liblgp_clang23.so")
         val lld23Output = File(nativeDirectory, "liblgp_lld23.so")
         if (enableExperimentalCompiler) {
@@ -205,36 +208,59 @@ val prepareCppRuntime by tasks.registering {
             experimentalClang.copyTo(clang23Output, overwrite = true)
             experimentalLld.copyTo(lld23Output, overwrite = true)
             logger.lifecycle("Clang 23 experimental incluido; verificar --version en Android.")
+            // LLVM 23 and LLD 23 are independent of FoldCode's LLVM 21.
+            // Remove stale Clang 21 libraries after switching build variants.
+            foldcodeLibraries.forEach { name ->
+                val oldLibrary = File(nativeDirectory, name)
+                check(!oldLibrary.exists() || oldLibrary.delete()) {
+                    "No se pudo retirar la biblioteca de Clang 21: ${oldLibrary.absolutePath}"
+                }
+            }
         } else {
-            // Prevent a previous experimental build from polluting a normal APK.
+            // Keep Clang 21 as the default, fully functional fallback.
             clang23Output.delete()
             lld23Output.delete()
+
+            val base = acquire(
+                "foldcode-base-native-arm64-v1.zip",
+                "https://github.com/FifiLeih/FoldCode/releases/download/v1.0.0/foldcode-base-native-arm64-v1.zip",
+                "5215289fdab11c43b8d762c788357ee3eb98d1b91e0c46ae53c80528f04970f1"
+            )
+            val cppExtension = acquire(
+                "foldcode-cpp-1.0.0-3.fcex",
+                "https://github.com/FifiLeih/FoldCode/releases/download/v1.0.0/foldcode-cpp-1.0.0-3.fcex",
+                "82677ce2d912127896a75a113d522455c773f905849e0e56d49c9b71c2930407"
+            )
+
+            extractSelected(base, "native/", listOf("libc++_shared.so", "libfoldclang.so"))
+
+            val nestedRuntime = File(cacheDirectory, "cpp-runtime-arm64.zip")
+            ZipFile(cppExtension).use { archive ->
+                val payload = archive.getEntry("payload/cpp-runtime-arm64.zip")
+                    ?: error("La extensión C++ no contiene payload/cpp-runtime-arm64.zip")
+                archive.getInputStream(payload).use { input ->
+                    nestedRuntime.outputStream().buffered().use(input::copyTo)
+                }
+            }
+            extractSelected(
+                nestedRuntime,
+                "native/",
+                listOf(
+                    "libLLVM.so",
+                    "libclang-cpp.so",
+                    "libffi.so",
+                    "libfoldlldcore.so",
+                    "libiconv.so",
+                    "libicudataxxx.so",
+                    "libicuucxxx.so",
+                    "libxml2xxx.so",
+                    "libzstdxx.so",
+                    "libzzz.so"
+                )
+            )
         }
 
-        val nestedRuntime = File(cacheDirectory, "cpp-runtime-arm64.zip")
-        ZipFile(cppExtension).use { archive ->
-            val payload = archive.getEntry("payload/cpp-runtime-arm64.zip")
-                ?: error("La extensión C++ no contiene payload/cpp-runtime-arm64.zip")
-            archive.getInputStream(payload).use { input ->
-                nestedRuntime.outputStream().buffered().use(input::copyTo)
-            }
-        }
-        extractSelected(
-            nestedRuntime,
-            "native/",
-            listOf(
-                "libLLVM.so",
-                "libclang-cpp.so",
-                "libffi.so",
-                "libfoldlldcore.so",
-                "libiconv.so",
-                "libicudataxxx.so",
-                "libicuucxxx.so",
-                "libxml2xxx.so",
-                "libzstdxx.so",
-                "libzzz.so"
-            )
-        )
+
     }
 }
 
