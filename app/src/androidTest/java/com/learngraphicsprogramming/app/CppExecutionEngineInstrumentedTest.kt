@@ -34,7 +34,7 @@ int main()
     int a = 0;
     int b = 0;
     if (!(std::cin >> a >> b)) return 2;
-    std::cout << (a + b) << '\\n';
+    std::cout << (a + b) << '\n';
 }
 """
         val result = CppExecutionEngine(context).compileAndRun(source, "7 8\n")
@@ -53,7 +53,7 @@ int main()
 {
     std::string line;
     if (!std::getline(std::cin, line)) return 2;
-    std::cout << "[" << line << "]" << '\\n';
+    std::cout << "[" << line << "]" << '\n';
 }
 """
         val result = CppExecutionEngine(context).compileAndRun(source, "hello C++ world\n")
