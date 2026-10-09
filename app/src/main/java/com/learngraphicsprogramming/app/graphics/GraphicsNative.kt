@@ -24,7 +24,15 @@ internal object GraphicsNative {
     const val TOUCH_CANCEL = 3
     const val TOUCH_RESET = 4
 
-    external fun draw(handle: Long, elapsedSeconds: Float): Boolean
+    const val SCENE_PHYSICS = 0
+    const val SCENE_GPU_BENCHMARK = 1
+
+    external fun draw(
+        handle: Long,
+        elapsedSeconds: Float,
+        simulationMode: Int,
+        benchmarkSide: Int
+    ): Boolean
     external fun touch(
         handle: Long,
         action: Int,
