@@ -83,6 +83,13 @@ try {
                 Write-Host $instrumentationResult -ForegroundColor Red
                 $gradleExit = 1
             } else {
+                # Remove only the previous diagnostic artifact so a stale
+                # checkpoint cannot be mistaken for the current test.
+                $runAsCheck = (& $adb exec-out run-as $targetPackage id 2>&1 | Out-String).Trim()
+                $packageState.Add("run-as before test: $runAsCheck")
+                if ($runAsCheck -match "uid=") {
+                    & $adb shell run-as $targetPackage rm -f files/cpp-runtime-phase.txt 2>&1 | Out-Null
+                }
                 Write-Host "Ejecutando instrumentacion directamente con ADB..." -ForegroundColor Cyan
                 $runner = "$testPackage/androidx.test.runner.AndroidJUnitRunner"
                 $selectedTest = "$testClass#$NdkTestName"
