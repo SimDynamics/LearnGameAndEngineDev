@@ -12,6 +12,11 @@ plugins {
 val lgpEnableWasmtime =
     providers.gradleProperty("lgp.wasmtime").orNull.equals("true", ignoreCase = true)
 
+// Experimental Android-native Clang 23.1.3 may only be selected after
+// an independently built ARM64 bundle is explicitly imported and verified.
+val lgpEnableClang23 =
+    providers.gradleProperty("lgp.clang23").orNull.equals("true", ignoreCase = true)
+
 // Crash-stage files and verbose JNI logs are opt-in, never enabled by default.
 val lgpWasmtimeDiagnostics =
     lgpEnableWasmtime &&
@@ -43,6 +48,7 @@ android {
             }
         }
         buildConfigField("boolean", "LGP_WASMTIME_ENABLED", lgpEnableWasmtime.toString())
+        buildConfigField("boolean", "LGP_CLANG23_ENABLED", lgpEnableClang23.toString())
         buildConfigField("boolean", "LGP_WASMTIME_DIAGNOSTICS", lgpWasmtimeDiagnostics.toString())
     }
 
@@ -96,6 +102,17 @@ val prepareCppRuntime by tasks.registering {
     notCompatibleWithConfigurationCache("Descarga y extrae archivos ZIP verificados.")
 
     val outputDirectory = layout.buildDirectory.dir("generated/cppRuntime/jniLibs/arm64-v8a")
+    val experimentalDirectory =
+        rootProject.layout.projectDirectory.dir(".gradle/clang23-android-arm64").asFile
+    val experimentalClang = File(experimentalDirectory, "liblgp_clang23.so")
+    val experimentalLld = File(experimentalDirectory, "liblgp_lld23.so")
+
+    // Without these inputs Gradle can wrongly reuse the old APK's Clang
+    // when switching -Plgp.clang23=true on/off.
+    inputs.property("lgpEnableClang23", lgpEnableClang23)
+    if (lgpEnableClang23) {
+        inputs.files(experimentalClang, experimentalLld)
+    }
     outputs.dir(outputDirectory)
 
     doLast {
@@ -157,6 +174,38 @@ val prepareCppRuntime by tasks.registering {
         )
 
         extractSelected(base, "native/", listOf("libc++_shared.so", "libfoldclang.so"))
+
+        val clang23Output = File(nativeDirectory, "liblgp_clang23.so")
+        val lld23Output = File(nativeDirectory, "liblgp_lld23.so")
+        if (lgpEnableClang23) {
+            fun checkAndroidArm64Pie(file: File) {
+                check(file.isFile) {
+                    "Falta el compilador ARM64 experimental: ${file.absolutePath}"
+                }
+                val header = ByteArray(20)
+                check(file.inputStream().use { it.read(header) } == header.size &&
+                    header[0] == 0x7f.toByte() &&
+                    header[1] == 'E'.code.toByte() &&
+                    header[2] == 'L'.code.toByte() &&
+                    header[3] == 'F'.code.toByte() &&
+                    header[4] == 2.toByte() && // ELF64
+                    header[5] == 1.toByte() && // little endian
+                    header[16] == 3.toByte() && // ET_DYN (PIE)
+                    header[17] == 0.toByte() &&
+                    header[18] == 0xb7.toByte() && // EM_AARCH64
+                    header[19] == 0.toByte()
+                ) { "No es un ejecutable ELF64 Android ARM64 PIE: ${file.name}" }
+            }
+            checkAndroidArm64Pie(experimentalClang)
+            checkAndroidArm64Pie(experimentalLld)
+            experimentalClang.copyTo(clang23Output, overwrite = true)
+            experimentalLld.copyTo(lld23Output, overwrite = true)
+            logger.lifecycle("Clang 23 experimental incluido; verificar --version en Android.")
+        } else {
+            // Prevent a previous experimental build from polluting a normal APK.
+            clang23Output.delete()
+            lld23Output.delete()
+        }
 
         val nestedRuntime = File(cacheDirectory, "cpp-runtime-arm64.zip")
         ZipFile(cppExtension).use { archive ->
