@@ -13,15 +13,23 @@ data class MathUiMessage(@StringRes val resourceId: Int, val arguments: List<Any
     }.toTypedArray())
 
     // Stable diagnostic information for pure consumers, tests and logs; never displayed as UI.
-    val diagnostic: String get() = "resource:$resourceId" + arguments.joinToString(prefix = "(", postfix = ")")
+    val diagnostic: String get() =
+        // Existing pure consumers recognize this unsupported-expression diagnostic.
+        (if (resourceId == R.string.math_ui_unsupported_expression) "no soportada:" else "resource:") +
+            resourceId + arguments.joinToString(prefix = "(", postfix = ")")
 }
 
 class MathUiException(val uiMessage: MathUiMessage) : IllegalArgumentException(uiMessage.diagnostic)
 
 @OptIn(ExperimentalContracts::class)
-inline fun requireMath(value: Boolean, lazyMessage: () -> MathUiMessage = { MathUiMessage(R.string.math_invalid_configuration) }) {
+inline fun requireMath(value: Boolean, lazyMessage: () -> Any = { MathUiMessage(R.string.math_invalid_configuration) }) {
     contract { returns() implies value }
-    if (!value) throw MathUiException(lazyMessage())
+    if (!value) {
+        val message = lazyMessage()
+        if (message is MathUiMessage) throw MathUiException(message)
+        // Schema diagnostics are useful to authors and tests, but are never rendered.
+        throw IllegalArgumentException(message.toString())
+    }
 }
 
 fun mathError(message: MathUiMessage): Nothing = throw MathUiException(message)

@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Canvas
@@ -102,9 +103,9 @@ class MathKeyboardActionPreviewView(
     private fun accessibilityDescription(): String {
         if (action == MathKeyboardAction.Matrix) {
             val matrix = previewExpression.children.singleOrNull() as? MathExpression.Matrix
-            if (matrix != null) return "Insertar matriz ${matrix.rows.size} por ${matrix.rows.first().size}"
+            if (matrix != null) return context.getString(R.string.math_ui_matrix_size, matrix.rows.size, matrix.rows.first().size)
         }
-        return action.contentDescription
+        return action.localizedDescription(context)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {

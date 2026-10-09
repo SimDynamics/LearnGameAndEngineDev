@@ -26,11 +26,11 @@ class MathPuzzleRenderer(
 ) {
     val view = MathWidgetUi.column(context)
     private val accent = AppearanceSettingsRepository.getRouteAccentColor(context, routeId)
-    val fullscreenButton = MathWidgetUi.icon(context, R.drawable.ic_code_fullscreen, "Pantalla completa")
-    private val checkButton = MathWidgetUi.button(context, "Comprobar", accent).apply {
+    val fullscreenButton = MathWidgetUi.icon(context, R.drawable.ic_code_fullscreen, context.getString(R.string.math_ui_fullscreen))
+    private val checkButton = MathWidgetUi.button(context, context.getString(R.string.math_ui_check), accent).apply {
         tag = CHECK_ACTION_TAG
     }
-    private val resetButton = MathWidgetUi.icon(context, R.drawable.ic_code_reset, "Reiniciar", accent)
+    private val resetButton = MathWidgetUi.icon(context, R.drawable.ic_code_reset, context.getString(R.string.math_ui_restart), accent)
     private val feedback = MathWidgetUi.text(context, "")
     private val spec = MathPuzzleParser.parse(block)
     private val fingerprint = MathPuzzleState.fingerprint(block)
@@ -70,7 +70,7 @@ class MathPuzzleRenderer(
                     ?: throw IllegalArgumentException("Herramienta no disponible: $type")
                 tools[id] = control
                 initialTools[id] = control.answer()
-                view.addView(MathWidgetUi.text(context, tool.optString("label", "Herramienta auxiliar")))
+                view.addView(MathWidgetUi.text(context, tool.optString("label", context.getString(R.string.math_ui_auxiliary_tool))))
                 view.addView(control.view)
             } else view.addView(MathRepresentationRenderer.render(context, tool, accent))
         }
@@ -268,7 +268,7 @@ class MathPuzzleRenderer(
             require(checked.size == spec.responses.size) { "La evaluación debe devolver un resultado por respuesta." }
             checked
         } catch (_: Exception) {
-            spec.responses.map { MathValidationResult(false, "No se pudo evaluar esta respuesta. Inténtalo de nuevo.", evaluable = false) }
+            spec.responses.map { MathValidationResult(false, "evaluation failed", evaluable = false, uiMessage = MathUiMessage(R.string.math_ui_evaluation_error)) }
         }
         val results = spec.responses.zip(validations)
         if (results.all { it.second.correct }) {
@@ -280,27 +280,28 @@ class MathPuzzleRenderer(
         } else {
             val details = results.filterNot { it.second.correct }.map { (response, result) ->
                 val definitions = response.config.optJSONArray("fields")
-                var message = result.message
+                var message = result.resolveMessage(context)
+                result.fieldId?.let { message = "$it: $message" }
                 if (definitions != null) for (index in 0 until definitions.length()) {
                     val field = definitions.getJSONObject(index)
                     val prefix = "${field.getString("id")}: "
                     if (message.startsWith(prefix)) {
-                        message = "${field.optString("label", "Campo ${index + 1}")}: ${message.removePrefix(prefix)}"
+                        message = "${field.optString("label", context.getString(R.string.math_ui_field, index + 1))}: ${message.removePrefix(prefix)}"
                         break
                     }
                 }
                 "${response.config.optString("label", response.id)}: $message"
             }
-            MathTextRenderer.apply(feedback, (listOf("✗ ${spec.incorrectFeedback}") + details).filter { it.isNotBlank() }.joinToString("\n"))
+            MathTextRenderer.apply(feedback, (listOf("✗ ${spec.incorrectFeedback.ifBlank { context.getString(R.string.math_ui_incorrect) }}") + details).filter { it.isNotBlank() }.joinToString("\n"))
             feedback.setTextColor(Color.rgb(240, 166, 166))
             save()
         }
     }
 
     private fun showCorrect() {
-        MathTextRenderer.apply(feedback, "✓ Correcto" + spec.correctFeedback.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty())
+        MathTextRenderer.apply(feedback, context.getString(R.string.math_ui_correct_heading) + spec.correctFeedback.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty())
         feedback.setTextColor(Color.rgb(180, 220, 190))
-        checkButton.text = "Correcto ✓"
+        checkButton.text = context.getString(R.string.math_ui_correct_button)
         checkButton.isEnabled = false
         responses.values.forEach { it.setEditable(false) }
         tools.values.forEach { it.setEditable(false) }
@@ -312,7 +313,7 @@ class MathPuzzleRenderer(
         isCorrect = false
         responses.forEach { (id, control) -> control.setEditable(true); control.restore(initialResponses.getValue(id)) }
         tools.forEach { (id, control) -> control.setEditable(true); control.restore(initialTools.getValue(id)) }
-        checkButton.text = "Comprobar"
+        checkButton.text = context.getString(R.string.math_ui_check)
         MathTextRenderer.apply(feedback, "")
         initializing = false
         updateActionState()

@@ -1,6 +1,8 @@
 package com.learngraphicsprogramming.app.narration
 
 import android.content.Context
+import com.learngraphicsprogramming.app.R
+import com.learngraphicsprogramming.app.UiLanguageSettings
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
@@ -28,6 +30,11 @@ class LessonNarrationController(
     private val onState: (Boolean) -> Unit,
     private val onError: (String) -> Unit
 ) {
+    private val uiContext: Context get() = UiLanguageSettings.localizedContext(appContext)
+    private fun s(id: Int, vararg args: Any): String = uiContext.getString(id, *args)
+    private class UiFailure(val messageRes: Int, vararg val arguments: Any) : IllegalStateException()
+    private fun errorMessage(error: Exception, fallback: Int) =
+        if (error is UiFailure) s(error.messageRes, *error.arguments) else s(fallback)
     private val appContext = context.applicationContext
     private val main = Handler(Looper.getMainLooper())
     private val workerThread = HandlerThread("LessonNarration", Process.THREAD_PRIORITY_BACKGROUND).apply { start() }
@@ -105,7 +112,7 @@ class LessonNarrationController(
         if (!settings.enabled) return@onMain
         val prepared = NarrationSegments.prepare(segments, 250)
         if (prepared.isEmpty()) {
-            onError("Esta página no contiene texto que se pueda leer.")
+            onError(s(R.string.narration_no_text))
             return@onMain
         }
         this.language = language
@@ -125,7 +132,7 @@ class LessonNarrationController(
     private fun resume() {
         if (closed || segments.isEmpty() || !NarrationSettingsRepository.get(appContext).enabled) return
         if (!acquireFocus()) {
-            onError("No se pudo iniciar la lectura mientras otra aplicación utiliza el audio.")
+            onError(s(R.string.narration_focus_error))
             return
         }
         playing = true
@@ -135,7 +142,7 @@ class LessonNarrationController(
             selectSegment(0, 0)
         } else if (playerReady) {
             applyRate()
-            runCatching { player?.start() }.onFailure { fail("No se pudo reanudar la lectura.") }
+            runCatching { player?.start() }.onFailure { fail(s(R.string.narration_resume_error)) }
         } else ensureSegment(index)
     }
 
@@ -200,7 +207,7 @@ class LessonNarrationController(
                 ttsGeneration++
                 runCatching { tts?.shutdown() }
                 tts = null; ttsReady = false; ttsInitializing = false; voices = emptyList()
-                failTtsPending("El proveedor de voz cambió; inicia la lectura de nuevo.")
+                failTtsPending(s(R.string.narration_provider_changed))
             }
             if (settings.engine == NarrationEngine.ANDROID) releaseKokoro()
         }
@@ -226,7 +233,7 @@ class LessonNarrationController(
             File(session, configuration.toString() + "_" + next + ".wav"),
             NarrationSettingsRepository.forLanguage(appContext, language))
         val timeout = Runnable {
-            if (isCurrent(request) && pending.contains(next)) fail("El motor de voz no respondió a tiempo. Puedes volver a intentarlo.")
+            if (isCurrent(request) && pending.contains(next)) fail(s(R.string.narration_engine_timeout))
         }
         watchdogs[request.id] = timeout
         main.postDelayed(timeout, 180_000L)
@@ -241,11 +248,11 @@ class LessonNarrationController(
             if (request.settings.engine != NarrationEngine.ANDROID) {
                 try {
                     val root = models.directory()
-                    if (!File(root, "model.onnx").isFile) error("El modelo Kokoro no está instalado")
+                    if (!File(root, "model.onnx").isFile) throw UiFailure(R.string.narration_model_missing)
                     val voice = KokoroVoiceCatalog.find(request.settings.kokoroVoice)
-                        ?: error("La voz Kokoro seleccionada no es válida")
-                    if (!File(root, voice.artifact.fileName).isFile) error("La voz Kokoro seleccionada no está instalada")
-                    if (!Build.SUPPORTED_ABIS.contains("arm64-v8a")) error("Kokoro requiere ARM64")
+                        ?: throw UiFailure(R.string.narration_voice_invalid)
+                    if (!File(root, voice.artifact.fileName).isFile) throw UiFailure(R.string.narration_voice_missing)
+                    if (!Build.SUPPORTED_ABIS.contains("arm64-v8a")) throw UiFailure(R.string.narration_requires_arm64)
                     val phonemes = phonemize(request.text, request.settings.language, root) { isCurrent(request) }
                     if (!isCurrent(request)) return
                     val engine = kokoro ?: KokoroOnnxEngine(root).also { kokoro = it }
@@ -260,17 +267,17 @@ class LessonNarrationController(
                     return
                 } catch (error: Exception) {
                     if (!isCurrent(request)) return
-                    reportFallback(request, error.message ?: "La síntesis neuronal no está disponible")
+                    reportFallback(request, errorMessage(error, R.string.narration_neural_unavailable))
                 } catch (_: UnsatisfiedLinkError) {
                     if (!isCurrent(request)) return
-                    reportFallback(request, "ONNX Runtime no está disponible en este dispositivo")
+                    reportFallback(request, s(R.string.narration_onnx_unavailable))
                 }
             }
             if (!isCurrent(request)) return
             ttsPending[request.id] = request
             if (ttsReady) synthesizeAndroid(request) else initializeTts()
         } catch (_: Exception) {
-            synthesisFailed(request, "No se pudo preparar el audio temporal de esta página.")
+            synthesisFailed(request, s(R.string.narration_temporary_audio_error))
         }
     }
 
@@ -302,7 +309,7 @@ class LessonNarrationController(
                     if (closed || initialization != ttsGeneration) return@post
                     ttsInitializing = false
                     if (status != TextToSpeech.SUCCESS) {
-                        failTtsPending("No hay un motor de voz Android disponible. Configura uno en las opciones.")
+                        failTtsPending(s(R.string.narration_android_configure))
                         runCatching { tts?.shutdown() }; tts = null
                         return@post
                     }
@@ -313,13 +320,13 @@ class LessonNarrationController(
                         ttsReady = true
                         ttsPending.values.toList().forEach(::synthesizeAndroid)
                     } catch (_: RuntimeException) {
-                        failTtsPending("No se pudo configurar el motor de voz Android.")
+                        failTtsPending(s(R.string.narration_android_configuration_error))
                     }
                 }
             }
         } catch (_: RuntimeException) {
             ttsInitializing = false
-            failTtsPending("No se pudo abrir el motor de voz Android.")
+            failTtsPending(s(R.string.narration_android_open_error))
         }
     }
 
@@ -332,17 +339,17 @@ class LessonNarrationController(
             val automatic = available.filter { it != preferred && !it.isNetworkConnectionRequired }
             val selected = (listOfNotNull(preferred) + automatic)
                 .firstOrNull { engine.setVoice(it) == TextToSpeech.SUCCESS }
-                ?: throw IllegalStateException("No hay una voz sin Internet instalada para " + request.settings.language.label + ". Elige una voz en las opciones.")
-            if (selected.isNetworkConnectionRequired) notice(request, "La voz Android seleccionada necesita Internet.")
+                ?: throw UiFailure(R.string.narration_offline_voice_missing, request.settings.language.label(uiContext))
+            if (selected.isNetworkConnectionRequired) notice(request, s(R.string.narration_network_notice))
             require(engine.setSpeechRate(1f) == TextToSpeech.SUCCESS)
             val result = engine.synthesizeToFile(request.text, Bundle(), request.file, request.id)
             if (result != TextToSpeech.SUCCESS) {
                 ttsPending.remove(request.id)
-                synthesisFailed(request, "Android no pudo generar el audio de este segmento.")
+                synthesisFailed(request, s(R.string.narration_android_segment_error))
             }
         } catch (error: RuntimeException) {
             ttsPending.remove(request.id)
-            synthesisFailed(request, error.message ?: "No se pudo generar la lectura con Android TTS.")
+            synthesisFailed(request, errorMessage(error, R.string.narration_android_synthesis_error))
         }
     }
 
@@ -359,9 +366,9 @@ class LessonNarrationController(
             worker.post {
                 val request = ttsPending.remove(id) ?: return@post
                 synthesisFailed(request, when (errorCode) {
-                    TextToSpeech.ERROR_NETWORK, TextToSpeech.ERROR_NETWORK_TIMEOUT -> "La voz Android no pudo conectarse. Elige una voz sin Internet."
-                    TextToSpeech.ERROR_NOT_INSTALLED_YET -> "Faltan datos de la voz Android. Instálalos desde las opciones del sistema."
-                    else -> "Android TTS no pudo generar el audio. Revisa su configuración."
+                    TextToSpeech.ERROR_NETWORK, TextToSpeech.ERROR_NETWORK_TIMEOUT -> s(R.string.narration_android_network_error)
+                    TextToSpeech.ERROR_NOT_INSTALLED_YET -> s(R.string.narration_android_data_missing)
+                    else -> s(R.string.narration_android_failed)
                 })
             }
         }
@@ -388,7 +395,7 @@ class LessonNarrationController(
                 if (request.index == index && player == null) preparePlayer(segments[index])
             }
         } catch (_: Exception) {
-            synthesisFailed(request, "El motor generó un audio que no se puede reproducir.")
+            synthesisFailed(request, s(R.string.narration_invalid_audio))
         }
     }
 
@@ -423,7 +430,7 @@ class LessonNarrationController(
                     applyRate()
                     if (playing && player === media) media.start()
                     if (index + 1 < segments.size) ensureSegment(index + 1)
-                } catch (_: RuntimeException) { fail("No se pudo iniciar el audio de la página.") }
+                } catch (_: RuntimeException) { fail(s(R.string.narration_audio_start_error)) }
             }
             media.setOnCompletionListener {
                 if (closed || generation != currentGeneration || player !== media) return@setOnCompletionListener
@@ -436,11 +443,11 @@ class LessonNarrationController(
                 }
             }
             media.setOnErrorListener { _, _, _ ->
-                if (generation == currentGeneration && player === media) fail("No se pudo reproducir el audio de la página.")
+                if (generation == currentGeneration && player === media) fail(s(R.string.narration_audio_play_error))
                 true
             }
             media.prepareAsync()
-        } catch (_: Exception) { fail("No se pudo abrir el audio de la página.") }
+        } catch (_: Exception) { fail(s(R.string.narration_audio_open_error)) }
     }
 
     private fun applyRate() {
@@ -450,7 +457,7 @@ class LessonNarrationController(
         if (!playerReady || !playing) return
         try {
             media.playbackParams = PlaybackParams().setSpeed(NarrationSettingsRepository.get(appContext).rate).setPitch(1f)
-        } catch (_: RuntimeException) { fail("Este dispositivo no pudo aplicar la velocidad de lectura.") }
+        } catch (_: RuntimeException) { fail(s(R.string.narration_rate_error)) }
     }
 
     private fun reportFallback(request: Synthesis, reason: String) {
@@ -458,7 +465,7 @@ class LessonNarrationController(
         main.post {
             if (isCurrent(request) && !reportedFallback) {
                 reportedFallback = true
-                if (request.settings.engine == NarrationEngine.KOKORO || installed) onError("Se utilizará Android TTS: " + reason)
+                if (request.settings.engine == NarrationEngine.KOKORO || installed) onError(s(R.string.narration_fallback, reason))
             }
         }
     }

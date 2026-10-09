@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -37,7 +38,7 @@ object MathRepresentationRenderer {
             "geometry_3d_diagram" -> MathExpandableRepresentation.wrap(context, GeometryDiagramView(context, config, accentColor, true), accentColor, 1.2f)
             "venn_diagram" -> MathExpandableRepresentation.wrap(context, VennDiagramView(context, config, accentColor), accentColor, 1.2f)
             "rich_answer_option" -> content(context, config.optJSONArray("content") ?: JSONArray(), accentColor)
-            else -> text(context, "Representación no compatible: $type").apply { setTextColor(Color.rgb(255, 194, 132)) }
+            else -> text(context, context.getString(R.string.math_ui_unsupported_representation, type)).apply { setTextColor(Color.rgb(255, 194, 132)) }
         }
     }
 
@@ -112,7 +113,7 @@ private class GeometryDiagramView(
     init {
         setBackgroundColor(Color.rgb(16, 17, 20))
         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, MathVisualControls.dp(context, 240))
-        contentDescription = "Diagrama ${if (threeDimensional) "tridimensional" else "geométrico"}: $shape. " + (0 until labels.length()).joinToString { labels.optString(it) }
+        contentDescription = context.getString(R.string.math_ui_diagram_description, context.getString(if (threeDimensional) R.string.math_ui_diagram_3d else R.string.math_ui_diagram_geometry), context.mathShapeName(shape), (0 until labels.length()).joinToString { labels.optString(it) })
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -196,8 +197,7 @@ private class VennDiagramView(context: Context, private val config: JSONObject, 
     init {
         setBackgroundColor(Color.rgb(16, 17, 20))
         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, MathVisualControls.dp(context, 240))
-        contentDescription = "Diagrama de Venn. ${config.optString("leftLabel", "A")}: ${config.optString("leftOnly")}. " +
-            "Intersección: ${config.optString("intersection")}. ${config.optString("rightLabel", "B")}: ${config.optString("rightOnly")}. Fuera: ${config.optString("outside")}."
+        contentDescription = context.getString(R.string.math_ui_venn_description, config.optString("leftLabel", "A"), config.optString("leftOnly"), config.optString("intersection"), config.optString("rightLabel", "B"), config.optString("rightOnly"), config.optString("outside"))
     }
 
     override fun onDraw(canvas: Canvas) {

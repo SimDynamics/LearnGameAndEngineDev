@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -262,9 +263,9 @@ class MathCartesianView(
     override fun performClick(): Boolean { super.performClick(); return true }
 
     private fun updateDescription() {
-        contentDescription = "Gráfica $mode. " + mutablePoints.mapIndexed { index, point ->
-            "Punto ${index + 1}: x ${formatCoordinate(point.x)}, y ${formatCoordinate(point.y)}"
-        }.joinToString(". ")
+        contentDescription = context.getString(R.string.math_ui_graph_description, context.mathGraphModeName(mode), mutablePoints.mapIndexed { index, point ->
+            context.getString(R.string.math_ui_point_description, index + 1, formatCoordinate(point.x), formatCoordinate(point.y))
+        }.joinToString(". "))
     }
 
     companion object {

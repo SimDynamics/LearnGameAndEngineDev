@@ -1,5 +1,9 @@
 package com.learngraphicsprogramming.app.calculator
 
+import com.learngraphicsprogramming.app.R
+import com.learngraphicsprogramming.app.math.MathUiMessage
+import com.learngraphicsprogramming.app.math.requireMath
+import com.learngraphicsprogramming.app.math.mathError
 import com.learngraphicsprogramming.app.math.MathDelimiter
 import com.learngraphicsprogramming.app.math.MathExpression
 import java.math.BigDecimal
@@ -27,12 +31,12 @@ internal class CalculatorExpressionCompiler(private val angleMode: CalculatorAng
     fun compile(expression: MathExpression.Sequence): ScalarExpression = sequence(expression, 0)
 
     private fun visit(depth: Int) {
-        require(depth <= 32 && ++nodeCount <= 512) { "La expresión es demasiado grande para calcularla." }
+        requireMath(depth <= 32 && ++nodeCount <= 512) { MathUiMessage(R.string.math_ui_calculation_size) }
     }
 
     private fun sequence(sequence: MathExpression.Sequence, depth: Int): ScalarExpression {
         visit(depth)
-        require(sequence.children.isNotEmpty()) { "Completa los espacios vacíos de la expresión." }
+        requireMath(sequence.children.isNotEmpty()) { MathUiMessage(R.string.math_ui_complete_expression) }
         val tokens = mutableListOf<Token>()
         var index = 0
         while (index < sequence.children.size) {
@@ -46,9 +50,9 @@ internal class CalculatorExpressionCompiler(private val angleMode: CalculatorAng
                     value.append((sequence.children[index++] as MathExpression.Number).value)
                 }
                 val text = value.toString()
-                require(text.length <= 64 && NUMBER.matches(text)) { "Hay un número incompleto o inválido." }
+                requireMath(text.length <= 64 && NUMBER.matches(text)) { MathUiMessage(R.string.math_ui_incomplete_number) }
                 val number = text.toBigDecimalOrNull()
-                require(number != null && number.toDouble().isFinite()) { "El número está fuera del rango admitido." }
+                requireMath(number != null && number.toDouble().isFinite()) { MathUiMessage(R.string.math_ui_number_range) }
                 tokens += Token.Value(ScalarExpression.Number(number))
             } else if (child is MathExpression.Operator || child is MathExpression.Symbol && child.value in setOf("%", "!")) {
                 visit(depth + 1)
@@ -59,7 +63,7 @@ internal class CalculatorExpressionCompiler(private val angleMode: CalculatorAng
                     "*", "×", "·" -> "*"
                     "/", "÷" -> "/"
                     "^", "%", "!", "nCr", "nPr" -> value
-                    else -> error("Esta operación todavía no está disponible en la calculadora.")
+                    else -> mathError(MathUiMessage(R.string.math_ui_unavailable_operation))
                 }
                 tokens += Token.Operator(operator)
             } else if (child is MathExpression.Scripts && child.lower == null && child.upper != null &&
@@ -92,7 +96,7 @@ internal class CalculatorExpressionCompiler(private val angleMode: CalculatorAng
             is MathExpression.Variable -> constant(expression.name)
             is MathExpression.Fraction -> binary(ScalarExpression.Operation.DIVIDE, region(expression.numerator), region(expression.denominator))
             is MathExpression.Scripts -> {
-                require(expression.lower == null) { "Los subíndices no tienen un valor numérico en esta versión." }
+                requireMath(expression.lower == null) { MathUiMessage(R.string.math_ui_numeric_subscript) }
                 val base = region(expression.base)
                 expression.upper?.let { binary(ScalarExpression.Operation.POWER, base, region(it)) } ?: base
             }
@@ -105,7 +109,7 @@ internal class CalculatorExpressionCompiler(private val angleMode: CalculatorAng
                 val argument = region(expression.argument)
                 when (expression.name) {
                     "sin", "cos", "tan" -> {
-                        require(expression.base == null) { "Esta función no admite una base." }
+                        requireMath(expression.base == null) { MathUiMessage(R.string.math_ui_function_no_base) }
                         val radians = if (angleMode == CalculatorAngleMode.DEG) binary(ScalarExpression.Operation.DIVIDE,
                             binary(ScalarExpression.Operation.MULTIPLY, argument, ScalarExpression.Constant.PI), ScalarExpression.Number(180)) else argument
                         ScalarExpression.Function(when (expression.name) {
@@ -115,7 +119,7 @@ internal class CalculatorExpressionCompiler(private val angleMode: CalculatorAng
                         }, radians)
                     }
                     "arcsin", "arccos", "arctan" -> {
-                        require(expression.base == null) { "Esta función no admite una base." }
+                        requireMath(expression.base == null) { MathUiMessage(R.string.math_ui_function_no_base) }
                         val radians = ScalarExpression.Function(when (expression.name) {
                             "arcsin" -> ScalarExpression.FunctionKind.ARCSIN
                             "arccos" -> ScalarExpression.FunctionKind.ARCCOS
@@ -126,23 +130,23 @@ internal class CalculatorExpressionCompiler(private val angleMode: CalculatorAng
                         else radians
                     }
                     "ln", "log" -> {
-                        require(expression.name != "ln" || expression.base == null) { "ln no admite una base." }
+                        requireMath(expression.name != "ln" || expression.base == null) { MathUiMessage(R.string.math_ui_ln_base) }
                         val natural = ScalarExpression.Function(ScalarExpression.FunctionKind.LOG, argument)
                         if (expression.name == "ln") natural else binary(ScalarExpression.Operation.DIVIDE, natural,
                             ScalarExpression.Function(ScalarExpression.FunctionKind.LOG,
                                 expression.base?.let(::region) ?: ScalarExpression.Number(10)))
                     }
-                    else -> error("La función ${expression.name} todavía no está disponible.")
+                    else -> mathError(MathUiMessage(R.string.math_ui_unavailable_function, listOf(expression.name)))
                 }
             }
-            else -> error("Esta estructura todavía no se puede evaluar en la calculadora.")
+            else -> mathError(MathUiMessage(R.string.math_ui_unavailable_structure))
         }
     }
 
     private fun constant(value: String): ScalarExpression = when (value) {
         "π" -> ScalarExpression.Constant.PI
         "e" -> ScalarExpression.Constant.E
-        else -> error("La calculadora necesita valores numéricos; $value no está definido.")
+        else -> mathError(MathUiMessage(R.string.math_ui_undefined_numeric, listOf(value)))
     }
 
     private sealed interface Token {
@@ -154,7 +158,7 @@ internal class CalculatorExpressionCompiler(private val angleMode: CalculatorAng
         private var position = 0
         fun parse(): ScalarExpression {
             val result = sum()
-            require(position == tokens.size) { "Revisa los operadores de la expresión." }
+            requireMath(position == tokens.size) { MathUiMessage(R.string.math_ui_check_operators) }
             return result
         }
         private fun take(operator: String): Boolean =
@@ -196,7 +200,7 @@ internal class CalculatorExpressionCompiler(private val angleMode: CalculatorAng
         }
         private fun postfix(): ScalarExpression {
             var value = (tokens.getOrNull(position++) as? Token.Value)?.expression
-                ?: error("Falta un valor antes o después de un operador.")
+                ?: mathError(MathUiMessage(R.string.math_ui_missing_operand))
             while (true) value = when {
                 take("%") -> binary(ScalarExpression.Operation.DIVIDE, value, ScalarExpression.Number(100))
                 take("!") -> ScalarExpression.Function(ScalarExpression.FunctionKind.FACTORIAL, value)

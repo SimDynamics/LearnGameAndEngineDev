@@ -115,14 +115,15 @@ class CourseAdapter(
         } else {
 
             holder.binding.textCourseProgress.text =
-                context.getString(
-                    R.string.nav_completed_lessons,
+                context.resources.getQuantityString(
+                    R.plurals.lesson_completed_lessons,
+                    progress.total,
                     progress.completed,
                     progress.total
                 )
 
             holder.binding.textCoursePercentage.text =
-                "${progress.percentage} %"
+                context.getString(R.string.lesson_percentage, progress.percentage)
 
             holder.binding.progressCourse.progress =
                 progress.percentage

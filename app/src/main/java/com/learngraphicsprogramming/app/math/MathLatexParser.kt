@@ -1,10 +1,14 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 /** A bounded mathematical LaTeX subset, deliberately independent of TeX execution. */
 object MathLatexParser {
     sealed interface Result {
         data class Success(val expression: MathExpression.Sequence) : Result
-        data class Failure(val message: String, val start: Int, val end: Int) : Result
+        data class Failure(val message: String, val start: Int, val end: Int, val uiMessage: MathUiMessage = MathUiMessage(R.string.math_ui_invalid_latex)) : Result {
+            constructor(message: MathUiMessage, start: Int, end: Int) : this(message.diagnostic, start, end, message)
+            fun resolveMessage(context: android.content.Context): String = uiMessage.resolve(context)
+        }
     }
 
     fun parse(source: String): Result = parse(source, content = false)
@@ -14,19 +18,19 @@ object MathLatexParser {
     fun parseContent(source: String): Result = parse(source, content = true)
 
     private fun parse(source: String, content: Boolean): Result {
-        if (source.length > 32_768) return Result.Failure("Expression is too long", 0, source.length)
+        if (source.length > 32_768) return Result.Failure(MathUiMessage(R.string.math_ui_parse_too_long), 0, source.length)
         return try {
             val prepared = if (content) source else source.trim()
             val parser = Parser(prepared.removeSurrounding("\\(", "\\)").removeSurrounding("\\[", "\\]"), content)
             Result.Success(parser.parse())
         } catch (failure: ParseFailure) {
-            Result.Failure(failure.message ?: "Invalid LaTeX", failure.position.coerceIn(0, source.length), (failure.position + 1).coerceIn(0, source.length))
+            Result.Failure(failure.uiMessage, failure.position.coerceIn(0, source.length), (failure.position + 1).coerceIn(0, source.length))
         } catch (_: IllegalArgumentException) {
-            Result.Failure("Invalid mathematical structure", 0, source.length)
+            Result.Failure(MathUiMessage(R.string.math_ui_parse_invalid_structure), 0, source.length)
         }
     }
 
-    private class ParseFailure(message: String, val position: Int) : RuntimeException(message)
+    private class ParseFailure(val uiMessage: MathUiMessage, val position: Int) : RuntimeException(uiMessage.diagnostic)
     private data class Stop(val close: Char? = null, val right: Boolean = false, val environment: Boolean = false)
 
     private class Parser(private val source: String, private val content: Boolean) {
@@ -38,12 +42,12 @@ object MathLatexParser {
         fun parse(): MathExpression.Sequence {
             val result = sequence(Stop())
             whitespace()
-            if (index != source.length) fail("Unexpected closing delimiter")
+            if (index != source.length) fail(MathUiMessage(R.string.math_ui_parse_unexpected_close))
             return result
         }
 
         private fun sequence(stop: Stop, preserveContent: Boolean = content && depth == 0): MathExpression.Sequence {
-            if (++depth > 64) fail("Expression nesting is too deep")
+            if (++depth > 64) fail(MathUiMessage(R.string.math_ui_parse_too_deep))
             val previousContext = contentContext
             contentContext = preserveContent
             val result = mutableListOf<MathExpression>()
@@ -54,7 +58,7 @@ object MathLatexParser {
                     result.add(MathExpression.Symbol(source.substring(whitespaceStart, index)))
                 }
                 if (index >= source.length || isStop(stop)) break
-                if (++nodes > 4_096) fail("Expression contains too many nodes")
+                if (++nodes > 4_096) fail(MathUiMessage(R.string.math_ui_parse_too_many_nodes))
                 if (source.startsWith("\\,", index) || source.startsWith("\\;", index) || source.startsWith("\\!", index) || source.startsWith("\\ ", index)) {
                     if (contentContext && source[index + 1] != '!') {
                         result.add(MathExpression.Symbol(when (source[index + 1]) { ',' -> "\u2009"; ';' -> "\u2002"; else -> " " }))
@@ -94,7 +98,7 @@ object MathLatexParser {
                 (stop.environment && (source[index] == '&' || source.startsWith("\\\\", index) || source.startsWith("\\end", index)))
 
         private fun atom(stop: Stop): MathExpression {
-            if (index >= source.length) fail("Expected an expression")
+            if (index >= source.length) fail(MathUiMessage(R.string.math_ui_parse_expected_expression))
             if (contentContext && source[index].isLetter()) {
                 val start = index
                 var end = index
@@ -115,7 +119,7 @@ object MathLatexParser {
                 '=', '<', '>', '≤', '≥', '≠', '≈', '→' -> { index++; MathExpression.Relation(char.toString()) }
                 'π', '∞', '∂', '∪', '∩', '∈' -> { index++; MathExpression.Symbol(char.toString()) }
                 'e' -> { index++; MathExpression.Symbol("e") }
-                '}', ')', ']', '^', '_', '&' -> fail("Unexpected '$char'")
+                '}', ')', ']', '^', '_', '&' -> fail(MathUiMessage(R.string.math_ui_parse_unexpected, listOf(char.toString())))
                 else -> when {
                     char.isDigit() || char == '.' && index + 1 < source.length && source[index + 1].isDigit() -> number()
                     source.startsWith("pi", index) -> { index += 2; MathExpression.Symbol("π") }
@@ -128,7 +132,7 @@ object MathLatexParser {
                     char.isLetter() -> { index++; MathExpression.Variable(char.toString()) }
                     char == ',' || char == ':' || char == ';' -> { index++; MathExpression.Symbol(char.toString()) }
                     contentContext -> { index++; MathExpression.Symbol(char.toString()) }
-                    else -> fail("Unsupported character '$char'")
+                    else -> fail(MathUiMessage(R.string.math_ui_parse_unsupported_character, listOf(char.toString())))
                 }
             }
         }
@@ -157,15 +161,15 @@ object MathLatexParser {
                 }
                 index++
                 val bound = argument()
-                if (char == '^') { if (upper != null) fail("Duplicate exponent"); upper = bound }
-                else { if (lower != null) fail("Duplicate subscript"); lower = bound }
+                if (char == '^') { if (upper != null) fail(MathUiMessage(R.string.math_ui_parse_duplicate_exponent)); upper = bound }
+                else { if (lower != null) fail(MathUiMessage(R.string.math_ui_parse_duplicate_subscript)); lower = bound }
             }
             return if (upper == null && lower == null) base else MathExpression.Scripts(asSequence(base), upper, lower)
         }
 
         private fun argument(): MathExpression.Sequence {
             whitespace()
-            if (index >= source.length) fail("Missing command argument")
+            if (index >= source.length) fail(MathUiMessage(R.string.math_ui_parse_missing_argument))
             return if (source[index] == '{') requiredGroup() else asSequence(atom(Stop()))
         }
 
@@ -222,7 +226,7 @@ object MathLatexParser {
                 }
                 "lim" -> {
                     val bounds = operatorBounds()
-                    if (bounds.first != null) fail("Limits only support a lower condition")
+                    if (bounds.first != null) fail(MathUiMessage(R.string.math_ui_parse_limit_lower_only))
                     whitespace()
                     val body = if (source.getOrNull(index) == '{') requiredGroup() else sequence(stop)
                     MathExpression.Limit(body, bounds.second ?: MathExpression.Sequence())
@@ -248,7 +252,7 @@ object MathLatexParser {
                 else -> {
                     if (name in MathLatexSerializer.functions) function(name)
                     else MathLatexSerializer.symbols.entries.firstOrNull { it.value == "\\$name" }?.let { MathExpression.Symbol(it.key) }
-                        ?: throw ParseFailure("Unsupported LaTeX command \\$name", start)
+                        ?: throw ParseFailure(MathUiMessage(R.string.math_ui_parse_unsupported_command, listOf(name)), start)
                 }
             }
             // Empty command terminators are syntax, not mathematical nodes.
@@ -259,7 +263,7 @@ object MathLatexParser {
         }
 
         private fun function(name: String): MathExpression.Function {
-            if (name.isBlank() || !name.all { it.isLetter() }) fail("Invalid function name")
+            if (name.isBlank() || !name.all { it.isLetter() }) fail(MathUiMessage(R.string.math_ui_parse_invalid_function_name))
             whitespace()
             val base = if (source.getOrNull(index) == '_') { index++; argument() } else null
             whitespace()
@@ -279,8 +283,8 @@ object MathLatexParser {
                 val char = source.getOrNull(index)
                 if (char != '^' && char != '_') break
                 index++
-                if (char == '^') { if (upper != null) fail("Duplicate upper bound"); upper = argument() }
-                else { if (lower != null) fail("Duplicate lower bound"); lower = argument() }
+                if (char == '^') { if (upper != null) fail(MathUiMessage(R.string.math_ui_parse_duplicate_upper)); upper = argument() }
+                else { if (lower != null) fail(MathUiMessage(R.string.math_ui_parse_duplicate_lower)); lower = argument() }
             }
             return upper to lower
         }
@@ -288,47 +292,47 @@ object MathLatexParser {
         private fun leftGroup(): MathExpression.Group {
             whitespace()
             val opening = delimiter()
-            val kind = when (opening) { "(" -> MathDelimiter.PARENTHESES; "[" -> MathDelimiter.BRACKETS; "{" -> MathDelimiter.BRACES; "|" -> MathDelimiter.ABSOLUTE; else -> fail("Unsupported delimiter") }
+            val kind = when (opening) { "(" -> MathDelimiter.PARENTHESES; "[" -> MathDelimiter.BRACKETS; "{" -> MathDelimiter.BRACES; "|" -> MathDelimiter.ABSOLUTE; else -> fail(MathUiMessage(R.string.math_ui_parse_unsupported_delimiter)) }
             val content = sequence(Stop(right = true))
-            if (!source.startsWith("\\right", index)) fail("Missing \\right delimiter")
+            if (!source.startsWith("\\right", index)) fail(MathUiMessage(R.string.math_ui_parse_missing_right))
             readCommand()
             whitespace()
             val closing = delimiter()
             val expected = when (opening) { "(" -> ")"; "[" -> "]"; "{" -> "}"; else -> "|" }
-            if (closing != expected) fail("Mismatched delimiters")
+            if (closing != expected) fail(MathUiMessage(R.string.math_ui_parse_mismatched_delimiters))
             return MathExpression.Group(content, kind)
         }
 
         private fun delimiter(): String {
             if (source.getOrNull(index) == '\\') return when (val command = readCommand()) { "lvert", "rvert", "vert" -> "|"; "lbrace" -> "{"; "rbrace" -> "}"; else -> command }
-            return source.getOrNull(index)?.also { index++ }?.toString() ?: fail("Missing delimiter")
+            return source.getOrNull(index)?.also { index++ }?.toString() ?: fail(MathUiMessage(R.string.math_ui_parse_missing_delimiter))
         }
 
         private fun environment(name: String): MathExpression {
-            if (name !in setOf("matrix", "pmatrix", "bmatrix", "Bmatrix", "cases")) fail("Unsupported environment '$name'")
+            if (name !in setOf("matrix", "pmatrix", "bmatrix", "Bmatrix", "cases")) fail(MathUiMessage(R.string.math_ui_parse_unsupported_environment, listOf(name)))
             val rows = mutableListOf<List<MathExpression.Sequence>>()
             var row = mutableListOf<MathExpression.Sequence>()
             while (true) {
                 row.add(sequence(Stop(environment = true)))
-                if (index >= source.length) fail("Missing environment end")
+                if (index >= source.length) fail(MathUiMessage(R.string.math_ui_parse_missing_environment_end))
                 when {
                     source[index] == '&' -> index++
                     source.startsWith("\\\\", index) -> { index += 2; rows.add(row); row = mutableListOf() }
                     source.startsWith("\\end", index) -> {
                         readCommand()
-                        if (readTextGroup() != name) fail("Mismatched environment end")
+                        if (readTextGroup() != name) fail(MathUiMessage(R.string.math_ui_parse_mismatched_environment))
                         rows.add(row)
                         break
                     }
-                    else -> fail("Invalid matrix separator")
+                    else -> fail(MathUiMessage(R.string.math_ui_parse_invalid_matrix_separator))
                 }
             }
-            if (rows.size > 32 || rows.any { it.size > 32 }) fail("Matrix exceeds supported dimensions")
+            if (rows.size > 32 || rows.any { it.size > 32 }) fail(MathUiMessage(R.string.math_ui_parse_matrix_dimensions))
             if (name == "cases") {
-                if (rows.any { it.size != 2 }) fail("Each case needs an expression and a condition")
+                if (rows.any { it.size != 2 }) fail(MathUiMessage(R.string.math_ui_parse_case_columns))
                 return MathExpression.Cases(rows.map { MathExpression.Case(it[0], it[1]) })
             }
-            if (rows.any { it.size != rows.first().size }) fail("Matrix rows must have the same number of columns")
+            if (rows.any { it.size != rows.first().size }) fail(MathUiMessage(R.string.math_ui_parse_matrix_columns))
             return MathExpression.Matrix(rows)
         }
 
@@ -350,7 +354,7 @@ object MathLatexParser {
         private fun readCommand(): String {
             expect('\\')
             val start = index
-            if (index >= source.length) fail("Incomplete LaTeX command")
+            if (index >= source.length) fail(MathUiMessage(R.string.math_ui_parse_incomplete_command))
             if (source[index].isLetter()) while (index < source.length && source[index].isLetter()) index++ else index++
             return source.substring(start, index)
         }
@@ -360,7 +364,7 @@ object MathLatexParser {
             expect('{')
             val start = index
             while (index < source.length && source[index] != '}') {
-                if (source[index] == '{' || source[index] == '\\') fail("Nested text macros are unsupported")
+                if (source[index] == '{' || source[index] == '\\') fail(MathUiMessage(R.string.math_ui_parse_nested_text))
                 index++
             }
             val text = source.substring(start, index)
@@ -370,8 +374,8 @@ object MathLatexParser {
 
         private fun asSequence(value: MathExpression) = value as? MathExpression.Sequence ?: MathExpression.Sequence(listOf(value))
         private fun whitespace() { while (index < source.length && source[index].isWhitespace()) index++ }
-        private fun expect(char: Char) { whitespace(); if (source.getOrNull(index) != char) fail("Expected '$char'"); index++ }
-        private fun fail(message: String): Nothing = throw ParseFailure(message, index)
+        private fun expect(char: Char) { whitespace(); if (source.getOrNull(index) != char) fail(MathUiMessage(R.string.math_ui_parse_expected, listOf(char.toString()))); index++ }
+        private fun fail(message: MathUiMessage): Nothing = throw ParseFailure(message, index)
     }
 
 }

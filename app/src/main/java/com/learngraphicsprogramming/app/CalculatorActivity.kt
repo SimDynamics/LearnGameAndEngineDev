@@ -148,8 +148,8 @@ class CalculatorActivity : AppCompatActivity() {
         binding.calculatorNativeKeyboard.setOnClickListener {
             editor.showSystemKeyboard()
         }
-        binding.calculatorImeLeft.contentDescription = MathKeyboardAction.MoveLeft.contentDescription
-        binding.calculatorImeRight.contentDescription = MathKeyboardAction.MoveRight.contentDescription
+        binding.calculatorImeLeft.contentDescription = MathKeyboardAction.MoveLeft.localizedDescription(this)
+        binding.calculatorImeRight.contentDescription = MathKeyboardAction.MoveRight.localizedDescription(this)
         binding.calculatorImeLeft.setOnClickListener { edit(MathKeyboardAction.MoveLeft) }
         binding.calculatorImeRight.setOnClickListener { edit(MathKeyboardAction.MoveRight) }
     }
@@ -294,7 +294,7 @@ class CalculatorActivity : AppCompatActivity() {
         R.id.calculator_key_combinations -> getString(R.string.calculator_combinations_description)
         R.id.calculator_key_permutations -> getString(R.string.calculator_permutations_description)
         else -> when (val action = key.action) {
-            is CalculatorEditorAction.Edit -> action.action.contentDescription
+            is CalculatorEditorAction.Edit -> action.action.localizedDescription(this)
             CalculatorEditorAction.Clear -> getString(R.string.calculator_clear)
             CalculatorEditorAction.Evaluate -> getString(R.string.calculator_evaluate)
         }
@@ -416,7 +416,7 @@ class CalculatorActivity : AppCompatActivity() {
                         resultInput = null
                         resultMode = null
                         updatePasteResultButton()
-                        showMessage(result.message, error = true)
+                        showMessage(result.resolveMessage(this), error = true)
                     }
                 }
             }

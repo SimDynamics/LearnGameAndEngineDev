@@ -8,7 +8,8 @@ import android.os.Process
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.speech.tts.Voice
-import java.util.Locale
+import com.learngraphicsprogramming.app.R
+import com.learngraphicsprogramming.app.UiLanguageSettings
 
 data class SpanishVoice(
     val name: String,
@@ -31,18 +32,18 @@ internal object SpanishVoices {
                 .thenBy { it.name }
         )
 
-    fun describe(voice: Voice): SpanishVoice {
-        val localeName = voice.locale.getDisplayName(Locale.forLanguageTag("es"))
-        val connection = if (voice.isNetworkConnectionRequired) "requiere Internet" else "sin Internet"
+    fun describe(context: Context, voice: Voice): SpanishVoice {
+        val localeName = voice.locale.getDisplayName(context.resources.configuration.locales[0])
+        val connection = if (voice.isNetworkConnectionRequired) context.getString(R.string.narration_requires_network) else context.getString(R.string.narration_offline)
         val quality = when {
-            voice.quality >= Voice.QUALITY_VERY_HIGH -> "calidad muy alta"
-            voice.quality >= Voice.QUALITY_HIGH -> "calidad alta"
-            voice.quality >= Voice.QUALITY_NORMAL -> "calidad normal"
-            else -> "calidad básica"
+            voice.quality >= Voice.QUALITY_VERY_HIGH -> context.getString(R.string.narration_quality_very_high)
+            voice.quality >= Voice.QUALITY_HIGH -> context.getString(R.string.narration_quality_high)
+            voice.quality >= Voice.QUALITY_NORMAL -> context.getString(R.string.narration_quality_normal)
+            else -> context.getString(R.string.narration_quality_basic)
         }
         return SpanishVoice(
             name = voice.name,
-            label = "$localeName · $quality · $connection\n${voice.name}",
+            label = context.getString(R.string.narration_android_voice_label, localeName, quality, connection, voice.name),
             requiresNetwork = voice.isNetworkConnectionRequired,
             quality = voice.quality
         )
@@ -57,6 +58,7 @@ internal fun defaultAndroidTtsEngine(context: Context): String? = runCatching {
 /** Consulta el motor predeterminado del sistema sin bloquear la pantalla de opciones. */
 class AndroidVoiceCatalog(context: Context) {
     private val applicationContext = context.applicationContext
+    private val appContext: Context get() = UiLanguageSettings.localizedContext(applicationContext)
     private val main = Handler(Looper.getMainLooper())
     private val workerThread = HandlerThread("NarrationVoiceCatalog", Process.THREAD_PRIORITY_BACKGROUND)
         .apply { start() }
@@ -92,7 +94,7 @@ class AndroidVoiceCatalog(context: Context) {
         val next = Request(++requestId, onResult, onError, language)
         pendingRequestId = next.id
         main.postDelayed({
-            deliverError(next, "El motor de voz de Android no responde. Revisa su configuración.")
+            deliverError(next, appContext.getString(R.string.narration_android_timeout))
         }, 15_000L)
         worker.post {
             if (closed) return@post
@@ -126,7 +128,7 @@ class AndroidVoiceCatalog(context: Context) {
                         publishVoices()
                     } else {
                         request?.let {
-                            deliverError(it, "No hay un motor de voz Android disponible. Instala o configura uno.")
+                            deliverError(it, appContext.getString(R.string.narration_android_missing))
                         }
                         tts?.shutdown()
                         tts = null
@@ -136,7 +138,7 @@ class AndroidVoiceCatalog(context: Context) {
         } catch (_: RuntimeException) {
             initializing = false
             request?.let {
-                deliverError(it, "No se pudo abrir el motor de voz Android.")
+                deliverError(it, appContext.getString(R.string.narration_android_open_error))
             }
         }
     }
@@ -144,7 +146,7 @@ class AndroidVoiceCatalog(context: Context) {
     private fun publishVoices() {
         val current = request ?: return
         try {
-            val voices = SpanishVoices.available(tts?.voices, current.language).map(SpanishVoices::describe)
+            val voices = SpanishVoices.available(tts?.voices, current.language).map { SpanishVoices.describe(appContext, it) }
             main.post {
                 if (!closed && pendingRequestId == current.id) {
                     pendingRequestId = null
@@ -152,7 +154,7 @@ class AndroidVoiceCatalog(context: Context) {
                 }
             }
         } catch (_: RuntimeException) {
-            deliverError(current, "No se pudieron consultar las voces del sistema.")
+            deliverError(current, appContext.getString(R.string.narration_android_query_error))
         }
     }
 

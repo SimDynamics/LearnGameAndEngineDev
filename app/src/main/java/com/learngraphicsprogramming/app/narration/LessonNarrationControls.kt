@@ -45,7 +45,7 @@ class LessonNarrationControls(
         setBackgroundResource(android.R.drawable.list_selector_background)
         setOnClickListener { onListen() }
     }
-    private val rate = control("1X", "Cambiar velocidad") {
+    private val rate = control(activity.getString(R.string.narration_rate_normal), activity.getString(R.string.narration_change_rate)) {
         val settings = NarrationSettingsRepository.get(activity)
         NarrationSettingsRepository.saveRate(activity, NarrationSettingsRepository.nextRate(settings.rate))
         refresh(listen.isActivated)
@@ -54,12 +54,12 @@ class LessonNarrationControls(
     private val layoutListener = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> positionRow() }
 
     init {
-        row.addView(control("↶3", "Retroceder 3 segundos") { onSeek(-3) }.apply { id = R.id.buttonLessonBackThree }, itemParams())
-        row.addView(control("↶5", "Retroceder 5 segundos. Mantener pulsado para reiniciar la página") { onSeek(-5) }.apply {
+        row.addView(control(activity.getString(R.string.narration_control_back_three), activity.getString(R.string.narration_back_three)) { onSeek(-3) }.apply { id = R.id.buttonLessonBackThree }, itemParams())
+        row.addView(control(activity.getString(R.string.narration_control_back_five), activity.getString(R.string.narration_back_five)) { onSeek(-5) }.apply {
             id = R.id.buttonLessonBackFive
-            setOnLongClickListener { onRestart(); Toast.makeText(activity, "Lectura reiniciada", Toast.LENGTH_SHORT).show(); true }
+            setOnLongClickListener { onRestart(); Toast.makeText(activity, activity.getString(R.string.narration_restarted), Toast.LENGTH_SHORT).show(); true }
         }, itemParams())
-        row.addView(control("5↷", "Avanzar 5 segundos") { onSeek(5) }.apply { id = R.id.buttonLessonForwardFive }, itemParams())
+        row.addView(control(activity.getString(R.string.narration_control_forward_five), activity.getString(R.string.narration_forward_five)) { onSeek(5) }.apply { id = R.id.buttonLessonForwardFive }, itemParams())
         row.addView(listen, itemParams())
         row.addView(rate, itemParams())
         root.addView(row, FrameLayout.LayoutParams(dp(256), dp(56), Gravity.TOP or Gravity.START))
@@ -75,10 +75,10 @@ class LessonNarrationControls(
         val accent = AppearanceSettingsRepository.getRouteAccentColor(activity, route)
         listen.isActivated = playing
         listen.imageTintList = ColorStateList.valueOf(if (playing) accent else Color.WHITE)
-        listen.contentDescription = if (playing) "Pausar lectura" else "Iniciar o reanudar lectura de esta página"
-        rate.text = NarrationSettingsRepository.rateLabel(settings.rate)
+        listen.contentDescription = if (playing) activity.getString(R.string.narration_pause) else activity.getString(R.string.narration_start_resume)
+        rate.text = NarrationSettingsRepository.rateLabel(activity, settings.rate)
         rate.setTextColor(accent)
-        rate.contentDescription = "Velocidad de lectura ${rate.text}. Cambiar velocidad"
+        rate.contentDescription = activity.getString(R.string.narration_rate_description, rate.text)
     }
 
     fun setVisible(visible: Boolean) {

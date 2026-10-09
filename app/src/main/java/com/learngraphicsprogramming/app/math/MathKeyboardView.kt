@@ -287,7 +287,7 @@ class MathKeyboardView(
         addView(keys)
 
         contentDescription =
-            "Atajos del teclado matemático"
+            context.getString(R.string.math_ui_keyboard_shortcuts)
     }
 
     fun bind(
@@ -453,7 +453,7 @@ class MathKeyboardView(
         ) {
 
             key.contentDescription =
-                action.contentDescription
+                action.localizedDescription(context)
         }
 
         key.setOnClickListener {

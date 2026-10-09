@@ -120,14 +120,15 @@ class LessonAdapter(
                 )
 
         holder.textLessonProgress.text =
-            context.getString(
-                R.string.nav_completed_pages,
+            context.resources.getQuantityString(
+                R.plurals.lesson_completed_pages,
+                progress.total,
                 progress.completed,
                 progress.total
             )
 
         holder.textLessonPercentage.text =
-            "${progress.percentage} %"
+            context.getString(R.string.lesson_percentage, progress.percentage)
 
         holder.progressLesson.max =
             100

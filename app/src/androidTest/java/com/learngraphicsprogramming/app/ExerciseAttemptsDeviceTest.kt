@@ -389,10 +389,12 @@ class ExerciseAttemptsDeviceTest {
     @Test fun actualCppCompilerDiagnosticsDoNotSpendAttempts() {
         val block = json("""{"type":"cpp_compiler","initialCode":"int main( { return 0; }"}""")
         withFixture(PROGRAMMING, listOf(listOf(block))) { scenario ->
-            scenario.onActivity { activity -> button(content(activity), "Compilar y ejecutar").performClick() }
+            scenario.onActivity { activity -> button(content(activity), R.string.cpp_runtime_run).performClick() }
             await(scenario, "The offline Clang compile finishes with real diagnostics", timeout = 60_000L) { activity ->
-                button(content(activity), "Compilar y ejecutar").isEnabled &&
-                    descendants(content(activity)).filterIsInstance<TextView>().any { it.text.startsWith("La compilación falló") }
+                button(content(activity), R.string.cpp_runtime_run).isEnabled &&
+                    descendants(content(activity)).filterIsInstance<TextView>().any {
+                        matchesFormattedStatus(it, R.string.cpp_compilation_failed)
+                    }
             }
             scenario.onActivity { activity ->
                 assertTrue("Real Clang reports an error for invalid C++", descendants(content(activity)).filterIsInstance<TextView>()
@@ -560,14 +562,18 @@ class ExerciseAttemptsDeviceTest {
             "math_ordering_drag" -> {
                 resetButton(card).performClick()
                 answer.order.forEach { index ->
-                    descendants(card).first { it.contentDescription?.startsWith("Ordenar tarjeta ${('a'.code + index).toChar()}:") == true }.performClick()
+                    val description = card.context.getString(R.string.math_ui_sort_card,
+                        ('a'.code + index).toChar().toString(), ('A'.code + index).toChar().toString())
+                    descendants(card).first { it.contentDescription?.toString() == description }.performClick()
                 }
             }
             "math_matching_drag" -> {
                 resetButton(card).performClick()
                 answer.order.forEachIndexed { sourceIndex, targetIndex ->
-                    descendants(card).first { it.contentDescription == "Seleccionar ficha ${('A'.code + sourceIndex).toChar()}" }.performClick()
-                    descendants(card).first { it.contentDescription == "Destino ${('A'.code + targetIndex).toChar()}" }.performClick()
+                    val sourceDescription = card.context.getString(R.string.math_ui_select_tile, ('A'.code + sourceIndex).toChar().toString())
+                    val targetDescription = card.context.getString(R.string.math_ui_target, ('A'.code + targetIndex).toChar().toString())
+                    descendants(card).first { it.contentDescription?.toString() == sourceDescription }.performClick()
+                    descendants(card).first { it.contentDescription?.toString() == targetDescription }.performClick()
                 }
             }
             "math_slider_interaction" -> {
@@ -630,11 +636,30 @@ class ExerciseAttemptsDeviceTest {
     private fun content(activity: LessonActivity): ViewGroup = activity.findViewById(R.id.lessonContent)
     private fun mathCard(root: View): View = descendants(root).single { it.tag == MathPuzzleRenderer.INTERACTION_TAG }
     private fun token(root: View, label: String): TextView = descendants(root).filterIsInstance<TextView>().single { it.text.toString() == label }
-    private fun checkButton(root: View, index: Int = 0): Button = descendants(root).filterIsInstance<Button>()
-        .filter { it.text.toString() in listOf("Comprobar", "Correcto ✓") }[index]
-    private fun resetButton(root: View, index: Int = 0): View = descendants(root)
-        .filter { it.contentDescription?.startsWith("Reiniciar") == true }[index]
-    private fun button(root: View, text: String): Button = descendants(root).filterIsInstance<Button>().single { it.text.toString() == text }
+    private fun checkButton(root: View, index: Int = 0): Button {
+        val labels = listOf(R.string.exercise_check, R.string.exercise_correct,
+            R.string.math_ui_check, R.string.math_ui_correct_button).map { root.context.getString(it) }
+        return descendants(root).filterIsInstance<Button>()
+            .filter { it.tag == MathPuzzleRenderer.CHECK_ACTION_TAG || it.text.toString() in labels }[index]
+    }
+    private fun resetButton(root: View, index: Int = 0): View {
+        val descriptions = listOf(R.string.exercise_reset, R.string.exercise_reset_text,
+            R.string.exercise_reset_code, R.string.math_ui_restart).map { root.context.getString(it) }
+        return descendants(root).filter { it.contentDescription?.toString() in descriptions }[index]
+    }
+    private fun button(root: View, textResource: Int): Button {
+        val candidates = descendants(root).filterIsInstance<Button>()
+        val expected = root.context.getString(textResource)
+        return requireNotNull(candidates.singleOrNull { it.text.toString() == expected }) {
+            "Expected button '$expected'; actual buttons=${candidates.map { it.text.toString() }}; " +
+                "locale=${root.resources.configuration.locales}"
+        }
+    }
+    private fun matchesFormattedStatus(view: TextView, resource: Int): Boolean {
+        val pattern = view.context.getText(resource).toString().split("%1\$d")
+            .joinToString("[-+]?\\p{Nd}+") { Regex.escape(it) }
+        return Regex(pattern).matches(view.text.toString())
+    }
     private fun descendants(root: View): List<View> = buildList {
         add(root)
         if (root is ViewGroup) for (index in 0 until root.childCount) addAll(descendants(root.getChildAt(index)))

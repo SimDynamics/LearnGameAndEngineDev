@@ -82,22 +82,22 @@ class NarrationDeviceTest {
                 assertSame("Controles superpuestos, fuera del flujo del contenido",
                     activity.findViewById<View>(android.R.id.content), controls.parent)
                 val rate = activity.findViewById<TextView>(R.id.buttonLessonSpeechRate)
-                assertEquals("1X", rate.text.toString())
-                listOf("1.5X", "2X", "0.5X", "1X").forEach { expected ->
+                assertRate(activity, 1f)
+                listOf(1.5f, 2f, 0.5f, 1f).forEach { expected ->
                     rate.performClick()
-                    assertEquals(expected, rate.text.toString())
+                    assertRate(activity, expected)
                 }
                 rate.performClick()
+                assertRate(activity, 1.5f)
                 injectPages(activity)
                 setField(activity, "currentPage", 1)
                 invoke(activity, "renderCurrentPage")
-                assertEquals("1.5X", rate.text.toString())
+                assertRate(activity, 1.5f)
                 activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             }
             SystemClock.sleep(900)
             scenario.onActivity { activity ->
-                assertEquals(1.5f, NarrationSettingsRepository.get(activity).rate)
-                assertEquals("1.5X", activity.findViewById<TextView>(R.id.buttonLessonSpeechRate).text.toString())
+                assertRate(activity, 1.5f)
                 NarrationSettingsRepository.saveEnabled(activity, false)
                 invoke(activity, "updateNarrationVisibility")
                 assertEquals(View.GONE, activity.findViewById<View>(R.id.lessonNarrationControls).visibility)
@@ -110,9 +110,21 @@ class NarrationDeviceTest {
             scenario.recreate()
             awaitShown(scenario)
             scenario.onActivity { activity ->
-                assertEquals("1.5X", activity.findViewById<TextView>(R.id.buttonLessonSpeechRate).text.toString())
+                assertRate(activity, 1.5f)
             }
         }
+    }
+
+    private fun assertRate(activity: LessonActivity, expected: Float) {
+        assertEquals(expected, NarrationSettingsRepository.get(activity).rate)
+        val label = when (expected) {
+            0.5f -> R.string.narration_rate_half
+            1.5f -> R.string.narration_rate_one_half
+            2f -> R.string.narration_rate_double
+            else -> R.string.narration_rate_normal
+        }
+        assertEquals(activity.getString(label),
+            activity.findViewById<TextView>(R.id.buttonLessonSpeechRate).text.toString())
     }
 
     @Test fun realExerciseFullscreenHidesControlsAndRestoresThem() {
@@ -173,7 +185,13 @@ class NarrationDeviceTest {
 
     @Test fun globalOptionsBelowPremiumPersistLanguageInstalledVoiceEngineAndDisable() {
         ActivityScenario.launch<OptionsActivity>(Intent(context, OptionsActivity::class.java)).use { scenario ->
+            var kokoroChoice = ""
+            var alexChoice = ""
+            var frenchChoice = ""
             scenario.onActivity { activity ->
+                kokoroChoice = activity.getString(R.string.narration_kokoro_neural)
+                alexChoice = activity.getString(R.string.narration_voice_name_id, "Alex", "em_alex")
+                frenchChoice = NarrationLanguage.FRENCH.label(activity)
                 activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 val section = activity.findViewById<ViewGroup>(R.id.narrationSettingsSection)
                 val parent = section.parent as ViewGroup
@@ -183,9 +201,11 @@ class NarrationDeviceTest {
                 val toggle = tree(section).filterIsInstance<android.widget.Switch>().single()
                 toggle.isChecked = false
                 assertFalse(NarrationSettingsRepository.get(activity).enabled)
-                tree(section).filterIsInstance<android.widget.Button>().single { it.text.startsWith("Motor:") }.performClick()
+                tree(section).filterIsInstance<android.widget.Button>().single {
+                    it.text == activity.getString(R.string.narration_engine_android)
+                }.performClick()
             }
-            onView(withText("Kokoro neuronal")).inRoot(androidx.test.espresso.matcher.RootMatchers.isDialog()).perform(click())
+            onView(withText(kokoroChoice)).inRoot(androidx.test.espresso.matcher.RootMatchers.isDialog()).perform(click())
             // Integrity checks run off the UI thread and include the shared FP32 graph.
             // Wait for the actual verified snapshot before opening the installed-only list.
             val verifiedDeadline = SystemClock.uptimeMillis() + 30_000L
@@ -193,9 +213,10 @@ class NarrationDeviceTest {
             while (!voiceVerified && SystemClock.uptimeMillis() < verifiedDeadline) {
                 scenario.onActivity { activity ->
                     val section = activity.findViewById<ViewGroup>(R.id.narrationSettingsSection)
-                    voiceVerified = tree(section).filterIsInstance<android.widget.Button>().any {
-                        it.text.startsWith("Voz Kokoro:") && it.text.contains("instalado y verificado")
-                    }
+                    val selected = NarrationSettingsRepository.get(activity).kokoroVoice
+                    val expected = activity.getString(R.string.narration_selected_kokoro,
+                        selected, activity.getString(R.string.narration_verified))
+                    voiceVerified = tree(section).filterIsInstance<android.widget.Button>().any { it.text == expected }
                 }
                 if (!voiceVerified) SystemClock.sleep(100)
             }
@@ -203,14 +224,19 @@ class NarrationDeviceTest {
             scenario.onActivity { activity ->
                 assertEquals(NarrationEngine.KOKORO, NarrationSettingsRepository.get(activity).engine)
                 val section = activity.findViewById<ViewGroup>(R.id.narrationSettingsSection)
-                tree(section).filterIsInstance<android.widget.Button>().single { it.text.startsWith("Voz Kokoro:") }.performClick()
+                val expected = activity.getString(R.string.narration_selected_kokoro,
+                    NarrationSettingsRepository.get(activity).kokoroVoice,
+                    activity.getString(R.string.narration_verified))
+                tree(section).filterIsInstance<android.widget.Button>().single { it.text == expected }.performClick()
             }
-            onView(withText("Alex · em_alex")).inRoot(androidx.test.espresso.matcher.RootMatchers.isDialog()).perform(click())
+            onView(withText(alexChoice)).inRoot(androidx.test.espresso.matcher.RootMatchers.isDialog()).perform(click())
             scenario.onActivity { activity ->
                 val section = activity.findViewById<ViewGroup>(R.id.narrationSettingsSection)
-                tree(section).filterIsInstance<android.widget.Button>().single { it.text.startsWith("Idioma:") }.performClick()
+                val expected = activity.getString(R.string.narration_selected_language,
+                    NarrationSettingsRepository.get(activity).language.label(activity))
+                tree(section).filterIsInstance<android.widget.Button>().single { it.text == expected }.performClick()
             }
-            onView(withText("Francés")).inRoot(androidx.test.espresso.matcher.RootMatchers.isDialog()).perform(click())
+            onView(withText(frenchChoice)).inRoot(androidx.test.espresso.matcher.RootMatchers.isDialog()).perform(click())
             scenario.recreate()
             SystemClock.sleep(400)
             scenario.onActivity { activity ->

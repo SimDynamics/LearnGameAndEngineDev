@@ -128,8 +128,9 @@ class UnitAdapter(
          * seleccionado en Opciones globales.
          */
         holder.binding.textUnitProgress.text =
-            context.getString(
-                R.string.nav_completed_lessons,
+            context.resources.getQuantityString(
+                R.plurals.lesson_completed_lessons,
+                completionProgress.total,
                 completionProgress.completed,
                 completionProgress.total
             )
@@ -140,7 +141,7 @@ class UnitAdapter(
          * acumulado dentro de la unidad.
          */
         holder.binding.textUnitPercentage.text =
-            "${learningProgress.percentage} %"
+            context.getString(R.string.lesson_percentage, learningProgress.percentage)
 
         holder.binding.progressUnit.progress =
             learningProgress.percentage

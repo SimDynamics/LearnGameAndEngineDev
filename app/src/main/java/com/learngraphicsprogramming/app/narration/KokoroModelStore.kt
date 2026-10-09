@@ -5,6 +5,8 @@ import android.content.Context
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import com.learngraphicsprogramming.app.R
+import com.learngraphicsprogramming.app.UiLanguageSettings
 import java.io.File
 import java.io.IOException
 import java.util.zip.ZipInputStream
@@ -27,8 +29,18 @@ data class KokoroModelState(
  * INSTALLED describes verified files, not availability of a Spanish synthesis engine.
  */
 class KokoroModelStore(context: Context) {
+    private val uiContext: Context get() = UiLanguageSettings.localizedContext(appContext)
+    private fun problem(code: NarrationResourceProblem, vararg args: Any) = NarrationResourceMessages.encode(code, *args)
+    private fun problem(error: Exception, code: NarrationResourceProblem) = NarrationResourceMessages.encode(error, code)
+    private fun message(encoded: String?) = NarrationResourceMessages.render(uiContext, encoded)
     private val appContext = context.applicationContext
     private val preferences = appContext.getSharedPreferences("kokoro_model_downloads", Context.MODE_PRIVATE)
+    private fun storedProblem(key: String): String? {
+        val saved = preferences.getString(key, null) ?: return null
+        val normalized = NarrationResourceMessages.normalize(saved)
+        if (normalized != saved) preferences.edit().putString(key, normalized).apply()
+        return normalized
+    }
     private val downloads = appContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     private val worker = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
@@ -52,7 +64,7 @@ class KokoroModelStore(context: Context) {
                     KokoroVoiceCatalog.voices.forEach { groups[it.id] = listOf(it.artifact) }
                     groups.forEach { (name, artifacts) ->
                         states[name] = try { inspectInternal(artifacts) }
-                        catch (error: Exception) { KokoroModelState(KokoroModelStatus.ERROR, error = error.message,
+                        catch (error: Exception) { KokoroModelState(KokoroModelStatus.ERROR, error = message(problem(error, NarrationResourceProblem.CHECK_FAILED)),
                             totalBytes = artifacts.sumOf { it.bytes }) }
                     }
                 }
@@ -69,7 +81,7 @@ class KokoroModelStore(context: Context) {
             } catch (_: InterruptedException) {
                 return@submit
             } catch (error: Exception) {
-                KokoroModelState(KokoroModelStatus.ERROR, error = error.message ?: "No se pudieron comprobar los archivos")
+                KokoroModelState(KokoroModelStatus.ERROR, error = message(problem(error, NarrationResourceProblem.CHECK_FAILED)))
             } finally {
                 inspecting.set(false)
             }
@@ -86,11 +98,11 @@ class KokoroModelStore(context: Context) {
                 try {
                     val directory = currentDirectory()
                     if (!directory.isDirectory && !directory.mkdirs()) {
-                        throw IOException("No se pudo crear el directorio de Kokoro")
+                        throw NarrationResourceException(NarrationResourceProblem.CREATE_DIRECTORY)
                     }
                     val revisions = managedRevisions() + KokoroModelManifest.revision
                     if (!preferences.edit().putStringSet(KEY_MANAGED_REVISIONS, revisions).commit()) {
-                        throw IOException("No se pudo guardar el directorio de la descarga")
+                        throw NarrationResourceException(NarrationResourceProblem.SAVE_DIRECTORY)
                     }
                     // A replacement keeps the previous verified model until every new file
                     // passes integrity checking, but never runs transfers for two revisions.
@@ -101,7 +113,7 @@ class KokoroModelStore(context: Context) {
                         val destination = ownedFile(directory, artifact.fileName)
                         val importedPartial = ownedFile(directory, "${artifact.fileName}.import-part")
                         if (importedPartial.exists() && !importedPartial.delete()) {
-                            throw IOException("No se pudo limpiar una importación interrumpida")
+                            throw NarrationResourceException(NarrationResourceProblem.IMPORT_CLEANUP)
                         }
                         if (isVerified(destination, artifact)) return@forEach
                         val id = recoverDownloadId(directory, artifact)
@@ -114,11 +126,11 @@ class KokoroModelStore(context: Context) {
                         if (destination.exists()) destination.delete()
                         val partial = ownedFile(directory, "${artifact.fileName}.part")
                         if (partial.exists() && !partial.delete()) {
-                            throw IOException("No se pudo limpiar una descarga incompleta")
+                            throw NarrationResourceException(NarrationResourceProblem.DOWNLOAD_CLEANUP)
                         }
                         val request = DownloadManager.Request(Uri.parse(artifact.url))
-                            .setTitle("Kokoro: ${artifact.fileName}")
-                            .setDescription("Modelo de lectura en voz alta")
+                            .setTitle(uiContext.getString(R.string.narration_resource_notification_title, artifact.fileName))
+                            .setDescription(uiContext.getString(R.string.narration_resource_notification_description))
                             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                             .setAllowedOverMetered(true)
                             .setAllowedOverRoaming(false)
@@ -127,11 +139,11 @@ class KokoroModelStore(context: Context) {
                         // Commit immediately: a recreated store must recover the same transfer ID.
                         if (!preferences.edit().putLong(idKey(artifact), newId).commit()) {
                             downloads.remove(newId)
-                            throw IOException("No se pudo guardar el estado de la descarga")
+                            throw NarrationResourceException(NarrationResourceProblem.SAVE_DOWNLOAD)
                         }
                     }
                 } catch (error: Exception) {
-                    preferences.edit().putString(errorKey(artifacts), error.message ?: "No se pudo iniciar la descarga").apply()
+                    preferences.edit().putString(errorKey(artifacts), problem(error, NarrationResourceProblem.START_FAILED)).apply()
                 }
             }
         }
@@ -156,7 +168,7 @@ class KokoroModelStore(context: Context) {
                     }
                     preferences.edit().remove(errorKey(artifacts)).apply()
                 } catch (error: Exception) {
-                    writeOperationError(artifacts, error.message ?: "No se pudo cancelar la descarga")
+                    writeOperationError(artifacts, problem(error, NarrationResourceProblem.CANCEL_FAILED))
                 }
             }
         }
@@ -176,7 +188,7 @@ class KokoroModelStore(context: Context) {
                         artifacts.forEach { artifact ->
                             listOf(artifact.fileName, "${artifact.fileName}.part", "${artifact.fileName}.import-part").forEach { name ->
                                 val file = ownedFile(directory, name)
-                                if (file.exists() && !file.delete()) throw IOException("No se pudo eliminar $name")
+                                if (file.exists() && !file.delete()) throw NarrationResourceException(NarrationResourceProblem.REMOVE_FILE, name)
                             }
                         }
                         if (directory.isDirectory && directory.list()?.isEmpty() == true) directory.delete()
@@ -186,7 +198,7 @@ class KokoroModelStore(context: Context) {
                     if (artifacts.any { it.fileName == "model.onnx" }) editor.remove(KEY_INSTALLED_REVISION)
                     editor.apply()
                 } catch (error: Exception) {
-                    writeOperationError(artifacts, error.message ?: "No se pudo eliminar Kokoro")
+                    writeOperationError(artifacts, problem(error, NarrationResourceProblem.REMOVE_FAILED))
                 }
             }
         }
@@ -203,9 +215,9 @@ class KokoroModelStore(context: Context) {
         var downloadedBytes = 0L
         var active = false
         var allVerified = true
-        var failure = preferences.getString(errorKey(artifacts), null)
+        var failure = storedProblem(errorKey(artifacts))
         val totalBytes = artifacts.sumOf { it.bytes }
-        val operationError = artifacts.firstNotNullOfOrNull { preferences.getString("operation_error:${it.fileName}", null) }
+        val operationError = artifacts.firstNotNullOfOrNull { storedProblem("operation_error:${it.fileName}") }
         artifacts.forEach { artifact ->
             val destination = ownedFile(directory, artifact.fileName)
             // A killed import leaves a bounded temporary file. Expose it so the user can
@@ -213,7 +225,7 @@ class KokoroModelStore(context: Context) {
             val importedPartial = ownedFile(directory, "${artifact.fileName}.import-part")
             if (importedPartial.exists()) {
                 allVerified = false
-                failure = "La importación de ${artifact.fileName} fue interrumpida; vuelve a importar o elimina estos recursos"
+                failure = problem(NarrationResourceProblem.IMPORT_INTERRUPTED, artifact.fileName)
                 if (!destination.isFile) downloadedBytes += importedPartial.length().coerceIn(0L, artifact.bytes)
             }
             if (isVerified(destination, artifact)) {
@@ -226,14 +238,14 @@ class KokoroModelStore(context: Context) {
             if (record?.status == DownloadManager.STATUS_SUCCESSFUL) {
                 val partial = ownedFile(directory, "${artifact.fileName}.part")
                 if (KokoroModelManifest.verify(partial, artifact)) {
-                    if (destination.exists() && !destination.delete()) throw IOException("No se pudo sustituir ${artifact.fileName}")
-                    if (!partial.renameTo(destination)) throw IOException("No se pudo guardar ${artifact.fileName}")
+                    if (destination.exists() && !destination.delete()) throw NarrationResourceException(NarrationResourceProblem.REPLACE_FILE, artifact.fileName)
+                    if (!partial.renameTo(destination)) throw NarrationResourceException(NarrationResourceProblem.SAVE_FILE, artifact.fileName)
                     verified[destination.absolutePath] = destination.length() to destination.lastModified()
                     downloadedBytes += artifact.bytes
                     cleanupSuccessfulTransfer(artifact)
                     return@forEach
                 }
-                failure = "La integridad de ${artifact.fileName} no coincide con SHA-256; vuelve a descargar"
+                failure = problem(NarrationResourceProblem.DOWNLOAD_DIGEST, artifact.fileName)
                 downloads.remove(id)
                 clearDownloadId(artifact)
                 partial.delete()
@@ -241,17 +253,17 @@ class KokoroModelStore(context: Context) {
                 active = true
                 downloadedBytes += record.bytes.coerceIn(0L, artifact.bytes)
             } else if (record?.status == DownloadManager.STATUS_FAILED) {
-                failure = "Falló la descarga de ${artifact.fileName} (código ${record.reason}); puedes reintentar"
+                failure = problem(NarrationResourceProblem.DOWNLOAD_FAILED, artifact.fileName, record.reason)
             } else if (id != NO_DOWNLOAD) {
-                failure = "La descarga de ${artifact.fileName} fue interrumpida; puedes reintentar"
+                failure = problem(NarrationResourceProblem.DOWNLOAD_INTERRUPTED, artifact.fileName)
                 clearDownloadId(artifact)
             } else if (destination.exists()) {
-                failure = "El archivo ${artifact.fileName} está incompleto o no supera la comprobación SHA-256"
+                failure = problem(NarrationResourceProblem.INVALID_FILE, artifact.fileName)
             }
             allVerified = false
         }
         val percentage = if (totalBytes == 0L) 100 else ((downloadedBytes * 100L) / totalBytes).toInt().coerceIn(0, 100)
-        if (operationError != null) return KokoroModelState(KokoroModelStatus.ERROR, percentage, operationError, downloadedBytes, totalBytes)
+        if (operationError != null) return KokoroModelState(KokoroModelStatus.ERROR, percentage, message(operationError), downloadedBytes, totalBytes)
         if (allVerified) {
             val revisions = managedRevisions()
             val sharedModel = artifacts.any { it.fileName == "model.onnx" }
@@ -269,15 +281,15 @@ class KokoroModelStore(context: Context) {
                     .remove(errorKey(artifacts))
             if (sharedModel) editor.putString(KEY_INSTALLED_REVISION, KokoroModelManifest.revision)
             if (!editor.commit()) {
-                throw IOException("No se pudo guardar la revisión instalada de Kokoro")
+                throw NarrationResourceException(NarrationResourceProblem.SAVE_REVISION)
             }
             return KokoroModelState(KokoroModelStatus.INSTALLED, 100, downloadedBytes = downloadedBytes, totalBytes = totalBytes)
         }
         if (failure != null) preferences.edit().putString(errorKey(artifacts), failure).apply()
         // Keep cancellation visible until every in-flight transfer has stopped, even if
         // another artifact failed. The terminal snapshot then exposes the retryable error.
-        if (active) return KokoroModelState(KokoroModelStatus.DOWNLOADING, percentage, failure, downloadedBytes, totalBytes)
-        if (failure != null) return KokoroModelState(KokoroModelStatus.ERROR, percentage, failure, downloadedBytes, totalBytes)
+        if (active) return KokoroModelState(KokoroModelStatus.DOWNLOADING, percentage, message(failure), downloadedBytes, totalBytes)
+        if (failure != null) return KokoroModelState(KokoroModelStatus.ERROR, percentage, message(failure), downloadedBytes, totalBytes)
         val installedRevision = preferences.getString(KEY_INSTALLED_REVISION, null)
         if (artifacts.any { it.fileName == "model.onnx" } && installedRevision != null && installedRevision != KokoroModelManifest.revision) {
             return KokoroModelState(KokoroModelStatus.UPDATE_AVAILABLE, percentage, downloadedBytes = downloadedBytes, totalBytes = totalBytes)
@@ -384,15 +396,15 @@ class KokoroModelStore(context: Context) {
             val message = try {
                 synchronized(storeLock) {
                     val root = currentDirectory()
-                    if (!root.isDirectory && !root.mkdirs()) throw IOException("No se pudo crear el directorio de recursos")
+                    if (!root.isDirectory && !root.mkdirs()) throw NarrationResourceException(NarrationResourceProblem.CREATE_DIRECTORY)
                     val expected = KokoroModelManifest.artifacts.associateBy { it.fileName }
                     val installed = mutableSetOf<String>()
                     appContext.contentResolver.openInputStream(uri)?.use { input ->
                         ZipInputStream(input.buffered()).use { zip ->
                             while (true) {
                                 val entry = zip.nextEntry ?: break
-                                val artifact = expected[entry.name] ?: throw IOException("El paquete contiene un recurso no declarado: ${entry.name}")
-                                if (entry.isDirectory || !installed.add(entry.name)) throw IOException("El paquete contiene una entrada repetida o no válida")
+                                val artifact = expected[entry.name] ?: throw NarrationResourceException(NarrationResourceProblem.UNKNOWN_ENTRY, entry.name)
+                                if (entry.isDirectory || !installed.add(entry.name)) throw NarrationResourceException(NarrationResourceProblem.INVALID_ENTRY)
                                 val temporary = ownedFile(root, "${artifact.fileName}.import-part")
                                 try {
                                     temporary.outputStream().buffered().use { output ->
@@ -402,15 +414,15 @@ class KokoroModelStore(context: Context) {
                                             val count = zip.read(buffer)
                                             if (count < 0) break
                                             bytes += count
-                                            if (bytes > artifact.bytes) throw IOException("Tamaño incorrecto: ${artifact.fileName}")
+                                            if (bytes > artifact.bytes) throw NarrationResourceException(NarrationResourceProblem.INVALID_SIZE, artifact.fileName)
                                             output.write(buffer, 0, count)
                                         }
                                     }
-                                    if (!KokoroModelManifest.verify(temporary, artifact)) throw IOException("No coincide SHA-256: ${artifact.fileName}")
+                                    if (!KokoroModelManifest.verify(temporary, artifact)) throw NarrationResourceException(NarrationResourceProblem.IMPORT_DIGEST, artifact.fileName)
                                     val destination = ownedFile(root, artifact.fileName)
                                     if (!isVerified(destination, artifact)) {
-                                        if (destination.exists() && !destination.delete()) throw IOException("No se pudo sustituir ${artifact.fileName}")
-                                        if (!temporary.renameTo(destination)) throw IOException("No se pudo guardar ${artifact.fileName}")
+                                        if (destination.exists() && !destination.delete()) throw NarrationResourceException(NarrationResourceProblem.REPLACE_FILE, artifact.fileName)
+                                        if (!temporary.renameTo(destination)) throw NarrationResourceException(NarrationResourceProblem.SAVE_FILE, artifact.fileName)
                                         verified.remove(destination.absolutePath)
                                     }
                                     writeOperationError(listOf(artifact), null)
@@ -418,12 +430,12 @@ class KokoroModelStore(context: Context) {
                                 zip.closeEntry()
                             }
                         }
-                    } ?: throw IOException("No se pudo abrir el paquete seleccionado")
-                    if (installed.isEmpty()) throw IOException("El paquete no contiene recursos")
+                    } ?: throw NarrationResourceException(NarrationResourceProblem.OPEN_PACKAGE)
+                    if (installed.isEmpty()) throw NarrationResourceException(NarrationResourceProblem.EMPTY_PACKAGE)
                     preferences.edit().putStringSet(KEY_MANAGED_REVISIONS, managedRevisions() + KokoroModelManifest.revision).commit()
                 }
                 null
-            } catch (error: Exception) { error.message ?: "No se pudieron importar los recursos" }
+            } catch (error: Exception) { message(problem(error, NarrationResourceProblem.IMPORT_FAILED)) }
             main.post { if (!closed) onResult(message) }
         }
     }
@@ -442,24 +454,24 @@ class KokoroModelStore(context: Context) {
         require(revision.matches(REVISION_PATTERN))
         val root = storageRoot()
         val directory = File(root, revision)
-        if (directory.canonicalFile != File(root.canonicalFile, revision)) throw IOException("Directorio de Kokoro no válido")
+        if (directory.canonicalFile != File(root.canonicalFile, revision)) throw NarrationResourceException(NarrationResourceProblem.INVALID_DIRECTORY)
         return directory
     }
 
     private fun storageRoot(): File {
         val privateRoot = appContext.getExternalFilesDir(null)?.canonicalFile
-            ?: throw IOException("El almacenamiento privado de la aplicación no está disponible")
+            ?: throw NarrationResourceException(NarrationResourceProblem.STORAGE_UNAVAILABLE)
         val root = appContext.getExternalFilesDir("kokoro")
-            ?: throw IOException("El almacenamiento privado de la aplicación no está disponible")
+            ?: throw NarrationResourceException(NarrationResourceProblem.STORAGE_UNAVAILABLE)
         if (root.canonicalFile.parentFile != privateRoot || root.canonicalFile.name != "kokoro") {
-            throw IOException("Directorio privado de Kokoro no válido")
+            throw NarrationResourceException(NarrationResourceProblem.INVALID_PRIVATE_DIRECTORY)
         }
         return root
     }
 
     private fun ownedFile(directory: File, name: String): File {
         val file = File(directory, name)
-        if (file.canonicalFile.parentFile != directory.canonicalFile) throw IOException("Archivo de Kokoro no válido")
+        if (file.canonicalFile.parentFile != directory.canonicalFile) throw NarrationResourceException(NarrationResourceProblem.INVALID_PATH)
         return file
     }
 

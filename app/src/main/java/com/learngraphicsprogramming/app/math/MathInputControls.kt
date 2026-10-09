@@ -114,7 +114,7 @@ private class TextControl(
         )
 
     private val edit: EditText? = if (inputMode == MathInputMode.SIMPLE)
-        input(context, accent, spec.config.optString("hint", "Respuesta"), keyboardMode) else null
+        input(context, accent, spec.config.optString("hint", context.getString(R.string.math_ui_answer)), keyboardMode) else null
     private val structured = if (inputMode == MathInputMode.STRUCTURED) MathExpressionEditor(context).apply {
         background = MathWidgetUi.background(context, true, accent)
     } else null
@@ -145,7 +145,7 @@ private class TextControl(
             view.addView(
                 MathWidgetUi.text(
                     context,
-                    "Unidad: $unit"
+                    context.getString(R.string.math_ui_unit, unit)
                 )
             )
         }
@@ -156,7 +156,7 @@ private class TextControl(
         structured?.keyboardShortcuts = MathShortcutResolver.resolveStructured(spec.validator, keyboardMode, spec.config.optJSONArray("keyboardSymbols"))
         surface.contentDescription =
             label.ifBlank {
-                "Respuesta matemática"
+                context.getString(R.string.math_ui_math_answer)
             }
 
         if (edit != null) MathKeyboardContext.configure(edit, spec.validator, keyboardMode, spec.config.optJSONArray("keyboardSymbols"))
@@ -314,7 +314,7 @@ private class TextControl(
     }
     override fun hasDraftChanges(): Boolean = structured?.getLatex()?.isNotBlank() == true
     override fun draftError(): String? = structured?.takeIf { it.getLatex().isNotBlank() && !it.isComplete() }
-        ?.let { "Completa los espacios de la expresión matemática." }
+        ?.let { view.context.getString(R.string.math_ui_complete_slots) }
     override fun saveDraft(): JSONObject? = structured?.saveDraft()
     override fun restoreDraft(state: JSONObject) { structured?.restoreDraft(state) }
 }
@@ -337,7 +337,7 @@ private class ChoiceControl(context: Context, spec: MathResponseSpec, private va
     init {
         val options = MathWidgetUi.objects(spec.config.optJSONArray("options"))
         require(options.isNotEmpty()) { "La selección necesita opciones." }
-        val label = spec.config.optString("label", if (multi) "Selecciona todas las respuestas correctas." else "Selecciona una respuesta.")
+        val label = spec.config.optString("label", if (multi) context.getString(R.string.math_ui_select_all_answers) else context.getString(R.string.math_ui_select_answer))
         view.addView(MathWidgetUi.text(context, label))
         options.forEach { option ->
             val id = option.getString("id")
@@ -350,7 +350,7 @@ private class ChoiceControl(context: Context, spec: MathResponseSpec, private va
             val button = if (multi) CheckBox(context) else RadioButton(context)
             // The rich body owns the visible answer. Keep the label for accessibility only.
             button.text = ""
-            button.contentDescription = option.optString("label", "Opción ${buttons.size + 1}")
+            button.contentDescription = option.optString("label", context.getString(R.string.math_ui_option, buttons.size + 1))
             button.setTextColor(MathWidgetUi.foreground)
             button.buttonTintList = ColorStateList.valueOf(accent)
             button.minHeight = MathWidgetUi.dp(context, 48)
@@ -433,7 +433,7 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
                     val options = MathWidgetUi.objects(definition.optJSONArray("options"))
                     require(options.isNotEmpty() && options.map { it.getString("id") }.toSet().size == options.size) { "Opciones inválidas en $id" }
                     val ids = listOf("") + options.map { it.getString("id") }
-                    val labels = listOf("Selecciona…") + options.map { it.optString("label", it.getString("id")) }
+                    val labels = listOf(context.getString(R.string.math_ui_select_placeholder)) + options.map { it.optString("label", it.getString("id")) }
                     val dropdown = MathDropdown(context).apply {
                         val owner = this
                         minimumHeight = MathWidgetUi.dp(context, 48)
@@ -503,10 +503,10 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
                                         "hint",
                                         if (inlineFields) {
                                             fieldLabel.ifBlank {
-                                                "Respuesta"
+                                                context.getString(R.string.math_ui_answer)
                                             }
                                         } else {
-                                            "Respuesta"
+                                            context.getString(R.string.math_ui_answer)
                                         }
                                     ),
                                     keyboardMode
@@ -623,7 +623,7 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
     override fun answer(): MathAnswer = MathAnswer.Fields(fields.filterValues { it.editable }.mapValues { it.value.read() })
     override fun hasDraftChanges(): Boolean = fields.values.any { it.structured?.getLatex()?.isNotBlank() == true }
     override fun draftError(): String? = fields.values.firstOrNull { it.structured?.let { editor -> editor.getLatex().isNotBlank() && !editor.isComplete() } == true }
-        ?.let { "Completa los espacios de todos los campos matemáticos." }
+        ?.let { view.context.getString(R.string.math_ui_complete_field_slots) }
     override fun saveDraft(): JSONObject? = fields.filterValues { it.structured != null }.takeIf { it.isNotEmpty() }?.let { selected ->
         JSONObject().put("fields", JSONObject().apply { selected.forEach { (id, field) -> put(id, field.structured!!.saveDraft()) } })
     }

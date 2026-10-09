@@ -47,7 +47,11 @@ object UiLanguageSettings {
         require(tag.isEmpty() || tag in supportedTags(context))
         context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE).edit()
             .putString(SELECTION, tag).putBoolean(INITIALIZED, true).apply()
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+        if (Build.VERSION.SDK_INT >= 33) {
+            context.getSystemService(LocaleManager::class.java).applicationLocales = LocaleList.forLanguageTags(tag)
+        } else {
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(tag))
+        }
     }
 
     /** Resolve asynchronous application-context notices using the currently selected UI language. */

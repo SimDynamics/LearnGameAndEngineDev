@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 import android.widget.EditText
 
 /**
@@ -18,7 +19,9 @@ import android.widget.EditText
 sealed class MathKeyboardAction {
 
     abstract val label: String
-    abstract val contentDescription: String
+    abstract val description: MathUiMessage?
+    open val contentDescription: String get() = description?.diagnostic ?: label
+    fun localizedDescription(context: android.content.Context): String = description?.resolve(context) ?: contentDescription
 
     abstract fun apply(
         target: EditText,
@@ -30,6 +33,7 @@ sealed class MathKeyboardAction {
     ) : MathKeyboardAction() {
 
         override val label: String = symbol
+        override val description: MathUiMessage? = null
         override val contentDescription: String = symbol
 
         override fun apply(
@@ -50,8 +54,8 @@ sealed class MathKeyboardAction {
         // por una plantilla apilada sin cambiar la acción.
         override val label: String = "□\n―\n□"
 
-        override val contentDescription: String =
-            "Insertar fracción"
+        override val description: MathUiMessage =
+            MathUiMessage(R.string.math_ui_insert_fraction)
 
         override fun apply(
             target: EditText,
@@ -70,8 +74,8 @@ sealed class MathKeyboardAction {
 
         override val label: String = "()"
 
-        override val contentDescription: String =
-            "Insertar paréntesis"
+        override val description: MathUiMessage =
+            MathUiMessage(R.string.math_ui_insert_parentheses)
 
         override fun apply(
             target: EditText,
@@ -97,8 +101,8 @@ sealed class MathKeyboardAction {
 
         override val label: String = "⌫"
 
-        override val contentDescription: String =
-            "Borrar"
+        override val description: MathUiMessage =
+            MathUiMessage(R.string.math_ui_delete)
 
         override fun apply(
             target: EditText,
@@ -118,35 +122,35 @@ sealed class MathKeyboardAction {
     }
 
     /** One action has linear insertion for SIMPLE and AST insertion for STRUCTURED. */
-    sealed class Structure(override val label: String, override val contentDescription: String,
+    sealed class Structure(override val label: String, override val description: MathUiMessage,
         private val linear: String) : MathKeyboardAction() {
         override fun apply(target: EditText, minusInsertion: String) = replaceSelection(target, linear)
     }
-    data object Power : Structure("xⁿ", "Insertar potencia", "^")
-    data object Subscript : Structure("xₙ", "Insertar subíndice", "_")
-    data object Root : Structure("√", "Insertar raíz cuadrada", "√")
-    data object NthRoot : Structure("ⁿ√", "Insertar raíz de índice n", "√")
-    data object AbsoluteValue : Structure("|□|", "Insertar valor absoluto", "||")
-    data object Brackets : Structure("[□]", "Insertar corchetes", "[]")
-    data object Braces : Structure("{□}", "Insertar agrupación entre llaves", "{}")
-    data object Integral : Structure("∫", "Insertar integral", "∫")
-    data object Sum : Structure("∑", "Insertar sumatoria", "∑")
-    data object Product : Structure("∏", "Insertar producto", "∏")
-    data object Limit : Structure("lim", "Insertar límite", "lim")
-    data object Matrix : Structure("▦", "Insertar matriz 2 por 2", "")
-    data object Cases : Structure("{…", "Insertar expresión por partes", "")
-    data object Derivative : Structure("d/dx", "Insertar derivada", "d/dx")
-    data class Function(val name: String) : Structure("$name()", "Insertar función $name", "$name()")
-    data object MoveLeft : Structure("←", "Mover cursor atrás", "")
-    data object MoveRight : Structure("→", "Mover cursor adelante", "")
+    data object Power : Structure("xⁿ", MathUiMessage(R.string.math_ui_insert_power), "^")
+    data object Subscript : Structure("xₙ", MathUiMessage(R.string.math_ui_insert_subscript), "_")
+    data object Root : Structure("√", MathUiMessage(R.string.math_ui_insert_root), "√")
+    data object NthRoot : Structure("ⁿ√", MathUiMessage(R.string.math_ui_insert_nth_root), "√")
+    data object AbsoluteValue : Structure("|□|", MathUiMessage(R.string.math_ui_insert_absolute), "||")
+    data object Brackets : Structure("[□]", MathUiMessage(R.string.math_ui_insert_brackets), "[]")
+    data object Braces : Structure("{□}", MathUiMessage(R.string.math_ui_insert_braces), "{}")
+    data object Integral : Structure("∫", MathUiMessage(R.string.math_ui_insert_integral), "∫")
+    data object Sum : Structure("∑", MathUiMessage(R.string.math_ui_insert_sum), "∑")
+    data object Product : Structure("∏", MathUiMessage(R.string.math_ui_insert_product), "∏")
+    data object Limit : Structure("lim", MathUiMessage(R.string.math_ui_insert_limit), "lim")
+    data object Matrix : Structure("▦", MathUiMessage(R.string.math_ui_insert_matrix), "")
+    data object Cases : Structure("{…", MathUiMessage(R.string.math_ui_insert_cases), "")
+    data object Derivative : Structure("d/dx", MathUiMessage(R.string.math_ui_insert_derivative), "d/dx")
+    data class Function(val name: String) : Structure("$name()", MathUiMessage(R.string.math_ui_insert_function, listOf(name)), "$name()")
+    data object MoveLeft : Structure("←", MathUiMessage(R.string.math_ui_cursor_back), "")
+    data object MoveRight : Structure("→", MathUiMessage(R.string.math_ui_cursor_forward), "")
     data object PreviousSlot : MathKeyboardAction() {
         override val label = ""
-        override val contentDescription = "Slot anterior"
+        override val description = MathUiMessage(R.string.math_ui_previous_slot)
         override fun apply(target: EditText, minusInsertion: String) = Unit
     }
     data object NextSlot : MathKeyboardAction() {
         override val label = ""
-        override val contentDescription = "Slot siguiente"
+        override val description = MathUiMessage(R.string.math_ui_next_slot)
         override fun apply(target: EditText, minusInsertion: String) = Unit
     }
 

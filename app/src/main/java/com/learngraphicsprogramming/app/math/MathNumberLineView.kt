@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -149,6 +150,6 @@ class MathNumberLineView(
 
     override fun performClick(): Boolean { super.performClick(); return true }
     private fun updateDescription() {
-        contentDescription = "Recta numérica. Valor ${MathCartesianView.formatCoordinate(markerValue)}, punto ${if (markerClosed) "cerrado" else "abierto"}, dirección ${when (markerDirection) { "left" -> "izquierda"; "right" -> "derecha"; else -> "sin rayo" }}."
+        contentDescription = context.getString(R.string.math_ui_number_line_description, MathCartesianView.formatCoordinate(markerValue), context.getString(if (markerClosed) R.string.math_ui_point_closed else R.string.math_ui_point_open), context.getString(when (markerDirection) { "left" -> R.string.math_ui_left; "right" -> R.string.math_ui_right; else -> R.string.math_ui_no_ray }))
     }
 }

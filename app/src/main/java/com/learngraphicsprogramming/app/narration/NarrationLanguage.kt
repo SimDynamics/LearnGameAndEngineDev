@@ -1,13 +1,17 @@
 package com.learngraphicsprogramming.app.narration
 
+import android.content.Context
+import com.learngraphicsprogramming.app.R
 import org.json.JSONObject
 import java.util.Locale
 
-enum class NarrationLanguage(val tag: String, val label: String, val defaultVoice: String) {
-    SPANISH("es", "Español", "ef_dora"),
-    AMERICAN_ENGLISH("en-US", "Inglés estadounidense", "af_heart"),
-    BRITISH_ENGLISH("en-GB", "Inglés británico", "bf_emma"),
-    FRENCH("fr", "Francés", "ff_siwis");
+enum class NarrationLanguage(val tag: String, val labelRes: Int, val defaultVoice: String) {
+    SPANISH("es", R.string.narration_language_es, "ef_dora"),
+    AMERICAN_ENGLISH("en-US", R.string.narration_language_en_us, "af_heart"),
+    BRITISH_ENGLISH("en-GB", R.string.narration_language_en_gb, "bf_emma"),
+    FRENCH("fr", R.string.narration_language_fr, "ff_siwis");
+
+    fun label(context: Context): String = context.getString(labelRes)
 
     val locale: Locale get() = Locale.forLanguageTag(tag)
     val resourceGroup: String get() = if (locale.language == "en") "en" else tag

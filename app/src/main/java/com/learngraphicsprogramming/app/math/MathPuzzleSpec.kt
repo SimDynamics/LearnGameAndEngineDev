@@ -76,9 +76,8 @@ object MathPuzzleParser {
         } else null
         return MathPuzzleSpec(
             prompt, representations, tools, responses,
-            feedback?.optString("correct", "¡Correcto!") ?: "¡Correcto!",
-            feedback?.optString("incorrect", "Revisa tu respuesta e inténtalo de nuevo.")
-                ?: "Revisa tu respuesta e inténtalo de nuevo."
+            feedback?.optString("correct").orEmpty(),
+            feedback?.optString("incorrect").orEmpty()
         )
     }
 

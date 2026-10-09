@@ -614,7 +614,7 @@ class LessonOptionsActivity : AppCompatActivity() {
             )
 
             input.hint =
-                "Atajo ${index + 1}"
+                getString(R.string.lesson_shortcut_hint, index + 1)
 
             input.setText(
                 currentShortcuts[

@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Canvas
@@ -39,7 +40,7 @@ object MathVisualControls {
         val layout = column(context)
         val graph = MathCartesianView(context, config, accent, true)
         layout.addView(MathExpandableRepresentation.wrap(context, graph, accent))
-        layout.addView(label(context, "Arrastra los puntos o edita sus coordenadas."))
+        layout.addView(label(context, context.getString(R.string.math_ui_edit_coordinates)))
         val fields = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         layout.addView(fields)
         var synchronizing = false
@@ -64,11 +65,11 @@ object MathVisualControls {
                 row.gravity = android.view.Gravity.CENTER_VERTICAL
                 val pointPrefix = if (graph.points().size > 1) "${MathCartesianView.pointLabel(index)}: " else ""
                 row.addView(label(context, "${pointPrefix}x ="))
-                val x = numberInput(context, "Coordenada x del punto ${index + 1}", point.x, accent)
+                val x = numberInput(context, context.getString(R.string.math_ui_x_coordinate, index + 1), point.x, accent)
                 MathKeyboardContext.configureVisual(x, config, spec.validator, "x")
                 row.addView(x, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
                 row.addView(label(context, " y ="))
-                val y = numberInput(context, "Coordenada y del punto ${index + 1}", point.y, accent)
+                val y = numberInput(context, context.getString(R.string.math_ui_y_coordinate, index + 1), point.y, accent)
                 MathKeyboardContext.configureVisual(y, config, spec.validator, "y")
                 if (previousTextSize != null) {
                     x.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, previousTextSize)
@@ -111,7 +112,7 @@ object MathVisualControls {
             override fun answer(): MathAnswer = MathAnswer.Graph(graph.points())
             override fun hasDraftChanges(): Boolean = inputs.map { (x, y) -> x.text.toString() to y.text.toString() } != initialCoordinateText
             override fun draftError(): String? = if (inputs.any { (x, y) -> parse(x.text.toString()) == null || parse(y.text.toString()) == null }) {
-                "Escribe valores numéricos válidos en todas las coordenadas."
+                context.getString(R.string.math_ui_valid_coordinates)
             } else null
             override fun saveDraft(): JSONObject? = if (hasDraftChanges()) JSONObject().put("coords", JSONArray().apply {
                 inputs.forEach { (x, y) -> put(JSONObject().put("x", x.text.toString()).put("y", y.text.toString())) }
@@ -154,24 +155,24 @@ object MathVisualControls {
         val layout = column(context)
         val line = MathNumberLineView(context, config, accent, true)
         layout.addView(MathExpandableRepresentation.wrap(context, line, accent, 2.4f))
-        val position = numberInput(context, "Posición del punto en la recta", line.answer().value, accent)
+        val position = numberInput(context, context.getString(R.string.math_ui_point_position), line.answer().value, accent)
         MathKeyboardContext.configureVisual(position, config, spec.validator)
         val initialPositionText = position.text.toString()
-        layout.addView(label(context, "Posición"))
+        layout.addView(label(context, context.getString(R.string.math_ui_position)))
         layout.addView(position)
         val closed = CheckBox(context).apply {
-            text = "Punto cerrado (incluye el extremo)"
+            text = context.getString(R.string.math_ui_closed_point)
             setTextColor(Color.WHITE)
             buttonTintList = ColorStateList.valueOf(accent)
             isChecked = line.answer().closed
         }
         layout.addView(closed)
-        layout.addView(label(context, "Dirección del intervalo"))
+        layout.addView(label(context, context.getString(R.string.math_ui_interval_direction)))
         val direction = Spinner(context)
-        direction.contentDescription = "Dirección del intervalo"
+        direction.contentDescription = context.getString(R.string.math_ui_interval_direction)
         direction.minimumHeight = dp(context, 48)
         direction.setPadding(dp(context, 4), dp(context, 4), dp(context, 4), dp(context, 4))
-        direction.adapter = object : ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, listOf("Izquierda", "Derecha")) {
+        direction.adapter = object : ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, listOf(context.getString(R.string.math_ui_left), context.getString(R.string.math_ui_right))) {
             private var selectedTextSize: Float? = null
             private var baseTextSize: Float? = null
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View = super.getView(position, convertView, parent).also {
@@ -229,7 +230,7 @@ object MathVisualControls {
             override val view: View = layout
             override fun answer(): MathAnswer = line.answer()
             override fun hasDraftChanges(): Boolean = position.text.toString() != initialPositionText
-            override fun draftError(): String? = if (parse(position.text.toString()) == null) "Escribe una posición numérica válida en la recta." else null
+            override fun draftError(): String? = if (parse(position.text.toString()) == null) context.getString(R.string.math_ui_valid_position) else null
             override fun saveDraft(): JSONObject? = if (hasDraftChanges()) JSONObject().put("position", position.text.toString()) else null
             override fun restoreDraft(state: JSONObject) {
                 if (!state.has("position")) return
@@ -275,7 +276,7 @@ object MathVisualControls {
             }
             val id = item.optString("id", "parameter_$index")
             require(id.isNotBlank()) { "ID vacío del parámetro ${index + 1}." }
-            Parameter(id, item.optString("label", "Parámetro ${index + 1}"), min, max, rawStep)
+            Parameter(id, item.optString("label", context.getString(R.string.math_ui_parameter, index + 1)), min, max, rawStep)
         }
         require(parameters.map { it.id }.distinct().size == parameters.size) { "Los IDs de parámetros deben ser únicos." }
         val values = linkedMapOf<String, Double>()
@@ -335,7 +336,7 @@ object MathVisualControls {
                 val intercept = values[visual.optString("interceptParameter", parameters.getOrNull(1)?.id ?: "")] ?: 0.0
                 graph.setPoints(listOf(MathPoint(0.0, intercept), MathPoint(1.0, intercept + slope)))
             }
-            preview.contentDescription = "Vista de parámetros: " + parameters.joinToString { "${it.name} ${MathCartesianView.formatCoordinate(values[it.id] ?: it.min)}" }
+            preview.contentDescription = context.getString(R.string.math_ui_parameter_preview, parameters.joinToString { "${it.name} ${MathCartesianView.formatCoordinate(values[it.id] ?: it.min)}" })
             preview.invalidate()
         }
         parameters.forEach { parameter ->

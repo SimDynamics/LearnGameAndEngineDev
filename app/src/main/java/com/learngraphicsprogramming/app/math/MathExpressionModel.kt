@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -344,7 +345,7 @@ class MathExpressionModel(initialExpression: MathExpression.Sequence = MathExpre
     fun insertLatex(latex: String): MathLatexParser.Result {
         val parsed = MathLatexParser.parse(latex)
         return if (parsed is MathLatexParser.Result.Success && !insert(parsed.expression))
-            MathLatexParser.Result.Failure("Expression exceeds the editable resource limits", 0, latex.length)
+            MathLatexParser.Result.Failure(MathUiMessage(R.string.math_ui_parse_editable_limits), 0, latex.length)
         else parsed
     }
 

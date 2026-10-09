@@ -1,14 +1,15 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 /** Bridges notation to the existing bounded polynomial validator, without expanding its domain. */
 object MathExpressionSemantics {
     fun polynomialSource(source: String): String {
         if ('\\' !in source && '_' !in source && '{' !in source) return source
         val parsed = MathLatexParser.parse(source)
-        require(parsed is MathLatexParser.Result.Success) { "La expresión LaTeX no es válida." }
-        require(parsed.expression.isComplete()) { "Completa la expresión matemática." }
+        requireMath(parsed is MathLatexParser.Result.Success) { MathUiMessage(R.string.math_ui_invalid_latex) }
+        requireMath(parsed.expression.isComplete()) { MathUiMessage(R.string.math_ui_complete_math_expression) }
         return polynomial(parsed.expression)
-            ?: throw IllegalArgumentException("Esta estructura requiere un validador específico; no es un polinomio admitido.")
+            ?: throw MathUiException(MathUiMessage(R.string.math_ui_specific_validator))
     }
 
     private fun polynomial(expression: MathExpression): String? = when (expression) {
@@ -39,8 +40,8 @@ object MathExpressionSemantics {
     /** Canonical AST notation comparison for QA/structural answers; not symbolic calculus. */
     fun canonical(source: String): String {
         val parsed = MathLatexParser.parse(source)
-        require(parsed is MathLatexParser.Result.Success) { "La expresión LaTeX no es válida." }
-        require(parsed.expression.isComplete()) { "Completa la expresión matemática." }
+        requireMath(parsed is MathLatexParser.Result.Success) { MathUiMessage(R.string.math_ui_invalid_latex) }
+        requireMath(parsed.expression.isComplete()) { MathUiMessage(R.string.math_ui_complete_math_expression) }
         return MathLatexSerializer.serialize(parsed.expression)
     }
 }

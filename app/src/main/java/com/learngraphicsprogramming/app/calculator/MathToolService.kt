@@ -1,5 +1,8 @@
 package com.learngraphicsprogramming.app.calculator
 
+import com.learngraphicsprogramming.app.R
+import com.learngraphicsprogramming.app.math.MathUiMessage
+import com.learngraphicsprogramming.app.math.requireMath
 import org.matheclipse.core.basic.Config
 import org.matheclipse.core.eval.EvalEngine
 import org.matheclipse.core.eval.ExprEvaluator
@@ -39,8 +42,8 @@ class MathToolService {
             val exact = request.evaluate(input)
             val result = request.evaluate(F.N(exact))
             val numeric = runCatching { result.evalDouble() }.getOrNull()
-            require(numeric != null && numeric.isFinite()) {
-                "No hay un resultado real finito. Revisa divisiones, raíces y dominios de las funciones."
+            requireMath(numeric != null && numeric.isFinite()) {
+                MathUiMessage(R.string.math_ui_finite_result)
             }
             return consume(exact, numeric)
         } finally {
@@ -73,18 +76,18 @@ class MathToolService {
             val remainingSeconds = (deadline - System.currentTimeMillis()) / 1000.0
             val result = evaluator.eval(F.TimeConstrained(expression, F.num(remainingSeconds)))
             checkBudget()
-            require(result != S.`$Aborted`) { "El cálculo excedió el tiempo permitido." }
+            requireMath(result != S.`$Aborted`) { MathUiMessage(R.string.math_ui_calculation_timeout) }
             return result
         }
         private fun checkBudget() {
-            require(!Thread.currentThread().isInterrupted && System.currentTimeMillis() < deadline) {
-                "El cálculo excedió el tiempo permitido."
+            requireMath(!Thread.currentThread().isInterrupted && System.currentTimeMillis() < deadline) {
+                MathUiMessage(R.string.math_ui_calculation_timeout)
             }
         }
     }
 
     private fun toSymja(expression: ScalarExpression, depth: Int, request: EngineRequest): IExpr {
-        require(depth <= 128) { "La expresión es demasiado grande para calcularla." }
+        requireMath(depth <= 128) { MathUiMessage(R.string.math_ui_calculation_size) }
         fun nested(value: ScalarExpression) = toSymja(value, depth + 1, request)
         return when (expression) {
             is ScalarExpression.Number -> expression.value.stripTrailingZeros().let { value ->
@@ -105,7 +108,7 @@ class MathToolService {
                     ScalarExpression.Operation.COMBINATION, ScalarExpression.Operation.PERMUTATION -> {
                         val n = boundedInteger(left, request, "n")
                         val r = boundedInteger(right, request, "r")
-                        require(r <= n) { "nCr y nPr requieren 0 ≤ r ≤ n." }
+                        requireMath(r <= n) { MathUiMessage(R.string.math_ui_combinatorial_domain) }
                         if (expression.operation == ScalarExpression.Operation.COMBINATION) F.Binomial(n, r)
                         else F.Divide(F.Factorial(n), F.Factorial(n - r))
                     }
@@ -121,29 +124,29 @@ class MathToolService {
                     ScalarExpression.FunctionKind.ARCTAN -> F.ArcTan(it)
                     ScalarExpression.FunctionKind.LOG -> F.Log(it)
                     ScalarExpression.FunctionKind.ABS -> F.Abs(it)
-                    ScalarExpression.FunctionKind.FACTORIAL -> F.Factorial(boundedInteger(it, request, "El factorial"))
+                    ScalarExpression.FunctionKind.FACTORIAL -> F.Factorial(boundedInteger(it, request, MathUiMessage(R.string.math_ui_factorial)))
                 }
             }
             is ScalarExpression.Root -> {
-                val index = boundedInteger(nested(expression.index), request, "El índice de la raíz")
-                require(index > 0) { "El índice de la raíz debe ser un entero positivo." }
+                val index = boundedInteger(nested(expression.index), request, MathUiMessage(R.string.math_ui_root_index))
+                requireMath(index > 0) { MathUiMessage(R.string.math_ui_root_positive_index) }
                 val radicand = request.evaluate(nested(expression.radicand))
                 val numeric = runCatching { radicand.evalDouble() }.getOrNull()
-                require(numeric != null && numeric.isFinite()) { "La raíz requiere un radicando real finito." }
+                requireMath(numeric != null && numeric.isFinite()) { MathUiMessage(R.string.math_ui_root_finite) }
                 if (radicand.isNegative || numeric < 0) {
-                    require(index % 2 == 1) { "Una raíz de índice par no admite un radicando negativo." }
+                    requireMath(index % 2 == 1) { MathUiMessage(R.string.math_ui_root_even_negative) }
                     F.Times(F.CN1, F.Power(F.Abs(radicand), F.QQ(1, index.toLong())))
                 } else F.Power(radicand, F.QQ(1, index.toLong()))
             }
         }
     }
 
-    private fun boundedInteger(value: IExpr, request: EngineRequest, label: String): Int {
+    private fun boundedInteger(value: IExpr, request: EngineRequest, label: Any): Int {
         val exact = request.evaluate(value)
-        require(exact is IInteger) { "$label debe ser un entero no negativo; no se redondea automáticamente." }
+        requireMath(exact is IInteger) { MathUiMessage(R.string.math_ui_nonnegative_integer, listOf(label)) }
         val integer = exact.toBigNumerator()
-        require(integer.signum() >= 0 && integer <= BigInteger.valueOf(1000)) {
-            "$label debe estar entre 0 y 1000."
+        requireMath(integer.signum() >= 0 && integer <= BigInteger.valueOf(1000)) {
+            MathUiMessage(R.string.math_ui_bounded_integer, listOf(label))
         }
         return integer.toInt()
     }
@@ -151,8 +154,8 @@ class MathToolService {
     private fun boundedPower(base: IExpr, exponent: IExpr, request: EngineRequest): IExpr {
         val exactExponent = request.evaluate(exponent)
         val numericExponent = runCatching { exactExponent.evalDouble() }.getOrNull()
-        require(numericExponent != null && numericExponent.isFinite()) { "La potencia requiere un exponente real finito." }
-        require(kotlin.math.abs(numericExponent) <= 10000) { "El exponente supera el rango de cálculo permitido (−10000 a 10000)." }
+        requireMath(numericExponent != null && numericExponent.isFinite()) { MathUiMessage(R.string.math_ui_power_finite) }
+        requireMath(kotlin.math.abs(numericExponent) <= 10000) { MathUiMessage(R.string.math_ui_power_range) }
         val exactBase = request.evaluate(base)
         // Limit intermediate integer allocation before Symja raises an exact integer to a huge power.
         if (exactBase is IRational) {
@@ -161,7 +164,7 @@ class MathToolService {
             if (numerator > BigInteger.ONE || denominator > BigInteger.ONE) {
                 val bits = maxOf(numerator.bitLength(), denominator.bitLength())
                 val estimatedBits = bits.toLong() * kotlin.math.ceil(kotlin.math.abs(numericExponent)).toLong()
-                require(estimatedBits <= 16384) { "La potencia supera el tamaño de cálculo permitido." }
+                requireMath(estimatedBits <= 16384) { MathUiMessage(R.string.math_ui_power_size) }
             }
         }
         return F.Power(exactBase, exactExponent)
@@ -172,7 +175,7 @@ class MathToolService {
         val numeric = runCatching { exact.evalDouble() }.getOrNull()
         val inDomain = if (exact is IRational) exact.toBigNumerator().abs() <= exact.toBigDenominator()
         else numeric != null && numeric.isFinite() && numeric in -1.0..1.0
-        require(inDomain) { "arcsin y arccos requieren un argumento entre −1 y 1." }
+        requireMath(inDomain) { MathUiMessage(R.string.math_ui_inverse_domain) }
         return exact
     }
 }

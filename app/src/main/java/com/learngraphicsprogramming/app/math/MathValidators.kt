@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 import org.json.JSONArray
 import org.json.JSONObject
 import java.math.BigDecimal
@@ -10,7 +11,12 @@ import kotlin.math.hypot
 import kotlin.math.max
 
 /** Only complete, supported answers produce an evaluated correct/incorrect result. */
-data class MathValidationResult(val correct: Boolean, val message: String, val evaluable: Boolean = true)
+data class MathValidationResult(
+    val correct: Boolean, val message: String, val evaluable: Boolean = true,
+    val uiMessage: MathUiMessage? = null, val fieldId: String? = null
+) {
+    fun resolveMessage(context: android.content.Context): String = uiMessage?.resolve(context) ?: message
+}
 
 interface MathAnswerValidator {
     fun validate(spec: JSONObject, answer: MathAnswer): MathValidationResult
@@ -48,7 +54,7 @@ object MathValidators {
     }
 
     fun register(type: String, validator: MathAnswerValidator) {
-        require(type.isNotBlank()) { "El tipo de validador no puede estar vacío." }
+        requireMath(type.isNotBlank()) { "El tipo de validador no puede estar vacío." }
         registry[type] = validator
     }
 
@@ -61,82 +67,82 @@ object MathValidators {
     fun validate(spec: JSONObject, answer: MathAnswer): MathValidationResult = try {
         val type = spec.optString("type")
         val validator = registry[type]
-        if (validator == null) fail("Validador no soportado: $type")
-        else if (answer is MathAnswer.Text && answer.value.isBlank()) fail("Completa la respuesta.")
+        if (validator == null) fail(MathUiMessage(R.string.math_ui_unsupported_validator, listOf(type)))
+        else if (answer is MathAnswer.Text && answer.value.isBlank()) fail(MathUiMessage(R.string.math_ui_complete_answer))
         else validator.validate(spec, answer)
     } catch (exception: IllegalArgumentException) {
-        fail(exception.message ?: "No se pudo validar esta respuesta.")
+        fail((exception as? MathUiException)?.uiMessage ?: MathUiMessage(R.string.math_ui_validation_error))
     } catch (_: Exception) {
-        fail("La configuración de validación no es válida.")
+        fail(MathUiMessage(R.string.math_ui_invalid_validation))
     }
 
     /** Fail malformed lesson content early, before an answer is requested. */
     fun validateSpec(spec: JSONObject) {
         val type = spec.opt("type")
-        require(type is String && type.isNotBlank()) { "validator requiere type como texto." }
-        require(type in registry) { "Tipo de validador desconocido: $type" }
+        requireMath(type is String && type.isNotBlank()) { "validator requiere type como texto." }
+        requireMath(type in registry) { "Tipo de validador desconocido: $type" }
         tolerance(spec)
         when (type) {
             "numeric", "tolerance", "exact_fraction" -> number(spec, "expected")
             "equivalent_expression", "symbolic" -> {
-                require(spec.opt("expected") is String) { "$type requiere expected como texto." }
+                requireMath(spec.opt("expected") is String) { "$type requiere expected como texto." }
                 PolynomialExpression.parse(MathExpressionSemantics.polynomialSource(spec.getString("expected")))
             }
-            "text", "exact_text" -> require(spec.opt("expected") is String) { "$type requiere expected como texto." }
+            "text", "exact_text" -> requireMath(spec.opt("expected") is String) { "$type requiere expected como texto." }
             "latex" -> {
-                require(spec.opt("expected") is String) { "latex requiere expected como texto." }
+                requireMath(spec.opt("expected") is String) { "latex requiere expected como texto." }
                 MathExpressionSemantics.canonical(spec.getString("expected"))
             }
             "choice", "order" -> stringList(requiredArray(spec, "expected"))
             "matching" -> stringMap(requiredObject(spec, "expected"))
             "fields", "sliders" -> {
                 val values = requiredObject(spec, if (type == "fields") "fields" else "values")
-                require(values.length() > 0) { "$type requiere al menos un valor esperado." }
+                requireMath(values.length() > 0) { "$type requiere al menos un valor esperado." }
                 values.keys().forEach { key ->
-                    require(key.isNotBlank()) { "Los IDs de $type no pueden estar vacíos." }
+                    requireMath(key.isNotBlank()) { "Los IDs de $type no pueden estar vacíos." }
                     val validator = values.optJSONObject(key)
                         ?: throw IllegalArgumentException("$type.$key requiere un objeto validador.")
                     validateSpec(validator)
                     val childType = validator.getString("type")
                     val nonTextBuiltins = setOf("choice", "fields", "order", "matching", "number_line", "sliders", "coordinates", "geometry")
-                    require(childType !in nonTextBuiltins) { "$type.$key requiere un validador de entrada textual/numeral." }
+                    requireMath(childType !in nonTextBuiltins) { "$type.$key requiere un validador de entrada textual/numeral." }
                 }
             }
             "number_line" -> {
                 number(spec, if (spec.has("value")) "value" else "expected")
-                require(!spec.has("closed") || spec.opt("closed") is Boolean) {
+                requireMath(!spec.has("closed") || spec.opt("closed") is Boolean) {
                     "number_line.closed debe ser booleano."
                 }
-                require(!spec.has("direction") || spec.optString("direction") in setOf("left", "right", "none")) {
+                requireMath(!spec.has("direction") || spec.optString("direction") in setOf("left", "right", "none")) {
                     "number_line.direction debe ser left, right o none."
                 }
             }
             "coordinates" -> {
                 val mode = spec.optString("mode", "point")
-                require(mode in setOf("point", "line", "polygon", "scatter", "parabola")) {
+                requireMath(mode in setOf("point", "line", "polygon", "scatter", "parabola")) {
                     "Modo de coordenadas no soportado: $mode"
                 }
                 val points = points(requiredArray(spec, "expected"))
-                require(points.isNotEmpty()) { "coordinates.expected no puede estar vacío." }
-                require(when (mode) {
+                requireMath(points.isNotEmpty()) { "coordinates.expected no puede estar vacío." }
+                requireMath(when (mode) {
                     "point" -> points.size == 1
                     "line", "parabola" -> points.size == 2
                     "polygon" -> points.size >= 3
                     else -> true
                 }) { "Cantidad de puntos incompatible con el modo $mode." }
-                if (mode == "line") require(distance(points[0], points[1]) > 1e-12) {
+                if (mode == "line") requireMath(distance(points[0], points[1]) > 1e-12) {
                     "Una recta esperada requiere dos puntos distintos."
                 }
                 if (mode == "parabola") parabolaCoefficient(points, 1e-12)
-                if (mode == "polygon") require(MathGeometry.isSimplePolygon(points)) {
+                if (mode == "polygon") requireMath(MathGeometry.isSimplePolygon(points)) {
                     "El polígono esperado debe ser simple y no degenerado."
                 }
             }
             "geometry" -> {
-                require(number(spec, if (spec.has("expected")) "expected" else "area") > 0.0) {
+                requireMath(number(spec, if (spec.has("expected")) "expected" else "area") > 0.0) {
                     "El área esperada debe ser positiva."
                 }
-                require(!spec.has("shape") || spec.optString("shape") in setOf("polygon", "rectangle")) {
+                requireMath(!spec.has("shape") || spec.optString("shape") in setOf("polygon", "rectangle")) {
                     "Forma geométrica no soportada."
                 }
             }
@@ -145,26 +151,26 @@ object MathValidators {
 
     private fun numeric(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val text = (answer as? MathAnswer.Text)?.value ?: return wrongKind()
-        val value = Rational.parse(text) ?: return fail("Escribe un número o una fracción válidos.")
-        if (!value.toDouble().isFinite()) return fail("Escribe un número finito.")
+        val value = Rational.parse(text) ?: return fail(MathUiMessage(R.string.math_ui_valid_number_fraction))
+        if (!value.toDouble().isFinite()) return fail(MathUiMessage(R.string.math_ui_finite_number))
         val expected = Rational.parse(spec.get("expected").toString())
-            ?: return fail("El número esperado no es válido.")
+            ?: return fail(MathUiMessage(R.string.math_ui_invalid_expected_number))
         val tolerance = tolerance(spec, if (spec.optString("type") == "tolerance") 1e-6 else 0.0)
         return result(rationalNear(value, expected, tolerance))
     }
 
     private fun fraction(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val text = (answer as? MathAnswer.Text)?.value ?: return wrongKind()
-        val value = Rational.parse(text) ?: return fail("Escribe una fracción válida; el denominador debe ser distinto de cero.")
+        val value = Rational.parse(text) ?: return fail(MathUiMessage(R.string.math_ui_valid_fraction))
         val expected = Rational.parse(spec.get("expected").toString())
-            ?: return fail("La fracción esperada no es válida.")
+            ?: return fail(MathUiMessage(R.string.math_ui_invalid_expected_fraction))
         val tolerance = tolerance(spec, 0.0)
         return result(rationalNear(value, expected, tolerance))
     }
 
     private fun expression(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val text = (answer as? MathAnswer.Text)?.value ?: return wrongKind()
-        if (text.isBlank()) return fail("Escribe una expresión.")
+        if (text.isBlank()) return fail(MathUiMessage(R.string.math_ui_write_expression))
         val actual = PolynomialExpression.parse(MathExpressionSemantics.polynomialSource(text))
         val expected = PolynomialExpression.parse(MathExpressionSemantics.polynomialSource(spec.getString("expected")))
         return result(actual == expected)
@@ -183,7 +189,7 @@ object MathValidators {
         val expectedTree = (MathLatexParser.parse(expected) as MathLatexParser.Result.Success).expression
         // A puzzle may deliberately request a single sign. For ordinary formulas,
         // structural slots alone cannot detect an unfinished input such as x+.
-        if (!operatorLiteral(expectedTree) && !completeOperands(actualTree)) return fail("Completa los operandos de la expresión matemática.")
+        if (!operatorLiteral(expectedTree) && !completeOperands(actualTree)) return fail(MathUiMessage(R.string.math_ui_complete_operands))
         return result(actual == expected)
     }
 
@@ -232,7 +238,7 @@ object MathValidators {
 
     private fun choice(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val selected = (answer as? MathAnswer.Choice)?.selected ?: return wrongKind()
-        if (selected.isEmpty() || selected.any { it.isBlank() }) return fail("Selecciona una respuesta.")
+        if (selected.isEmpty() || selected.any { it.isBlank() }) return fail(MathUiMessage(R.string.math_ui_select_answer))
         return result(selected == stringList(spec.getJSONArray("expected")).toSet())
     }
 
@@ -240,7 +246,7 @@ object MathValidators {
         val values = (answer as? MathAnswer.Fields)?.values ?: return wrongKind()
         val expected = spec.getJSONObject("fields")
         val keys = expected.keys().asSequence().toSet()
-        if (values.keys != keys) return fail("Completa todos los campos de respuesta.")
+        if (values.keys != keys) return fail(MathUiMessage(R.string.math_ui_complete_fields))
         val results = keys.map { key ->
             key to validate(expected.getJSONObject(key), MathAnswer.Text(values.getValue(key)))
         }
@@ -250,7 +256,7 @@ object MathValidators {
     private fun order(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val ids = (answer as? MathAnswer.Order)?.ids ?: return wrongKind()
         val expected = stringList(spec.getJSONArray("expected"))
-        if (ids.size != expected.size || ids.toSet() != expected.toSet()) return fail("Coloca todas las tarjetas una vez.")
+        if (ids.size != expected.size || ids.toSet() != expected.toSet()) return fail(MathUiMessage(R.string.math_ui_place_all_cards))
         return result(ids == expected)
     }
 
@@ -258,14 +264,14 @@ object MathValidators {
         val pairs = (answer as? MathAnswer.Matching)?.pairs ?: return wrongKind()
         val expected = stringMap(spec.getJSONObject("expected"))
         if (pairs.keys != expected.keys || pairs.values.any { it.isBlank() } || pairs.values.toSet().size != pairs.size) {
-            return fail("Relaciona todas las fichas con destinos distintos.")
+            return fail(MathUiMessage(R.string.math_ui_match_all_tiles))
         }
         return result(pairs == expected)
     }
 
     private fun numberLine(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val value = answer as? MathAnswer.NumberLine ?: return wrongKind()
-        if (!value.value.isFinite() || value.direction !in setOf("left", "right", "none")) return fail("Revisa la posición y la dirección de la recta.")
+        if (!value.value.isFinite() || value.direction !in setOf("left", "right", "none")) return fail(MathUiMessage(R.string.math_ui_check_line))
         val expected = number(spec, if (spec.has("value")) "value" else "expected")
         return result(
             value.value.isFinite() && near(value.value, expected, tolerance(spec)) &&
@@ -278,7 +284,7 @@ object MathValidators {
         val values = (answer as? MathAnswer.Sliders)?.values ?: return wrongKind()
         val expected = spec.getJSONObject("values")
         val keys = expected.keys().asSequence().toSet()
-        if (values.keys != keys || values.values.any { !it.isFinite() }) return fail("Revisa todos los controles.")
+        if (values.keys != keys || values.values.any { !it.isFinite() }) return fail(MathUiMessage(R.string.math_ui_check_controls))
         val results = keys.map { key ->
             val itemValidator = JSONObject(expected.getJSONObject(key).toString())
             // Sliders compute Double values, so their internal roundoff is expected. Text
@@ -291,9 +297,9 @@ object MathValidators {
 
     private fun coordinates(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val actual = (answer as? MathAnswer.Graph)?.points ?: return wrongKind()
-        if (actual.any { !it.x.isFinite() || !it.y.isFinite() }) return fail("Las coordenadas deben ser finitas.")
+        if (actual.any { !it.x.isFinite() || !it.y.isFinite() }) return fail(MathUiMessage(R.string.math_ui_finite_coordinates))
         val expected = points(spec.getJSONArray("expected"))
-        if (actual.size < expected.size) return fail("Completa todos los puntos de la gráfica.")
+        if (actual.size < expected.size) return fail(MathUiMessage(R.string.math_ui_complete_points))
         val tolerance = tolerance(spec)
         val mode = spec.optString("mode", "point")
         val correct = when (mode) {
@@ -303,17 +309,17 @@ object MathValidators {
                 else {
                     val actualSpan = distance(actual[0], actual[1])
                     val span = distance(expected[0], expected[1])
-                    require(actualSpan.isFinite() && span.isFinite()) { "No se pudo evaluar esta recta con coordenadas finitas." }
+                    requireMath(actualSpan.isFinite() && span.isFinite()) { MathUiMessage(R.string.math_ui_evaluate_finite_line) }
                     actualSpan > 1e-12 && span > 1e-12 && actual.all {
                         val offset = abs(cross(expected[0], expected[1], it)) / span
-                        require(offset.isFinite()) { "No se pudo evaluar esta recta con coordenadas finitas." }
+                        requireMath(offset.isFinite()) { MathUiMessage(R.string.math_ui_evaluate_finite_line) }
                         offset <= tolerance
                     }
                 }
             }
             "scatter" -> unorderedPoints(actual, expected, tolerance)
             "polygon" -> {
-                require(MathGeometry.area(actual).isFinite() && MathGeometry.area(expected).isFinite()) { "No se pudo evaluar el área de esta figura." }
+                requireMath(MathGeometry.area(actual).isFinite() && MathGeometry.area(expected).isFinite()) { MathUiMessage(R.string.math_ui_evaluate_area) }
                 cyclicPoints(actual, expected, tolerance)
             }
             "parabola" -> {
@@ -322,28 +328,28 @@ object MathValidators {
                     val expectedA = parabolaCoefficient(expected, 1e-12)
                     val dx = actual[1].x - actual[0].x
                     val dy = actual[1].y - actual[0].y
-                    require(dx.isFinite() && dy.isFinite() && (dx * dx).isFinite()) { "No se pudo evaluar la curvatura de esta parábola." }
-                    if (abs(dx) > 1e-12) require((dy / (dx * dx)).isFinite()) { "No se pudo evaluar la curvatura de esta parábola." }
+                    requireMath(dx.isFinite() && dy.isFinite() && (dx * dx).isFinite()) { MathUiMessage(R.string.math_ui_evaluate_parabola) }
+                    if (abs(dx) > 1e-12) requireMath((dy / (dx * dx)).isFinite()) { MathUiMessage(R.string.math_ui_evaluate_parabola) }
                     val actualA = try { parabolaCoefficient(actual, 1e-12) } catch (_: IllegalArgumentException) { null }
                     actualA != null && near(actualA, expectedA, tolerance)
                 }
             }
-            else -> return fail("Modo de gráfica no soportado: $mode")
+            else -> return fail(MathUiMessage(R.string.math_ui_unsupported_graph_mode, listOf(mode)))
         }
         return result(correct)
     }
 
     private fun geometry(spec: JSONObject, answer: MathAnswer): MathValidationResult {
         val points = (answer as? MathAnswer.Graph)?.points ?: return wrongKind()
-        if (points.size < 3) return fail("Completa todos los vértices del polígono.")
+        if (points.size < 3) return fail(MathUiMessage(R.string.math_ui_complete_vertices))
         if (points.size > 100 || points.any { !it.x.isFinite() || !it.y.isFinite() } || !MathGeometry.area(points).isFinite()) {
-            return fail("No se pudo evaluar esta figura con coordenadas finitas.")
+            return fail(MathUiMessage(R.string.math_ui_evaluate_finite_shape))
         }
-        if (!MathGeometry.isSimplePolygon(points)) return result(false).copy(message = "Construye un polígono sin cruces ni lados de longitud cero.")
+        if (!MathGeometry.isSimplePolygon(points)) return result(false).copy(message = "invalid polygon", uiMessage = MathUiMessage(R.string.math_ui_simple_polygon))
         val expected = number(spec, if (spec.has("expected")) "expected" else "area")
         val tolerance = tolerance(spec)
         if (spec.optString("shape", "polygon") == "rectangle" && !MathGeometry.isRectangle(points, tolerance)) {
-            return result(false).copy(message = "La figura debe ser un rectángulo.")
+            return result(false).copy(message = "rectangle required", uiMessage = MathUiMessage(R.string.math_ui_rectangle_required))
         }
         return result(near(MathGeometry.area(points), expected, tolerance))
     }
@@ -376,23 +382,23 @@ object MathValidators {
     }
 
     private fun parabolaCoefficient(points: List<MathPoint>, epsilon: Double): Double {
-        require(points.size == 2) { "La parábola requiere vértice y otro punto." }
+        requireMath(points.size == 2) { MathUiMessage(R.string.math_ui_parabola_points) }
         val dx = points[1].x - points[0].x
-        require(abs(dx) > epsilon) { "El segundo punto de la parábola debe tener otra coordenada x." }
+        requireMath(abs(dx) > epsilon) { MathUiMessage(R.string.math_ui_parabola_x) }
         val a = (points[1].y - points[0].y) / (dx * dx)
-        require(a.isFinite() && abs(a) > epsilon) { "Los puntos deben definir una parábola no degenerada." }
+        requireMath(a.isFinite() && abs(a) > epsilon) { MathUiMessage(R.string.math_ui_nondegenerate_parabola) }
         return a
     }
 
     private fun tolerance(spec: JSONObject, default: Double = 1e-6): Double {
         val value = if (spec.has("tolerance")) spec.optDouble("tolerance", Double.NaN) else default
-        require(value.isFinite() && value >= 0.0) { "La tolerancia debe ser finita y no negativa." }
+        requireMath(value.isFinite() && value >= 0.0) { MathUiMessage(R.string.math_ui_valid_tolerance) }
         return value
     }
 
     private fun number(spec: JSONObject, key: String): Double {
         val value = Rational.parse(spec.opt(key)?.toString() ?: "")?.toDouble()
-        require(value != null && value.isFinite()) { "validator.$key requiere un número finito." }
+        requireMath(value != null && value.isFinite()) { "validator.$key requiere un número finito." }
         return value
     }
 
@@ -404,18 +410,18 @@ object MathValidators {
 
     private fun stringList(values: JSONArray): List<String> = (0 until values.length()).map {
         val value = values.get(it)
-        require(value is String && value.isNotBlank()) { "Los IDs esperados deben ser textos no vacíos." }
+        requireMath(value is String && value.isNotBlank()) { "Los IDs esperados deben ser textos no vacíos." }
         value
-    }.also { require(it.distinct().size == it.size) { "Los IDs esperados no pueden repetirse." } }
+    }.also { requireMath(it.distinct().size == it.size) { "Los IDs esperados no pueden repetirse." } }
 
     private fun stringMap(values: JSONObject): Map<String, String> = values.keys().asSequence().associateWith {
         val value = values.get(it)
-        require(value is String && it.isNotBlank() && value.isNotBlank()) { "Los pares esperados requieren IDs de texto." }
+        requireMath(value is String && it.isNotBlank() && value.isNotBlank()) { "Los pares esperados requieren IDs de texto." }
         value
     }
 
     private fun points(values: JSONArray): List<MathPoint> {
-        require(values.length() <= 100) { "Máximo 100 puntos por validador." }
+        requireMath(values.length() <= 100) { "Máximo 100 puntos por validador." }
         return (0 until values.length()).map {
             val point = values.optJSONObject(it) ?: throw IllegalArgumentException("Cada punto requiere x e y.")
             MathPoint(number(point, "x"), number(point, "y"))
@@ -432,11 +438,14 @@ object MathValidators {
     private fun combinedResults(results: List<Pair<String, MathValidationResult>>): MathValidationResult {
         // An earlier wrong field must not hide another field's parser/internal error.
         val failure = results.firstOrNull { !it.second.evaluable } ?: results.firstOrNull { !it.second.correct }
-        return failure?.let { (key, checked) -> checked.copy(message = "$key: ${checked.message}") } ?: result(true)
+        return failure?.let { (key, checked) -> checked.copy(message = "$key: ${checked.message}", fieldId = key) } ?: result(true)
     }
-    private fun result(correct: Boolean) = MathValidationResult(correct, if (correct) "¡Correcto!" else "Revisa tu respuesta e inténtalo de nuevo.")
-    private fun fail(message: String) = MathValidationResult(false, message, evaluable = false)
-    private fun wrongKind() = fail("El mecanismo de respuesta no coincide con el validador.")
+    private fun result(correct: Boolean): MathValidationResult {
+        val message = MathUiMessage(if (correct) R.string.math_ui_correct else R.string.math_ui_incorrect)
+        return MathValidationResult(correct, message.diagnostic, uiMessage = message)
+    }
+    private fun fail(message: MathUiMessage) = MathValidationResult(false, message.diagnostic, evaluable = false, uiMessage = message)
+    private fun wrongKind() = fail(MathUiMessage(R.string.math_ui_wrong_answer_kind))
 }
 
 /** Pure polygon helpers; crossings and degeneracy are rejected before area can be accepted. */
@@ -514,7 +523,7 @@ private data class Rational private constructor(val numerator: BigInteger, val d
         val ZERO = of(BigInteger.ZERO, BigInteger.ONE)
         val ONE = of(BigInteger.ONE, BigInteger.ONE)
         fun of(numerator: BigInteger, denominator: BigInteger): Rational {
-            require(denominator != BigInteger.ZERO) { "El denominador debe ser distinto de cero." }
+            requireMath(denominator != BigInteger.ZERO) { MathUiMessage(R.string.math_ui_nonzero_denominator) }
             val sign = if (denominator.signum() < 0) BigInteger.valueOf(-1) else BigInteger.ONE
             val gcd = numerator.gcd(denominator)
             return Rational(numerator / gcd * sign, denominator / gcd * sign)
@@ -530,7 +539,7 @@ private data class Rational private constructor(val numerator: BigInteger, val d
             if (parts.size !in 1..2) return null
             fun decimal(value: String): Rational {
                 val decimal = BigDecimal(value.trim())
-                require(abs(decimal.scale()) <= 1000 && decimal.precision() <= 256)
+                requireMath(abs(decimal.scale()) <= 1000 && decimal.precision() <= 256)
                 return if (decimal.scale() >= 0) of(decimal.unscaledValue(), BigInteger.TEN.pow(decimal.scale()))
                     else of(decimal.unscaledValue() * BigInteger.TEN.pow(-decimal.scale()), BigInteger.ONE)
             }
@@ -547,7 +556,7 @@ private data class Monomial(val powers: Map<String, Int>) {
     fun times(other: Monomial): Monomial {
         val merged = powers.toMutableMap()
         other.powers.forEach { (name, power) -> merged[name] = (merged[name] ?: 0) + power }
-        require(merged.values.sum() <= 16) { UNSUPPORTED_EXPRESSION }
+        requireMath(merged.values.sum() <= 16) { UNSUPPORTED_EXPRESSION }
         return Monomial(merged)
     }
     fun sortKey() = powers.toSortedMap().entries.joinToString(";") { "${it.key}:${it.value}" }
@@ -568,11 +577,11 @@ private data class Polynomial(val terms: Map<Monomial, Rational>) {
     }
     fun divide(other: Polynomial): Polynomial {
         val divisor = other.terms[Monomial(emptyMap())]
-        require(other.terms.size == 1 && divisor != null && !divisor.isZero()) { UNSUPPORTED_EXPRESSION }
+        requireMath(other.terms.size == 1 && divisor != null && !divisor.isZero()) { UNSUPPORTED_EXPRESSION }
         return normalized(terms.mapValues { it.value / divisor })
     }
     fun pow(exponent: Int): Polynomial {
-        require(exponent in 0..8) { UNSUPPORTED_EXPRESSION }
+        requireMath(exponent in 0..8) { UNSUPPORTED_EXPRESSION }
         var value = constant(Rational.ONE)
         repeat(exponent) { value *= this }
         return value
@@ -588,27 +597,27 @@ private data class Polynomial(val terms: Map<Monomial, Rational>) {
         fun variable(name: String) = Polynomial(mapOf(Monomial(mapOf(name to 1)) to Rational.ONE))
         private fun normalized(terms: Map<Monomial, Rational>): Polynomial {
             val cleaned = terms.filterValues { !it.isZero() }
-            require(cleaned.size <= 128) { UNSUPPORTED_EXPRESSION }
+            requireMath(cleaned.size <= 128) { UNSUPPORTED_EXPRESSION }
             return Polynomial(cleaned)
         }
     }
 }
 
-private const val UNSUPPORTED_EXPRESSION = "Expresión no soportada todavía. Usa polinomios, fracciones constantes y π; sin funciones ni división por variables."
+private val UNSUPPORTED_EXPRESSION = MathUiMessage(R.string.math_ui_unsupported_expression)
 
 private data class PolynomialExpression(val polynomial: Polynomial, val equation: Boolean) {
     companion object {
         fun parse(raw: String): PolynomialExpression {
-            require(raw.isNotBlank() && raw.length <= 256) { UNSUPPORTED_EXPRESSION }
+            requireMath(raw.isNotBlank() && raw.length <= 256) { UNSUPPORTED_EXPRESSION }
             val parts = raw.split('=')
-            require(parts.size in 1..2 && parts.all { it.isNotBlank() }) { UNSUPPORTED_EXPRESSION }
+            requireMath(parts.size in 1..2 && parts.all { it.isNotBlank() }) { UNSUPPORTED_EXPRESSION }
             val left = ExpressionParser(parts[0]).parse()
             if (parts.size == 1) {
-                require(left.variables().size <= 1) { UNSUPPORTED_EXPRESSION }
+                requireMath(left.variables().size <= 1) { UNSUPPORTED_EXPRESSION }
                 return PolynomialExpression(left, false)
             }
             val difference = left - ExpressionParser(parts[1]).parse()
-            require(difference.variables().size <= 2) { UNSUPPORTED_EXPRESSION }
+            requireMath(difference.variables().size <= 2) { UNSUPPORTED_EXPRESSION }
             return PolynomialExpression(difference.equationNormalized(), true)
         }
     }
@@ -623,7 +632,7 @@ private class ExpressionParser(raw: String) {
     fun parse(): Polynomial {
         val value = sum()
         skipSpaces()
-        require(position == source.length) { UNSUPPORTED_EXPRESSION }
+        requireMath(position == source.length) { UNSUPPORTED_EXPRESSION }
         return value
     }
 
@@ -647,7 +656,7 @@ private class ExpressionParser(raw: String) {
                 beginsAtom() -> value * unary()
                 else -> return value
             }
-            require(++operations <= 256) { UNSUPPORTED_EXPRESSION }
+            requireMath(++operations <= 256) { UNSUPPORTED_EXPRESSION }
         }
     }
 
@@ -663,34 +672,34 @@ private class ExpressionParser(raw: String) {
         skipSpaces()
         val start = position
         while (position < source.length && source[position].isDigit()) position++
-        require(position > start) { UNSUPPORTED_EXPRESSION }
+        requireMath(position > start) { UNSUPPORTED_EXPRESSION }
         val exponent = source.substring(start, position).toIntOrNull()
-        require(exponent != null && exponent in 0..8) { UNSUPPORTED_EXPRESSION }
+        requireMath(exponent != null && exponent in 0..8) { UNSUPPORTED_EXPRESSION }
         return value.pow(exponent)
     }
 
     private fun atom(): Polynomial {
         skipSpaces()
-        require(position < source.length) { UNSUPPORTED_EXPRESSION }
+        requireMath(position < source.length) { UNSUPPORTED_EXPRESSION }
         if (consume('(')) {
             val value = sum()
-            require(consume(')')) { UNSUPPORTED_EXPRESSION }
+            requireMath(consume(')')) { UNSUPPORTED_EXPRESSION }
             return value
         }
         if (source[position].isDigit() || source[position] == '.') {
             val start = position
             while (position < source.length && (source[position].isDigit() || source[position] == '.')) position++
             val rational = Rational.parse(source.substring(start, position))
-            require(rational != null) { UNSUPPORTED_EXPRESSION }
+            requireMath(rational != null) { UNSUPPORTED_EXPRESSION }
             return Polynomial.constant(rational)
         }
         if (source[position] == 'π') { position++; return Polynomial.variable("pi") }
         if (source.startsWith("pi", position)) { position += 2; return Polynomial.variable("pi") }
         val letter = source[position]
-        require(letter in 'a'..'z' && letter !in setOf('e', 'i')) { UNSUPPORTED_EXPRESSION }
+        requireMath(letter in 'a'..'z' && letter !in setOf('e', 'i')) { UNSUPPORTED_EXPRESSION }
         position++
         // Allow xy as multiplication, but reject function-like identifiers such as sin/cos.
-        require(!source.substring(position - 1).startsWith("sin") &&
+        requireMath(!source.substring(position - 1).startsWith("sin") &&
             !source.substring(position - 1).startsWith("cos") &&
             !source.substring(position - 1).startsWith("tan") &&
             !source.substring(position - 1).startsWith("sqrt") &&

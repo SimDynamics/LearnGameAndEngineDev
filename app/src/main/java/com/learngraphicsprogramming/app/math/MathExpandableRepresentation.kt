@@ -49,7 +49,7 @@ object MathExpandableRepresentation {
                 gravity = Gravity.END or Gravity.CENTER_VERTICAL
                 layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
             }
-            controls.addView(icon(context, accentColor, "Ampliar representación", "math_expand_representation").apply {
+            controls.addView(icon(context, accentColor, context.getString(R.string.math_ui_expand_representation), "math_expand_representation").apply {
                 setOnClickListener { expand(accentColor) }
             })
             addView(controls)
@@ -98,7 +98,7 @@ object MathExpandableRepresentation {
             val exitRow = LinearLayout(context).apply {
                 gravity = Gravity.RIGHT or Gravity.CENTER_VERTICAL
             }
-            val resetZoom = icon(context, accentColor, "Restablecer zoom", "math_reset_representation_zoom").apply {
+            val resetZoom = icon(context, accentColor, context.getString(R.string.math_ui_reset_zoom), "math_reset_representation_zoom").apply {
                 setImageResource(R.drawable.ic_math_reset_zoom)
                 visibility = View.GONE
                 setOnClickListener { expandedHolder.resetZoom() }
@@ -106,7 +106,7 @@ object MathExpandableRepresentation {
             expandedHolder.onZoomChanged = { enlarged -> resetZoom.visibility = if (enlarged) View.VISIBLE else View.GONE }
             exitRow.addView(resetZoom)
             exitRow.addView(View(context), LayoutParams(0, 1, 1f))
-            exitRow.addView(icon(context, accentColor, "Cerrar representación ampliada", "math_exit_representation").apply {
+            exitRow.addView(icon(context, accentColor, context.getString(R.string.math_ui_close_representation), "math_exit_representation").apply {
                 setOnClickListener { dialog.dismiss() }
             })
             column.addView(exitRow, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))

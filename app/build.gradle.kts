@@ -56,6 +56,11 @@ android {
     androidResources {
         generateLocaleConfig = true
     }
+    testOptions {
+        unitTests.all {
+            it.systemProperty("translation.resources", file("src/main/res").absolutePath)
+        }
+    }
     sourceSets {
         getByName("main").jniLibs.srcDir("build/generated/cppRuntime/jniLibs")
     }

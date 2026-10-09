@@ -1,5 +1,7 @@
 package com.learngraphicsprogramming.app.runtime
 
+import com.learngraphicsprogramming.app.R
+import com.learngraphicsprogramming.app.UiLanguageSettings
 import android.content.Context
 import android.system.Os
 import java.io.File
@@ -22,8 +24,8 @@ internal class CppCompiler(private val context: Context) {
         val linkerDirectory = File(runtimeDirectory, "bin").apply { mkdirs() }
         val linker = File(linkerDirectory, "wasm-ld")
 
-        check(clang.isFile) { "No se encontró el ejecutable local de Clang." }
-        check(lldCore.isFile) { "No se encontró el enlazador local de LLVM." }
+        check(clang.isFile) { UiLanguageSettings.localizedContext(context).getString(R.string.math_ui_clang_missing) }
+        check(lldCore.isFile) { UiLanguageSettings.localizedContext(context).getString(R.string.math_ui_llvm_missing) }
 
         linker.delete()
 
@@ -112,10 +114,11 @@ internal class CppCompiler(private val context: Context) {
         return CppCompilationResult(
             exitCode = exitCode,
             stdout = compilerStdout,
-            stderr = if (finished) compilerStderr else "$compilerStderr\nLa compilación superó el límite de tiempo.",
+            stderr = compilerStderr,
             wasmFile = wasmFile.takeIf { exitCode == 0 && it.isFile },
             workspace = workspace,
-            durationMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt)
+            durationMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt),
+            timedOut = !finished
         )
     }
 
@@ -378,5 +381,6 @@ internal data class CppCompilationResult(
     val stderr: String,
     val wasmFile: File?,
     val workspace: File,
-    val durationMillis: Long
+    val durationMillis: Long,
+    val timedOut: Boolean = false
 )

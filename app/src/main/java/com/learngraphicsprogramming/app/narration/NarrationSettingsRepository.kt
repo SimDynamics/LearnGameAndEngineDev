@@ -1,6 +1,7 @@
 package com.learngraphicsprogramming.app.narration
 
 import android.content.Context
+import com.learngraphicsprogramming.app.R
 
 enum class NarrationEngine {
     AUTO,
@@ -120,6 +121,14 @@ object NarrationSettingsRepository {
         return RATES[(index + 1) % RATES.size]
     }
 
+    fun rateLabel(context: Context, rate: Float): String = context.getString(when (normalizedRate(rate)) {
+        0.5f -> R.string.narration_rate_half
+        1.5f -> R.string.narration_rate_one_half
+        2f -> R.string.narration_rate_double
+        else -> R.string.narration_rate_normal
+    })
+
+    // Stable diagnostic labels remain available to non-UI callers.
     fun rateLabel(rate: Float): String = when (normalizedRate(rate)) {
         0.5f -> "0.5X"
         1.5f -> "1.5X"

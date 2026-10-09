@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 import android.content.ClipData
 import android.content.Context
 import android.view.DragEvent
@@ -30,7 +31,7 @@ private class OrderingControl(context: Context, spec: MathResponseSpec, accent: 
     private var nextTapPosition = 0
     private var editable = true
     init {
-        view.addView(MathWidgetUi.text(context, spec.config.optString("label", "Arrastra una tarjeta directamente o toca las tarjetas en el orden deseado.")))
+        view.addView(MathWidgetUi.text(context, spec.config.optString("label", context.getString(R.string.math_ui_ordering_help))))
         val items = MathWidgetUi.objects(spec.config.optJSONArray("items"))
         require(items.isNotEmpty()) { "Faltan tarjetas para ordenar." }
         items.forEach { item ->
@@ -45,7 +46,7 @@ private class OrderingControl(context: Context, spec: MathResponseSpec, accent: 
             }
             card.addView(MathWidgetUi.rich(context, item, accent))
             card.isFocusable = true
-            card.contentDescription = "Ordenar tarjeta $id: ${item.optString("label", id)}"
+            card.contentDescription = context.getString(R.string.math_ui_sort_card, id, item.optString("label", id))
             card.setOnClickListener {
                 if (editable && nextTapPosition < order.size) {
                     move(id, nextTapPosition, notify = false)
@@ -125,13 +126,13 @@ private class MatchingControl(context: Context, spec: MathResponseSpec, private 
     private var selectedSource: String? = null
     private var editable = true
     init {
-        view.addView(MathWidgetUi.text(context, spec.config.optString("label", "Arrastra una ficha a su destino, o toca primero la ficha y después el destino. Toca un destino sin ficha seleccionada para vaciarlo.")))
+        view.addView(MathWidgetUi.text(context, spec.config.optString("label", context.getString(R.string.math_ui_matching_help))))
         val sourceItems = MathWidgetUi.objects(spec.config.optJSONArray("sources"))
         val targetItems = MathWidgetUi.objects(spec.config.optJSONArray("targets"))
         require(sourceItems.isNotEmpty() && targetItems.isNotEmpty()) { "Faltan fichas o destinos." }
-        view.addView(MathWidgetUi.text(context, "Fichas disponibles", true))
+        view.addView(MathWidgetUi.text(context, context.getString(R.string.math_ui_tiles), true))
         sourceList.minimumHeight = MathWidgetUi.dp(context, 48)
-        sourceList.contentDescription = "Fichas disponibles. Arrastra aquí una ficha asignada para liberarla."
+        sourceList.contentDescription = context.getString(R.string.math_ui_available_tiles)
         sourceList.setOnDragListener { _, event ->
             val token = event.localState as? MathDragToken
             if (!editable || token?.owner !== owner) false
@@ -147,7 +148,7 @@ private class MatchingControl(context: Context, spec: MathResponseSpec, private 
             require(id.isNotBlank() && id !in sources) { "ID de ficha vacío o repetido: $id" }
             val card = card(context)
             card.tag = MathInputFocusOrder.GESTURE_OWNER_TAG
-            card.contentDescription = "Seleccionar ficha ${item.optString("label", id)}"
+            card.contentDescription = context.getString(R.string.math_ui_select_tile, item.optString("label", id))
             card.addView(MathWidgetUi.rich(context, item, accent))
             card.setOnClickListener {
                 if (editable) { selectedSource = if (selectedSource == id) null else id; refresh() }
@@ -158,14 +159,14 @@ private class MatchingControl(context: Context, spec: MathResponseSpec, private 
             sources[id] = card
             sourceList.addView(card)
         }
-        view.addView(MathWidgetUi.text(context, "Destinos", true))
+        view.addView(MathWidgetUi.text(context, context.getString(R.string.math_ui_targets), true))
         targetItems.forEach { item ->
             val id = item.getString("id")
             require(id.isNotBlank() && id !in targets) { "ID de destino vacío o repetido: $id" }
             val card = card(context)
-            card.contentDescription = "Destino ${item.optString("label", id)}"
+            card.contentDescription = context.getString(R.string.math_ui_target, item.optString("label", id))
             card.addView(MathWidgetUi.rich(context, item, accent))
-            val assigned = MathWidgetUi.text(context, "Sin asignar")
+            val assigned = MathWidgetUi.text(context, context.getString(R.string.math_ui_unassigned))
             assigned.setTextColor(MathWidgetUi.muted)
             card.addView(assigned)
             val slot = MathWidgetUi.column(context)

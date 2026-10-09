@@ -75,7 +75,7 @@ class OptionsActivity : AppCompatActivity() {
         spinnerAppLanguage.adapter = languageAdapter
         val selectedTag = UiLanguageSettings.selectedTag(this)
         val selectedIndex = languageTags.indexOf(selectedTag).takeIf { it >= 0 }
-            ?: languageTags.indexOf(selectedTag.substringBefore('-')).coerceAtLeast(0)
+            ?: languageTags.indexOf(selectedTag.substringBefore(',').substringBefore('-')).coerceAtLeast(0)
         spinnerAppLanguage.setSelection(selectedIndex)
         spinnerAppLanguage.onItemSelectedListener =
             object : android.widget.AdapterView.OnItemSelectedListener {

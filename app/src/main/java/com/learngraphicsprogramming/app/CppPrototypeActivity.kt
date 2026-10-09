@@ -26,6 +26,11 @@ class CppPrototypeActivity : AppCompatActivity() {
     private var lineWrapEnabled =
         false
 
+    private var statusResource = R.string.cpp_runtime_ready
+    private var statusExitCode: Int? = null
+    private var rawOutput = ""
+    private var compilationTimedOut = false
+
     override fun onCreate(
         savedInstanceState: Bundle?
     ) {
@@ -62,19 +67,14 @@ class CppPrototypeActivity : AppCompatActivity() {
                     ?: SAMPLE_SOURCE
             )
 
-            binding.statusText.text =
-                savedInstanceState.getString(
-                    STATE_STATUS
-                )
-                    ?: getString(
-                        R.string.cpp_runtime_ready
-                    )
+            setStatus(
+                savedInstanceState.getInt(STATE_STATUS, R.string.cpp_runtime_ready),
+                savedInstanceState.takeIf { it.containsKey(STATE_EXIT_CODE) }?.getInt(STATE_EXIT_CODE)
+            )
 
-            binding.outputText.text =
-                savedInstanceState.getString(
-                    STATE_OUTPUT
-                )
-                    .orEmpty()
+            rawOutput = savedInstanceState.getString(STATE_OUTPUT).orEmpty()
+            compilationTimedOut = savedInstanceState.getBoolean(STATE_COMPILATION_TIMED_OUT)
+            showOutput()
 
             lineWrapEnabled =
                 savedInstanceState.getBoolean(
@@ -268,12 +268,13 @@ class CppPrototypeActivity : AppCompatActivity() {
             )
         }
 
-        binding.statusText.setText(
+        setStatus(
             R.string.cpp_runtime_ready
         )
 
-        binding.outputText.text =
-            ""
+        rawOutput = ""
+        compilationTimedOut = false
+        showOutput()
 
         lineWrapEnabled =
             false
@@ -367,12 +368,13 @@ class CppPrototypeActivity : AppCompatActivity() {
         binding.runButton.isEnabled =
             false
 
-        binding.statusText.setText(
+        setStatus(
             R.string.cpp_runtime_running
         )
 
-        binding.outputText.text =
-            ""
+        rawOutput = ""
+        compilationTimedOut = false
+        showOutput()
 
         worker.execute {
 
@@ -399,25 +401,24 @@ class CppPrototypeActivity : AppCompatActivity() {
                     val execution =
                         engineResult.execution
 
-                    binding.statusText.text =
-                        if (
+                    if (
                             execution == null
                         ) {
 
-                            getString(
+                            setStatus(
                                 R.string.cpp_compilation_failed,
                                 compilation.exitCode
                             )
 
                         } else {
 
-                            getString(
+                            setStatus(
                                 R.string.cpp_runtime_finished,
                                 execution.exitCode
                             )
                         }
 
-                    binding.outputText.text =
+                    rawOutput =
                         buildString {
 
                             append(
@@ -441,16 +442,19 @@ class CppPrototypeActivity : AppCompatActivity() {
                                 )
                             }
                         }.trimEnd()
+                    compilationTimedOut = compilation.timedOut
+                    showOutput()
                 }
 
                 result.onFailure { error ->
 
-                    binding.statusText.setText(
+                    setStatus(
                         R.string.cpp_runtime_failed
                     )
 
-                    binding.outputText.text =
-                        error.stackTraceToString()
+                    rawOutput = ""
+                    compilationTimedOut = false
+                    showOutput()
                 }
             }
         }
@@ -465,15 +469,17 @@ class CppPrototypeActivity : AppCompatActivity() {
             binding.sourceCode.text.toString()
         )
 
-        outState.putString(
+        outState.putInt(
             STATE_STATUS,
-            binding.statusText.text.toString()
+            statusResource
         )
+        statusExitCode?.let { outState.putInt(STATE_EXIT_CODE, it) }
 
         outState.putString(
             STATE_OUTPUT,
-            binding.outputText.text.toString()
+            rawOutput
         )
+        outState.putBoolean(STATE_COMPILATION_TIMED_OUT, compilationTimedOut)
 
         outState.putBoolean(
             STATE_WRAP,
@@ -502,6 +508,21 @@ class CppPrototypeActivity : AppCompatActivity() {
                 ).toInt()
     }
 
+    private fun setStatus(resource: Int, exitCode: Int? = null) {
+        statusResource = resource
+        statusExitCode = exitCode
+        binding.statusText.text = if (exitCode == null) getString(resource) else getString(resource, exitCode)
+    }
+
+    private fun showOutput() {
+        binding.outputText.text = when {
+            statusResource == R.string.cpp_runtime_failed -> getString(R.string.math_ui_runtime_error)
+            compilationTimedOut -> listOf(rawOutput, getString(R.string.math_ui_compiler_timeout))
+                .filter { it.isNotEmpty() }.joinToString("\n")
+            else -> rawOutput
+        }
+    }
+
     private companion object {
 
         const val STATE_SOURCE =
@@ -509,6 +530,9 @@ class CppPrototypeActivity : AppCompatActivity() {
 
         const val STATE_STATUS =
             "cpp_prototype_status"
+
+        const val STATE_EXIT_CODE = "cpp_prototype_exit_code"
+        const val STATE_COMPILATION_TIMED_OUT = "cpp_prototype_compilation_timed_out"
 
         const val STATE_OUTPUT =
             "cpp_prototype_output"

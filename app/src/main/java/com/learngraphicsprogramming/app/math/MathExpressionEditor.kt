@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.math
 
+import com.learngraphicsprogramming.app.R
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -130,13 +131,13 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
         if (latex.isBlank()) { composition = null; model.clear(); refresh(); restartIme(); return true }
         val result = MathLatexParser.parse(latex)
         if (result !is MathLatexParser.Result.Success) {
-            lastError = (result as MathLatexParser.Result.Failure).message
+            lastError = (result as MathLatexParser.Result.Failure).resolveMessage(context)
             announceForAccessibility(lastError)
             return false
         }
         val imported = MathExpressionModel()
         val insertion = imported.insertLatex(latex)
-        if (insertion is MathLatexParser.Result.Failure) { lastError = insertion.message; announceForAccessibility(lastError); return false }
+        if (insertion is MathLatexParser.Result.Failure) { lastError = insertion.resolveMessage(context); announceForAccessibility(lastError); return false }
         model.setExpression(imported.expression, MathCursor(offset = imported.expression.children.size))
         composition = null
         refresh()
@@ -328,7 +329,7 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
         ) {
             restartIme()
         }
-        if (!accepted) { lastError = "La expresión supera el tamaño o la profundidad admitidos."; announceForAccessibility(lastError) }
+        if (!accepted) { lastError = context.getString(R.string.math_ui_editor_size); announceForAccessibility(lastError) }
     }
 
     private fun refresh(
@@ -350,11 +351,11 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
             null
 
         contentDescription =
-            "Editor matemático: " +
+            context.getString(R.string.math_ui_editor_description,
                     getLatex()
                         .ifBlank {
-                            "vacío"
-                        }
+                            context.getString(R.string.math_ui_empty)
+                        })
 
         invalidate()
 
@@ -965,9 +966,9 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
 
     private fun showEditMenu() {
         PopupMenu(context, this).apply {
-            menu.add(0, android.R.id.selectAll, 0, "Seleccionar todo")
-            menu.add(0, android.R.id.copy, 1, "Copiar LaTeX")
-            if (isEnabled) { menu.add(0, android.R.id.cut, 2, "Cortar"); menu.add(0, android.R.id.paste, 3, "Pegar") }
+            menu.add(0, android.R.id.selectAll, 0, context.getString(R.string.math_ui_select_all))
+            menu.add(0, android.R.id.copy, 1, context.getString(R.string.math_ui_copy_latex))
+            if (isEnabled) { menu.add(0, android.R.id.cut, 2, context.getString(R.string.math_ui_cut)); menu.add(0, android.R.id.paste, 3, context.getString(R.string.math_ui_paste)) }
             setOnMenuItemClickListener { editCommand(it.itemId) }
             show()
         }
@@ -982,7 +983,7 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
                 val snapshot = model.saveDraft()
                 val selected = model.takeSelection()
                 val text = if (selected.children.isEmpty()) getLatex() else MathLatexSerializer.serialize(selected)
-                clipboard.setPrimaryClip(ClipData.newPlainText("Expresión matemática", text))
+                clipboard.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.math_ui_expression), text))
                 if (id == android.R.id.copy || !isEnabled) model.restoreDraft(snapshot)
                 else if (selected.children.isEmpty()) model.clear()
             }
@@ -991,7 +992,7 @@ class MathExpressionEditor(context: Context) : MathExpressionView(context) {
                 val text = clipboard.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString().orEmpty()
                 if ('\\' in text) {
                     val parsed = model.insertLatex(text)
-                    if (parsed is MathLatexParser.Result.Failure) { lastError = parsed.message; announceForAccessibility(lastError); return false }
+                    if (parsed is MathLatexParser.Result.Failure) { lastError = parsed.resolveMessage(context); announceForAccessibility(lastError); return false }
                 } else if (!model.insertText(text)) return false
             }
             else -> return false

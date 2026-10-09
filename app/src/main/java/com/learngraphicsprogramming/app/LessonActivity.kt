@@ -42,6 +42,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsAnimationCompat
 import android.util.TypedValue
 import android.widget.SeekBar
+import com.learngraphicsprogramming.app.math.mathErrorMessage
 import com.learngraphicsprogramming.app.math.MathPuzzleRenderer
 import com.learngraphicsprogramming.app.math.MathPuzzleTypes
 import com.learngraphicsprogramming.app.math.MathTextScaleAware
@@ -628,7 +629,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         textTopLesson.text =
-            "Lección $lessonNumber"
+            getString(R.string.nav_lesson_number, lessonNumber)
 
         buttonBack.setOnClickListener {
 
@@ -855,9 +856,9 @@ class LessonActivity : AppCompatActivity() {
             if (
                 attemptState.unlimited
             ) {
-                "Intentos ilimitados"
+                getString(R.string.exercise_unlimited_attempts)
             } else {
-                "${attemptState.available} de ${attemptState.maximum} intentos disponibles"
+                getString(R.string.nav_available_attempts, attemptState.available, attemptState.maximum)
             }
 
         /*
@@ -893,9 +894,9 @@ class LessonActivity : AppCompatActivity() {
             if (
                 attemptState.unlimited
             ) {
-                "∞"
+                getString(R.string.lesson_infinity_symbol)
             } else {
-                attemptState.available.toString()
+                getString(R.string.lesson_integer, attemptState.available)
             }
 
         if (
@@ -964,7 +965,7 @@ class LessonActivity : AppCompatActivity() {
                 View.GONE
 
             textAttemptCount.text =
-                attemptState.available.toString()
+                getString(R.string.lesson_integer, attemptState.available)
         }
 
         val percentage =
@@ -979,7 +980,7 @@ class LessonActivity : AppCompatActivity() {
                 )
 
         textAttemptPercent.text =
-            "$percentage%"
+            getString(R.string.lesson_percentage, percentage)
 
         textAttemptPercent.setTextColor(
             attemptColor
@@ -1004,7 +1005,7 @@ class LessonActivity : AppCompatActivity() {
 
         Toast.makeText(
             this,
-            "No tienes intentos disponibles.",
+            getString(R.string.nav_no_attempts),
             Toast.LENGTH_SHORT
         ).show()
 
@@ -1352,9 +1353,9 @@ class LessonActivity : AppCompatActivity() {
                     progress >=
                     1f
                 ) {
-                    "Intento disponible"
+                    getString(R.string.exercise_attempt_available)
                 } else {
-                    "Intento cargado al ${(progress * 100f).toInt()} por ciento"
+                    getString(R.string.exercise_attempt_recharge, (progress * 100f).toInt())
                 }
 
             content.addView(
@@ -1461,7 +1462,7 @@ class LessonActivity : AppCompatActivity() {
          * TAB siempre es fijo.
          */
         addProgrammingShortcutButton(
-            label = "TAB",
+            label = getString(R.string.lesson_tab_label),
             insertedText =
                 KeyboardShortcutSettingsRepository
                     .getTabText()
@@ -1514,7 +1515,7 @@ class LessonActivity : AppCompatActivity() {
 
         button.minWidth =
             if (
-                label == "TAB"
+                label == getString(R.string.lesson_tab_label)
             ) {
                 dp(56)
             } else {
@@ -2211,7 +2212,7 @@ class LessonActivity : AppCompatActivity() {
             )
 
             wrapButton.contentDescription =
-                "Ajuste de línea activado"
+                getString(R.string.exercise_wrap_enabled)
 
         } else {
 
@@ -2261,7 +2262,7 @@ class LessonActivity : AppCompatActivity() {
             )
 
             wrapButton.contentDescription =
-                "Ajuste de línea desactivado"
+                getString(R.string.exercise_wrap_disabled)
 
             codeLines.requestLayout()
         }
@@ -4194,7 +4195,7 @@ class LessonActivity : AppCompatActivity() {
             dp(18).toFloat()
 
         buttonSwipeToggle.text =
-            "Deslizar"
+            getString(R.string.nav_swipe)
 
         if (
             swipeNavigationEnabled
@@ -4295,9 +4296,9 @@ class LessonActivity : AppCompatActivity() {
         val view = TextView(this)
 
         view.text =
-            "Nota\n\n$text"
+            getString(R.string.lesson_note, text)
         if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
-            MathTextRenderer.apply(view, "Nota\n\n$text", mathMode)
+            MathTextRenderer.apply(view, getString(R.string.lesson_note, text), mathMode)
         }
 
         view.setTextColor(
@@ -4478,7 +4479,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         languageLabel.text =
-            "</>  C++"
+            getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
             Color.rgb(
@@ -4523,7 +4524,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         resetButton.contentDescription =
-            "Reiniciar texto"
+            getString(R.string.exercise_reset_text)
 
         resetButton.isEnabled =
             false
@@ -4571,7 +4572,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         copyButton.contentDescription =
-            "Copiar texto"
+            getString(R.string.exercise_copy_text)
 
         copyButton.isClickable =
             true
@@ -4614,7 +4615,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         input.hint =
-            "Escribe el código faltante"
+            getString(R.string.exercise_missing_code)
 
         input.setTextColor(
             Color.WHITE
@@ -4677,7 +4678,7 @@ class LessonActivity : AppCompatActivity() {
             MaterialButton(this)
 
         button.text =
-            "Comprobar"
+            getString(R.string.exercise_check)
 
         button.isAllCaps =
             false
@@ -4750,7 +4751,7 @@ class LessonActivity : AppCompatActivity() {
 
             val clip =
                 ClipData.newPlainText(
-                    "C++",
+                    getString(R.string.lesson_cpp_label),
                     input.text.toString()
                 )
 
@@ -4760,7 +4761,7 @@ class LessonActivity : AppCompatActivity() {
 
             Toast.makeText(
                 this,
-                "Texto copiado",
+                getString(R.string.exercise_text_copied),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -4821,13 +4822,10 @@ class LessonActivity : AppCompatActivity() {
                 false
 
             button.text =
-                "Correcto ✓"
+                getString(R.string.exercise_correct)
 
             result.text =
-                "✓ Correcto\n\n" +
-                        block.optString(
-                            "explanation"
-                        )
+                getString(R.string.lesson_correct_explanation, block.optString("explanation"))
 
             result.setTextColor(
                 Color.rgb(
@@ -4884,7 +4882,7 @@ class LessonActivity : AppCompatActivity() {
                 true
 
             button.text =
-                "Comprobar"
+                getString(R.string.exercise_check)
 
             result.text =
                 ""
@@ -4965,10 +4963,7 @@ class LessonActivity : AppCompatActivity() {
             ) {
 
                 result.text =
-                    "✓ Correcto\n\n" +
-                            block.optString(
-                                "explanation"
-                            )
+                    getString(R.string.lesson_correct_explanation, block.optString("explanation"))
 
                 result.setTextColor(
                     Color.rgb(
@@ -4994,13 +4989,13 @@ class LessonActivity : AppCompatActivity() {
                         false
 
                     button.text =
-                        "Correcto ✓"
+                        getString(R.string.exercise_correct)
                 }
 
             } else {
 
                 result.text =
-                    "✗ Incorrecto"
+                    getString(R.string.exercise_incorrect)
 
                 result.setTextColor(
                     Color.rgb(
@@ -5140,7 +5135,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         languageLabel.text =
-            "</>  C++"
+            getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
             Color.rgb(
@@ -5185,7 +5180,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         resetButton.contentDescription =
-            "Reiniciar texto"
+            getString(R.string.exercise_reset_text)
 
         resetButton.isEnabled =
             false
@@ -5230,7 +5225,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         copyButton.contentDescription =
-            "Copiar texto"
+            getString(R.string.exercise_copy_text)
 
         copyButton.isClickable =
             true
@@ -5262,7 +5257,7 @@ class LessonActivity : AppCompatActivity() {
             EditText(this)
 
         input.hint =
-            "Escribe la salida"
+            getString(R.string.exercise_expected_output)
 
         input.setTextColor(
             Color.WHITE
@@ -5321,7 +5316,7 @@ class LessonActivity : AppCompatActivity() {
             MaterialButton(this)
 
         button.text =
-            "Comprobar"
+            getString(R.string.exercise_check)
 
         button.isAllCaps =
             false
@@ -5393,7 +5388,7 @@ class LessonActivity : AppCompatActivity() {
 
             val clip =
                 ClipData.newPlainText(
-                    "Texto",
+                    getString(R.string.exercise_clipboard_text),
                     input.text.toString()
                 )
 
@@ -5403,7 +5398,7 @@ class LessonActivity : AppCompatActivity() {
 
             Toast.makeText(
                 this,
-                "Texto copiado",
+                getString(R.string.exercise_text_copied),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -5466,13 +5461,10 @@ class LessonActivity : AppCompatActivity() {
                 false
 
             button.text =
-                "Correcto ✓"
+                getString(R.string.exercise_correct)
 
             result.text =
-                "✓ Correcto\n\n" +
-                        block.optString(
-                            "explanation"
-                        )
+                getString(R.string.lesson_correct_explanation, block.optString("explanation"))
 
             result.setTextColor(
                 Color.rgb(
@@ -5529,7 +5521,7 @@ class LessonActivity : AppCompatActivity() {
                 false
 
             button.text =
-                "Comprobar"
+                getString(R.string.exercise_check)
 
             result.text =
                 ""
@@ -5610,10 +5602,7 @@ class LessonActivity : AppCompatActivity() {
             ) {
 
                 result.text =
-                    "✓ Correcto\n\n" +
-                            block.optString(
-                                "explanation"
-                            )
+                    getString(R.string.lesson_correct_explanation, block.optString("explanation"))
 
                 result.setTextColor(
                     Color.rgb(
@@ -5639,13 +5628,13 @@ class LessonActivity : AppCompatActivity() {
                         false
 
                     button.text =
-                        "Correcto ✓"
+                        getString(R.string.exercise_correct)
                 }
 
             } else {
 
                 result.text =
-                    "✗ Incorrecto"
+                    getString(R.string.exercise_incorrect)
 
                 result.setTextColor(
                     Color.rgb(
@@ -5702,7 +5691,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         instruction.text =
-            "Mantén pulsado un bloque y arrástralo hasta la posición correcta."
+            getString(R.string.exercise_order_instruction)
 
         instruction.setTextColor(
             Color.rgb(180, 185, 195)
@@ -5775,7 +5764,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         languageLabel.text =
-            "</>  C++"
+            getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
             Color.rgb(
@@ -5818,7 +5807,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         resetButton.contentDescription =
-            "Reiniciar ejercicio"
+            getString(R.string.exercise_reset)
 
         resetButton.isClickable =
             true
@@ -5859,7 +5848,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         copyButton.contentDescription =
-            "Copiar código"
+            getString(R.string.lesson_copy_code)
 
         copyButton.isClickable =
             true
@@ -5888,7 +5877,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         fullscreenButton.contentDescription =
-            "Pantalla completa"
+            getString(R.string.exercise_fullscreen)
 
         fullscreenButton.isClickable =
             true
@@ -5952,7 +5941,7 @@ class LessonActivity : AppCompatActivity() {
             MaterialButton(this)
 
         checkButton.text =
-            "Comprobar"
+            getString(R.string.exercise_check)
 
         checkButton.isAllCaps =
             false
@@ -6007,7 +5996,7 @@ class LessonActivity : AppCompatActivity() {
                 TextView(this)
 
             number.text =
-                "${i + 1}"
+                getString(R.string.lesson_integer, i + 1)
 
             number.typeface =
                 Typeface.MONOSPACE
@@ -6134,7 +6123,7 @@ class LessonActivity : AppCompatActivity() {
                 closeExerciseFullscreenHost()
 
                 fullscreenButton.contentDescription =
-                    "Pantalla completa"
+                    getString(R.string.exercise_fullscreen)
 
                 return@setOnClickListener
             }
@@ -6206,7 +6195,7 @@ class LessonActivity : AppCompatActivity() {
                 )
 
                 fullscreenButton.contentDescription =
-                    "Salir de pantalla completa"
+                    getString(R.string.exercise_exit_fullscreen)
             }
         }
 
@@ -6734,13 +6723,10 @@ class LessonActivity : AppCompatActivity() {
                 false
 
             checkButton.text =
-                "Correcto ✓"
+                getString(R.string.exercise_correct)
 
             result.text =
-                "✓ Correcto\n\n" +
-                        block.optString(
-                            "explanation"
-                        )
+                getString(R.string.lesson_correct_explanation, block.optString("explanation"))
 
             result.setTextColor(
                 Color.rgb(
@@ -6788,10 +6774,7 @@ class LessonActivity : AppCompatActivity() {
             if (correct) {
 
                 result.text =
-                    "✓ Correcto\n\n" +
-                            block.optString(
-                                "explanation"
-                            )
+                    getString(R.string.lesson_correct_explanation, block.optString("explanation"))
 
                 result.setTextColor(
                     Color.rgb(
@@ -6812,7 +6795,7 @@ class LessonActivity : AppCompatActivity() {
                         false
 
                     checkButton.text =
-                        "Correcto ✓"
+                        getString(R.string.exercise_correct)
 
                     for (
                     i in 0 until
@@ -6830,7 +6813,7 @@ class LessonActivity : AppCompatActivity() {
             } else {
 
                 result.text =
-                    "✗ El orden todavía no es correcto."
+                    getString(R.string.exercise_wrong_order)
 
                 result.setTextColor(
                     Color.rgb(
@@ -6913,7 +6896,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         languageLabel.text =
-            "</>  C++"
+            getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
             Color.rgb(
@@ -6955,7 +6938,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         resetButton.contentDescription =
-            "Reiniciar código"
+            getString(R.string.exercise_reset_code)
 
         resetButton.isClickable =
             true
@@ -6994,7 +6977,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         wrapButton.contentDescription =
-            "Ajuste de línea desactivado"
+            getString(R.string.exercise_wrap_disabled)
 
         wrapButton.isClickable =
             true
@@ -7023,7 +7006,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         copyButton.contentDescription =
-            "Copiar código"
+            getString(R.string.lesson_copy_code)
 
         copyButton.isClickable =
             true
@@ -7052,7 +7035,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         fullscreenButton.contentDescription =
-            "Pantalla completa"
+            getString(R.string.exercise_fullscreen)
 
         fullscreenButton.isClickable =
             true
@@ -8807,7 +8790,7 @@ class LessonActivity : AppCompatActivity() {
             MaterialButton(this)
 
         runButton.text =
-            "Compilar y ejecutar"
+            getString(R.string.cpp_runtime_run)
 
         runButton.isAllCaps =
             false
@@ -8845,7 +8828,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         statusText.text =
-            "Listo para ejecutar."
+            getString(R.string.cpp_runtime_ready)
 
         statusText.textSize =
             18f
@@ -9151,7 +9134,7 @@ class LessonActivity : AppCompatActivity() {
                         View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
 
             fullscreenButton.contentDescription =
-                "Salir de pantalla completa"
+                getString(R.string.exercise_exit_fullscreen)
 
             /*
              * Esperamos al nuevo tamaño disponible.
@@ -9245,7 +9228,7 @@ class LessonActivity : AppCompatActivity() {
                 normalSystemUiVisibility
 
             fullscreenButton.contentDescription =
-                "Pantalla completa"
+                getString(R.string.exercise_fullscreen)
 
             /*
              * Recuperamos el mismo ancho especial
@@ -9342,7 +9325,7 @@ class LessonActivity : AppCompatActivity() {
             }
 
             statusText.text =
-                "Listo para ejecutar."
+                getString(R.string.cpp_runtime_ready)
 
             outputText.text =
                 ""
@@ -9394,9 +9377,9 @@ class LessonActivity : AppCompatActivity() {
                 if (
                     wrapEnabled
                 ) {
-                    "Ajuste de línea activado"
+                    getString(R.string.exercise_wrap_enabled)
                 } else {
-                    "Ajuste de línea desactivado"
+                    getString(R.string.exercise_wrap_disabled)
                 }
 
             sourceCode.post {
@@ -9443,7 +9426,7 @@ class LessonActivity : AppCompatActivity() {
                 false
 
             statusText.text =
-                "Compilando y ejecutando..."
+                getString(R.string.exercise_compiling)
 
             outputText.text =
                 ""
@@ -9478,13 +9461,11 @@ class LessonActivity : AppCompatActivity() {
                                 execution == null
                             ) {
 
-                                "La compilación falló " +
-                                        "(código ${compilation.exitCode})."
+                                getString(R.string.cpp_compilation_failed, compilation.exitCode)
 
                             } else {
 
-                                "Ejecución terminada " +
-                                        "(código ${execution.exitCode})."
+                                getString(R.string.cpp_runtime_finished, execution.exitCode)
                             }
 
                         outputText.text =
@@ -9497,6 +9478,11 @@ class LessonActivity : AppCompatActivity() {
                                 append(
                                     compilation.stderr
                                 )
+
+                                if (compilation.timedOut) {
+                                    append('\n')
+                                    append(getString(R.string.math_ui_compiler_timeout))
+                                }
 
                                 if (
                                     execution != null
@@ -9516,10 +9502,10 @@ class LessonActivity : AppCompatActivity() {
                     result.onFailure { error ->
 
                         statusText.text =
-                            "No se pudo ejecutar."
+                            getString(R.string.exercise_execution_failed)
 
-                        outputText.text =
-                            error.stackTraceToString()
+                        android.util.Log.w("LessonCompiler", "Could not compile or run the source", error)
+                        outputText.text = getString(R.string.exercise_execution_failed)
                     }
                 }
             }.start()
@@ -9697,7 +9683,7 @@ class LessonActivity : AppCompatActivity() {
 
             Toast.makeText(
                 this,
-                "Responde correctamente todos los ejercicios antes de continuar.",
+                getString(R.string.exercise_finish_required),
                 Toast.LENGTH_SHORT
             ).show()
 
@@ -9722,7 +9708,7 @@ class LessonActivity : AppCompatActivity() {
 
             Toast.makeText(
                 this,
-                "Responde correctamente todos los ejercicios antes de continuar.",
+                getString(R.string.exercise_finish_required),
                 Toast.LENGTH_SHORT
             ).show()
 
@@ -9932,7 +9918,7 @@ class LessonActivity : AppCompatActivity() {
         findViewById<TextView>(
             R.id.textTopLesson
         ).text =
-            "Lección $lessonNumber"
+            getString(R.string.nav_lesson_number, lessonNumber)
 
         loadLesson(
             currentLessonId
@@ -10538,7 +10524,7 @@ class LessonActivity : AppCompatActivity() {
 
                 Toast.makeText(
                     this,
-                    "No se encontró la lección.",
+                    getString(R.string.nav_lesson_not_found),
                     Toast.LENGTH_SHORT
                 ).show()
 
@@ -10623,7 +10609,7 @@ class LessonActivity : AppCompatActivity() {
          */
 
         textProgress.text =
-            "${currentPage + 1} de $totalPages"
+            getString(R.string.exercise_page_count, currentPage + 1, totalPages)
 
         lessonProgress.max =
             totalPages
@@ -10641,11 +10627,11 @@ class LessonActivity : AppCompatActivity() {
                 totalPages - 1
             ) {
 
-                "Terminar lección"
+                getString(R.string.nav_finish_lesson)
 
             } else {
 
-                "Continuar"
+                getString(R.string.continue_lesson)
             }
 
         /*
@@ -10945,7 +10931,7 @@ class LessonActivity : AppCompatActivity() {
             renderer.fullscreenButton.setOnClickListener {
                 if (exerciseFullscreenActive) {
                     closeExerciseFullscreenHost()
-                    renderer.fullscreenButton.contentDescription = "Pantalla completa"
+                    renderer.fullscreenButton.contentDescription = getString(R.string.exercise_fullscreen)
                 } else {
                     openExerciseFullscreenHost(usesKeyboard = true) { _, bodyHost, footerHost ->
                         val scroll = ScrollView(this).apply {
@@ -10963,13 +10949,14 @@ class LessonActivity : AppCompatActivity() {
                         MathInputFocusOrder.configure(renderer.view)
                         footerHost.visibility = View.VISIBLE
                         moveViewToExerciseFullscreen(renderer.fullscreenButton, footerHost, FrameLayout.LayoutParams(dp(48), dp(48)).apply { gravity = Gravity.RIGHT })
-                        renderer.fullscreenButton.contentDescription = "Salir de pantalla completa"
+                        renderer.fullscreenButton.contentDescription = getString(R.string.exercise_exit_fullscreen)
                     }
                 }
             }
         } catch (exception: Exception) {
             // Invalid content is visible and remains required instead of silently completing a page.
-            addNote("No se pudo cargar el puzzle matemático: ${exception.message}")
+            android.util.Log.w("LessonMath", "Could not load a math puzzle", exception)
+            addNote(getString(R.string.lesson_math_load_failed, mathErrorMessage(exception)))
         }
     }
 
@@ -11268,7 +11255,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         instruction.text =
-            "Mantén pulsado un bloque y arrástralo hacia un espacio vacío."
+            getString(R.string.exercise_fill_instruction)
 
         instruction.setTextColor(
             Color.rgb(180, 185, 195)
@@ -11369,7 +11356,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         languageLabel.text =
-            "</>  C++"
+            getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
             Color.rgb(
@@ -11417,7 +11404,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         resetButton.contentDescription =
-            "Reiniciar ejercicio"
+            getString(R.string.exercise_reset)
 
         resetButton.isClickable =
             true
@@ -11468,7 +11455,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         wrapButton.contentDescription =
-            "Ajuste de línea desactivado"
+            getString(R.string.exercise_wrap_disabled)
 
         wrapButton.isClickable =
             true
@@ -11498,7 +11485,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         copyButton.contentDescription =
-            "Copiar código"
+            getString(R.string.lesson_copy_code)
 
         copyButton.visibility =
             View.VISIBLE
@@ -11530,7 +11517,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         fullscreenButton.contentDescription =
-            "Pantalla completa"
+            getString(R.string.exercise_fullscreen)
 
         fullscreenButton.isClickable =
             true
@@ -11701,7 +11688,7 @@ class LessonActivity : AppCompatActivity() {
             MaterialButton(this)
 
         checkButton.text =
-            "Comprobar"
+            getString(R.string.exercise_check)
 
         checkButton.isAllCaps =
             false
@@ -11796,7 +11783,7 @@ class LessonActivity : AppCompatActivity() {
                 TextView(this)
 
             number.text =
-                "${lineIndex + 1}"
+                getString(R.string.lesson_integer, lineIndex + 1)
 
             number.typeface =
                 Typeface.MONOSPACE
@@ -12871,7 +12858,7 @@ class LessonActivity : AppCompatActivity() {
                 closeExerciseFullscreenHost()
 
                 fullscreenButton.contentDescription =
-                    "Pantalla completa"
+                    getString(R.string.exercise_fullscreen)
 
                 return@setOnClickListener
             }
@@ -13023,7 +13010,7 @@ class LessonActivity : AppCompatActivity() {
                 )
 
                 fullscreenButton.contentDescription =
-                    "Salir de pantalla completa"
+                    getString(R.string.exercise_exit_fullscreen)
             }
         }
 
@@ -13162,10 +13149,10 @@ class LessonActivity : AppCompatActivity() {
                 false
 
             checkButton.text =
-                "Correcto ✓"
+                getString(R.string.exercise_correct)
 
             result.text =
-                "✓ Correcto"
+                getString(R.string.lesson_correct_feedback)
 
             result.setTextColor(
                 Color.rgb(
@@ -13206,7 +13193,7 @@ class LessonActivity : AppCompatActivity() {
 
                     Toast.makeText(
                         this,
-                        "Completa todos los espacios primero.",
+                        getString(R.string.exercise_complete_blanks),
                         Toast.LENGTH_SHORT
                     ).show()
 
@@ -13236,7 +13223,7 @@ class LessonActivity : AppCompatActivity() {
             if (correct) {
 
                 result.text =
-                    "✓ Correcto"
+                    getString(R.string.lesson_correct_feedback)
 
                 result.setTextColor(
                     Color.rgb(
@@ -13262,7 +13249,7 @@ class LessonActivity : AppCompatActivity() {
                         false
 
                     checkButton.text =
-                        "Correcto ✓"
+                        getString(R.string.exercise_correct)
 
                     for (
                     token in tokens
@@ -13281,7 +13268,7 @@ class LessonActivity : AppCompatActivity() {
             } else {
 
                 result.text =
-                    "✗ Algunos bloques todavía no están en el lugar correcto."
+                    getString(R.string.exercise_wrong_blocks)
 
                 result.setTextColor(
                     Color.rgb(
@@ -13823,8 +13810,8 @@ class LessonActivity : AppCompatActivity() {
             .forEach { state ->
 
                 if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS &&
-                    state.view.contentDescription == "Salir de pantalla completa") {
-                    state.view.contentDescription = "Pantalla completa"
+                    state.view.contentDescription == getString(R.string.exercise_exit_fullscreen)) {
+                    state.view.contentDescription = getString(R.string.exercise_fullscreen)
                 }
 
                 state.view.layoutParams =
@@ -13896,7 +13883,7 @@ class LessonActivity : AppCompatActivity() {
 
                     codeHandle.fullscreenButton
                         .contentDescription =
-                        "Pantalla completa"
+                        getString(R.string.exercise_fullscreen)
 
                     return@setOnClickListener
                 }
@@ -14022,7 +14009,7 @@ class LessonActivity : AppCompatActivity() {
 
                     codeHandle.fullscreenButton
                         .contentDescription =
-                        "Salir de pantalla completa"
+                        getString(R.string.exercise_exit_fullscreen)
                 }
             }
     }
@@ -14109,14 +14096,14 @@ class LessonActivity : AppCompatActivity() {
             ) {
 
                 "cpp",
-                "c++" -> "C++"
+                "c++" -> getString(R.string.lesson_cpp_label)
 
                 else ->
                     language.uppercase()
             }
 
         languageLabel.text =
-            "</>  $readableLanguage"
+            getString(R.string.lesson_code_heading, readableLanguage)
 
         languageLabel.setTextColor(
             Color.rgb(
@@ -14172,7 +14159,7 @@ class LessonActivity : AppCompatActivity() {
             )
 
             resetButton.contentDescription =
-                "Reiniciar ejercicio"
+                getString(R.string.exercise_reset)
 
             resetButton.isEnabled =
                 false
@@ -14219,7 +14206,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         wrapButton.contentDescription =
-            "Ajuste de línea desactivado"
+            getString(R.string.exercise_wrap_disabled)
 
         /*
          * BOTÓN COPIAR
@@ -14261,7 +14248,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         fullscreenButton.contentDescription =
-            "Pantalla completa"
+            getString(R.string.exercise_fullscreen)
 
         fullscreenButton.isClickable =
             true
@@ -14281,7 +14268,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         copyButton.contentDescription =
-            "Copiar código"
+            getString(R.string.lesson_copy_code)
 
         header.addView(
             languageLabel
@@ -14553,7 +14540,7 @@ class LessonActivity : AppCompatActivity() {
                 )
 
                 wrapButton.contentDescription =
-                    "Ajuste de línea activado"
+                    getString(R.string.exercise_wrap_enabled)
 
             } else {
 
@@ -14584,7 +14571,7 @@ class LessonActivity : AppCompatActivity() {
                 )
 
                 wrapButton.contentDescription =
-                    "Ajuste de línea desactivado"
+                    getString(R.string.exercise_wrap_disabled)
             }
 
             codeView.layoutParams =
@@ -14618,7 +14605,7 @@ class LessonActivity : AppCompatActivity() {
 
             val clip =
                 ClipData.newPlainText(
-                    "C++",
+                    getString(R.string.lesson_cpp_label),
                     code
                 )
 
@@ -14761,7 +14748,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         languageLabel.text =
-            "</>  C++"
+            getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
             Color.rgb(
@@ -14803,7 +14790,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         resetButton.contentDescription =
-            "Reiniciar ejercicio"
+            getString(R.string.exercise_reset)
 
         resetButton.isEnabled =
             savedSelectedIndex >= 0 || savedCorrect
@@ -14851,7 +14838,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         copyButton.contentDescription =
-            "Copiar ejercicio"
+            getString(R.string.exercise_copy_exercise)
 
         header.addView(
             languageLabel
@@ -14971,7 +14958,7 @@ class LessonActivity : AppCompatActivity() {
             MaterialButton(this)
 
         button.text =
-            "Comprobar"
+            getString(R.string.exercise_check)
 
         button.isAllCaps =
             false
@@ -15116,7 +15103,7 @@ class LessonActivity : AppCompatActivity() {
                         optionButtons[i].id ==
                         checkedId
                     ) {
-                        builder.append("\nSeleccionado: ")
+                        builder.append(getString(R.string.lesson_selected_prefix))
                         builder.append(
                             options.getString(i)
                         )
@@ -15132,7 +15119,7 @@ class LessonActivity : AppCompatActivity() {
 
             val clip =
                 ClipData.newPlainText(
-                    "Ejercicio",
+                    getString(R.string.exercise_clipboard_exercise),
                     builder.toString()
                 )
 
@@ -15142,7 +15129,7 @@ class LessonActivity : AppCompatActivity() {
 
             Toast.makeText(
                 this,
-                "Ejercicio copiado",
+                getString(R.string.exercise_copied),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -15167,13 +15154,10 @@ class LessonActivity : AppCompatActivity() {
                 false
 
             button.text =
-                "Correcto ✓"
+                getString(R.string.exercise_correct)
 
             result.text =
-                "✓ Correcto\n\n" +
-                        block.optString(
-                            "explanation"
-                        )
+                getString(R.string.lesson_correct_explanation, block.optString("explanation"))
 
             result.setTextColor(
                 Color.rgb(
@@ -15226,7 +15210,7 @@ class LessonActivity : AppCompatActivity() {
                 false
 
             button.text =
-                "Comprobar"
+                getString(R.string.exercise_check)
 
             result.text =
                 ""
@@ -15269,7 +15253,7 @@ class LessonActivity : AppCompatActivity() {
 
                 Toast.makeText(
                     this,
-                    "Selecciona una respuesta.",
+                    getString(R.string.exercise_select_answer),
                     Toast.LENGTH_SHORT
                 ).show()
 
@@ -15327,10 +15311,7 @@ class LessonActivity : AppCompatActivity() {
             ) {
 
                 result.text =
-                    "✓ Correcto\n\n" +
-                            block.optString(
-                                "explanation"
-                            )
+                    getString(R.string.lesson_correct_explanation, block.optString("explanation"))
 
                 result.setTextColor(
                     Color.rgb(
@@ -15360,13 +15341,13 @@ class LessonActivity : AppCompatActivity() {
                         false
 
                     button.text =
-                        "Correcto ✓"
+                        getString(R.string.exercise_correct)
                 }
 
             } else {
 
                 result.text =
-                    "✗ Incorrecto"
+                    getString(R.string.exercise_incorrect)
 
                 result.setTextColor(
                     Color.rgb(
@@ -15502,7 +15483,7 @@ class LessonActivity : AppCompatActivity() {
             TextView(this)
 
         languageLabel.text =
-            "</>  C++"
+            getString(R.string.lesson_code_heading, getString(R.string.lesson_cpp_label))
 
         languageLabel.setTextColor(
             Color.rgb(
@@ -15554,7 +15535,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         resetButton.contentDescription =
-            "Reiniciar ejercicio"
+            getString(R.string.exercise_reset)
 
         resetButton.isClickable =
             true
@@ -15610,7 +15591,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         wrapButton.contentDescription =
-            "Ajuste de línea desactivado"
+            getString(R.string.exercise_wrap_disabled)
 
         wrapButton.isClickable =
             true
@@ -15640,7 +15621,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         copyButton.contentDescription =
-            "Copiar código"
+            getString(R.string.lesson_copy_code)
 
         copyButton.visibility =
             View.VISIBLE
@@ -15672,7 +15653,7 @@ class LessonActivity : AppCompatActivity() {
         )
 
         fullscreenButton.contentDescription =
-            "Pantalla completa"
+            getString(R.string.exercise_fullscreen)
 
         fullscreenButton.isClickable =
             true
@@ -15874,7 +15855,7 @@ class LessonActivity : AppCompatActivity() {
                 TextView(this)
 
             lineNumber.text =
-                "${lineIndex + 1}"
+                getString(R.string.lesson_integer, lineIndex + 1)
 
             lineNumber.typeface =
                 Typeface.MONOSPACE
@@ -16223,7 +16204,7 @@ class LessonActivity : AppCompatActivity() {
             MaterialButton(this)
 
         checkButton.text =
-            "Comprobar"
+            getString(R.string.exercise_check)
 
         checkButton.isAllCaps =
             false
@@ -16362,7 +16343,7 @@ class LessonActivity : AppCompatActivity() {
                 closeExerciseFullscreenHost()
 
                 fullscreenButton.contentDescription =
-                    "Pantalla completa"
+                    getString(R.string.exercise_fullscreen)
 
                 return@setOnClickListener
             }
@@ -16456,7 +16437,7 @@ class LessonActivity : AppCompatActivity() {
                 )
 
                 fullscreenButton.contentDescription =
-                    "Salir de pantalla completa"
+                    getString(R.string.exercise_exit_fullscreen)
 
                 /*
                  * Recalculamos el ajuste de línea porque
@@ -16611,10 +16592,10 @@ class LessonActivity : AppCompatActivity() {
                 false
 
             checkButton.text =
-                "Correcto ✓"
+                getString(R.string.exercise_correct)
 
             result.text =
-                "✓ Correcto"
+                getString(R.string.lesson_correct_feedback)
 
             result.setTextColor(
                 Color.rgb(
@@ -16685,7 +16666,7 @@ class LessonActivity : AppCompatActivity() {
             ) {
 
                 result.text =
-                    "✓ Correcto"
+                    getString(R.string.lesson_correct_feedback)
 
                 result.setTextColor(
                     Color.rgb(
@@ -16719,13 +16700,13 @@ class LessonActivity : AppCompatActivity() {
                         false
 
                     checkButton.text =
-                        "Correcto ✓"
+                        getString(R.string.exercise_correct)
                 }
 
             } else {
 
                 result.text =
-                    "✗ Revisa los espacios del código."
+                    getString(R.string.exercise_wrong_spacing)
 
                 result.setTextColor(
                     Color.rgb(
@@ -16749,7 +16730,7 @@ class LessonActivity : AppCompatActivity() {
 
         val clip =
             android.content.ClipData.newPlainText(
-                "code",
+                getString(R.string.exercise_cpp_code),
                 code
             )
 
@@ -16759,7 +16740,7 @@ class LessonActivity : AppCompatActivity() {
 
         Toast.makeText(
             this,
-            "Código copiado",
+            getString(R.string.code_copied),
             Toast.LENGTH_SHORT
         ).show()
     }
