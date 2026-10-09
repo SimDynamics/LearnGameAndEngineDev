@@ -135,6 +135,12 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
         fclose(diagnostics);
         return kFailure;
     }
+    // On constrained Android devices, avoid Cranelift compiling functions
+    // concurrently while we investigate a crash in wasmtime_module_new().
+    // This only changes the optional Wasmtime backend; WAMR is untouched.
+#ifdef WASMTIME_FEATURE_PARALLEL_COMPILATION
+    wasmtime_config_parallel_compilation_set(config, false);
+#endif
     wasmtime_config_consume_fuel_set(config, true);
     wasmtime_config_wasm_exceptions_set(config, true);
     trace("03 constructing engine", stage.get());
@@ -145,7 +151,39 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
         fprintf(diagnostics, "Wasmtime: no se pudo crear el motor ARM64.\n");
     } else {
         do {
-            trace("05 compiling WASM module", stage.get());
+            // Diagnostic-only Cranelift smoke test with a 36-byte WebAssembly
+            // module exporting an empty _start(). It has no WASI imports.
+            // This separates failures of native Wasm compilation itself from
+            // failures specific to large libc++/iostream-generated modules.
+            if (stage.get() && stage.get()[0]) {
+                static const uint8_t kMinimalWasm[] = {
+                    0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+                    0x01, 0x04, 0x01, 0x60, 0x00, 0x00,
+                    0x03, 0x02, 0x01, 0x00,
+                    0x07, 0x0a, 0x01, 0x06, 0x5f, 0x73,
+                    0x74, 0x61, 0x72, 0x74, 0x00, 0x00,
+                    0x0a, 0x04, 0x01, 0x02, 0x00, 0x0b
+                };
+                trace("04a compiling minimal 36-byte WASM probe", stage.get());
+                wasmtime_module_t *probe_module = nullptr;
+                wasmtime_error_t *probe_error = wasmtime_module_new(
+                    engine, kMinimalWasm, sizeof(kMinimalWasm), &probe_module);
+                if (probe_error) {
+                    trace("04b minimal WASM probe returned error", stage.get());
+                    report_error(diagnostics, probe_error);
+                    if (probe_module) wasmtime_module_delete(probe_module);
+                    break;
+                }
+                if (!probe_module) {
+                    trace("04b minimal WASM probe returned null module", stage.get());
+                    fprintf(diagnostics, "Wasmtime: minimal WASM probe returned null module.\\n");
+                    break;
+                }
+                wasmtime_module_delete(probe_module);
+                trace("04b minimal WASM probe compiled successfully", stage.get());
+            }
+
+            trace("05 compiling full C++ WASM module", stage.get());
             wasmtime_error_t *error = wasmtime_module_new(
                 engine, reinterpret_cast<uint8_t *>(bytes),
                 static_cast<size_t>(byte_count), &module);
