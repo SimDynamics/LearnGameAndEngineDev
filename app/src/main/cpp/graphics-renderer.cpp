@@ -18,12 +18,12 @@
 namespace {
 
 // glslc generates SPIR-V bytecode at build time, not on the phone.
-static const uint32_t kTriangleVertexSpirv[] =
-#include "triangle.vert.inc"
+static const uint32_t kCubeVertexSpirv[] =
+#include "cube.vert.inc"
 ;
 
-static const uint32_t kTriangleFragmentSpirv[] =
-#include "triangle.frag.inc"
+static const uint32_t kCubeFragmentSpirv[] =
+#include "cube.frag.inc"
 ;
 
 thread_local std::string last_error;
@@ -43,8 +43,8 @@ struct GlesRenderer final : Renderer {
     EGLSurface surface = EGL_NO_SURFACE;
     EGLContext context = EGL_NO_CONTEXT;
     GLuint shader_program = 0;
-    GLuint vertices = 0;
     GLint time_uniform = -1;
+    GLint aspect_uniform = -1;
     std::string gpu;
 
     ~GlesRenderer() override {
@@ -53,7 +53,6 @@ struct GlesRenderer final : Renderer {
                 eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, context);
             }
             if (shader_program) glDeleteProgram(shader_program);
-            if (vertices) glDeleteBuffers(1, &vertices);
             if (context != EGL_NO_CONTEXT) eglDestroyContext(display, context);
             if (surface != EGL_NO_SURFACE) eglDestroySurface(display, surface);
             eglTerminate(display);
@@ -83,6 +82,7 @@ struct GlesRenderer final : Renderer {
             EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
             EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
             EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8,
+            EGL_DEPTH_SIZE, 24,
             EGL_NONE
         };
         EGLConfig config = nullptr;
@@ -105,20 +105,89 @@ struct GlesRenderer final : Renderer {
             error = "EGL: no se pudo usar la superficie Android.";
             return false;
         }
+        // Match the Vulkan cube mathematically, using gl_VertexID instead
+        // of uploading a static vertex buffer. Both backends own GPU shaders.
         static const char *vertex_source = R"(#version 300 es
-            layout(location = 0) in vec2 position;
+            precision highp float;
             uniform float elapsed;
+            uniform float aspectRatio;
+            out vec3 worldNormal;
+            out vec3 baseColor;
+
             void main() {
-                float angle = elapsed * 0.8;
-                mat2 rotation = mat2(cos(angle), sin(angle),
-                                     -sin(angle), cos(angle));
-                gl_Position = vec4(rotation * position, 0.0, 1.0);
+                const vec2 corners[6] = vec2[6](
+                    vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(1.0, 1.0),
+                    vec2(-1.0, -1.0), vec2(1.0, 1.0), vec2(-1.0, 1.0)
+                );
+                const vec3 normals[6] = vec3[6](
+                    vec3(0, 0, 1), vec3(0, 0, -1),
+                    vec3(1, 0, 0), vec3(-1, 0, 0),
+                    vec3(0, 1, 0), vec3(0, -1, 0)
+                );
+                const vec3 tangents[6] = vec3[6](
+                    vec3(1, 0, 0), vec3(-1, 0, 0),
+                    vec3(0, 0, -1), vec3(0, 0, 1),
+                    vec3(1, 0, 0), vec3(1, 0, 0)
+                );
+                const vec3 bitangents[6] = vec3[6](
+                    vec3(0, 1, 0), vec3(0, 1, 0),
+                    vec3(0, 1, 0), vec3(0, 1, 0),
+                    vec3(0, 0, -1), vec3(0, 0, 1)
+                );
+                int face = gl_VertexID / 6;
+                vec2 uv = corners[gl_VertexID % 6];
+                vec3 normal = normals[face];
+                vec3 point = 0.72 * (
+                    normal + tangents[face] * uv.x + bitangents[face] * uv.y
+                );
+
+                float yaw = elapsed * 0.65;
+                float cy = cos(yaw);
+                float sy = sin(yaw);
+                mat3 rotateY = mat3(
+                    vec3(cy, 0.0, -sy),
+                    vec3(0.0, 1.0, 0.0),
+                    vec3(sy, 0.0, cy)
+                );
+                float pitch = 0.42 + elapsed * 0.32;
+                float cx = cos(pitch);
+                float sx = sin(pitch);
+                mat3 rotateX = mat3(
+                    vec3(1.0, 0.0, 0.0),
+                    vec3(0.0, cx, sx),
+                    vec3(0.0, -sx, cx)
+                );
+                mat3 rotation = rotateX * rotateY;
+                vec3 cameraPoint = rotation * point + vec3(0.0, 0.0, -4.0);
+
+                float focal = 1.8;
+                float aspect = max(aspectRatio, 0.25);
+                float z = -1.002002 * cameraPoint.z - 0.2002002;
+                gl_Position = vec4(
+                    focal * cameraPoint.x / aspect,
+                    focal * cameraPoint.y,
+                    z,
+                    -cameraPoint.z
+                );
+                worldNormal = rotation * normal;
+                baseColor = vec3(0.19, 0.52, 0.91)
+                          + abs(normal) * vec3(0.56, 0.28, 0.05);
             }
         )";
         static const char *fragment_source = R"(#version 300 es
-            precision mediump float;
+            precision highp float;
+            in vec3 worldNormal;
+            in vec3 baseColor;
             out vec4 color;
-            void main() { color = vec4(0.98, 0.58, 0.16, 1.0); }
+
+            void main() {
+                vec3 lightDirection = normalize(vec3(-0.55, 0.8, 1.0));
+                float diffuse = max(
+                    dot(normalize(worldNormal), lightDirection),
+                    0.0
+                );
+                color = vec4(baseColor * (0.26 + diffuse * 0.74), 1.0);
+            }
         )";
         const GLuint vert = compile_shader(GL_VERTEX_SHADER, vertex_source);
         const GLuint frag = compile_shader(GL_FRAGMENT_SHADER, fragment_source);
@@ -140,11 +209,11 @@ struct GlesRenderer final : Renderer {
             error = "OpenGL ES: fallo al enlazar el programa de shaders.";
             return false;
         }
-        const GLfloat points[] = {0.0f, 0.7f, -0.7f, -0.5f, 0.7f, -0.5f};
-        glGenBuffers(1, &vertices);
-        glBindBuffer(GL_ARRAY_BUFFER, vertices);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
         time_uniform = glGetUniformLocation(shader_program, "elapsed");
+        aspect_uniform = glGetUniformLocation(shader_program, "aspectRatio");
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glClearDepthf(1.0f);
         const auto *renderer = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
         const auto *version = reinterpret_cast<const char *>(glGetString(GL_VERSION));
         gpu = std::string(renderer ? renderer : "GPU desconocida") +
@@ -160,14 +229,13 @@ struct GlesRenderer final : Renderer {
             return false;
         }
         glViewport(0, 0, width, height);
-        glClearColor(0.045f, 0.075f, 0.13f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(0.055f, 0.105f, 0.19f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glUseProgram(shader_program);
         glUniform1f(time_uniform, elapsed_seconds);
-        glBindBuffer(GL_ARRAY_BUFFER, vertices);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glUniform1f(aspect_uniform,
+                    static_cast<float>(width) / static_cast<float>(std::max(1, height)));
+        glDrawArrays(GL_TRIANGLES, 0, 36);
         if (eglSwapBuffers(display, surface) != EGL_TRUE) {
             error = "OpenGL ES: falló eglSwapBuffers.";
             return false;
