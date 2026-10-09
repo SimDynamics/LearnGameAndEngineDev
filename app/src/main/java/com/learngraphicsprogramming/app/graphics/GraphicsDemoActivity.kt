@@ -28,6 +28,16 @@ class GraphicsDemoActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
     private lateinit var preview: SurfaceView
     private lateinit var status: TextView
+    private lateinit var nextSimulationButton: Button
+    private lateinit var loadButton: Button
+    private lateinit var resetButton: Button
+    private lateinit var instructions: TextView
+
+    @Volatile
+    private var currentSimulation = GraphicsNative.SCENE_PHYSICS
+
+    @Volatile
+    private var benchmarkSide = 8
 
     private var preferredBackend = GraphicsNative.BACKEND_AUTO
     private var surfaceReady = false
@@ -48,7 +58,7 @@ class GraphicsDemoActivity : AppCompatActivity(), SurfaceHolder.Callback {
             setPadding(dp(12), dp(12), dp(12), dp(12))
         }
         root.addView(TextView(this).apply {
-            text = "Simulación de física 3D"
+            text = "Laboratorio gráfico · Física / GPU"
             textSize = 21f
             setTextColor(Color.WHITE)
             setPadding(0, dp(4), 0, dp(12))
@@ -62,19 +72,49 @@ class GraphicsDemoActivity : AppCompatActivity(), SurfaceHolder.Callback {
         addBackendButton(backends, "OpenGL ES", GraphicsNative.BACKEND_OPENGL_ES)
         root.addView(backends)
 
-        root.addView(Button(this).apply {
+        nextSimulationButton = Button(this).apply {
+            text = "Siguiente simulación: Benchmark GPU →"
+            isAllCaps = false
+            setOnClickListener {
+                currentSimulation = if (currentSimulation == GraphicsNative.SCENE_PHYSICS) {
+                    GraphicsNative.SCENE_GPU_BENCHMARK
+                } else {
+                    GraphicsNative.SCENE_PHYSICS
+                }
+                updateSimulationControls()
+            }
+        }
+        root.addView(nextSimulationButton)
+
+        loadButton = Button(this).apply {
+            isAllCaps = false
+            setOnClickListener {
+                benchmarkSide = when (benchmarkSide) {
+                    8 -> 16
+                    16 -> 32
+                    else -> 8
+                }
+                updateSimulationControls()
+            }
+        }
+        root.addView(loadButton)
+
+        resetButton = Button(this).apply {
             text = "Reiniciar objetos"
             isAllCaps = false
             setOnClickListener {
                 pendingTouches.add(TouchCommand(GraphicsNative.TOUCH_RESET))
             }
-        })
-        root.addView(TextView(this).apply {
-            text = "Toca una esfera, arrástrala y suéltala. La velocidad del dedo determina la fuerza."
+        }
+        root.addView(resetButton)
+
+        instructions = TextView(this).apply {
             textSize = 13f
             setTextColor(Color.rgb(182, 197, 215))
             setPadding(0, dp(5), 0, dp(7))
-        })
+        }
+        root.addView(instructions)
+        updateSimulationControls()
 
         status = TextView(this).apply {
             text = "Preparando simulación..."
@@ -96,6 +136,7 @@ class GraphicsDemoActivity : AppCompatActivity(), SurfaceHolder.Callback {
     }
 
     private fun onPreviewTouch(event: MotionEvent): Boolean {
+        if (currentSimulation != GraphicsNative.SCENE_PHYSICS) return true
         val width = preview.width.toFloat().coerceAtLeast(1f)
         val height = preview.height.toFloat().coerceAtLeast(1f)
         val x = (event.x / width).coerceIn(0f, 1f)
@@ -151,6 +192,26 @@ class GraphicsDemoActivity : AppCompatActivity(), SurfaceHolder.Callback {
             }
         }
         return true
+    }
+
+    private fun updateSimulationControls() {
+        val gpu = currentSimulation == GraphicsNative.SCENE_GPU_BENCHMARK
+        nextSimulationButton.text = if (gpu) {
+            "Simulación anterior: Física interactiva ←"
+        } else {
+            "Siguiente simulación: Benchmark GPU →"
+        }
+        loadButton.visibility = if (gpu) android.view.View.VISIBLE else android.view.View.GONE
+        resetButton.visibility = if (gpu) android.view.View.GONE else android.view.View.VISIBLE
+        if (gpu) {
+            val objects = benchmarkSide * benchmarkSide
+            loadButton.text = "Carga GPU: " + objects + " esferas (cambiar nivel)"
+            instructions.text = "Geometría 3D animada por GPU mediante instancing. " +
+                "Los FPS incluyen CPU, controladores, presentación y sincronización."
+        } else {
+            instructions.text = "Toca una esfera, arrástrala y suéltala. " +
+                "La velocidad del dedo determina la fuerza."
+        }
     }
 
     private fun addBackendButton(row: LinearLayout, label: String, backend: Int) {
@@ -234,27 +295,43 @@ class GraphicsDemoActivity : AppCompatActivity(), SurfaceHolder.Callback {
 
                     val now = System.nanoTime()
                     val elapsed = (now - started) / 1_000_000_000f
-                    if (!GraphicsNative.draw(handle, elapsed)) {
+                    val simulation = currentSimulation
+                    val side = benchmarkSide
+                    if (!GraphicsNative.draw(handle, elapsed, simulation, side)) {
                         showStatus("Motor gráfico detenido: " + GraphicsNative.lastError())
                         break
                     }
                     frameCount++
 
                     val dt = (now - previousStats) / 1_000_000_000f
-                    if (dt >= 0.7f) {
+                    if (dt >= 0.5f) {
                         val fps = frameCount / dt
+                        val msPerFrame = if (fps > 0f) 1000f / fps else 0f
+                        val sceneDescription = if (simulation == GraphicsNative.SCENE_GPU_BENCHMARK) {
+                            val objects = side * side
+                            val vertices = objects * 16 * 12 * 6
+                            "Benchmark GPU · " + objects + " esferas · " +
+                                vertices + " vértices/fotograma"
+                        } else {
+                            "Física interactiva · " + GraphicsNative.stats(handle)
+                        }
                         showStatus(
-                            rendererName + "\n" +
-                            GraphicsNative.stats(handle) +
-                            "\n" + String.format(java.util.Locale.US, "%.1f FPS", fps)
+                            rendererName + "\n" + sceneDescription + "\n" +
+                                String.format(
+                                    java.util.Locale.US,
+                                    "%.1f FPS · %.2f ms/fotograma (tiempo total)",
+                                    fps, msPerFrame
+                                )
                         )
                         previousStats = now
                         frameCount = 0
                     }
-                    try {
-                        Thread.sleep(8)
-                    } catch (_: InterruptedException) {
-                        break
+                    if (simulation == GraphicsNative.SCENE_PHYSICS) {
+                        try {
+                            Thread.sleep(8)
+                        } catch (_: InterruptedException) {
+                            break
+                        }
                     }
                 }
             } finally {
