@@ -51,20 +51,25 @@ Java_com_learngraphicsprogramming_app_runtime_WasiRuntime_execute(
         jbyteArray wasm_bytes,
         jstring working_directory,
         jstring stdout_path,
-        jstring stderr_path) {
+        jstring stderr_path,
+        jstring stdin_path) {
     std::lock_guard<std::mutex> lock(runtime_mutex);
 
     UtfChars work_dir(env, working_directory);
     UtfChars stdout_file(env, stdout_path);
     UtfChars stderr_file(env, stderr_path);
+    UtfChars stdin_file(env, stdin_path);
     if (wasm_bytes == nullptr || work_dir.get() == nullptr ||
-        stdout_file.get() == nullptr || stderr_file.get() == nullptr) {
+        stdout_file.get() == nullptr || stderr_file.get() == nullptr ||
+        stdin_file.get() == nullptr) {
         return kRuntimeFailure;
     }
 
+    const int stdin_fd = open(stdin_file.get(), O_RDONLY);
     const int stdout_fd = open(stdout_file.get(), O_CREAT | O_TRUNC | O_WRONLY, 0600);
     const int stderr_fd = open(stderr_file.get(), O_CREAT | O_TRUNC | O_WRONLY, 0600);
-    if (stdout_fd < 0 || stderr_fd < 0) {
+    if (stdin_fd < 0 || stdout_fd < 0 || stderr_fd < 0) {
+        if (stdin_fd >= 0) close(stdin_fd);
         if (stdout_fd >= 0) close(stdout_fd);
         if (stderr_fd >= 0) close(stderr_fd);
         return kRuntimeFailure;
@@ -76,6 +81,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasiRuntime_execute(
 
     if (!wasm_runtime_full_init(&init_args)) {
         write_error(stderr_fd, "WAMR no pudo inicializar el entorno de ejecución.");
+        close(stdin_fd);
         close(stdout_fd);
         close(stderr_fd);
         return result;
@@ -114,7 +120,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasiRuntime_execute(
                 0,
                 nullptr,
                 0,
-                -1,
+                stdin_fd,
                 stdout_fd,
                 stderr_fd);
     }
@@ -152,6 +158,7 @@ cleanup:
         env->ReleaseByteArrayElements(wasm_bytes, bytes, JNI_ABORT);
     }
     wasm_runtime_destroy();
+    close(stdin_fd);
     close(stdout_fd);
     close(stderr_fd);
     return result;
