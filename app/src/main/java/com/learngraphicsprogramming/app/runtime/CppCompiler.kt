@@ -48,6 +48,30 @@ internal class CppCompiler(private val context: Context) {
 
         val sysroot = File(runtimeDirectory, "sysroot")
         val resourceDirectory = File(runtimeDirectory, "resource")
+        val useCppExceptions = BuildConfig.LGP_CPP_EXCEPTIONS_ENABLED
+
+        // Official WASI SDK 34 has distinct EH and no-EH C++ headers.
+        val cppHeaders = File(
+            sysroot,
+            if (useCppExceptions) "include/wasm32-wasip1/eh/c++/v1"
+            else "include/wasm32-wasip1/c++/v1"
+        )
+        check(cppHeaders.isDirectory) {
+            "Faltan las cabeceras C++ del entorno WASI: ${cppHeaders.absolutePath}"
+        }
+
+        val exceptionFlags =
+            if (useCppExceptions) listOf(
+                "-fwasm-exceptions",
+                "-mllvm", "-wasm-use-legacy-eh=false"
+            ) else listOf("-fno-exceptions")
+
+        val exceptionLinkFlags =
+            if (useCppExceptions) listOf(
+                "-L${File(sysroot, "lib/wasm32-wasip1/eh").absolutePath}",
+                "-lunwind"
+            ) else emptyList()
+
         val command = listOf(
             clang.absolutePath,
             "--driver-mode=g++",
@@ -55,29 +79,19 @@ internal class CppCompiler(private val context: Context) {
             "--sysroot=${sysroot.absolutePath}",
             "-resource-dir=${resourceDirectory.absolutePath}",
             "-isystem",
-            File(sysroot, "include/wasm32-wasip1/c++/v1").absolutePath,
-            // The C++23 language mode is available on both compiler variants.
-            // Native Clang 23 must be verified on-device before broad use.
-            // C++ exceptions still need the matching exception-enabled sysroot.
-            "-std=c++23",
-            // The packaged WASI C++ sysroot uses libraries built without exception handling.
-            // Keep code generation consistent with that runtime until an EH-capable
-            // sysroot and a compatible WebAssembly executor are integrated.
-            "-fno-exceptions",
-
-            /*
-             * Diagnósticos compactos para aprendizaje.
-             */
+            cppHeaders.absolutePath,
+            "-std=c++23"
+        ) + exceptionFlags + listOf(
+            // Keep learning-oriented diagnostics compact in both modes.
             "-ferror-limit=1",
             "-fshow-overloads=best",
-
             "-static",
             "-O0",
             "-g0",
             sourceFile.absolutePath,
-            "-Wl,--strip-all",
-            "-o",
-            wasmFile.absolutePath
+            "-Wl,--strip-all"
+        ) + exceptionLinkFlags + listOf(
+            "-o", wasmFile.absolutePath
         )
 
         val process = ProcessBuilder(command)
@@ -360,29 +374,49 @@ internal class CppCompiler(private val context: Context) {
     private fun prepareRuntime(): File {
         val runtimeDirectory = File(context.filesDir, "cpp-runtime/wasi-sdk-34")
         val marker = File(runtimeDirectory, ".ready")
-        if (marker.takeIf(File::isFile)?.readText() == RUNTIME_VERSION) return runtimeDirectory
+        val expectedVersion =
+            if (BuildConfig.LGP_CPP_EXCEPTIONS_ENABLED) "$RUNTIME_VERSION-eh-experiment-1"
+            else RUNTIME_VERSION
+        if (marker.takeIf(File::isFile)?.readText() == expectedVersion) return runtimeDirectory
 
         runtimeDirectory.deleteRecursively()
         runtimeDirectory.mkdirs()
-        context.assets.open("runtime/wasi-runtime.zip").use { input ->
-            ZipInputStream(input.buffered()).use { archive ->
-                while (true) {
-                    val entry = archive.nextEntry ?: break
-                    val output = File(runtimeDirectory, entry.name).canonicalFile
-                    check(output.path.startsWith(runtimeDirectory.canonicalPath + File.separator)) {
-                        "Entrada no segura en el sysroot: ${entry.name}"
+
+        // Both assets are bundled at build time. No executable is downloaded.
+        // The EH overlay replaces target headers/libs only in experimental APKs.
+        fun unpackAsset(assetName: String, destination: File) {
+            val canonicalRoot = destination.canonicalPath + File.separator
+            context.assets.open(assetName).use { input ->
+                ZipInputStream(input.buffered()).use { archive ->
+                    while (true) {
+                        val entry = archive.nextEntry ?: break
+                        val output = File(destination, entry.name).canonicalFile
+                        check(output.path.startsWith(canonicalRoot)) {
+                            "Entrada no segura en el sysroot: ${entry.name}"
+                        }
+                        if (entry.isDirectory) {
+                            output.mkdirs()
+                        } else {
+                            output.parentFile?.mkdirs()
+                            output.outputStream().buffered().use(archive::copyTo)
+                        }
+                        archive.closeEntry()
                     }
-                    if (entry.isDirectory) {
-                        output.mkdirs()
-                    } else {
-                        output.parentFile?.mkdirs()
-                        output.outputStream().buffered().use(archive::copyTo)
-                    }
-                    archive.closeEntry()
                 }
             }
         }
-        marker.writeText(RUNTIME_VERSION)
+
+        unpackAsset("runtime/wasi-runtime.zip", runtimeDirectory)
+        if (BuildConfig.LGP_CPP_EXCEPTIONS_ENABLED) {
+            unpackAsset("runtime/wasi-eh-sysroot.zip", File(runtimeDirectory, "sysroot"))
+            val ehLibraries = File(runtimeDirectory, "sysroot/lib/wasm32-wasip1/eh")
+            listOf("libc++.a", "libc++abi.a", "libunwind.a").forEach { name ->
+                check(File(ehLibraries, name).isFile) {
+                    "Biblioteca de excepciones WASI ausente: $name"
+                }
+            }
+        }
+        marker.writeText(expectedVersion)
         return runtimeDirectory
     }
 
