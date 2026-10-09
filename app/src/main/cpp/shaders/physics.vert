@@ -39,6 +39,46 @@ void main() {
         normal = vec3(sin(latitude) * cos(longitude),
                       cos(latitude),
                       sin(latitude) * sin(longitude));
+        if (kind == 3) {
+            // Independent GPU benchmark. One instanced draw produces an NxN
+            // field of animated 3D spheres without CPU per-object updates.
+            int side = max(1, int(objectState.camera.z + 0.5));
+            int column = gl_InstanceIndex % side;
+            int row = gl_InstanceIndex / side;
+
+            float phase = objectState.camera.x * 0.85 +
+                          float(gl_InstanceIndex) * 0.157;
+            float cp = cos(phase);
+            float sp = sin(phase);
+            vec3 rotated = vec3(
+                cp * normal.x + sp * normal.z,
+                normal.y * cos(phase * 0.47) - normal.z * sin(phase * 0.47),
+                -sp * normal.x + cp * normal.z
+            );
+            rotated = normalize(rotated);
+
+            float gap = 0.85 / float(side);
+            vec2 center = (
+                (vec2(float(column), float(row)) + 0.5)
+                / float(side) * 2.0 - 1.0
+            ) * 0.94;
+
+            gl_Position = vec4(
+                center.x + rotated.x * gap,
+                -(center.y + rotated.y * gap),
+                0.50 - rotated.z * 0.12,
+                1.0
+            );
+            worldNormal = rotated;
+            baseColor = 0.28 + 0.62 * vec3(
+                0.5 + 0.5 * sin(float(gl_InstanceIndex) * 0.21),
+                0.5 + 0.5 * sin(float(gl_InstanceIndex) * 0.37 + 1.5),
+                0.5 + 0.5 * cos(float(gl_InstanceIndex) * 0.13 + 0.6)
+            );
+            worldPosition = rotated;
+            objectKind = 3;
+            return;
+        }
         world = objectState.transform.xyz + normal * objectState.transform.w;
     }
 
