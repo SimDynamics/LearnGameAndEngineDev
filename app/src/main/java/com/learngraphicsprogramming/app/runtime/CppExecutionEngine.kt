@@ -5,10 +5,10 @@ import android.content.Context
 internal class CppExecutionEngine(context: Context) {
     private val compiler = CppCompiler(context.applicationContext)
 
-    fun compileAndRun(source: String): CppEngineResult {
+    fun compileAndRun(source: String, standardInput: String = ""): CppEngineResult {
         val compilation = compiler.compile(source)
         val wasmFile = compilation.wasmFile ?: return CppEngineResult(compilation, null)
-        val execution = WasiRuntime.run(wasmFile.readBytes(), compilation.workspace)
+        val execution = WasiRuntime.run(wasmFile.readBytes(), compilation.workspace, standardInput)
         return CppEngineResult(compilation, execution)
     }
 }
