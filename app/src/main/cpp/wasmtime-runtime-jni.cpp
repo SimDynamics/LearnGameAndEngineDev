@@ -2,6 +2,7 @@
 // This code is compiled only when -Plgp.wasmtime=true is set.
 // WAMR remains available for regression comparison.
 #include <jni.h>
+#include <android/log.h>
 
 #include <cstdint>
 #include <cstdio>
@@ -16,6 +17,10 @@
 namespace {
 
 std::mutex s_runtime_mutex;
+constexpr const char *kTraceTag = "LGP-Wasmtime";
+void trace(const char *phase) {
+    __android_log_print(ANDROID_LOG_INFO, kTraceTag, "%s", phase);
+}
 constexpr jint kFailure = -1;
 constexpr size_t kMaxModuleBytes = 32 * 1024 * 1024;
 constexpr int64_t kMemoryLimitBytes = 256 * 1024 * 1024;
@@ -73,6 +78,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
         jstring stdout_path,
         jstring stderr_path,
         jstring stdin_path) {
+    trace("00 JNI execute entered");
     std::lock_guard<std::mutex> lock(s_runtime_mutex);
     JniString working(env, work_dir);
     JniString out(env, stdout_path);
@@ -94,6 +100,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
         return kFailure;
     }
 
+    trace("01 WASM size accepted; acquiring bytes");
     jbyte *bytes = env->GetByteArrayElements(wasm_bytes, nullptr);
     if (!bytes) {
         fclose(diagnostics);
@@ -107,15 +114,25 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
 
     // Wasmtime compiles the WebAssembly module and executes it inside
     // a new store, with limited memory and finite instruction fuel.
+    trace("02 constructing wasm_config");
     wasm_config_t *config = wasm_config_new();
+    if (!config) {
+        fprintf(diagnostics, "Wasmtime: error al crear wasm_config.\n");
+        env->ReleaseByteArrayElements(wasm_bytes, bytes, JNI_ABORT);
+        fclose(diagnostics);
+        return kFailure;
+    }
     wasmtime_config_consume_fuel_set(config, true);
     wasmtime_config_wasm_exceptions_set(config, true);
+    trace("03 constructing engine");
     wasm_engine_t *engine = wasm_engine_new_with_config(config);
+    trace("04 engine creation returned");
 
     if (!engine) {
         fprintf(diagnostics, "Wasmtime: no se pudo crear el motor ARM64.\n");
     } else {
         do {
+            trace("05 compiling WASM module");
             wasmtime_error_t *error = wasmtime_module_new(
                 engine, reinterpret_cast<uint8_t *>(bytes),
                 static_cast<size_t>(byte_count), &module);
@@ -124,6 +141,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
+            trace("06 module compiled; constructing store");
             store = wasmtime_store_new(engine, nullptr, nullptr);
             if (!store) {
                 fprintf(diagnostics, "Wasmtime: no se pudo crear el almacén.\n");
@@ -137,7 +155,12 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
+            trace("07 fuel/store ready; configuring WASI");
             wasi_config_t *wasi = wasi_config_new();
+            if (!wasi) {
+                fprintf(diagnostics, "Wasmtime: error al crear wasi_config.\n");
+                break;
+            }
             if (!wasi_config_set_stdin_file(wasi, in.get()) ||
                 !wasi_config_set_stdout_file(wasi, out.get()) ||
                 !wasi_config_set_stderr_file(wasi, err.get()) ||
@@ -153,6 +176,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
             fclose(diagnostics);
             diagnostics = nullptr;
 
+            trace("08 applying WASI config");
             error = wasmtime_context_set_wasi(context, wasi);
             // Ownership of wasi is transferred even if this call fails.
             if (error) {
@@ -161,6 +185,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
+            trace("09 creating WASI linker");
             linker = wasmtime_linker_new(engine);
             error = wasmtime_linker_define_wasi(linker);
             if (error) {
@@ -169,6 +194,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
+            trace("10 instantiating WASM module");
             wasmtime_instance_t instance{};
             wasm_trap_t *trap = nullptr;
             error = wasmtime_linker_instantiate(linker, context, module, &instance, &trap);
@@ -179,6 +205,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
+            trace("11 WASM instantiated; resolving _start");
             wasmtime_extern_t function{};
             if (!wasmtime_instance_export_get(context, &instance, "_start", 6, &function) ||
                 function.kind != WASMTIME_EXTERN_FUNC) {
@@ -187,8 +214,10 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
+            trace("12 calling _start");
             error = wasmtime_func_call(context, &function.of.func,
                                       nullptr, 0, nullptr, 0, &trap);
+            trace("13 _start call returned");
             wasmtime_extern_delete(&function);
             if (error) {
                 int exit_status = 0;
@@ -210,11 +239,13 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
         } while (false);
     }
 
+    trace("14 cleanup started");
     if (linker) wasmtime_linker_delete(linker);
     if (store) wasmtime_store_delete(store);
     if (module) wasmtime_module_delete(module);
     if (engine) wasm_engine_delete(engine);
     env->ReleaseByteArrayElements(wasm_bytes, bytes, JNI_ABORT);
     if (diagnostics) fclose(diagnostics);
+    trace("15 JNI execute completed");
     return code;
 }
