@@ -176,7 +176,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 }
                 if (!probe_module) {
                     trace("04b minimal WASM probe returned null module", stage.get());
-                    fprintf(diagnostics, "Wasmtime: minimal WASM probe returned null module.\\n");
+                    fprintf(diagnostics, "Wasmtime: minimal WASM probe returned null module.\n");
                     break;
                 }
                 wasmtime_module_delete(probe_module);
