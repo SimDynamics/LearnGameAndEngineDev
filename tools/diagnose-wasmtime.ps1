@@ -23,6 +23,7 @@ $filteredLog = Join-Path $logDirectory "wasmtime-crash-filtered.txt"
 $gradleLog = Join-Path $logDirectory "gradle-test-output.txt"
 $liveLog = Join-Path $logDirectory "android-live-logcat.txt"
 $liveErrors = Join-Path $logDirectory "android-live-errors.txt"
+$phaseLog = Join-Path $logDirectory "cpp-runtime-phase.txt"
 
 Write-Host "Limpiando logcat para reproducir el cierre..." -ForegroundColor Cyan
 & $adb logcat -c
@@ -94,6 +95,29 @@ try {
         $ErrorActionPreference = $previousErrorPreference
     }
 
+    # When logcat is missing, retrieve persistent checkpoints from app-private storage.
+    # These markers contain stages only, no source code or standard input.
+    try {
+        $ErrorActionPreference = "Continue"
+        $checkpointOutput = & $adb exec-out run-as com.learngraphicsprogramming.app `
+            cat files/cpp-runtime-phase.txt 2>&1
+        $checkpointExit = $LASTEXITCODE
+        if ($checkpointExit -eq 0 -and $checkpointOutput) {
+            $checkpointOutput | Set-Content -Path $phaseLog -Encoding UTF8
+        } else {
+            @(
+                "No se pudo recuperar el archivo privado de etapas.",
+                "Codigo ADB: $checkpointExit",
+                "Detalle: $($checkpointOutput | Out-String)"
+            ) | Set-Content -Path $phaseLog -Encoding UTF8
+        }
+    } catch {
+        "No se pudieron recuperar las etapas JNI: $($_.Exception.Message)" |
+            Set-Content -Path $phaseLog -Encoding UTF8
+    } finally {
+        $ErrorActionPreference = $previousErrorPreference
+    }
+
     # Always create the filtered artifact so its path is predictable.
     if (-not (Test-Path $rawLog)) {
         "ADB no pudo crear logcat. Error: $collectionError" |
@@ -123,6 +147,10 @@ try {
     $rawBytes = if (Test-Path $rawLog) { (Get-Item $rawLog).Length } else { 0 }
     $summary.Add("Live logcat bytes: $liveBytes; final snapshot bytes: $rawBytes")
     if ($collectionError) { $summary.Add("Collector warning: $collectionError") }
+    $summary.Add("")
+    $summary.Add("=== PERSISTENT CPP / JNI STAGES ===")
+    $phaseText = Get-Content -Path $phaseLog -Raw -ErrorAction SilentlyContinue
+    if ($phaseText) { $summary.Add($phaseText) }
     $summary.Add("")
     $summary.Add("=== ANDROID LOGCAT ===")
     $nativeText = Get-Content -Path $filteredLog -Raw -ErrorAction SilentlyContinue
@@ -167,6 +195,7 @@ try {
     Write-Host "Diagnóstico filtrado: $filteredLog" -ForegroundColor Green
     Write-Host "Logcat completo: $rawLog"
     Write-Host "Logcat en vivo: $liveLog"
+    Write-Host "Etapas privadas de C++/JNI: $phaseLog"
     Write-Host "Salida Gradle: $gradleLog"
     if ($collectionError) {
         Write-Host "Detalle adicional: $collectionError" -ForegroundColor Yellow
