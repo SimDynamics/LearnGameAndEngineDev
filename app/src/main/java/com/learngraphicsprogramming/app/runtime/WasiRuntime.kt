@@ -15,7 +15,12 @@ internal object WasiRuntime {
         stdinPath: String
     ): Int
 
-    fun run(wasmBytes: ByteArray, workingDirectory: File, standardInput: String = ""): WasiExecutionResult {
+    fun run(
+        wasmBytes: ByteArray,
+        workingDirectory: File,
+        standardInput: String = "",
+        diagnosticPath: String? = null
+    ): WasiExecutionResult {
         workingDirectory.mkdirs()
         val stdoutFile = File(workingDirectory, "stdout.txt")
         val stderrFile = File(workingDirectory, "stderr.txt")
@@ -32,7 +37,8 @@ internal object WasiRuntime {
                 workingDirectory.absolutePath,
                 stdoutFile.absolutePath,
                 stderrFile.absolutePath,
-                stdinFile.absolutePath
+                stdinFile.absolutePath,
+                diagnosticPath ?: ""
             )
         } else {
             execute(
