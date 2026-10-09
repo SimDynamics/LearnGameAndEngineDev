@@ -1,5 +1,6 @@
 package com.learngraphicsprogramming.app.runtime
 
+import com.learngraphicsprogramming.app.BuildConfig
 import com.learngraphicsprogramming.app.R
 import com.learngraphicsprogramming.app.UiLanguageSettings
 import android.content.Context
@@ -19,7 +20,13 @@ internal class CppCompiler(private val context: Context) {
         val sourceFile = File(workspace, "main.cpp").apply { writeText(source) }
         val wasmFile = File(workspace, "program.wasm")
         val nativeDirectory = File(context.applicationInfo.nativeLibraryDir)
-        val clang = File(nativeDirectory, "libfoldclang.so")
+        // Experimental LLVM 23 uses its own native Clang + LLD pair.
+        // Normal builds continue to use the validated FoldCode LLVM 21 pair.
+        val clang = File(
+            nativeDirectory,
+            if (BuildConfig.LGP_CLANG23_ENABLED) "liblgp_clang23.so"
+            else "libfoldclang.so"
+        )
         val lldCore = File(nativeDirectory, "libfoldlldcore.so")
         val linkerDirectory = File(runtimeDirectory, "bin").apply { mkdirs() }
         val linker = File(linkerDirectory, "wasm-ld")
@@ -32,7 +39,8 @@ internal class CppCompiler(private val context: Context) {
         Os.symlink(
             File(
                 nativeDirectory,
-                "liblgp_wasm_ld.so"
+                if (BuildConfig.LGP_CLANG23_ENABLED) "liblgp_lld23.so"
+                else "liblgp_wasm_ld.so"
             ).absolutePath,
             linker.absolutePath
         )
@@ -47,9 +55,9 @@ internal class CppCompiler(private val context: Context) {
             "-resource-dir=${resourceDirectory.absolutePath}",
             "-isystem",
             File(sysroot, "include/wasm32-wasip1/c++/v1").absolutePath,
-            // Current Clang 21 supports the C++23 language mode. Full C++23
-            // library and wasm exceptions need the future verified Clang 23
-            // Android host build plus the official exception-enabled sysroot.
+            // The C++23 language mode is available on both compiler variants.
+            // Native Clang 23 must be verified on-device before broad use.
+            // C++ exceptions still need the matching exception-enabled sysroot.
             "-std=c++23",
             // The packaged WASI C++ sysroot uses libraries built without exception handling.
             // Keep code generation consistent with that runtime until an EH-capable
@@ -75,7 +83,9 @@ internal class CppCompiler(private val context: Context) {
             .directory(workspace)
             .apply {
                 environment()["LD_LIBRARY_PATH"] = nativeDirectory.absolutePath
-                environment()["LGP_LLD_CORE"] = lldCore.absolutePath
+                if (!BuildConfig.LGP_CLANG23_ENABLED) {
+                    environment()["LGP_LLD_CORE"] = lldCore.absolutePath
+                }
                 environment()["PATH"] = "${linkerDirectory.absolutePath}:/system/bin:/system/xbin"
                 environment()["TMPDIR"] = workspace.absolutePath
                 environment()["HOME"] = workspace.absolutePath
