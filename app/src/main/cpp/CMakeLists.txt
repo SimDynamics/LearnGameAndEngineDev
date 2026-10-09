@@ -30,10 +30,44 @@ include("${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake")
 
 add_library(wamr_runtime STATIC ${WAMR_RUNTIME_LIB_SOURCE})
 
+
+# The Android NDK ships glslc. Compile GLSL to SPIR-V C initializers while
+# building the native library, so the APK does not require a shader compiler.
+file(GLOB LGP_SHADER_TOOL_DIRS "${ANDROID_NDK}/shader-tools/*")
+find_program(LGP_GLSLC
+        NAMES glslc glslc.exe
+        PATHS ${LGP_SHADER_TOOL_DIRS}
+        NO_DEFAULT_PATH)
+if (NOT LGP_GLSLC)
+    message(FATAL_ERROR "glslc not found in Android NDK shader-tools; install the NDK shader tools")
+endif ()
+
+set(LGP_GENERATED_SHADERS "${CMAKE_CURRENT_BINARY_DIR}/generated-shaders")
+file(MAKE_DIRECTORY "${LGP_GENERATED_SHADERS}")
+
+foreach (LGP_SHADER_STAGE IN ITEMS vert frag)
+    set(LGP_SHADER_SOURCE
+            "${CMAKE_CURRENT_SOURCE_DIR}/shaders/triangle.${LGP_SHADER_STAGE}")
+    set(LGP_SHADER_OUTPUT
+            "${LGP_GENERATED_SHADERS}/triangle.${LGP_SHADER_STAGE}.inc")
+    add_custom_command(
+            OUTPUT "${LGP_SHADER_OUTPUT}"
+            COMMAND "${LGP_GLSLC}" -c -mfmt=c
+                    "${LGP_SHADER_SOURCE}" -o "${LGP_SHADER_OUTPUT}"
+            DEPENDS "${LGP_SHADER_SOURCE}"
+            VERBATIM)
+    list(APPEND LGP_GENERATED_SHADER_FILES "${LGP_SHADER_OUTPUT}")
+endforeach ()
+
+add_custom_target(lgp_vulkan_shaders DEPENDS ${LGP_GENERATED_SHADER_FILES})
+
 add_library(${CMAKE_PROJECT_NAME} SHARED
         native-lib.cpp
         wasi-runtime-jni.cpp
         graphics-renderer.cpp)
+
+add_dependencies(${CMAKE_PROJECT_NAME} lgp_vulkan_shaders)
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE "${LGP_GENERATED_SHADERS}")
 
 add_executable(lgp_wasm_ld wasm-lld-wrapper.cpp)
 set_target_properties(lgp_wasm_ld PROPERTIES
