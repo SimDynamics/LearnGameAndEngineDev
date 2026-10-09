@@ -12,6 +12,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.File
 
 /**
  * End-to-end Android ARM64 verification for the experimental Clang 23 + LLD 23 pair.
@@ -74,6 +75,27 @@ class Clang23CompilationInstrumentedTest {
         assertNotNull("WASM execution was skipped", execution)
         assertEquals("WASM execution error: ${execution!!.stderr}", 0, execution.exitCode)
         assertEquals("Unexpected standard output", expectedOutput, execution.stdout)
+    }
+
+    @Test
+    fun clang23ApkDoesNotShipFoldCodeCompilerLibraries() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val nativeDirectory = File(context.applicationInfo.nativeLibraryDir)
+
+        assertTrue(File(nativeDirectory, "liblgp_clang23.so").isFile)
+        assertTrue(File(nativeDirectory, "liblgp_lld23.so").isFile)
+
+        listOf(
+            "libfoldclang.so",
+            "libfoldlldcore.so",
+            "libLLVM.so",
+            "libclang-cpp.so"
+        ).forEach { name ->
+            assertFalse(
+                "Clang 21 dependency remains in the Clang 23 APK: $name",
+                File(nativeDirectory, name).exists()
+            )
+        }
     }
 
     @Test
