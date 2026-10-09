@@ -302,12 +302,56 @@ val prepareWasiSdk34Reference by tasks.registering {
         }
         if (!archive.isFile || hash(archive) != expected) {
             archive.delete()
-            logger.lifecycle("Descargando WASI SDK 34 oficial (183 MiB)...")
-            URI(url).toURL().openStream().buffered().use { src ->
-                archive.outputStream().buffered().use(src::copyTo)
+            logger.lifecycle("Conectando a la descarga oficial de WASI SDK 34...")
+            val connection = URI(url).toURL().openConnection().apply {
+                connectTimeout = 30_000
+                readTimeout = 120_000
             }
+            val contentLength = connection.contentLengthLong
+            val mib = 1024.0 * 1024.0
+            var downloadedBytes = 0L
+            var lastProgressNanos = System.nanoTime()
+            logger.lifecycle("Descargando WASI SDK 34; avance cada 4 segundos...")
+
+            try {
+                connection.getInputStream().buffered().use { src ->
+                    archive.outputStream().buffered().use { destination ->
+                        val buffer = ByteArray(1024 * 1024)
+                        while (true) {
+                            val count = src.read(buffer)
+                            if (count < 0) break
+                            destination.write(buffer, 0, count)
+                            downloadedBytes += count
+
+                            val now = System.nanoTime()
+                            if (now - lastProgressNanos >= 4_000_000_000L) {
+                                val downloadedMiB = (downloadedBytes / mib).toInt()
+                                if (contentLength > 0L) {
+                                    val percent = downloadedBytes * 100 / contentLength
+                                    logger.lifecycle(
+                                        "WASI SDK 34: ${downloadedMiB} MiB / " +
+                                            "${(contentLength / mib).toInt()} MiB (${percent}%)"
+                                    )
+                                } else {
+                                    logger.lifecycle("WASI SDK 34: ${downloadedMiB} MiB descargados")
+                                }
+                                lastProgressNanos = now
+                            }
+                        }
+                    }
+                }
+            } catch (error: Exception) {
+                archive.delete()
+                throw error
+            }
+            logger.lifecycle(
+                "Descarga completa: ${(downloadedBytes / mib).toInt()} MiB. Verificando SHA-256..."
+            )
+        } else {
+            logger.lifecycle("WASI SDK 34 encontrado en caché; SHA-256 correcto.")
         }
         check(hash(archive) == expected) { "El SHA256 de WASI SDK 34 no coincide." }
+        logger.lifecycle("SHA-256 correcto. Extrayendo bibliotecas WASI SDK 34...")
 
         val root = sdkDirectory.get().asFile
         root.deleteRecursively()
