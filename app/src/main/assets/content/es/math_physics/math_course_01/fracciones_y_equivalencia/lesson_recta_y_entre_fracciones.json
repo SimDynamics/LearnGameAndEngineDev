@@ -1,0 +1,404 @@
+{
+  "id": "math_course_01__fracciones_y_equivalencia__recta_y_entre_fracciones",
+  "title": "Fracciones en la recta: distancia y números intermedios",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una fracción determina una posición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una recta exige el mismo origen y la misma unidad para comparar sus puntos. La unidad es el segmento de cero a uno; puede contener muchas marcas. A la izquierda de cero aparecen los negativos. Contar intervalos, en vez de rayitas, permite leer un punto aunque su etiqueta esté oculta."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recta_negativa_octavos",
+          "prompt": "La distancia de −1 a 0 representa una unidad, dividida en cuartos. El punto señalado está exactamente a mitad de camino entre las dos marcas vecinas. Escribe su posición como fracción reducida con denominador positivo.",
+          "representations": [
+            {
+              "type": "math_number_line",
+              "mode": "read_value",
+              "min": -2,
+              "max": 0,
+              "step": 0.25,
+              "value": -1.375,
+              "closed": true,
+              "direction": "none",
+              "showValueLabel": false
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador positivo",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-11"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada medio intervalo de un cuarto vale un octavo. Desde cero hay once octavos a la izquierda: −11/8 = −1−3/8.",
+            "incorrect": "El punto no coincide con una marca de cuarto: queda a mitad de un intervalo. Refina cuartos a octavos y conserva la dirección negativa."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distancia_y_posicion",
+          "prompt": "Un punto está en −7/6. Escribe su distancia al cero y cuánto falta para llegar a 1/3 avanzando a la derecha.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "distancia",
+                  "type": "numeric",
+                  "label": "Distancia al cero"
+                },
+                {
+                  "id": "avance",
+                  "type": "numeric",
+                  "label": "Avance hasta 1/3"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "distancia": {
+                    "type": "numeric",
+                    "expected": "7/6"
+                  },
+                  "avance": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La distancia al cero es 7/6. El avance es 1/3−(−7/6) = 3/2: se atraviesa cero y se continúa un tercio.",
+            "incorrect": "La posición lleva signo; una distancia no es negativa. Restar −7/6 exige sumar su opuesto para medir el avance."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La diferencia entre dos posiciones mide el desplazamiento dirigido. Para una distancia entre puntos, se usa la diferencia positiva entre el mayor y el menor. Esto recupera la resta con signos y le da una interpretación geométrica."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "separacion_fracciones",
+          "prompt": "Dos marcas están en 5/8 y 11/12. ¿Qué distancia las separa?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "7/24"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "11/12 = 22/24 y 5/8 = 15/24. La distancia es 7/24 de unidad.",
+            "incorrect": "Sumar las posiciones mide otra relación. La distancia se obtiene restando la menor posición de la mayor."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Entre dos fracciones hay otras"
+        },
+        {
+          "type": "paragraph",
+          "text": "Entre 1/3 y 2/3 está 1/2. Podemos verlo con sextos: 2/6 < 3/6 < 4/6. Si dos fracciones parecen consecutivas bajo una partición, refinamos esa partición. Entre 1/5 y 2/5 hay 3/10, porque 2/10 < 3/10 < 4/10. No existe un «siguiente racional» inmediato."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "intermedio_positivo",
+          "prompt": "7/12 y 2/3 se escriben como 14/24 y 16/24. Construye la fracción que queda exactamente a mitad de camino; usa denominador 24.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "15"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "24"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "15/24 está un veinticuatroavo de cada extremo. Se puede reducir a 5/8, pero aquí los campos muestran la construcción en veinticuatroavos.",
+            "incorrect": "14/24 y 16/24 son extremos, no puntos interiores. La partición refinada deja un numerador entero entre catorce y dieciséis."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "intermedio_negativo",
+          "prompt": "Construye con denominador 16 una fracción estrictamente entre −3/4 y −5/8.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-11"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "16"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−3/4 = −12/16 y −5/8 = −10/16; entre ellos está −11/16. Es el único numerador entero intermedio con ese denominador.",
+            "incorrect": "−13/16 quedaría a la izquierda de ambos; −9/16 a la derecha. Entre negativos también se conserva el orden de los numeradores cuando el denominador es el mismo y positivo."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Una construcción general consiste en tomar el punto medio. Si a < b, la distancia b−a es positiva. Desde a avanzamos la mitad de esa distancia: a+(b−a)/2 = (a+b)/2. Avanzamos algo, pero menos que la distancia completa; por eso el nuevo número queda entre ambos. Si a y b son racionales, estas operaciones producen otro racional."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "punto_medio",
+          "prompt": "Encuentra el punto medio entre −2/5 y 1/10.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "-3/20"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La suma es −3/10 y su mitad es −3/20. Está entre −8/20 y 2/20.",
+            "incorrect": "La suma sola no es el punto medio: también se divide entre dos. El signo del punto medio depende de la posición de los extremos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sin_siguiente_racional",
+          "prompt": "Se afirma que 1/100 y 2/100 son racionales consecutivos. ¿Qué contraejemplo refuta la afirmación?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "3/200, porque 2/200 < 3/200 < 4/200."
+                },
+                {
+                  "id": "b",
+                  "label": "3/100, porque tres es mayor que dos."
+                },
+                {
+                  "id": "c",
+                  "label": "0, porque todo intervalo contiene cero."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Refinar centésimos a doscientosavos produce un punto interior: 3/200. Se puede repetir el refinamiento.",
+            "incorrect": "3/100 queda fuera del intervalo y cero también. Un contraejemplo debe cumplir las dos desigualdades."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperación sin anunciar el método"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "varios_interiores",
+          "prompt": "Selecciona todos los números estrictamente entre −1/2 y 1/4.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−3/8"
+                },
+                {
+                  "id": "b",
+                  "label": "−1/2"
+                },
+                {
+                  "id": "c",
+                  "label": "1/8"
+                },
+                {
+                  "id": "d",
+                  "label": "1/3"
+                },
+                {
+                  "id": "e",
+                  "label": "0"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−3/8, 0 y 1/8 quedan dentro. −1/2 es un extremo excluido y 1/3 supera 1/4.",
+            "incorrect": "La palabra «entre» impone dos comparaciones. El signo por sí solo no basta para decidir si un número pertenece al intervalo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "unidad_doble",
+          "prompt": "La misma longitud mide 3/4 de una unidad A. Una unidad B mide el doble que A. ¿Cuánto mide la longitud en unidades B?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "3/2 de B."
+                },
+                {
+                  "id": "b",
+                  "label": "3/4 de B."
+                },
+                {
+                  "id": "c",
+                  "label": "3/8 de B."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Como A equivale a media B, tres cuartos de A son tres octavos de B. Una unidad mayor produce un número de medida menor para la misma longitud.",
+            "incorrect": "3/2 duplicaría la cantidad física. Mantener 3/4 olvida que cambió la unidad, aunque la longitud permaneció igual."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,372 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__paridad_y_argumentos",
+  "title": "Paridad: reconocer patrones y justificar",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Las formas sirven también con negativos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ser par significa tener un factor dos. La forma 2k permite ver ese factor sin conocer las cifras. Ser impar significa tener uno más que un par: 2k + 1. El entero k puede ser negativo o cero. Por ejemplo, −8 = 2 × (−4), −7 = 2 × (−4) + 1 y 0 = 2 × 0."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "paridad_negativa",
+          "prompt": "Completa los enteros k de estas representaciones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "paridad_negativa__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "−12 = 2k",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "−11 = 2k + 1",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En ambos casos k = −6. −12 es par y −11 es impar; un signo negativo no impide clasificar la paridad.",
+            "incorrect": "La letra representa un entero que puede ser negativo. Para el impar, quita primero la unidad extra y encuentra el factor de dos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_paridad",
+          "prompt": "¿Qué argumento clasifica correctamente al cero?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_paridad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es impar porque no hay parejas de objetos."
+                },
+                {
+                  "id": "b",
+                  "label": "Es par porque 0 = 2 × 0."
+                },
+                {
+                  "id": "c",
+                  "label": "No tiene paridad porque no es positivo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La definición por producto incluye cero: es múltiplo de dos y por tanto par.",
+            "incorrect": "La paridad se define para todos los enteros, no solo positivos. Cero parejas corresponden a cero objetos sin sobrante."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Suma y resta sin calcular números grandes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos pares suman un par; dos impares también, porque sus unidades sueltas forman una pareja. Un par y un impar suman un impar. La resta tiene el mismo patrón de paridad: el opuesto de un par es par y el opuesto de un impar es impar, así que restar puede interpretarse como sumar ese opuesto."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resta_paridad",
+          "prompt": "Sin calcular la diferencia completa, ¿qué puedes asegurar de 2047 − 1359?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resta_paridad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es impar porque ambas cifras finales son impares."
+                },
+                {
+                  "id": "b",
+                  "label": "Es par porque se resta un impar de otro impar."
+                },
+                {
+                  "id": "c",
+                  "label": "No se puede decidir sin calcular todo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Es impar más el opuesto de un impar: suma de dos impares, por tanto par. La diferencia es 688 y confirma el patrón.",
+            "incorrect": "Las dos cantidades son impares, pero la resta no conserva la paridad de un único término. El patrón permite decidir antes de hacer toda la cuenta."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_paridad_general",
+          "prompt": "Si p es un entero par y q es un entero impar, ¿qué justifica que p + q sea impar?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "suma_paridad_general__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "p + q = 2k + (2m + 1) = 2(k + m) + 1."
+                },
+                {
+                  "id": "b",
+                  "label": "Todos los números grandes son impares."
+                },
+                {
+                  "id": "c",
+                  "label": "Un ejemplo como 2 + 3 = 5 demuestra todos los casos por sí solo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La forma dos veces un entero más uno es exactamente la definición de impar. Vale para cualquier k y m enteros.",
+            "incorrect": "Un ejemplo ilustra la idea, pero no abarca todos los enteros. El tamaño no decide la paridad."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Paridad de productos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un factor es par, el producto contiene su factor dos: (2k)b = 2(kb). Por eso es par aunque b sea impar, negativo o cero. Si ambos factores son impares, escribe uno como 2k + 1: (2k + 1)b = 2kb + b. El primer sumando es par y b es impar; la suma y, por tanto, el producto son impares."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_impares",
+          "prompt": "¿Qué puedes asegurar del producto de dos enteros impares?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_impares__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Siempre es par porque hay dos factores."
+                },
+                {
+                  "id": "b",
+                  "label": "Es impar; un factor puede separarse en un par más uno y el producto queda par más impar."
+                },
+                {
+                  "id": "c",
+                  "label": "Puede tener cualquier paridad sin ninguna condición."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La estructura del producto demuestra que queda una parte par más un impar. El signo de los factores no cambia esa conclusión.",
+            "incorrect": "Contar dos factores no es contar parejas de unidades. El producto de impares, como 3 × 5, no contiene un factor dos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_tres_factores_paridad",
+          "prompt": "Sin calcular el producto completo, ¿qué afirmación describe (−15) × 8 × 7?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_tres_factores_paridad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es negativo y par."
+                },
+                {
+                  "id": "b",
+                  "label": "Es positivo e impar."
+                },
+                {
+                  "id": "c",
+                  "label": "Es negativo e impar."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Un único factor negativo da signo negativo; el factor 8 garantiza paridad par. Son dos decisiones independientes.",
+            "incorrect": "El signo no decide la paridad. El ocho conserva un factor dos dentro de todo el producto."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuadrados y lo que permiten deducir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un cuadrado es el producto de un entero por sí mismo. Si el entero es par, el producto es par; si es impar, el producto de dos impares es impar. También funciona la conclusión hacia atrás: si un cuadrado es par, su base entera no puede ser impar, porque entonces el cuadrado sería impar. Por tanto la base es par."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "paridad_cuadrado_reciproca",
+          "prompt": "Se sabe que n es entero y n² es impar. ¿Qué conclusión es segura?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "paridad_cuadrado_reciproca__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "n es necesariamente positivo."
+                },
+                {
+                  "id": "b",
+                  "label": "n es par."
+                },
+                {
+                  "id": "c",
+                  "label": "n es impar, aunque podría ser negativo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Si n fuera par, su cuadrado sería par. Por eso n debe ser impar. Por ejemplo, (−3)² también es impar.",
+            "incorrect": "La paridad del cuadrado no determina el signo de su base. La conclusión segura es sobre paridad."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencias_menos_uno",
+          "prompt": "Calcula estas potencias sin multiplicar muchos factores uno a uno.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencias_menos_uno__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "(−1)⁶",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "(−1)⁷",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Seis signos negativos se emparejan y dan 1. Con siete queda un signo negativo: −1.",
+            "incorrect": "La base tiene tamaño uno; solo cambia el signo según la paridad del número de factores."
+          }
+        }
+      ]
+    }
+  ]
+}

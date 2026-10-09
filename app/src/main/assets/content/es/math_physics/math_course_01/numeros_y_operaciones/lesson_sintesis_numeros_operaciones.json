@@ -19,6 +19,44 @@
         {
           "type": "paragraph",
           "text": "Una respuesta debe superar tres comprobaciones: tamaño, signo y significado. Por ejemplo, si partes de -6 y recibes un cambio de +2 en cada una de cuatro etapas, el cambio total es \\(4\\times2=8\\), y el estado final es \\(-6+8=2\\). Responder 8 cuando se pregunta el estado final confunde el cambio con el resultado de aplicarlo."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "estado_o_cambio",
+          "prompt": "Un nivel comienza en -7 cm y recibe tres aumentos de 4 cm. ¿Qué expresión calcula su estado final?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "estado_o_cambio__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "3 × (-7 + 4)"
+                },
+                {
+                  "id": "b",
+                  "label": "-7 + 3 × 4"
+                },
+                {
+                  "id": "c",
+                  "label": "-7 - 3 × 4"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El inicio -7 se usa una sola vez. Los tres aumentos suman 12; el nivel final es 5 cm.",
+            "incorrect": "La primera opción repite tres veces el estado inicial. La tercera convierte aumentos en disminuciones. Separa estado y cambios."
+          }
         }
       ]
     },
@@ -39,6 +77,44 @@
         {
           "type": "paragraph",
           "text": "Las actividades siguientes mezclan situaciones de medición, registros y cálculos. Algunas piden una decisión antes del resultado. No uses el aspecto de un número para adivinar la operación: una cantidad negativa puede ser un dato inicial, un cambio o un cociente. Mantén la unidad y la referencia durante toda la solución. Si falta una condición que determine una respuesta, reconocerlo también es razonar matemáticamente."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_y_limite",
+          "prompt": "¿Cuál afirmación es correcta?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_y_limite__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0 ÷ 7 no se puede calcular porque aparece cero."
+                },
+                {
+                  "id": "b",
+                  "label": "7 ÷ 0 vale 0 porque multiplicar por cero da 0."
+                },
+                {
+                  "id": "c",
+                  "label": "0 ÷ 7 vale 0, pero 7 ÷ 0 no está definido."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cero dividido entre siete vale cero. Siete dividido entre cero no puede ser un número cuyo producto por cero dé siete.",
+            "incorrect": "El divisor, no la mera presencia de cero, decide si la división está definida. Que cero por cualquier número sea cero impide recuperar un dividendo siete."
+          }
         }
       ]
     },
@@ -165,39 +241,26 @@
         {
           "type": "math_puzzle",
           "schemaVersion": 1,
-          "id": "estado_o_cambio",
-          "prompt": "Un nivel comienza en -7 cm y recibe tres aumentos de 4 cm. ¿Qué expresión calcula su estado final?",
+          "id": "sintesis_cambio_descendente",
+          "prompt": "Una lectura inicial de 7 cm recibe cinco cambios iguales de −3 cm. ¿Cuál es la lectura final?",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "estado_o_cambio__eleccion",
-              "type": "math_multiple_choice_single",
-              "options": [
-                {
-                  "id": "a",
-                  "label": "3 × (-7 + 4)"
-                },
-                {
-                  "id": "b",
-                  "label": "-7 + 3 × 4"
-                },
-                {
-                  "id": "c",
-                  "label": "-7 - 3 × 4"
-                }
-              ],
+              "id": "sintesis_cambio_descendente__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
               "validator": {
-                "type": "choice",
-                "expected": [
-                  "b"
-                ]
-              }
+                "type": "numeric",
+                "expected": "-8"
+              },
+              "unit": "cm"
             }
           ],
           "feedback": {
-            "correct": "El inicio -7 se usa una sola vez. Los tres aumentos suman 12; el nivel final es 5 cm.",
-            "incorrect": "La primera opción repite tres veces el estado inicial. La tercera convierte aumentos en disminuciones. Separa estado y cambios."
+            "correct": "7 + 5 × (−3) = 7 − 15 = −8 cm.",
+            "incorrect": "El inicio es una lectura; −15 es el cambio acumulado. El descenso puede llevar una lectura positiva al lado negativo."
           }
         }
       ]
@@ -282,6 +345,51 @@
             "correct": "La pérdida total es -54; -54 ÷ 6 = -9 puntos por ronda.",
             "incorrect": "54 es el tamaño de la pérdida. El cambio dirigido es -54 y cada ronda conserva signo negativo."
           }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sintesis_saldo_ida_vuelta",
+          "prompt": "Un saldo comienza en −6 pesos, recibe 10 y después se pagan 10. Escribe el saldo final y cuánto cambiaron en total los movimientos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sintesis_saldo_ida_vuelta__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Saldo final (pesos)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Cambio total (pesos)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "f": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El saldo final es −6 y el cambio total es cero. Los movimientos se compensan sin borrar el estado inicial.",
+            "incorrect": "Que el cambio neto sea cero no significa que el saldo final sea cero. Distingue lo que había de lo que ocurrió."
+          }
         }
       ]
     },
@@ -290,44 +398,6 @@
         {
           "type": "heading",
           "text": "Detectar límites y reparar"
-        },
-        {
-          "type": "math_puzzle",
-          "schemaVersion": 1,
-          "id": "cero_y_limite",
-          "prompt": "¿Cuál afirmación es correcta?",
-          "representations": [],
-          "tools": [],
-          "responses": [
-            {
-              "id": "cero_y_limite__eleccion",
-              "type": "math_multiple_choice_single",
-              "options": [
-                {
-                  "id": "a",
-                  "label": "0 ÷ 7 no se puede calcular porque aparece cero."
-                },
-                {
-                  "id": "b",
-                  "label": "7 ÷ 0 vale 0 porque multiplicar por cero da 0."
-                },
-                {
-                  "id": "c",
-                  "label": "0 ÷ 7 vale 0, pero 7 ÷ 0 no está definido."
-                }
-              ],
-              "validator": {
-                "type": "choice",
-                "expected": [
-                  "c"
-                ]
-              }
-            }
-          ],
-          "feedback": {
-            "correct": "Cero dividido entre siete vale cero. Siete dividido entre cero no puede ser un número cuyo producto por cero dé siete.",
-            "incorrect": "El divisor, no la mera presencia de cero, decide si la división está definida. Que cero por cualquier número sea cero impide recuperar un dividendo siete."
-          }
         },
         {
           "type": "math_puzzle",
@@ -390,6 +460,44 @@
           "feedback": {
             "correct": "240 ÷ 8 = 30 cm; ocho piezas de 30 cm recuperan 240 cm.",
             "incorrect": "Sumar 8 no reparte la cuerda. El supuesto de cortes sin pérdida permite que la suma de las piezas sea la longitud inicial."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sintesis_unidad_y_estimacion",
+          "prompt": "Tres tramos miden 99 cm, 102 cm y 98 cm. ¿Qué afirmación conserva unidad y precisión?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sintesis_unidad_y_estimacion__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La longitud total exacta es 300 cm porque se estimó con centenas."
+                },
+                {
+                  "id": "b",
+                  "label": "La longitud total exacta es 299 cm y una estimación útil es 300 cm."
+                },
+                {
+                  "id": "c",
+                  "label": "El total es 299 kg porque todas son cantidades."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "99 + 102 + 98 = 299 cm. La estimación 100 + 100 + 100 = 300 cm es cercana, pero no igual al total exacto.",
+            "incorrect": "Una aproximación no es una igualdad exacta y una longitud no se expresa en kilogramos."
           }
         }
       ]

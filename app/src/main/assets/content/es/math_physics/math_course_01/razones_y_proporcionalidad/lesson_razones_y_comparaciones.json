@@ -6,7 +6,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Dos preguntas diferentes"
+          "text": "Comprender la relación"
         },
         {
           "type": "paragraph",
@@ -19,6 +19,10 @@
         {
           "type": "paragraph",
           "text": "Si multiplicamos ambos términos por el mismo número positivo, la comparación se conserva: 12:8 y 3:2 describen la misma composición. Podemos formar grupos iguales de 3 azules y 2 verdes. Reducir la razón facilita verla, pero no cambia la cantidad real de fichas. Como con las fracciones equivalentes, cambiamos la representación y conservamos el valor del cociente."
+        },
+        {
+          "type": "note",
+          "text": "Lee una razón de izquierda a derecha y nombra la referencia. Un denominador cero no define una razón por cociente."
         }
       ]
     },
@@ -26,7 +30,110 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Parte con parte, parte con todo"
+          "text": "Cambiar el orden cambia la pregunta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si A:B = 2:5, A/B = 2/5 y B/A = 5/2. Son cocientes recíprocos, no dos maneras de responder la misma pregunta. A ocupa 2 de las 7 partes del total, así que A/total = 2/7. El total se construye sumando partes comparables; el orden de la razón se conserva al calcular."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una razón se conserva al multiplicar ambos términos por el mismo factor no nulo. En cantidades positivas ese factor es positivo. Multiplicar ambos por cero produce 0:0 y destruye la comparación por cociente. Reducir 6:15 a 2:5 cambia la escritura, no las cantidades reales."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orientacion_reciproca",
+          "prompt": "Una bolsa tiene 6 fichas amarillas y 15 violetas. Calcula amarillas por violeta, violetas por amarilla y fracción amarilla del total. Se aceptan valores exactos equivalentes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "av",
+              "type": "math_numeric_input",
+              "label": "Amarillas por violeta",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2/5"
+              }
+            },
+            {
+              "id": "va",
+              "type": "math_numeric_input",
+              "label": "Violetas por amarilla",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/2"
+              }
+            },
+            {
+              "id": "at",
+              "type": "math_numeric_input",
+              "label": "Amarillas dentro del total",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2/7"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los cocientes son 2/5, 5/2 y 2/7. El denominador cambia porque cambia la referencia.",
+            "incorrect": "Sumar 6+15 sirve para el total; no para la razón entre colores. Invertir términos responde a la comparación inversa."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "razon_cero",
+          "prompt": "¿Qué comparaciones quedan definidas como cocientes? Selecciona todas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "casos",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0 objetos A frente a 5 B: 0/5."
+                },
+                {
+                  "id": "b",
+                  "label": "5 A frente a 0 B: 5/0."
+                },
+                {
+                  "id": "c",
+                  "label": "0 A frente a 0 B: 0/0."
+                },
+                {
+                  "id": "d",
+                  "label": "2 A frente a 5 B: 2/5."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0/5 = 0 y 2/5 están definidos. Los denominadores cero no admiten cociente.",
+            "incorrect": "Un numerador cero puede dar cero; un denominador cero impide definir el cociente. No son el mismo caso."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencias, condiciones y primer ensayo"
         },
         {
           "type": "paragraph",
@@ -39,10 +146,6 @@
         {
           "type": "paragraph",
           "text": "Una composición no queda determinada por una diferencia. Las parejas 12 y 8, y 20 y 16, tienen diferencia 4; sus razones son distintas. En cambio, 12 y 8, y 18 y 12, conservan la razón 3:2. Para comprobar una afirmación sobre composición, compara cocientes o busca un mismo factor en los dos términos."
-        },
-        {
-          "type": "note",
-          "text": "Lee una razón de izquierda a derecha y nombra la referencia. Un denominador cero no define una razón por cociente."
         },
         {
           "type": "math_puzzle",
@@ -88,7 +191,78 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Practica el significado"
+          "text": "Un mismo material, una unidad común"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comparar 0,4 kg con 600 g exige elegir primero una misma unidad: 400 g:600 g = 2:3. Dividir 0,4 entre 600 sin convertir compara valores numéricos de unidades diferentes y no representa la composición. La conversión conserva la masa y puede hacerse antes de reducir."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "razon_unidades",
+          "prompt": "Una mezcla seca lleva 0,45 kg de avena y 300 g de semillas. Usa 1 kg = 1000 g. Indica avena por semilla y fracción de semillas dentro del total.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "as",
+              "type": "math_numeric_input",
+              "label": "Avena por semilla",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/2"
+              }
+            },
+            {
+              "id": "st",
+              "type": "math_numeric_input",
+              "label": "Semillas dentro del total",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2/5"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "450:300 = 3:2; las semillas son 300/750 = 2/5 del total.",
+            "incorrect": "0,45/300 omite convertir. 2/3 compara semillas con avena, no semillas con toda la mezcla."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_fraccionario",
+          "prompt": "Una composición A:B = 3:4 debe conservarse. Hay 1,5 L de A. ¿Cuántos litros de B se necesitan?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Cantidad de B",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2"
+              },
+              "unit": "L"
+            }
+          ],
+          "feedback": {
+            "correct": "El factor común es 1,5/3 = 1/2; B necesita 4×1/2 = 2 L.",
+            "incorrect": "El factor puede ser menor que uno. Restar 1,5 a ambos términos conservaría una diferencia, no el cociente."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Variar sin perder el significado"
         },
         {
           "type": "math_puzzle",
@@ -175,6 +349,99 @@
             "correct": "8:6 y 12:9 multiplican ambos términos por 2 y por 3. En ambas, el cociente es 4/3.",
             "incorrect": "8 y 7 mantienen una diferencia de uno, pero no la razón. 4 y 7 confunden las oscuras con el total de partes. Busca el mismo factor en ambos términos."
           }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar una referencia distinta"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "razon_desde_parte",
+          "prompt": "En un taller hay dos tipos de pieza A y B en razón 5:7. Hay 28 piezas B. Calcula las A y el total.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Piezas A",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "20"
+              }
+            },
+            {
+              "id": "total",
+              "type": "math_numeric_input",
+              "label": "Total",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "48"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "B corresponde a siete partes: cada parte vale cuatro. A = 20 y total = 48.",
+            "incorrect": "28 es una de las partes, no el total. Comprueba 20/28 = 5/7 y 20+28 = 48."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparaciones_en_conflicto",
+          "prompt": "Dos lotes tienen A y B. Lote I: 6 y 4. Lote II: 12 y 8. ¿Qué afirmaciones son correctas?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "afirmaciones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Tienen igual composición."
+                },
+                {
+                  "id": "b",
+                  "label": "Tienen igual diferencia A−B."
+                },
+                {
+                  "id": "c",
+                  "label": "A representa 3/5 del total en ambos."
+                },
+                {
+                  "id": "d",
+                  "label": "A/B vale 3/5 en ambos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las razones son 3/2 y las fracciones A/total son 3/5. Las diferencias son 2 y 4.",
+            "incorrect": "Una composición igual no exige la misma diferencia. 3/5 usa el total; 3/2 compara A con B."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar y comprobar"
         },
         {
           "type": "math_puzzle",

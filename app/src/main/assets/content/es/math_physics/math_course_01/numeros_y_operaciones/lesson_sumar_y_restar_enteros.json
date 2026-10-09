@@ -19,6 +19,54 @@
         {
           "type": "paragraph",
           "text": "Sumar cero conserva el estado. Sumar dos cambios de la misma dirección acumula sus tamaños: bajar cuatro y después bajar tres equivale a bajar siete. Si las direcciones son contrarias, una parte del recorrido se compensa; la dirección del cambio mayor decide el signo del resultado."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_negativos",
+          "prompt": "Calcula −6 + (−4).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "suma_negativos__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-10"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Ambos cambios tienen dirección negativa: −6 + (−4) = −10.",
+            "incorrect": "Aquí no se compensan direcciones contrarias. Suma los tamaños 6 y 4 y conserva la dirección negativa."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_con_cero",
+          "prompt": "Un registro marca −8 y recibe un cambio de cero. ¿Qué valor queda?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "suma_con_cero__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−8 + 0 = −8. No recibir cambio conserva el estado.",
+            "incorrect": "Cero no borra el estado en una suma. No confundas sumar cero con multiplicar por cero."
+          }
         }
       ]
     },
@@ -39,62 +87,77 @@
         {
           "type": "paragraph",
           "text": "Esta relación no significa que todo signo menos desaparezca junto a otro. Debes saber cuál número estás restando. Los paréntesis ayudan a conservar la unidad del número negativo. Si escribes una historia con varios cambios, coloca cada uno con su signo antes de intentar simplificar la cuenta."
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Cambios entre dos estados"
-        },
-        {
-          "type": "paragraph",
-          "text": "Para saber cuánto cambió una cantidad calculamos estado final menos estado inicial. Si una temperatura pasa de -6 °C a 1 °C, el cambio es \\(1-(-6)=7\\) °C: aumentó siete grados. Si pasa de 1 °C a -6 °C, el cambio es \\(-6-1=-7\\) °C: disminuyó siete grados. La distancia entre los estados es siete en ambos casos, pero el cambio incluye dirección."
-        },
-        {
-          "type": "paragraph",
-          "text": "Una comprobación útil consiste en sumar el cambio al estado inicial. Para el primer caso, \\(-6+7=1\\), exactamente el estado final. También puedes comprobar una resta mediante suma: si \\(a-b=c\\), entonces \\(c+b=a\\). No necesitas aprender una fórmula ajena al significado; estás recuperando lo que se quitó."
-        },
-        {
-          "type": "paragraph",
-          "text": "Supón que comienzas con un saldo de 12 pesos, pagas 17 y después recibes 9. La cuenta es 12 - 17 + 9, y el saldo final es 4 pesos. Después del pago el saldo era -5. Un saldo final positivo no implica que todos los estados intermedios hayan sido positivos. Registrar esos estados puede ayudarte a detectar un signo perdido."
-        },
-        {
-          "type": "note",
-          "text": "Distingue tres preguntas: estado final, cambio dirigido y distancia entre estados. Pueden usar los mismos datos y tener respuestas diferentes."
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Aplicar y comprobar"
         },
         {
           "type": "math_puzzle",
           "schemaVersion": 1,
-          "id": "cambio_temperatura",
-          "prompt": "La temperatura empieza en -4 °C, sube 9 °C y después baja 7 °C. ¿Cuál es la temperatura final?",
+          "id": "compensa_no_cruza",
+          "prompt": "Calcula −11 + 5.",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "cambio_temperatura__valor",
+              "id": "compensa_no_cruza__valor",
               "type": "math_numeric_input",
               "label": "Resultado",
               "keyboard": "NUMERIC",
               "validator": {
                 "type": "numeric",
-                "expected": "-2"
-              },
-              "unit": "°C"
+                "expected": "-6"
+              }
             }
           ],
           "feedback": {
-            "correct": "-4 + 9 - 7 = 5 - 7 = -2 °C.",
-            "incorrect": "Subir corresponde a +9 y bajar a -7. No conviertas el estado inicial -4 en un cambio positivo."
+            "correct": "Cinco unidades compensan parte del lado negativo; quedan seis hacia la izquierda: −6.",
+            "incorrect": "El incremento no alcanza para llegar a cero. Anticipa primero el signo y después resta los tamaños."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "compensa_cruza",
+          "prompt": "Calcula −5 + 11.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "compensa_cruza__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cinco unidades llegan al origen y las seis restantes avanzan a la derecha: 6.",
+            "incorrect": "Aquí domina el cambio positivo. Los mismos tamaños de la actividad anterior están asociados a signos distintos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "compensacion_exacta",
+          "prompt": "Calcula 9 + (−9).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "compensacion_exacta__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "0"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los cambios se deshacen exactamente: un número y su opuesto suman cero.",
+            "incorrect": "Los tamaños son iguales y las direcciones contrarias. No queda un tamaño positivo ni negativo."
           }
         },
         {
@@ -165,7 +228,128 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Leer una transición completa"
+          "text": "El signo del número que se resta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contrasta −4 − 3 y −4 − (−3). La primera suma un cambio de −3 y termina en −7; la segunda suma el opuesto de −3, que es +3, y termina en −1. El estado inicial es el mismo; cambia el número que se está restando."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "negativo_menos_positivo",
+          "prompt": "Calcula −8 − 5.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "negativo_menos_positivo__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-13"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar 5 suma su opuesto −5: −8 + (−5) = −13.",
+            "incorrect": "La resta de un positivo va hacia la izquierda incluso si el inicio ya es negativo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resta_cruza_origen",
+          "prompt": "Calcula −3 − (−10).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resta_cruza_origen__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar −10 es sumar 10: −3 + 10 = 7. La comprobación 7 + (−10) = −3 recupera el inicio.",
+            "incorrect": "No cambies el signo del −3 inicial. Solo toma el opuesto del número que se resta."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "restar_cero_y_de_cero",
+          "prompt": "Calcula estas dos restas relacionadas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "restar_cero_y_de_cero__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "−7 − 0",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "0 − (−7)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar cero conserva −7. Restar −7 desde cero da su opuesto: 7.",
+            "incorrect": "No intercambies minuendo y sustraendo. La presencia de cero no convierte las dos preguntas en la misma operación."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambios entre dos estados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para saber cuánto cambió una cantidad calculamos estado final menos estado inicial. Si una temperatura pasa de -6 °C a 1 °C, el cambio es \\(1-(-6)=7\\) °C: aumentó siete grados. Si pasa de 1 °C a -6 °C, el cambio es \\(-6-1=-7\\) °C: disminuyó siete grados. La distancia entre los estados es siete en ambos casos, pero el cambio incluye dirección."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una comprobación útil consiste en sumar el cambio al estado inicial. Para el primer caso, \\(-6+7=1\\), exactamente el estado final. También puedes comprobar una resta mediante suma: si \\(a-b=c\\), entonces \\(c+b=a\\). No necesitas aprender una fórmula ajena al significado; estás recuperando lo que se quitó."
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón que comienzas con un saldo de 12 pesos, pagas 17 y después recibes 9. La cuenta es 12 - 17 + 9, y el saldo final es 4 pesos. Después del pago el saldo era -5. Un saldo final positivo no implica que todos los estados intermedios hayan sido positivos. Registrar esos estados puede ayudarte a detectar un signo perdido."
+        },
+        {
+          "type": "note",
+          "text": "Distingue tres preguntas: estado final, cambio dirigido y distancia entre estados. Pueden usar los mismos datos y tener respuestas diferentes."
         },
         {
           "type": "math_puzzle",
@@ -215,6 +399,51 @@
         {
           "type": "math_puzzle",
           "schemaVersion": 1,
+          "id": "transicion_descendente",
+          "prompt": "Una sonda pasa de −2 m a −9 m por un trayecto recto sin retroceso. Escribe el cambio dirigido y la distancia recorrida.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "transicion_descendente__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Cambio (m)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Distancia (m)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "c": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cambio es −9 − (−2) = −7 m; la sonda desciende siete metros y recorre 7 m.",
+            "incorrect": "El estado final −9 no es el cambio. La dirección descendente exige cambio negativo, pero la distancia es positiva."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
           "id": "recuperar_inicio",
           "prompt": "Un saldo aumenta 7 pesos y termina en -2 pesos. ¿Cuál era el saldo inicial?",
           "representations": [],
@@ -235,6 +464,39 @@
           "feedback": {
             "correct": "El saldo inicial era -9: -9 + 7 = -2. Recuperamos el inicio mediante -2 - 7.",
             "incorrect": "La pregunta va hacia atrás. Si sumas 7 a -2, describes otro aumento después del estado final."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambios encadenados y recorrido"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cambio_temperatura",
+          "prompt": "La temperatura empieza en -4 °C, sube 9 °C y después baja 7 °C. ¿Cuál es la temperatura final?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cambio_temperatura__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-2"
+              },
+              "unit": "°C"
+            }
+          ],
+          "feedback": {
+            "correct": "-4 + 9 - 7 = 5 - 7 = -2 °C.",
+            "incorrect": "Subir corresponde a +9 y bajar a -7. No conviertas el estado inicial -4 en un cambio positivo."
           }
         },
         {
@@ -286,6 +548,51 @@
           "feedback": {
             "correct": "Primero se reemplaza restar -6 por sumar 6; después 4 + 6 = 10; finalmente 10 - 3 = 7.",
             "incorrect": "El cambio de operación debe justificarse antes de combinar números. El resultado corresponde a toda la expresión, no solo a su primer tramo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recorrido_con_retroceso",
+          "prompt": "Una persona parte del origen, avanza 6 m a la derecha y vuelve 4 m a la izquierda. Escribe su posición final y la distancia total que caminó.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recorrido_con_retroceso__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "Posición final (m)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Distancia caminada (m)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "p": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "10"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Termina en 2 m, pero caminó 6 + 4 = 10 m. El retroceso compensa posición; no borra distancia recorrida.",
+            "incorrect": "La diferencia de movimientos da la posición. Para el recorrido se suman las longitudes de ambos tramos, sin signo dirigido."
           }
         }
       ]

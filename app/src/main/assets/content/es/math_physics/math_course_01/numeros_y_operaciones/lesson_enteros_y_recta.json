@@ -19,6 +19,67 @@
         {
           "type": "paragraph",
           "text": "El cero no es positivo ni negativo. Marca la referencia desde la que medimos la posición. Una persona situada en el origen tiene distancia cero a ese origen. En un contexto físico debes saber qué se escogió como referencia: cambiar la referencia puede cambiar los valores numéricos de las posiciones sin mover los objetos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "referencia_altura",
+          "prompt": "Una marca está 3 m por debajo de una superficie que tomamos como cero. ¿Qué entero expresa su posición?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "referencia_altura__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-3"
+              },
+              "unit": "m"
+            }
+          ],
+          "feedback": {
+            "correct": "La posición es -3 m respecto de la superficie. La distancia a la superficie es 3 m.",
+            "incorrect": "Por debajo corresponde al lado negativo de la referencia. Un valor positivo indicaría por encima."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "marca_positiva",
+          "prompt": "Lee el punto de la recta. Cada separación vale una unidad.",
+          "representations": [
+            {
+              "type": "math_number_line",
+              "mode": "read_value",
+              "min": -6,
+              "max": 6,
+              "step": 1,
+              "value": 4,
+              "closed": true,
+              "direction": "none",
+              "showValueLabel": false
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "marca_positiva__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "4"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El punto está cuatro unidades a la derecha del origen: su posición es 4.",
+            "incorrect": "El origen es cero; no cuentes desde el borde izquierdo de la imagen. A la derecha del origen el signo es positivo."
+          }
         }
       ]
     },
@@ -39,38 +100,6 @@
         {
           "type": "paragraph",
           "text": "La distancia a cero mide cuántas unidades separan una posición del origen. Es una cantidad no negativa: tanto -5 como 5 están a cinco unidades de cero. Distancia y posición responden a preguntas distintas. Si sabes solo que alguien está a cinco metros del origen, falta decir en cuál de las dos direcciones se encuentra."
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "El opuesto no siempre es negativo"
-        },
-        {
-          "type": "paragraph",
-          "text": "Dos números opuestos están a la misma distancia del cero, en lados contrarios. El opuesto de 4 es -4; el de -4 es 4; el de 0 es 0. Si usamos la letra \\(a\\) para representar un entero, escribimos su opuesto como \\(-a\\). La letra puede valer un positivo, un negativo o cero. El signo exterior indica la operación de tomar el opuesto."
-        },
-        {
-          "type": "paragraph",
-          "text": "Por ejemplo, si \\(a=-6\\), entonces \\(-a=-(-6)=6\\). Tomar el opuesto dos veces devuelve el número inicial. No es una regla reservada a números negativos: también \\(-(-3)=3\\), y el doble opuesto de cero es cero. La recta explica esta operación como una reflexión respecto del origen."
-        },
-        {
-          "type": "paragraph",
-          "text": "Para leer una marca sin rótulo, localiza primero el cero y observa de cuánto en cuánto aumentan las marcas. No cuentes desde el borde de la imagen como si allí comenzaran necesariamente los valores. Una separación dibujada representa la unidad indicada, no una longitud física de la pantalla."
-        },
-        {
-          "type": "note",
-          "text": "Usaremos distancia al cero de manera concreta. La posición puede ser negativa; su distancia al origen nunca lo es."
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Interpretar la recta"
         },
         {
           "type": "math_puzzle",
@@ -107,6 +136,109 @@
             "correct": "La marca está cuatro unidades a la izquierda de cero: representa -4.",
             "incorrect": "La distancia es 4, pero se pide la posición. Estar a la izquierda de cero requiere signo negativo."
           }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden_enteros",
+          "prompt": "Ordena de menor a mayor.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "orden_enteros__orden",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "-8"
+                },
+                {
+                  "id": "b",
+                  "label": "-3"
+                },
+                {
+                  "id": "c",
+                  "label": "0"
+                },
+                {
+                  "id": "d",
+                  "label": "2"
+                },
+                {
+                  "id": "e",
+                  "label": "7"
+                }
+              ],
+              "initialOrder": [
+                "e",
+                "d",
+                "c",
+                "b",
+                "a"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "-8 < -3 < 0 < 2 < 7, siguiendo la recta de izquierda a derecha.",
+            "incorrect": "Entre negativos, el que tiene mayor distancia a cero queda más a la izquierda. No ordenes por las cifras ignorando los signos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mayor_distancia_menor_valor",
+          "prompt": "Dos posiciones son −9 y −2. ¿Qué afirmación distingue correctamente valor y distancia?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mayor_distancia_menor_valor__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−9 es mayor y está más cerca de cero."
+                },
+                {
+                  "id": "b",
+                  "label": "−9 es menor, aunque su distancia a cero sea mayor."
+                },
+                {
+                  "id": "c",
+                  "label": "Ambos valores son iguales porque son negativos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−9 < −2, pero 9 > 2. Valor y distancia contestan preguntas distintas.",
+            "incorrect": "En el lado negativo, alejarse del origen hacia la izquierda reduce el valor. El signo no hace iguales a todos los negativos."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer la escala completa"
         },
         {
           "type": "math_puzzle",
@@ -168,58 +300,94 @@
         {
           "type": "math_puzzle",
           "schemaVersion": 1,
-          "id": "orden_enteros",
-          "prompt": "Ordena de menor a mayor.",
-          "representations": [],
+          "id": "escala_de_dos",
+          "prompt": "La recta avanza de dos en dos. Escribe la posición marcada y su distancia al origen.",
+          "representations": [
+            {
+              "type": "math_number_line",
+              "mode": "read_value",
+              "min": -12,
+              "max": 12,
+              "step": 2,
+              "value": -8,
+              "closed": true,
+              "direction": "none",
+              "showValueLabel": false
+            }
+          ],
           "tools": [],
           "responses": [
             {
-              "id": "orden_enteros__orden",
-              "type": "math_ordering_drag",
-              "items": [
+              "id": "escala_de_dos__datos",
+              "type": "math_multi_input",
+              "fields": [
                 {
-                  "id": "a",
-                  "label": "-8"
-                },
-                {
-                  "id": "b",
-                  "label": "-3"
-                },
-                {
-                  "id": "c",
-                  "label": "0"
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "Posición",
+                  "keyboard": "NUMERIC"
                 },
                 {
                   "id": "d",
-                  "label": "2"
-                },
-                {
-                  "id": "e",
-                  "label": "7"
+                  "type": "numeric",
+                  "label": "Distancia",
+                  "keyboard": "NUMERIC"
                 }
               ],
-              "initialOrder": [
-                "e",
-                "d",
-                "c",
-                "b",
-                "a"
-              ],
               "validator": {
-                "type": "order",
-                "expected": [
-                  "a",
-                  "b",
-                  "c",
-                  "d",
-                  "e"
-                ]
+                "type": "fields",
+                "fields": {
+                  "p": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
               }
             }
           ],
           "feedback": {
-            "correct": "-8 < -3 < 0 < 2 < 7, siguiendo la recta de izquierda a derecha.",
-            "incorrect": "Entre negativos, el que tiene mayor distancia a cero queda más a la izquierda. No ordenes por las cifras ignorando los signos."
+            "correct": "La posición es −8 y su distancia es 8 unidades. Cuatro intervalos de dos unidades separan el punto del origen.",
+            "incorrect": "Contar cuatro intervalos no da cuatro unidades: cada intervalo vale dos. La distancia no lleva signo negativo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "marca_origen",
+          "prompt": "¿Qué posición representa el punto marcado en la recta?",
+          "representations": [
+            {
+              "type": "math_number_line",
+              "mode": "read_value",
+              "min": -4,
+              "max": 4,
+              "step": 1,
+              "value": 0,
+              "closed": true,
+              "direction": "none",
+              "showValueLabel": false
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "marca_origen__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "0"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El punto está en el origen: representa cero, que no es positivo ni negativo.",
+            "incorrect": "Cero es una posición determinada. No se elige un signo positivo o negativo para el origen."
           }
         }
       ]
@@ -228,7 +396,23 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Opuestos y una referencia nueva"
+          "text": "El opuesto no siempre es negativo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos números opuestos están a la misma distancia del cero, en lados contrarios. El opuesto de 4 es -4; el de -4 es 4; el de 0 es 0. Si usamos la letra \\(a\\) para representar un entero, escribimos su opuesto como \\(-a\\). La letra puede valer un positivo, un negativo o cero. El signo exterior indica la operación de tomar el opuesto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, si \\(a=-6\\), entonces \\(-a=-(-6)=6\\). Tomar el opuesto dos veces devuelve el número inicial. No es una regla reservada a números negativos: también \\(-(-3)=3\\), y el doble opuesto de cero es cero. La recta explica esta operación como una reflexión respecto del origen."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para leer una marca sin rótulo, localiza primero el cero y observa de cuánto en cuánto aumentan las marcas. No cuentes desde el borde de la imagen como si allí comenzaran necesariamente los valores. Una separación dibujada representa la unidad indicada, no una longitud física de la pantalla."
+        },
+        {
+          "type": "note",
+          "text": "Usaremos distancia al cero de manera concreta. La posición puede ser negativa; su distancia al origen nunca lo es."
         },
         {
           "type": "math_puzzle",
@@ -325,26 +509,137 @@
         {
           "type": "math_puzzle",
           "schemaVersion": 1,
-          "id": "referencia_altura",
-          "prompt": "Una marca está 3 m por debajo de una superficie que tomamos como cero. ¿Qué entero expresa su posición?",
+          "id": "opuesto_tres_casos",
+          "prompt": "Completa el opuesto de cada valor de a. El símbolo −a pide el opuesto, no asegura un resultado negativo.",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "referencia_altura__valor",
+              "id": "opuesto_tres_casos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "Si a = 7, −a =",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "n",
+                  "type": "numeric",
+                  "label": "Si a = −7, −a =",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Si a = 0, −a =",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "p": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "n": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los resultados son −7, 7 y 0. El opuesto conserva distancia y cambia de lado; el origen permanece en su lugar.",
+            "incorrect": "El signo exterior indica una operación. Cuando a ya es negativo su opuesto es positivo; cero es su propio opuesto."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reflejar y cambiar de referencia"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "doble_opuesto",
+          "prompt": "Calcula −(−(−6)).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "doble_opuesto__valor",
               "type": "math_numeric_input",
               "label": "Resultado",
               "keyboard": "NUMERIC",
               "validator": {
                 "type": "numeric",
-                "expected": "-3"
-              },
-              "unit": "m"
+                "expected": "-6"
+              }
             }
           ],
           "feedback": {
-            "correct": "La posición es -3 m respecto de la superficie. La distancia a la superficie es 3 m.",
-            "incorrect": "Por debajo corresponde al lado negativo de la referencia. Un valor positivo indicaría por encima."
+            "correct": "Desde −6, un opuesto da 6 y el siguiente devuelve −6. Los dos signos exteriores representan dos reflexiones.",
+            "incorrect": "Lee de dentro hacia fuera: el número inicial es −6. No conviertas automáticamente todos los signos en un positivo."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Una misma altura tiene valores diferentes respecto de referencias distintas. Si una repisa está 4 m sobre el suelo y una lámpara está 6 m sobre el suelo, la lámpara está 2 m sobre la repisa. No se movió: cambiamos el punto desde el que medimos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "nueva_referencia",
+          "prompt": "Una marca está 3 m sobre el suelo. Una plataforma está 5 m sobre ese suelo. Toma ahora la plataforma como cero: escribe la posición de la marca y su distancia a la plataforma.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "nueva_referencia__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "Posición respecto de plataforma (m)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Distancia a plataforma (m)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "p": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La marca queda 2 m por debajo de la nueva referencia: posición −2 m y distancia 2 m.",
+            "incorrect": "El 3 describe la referencia anterior. Comparar marca y plataforma muestra que la marca queda debajo; la distancia sigue siendo no negativa."
           }
         }
       ]

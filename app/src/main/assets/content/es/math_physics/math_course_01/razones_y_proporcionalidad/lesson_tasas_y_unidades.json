@@ -6,7 +6,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Una comparación por unidad"
+          "text": "Comprender la relación"
         },
         {
           "type": "paragraph",
@@ -19,6 +19,10 @@
         {
           "type": "paragraph",
           "text": "Las unidades ayudan a comprobar una operación. Si una bomba llena 8 litros cada minuto y mantiene ese ritmo 5 minutos, multiplicamos 8 L/min por 5 min y obtenemos 40 L. La referencia minuto desaparece porque hay cinco grupos de un minuto. Si buscamos cuánto tarda en llenar 40 L, dividimos los litros entre la tasa: 40/8 = 5 minutos."
+        },
+        {
+          "type": "note",
+          "text": "En los campos escribe el número; la unidad del rótulo indica cómo interpretarlo. Comprueba que ambas cantidades de una comparación estén expresadas en unidades coherentes."
         }
       ]
     },
@@ -26,7 +30,80 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "La cantidad y su valor numérico"
+          "text": "La tasa inversa también tiene significado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si salen 12 litros en 3 minutos, la tasa es 4 L/min. También se necesitan 3/12 = 1/4 min por litro. Multiplicar 4 L/min por 1/4 min/L da uno: son tasas recíprocas. Para hallar litros usamos litros por minuto; para hallar minutos podemos usar minutos por litro. La pregunta determina cuál conviene."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tasa_reciproca",
+          "prompt": "Un dispensador mantiene 15 L cada 6 min. Determina litros por minuto y minutos por litro. No redondees.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "lm",
+              "type": "math_numeric_input",
+              "label": "Litros por minuto",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/2"
+              },
+              "unit": "L/min"
+            },
+            {
+              "id": "ml",
+              "type": "math_numeric_input",
+              "label": "Minutos por litro",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2/5"
+              },
+              "unit": "min/L"
+            }
+          ],
+          "feedback": {
+            "correct": "15/6 = 5/2 L/min y 6/15 = 2/5 min/L. Su producto vale uno.",
+            "incorrect": "Los cocientes tienen orden y unidades diferentes. 2,5 no puede representar ambos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "duracion_desde_tasa",
+          "prompt": "Una válvula requiere 2/5 min para entregar un litro. Mantiene el ritmo. ¿Cuánto tarda en entregar 7,5 L?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Duración",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              },
+              "unit": "min"
+            }
+          ],
+          "feedback": {
+            "correct": "7,5 L×2/5 min/L = 3 min.",
+            "incorrect": "Multiplicar una tasa en min/L por litros produce minutos. Invertirla y volver a multiplicar por litros produciría unidades incompatibles."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencias, condiciones y primer ensayo"
         },
         {
           "type": "paragraph",
@@ -39,10 +116,6 @@
         {
           "type": "paragraph",
           "text": "Comparar ofertas exige una referencia común. Un envase de 0,75 L por 30 pesos cuesta 40 pesos/L; otro de 1,2 L por 42 pesos cuesta 35 pesos/L. El segundo tiene menor precio por litro aunque su pago total sea mayor. La elección también depende de si necesitas esa cantidad, de la calidad y del presupuesto: la tasa permite una comparación concreta, no decide todos los aspectos."
-        },
-        {
-          "type": "note",
-          "text": "En los campos escribe el número; la unidad del rótulo indica cómo interpretarlo. Comprueba que ambas cantidades de una comparación estén expresadas en unidades coherentes."
         },
         {
           "type": "math_puzzle",
@@ -93,7 +166,55 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Conversiones con una referencia clara"
+          "text": "Convertir en el sentido contrario"
+        },
+        {
+          "type": "paragraph",
+          "text": "De metros a kilómetros se agrupan mil metros por kilómetro y el número disminuye. De minutos a horas se agrupan sesenta minutos por hora. En una tasa también cambia el denominador: 10 m/s son 600 m/min y 36 km/h. La cantidad física se conserva aunque el valor numérico aumente o disminuya."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conversion_regreso",
+          "prompt": "Expresa 750 m en kilómetros y 90 min en horas. Usa 1 km = 1000 m y 1 h = 60 min.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "km",
+              "type": "math_numeric_input",
+              "label": "Kilómetros",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/4"
+              },
+              "unit": "km"
+            },
+            {
+              "id": "h",
+              "type": "math_numeric_input",
+              "label": "Horas",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/2"
+              },
+              "unit": "h"
+            }
+          ],
+          "feedback": {
+            "correct": "750/1000 = 3/4 km y 90/60 = 3/2 h.",
+            "incorrect": "Convertir a unidades mayores disminuye el número. 0,90 h trata cada hora como si tuviera cien minutos."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Variar sin perder el significado"
         },
         {
           "type": "math_puzzle",
@@ -163,6 +284,14 @@
             "correct": "54×1000/3600 = 15 m/s. La distancia pasa a metros y el tiempo a segundos.",
             "incorrect": "Multiplicar solo por 1000 deja metros por hora. Dividir solo entre 3600 deja kilómetros por segundo. Convierte ambas unidades y revisa la magnitud del resultado."
           }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar y comprobar"
         },
         {
           "type": "math_puzzle",

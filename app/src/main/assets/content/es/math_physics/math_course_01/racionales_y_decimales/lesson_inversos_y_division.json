@@ -52,38 +52,43 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "cero_inverso",
-          "prompt": "¿Cuál es la explicación correcta de que cero no tenga inverso multiplicativo?",
+          "prompt": "Selecciona todas las afirmaciones válidas sobre cero y división.",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "razon",
-              "type": "math_multiple_choice_single",
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
               "options": [
                 {
                   "id": "a",
-                  "label": "Porque el inverso tendría que ser negativo."
+                  "label": "0/13 = 0, porque 13×0 = 0."
                 },
                 {
                   "id": "b",
-                  "label": "Porque 0 × b = 0 para cualquier número b, nunca 1."
+                  "label": "13/0 = 0, porque el numerador no es cero."
                 },
                 {
                   "id": "c",
-                  "label": "Porque ningún entero tiene inverso."
+                  "label": "0/0 = 1, porque un número dividido por sí mismo da uno."
+                },
+                {
+                  "id": "d",
+                  "label": "Cero no tiene inverso: 0×b nunca vale uno."
                 }
               ],
               "validator": {
                 "type": "choice",
                 "expected": [
-                  "b"
+                  "a",
+                  "d"
                 ]
               }
             }
           ],
           "feedback": {
-            "correct": "La condición de inverso es producir uno al multiplicar. Ningún número puede conseguirlo con cero.",
-            "incorrect": "Un signo negativo no resolvería el problema: cero por un negativo sigue siendo cero. Muchos enteros no nulos tienen inverso racional; por ejemplo, dos y un medio."
+            "correct": "0/13 está definido y vale cero. Ni 13/0 ni 0/0 están definidos, y cero no tiene inverso multiplicativo.",
+            "incorrect": "La regla a/a = 1 exige a distinto de cero. Multiplicar cualquier candidato por cero no produce trece ni selecciona un cociente único para 0/0."
           }
         }
       ]
@@ -110,24 +115,24 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "porciones_cinta",
-          "prompt": "Una cinta mide 15/8 m. Se corta en porciones de 3/16 m, sin pérdida en los cortes. ¿Cuántas porciones completas se obtienen?",
+          "prompt": "Una cinta de 9/4 m se corta en porciones de 3/8 m, sin pérdida. ¿Cuántas porciones completas salen?",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "numero",
+              "id": "valor",
               "type": "math_numeric_input",
-              "label": "Porciones completas",
-              "keyboard": "NUMERIC",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
               "validator": {
                 "type": "numeric",
-                "expected": "10"
+                "expected": "6"
               }
             }
           ],
           "feedback": {
-            "correct": "15/8 = 30/16 y cada porción usa 3/16: 30 ÷ 3 = 10. También (15/8) × (16/3) = 10.",
-            "incorrect": "Multiplicar las dos longitudes no cuenta porciones. Invertir 15/8 en lugar de 3/16 cambia el problema. Comprueba que diez porciones de 3/16 suman 15/8 m."
+            "correct": "9/4 = 18/8. Caben seis porciones de tres octavos; 6×3/8 = 9/4 reconstruye la cinta.",
+            "incorrect": "Multiplicar las longitudes no cuenta porciones. Invertir la longitud total en vez del tamaño de porción responde a otra división."
           }
         },
         {
@@ -265,6 +270,128 @@
           "feedback": {
             "correct": "a y d cancelan factores cinco y cuatro que multiplican al numerador completo y al denominador. Ambos son distintos de cero.",
             "incorrect": "b cancela sumandos: el valor original es 14/9, distinto de 9/4. c cancela cero, que no tiene inverso. Tener el mismo símbolo a ambos lados no garantiza que se pueda eliminar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Opuesto e inverso: dos comprobaciones distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para 2, el opuesto es −2 y el inverso es 1/2. Para −1, el opuesto es 1 y el inverso es −1: un mismo número puede ser su propio inverso. Siempre hay que identificar qué operación debe producir el neutro: suma y cero, o producto y uno."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "opuesto_e_inverso",
+          "prompt": "Para −5/8, escribe su opuesto y su inverso multiplicativo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "opuesto",
+                  "type": "numeric",
+                  "label": "Opuesto"
+                },
+                {
+                  "id": "inverso",
+                  "type": "numeric",
+                  "label": "Inverso"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "opuesto": {
+                    "type": "numeric",
+                    "expected": "5/8"
+                  },
+                  "inverso": {
+                    "type": "numeric",
+                    "expected": "-8/5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El opuesto 5/8 hace cero en la suma. El inverso −8/5 hace uno en el producto.",
+            "incorrect": "Cambiar solo el signo encuentra el opuesto. Intercambiar numerador y denominador conserva aquí el signo negativo para producir un producto positivo uno."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inversos_enteros",
+          "prompt": "Escribe los inversos de siete y de menos uno.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "siete",
+                  "type": "numeric",
+                  "label": "Inverso de 7"
+                },
+                {
+                  "id": "menos_uno",
+                  "type": "numeric",
+                  "label": "Inverso de −1"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "siete": {
+                    "type": "numeric",
+                    "expected": "1/7"
+                  },
+                  "menos_uno": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7×1/7 = 1 y (−1)×(−1) = 1. Los inversos son 1/7 y −1.",
+            "incorrect": "−7 es el opuesto de siete, pero no su inverso. Uno multiplicado por menos uno da menos uno y tampoco sirve."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_para_uno",
+          "prompt": "Un número r satisface r×(−8/5) = 1. ¿Cuál es r?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "-5/8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "r es el inverso de −8/5: vale −5/8. El producto positivo se reduce a uno.",
+            "incorrect": "5/8 produciría menos uno. La condición producto uno distingue este problema de buscar un opuesto."
           }
         }
       ]

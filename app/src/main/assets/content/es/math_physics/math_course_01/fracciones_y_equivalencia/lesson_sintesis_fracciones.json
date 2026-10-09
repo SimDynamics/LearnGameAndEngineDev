@@ -314,6 +314,179 @@
           "text": "Si una respuesta no pasa tu comprobación, identifica qué cambió: el valor, el signo, la unidad o la forma pedida. Corregir ese punto es más útil que repetir mecánicamente la misma cuenta."
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir y recuperar relaciones"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "registro_dos_cambios",
+          "prompt": "Un registro comienza en −3/4. Primero baja 1/6 y después sube 5/8. Escribe el valor final y decide si llegó a cero.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Valor final",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "-7/24"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí, porque el último cambio es positivo."
+                },
+                {
+                  "id": "b",
+                  "label": "No: el resultado sigue siendo negativo; la subida no compensa la posición inicial y la bajada."
+                },
+                {
+                  "id": "c",
+                  "label": "Sí: cualquier subida anula las bajadas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En veinticuatroavos: −18/24−4/24+15/24 = −7/24. La última subida reduce la distancia al cero, pero no alcanza a llegar.",
+            "incorrect": "La dirección del último cambio no decide el signo final. Conserva todos los cambios y sus signos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_y_particion",
+          "prompt": "Para 18/30+7/10, alguien cancela el tres de treinta y concluye 18/10+7/10. ¿Qué reparación conserva los sumandos?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "18/30 = 3/5 = 6/10; así, la suma es 13/10."
+                },
+                {
+                  "id": "b",
+                  "label": "Se debe sumar primero 18+7 y 30+10."
+                },
+                {
+                  "id": "c",
+                  "label": "La cancelación es correcta porque treinta tiene un factor tres."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Reducir afecta a ambos términos: 18/30 = 3/5. Luego 6/10+7/10 = 13/10.",
+            "incorrect": "Cancelar un factor del denominador exige cancelarlo también del numerador. Sumar numeradores y denominadores no reúne partes del mismo tamaño."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recta_recuperada",
+          "prompt": "Las marcas de la recta están separadas por un sexto. Lee el punto y escribe cuánto debe avanzar hacia la derecha para llegar a cero.",
+          "representations": [
+            {
+              "type": "math_number_line",
+              "mode": "read_value",
+              "min": -1,
+              "max": 1,
+              "step": 0.16666666666666666,
+              "value": -0.8333333333333334,
+              "closed": true,
+              "direction": "none",
+              "showValueLabel": false
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "posicion",
+                  "type": "numeric",
+                  "label": "Posición del punto"
+                },
+                {
+                  "id": "avance",
+                  "type": "numeric",
+                  "label": "Avance hasta cero"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "posicion": {
+                    "type": "numeric",
+                    "expected": "-5/6"
+                  },
+                  "avance": {
+                    "type": "numeric",
+                    "expected": "5/6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La posición es −5/6; avanzar 5/6 lleva a cero. Posición y desplazamiento usan signos distintos.",
+            "incorrect": "Cinco intervalos hacia la izquierda dan una posición negativa. El avance a la derecha tiene valor positivo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "medio_entre_impropias",
+          "prompt": "Una marca queda exactamente a mitad entre 7/6 y 3/2. ¿Cuál es su posición?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "4/3"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7/6+9/6 = 16/6; su mitad es 8/6 = 4/3. Se cumple 7/6 < 4/3 < 3/2.",
+            "incorrect": "Sumar los extremos sin tomar la mitad coloca otro punto. Comparar con los dos extremos comprueba la construcción."
+          }
+        }
+      ]
     }
   ]
 }

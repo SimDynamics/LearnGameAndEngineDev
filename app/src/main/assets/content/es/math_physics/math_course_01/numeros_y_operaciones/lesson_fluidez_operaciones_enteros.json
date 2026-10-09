@@ -1,0 +1,371 @@
+{
+  "id": "math_course_01__numeros_y_operaciones__fluidez_operaciones_enteros",
+  "title": "Operaciones con enteros: elegir, calcular y comprobar",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una respuesta antes de la cuenta completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta práctica combina las ideas anteriores. Antes de calcular, decide si el resultado será positivo, negativo o cero, y qué tamaño esperas. Después comprueba con una operación inversa o con una segunda agrupación. No hace falta que el cálculo sea largo para que la decisión importe."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "signos_y_tamanos",
+          "prompt": "Calcula las tres expresiones; observa que usan los mismos tamaños con operaciones diferentes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "signos_y_tamanos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "−12 + 8",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "−12 − 8",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "(−12) ÷ (−4)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-20"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los resultados son −4, −20 y 3. Sumar compensa, restar un positivo acumula dirección negativa y dividir busca un factor.",
+            "incorrect": "Los signos no sustituyen la operación. La suma y la resta aquí tienen resultados diferentes, y el cociente se verifica con (−4) × 3."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_tres_signos",
+          "prompt": "Calcula −8 + 15 + (−7).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "suma_tres_signos__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "0"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los términos negativos suman −15 y compensan el +15: resultado cero.",
+            "incorrect": "Conserva el signo de cada término al agrupar. Un resultado cero puede surgir de números no nulos."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar una cantidad ausente"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cambio_ausente",
+          "prompt": "Un saldo era 4 pesos y termina en −9 pesos. ¿Qué cambio dirigido recibió?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cambio_ausente__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-13"
+              },
+              "unit": "pesos"
+            }
+          ],
+          "feedback": {
+            "correct": "Recibió −13 pesos de cambio: 4 + (−13) = −9.",
+            "incorrect": "El final es −9, pero el cambio debe llevar de 4 a −9. Comprueba aplicando tu respuesta al inicio."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisor_ausente",
+          "prompt": "¿Qué entero no nulo completa 48 ÷ ? = −6?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisor_ausente__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El divisor es −8: (−8) × (−6) = 48.",
+            "incorrect": "El divisor y el cociente deben multiplicarse para recuperar 48. No intercambies suma y producto."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "verificacion_cociente",
+          "prompt": "Se propone (−45) ÷ (−9) = −5. ¿Qué comprobación permite detectar el error?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "verificacion_cociente__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(−9) × (−5) = 45, que no recupera −45."
+                },
+                {
+                  "id": "b",
+                  "label": "−9 + (−5) = −14, que debe ser el dividendo."
+                },
+                {
+                  "id": "c",
+                  "label": "Como aparece un negativo, todo cociente debe ser negativo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La comprobación multiplica divisor por cociente. El producto obtenido es +45; el cociente correcto es +5.",
+            "incorrect": "Sumar divisor y cociente no comprueba una división. Dos negativos no obligan a un cociente negativo: la relación multiplicativa determina el signo."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambios repetidos y datos de una recta"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "registro_mixto",
+          "prompt": "Un registro empieza en −4 puntos, recibe tres pérdidas de 5 puntos y después gana 12. ¿Cuál es el valor final?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "registro_mixto__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-7"
+              },
+              "unit": "puntos"
+            }
+          ],
+          "feedback": {
+            "correct": "−4 + 3 × (−5) + 12 = −4 − 15 + 12 = −7 puntos.",
+            "incorrect": "Las tres pérdidas afectan al registro; el estado inicial ocurre una sola vez. La ganancia final no compensa toda la cantidad negativa."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "origen_y_repeticiones",
+          "prompt": "Un móvil parte de −6 m y llega a 2 m mediante cuatro cambios iguales. Escribe el cambio total y el cambio en cada etapa.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "origen_y_repeticiones__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "t",
+                  "type": "numeric",
+                  "label": "Cambio total (m)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Cambio por etapa (m)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "t": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cambio total es 8 m y cada etapa aporta 2 m. Comprobar: −6 + 4 × 2 = 2.",
+            "incorrect": "La posición final 2 no es por sí sola el cambio total. Primero relaciona inicio y final y después reparte ese cambio."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cero y límites en una situación nueva"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparto_sin_grupos",
+          "prompt": "Hay 12 fichas y se pide repartirlas por igual entre cero grupos. ¿Qué conclusión corresponde?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparto_sin_grupos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Cada grupo recibe cero fichas."
+                },
+                {
+                  "id": "b",
+                  "label": "Cada grupo recibe doce fichas."
+                },
+                {
+                  "id": "c",
+                  "label": "No se define una cantidad por grupo: el número de grupos es cero."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El reparto pediría 12 ÷ 0. Ninguna cantidad multiplicada por cero grupos reconstruye las doce fichas.",
+            "incorrect": "Con cero grupos, ni cero ni doce fichas por grupo reconstruyen doce. La condición impide definir el cociente."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_operaciones_distintas",
+          "prompt": "Calcula sin confundir el papel del cero.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_operaciones_distintas__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "s",
+                  "type": "numeric",
+                  "label": "0 + (−6)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "0 × (−6)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "0 ÷ (−6)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "s": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "p": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Suma: −6; producto: 0; cociente: 0. La división está definida porque el divisor es −6.",
+            "incorrect": "La presencia de cero no tiene un único efecto para todas las operaciones. Revisa la operación y la posición del cero."
+          }
+        }
+      ]
+    }
+  ]
+}

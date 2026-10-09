@@ -1,0 +1,369 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__factorizacion_y_divisores",
+  "title": "Factorización prima y disponibilidad de factores",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir hasta llegar a primos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para descomponer 48 puedes empezar con 6 × 8 o con 3 × 16. Si continúas hasta que cada factor sea primo, ambos caminos dan cuatro doses y un tres: 48 = 2⁴ × 3. Detenerte en 6 × 8 conserva el valor, pero todavía no es una factorización prima. La multiplicación final comprueba el número; comprobar que los factores son primos comprueba que el proceso terminó."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factorizacion_terminada",
+          "prompt": "¿Cuál escritura es una factorización prima completa de 120?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factorizacion_terminada__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "2³ × 15"
+                },
+                {
+                  "id": "b",
+                  "label": "2² × 3 × 5"
+                },
+                {
+                  "id": "c",
+                  "label": "2³ × 3 × 5"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2³ × 3 × 5 = 8 × 3 × 5 = 120 y todos los factores son primos. 2³ × 15 vale 120, pero 15 aún se descompone.",
+            "incorrect": "Conservar el producto no basta para decir prima: 15 es compuesto. La segunda escritura sí usa primos, pero da 60 y pierde un dos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factorizacion_tres_primos",
+          "prompt": "Completa 90 = 2ᵃ × 3ᵇ × 5ᶜ.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factorizacion_tres_primos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Exponente de 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Exponente de 3",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Exponente de 5",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "90 = 9 × 10 = 3² × 2 × 5. Los exponentes son 1, 2 y 1; multiplicar 2 × 9 × 5 recupera 90.",
+            "incorrect": "Los exponentes cuentan copias de cada primo. No uses el propio primo como exponente ni omitas el segundo tres."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Orden distinto, mismos factores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los factores pueden aparecer en otro orden por conmutatividad y agrupados de otro modo por asociatividad. Eso no crea una factorización nueva si las copias de cada primo son las mismas. Por ejemplo, 2 × 3 × 2 × 5 y 3 × 5 × 2² representan el mismo conjunto de factores de 60."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "copias_equivalentes",
+          "prompt": "Selecciona todas las escrituras que son factorizaciones primas completas de 84.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "copias_equivalentes__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "2 × 2 × 3 × 7"
+                },
+                {
+                  "id": "b",
+                  "label": "3 × 7 × 2²"
+                },
+                {
+                  "id": "c",
+                  "label": "4 × 3 × 7"
+                },
+                {
+                  "id": "d",
+                  "label": "2 × 3 × 7"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las dos primeras contienen dos doses, un tres y un siete: producto 84. La tercera da 84 pero conserva un factor compuesto; la cuarta da 42.",
+            "incorrect": "El orden puede cambiar, pero no la cantidad de copias. Cuatro todavía se puede descomponer en dos doses."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_primo_repetido",
+          "prompt": "La factorización prima de 49 contiene solo el primo 7. ¿Qué exponente lleva?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_primo_repetido__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "49 = 7 × 7 = 7². Un mismo primo puede aparecer repetido y se registra con un exponente.",
+            "incorrect": "Ser impar no implica ser primo. Aquí el siete es primo, pero el número 49 es un producto de dos sietes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un divisor con las copias disponibles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si 72 = 2³ × 3², un divisor positivo solo puede usar de cero a tres doses y de cero a dos treses. Puede usar menos copias, pero no más ni un primo ausente. Elegir cero copias de un primo significa que no interviene; el producto de los factores elegidos debe caber exactamente en 72."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisores_por_copias",
+          "prompt": "Selecciona todos los divisores de 72 de esta lista, usando 72 = 2³ × 3².",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisores_por_copias__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "8"
+                },
+                {
+                  "id": "b",
+                  "label": "9"
+                },
+                {
+                  "id": "c",
+                  "label": "18"
+                },
+                {
+                  "id": "d",
+                  "label": "16"
+                },
+                {
+                  "id": "e",
+                  "label": "27"
+                },
+                {
+                  "id": "f",
+                  "label": "5"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "8 usa tres doses; 9 usa dos treses; 18 usa un dos y dos treses. 16 pide cuatro doses, 27 tres treses y 5 un primo ausente.",
+            "incorrect": "Un divisor no puede pedir más copias de un primo de las que contiene el número ni añadir otro primo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencias_divisoras_maximas",
+          "prompt": "Para 360 = 2³ × 3² × 5, escribe la mayor potencia de 2 que lo divide y la mayor potencia de 3 que lo divide.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencias_divisoras_maximas__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Mayor potencia de 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "t",
+                  "type": "numeric",
+                  "label": "Mayor potencia de 3",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "t": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las potencias son 2³ = 8 y 3² = 9. Una copia extra de cualquiera de esos primos ya no está disponible.",
+            "incorrect": "Se pide la potencia, no solo el exponente. El factor cinco no aumenta las copias de dos o de tres."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar lo que el producto dice"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "numero_primo_factorizacion",
+          "prompt": "¿Cuál afirmación distingue correctamente 1, 13 y 26?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "numero_primo_factorizacion__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "1 debe agregarse como factor primo a cualquier lista."
+                },
+                {
+                  "id": "b",
+                  "label": "13 ya es primo y 26 se descompone como 2 × 13."
+                },
+                {
+                  "id": "c",
+                  "label": "26 es primo porque contiene al primo 13."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "13 ya es un factor primo. 26 contiene dos factores mayores que uno y es compuesto. El uno no se considera primo.",
+            "incorrect": "Contener un primo como factor no hace primo al producto. Añadir unos conserva el valor pero no aporta factores primos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reconstruir_factorizacion",
+          "prompt": "Reconstruye el número cuya factorización es 2² × 3 × 11.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reconstruir_factorizacion__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "132"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2² × 3 × 11 = 4 × 3 × 11 = 132.",
+            "incorrect": "El exponente dos repite el factor dos. No sumes los primos ni interpretes 2² como 2 × un dato ausente."
+          }
+        }
+      ]
+    }
+  ]
+}

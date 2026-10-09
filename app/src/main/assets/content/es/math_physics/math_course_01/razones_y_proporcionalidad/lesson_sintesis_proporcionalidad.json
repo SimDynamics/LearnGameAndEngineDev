@@ -6,7 +6,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "De la situación al modelo"
+          "text": "Comprender la relación"
         },
         {
           "type": "paragraph",
@@ -26,7 +26,92 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Retos de transferencia"
+          "text": "Reunir información que está en distintas unidades"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sintesis_receta_unidades",
+          "prompt": "Para cuatro porciones iguales se usan 3/5 L de salsa. Se prepararán diez porciones y cada recipiente admite 250 mL. Usa 1 L = 1000 mL. Calcula los litros necesarios y el número mínimo de recipientes completos que permite guardarlos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "l",
+              "type": "math_numeric_input",
+              "label": "Salsa necesaria",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/2"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "n",
+              "type": "math_numeric_input",
+              "label": "Recipientes mínimos",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se necesitan 3/2 L = 1500 mL, que caben exactamente en seis recipientes.",
+            "incorrect": "La razón conecta porciones y salsa; la capacidad conecta litros y recipientes. Dividir litros entre 250 sin convertir mezcla unidades."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sintesis_datos_insuficientes",
+          "prompt": "Un servicio cobró 84 pesos por seis piezas. Se quiere calcular el pago por diez. ¿Cuál respuesta respeta la información disponible?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "criterio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "140 pesos necesariamente."
+                },
+                {
+                  "id": "b",
+                  "label": "88 pesos necesariamente."
+                },
+                {
+                  "id": "c",
+                  "label": "Hace falta conocer si hay precio constante por pieza, cargo fijo u otra regla."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El pago de seis piezas no determina la regla del servicio.",
+            "incorrect": "84/6 es una media de esa compra. Antes de extenderla debe justificarse que se conserva."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencias, condiciones y primer ensayo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de dar una respuesta, vuelve a la pregunta. Una misma situación puede pedir cantidad, tasa, parte del total o tiempo. Cambiar la referencia cambia la cuenta. Si puedes explicar qué permanece constante, verificarlo con los datos y conservar las unidades, estás preparado para usar porcentajes y escalas con el mismo criterio."
         },
         {
           "type": "math_puzzle",
@@ -79,6 +164,76 @@
             "correct": "Hay ocho partes de ocho plantas: 40 de hoja y 24 de flor. Las de flor son 24/64 = 3/8 del total.",
             "incorrect": "5:3 compara dos partes. Para el total se suman ocho partes; 3/5 compararía flor con hoja. Verifica que 40+24 sea 64."
           }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar divisibilidad y operaciones con fracciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un múltiplo común puede expresar la primera coincidencia de ciclos. Un denominador común expresa partes de una misma unidad. En ambos casos se organiza una unidad compartida; las operaciones se eligen por el significado del problema."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ciclos_sincronizados",
+          "prompt": "Dos controles se realizan cada 6 y cada 8 minutos. Acaban de coincidir. ¿Cuántos minutos pasarán hasta su primera nueva coincidencia?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Tiempo",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "24"
+              },
+              "unit": "min"
+            }
+          ],
+          "feedback": {
+            "correct": "Los múltiplos de 6 son 6,12,18,24; los de 8 son 8,16,24. La primera nueva coincidencia es 24 min.",
+            "incorrect": "48 también es una coincidencia, pero no la primera. 2 es un divisor común, no el intervalo buscado."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cinta_suma_resta",
+          "prompt": "Hay 5/4 m de cinta. Se utiliza 1/3 m y después se agrega 1/6 m. ¿Qué longitud queda disponible?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Longitud disponible",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "13/12"
+              },
+              "unit": "m"
+            }
+          ],
+          "feedback": {
+            "correct": "Con doceavos: 15/12−4/12+2/12 = 13/12 m.",
+            "incorrect": "No se suman denominadores. El uso resta y la incorporación suma; conserva el signo de cada cambio."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Variar sin perder el significado"
         },
         {
           "type": "math_puzzle",
@@ -207,6 +362,14 @@
             "correct": "Se tarda 3 h y 2 h. Ambos productos velocidad×tiempo son 96 km, la distancia fijada.",
             "incorrect": "La distancia es la referencia fija. Una suma de km/h y horas no representa una distancia; el cociente tampoco conserva el recorrido."
           }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar y comprobar"
         },
         {
           "type": "math_puzzle",
@@ -386,18 +549,6 @@
             "correct": "18/2 y 16/4 son distintos; 2×18 y 4×16 también. La pérdida constante exige restar al valor inicial.",
             "incorrect": "Duplicar solo una cantidad no establece proporcionalidad directa. Disminuir no establece la inversa. Hay que comprobar el invariante pertinente, no elegir por la dirección del cambio."
           }
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Comprobación final"
-        },
-        {
-          "type": "paragraph",
-          "text": "Antes de dar una respuesta, vuelve a la pregunta. Una misma situación puede pedir cantidad, tasa, parte del total o tiempo. Cambiar la referencia cambia la cuenta. Si puedes explicar qué permanece constante, verificarlo con los datos y conservar las unidades, estás preparado para usar porcentajes y escalas con el mismo criterio."
         }
       ]
     }

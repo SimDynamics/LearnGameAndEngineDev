@@ -1,0 +1,526 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__potencias_y_factores_repetidos",
+  "title": "Potencias: factores, signos y transformaciones",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contar factores, no sumar la base"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una potencia registra cuántas veces aparece un factor. En 3² hay dos factores tres: 3 × 3 = 9. En 3³ hay tres: 3 × 3 × 3 = 27. El producto 3 × 2 = 6 y la suma 3 + 3 = 6 tienen otro significado. Escribir primero los factores permite comprobar una potencia pequeña sin depender de una consigna."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencia_como_producto",
+          "prompt": "Calcula 4³ a partir de sus factores repetidos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencia_como_producto__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "64"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4³ = 4 × 4 × 4 = 64. El exponente cuenta tres factores.",
+            "incorrect": "4 × 3 o 4 + 4 + 4 no representan la potencia: repiten sumandos, no factores."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escritura_potencia",
+          "prompt": "¿Qué potencia resume 5 × 5 × 5 × 5?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escritura_potencia__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4⁵"
+                },
+                {
+                  "id": "b",
+                  "label": "5⁴"
+                },
+                {
+                  "id": "c",
+                  "label": "5 × 4"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La base es 5 y aparece cuatro veces: 5⁴.",
+            "incorrect": "Intercambiar base y exponente cambia los factores. Multiplicar 5 por 4 no repite el factor cinco cuatro veces."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Juntar bloques de la misma base"
+        },
+        {
+          "type": "paragraph",
+          "text": "En 2³ × 2², el primer bloque tiene tres doses y el segundo dos. Juntos hay cinco: 2³ × 2² = 2⁵. Para exponentes positivos, aᵐ × aⁿ = aᵐ⁺ⁿ porque se reúnen los factores de la misma base. Esta regla se refiere a un producto; no convierte una suma de potencias en otra potencia."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_potencias",
+          "prompt": "Completa 3² × 3³ = 3ᵉ y calcula el valor del producto.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_potencias__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Exponente e",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "v",
+                  "type": "numeric",
+                  "label": "Valor",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "e": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "v": {
+                    "type": "numeric",
+                    "expected": "243"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se reúnen dos y tres factores tres: e = 5 y 3⁵ = 243.",
+            "incorrect": "Los exponentes cuentan factores, por eso se suman en este producto. Multiplicarlos daría seis factores y otro valor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_frente_suma_potencias",
+          "prompt": "Calcula las dos expresiones y comprueba si admiten la misma transformación.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_frente_suma_potencias__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "2² × 2³",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "s",
+                  "type": "numeric",
+                  "label": "2² + 2³",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "p": {
+                    "type": "numeric",
+                    "expected": "32"
+                  },
+                  "s": {
+                    "type": "numeric",
+                    "expected": "12"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El producto vale 32 = 2⁵; la suma vale 4 + 8 = 12. Sumar los exponentes no calcula una suma de potencias.",
+            "incorrect": "La regla reúne factores multiplicados. En la suma se añaden los valores de dos bloques ya calculados."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Repetir un bloque de factores"
+        },
+        {
+          "type": "paragraph",
+          "text": "En (2³)² se repite dos veces un bloque de tres doses: (2 × 2 × 2) × (2 × 2 × 2). Hay seis factores, de modo que (2³)² = 2⁶ = 64. En general, (aᵐ)ⁿ = aᵐⁿ para exponentes positivos: n bloques de m factores contienen m × n factores."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencia_de_potencia",
+          "prompt": "Completa (3²)² = 3ᵉ y calcula su valor.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencia_de_potencia__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Exponente e",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "v",
+                  "type": "numeric",
+                  "label": "Valor",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "e": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "v": {
+                    "type": "numeric",
+                    "expected": "81"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dos bloques de dos treses dan cuatro factores: e = 4 y el valor es 81.",
+            "incorrect": "En una potencia de potencia se repite todo el bloque. Sumar 2 + 2 coincide aquí por casualidad; contar bloques explica la regla que también funciona con exponentes distintos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "bloques_exponentes_distintos",
+          "prompt": "¿Qué exponente e completa (2²)³ = 2ᵉ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "bloques_exponentes_distintos__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Tres bloques de dos factores dos contienen seis factores: e = 6.",
+            "incorrect": "Sumar exponentes daría cinco factores, pero esta expresión tiene tres bloques de dos."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Potencia de un producto, no de una suma"
+        },
+        {
+          "type": "paragraph",
+          "text": "En (2 × 5)² aparecen dos doses y dos cincos. Asociar y conmutar permite reunirlos: (2 × 5)² = 2² × 5² = 4 × 25 = 100. Lo mismo vale para otros exponentes positivos. En cambio, (2 + 5)² = 49 y 2² + 5² = 29: el cuadrado de una suma no se obtiene sumando los cuadrados."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencia_producto",
+          "prompt": "Calcula (3 × 2)³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencia_producto__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "216"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "(3 × 2)³ = 3³ × 2³ = 27 × 8 = 216. También 6³ = 216.",
+            "incorrect": "El exponente afecta a ambos factores. Elevar solo el 3 y conservar el 2 sin repetir cambia el producto."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cuadrado_suma_error",
+          "prompt": "Se propone (4 + 1)² = 4² + 1². ¿Qué evaluación corresponde?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cuadrado_suma_error__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es válida porque la potencia se distribuye en cualquier operación."
+                },
+                {
+                  "id": "b",
+                  "label": "Es falsa: el lado izquierdo vale 25 y el derecho 17."
+                },
+                {
+                  "id": "c",
+                  "label": "Es falsa porque ninguna potencia puede tener paréntesis."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El paréntesis vale 5 y su cuadrado 25. Los cuadrados separados suman 16 + 1 = 17.",
+            "incorrect": "Los paréntesis son válidos; lo inválido es trasladar a una suma una transformación que se justifica para un producto."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Bases especiales y signos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para a distinto de cero, a⁰ = 1 es compatible con bajar el exponente dividiendo por a. Esto incluye bases negativas. Cero con exponente positivo sí se define por un producto de ceros. No usamos 0⁰ aquí: el argumento de bajar el exponente exigiría dividir entre cero."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "bases_cero_uno_y_signo",
+          "prompt": "Calcula estas potencias definidas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "bases_cero_uno_y_signo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "0³",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "(−5)⁰",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "1⁵",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "7¹",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los resultados son 0, 1, 1 y 7. El exponente positivo repite factores; el exponente cero de base no nula vale uno.",
+            "incorrect": "No confundas base cero con exponente cero. Por uno se conserva cada factor y un solo factor siete vale siete."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "paridad_exponente_signos",
+          "prompt": "Calcula las tres expresiones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "paridad_exponente_signos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "(−2)⁴",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "(−2)³",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "−2⁴",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "16"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "-16"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cuatro factores negativos se emparejan y dan 16; tres dejan uno sin pareja y dan −8. El signo exterior de −2⁴ se aplica después de la potencia y da −16.",
+            "incorrect": "Identifica primero la base completa. Los paréntesis y el número de factores negativos tienen papeles diferentes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir una escritura para una situación"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "duplicaciones",
+          "prompt": "Un cultivo empieza con 5 grupos y el número de grupos se duplica en cada etapa. Bajo ese patrón, ¿cuántos grupos habrá después de tres etapas?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "duplicaciones__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "40"
+              },
+              "unit": "grupos"
+            }
+          ],
+          "feedback": {
+            "correct": "Cada etapa multiplica por dos: 5 × 2³ = 40 grupos. Tres etapas no significa añadir tres veces dos.",
+            "incorrect": "La cantidad se actualiza en cada duplicación: 5, 10, 20, 40. No uses 5 × 2 × 3 ni 5 + 2 + 2 + 2."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencias_estructura_mixta",
+          "prompt": "Calcula 2³ × 2² − (−2)³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencias_estructura_mixta__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "40"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El producto es 2⁵ = 32 y (−2)³ = −8; 32 − (−8) = 40.",
+            "incorrect": "Aplica las leyes al producto de la misma base y conserva el signo de la potencia negativa que se resta."
+          }
+        }
+      ]
+    }
+  ]
+}

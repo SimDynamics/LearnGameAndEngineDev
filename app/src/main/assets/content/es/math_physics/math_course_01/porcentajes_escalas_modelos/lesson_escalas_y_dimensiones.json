@@ -6,7 +6,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "La misma forma con otro tamaño"
+          "text": "Comprender la relación"
         },
         {
           "type": "paragraph",
@@ -19,6 +19,10 @@
         {
           "type": "paragraph",
           "text": "Si un modelo mide 8 cm y el objeto real 2 m, primero expresamos 2 m como 200 cm. La razón modelo:real es 8:200 = 1:25. El real tiene longitudes 25 veces mayores. Para ir del real al modelo dividimos por 25, y para ir del modelo al real multiplicamos. El sentido de la comparación decide cuál factor usamos."
+        },
+        {
+          "type": "note",
+          "text": "Los dibujos esquemáticos no sirven para medir por su apariencia. Usa las medidas declaradas y distingue longitud, área y volumen; sus factores de cambio son diferentes."
         }
       ]
     },
@@ -26,7 +30,72 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Por qué el área no cambia como el lado"
+          "text": "Ir del objeto al plano y encontrar la escala"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una escala 1:250 divide cada longitud real entre 250 para obtener la longitud dibujada, en la misma unidad. Un tramo real de 5 m son 500 cm: en el plano mide 500/250 = 2 cm. Para volver al real se multiplica por 250. El sentido del cambio decide cuál operación usar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si 3 cm del modelo representan 90 cm reales, modelo:real = 3:90 = 1:30. El factor real/modelo es 30 y el factor modelo/real es 1/30. Simplificar la razón exige convertir unidades antes de comparar."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "real_a_plano",
+          "prompt": "Un tramo real mide 18 m. El plano tiene escala 1:300. Usa 1 m = 100 cm. ¿Cuántos centímetros mide el tramo en el plano?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Longitud en el plano",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              },
+              "unit": "cm"
+            }
+          ],
+          "feedback": {
+            "correct": "1800 cm/300 = 6 cm. Multiplicar 6 por 300 recupera la longitud real en cm.",
+            "incorrect": "Multiplicar 18 por 300 va en el sentido contrario; dividir metros y rotular el resultado como centímetros omite la conversión."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escala_desde_medidas",
+          "prompt": "Una maqueta mide 12 cm en una longitud que en el objeto real mide 3 m. Usa 1 m = 100 cm. La escala se escribe 1:n. ¿Qué valor tiene n?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Denominador n",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "25"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12:300 = 1:25. El factor real/modelo es 25.",
+            "incorrect": "3/12 mezcla metros con centímetros. 1/25 es el factor de reducción; n es su denominador en la escritura 1:n."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencias, condiciones y primer ensayo"
         },
         {
           "type": "paragraph",
@@ -39,10 +108,6 @@
         {
           "type": "paragraph",
           "text": "Una caja rectangular tiene volumen largo×ancho×alto. Al multiplicar las tres longitudes por k, el producto contiene k tres veces: el volumen cambia por k³. Con k = 2 pasa a ocho veces el original. Esto también explica unidades: un cuadrado de 1 m por 1 m tiene 100×100 = 10000 cm², y un cubo de 1 m de lado tiene 100×100×100 = 1000000 cm³."
-        },
-        {
-          "type": "note",
-          "text": "Los dibujos esquemáticos no sirven para medir por su apariencia. Usa las medidas declaradas y distingue longitud, área y volumen; sus factores de cambio son diferentes."
         },
         {
           "type": "math_puzzle",
@@ -76,7 +141,110 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Explorar y comprobar la escala"
+          "text": "Recuperar un factor y comprobar cuántas dimensiones cambian"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un rectángulo ampliado uniformemente tiene nueve veces el área original, su factor de longitud es tres: 3×3 = 9. No hace falta medir el dibujo ni aplicar nueve a los lados. Se buscan factores cuyo producto produzca el cambio de área."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con factores diferentes en largo y ancho, el factor de área es el producto de ambos. Duplicar largo y reducir ancho a la mitad conserva el área, pero cambia la forma. El área igual por sí sola no prueba que dos figuras tengan la misma forma."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_desde_area",
+          "prompt": "Un rectángulo se amplía uniformemente y su área pasa de 8 a 72 unidades cuadradas. ¿Cuál factor debe aplicarse a cada lado?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "k",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "9."
+                },
+                {
+                  "id": "b",
+                  "label": "3."
+                },
+                {
+                  "id": "c",
+                  "label": "18."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "72/8 = 9 es el factor de área. El factor de longitud es 3 porque 3² = 9.",
+            "incorrect": "Aplicar 9 a cada lado multiplicaría el área por 81. Distingue la razón entre áreas de la razón entre longitudes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escalas_independientes",
+          "prompt": "Un rectángulo de 6 cm por 4 cm duplica el largo y reduce el ancho a la mitad. Calcula el área final y elige la interpretación.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Área final",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "24"
+              },
+              "unit": "cm²"
+            },
+            {
+              "id": "forma",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es una escala uniforme por factor 2."
+                },
+                {
+                  "id": "b",
+                  "label": "Conserva área, pero usa factores distintos y cambia la forma."
+                },
+                {
+                  "id": "c",
+                  "label": "Su área debe cuadruplicarse."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los lados nuevos son 12 y 2; el área es 24 cm², igual a 6×4. El producto de factores es 2×1/2 = 1.",
+            "incorrect": "La regla k² requiere el mismo factor en ambos lados. Tener la misma área no implica una ampliación uniforme."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Variar sin perder el significado"
         },
         {
           "type": "math_puzzle",
@@ -172,6 +340,14 @@
             "correct": "Los lados quedan en 2 m y 3 m. Su área es 6 m², un cuarto de 24 m².",
             "incorrect": "Reducir cada lado a la mitad introduce dos factores 1/2. El área no es 12 m²: ese sería el efecto de reducir un solo lado."
           }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar y comprobar"
         },
         {
           "type": "math_puzzle",

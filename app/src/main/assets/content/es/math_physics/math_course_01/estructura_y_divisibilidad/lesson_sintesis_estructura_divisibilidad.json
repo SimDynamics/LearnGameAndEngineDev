@@ -19,6 +19,44 @@
         {
           "type": "paragraph",
           "text": "Para una potencia, identifica la base y cuenta sus factores. Para una suma con signos, conserva cada signo unido a su término. Para una división, comprueba el divisor y recupera el dividendo con un producto. Estas acciones sirven aunque el problema cambie de contexto y ya no te diga qué regla debes usar."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparacion_signos",
+          "prompt": "Una persona cambia (-3) × (8 - 2) por -24 - 6. ¿Qué evaluación corresponde?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparacion_signos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es correcto porque cada número aparece una vez."
+                },
+                {
+                  "id": "b",
+                  "label": "Falta considerar que se resta el producto (-3) × 2, que es -6; queda -24 - (-6) = -18."
+                },
+                {
+                  "id": "c",
+                  "label": "Solo hay que quitar todos los signos negativos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La distributividad conserva la resta: (-3) × 8 - [(-3) × 2] = -24 - (-6) = -18.",
+            "incorrect": "El segundo producto es negativo y se está restando. Contar apariciones de cifras o eliminar signos no conserva el valor."
+          }
         }
       ]
     },
@@ -43,38 +81,6 @@
         {
           "type": "paragraph",
           "text": "Las actividades siguientes exigen elegir, calcular y detectar errores. En algunas hay datos de la unidad anterior para recuperar lo aprendido. No hace falta usar un procedimiento largo si una observación sencilla justifica el resultado. Sin embargo, una coincidencia en un ejemplo no prueba por sí sola que una regla funcione siempre; expresa qué propiedad o representación respalda tu decisión."
-        }
-      ]
-    },
-    {
-      "blocks": [
-        {
-          "type": "heading",
-          "text": "Expresiones y equivalencia"
-        },
-        {
-          "type": "math_puzzle",
-          "schemaVersion": 1,
-          "id": "expresion_integrada",
-          "prompt": "Calcula 2 × (9 - 5)² - 7.",
-          "representations": [],
-          "tools": [],
-          "responses": [
-            {
-              "id": "expresion_integrada__valor",
-              "type": "math_numeric_input",
-              "label": "Resultado",
-              "keyboard": "NUMERIC",
-              "validator": {
-                "type": "numeric",
-                "expected": "25"
-              }
-            }
-          ],
-          "feedback": {
-            "correct": "9 - 5 = 4; 4² = 16; 2 × 16 = 32; 32 - 7 = 25.",
-            "incorrect": "La potencia pertenece al resultado del paréntesis. Si multiplicas 2 × 4 antes de elevar al cuadrado, cambias la base."
-          }
         },
         {
           "type": "math_puzzle",
@@ -118,43 +124,85 @@
             "correct": "Distribuir 18 × (10 + 1) da 180 + 18; conmutar intercambia los factores. Ambas expresiones valen 198.",
             "incorrect": "La segunda opción olvida multiplicar el 1 por 18. La cuarta sustituye el producto por una suma sin justificación."
           }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Expresiones y equivalencia"
         },
         {
           "type": "math_puzzle",
           "schemaVersion": 1,
-          "id": "reparacion_signos",
-          "prompt": "Una persona cambia (-3) × (8 - 2) por -24 - 6. ¿Qué evaluación corresponde?",
+          "id": "expresion_integrada",
+          "prompt": "Calcula 2 × (9 - 5)² - 7.",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "reparacion_signos__eleccion",
-              "type": "math_multiple_choice_single",
-              "options": [
-                {
-                  "id": "a",
-                  "label": "Es correcto porque cada número aparece una vez."
-                },
-                {
-                  "id": "b",
-                  "label": "Falta considerar que se resta el producto (-3) × 2, que es -6; queda -24 - (-6) = -18."
-                },
-                {
-                  "id": "c",
-                  "label": "Solo hay que quitar todos los signos negativos."
-                }
-              ],
+              "id": "expresion_integrada__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
               "validator": {
-                "type": "choice",
-                "expected": [
-                  "b"
-                ]
+                "type": "numeric",
+                "expected": "25"
               }
             }
           ],
           "feedback": {
-            "correct": "La distributividad conserva la resta: (-3) × 8 - [(-3) × 2] = -24 - (-6) = -18.",
-            "incorrect": "El segundo producto es negativo y se está restando. Contar apariciones de cifras o eliminar signos no conserva el valor."
+            "correct": "9 - 5 = 4; 4² = 16; 2 × 16 = 32; 32 - 7 = 25.",
+            "incorrect": "La potencia pertenece al resultado del paréntesis. Si multiplicas 2 × 4 antes de elevar al cuadrado, cambias la base."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_parentesis_opuesto",
+          "prompt": "Calcula −(7 − 12) + 3 × (−2).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_parentesis_opuesto__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-1"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El grupo vale −5 y su opuesto 5. El producto vale −6; la suma es −1.",
+            "incorrect": "El signo exterior afecta a la agrupación completa. Multiplicar precede a sumar los dos resultados."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_leyes_potencias",
+          "prompt": "Calcula (2²)³ ÷ 2³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_leyes_potencias__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "(2²)³ = 2⁶ = 64 y 2³ = 8; el cociente es 8.",
+            "incorrect": "La potencia de potencia cuenta seis factores, no cinco. Puedes comprobar la división multiplicando ocho por ocho."
           }
         }
       ]
@@ -273,6 +321,44 @@
             "correct": "La suma deja la pieza suelta del impar. El producto contiene el factor dos del número par, por lo que es par.",
             "incorrect": "En la suma de par e impar queda una pieza sin pareja. En el producto, conservar un factor dos asegura divisibilidad por dos."
           }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_paridad_cuadrados",
+          "prompt": "Un entero n es impar. ¿Cuál afirmación sobre n² + 1 está justificada?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_paridad_cuadrados__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es impar porque el cuadrado conserva la paridad y sumar uno no la cambia."
+                },
+                {
+                  "id": "b",
+                  "label": "Es par: n² es impar y uno más que un impar es par."
+                },
+                {
+                  "id": "c",
+                  "label": "No se puede saber si n es negativo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cuadrado de un impar es impar; añadir uno completa la pareja y da un par. El argumento vale también para impares negativos.",
+            "incorrect": "Sumar uno sí cambia la paridad. El signo de n no impide aplicar el patrón de productos impares."
+          }
         }
       ]
     },
@@ -365,6 +451,59 @@
         {
           "type": "math_puzzle",
           "schemaVersion": 1,
+          "id": "coincidencia_con_divisor",
+          "prompt": "Dos señales comienzan juntas. Una se repite cada 6 minutos y otra cada 24. Escribe el tiempo de la próxima coincidencia y cuántos ciclos completos hace la primera señal.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coincidencia_con_divisor__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "t",
+                  "type": "numeric",
+                  "label": "Tiempo (min)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Ciclos de la primera",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "t": {
+                    "type": "numeric",
+                    "expected": "24"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La coincidencia llega a los 24 minutos: el segundo periodo ya contiene cuatro periodos de seis.",
+            "incorrect": "Multiplicar 6 × 24 da una coincidencia posterior, pero no la primera. El tiempo debe contener ciclos completos de ambas señales."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar números, referencias y operaciones"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
           "id": "recuperacion_estado",
           "prompt": "Un registro comienza en -8 puntos y recibe cinco cambios de +3 puntos. ¿Cuál es el estado final?",
           "representations": [],
@@ -385,6 +524,113 @@
           "feedback": {
             "correct": "El cambio total es 5 × 3 = 15; el estado final es -8 + 15 = 7 puntos.",
             "incorrect": "15 es el cambio total y -8 es el inicio. La respuesta debe combinar ambos y no repetir cinco veces el estado inicial."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_cifras_ceros",
+          "prompt": "Escribe el número formado por 8 millares, 3 centenas, 0 decenas y 5 unidades.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_cifras_ceros__valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8305"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "8000 + 300 + 0 + 5 = 8305. El cero mantiene la posición de decenas.",
+            "incorrect": "No elimines posiciones al escribir las cifras. El cinco representa unidades, no decenas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_referencia_nueva",
+          "prompt": "Una marca tiene posición −4 m respecto de una referencia. Una nueva referencia está en −7 m respecto de la anterior. Escribe la posición de la marca respecto de la referencia nueva y su distancia a ella.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_referencia_nueva__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "Nueva posición (m)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Distancia (m)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "p": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La marca está tres metros por encima de la nueva referencia: posición +3 m y distancia 3 m.",
+            "incorrect": "La marca no se mueve. Cambia el origen desde el que se expresa su posición: −4 − (−7) = 3."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_estimacion_limite",
+          "prompt": "Se necesitan tres rollos que cuestan 149 pesos cada uno. Hay 450 pesos. ¿Qué comprobación exacta confirma si el dinero alcanza?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_estimacion_limite__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "149 + 3 = 152 pesos."
+                },
+                {
+                  "id": "b",
+                  "label": "3 × 149 = 447 pesos; alcanza y quedan 3."
+                },
+                {
+                  "id": "c",
+                  "label": "La estimación 3 × 150 = 450 prueba que no sobra nada."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El total exacto es 447 pesos. La estimación 450 orienta, pero no decide el sobrante exacto.",
+            "incorrect": "El precio se repite tres veces: se multiplica. La estimación cercana no es el total exacto."
           }
         }
       ]

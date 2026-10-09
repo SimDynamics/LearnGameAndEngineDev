@@ -154,7 +154,7 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "inverso_de_suma",
-          "prompt": "Calcula 1 ÷ (2/3 + 1/6) y elige el argumento válido.",
+          "prompt": "Calcula 1÷(3/10+1/5) y elige el argumento válido.",
           "representations": [],
           "tools": [],
           "responses": [
@@ -165,24 +165,24 @@
               "keyboard": "FRACTION",
               "validator": {
                 "type": "numeric",
-                "expected": "6/5"
+                "expected": "2"
               }
             },
             {
-              "id": "razon",
+              "id": "decision",
               "type": "math_multiple_choice_single",
               "options": [
                 {
                   "id": "a",
-                  "label": "Primero se suma el divisor: 2/3 + 1/6 = 5/6; luego se usa su inverso 6/5."
+                  "label": "Se calcula primero el divisor completo y después se toma el inverso de ese único número."
                 },
                 {
                   "id": "b",
-                  "label": "Se invierte cada sumando y se obtiene 3/2 + 6."
+                  "label": "Se suman 10/3 y cinco, los inversos de los sumandos."
                 },
                 {
                   "id": "c",
-                  "label": "Se cancela el uno contra el numerador uno de 1/6."
+                  "label": "Se cancela el uno con el numerador uno de 1/5."
                 }
               ],
               "validator": {
@@ -194,8 +194,8 @@
             }
           ],
           "feedback": {
-            "correct": "El cociente es 6/5. La suma del divisor vale 5/6 y (6/5) × (5/6) = 1.",
-            "incorrect": "El inverso de una suma no es la suma de inversos: 3/2 + 6 no devuelve uno al multiplicarlo por 5/6. El numerador uno dentro de un sumando tampoco es un factor común del divisor completo."
+            "correct": "El divisor completo es 5/10 = 1/2, no nulo. Su inverso es dos; 2×1/2 = 1 comprueba el resultado.",
+            "incorrect": "Invertir una suma no es sumar inversos. El uno de un sumando no multiplica al divisor completo y no se cancela contra el dividendo."
           }
         },
         {
@@ -271,7 +271,7 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "longitud_precision",
-          "prompt": "Una cinta de siete metros se reparte por igual entre nueve equipos. Escribe la longitud exacta por equipo y otra aproximación cuyo error absoluto máximo sea 0,001 m. La calculadora puede ayudar en la segunda respuesta.",
+          "prompt": "Siete metros se reparten por igual entre nueve equipos. Escribe la longitud exacta por equipo y una aproximación con error absoluto máximo de 0,001 m. Después selecciona todos los decimales propuestos que cumplen ese mismo límite; la calculadora puede ayudar.",
           "representations": [],
           "tools": [],
           "responses": [
@@ -296,16 +296,265 @@
                 "tolerance": 0.001
               },
               "calculator": true
+            },
+            {
+              "id": "candidatos",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,777 m"
+                },
+                {
+                  "id": "b",
+                  "label": "0,778 m"
+                },
+                {
+                  "id": "c",
+                  "label": "0,780 m"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
             }
           ],
           "feedback": {
-            "correct": "Cada equipo recibe exactamente 7/9 m. Una aproximación válida es 0,778 m: su error es 1/4500 m, menor que 0,001 m. El decimal repetido completo representa el valor; unos dígitos recortados solo lo aproximan.",
-            "incorrect": "Para la respuesta exacta, 0,778 no es igual a 7/9: usa una fracción equivalente. Para la aproximación, 0,78 tiene error mayor que 0,001 m. No confundas reparto entre nueve con tomar nueve veces la cinta inicial."
+            "correct": "La longitud exacta es 7/9 m. Los errores de 0,777 y 0,778 son 7/9000 m y 1/4500 m: ambos cumplen 0,001 m. 0,780 tiene error 1/450 m y excede el máximo.",
+            "incorrect": "La respuesta exacta debe conservar 7/9. La selección de decimales exige comprobar distancia: 0,777 y 0,778 cumplen por lados distintos; 0,780 excede el límite. Contar cifras no sustituye esa comprobación."
           }
         },
         {
           "type": "note",
           "text": "Al terminar, revisa una respuesta que te haya costado y formula qué la hace válida: conservar una unidad, multiplicar por el inverso, mantener la igualdad o cumplir una precisión. Esa razón será útil en los problemas de tasas y proporcionalidad."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar estructura, residuos y precisión"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "denominador_y_signos",
+          "prompt": "Calcula exactamente −9/14+2/21 en forma reducida con denominador positivo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador de la forma reducida"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador positivo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-23"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "42"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "El mcm es 42: −27/42+4/42 = −23/42. El incremento positivo no compensa la magnitud negativa.",
+            "incorrect": "Cambiar denominadores sin transformar numeradores cambia los sumandos. El signo se comprueba comparando sus magnitudes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_divisor_cero",
+          "prompt": "Se propone cancelar el divisor en 4÷(3/5−6/10). ¿Qué decisión responde correctamente?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El resultado es cuatro, porque el numerador es entero."
+                },
+                {
+                  "id": "b",
+                  "label": "La división no está definida: el divisor completo es cero."
+                },
+                {
+                  "id": "c",
+                  "label": "El resultado es cero porque las fracciones se cancelan."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/5 = 6/10, por lo que su diferencia es cero. No existe un número cuyo producto con cero sea cuatro.",
+            "incorrect": "Cancelar términos iguales de una resta identifica un divisor cero; no autoriza continuar la división ni asignarle resultado cero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "periodo_nuevo",
+          "prompt": "En la división de 4/15: 40 = 2×15+10 y 100 = 6×15+10. Elige su expansión exacta.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,262626… con 26 repetido."
+                },
+                {
+                  "id": "b",
+                  "label": "0,266666… con un dos inicial y después seis repetidos."
+                },
+                {
+                  "id": "c",
+                  "label": "0,2101010… porque diez es el residuo repetido."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El residuo diez vuelve después de escribir seis y seguirá dando seis. El dos inicial aparece antes del ciclo.",
+            "incorrect": "Las cifras no son los residuos. El regreso al residuo diez repite el segundo paso, no la cadena completa desde el primer paso."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "area_y_precision",
+          "prompt": "Una lámina mide 5/6 m por 3/7 m. Escribe el área exacta y selecciona su redondeo a milésimas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Área exacta, en m²",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/14"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,357 m²"
+                },
+                {
+                  "id": "b",
+                  "label": "0,358 m²"
+                },
+                {
+                  "id": "c",
+                  "label": "0,35 m²"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El área es 5/14 m² = 0,357142… m². El redondeo a milésimas es 0,357 m²; conservar la fracción durante el producto evita error intermedio.",
+            "incorrect": "0,358 redondea hacia el vecino más lejano en este caso; 0,35 recorta a centésimas. El área se obtiene multiplicando longitudes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "hipotesis_recuperada",
+          "prompt": "Para números racionales k, u y v, de k×u = k×v se quiere concluir u=v. ¿Cuál es la condición sobre k que permite cancelar sin imponer restricciones adicionales innecesarias?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Que k sea un entero positivo."
+                },
+                {
+                  "id": "b",
+                  "label": "Que u y v tengan el mismo denominador escrito."
+                },
+                {
+                  "id": "c",
+                  "label": "Que k no sea cero; así existe su inverso."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La cancelación necesita un factor común no nulo, sea positivo, negativo, entero o fraccionario.",
+            "incorrect": "Exigir entero positivo es más restrictivo de lo necesario. Las escrituras de u y v no determinan si k puede cancelarse."
+          }
         }
       ]
     }

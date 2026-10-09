@@ -24,24 +24,24 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "misma_particion",
-          "prompt": "Calcula 2/7 + 3/7. Se admite cualquier escritura numérica equivalente al resultado.",
+          "prompt": "Calcula 4/11+6/11.",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "suma",
+              "id": "valor",
               "type": "math_numeric_input",
               "label": "Resultado",
               "keyboard": "FRACTION",
               "validator": {
                 "type": "numeric",
-                "expected": "5/7"
+                "expected": "10/11"
               }
             }
           ],
           "feedback": {
-            "correct": "Dos séptimos más tres séptimos forman cinco séptimos. Las partes siguen siendo séptimos.",
-            "incorrect": "5/14 suma denominadores y cambia el tamaño de las partes. 6/49 multiplicaría las fracciones, que es una operación diferente. Aquí se reúnen cantidades."
+            "correct": "Cuatro onceavos más seis onceavos forman diez onceavos: 10/11. El tamaño de cada parte se conserva.",
+            "incorrect": "10/22 cambia onceavos por veintidosavos. 24/121 calcula un producto, no una suma."
           }
         }
       ]
@@ -281,24 +281,302 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "medida_restante",
-          "prompt": "Un recipiente tenía 7/8 de litro y se retira 1/3 de litro. ¿Cuántos litros quedan? Todas las medidas se refieren al litro, no a fracciones del líquido restante.",
+          "prompt": "Había 11/12 L y se retiran 2/5 L. ¿Cuántos litros quedan? Se retira una cantidad fija de litros.",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "queda",
+              "id": "valor",
               "type": "math_numeric_input",
-              "label": "Litros restantes",
+              "label": "Resultado",
               "keyboard": "FRACTION",
               "validator": {
                 "type": "numeric",
-                "expected": "13/24"
+                "expected": "31/60"
               }
             }
           ],
           "feedback": {
-            "correct": "7/8 − 1/3 = 21/24 − 8/24 = 13/24 L. Se retiró una cantidad fija de un tercio de litro.",
-            "incorrect": "No se calcula un tercio de 7/8: el enunciado dice un tercio de litro. La resta debe dejar menos de 7/8 L y una cantidad positiva."
+            "correct": "11/12−2/5 = 55/60−24/60 = 31/60 L. El resultado es positivo y menor que 11/12 L.",
+            "incorrect": "No se toman dos quintos del contenido: se retiran 2/5 L. Convertir solo denominadores cambia las medidas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Signos, cero y expresiones con varios términos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Restar una cantidad negativa equivale a sumar su opuesto. Por ejemplo, −1/2−(−3/4) = −2/4+3/4 = 1/4: el resultado cruza cero. En cambio, −3/4−1/2 se aleja de cero hacia la izquierda. El signo entre los términos y el signo del término restado tienen funciones distintas."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "restar_negativo",
+          "prompt": "Calcula 2/9−(−5/6) en forma reducida con denominador positivo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador de la forma reducida"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador positivo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "19"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "18"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "Restar −5/6 añade 5/6. En dieciochoavos, 4/18+15/18 = 19/18, mayor que uno.",
+            "incorrect": "Cambiar solo el signo del numerador final ignora la operación. El resultado debe superar 2/9 porque se resta un negativo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cruzar_cero",
+          "prompt": "Calcula −7/10+4/5.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/10"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−7/10+8/10 = 1/10. El incremento positivo supera la distancia inicial al cero.",
+            "incorrect": "La presencia de un término negativo no garantiza un resultado negativo. Primero compara sus magnitudes usando décimos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_cero",
+          "prompt": "Calcula 5/12+(−10/24).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "0"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "10/24 = 5/12. Son opuestos, por eso la suma vale cero.",
+            "incorrect": "Cero es un resultado válido. El denominador común permanece no nulo; un numerador cero no produce 0/0."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resta_negativa",
+          "prompt": "Calcula 3/8−7/12 en forma reducida con denominador positivo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador de la forma reducida"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador positivo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-5"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "24"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "9/24−14/24 = −5/24. Se retira una cantidad mayor que la inicial, así que el resultado numérico es negativo.",
+            "incorrect": "5/24 pierde el sentido de la resta. Numerador y denominador no se restan por separado."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_sumandos",
+          "prompt": "Calcula 7/6−5/8+1/12.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En veinticuatroavos: 28/24−15/24+2/24 = 15/24 = 5/8. Se conserva cada signo unido a su término.",
+            "incorrect": "Restar 5/8+1/12 cambiaría la agrupación del enunciado. El último término se suma."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_dos_caminos",
+          "prompt": "Para 3/4+5/6, Ana usa denominador 12 y Bruno usa 24. Selecciona todas las afirmaciones válidas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Ana obtiene 9/12+10/12 = 19/12."
+                },
+                {
+                  "id": "b",
+                  "label": "Bruno obtiene 18/24+20/24 = 38/24, equivalente a 19/12."
+                },
+                {
+                  "id": "c",
+                  "label": "Bruno está equivocado porque no usó el mínimo."
+                },
+                {
+                  "id": "d",
+                  "label": "Ambos deben obtener un resultado menor que uno."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12 y 24 son denominadores comunes. Ambos caminos conservan los sumandos; la suma supera uno.",
+            "incorrect": "El mínimo reduce trabajo, pero otros denominadores comunes son válidos. La suma de dos fracciones propias puede ser impropia."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_operacion_medida",
+          "prompt": "Un recipiente contiene 3/4 L. Caso A: se agregan 1/6 L. Caso B: se retiran 1/6 L. Escribe ambos contenidos finales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Contenido final A, en L"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Contenido final B, en L"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "11/12"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "7/12"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A queda con 11/12 L y B con 7/12 L. La misma cantidad conocida exige operaciones distintas según la acción.",
+            "incorrect": "Los datos no deciden por sí solos sumar o restar: lo decide agregar o retirar. En ambos casos las partes se convierten a doceavos."
           }
         }
       ]

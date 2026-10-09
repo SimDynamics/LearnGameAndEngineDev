@@ -1,0 +1,499 @@
+{
+  "id": "math_course_01__racionales_y_decimales__residuos_y_periodos",
+  "title": "Residuos y decimales periódicos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El residuo conserva lo que falta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para dividir 2 entre 7, no hay unidades completas. Pasamos a veinte décimas: la primera cifra es dos y sobran seis décimas. Pasamos a sesenta centésimas: la cifra siguiente es ocho y sobran cuatro. En cada paso multiplicamos por diez el residuo anterior, dividimos entre siete y obtenemos una cifra entre cero y nueve."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "seguir_residuos",
+          "prompt": "Para 1/8, la primera cifra decimal es 1 y el residuo es 2, porque 10 = 1×8+2. Completa la segunda y tercera cifras, y sus residuos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cifra2",
+                  "type": "numeric",
+                  "label": "Segunda cifra decimal"
+                },
+                {
+                  "id": "residuo2",
+                  "type": "numeric",
+                  "label": "Residuo después de la segunda cifra"
+                },
+                {
+                  "id": "cifra3",
+                  "type": "numeric",
+                  "label": "Tercera cifra decimal"
+                },
+                {
+                  "id": "residuo3",
+                  "type": "numeric",
+                  "label": "Residuo después de la tercera cifra"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cifra2": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "residuo2": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "cifra3": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "residuo3": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "20 = 2×8+4 y 40 = 5×8+0. Se obtiene 0,125 y la expansión termina al llegar a residuo cero.",
+            "incorrect": "Se divide diez veces el residuo, no diez veces la cifra anterior. Una cifra decimal no es el residuo; ambos tienen papeles distintos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "periodo_por_retorno",
+          "prompt": "Completa las cifras y residuos de 3/11. El residuo inicial es tres; después de estos dos pasos decide si el proceso terminará o repetirá.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cifra1",
+                  "type": "numeric",
+                  "label": "Primera cifra decimal"
+                },
+                {
+                  "id": "residuo1",
+                  "type": "numeric",
+                  "label": "Primer residuo"
+                },
+                {
+                  "id": "cifra2",
+                  "type": "numeric",
+                  "label": "Segunda cifra decimal"
+                },
+                {
+                  "id": "residuo2",
+                  "type": "numeric",
+                  "label": "Segundo residuo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cifra1": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "residuo1": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "cifra2": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "residuo2": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Termina: al menos uno de los residuos calculados es cero."
+                },
+                {
+                  "id": "b",
+                  "label": "Repite desde la primera cifra: el último residuo coincide con el inicial."
+                },
+                {
+                  "id": "c",
+                  "label": "El período se obtiene copiando los residuos como cifras decimales."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "30 = 2×11+8 y 80 = 7×11+3. Regresar al residuo tres reinicia exactamente los mismos pasos: 3/11 = 0,272727… con 27 repetido sin terminar.",
+            "incorrect": "Los residuos son ocho y tres, no las cifras del período. El proceso solo termina con residuo cero; repetir un residuo obliga a repetir los pasos siguientes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una parte inicial puede no repetirse"
+        },
+        {
+          "type": "paragraph",
+          "text": "En 1/6, 10 = 1×6+4 y luego 40 = 6×6+4. El residuo cuatro se repite desde el segundo paso: el decimal es 0,16666…, con un uno inicial y después seis repetidos. No se repite toda la cadena 16. Se llama periódico mixto porque hay cifras iniciales antes del período."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "periodo_mixto",
+          "prompt": "Completa los dos primeros pasos de 5/6 y elige qué parte se repite.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cifra1",
+                  "type": "numeric",
+                  "label": "Primera cifra"
+                },
+                {
+                  "id": "residuo1",
+                  "type": "numeric",
+                  "label": "Primer residuo"
+                },
+                {
+                  "id": "cifra2",
+                  "type": "numeric",
+                  "label": "Segunda cifra"
+                },
+                {
+                  "id": "residuo2",
+                  "type": "numeric",
+                  "label": "Segundo residuo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cifra1": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "residuo1": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "cifra2": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "residuo2": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Se repiten las dos primeras cifras desde el principio."
+                },
+                {
+                  "id": "b",
+                  "label": "La primera cifra queda antes del ciclo; desde la segunda se repite una sola cifra."
+                },
+                {
+                  "id": "c",
+                  "label": "Se copia el residuo repetido como cifra decimal."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "50 = 8×6+2 y 20 = 3×6+2. El residuo dos vuelve a aparecer, así que siguen tres tras tres: 0,83333… con tres repetido.",
+            "incorrect": "Un residuo no se copia como cifra. La repetición comienza al volver al mismo residuo; aquí el ocho queda antes de ese ciclo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "identificar_periodo_tabla",
+          "prompt": "La tabla corresponde a 3/22. Cada fila divide diez veces el residuo anterior entre 22. Elige la expansión exacta que describe.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Cantidad dividida",
+                "Cifra",
+                "Residuo"
+              ],
+              "rows": [
+                [
+                  "30",
+                  "1",
+                  "8"
+                ],
+                [
+                  "80",
+                  "3",
+                  "14"
+                ],
+                [
+                  "140",
+                  "6",
+                  "8"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,136363…: después del uno inicial se repite 36."
+                },
+                {
+                  "id": "b",
+                  "label": "0,136136…: se repite 136 desde el principio."
+                },
+                {
+                  "id": "c",
+                  "label": "0,138888…: el residuo ocho pasa a ser la cifra repetida."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El residuo ocho regresa después de las cifras tres y seis. Se repite 36, precedido por el uno inicial.",
+            "incorrect": "El ciclo de residuos no incluye el residuo inicial tres. Por eso no se repite 136; tampoco se escriben residuos como si fueran cifras."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Para denominador positivo q, un residuo solo puede ser 0, 1, …, q−1. Si aparece cero, la división termina. Si no aparece, hay solo q−1 residuos no nulos posibles: alguno acaba repitiéndose y el algoritmo repite sus cifras. Así todo racional tiene decimal finito o periódico. No afirmamos que el período tenga siempre q−1 cifras; puede ser mucho más corto."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "por_que_repite",
+          "prompt": "¿Qué argumento asegura que una división racional que no termina acaba repitiendo sus cifras?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Toda calculadora muestra una fila finita de números."
+                },
+                {
+                  "id": "b",
+                  "label": "Hay un número finito de residuos posibles, y el mismo residuo obliga a repetir los mismos pasos."
+                },
+                {
+                  "id": "c",
+                  "label": "El denominador siempre coincide con la longitud del período."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El algoritmo depende del residuo y del denominador. Repetir ese estado repite cada paso posterior; una pantalla finita no demuestra periodicidad.",
+            "incorrect": "La pantalla también corta aproximaciones. El período de 1/3 tiene una cifra, aunque el denominador sea tres."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Período exacto, recorte y signo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribir 0,272727… y decir que 27 se repite para siempre describe un valor exacto. Escribir 0,2727 sin puntos describe exactamente 2727/10000 y solo aproxima el valor anterior. Para un número negativo, recortar su magnitud puede producir un valor mayor: −0,33 está más cerca de cero que −1/3."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recorte_positivo",
+          "prompt": "La expansión de 2/11 es 0,181818… con 18 repetido. ¿Cómo se compara el recorte 0,1818 con 2/11?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es exactamente igual porque se repitió 18 dos veces."
+                },
+                {
+                  "id": "b",
+                  "label": "Es menor: faltan cifras positivas que siguen en la expansión."
+                },
+                {
+                  "id": "c",
+                  "label": "Es mayor porque 1818 supera dos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0,1818 = 909/5000. La diferencia 2/11−909/5000 es 1/55000, positiva.",
+            "incorrect": "Repetir un bloque un número finito de veces no es repetirlo para siempre. Los enteros 1818 y dos no se comparan sin sus denominadores."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recorte_negativo",
+          "prompt": "Compara −0,666 con −2/3 y elige el argumento correcto.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−0,666 < −2/3 porque 666 es mayor que dos."
+                },
+                {
+                  "id": "b",
+                  "label": "Son iguales por tener tres decimales."
+                },
+                {
+                  "id": "c",
+                  "label": "−0,666 > −2/3: 0,666 < 2/3 y tomar opuestos invierte el orden."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El recorte positivo queda por debajo de dos tercios. Al tomar opuestos, queda más cerca de cero y por eso es mayor.",
+            "incorrect": "El criterio aprendido para recortes positivos no se copia sin atender al signo. Tres cifras no hacen exacta la expansión."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "finito_periodico_recuperacion",
+          "prompt": "Selecciona todas las descripciones correctas después de reducir las fracciones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "21/60 = 7/20 tiene expansión finita."
+                },
+                {
+                  "id": "b",
+                  "label": "5/18 tiene expansión periódica porque el denominador reducido conserva un tres."
+                },
+                {
+                  "id": "c",
+                  "label": "4/12 tiene expansión finita porque ambos términos son pares."
+                },
+                {
+                  "id": "d",
+                  "label": "7/14 tiene expansión finita porque se reduce a 1/2."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "21/60 y 7/14 eliminan los factores ajenos a dos y cinco al reducir. 5/18 conserva tres; 4/12 se reduce a 1/3 y no termina.",
+            "incorrect": "Que ambos términos sean pares permite una reducción, pero no garantiza que desaparezcan todos los factores tres. El criterio se aplica al denominador final."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -24,25 +24,25 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "referencia_mitad",
-          "prompt": "Sin convertir a decimal, decide cuál afirmación compara correctamente 5/11 y 7/12.",
+          "prompt": "Sin convertir a decimal, compara 8/17 y 5/9 usando un medio.",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "argumento",
+              "id": "decision",
               "type": "math_multiple_choice_single",
               "options": [
                 {
                   "id": "a",
-                  "label": "5/11 > 7/12 porque once es menor que doce."
+                  "label": "8/17 > 5/9 porque ocho supera cinco."
                 },
                 {
                   "id": "b",
-                  "label": "5/11 < 7/12 porque la primera está bajo 1/2 y la segunda sobre 1/2."
+                  "label": "8/17 < 1/2 < 5/9, por eso 8/17 < 5/9."
                 },
                 {
                   "id": "c",
-                  "label": "5/11 = 7/12 porque ambas son menores que uno."
+                  "label": "Son iguales porque ambos están entre cero y uno."
                 }
               ],
               "validator": {
@@ -54,8 +54,8 @@
             }
           ],
           "feedback": {
-            "correct": "Al duplicar 5/11 obtienes 10/11, que es menor que 1; por eso 5/11 es menor que 1/2. Al duplicar 7/12 obtienes 14/12, que supera 1; así que 7/12 supera 1/2.",
-            "incorrect": "La opción del denominador menor solo serviría bajo otras condiciones, como numeradores positivos iguales. Ser menores que uno no hace iguales dos números; hay muchas posiciones distintas entre cero y uno."
+            "correct": "El doble de 8/17 es 16/17, menor que uno; el doble de 5/9 es 10/9, mayor que uno. Un medio separa los valores.",
+            "incorrect": "Los numeradores cuentan partes de tamaños distintos. Compartir un intervalo no significa compartir un punto."
           }
         }
       ]
@@ -82,57 +82,48 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "comparacion_comun",
-          "prompt": "Completa el signo entre 7/12 y 5/8. Luego indica el denominador común más pequeño que usaste.",
+          "prompt": "Compara 5/6 y 7/9. Elige el signo y escribe el menor denominador común positivo.",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "datos",
-              "type": "math_multi_input",
-              "fields": [
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
                 {
-                  "id": "signo",
-                  "type": "dropdown",
-                  "label": "Signo",
-                  "options": [
-                    {
-                      "id": "menor",
-                      "label": "<"
-                    },
-                    {
-                      "id": "igual",
-                      "label": "="
-                    },
-                    {
-                      "id": "mayor",
-                      "label": ">"
-                    }
-                  ]
+                  "id": "a",
+                  "label": "5/6 < 7/9"
                 },
                 {
-                  "id": "den",
-                  "type": "numeric",
-                  "label": "Denominador común mínimo"
+                  "id": "b",
+                  "label": "5/6 = 7/9"
+                },
+                {
+                  "id": "c",
+                  "label": "5/6 > 7/9"
                 }
               ],
               "validator": {
-                "type": "fields",
-                "fields": {
-                  "den": {
-                    "type": "numeric",
-                    "expected": "24"
-                  },
-                  "signo": {
-                    "type": "text",
-                    "expected": "menor"
-                  }
-                }
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            },
+            {
+              "id": "den",
+              "type": "math_numeric_input",
+              "label": "Denominador común mínimo",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "18"
               }
             }
           ],
           "feedback": {
-            "correct": "7/12 = 14/24 y 5/8 = 15/24. Por tanto, el signo es < y el denominador común mínimo es 24.",
-            "incorrect": "Comparar solo 7 con 5 ignora el tamaño de las partes. 96 es un denominador común, pero no el menor que se pide. Cada fracción debe conservar su valor al cambiar de denominador."
+            "correct": "5/6 = 15/18 y 7/9 = 14/18. Quince dieciochoavos superan catorce; mcm(6,9) = 18.",
+            "incorrect": "54 funciona como denominador común, pero no es el mínimo solicitado. Comparar cinco con siete sin transformar las partes invierte aquí la conclusión."
           }
         }
       ]
@@ -212,25 +203,25 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "negativos",
-          "prompt": "¿Qué razonamiento demuestra correctamente que −7/10 es menor que −2/3?",
+          "prompt": "¿Qué razonamiento compara correctamente −4/7 y −3/5?",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "razon",
+              "id": "decision",
               "type": "math_multiple_choice_single",
               "options": [
                 {
                   "id": "a",
-                  "label": "−21/30 < −20/30 después de usar denominador común."
+                  "label": "−20/35 > −21/35, por eso −4/7 > −3/5."
                 },
                 {
                   "id": "b",
-                  "label": "Siete es mayor que dos, así que −7/10 también es mayor."
+                  "label": "−4/7 < −3/5 porque cuatro es mayor que tres."
                 },
                 {
                   "id": "c",
-                  "label": "Todo negativo con denominador diez es menor que uno con denominador tres."
+                  "label": "Los dos negativos siempre son iguales en distancia al cero."
                 }
               ],
               "validator": {
@@ -242,8 +233,8 @@
             }
           ],
           "feedback": {
-            "correct": "La comparación −21 < −20 decide el orden porque las partes son treintaavos en ambas fracciones.",
-            "incorrect": "La opción del numerador ignora denominadores y signo. La afirmación sobre diez y tres no es general: −1/10 es mayor que −2/3. Es necesario considerar el número completo."
+            "correct": "Veinte treintaicincoavos negativos están más cerca de cero que veintiuno. También 4/7 < 3/5, y tomar opuestos invierte el orden.",
+            "incorrect": "El numerador aislado no decide el orden entre particiones diferentes. Ser negativos no iguala sus magnitudes."
           }
         }
       ]
@@ -342,6 +333,271 @@
           "feedback": {
             "correct": "11/15 = 44/60 y 3/4 = 45/60. La segunda pieza es un sesentavo de metro más larga.",
             "incorrect": "Once partes de un tamaño y tres de otro no se comparan solo contando. Tampoco basta que ambas longitudes sean cercanas: 44/60 y 45/60 son distintas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Casos que cambian el método"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con numeradores positivos iguales, el menor denominador produce partes mayores. Con igual denominador positivo, más partes producen un número mayor. Si hay un denominador negativo, normaliza primero el signo. No existe una regla válida que mire solo el numerador o solo el denominador en todos los casos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mismo_numerador",
+          "prompt": "Compara 4/9 y 4/7. Elige una razón que use el tamaño de las partes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4/9 > 4/7 porque nueve es mayor que siete."
+                },
+                {
+                  "id": "b",
+                  "label": "Son iguales porque ambos tienen cuatro partes."
+                },
+                {
+                  "id": "c",
+                  "label": "4/9 < 4/7 porque un noveno es menor que un séptimo y se toman cuatro."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con el mismo numerador positivo, cuatro partes más pequeñas forman una cantidad menor.",
+            "incorrect": "El denominador no cuenta las partes tomadas: determina su tamaño. Tener cuatro partes no iguala cantidades cuando los tamaños difieren."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "signos_denominadores",
+          "prompt": "Selecciona todas las comparaciones verdaderas. Normaliza los denominadores antes de decidir.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5/−8 < −2/3"
+                },
+                {
+                  "id": "b",
+                  "label": "−5/8 > −2/3"
+                },
+                {
+                  "id": "c",
+                  "label": "−7/−6 > 1"
+                },
+                {
+                  "id": "d",
+                  "label": "0/−4 < −1/9"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−5/8 = −15/24 > −16/24 = −2/3. −7/−6 es 7/6, mayor que uno. 0/−4 vale cero y supera todo número negativo.",
+            "incorrect": "5/−8 representa −5/8; no cambia la comparación de b. Dos signos negativos dan positivo, y un denominador negativo no hace negativo a cero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "impropias_cercanas",
+          "prompt": "Compara 13/8 y 8/5, ambas mayores que uno. Escribe su diferencia: primera menos segunda.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Diferencia",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/40"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "13/8 es mayor."
+                },
+                {
+                  "id": "b",
+                  "label": "8/5 es mayor."
+                },
+                {
+                  "id": "c",
+                  "label": "Son iguales porque superan uno."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "13/8 = 65/40 y 8/5 = 64/40. La diferencia es 1/40, positiva.",
+            "incorrect": "Estar sobre uno no hace iguales dos fracciones. Cuarentavos vuelve comparable la diferencia de dos medidas cercanas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "igualdad_disfrazada",
+          "prompt": "Entre 14/21 y 10/15, ¿qué relación hay?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "14/21 es mayor porque catorce supera diez."
+                },
+                {
+                  "id": "b",
+                  "label": "Son iguales: ambas se reducen a 2/3."
+                },
+                {
+                  "id": "c",
+                  "label": "10/15 es mayor porque quince es menor que veintiuno."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "14/21 = 2/3 = 10/15. Una comparación puede terminar en igualdad, sin un número mayor.",
+            "incorrect": "Mirar un término aislado puede inventar un orden entre dos escrituras del mismo número."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_estrategia",
+          "prompt": "Para comparar 19/20 y 21/20, ¿qué estrategia basta y por qué?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Comparar 19 y 21: las partes ya son veinteavos."
+                },
+                {
+                  "id": "b",
+                  "label": "Sumar los denominadores para convertirlos en cuarentavos."
+                },
+                {
+                  "id": "c",
+                  "label": "Buscar el MCD de 19 y 21, porque toda comparación es reducción."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El denominador positivo común ya fija el tamaño de las partes. Diecinueve veinteavos son menos que veintiuno.",
+            "incorrect": "Sumar denominadores cambia los números. El MCD de los numeradores no determina esta comparación."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cotas_sin_decimal",
+          "prompt": "Selecciona todos los números estrictamente entre 1 y 3/2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "9/8"
+                },
+                {
+                  "id": "b",
+                  "label": "3/2"
+                },
+                {
+                  "id": "c",
+                  "label": "7/6"
+                },
+                {
+                  "id": "d",
+                  "label": "11/7"
+                },
+                {
+                  "id": "e",
+                  "label": "5/4"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9/8, 7/6 y 5/4 superan uno y quedan por debajo de tres medios. 3/2 es el extremo y 11/7 lo supera.",
+            "incorrect": "Comprueba ambas cotas. Superar uno es necesario, pero no basta; «estrictamente» excluye el extremo 3/2."
           }
         }
       ]

@@ -1,0 +1,296 @@
+{
+  "id": "math_course_01__porcentajes_escalas_modelos__unidades_cuadradas_y_cubicas",
+  "title": "Unidades cuadradas y cúbicas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar la unidad conserva la medida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un metro cuadrado es el área de un cuadrado de un metro por un metro. Como cada lado mide 100 cm, el área es 100×100 = 10000 cm². Para pasar de m² a cm² multiplicamos por 10000; en sentido contrario dividimos. El área física no cambia."
+        },
+        {
+          "type": "paragraph",
+          "text": "En volumen aparecen tres factores: 1 m³ = 100×100×100 cm³ = 1000000 cm³. Un litro equivale a 1000 cm³ y, por tanto, 1 m³ equivale a 1000 L. El número cambia con la unidad, no porque el recipiente se agrande."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "area_a_centimetros",
+          "prompt": "Expresa un área de 0,3 m² en cm². Usa 1 m = 100 cm.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Área",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3000"
+              },
+              "unit": "cm²"
+            }
+          ],
+          "feedback": {
+            "correct": "0,3×10000 = 3000 cm². Cada longitud de la unidad introduce un factor 100.",
+            "incorrect": "30 cm² aplica un solo factor 100. Cambiar la unidad de área exige dos factores."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "area_regreso",
+          "prompt": "Expresa 2500 cm² en m² usando 1 m² = 10000 cm².",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Área",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/4"
+              },
+              "unit": "m²"
+            }
+          ],
+          "feedback": {
+            "correct": "2500/10000 = 1/4 m² = 0,25 m².",
+            "incorrect": "25 m² dividiría solo entre 100. Comprueba que volver a cm² recupere 2500."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "volumen_a_centimetros",
+          "prompt": "Expresa 0,002 m³ en cm³ usando 1 m = 100 cm.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Volumen",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2000"
+              },
+              "unit": "cm³"
+            }
+          ],
+          "feedback": {
+            "correct": "0,002×1000000 = 2000 cm³.",
+            "incorrect": "0,2 usaría un factor lineal y 20 usaría dos. La unidad cúbica contiene tres longitudes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Volumen, litros y sentido inverso"
+        },
+        {
+          "type": "paragraph",
+          "text": "Convertir una caja y ampliarla son operaciones distintas. Convertir 2 L a 2000 cm³ conserva la cantidad; ampliar todas las longitudes por dos multiplica su volumen por ocho. Un resultado debe indicar cuál de estas acciones ocurrió."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los factores de unidades compuestas pueden comprobarse con dimensiones concretas. Un cubo de 10 cm por lado contiene 1000 cm³, que es 1 L. Esto conecta litro y centímetro cúbico sin confundirlos con unidades de área."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "volumen_regreso",
+          "prompt": "Expresa 250000 cm³ en m³. Usa 1 m³ = 1000000 cm³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Volumen",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/4"
+              },
+              "unit": "m³"
+            }
+          ],
+          "feedback": {
+            "correct": "250000/1000000 = 1/4 m³.",
+            "incorrect": "Dividir entre 100 o 10000 omite dimensiones. La comprobación inversa multiplica por un millón."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "litros_y_cubicos",
+          "prompt": "Una caja interior mide 20 cm por 10 cm por 15 cm. Calcula su capacidad en cm³ y en litros. Usa 1 L = 1000 cm³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "v",
+              "type": "math_numeric_input",
+              "label": "Capacidad",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3000"
+              },
+              "unit": "cm³"
+            },
+            {
+              "id": "l",
+              "type": "math_numeric_input",
+              "label": "Capacidad en litros",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              },
+              "unit": "L"
+            }
+          ],
+          "feedback": {
+            "correct": "El volumen es 3000 cm³ = 3 L. Ambas cifras describen la misma capacidad.",
+            "incorrect": "Sumar las longitudes no produce volumen. Pasar a litros agrupa mil centímetros cúbicos por litro."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "convertir_o_ampliar",
+          "prompt": "Selecciona todas las afirmaciones correctas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "acciones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Convertir 2 L a 2000 cm³ conserva el volumen."
+                },
+                {
+                  "id": "b",
+                  "label": "Duplicar todas las longitudes de una caja duplica su volumen."
+                },
+                {
+                  "id": "c",
+                  "label": "Duplicar todas las longitudes de una caja multiplica su volumen por ocho."
+                },
+                {
+                  "id": "d",
+                  "label": "Cambiar de metros a centímetros agranda físicamente una longitud."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una conversión conserva la medida. Una ampliación uniforme duplica tres longitudes y multiplica volumen por 2³ = 8.",
+            "incorrect": "El cambio de unidad altera el valor numérico; el cambio de dimensiones altera el objeto. No confundir las dos acciones."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Factores racionales y recuperación posterior"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "volumen_reducido",
+          "prompt": "Una caja tiene capacidad de 16 L. Otra tiene la misma forma con todas las longitudes a la mitad. ¿Cuál es la nueva capacidad?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Capacidad",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2"
+              },
+              "unit": "L"
+            }
+          ],
+          "feedback": {
+            "correct": "El factor de volumen es 1/8; 16/8 = 2 L.",
+            "incorrect": "8 L aplica un solo factor 1/2; 4 L aplica dos. Hay tres longitudes reducidas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "area_por_cambio_lateral",
+          "prompt": "Un cuadrado de lado 10 cm pasa a lado 12 cm. Calcula ambas áreas y el porcentaje de aumento del área respecto del original.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a0",
+              "type": "math_numeric_input",
+              "label": "Área original",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "100"
+              },
+              "unit": "cm²"
+            },
+            {
+              "id": "a1",
+              "type": "math_numeric_input",
+              "label": "Área nueva",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "144"
+              },
+              "unit": "cm²"
+            },
+            {
+              "id": "p",
+              "type": "math_numeric_input",
+              "label": "Aumento de área, porcentaje",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "44"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las áreas son 100 y 144 cm²: aumento del 44%. El lado aumentó 20%, pero su factor se aplica dos veces al área.",
+            "incorrect": "El aumento del lado no es el aumento del área. Compara áreas usando el área original como base."
+          }
+        }
+      ]
+    }
+  ]
+}

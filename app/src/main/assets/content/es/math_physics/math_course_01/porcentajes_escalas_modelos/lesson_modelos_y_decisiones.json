@@ -6,7 +6,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Una cuenta comienza con una elección"
+          "text": "Comprender la relación"
         },
         {
           "type": "paragraph",
@@ -26,7 +26,132 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Comprobar un presupuesto y una mezcla"
+          "text": "Una tasa no decide una compra completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un envase de cinco litros por 26 pesos tiene menor precio por litro que uno de dos litros por 11 pesos. Pero para obtener al menos seis litros, dos envases grandes cuestan 52 y tres pequeños cuestan 33. La necesidad, los tamaños indivisibles y el presupuesto cambian la decisión. Comparar tasas es una parte del modelo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un presupuesto es una restricción: un plan puede cubrir la cantidad necesaria y aun así superar el dinero disponible. Conviene comprobar por separado necesidad, integridad de envases, costo y presupuesto. Redondear al entero más cercano no sirve cuando deja sin cubrir la necesidad."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "presupuesto_envases",
+          "prompt": "Necesitas al menos 7 L y dispones de 40 pesos. A vende 6 L por 25 pesos; B vende 2 L por 9 pesos. Se compran envases enteros de una sola presentación y la calidad es comparable. Calcula el pago mínimo con cada una y elige cuál satisface cantidad y presupuesto.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "a",
+              "type": "math_numeric_input",
+              "label": "Pago mínimo con A",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "50"
+              },
+              "unit": "pesos"
+            },
+            {
+              "id": "b",
+              "type": "math_numeric_input",
+              "label": "Pago mínimo con B",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              },
+              "unit": "pesos"
+            },
+            {
+              "id": "plan",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A."
+                },
+                {
+                  "id": "b",
+                  "label": "B."
+                },
+                {
+                  "id": "c",
+                  "label": "Ninguna."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A requiere dos envases y cuesta 50; B requiere cuatro y cuesta 36. Solo B cubre al menos siete litros dentro de 40 pesos.",
+            "incorrect": "La menor tasa de A no decide el gasto total. Un envase A cuesta 25, pero entrega seis litros y no satisface la necesidad. Con B, tres envases tampoco alcanzan."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "presupuesto_sin_plan",
+          "prompt": "Se requieren al menos 10 L. Hay 45 pesos. Los envases contienen 3 L y cuestan 12 pesos cada uno; solo se compran enteros. Calcula el costo mínimo que cubriría el agua y decide si el presupuesto alcanza.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "c",
+              "type": "math_numeric_input",
+              "label": "Costo mínimo necesario",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "48"
+              },
+              "unit": "pesos"
+            },
+            {
+              "id": "alcanza",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí: tres envases cuestan 36."
+                },
+                {
+                  "id": "b",
+                  "label": "No: la compra mínima completa supera el presupuesto."
+                },
+                {
+                  "id": "c",
+                  "label": "Sí: se pueden comprar 10/3 envases enteros."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Tres envases solo aportan nueve litros. Cuatro cubren doce y cuestan 48; el presupuesto no alcanza para el plan.",
+            "incorrect": "Cumplir el presupuesto no basta si falta agua. 10/3 no es una cantidad entera de envases."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencias, condiciones y primer ensayo"
         },
         {
           "type": "paragraph",
@@ -39,10 +164,6 @@
         {
           "type": "paragraph",
           "text": "Esa cuenta también supone que el componente se conserva y que todos los porcentajes son de volumen. Si ocurre una reacción, los porcentajes son de masa o los volúmenes no se suman, hace falta otro modelo. Declarar el supuesto limita la conclusión: un resultado puede ser correcto dentro de un modelo sin describir con exactitud todos los casos reales."
-        },
-        {
-          "type": "paragraph",
-          "text": "Al comparar decisiones, usa la misma necesidad. Si compras recipientes de tamaño distinto, compara la cantidad disponible y el pago total para satisfacer el objetivo. El menor precio por litro puede exigir un pago mayor o dejar sobrante. Revisa también la precisión: un resultado aproximado debe comunicar su margen, mientras que comprar ocho botellas es una decisión exacta bajo los datos elegidos."
         },
         {
           "type": "math_puzzle",
@@ -100,7 +221,121 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Elegir con los datos disponibles"
+          "text": "Recuperar signos, paréntesis y unidades"
+        },
+        {
+          "type": "paragraph",
+          "text": "Algunas relaciones incluyen una diferencia inicial, no un factor proporcional. Para convertir una lectura F en grados Fahrenheit a C en grados Celsius se usa C = (F−32)×5/9. Aquí se da la relación: la tarea es calcular con signos y conservar los paréntesis. El término 32 significa que duplicar F no duplica en general C."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una cuenta con cantidades fraccionarias requiere conservar una misma unidad antes de sumar o restar. El signo de cada término representa una entrada o salida. Después de hallar el total se decide si alcanza; no se elige una compra por apariencia del decimal."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "temperatura_relacion_desplazada",
+          "prompt": "Usa C = (F−32)×5/9. Para F = 14 calcula C. Decide además si las lecturas C y F son directamente proporcionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "c",
+              "type": "math_numeric_input",
+              "label": "Lectura Celsius",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-10"
+              },
+              "unit": "°C"
+            },
+            {
+              "id": "relacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí: la fórmula contiene una multiplicación."
+                },
+                {
+                  "id": "b",
+                  "label": "No: la resta de 32 introduce un desplazamiento."
+                },
+                {
+                  "id": "c",
+                  "label": "Sí: ambas son temperaturas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "14−32 = −18 y −18×5/9 = −10 °C. La conversión contiene un desplazamiento y no conserva C/F.",
+            "incorrect": "Restar exige mantener el signo negativo. (14−32)×5/9 no equivale a 14−32×5/9; los paréntesis determinan qué se multiplica."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reserva_con_fracciones",
+          "prompt": "Hay 3/4 L de pintura en un recipiente y 2/3 L en otro. Se usan 5/6 L en un trabajo. ¿Cuánto queda y alcanza para otro trabajo que necesita 1/2 L?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resto",
+              "type": "math_numeric_input",
+              "label": "Pintura restante",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7/12"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "alcanza",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí: el sobrante supera la cantidad del segundo trabajo."
+                },
+                {
+                  "id": "b",
+                  "label": "No: queda menos de 1/2 L."
+                },
+                {
+                  "id": "c",
+                  "label": "No se pueden sumar cantidades de recipientes distintos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9/12+8/12−10/12 = 7/12 L. Alcanza para 6/12 L y sobra 1/12 L.",
+            "incorrect": "Los recipientes cambian, pero la unidad litro es común. No sumes denominadores ni inviertas el signo del material usado."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Variar sin perder el significado"
         },
         {
           "type": "math_puzzle",
@@ -174,6 +409,61 @@
             "correct": "Hay 3×0,10 + 2×0,25 = 0,8 L de componente. El total es 5 L: 0,8/5 = 16%.",
             "incorrect": "El promedio simple de 10% y 25% es 17,5%, pero los volúmenes no son iguales. Calcula cantidades de componente y después compáralas con el total supuesto."
           }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cortes completos y desperdicio declarado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dividir una longitud total entre el tamaño de una pieza responde cuántas cabrían si no hay pérdida. Si cada corte pierde material, esa pérdida pertenece al modelo. Aunque el cociente no sea entero, no se puede fabricar una fracción de una pieza que deba tener la medida completa."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cortes_con_perdida",
+          "prompt": "Una cinta mide 2 m. Se desean piezas completas de 3/5 m; cada pieza cortada consume además 1/20 m de cinta en el corte, incluido el último. Calcula material por pieza y número máximo de piezas completas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "uso",
+              "type": "math_numeric_input",
+              "label": "Material consumido por pieza",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "13/20"
+              },
+              "unit": "m"
+            },
+            {
+              "id": "n",
+              "type": "math_numeric_input",
+              "label": "Piezas completas máximas",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada pieza consume 13/20 m. Tres consumen 39/20 = 1,95 m; cuatro necesitarían 52/20 = 2,6 m.",
+            "incorrect": "Ignorar la pérdida cambia el modelo. El cociente 40/13 no es una cantidad de piezas completas; se toma el mayor entero que cabe."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar y comprobar"
         },
         {
           "type": "math_puzzle",
@@ -301,6 +591,10 @@
             "correct": "Cada tramo mide exactamente 10/6 = 5/3 m. Una aproximación válida es 1,67 m, cuyo error es menor que 0,005 m.",
             "incorrect": "1,6 m se aparta más de 0,005 m. No conviertas un decimal cortado en igualdad exacta. Divide el total entre seis y comprueba la cercanía al valor exacto."
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "Al comparar decisiones, usa la misma necesidad. Si compras recipientes de tamaño distinto, compara la cantidad disponible y el pago total para satisfacer el objetivo. El menor precio por litro puede exigir un pago mayor o dejar sobrante. Revisa también la precisión: un resultado aproximado debe comunicar su margen, mientras que comprar ocho botellas es una decisión exacta bajo los datos elegidos."
         }
       ]
     }

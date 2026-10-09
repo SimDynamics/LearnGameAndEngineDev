@@ -6,7 +6,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Lo que permanece constante"
+          "text": "Comprender la relación"
         },
         {
           "type": "paragraph",
@@ -26,7 +26,86 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Aprender a leer una gráfica"
+          "text": "Recorrer la relación en ambos sentidos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una longitud produce masa mediante masa = longitud×4 g/m, una masa de 10 g corresponde a 10/4 = 2,5 m. Recuperar la entrada exige deshacer el factor; no basta repetir una multiplicación. La relación directa admite fracciones de unidad y factores menores que uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con un par de datos puedes hallar un cociente, pero no sabes si se conservará en otro caso. Para extenderlo hace falta una condición, por ejemplo material uniforme sin embalaje. Un conjunto de filas puede ser compatible con la proporcionalidad sin demostrar una ley universal del fenómeno."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "directa_buscar_entrada",
+          "prompt": "Un cordón uniforme pesa 8 g por metro, sin embalaje. ¿Qué longitud tiene una pieza que pesa 14 g?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Longitud",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7/4"
+              },
+              "unit": "m"
+            }
+          ],
+          "feedback": {
+            "correct": "La longitud es 14/8 = 7/4 m. Multiplicar 7/4 m por 8 g/m recupera 14 g.",
+            "incorrect": "Multiplicar 14 por 8 no recupera la longitud. Divide masa entre masa por metro."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "par_aislado",
+          "prompt": "Solo se informa que tres entradas costaron 90 pesos. No sabemos si hay cargo fijo ni descuentos. ¿Qué puede concluirse sobre seis entradas?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "alcance",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Costarán necesariamente 180 pesos."
+                },
+                {
+                  "id": "b",
+                  "label": "Costarán necesariamente 93 pesos."
+                },
+                {
+                  "id": "c",
+                  "label": "No puede determinarse el precio sin conocer la regla de cobro."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "90/3 = 30 es el pago medio por entrada en esa compra; no prueba una tarifa constante para otras compras.",
+            "incorrect": "Duplicar el número de entradas exige duplicar el costo únicamente si el modelo es proporcional. El dato aislado no establece esa condición."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencias, condiciones y primer ensayo"
         },
         {
           "type": "paragraph",
@@ -98,7 +177,121 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Representar y distinguir relaciones"
+          "text": "El origen es necesario, no suficiente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los pares (0,0), (1,1), (2,4) y (3,9) incluyen el origen, pero sus cocientes positivos son 1, 2 y 3. No representan proporcionalidad directa. Para una recta proporcional no solo importa el origen: cada par no nulo debe conservar el mismo factor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un incremento constante puede producir una recta con cargo inicial. En cambio, multiplicar todos los valores por el mismo factor describe una proporcionalidad directa. Estas comprobaciones contestan preguntas diferentes."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "origen_sin_proporcionalidad",
+          "prompt": "La tabla incluye el origen. Decide si es compatible con proporcionalidad directa y elige la prueba.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "x",
+                "y"
+              ],
+              "rows": [
+                [
+                  "0",
+                  "0"
+                ],
+                [
+                  "2",
+                  "3"
+                ],
+                [
+                  "4",
+                  "8"
+                ],
+                [
+                  "6",
+                  "9"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "prueba",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí: toda relación que contiene (0,0) es directa."
+                },
+                {
+                  "id": "b",
+                  "label": "No: para x = 2, 4 y 6, los cocientes y/x son 3/2, 2 y 3/2."
+                },
+                {
+                  "id": "c",
+                  "label": "Sí: y aumenta al aumentar x."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los cocientes 3/2, 2 y 3/2 cambian. Que dos filas compartan un factor no garantiza que lo compartan todas.",
+            "incorrect": "El origen y el aumento de valores no bastan. Compara el factor en cada fila no nula."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_menor_uno",
+          "prompt": "Un modelo mantiene y = 3/4 de x. Calcula y para x = 2 y calcula x cuando y = 6.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "y",
+              "type": "math_numeric_input",
+              "label": "y cuando x = 2",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/2"
+              }
+            },
+            {
+              "id": "x",
+              "type": "math_numeric_input",
+              "label": "x cuando y = 6",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El primer resultado es 3/2; en el segundo se divide 6 entre 3/4 y se obtiene 8.",
+            "incorrect": "Directa no significa que el factor sea entero o mayor que uno. Para recuperar x hay que invertir el mismo factor."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Variar sin perder el significado"
         },
         {
           "type": "math_puzzle",
@@ -198,6 +391,65 @@
             "correct": "La recta tiene dos gramos por metro y pasa por el origen. Por ejemplo, (0,0) y (4,8) la determinan.",
             "incorrect": "Los puntos deben ser distintos y cada coordenada vertical debe ser el doble de la horizontal. Una recta paralela desplazada conserva incrementos, pero no la razón masa/longitud."
           }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar procedimientos sin copiar una regla"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_metodos_receta",
+          "prompt": "Una receta mantiene 3/4 L para 6 porciones iguales. Para 10 porciones, ¿qué procedimientos conservan la relación? Selecciona todos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "metodos",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(3/4 ÷ 6) × 10."
+                },
+                {
+                  "id": "b",
+                  "label": "3/4 × (10/6)."
+                },
+                {
+                  "id": "c",
+                  "label": "3/4 + (10−6)."
+                },
+                {
+                  "id": "d",
+                  "label": "3/4 ÷ (10/6)."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La tasa unitaria y el factor entre cantidades dan 5/4 L. Ambos multiplican la cantidad inicial por 10/6.",
+            "incorrect": "Sumar cuatro litros confunde porciones con litros. Dividir entre 10/6 reduce el caldo aunque aumentan las porciones."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar y comprobar"
         },
         {
           "type": "math_puzzle",

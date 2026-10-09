@@ -1,0 +1,1187 @@
+{
+  "id": "math_course_01__recuperacion_y_transferencia__recuperacion_numerica",
+  "title": "Volver a resolver sin recetas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Volver a resolver sin recetas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas tandas mezclan conocimientos de todo el curso. Resuelve antes de consultar los mensajes de solución. Los rótulos indican qué cantidad debes dar, pero no anuncian el procedimiento. Puedes repartir las tandas entre sesiones y anotar qué decisiones todavía requieren esfuerzo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 1"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "posiciones_con_ceros",
+          "prompt": "Escribe el número formado por cuatro decenas de millar, siete centenas y seis unidades.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "40706"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "40706: las posiciones de millares y decenas están vacías y se conservan con ceros.",
+            "incorrect": "No juntes 4, 7 y 6 como si cada cifra representara una unidad. Cada posición tiene un valor distinto."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_cifras",
+          "prompt": "Compara 50108 y 50180.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "menor",
+                  "label": "50108 < 50180"
+                },
+                {
+                  "id": "igual",
+                  "label": "50108 = 50180"
+                },
+                {
+                  "id": "mayor",
+                  "label": "50108 > 50180"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "menor"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Tras 501, las decenas son 0 y 8. La diferencia se decide allí, antes de comparar unidades.",
+            "incorrect": "No compares solo la última cifra ni la suma de las cifras."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "presupuesto_cercano",
+          "prompt": "Tres artículos cuestan 101, 249 y 149 pesos. Una estimación da 500. Calcula el total exacto y el dinero que queda al pagar con 500 pesos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Total exacto, en pesos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "resto",
+                  "type": "numeric",
+                  "label": "Dinero restante, en pesos",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "total": {
+                    "type": "numeric",
+                    "expected": "499"
+                  },
+                  "resto": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El total es 499 y queda 1. Estimar orienta; la comparación exacta resuelve si alcanza el dinero.",
+            "incorrect": "No sustituyas el total por la estimación al decidir cuánto sobra."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 2"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cambio_descendente",
+          "prompt": "Una marca pasa de −12 m a −20 m en línea recta, sin retrocesos. Da el cambio dirigido y la longitud recorrida.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cambio",
+                  "type": "numeric",
+                  "label": "Cambio dirigido, en m",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "longitud",
+                  "type": "numeric",
+                  "label": "Longitud recorrida, en m",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cambio": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "longitud": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cambio es −8 m; su magnitud es 8 m. La longitud no lleva signo negativo.",
+            "incorrect": "Final menos inicial determina el cambio. El signo indica sentido; no convierte una longitud en negativa."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "trayectoria_con_regreso",
+          "prompt": "Un marcador recorre, en este orden, las posiciones 5 m, −2 m y 3 m de una recta. Va directamente de cada posición a la siguiente, sin retrocesos ni recorridos adicionales dentro de cada tramo. Da el cambio total de posición y la longitud total recorrida.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cambio",
+                  "type": "numeric",
+                  "label": "Cambio total, en m",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "recorrido",
+                  "type": "numeric",
+                  "label": "Longitud total, en m",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cambio": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "recorrido": {
+                    "type": "numeric",
+                    "expected": "12"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cambio total es −2 m. El recorrido suma 7 m y 5 m: 12 m. Hubo un cambio de sentido.",
+            "incorrect": "La separación de los extremos no suma el tramo de regreso."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_negativos",
+          "prompt": "Calcula (−8)+(−13).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-21"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dos cambios negativos se acumulan: −21.",
+            "incorrect": "No restes las magnitudes cuando ambos cambios tienen el mismo sentido."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 3"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resta_opuesto",
+          "prompt": "Calcula −4−(−11).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar −11 equivale a sumar 11: el resultado es 7.",
+            "incorrect": "Conserva el −4; cambia la resta por la suma del opuesto del segundo número."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_factores",
+          "prompt": "Calcula (−7)×(−3)×(−2).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-42"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los dos primeros factores producen 21; el tercero produce −42.",
+            "incorrect": "Tres factores negativos dejan un signo negativo. No sumes las magnitudes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cociente_negativos",
+          "prompt": "Calcula (−42)÷(−7).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "6×(−7)=−42, así que el cociente es 6.",
+            "incorrect": "Comprueba el cociente mediante un producto; mismo signo da cociente positivo."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 4"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_y_division",
+          "prompt": "Selecciona todas las afirmaciones correctas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0÷9 está definido y vale 0."
+                },
+                {
+                  "id": "b",
+                  "label": "9÷0 está definido y vale 0."
+                },
+                {
+                  "id": "c",
+                  "label": "0÷0 determina un único cociente."
+                },
+                {
+                  "id": "d",
+                  "label": "Si 0×b=0, no podemos concluir que b=0."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0÷9=0. Dividir entre cero no determina un cociente único; el producto 0×b=0 vale para cualquier b.",
+            "incorrect": "El cero como dividendo y el cero como divisor cumplen papeles diferentes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "base_y_signo",
+          "prompt": "Calcula −3² y (−3)². En la primera expresión, el signo está fuera de la potencia.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "fuera",
+                  "type": "numeric",
+                  "label": "−3²",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "dentro",
+                  "type": "numeric",
+                  "label": "(−3)²",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fuera": {
+                    "type": "numeric",
+                    "expected": "-9"
+                  },
+                  "dentro": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera expresión es −9. La segunda multiplica −3 por −3 y vale 9.",
+            "incorrect": "Los paréntesis deciden si el signo pertenece a la base."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "misma_prioridad",
+          "prompt": "Calcula 12−8÷2×3.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "0"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Primero 8÷2=4, luego 4×3=12; al restar queda 0.",
+            "incorrect": "Multiplicación y división se resuelven de izquierda a derecha cuando tienen la misma prioridad."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 5"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_potencias",
+          "prompt": "Completa 2⁴×2³=2 elevado a un exponente y calcula su valor.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "exponente",
+                  "type": "numeric",
+                  "label": "Exponente",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Valor",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "exponente": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "128"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Hay siete factores iguales a 2: el exponente es 7 y el valor es 128.",
+            "incorrect": "Se reúnen factores de la misma base; no se multiplican los exponentes en un producto de potencias."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "calculo_mental",
+          "prompt": "Para calcular 25×36, ¿qué transformación conserva el valor y permite formar primero 100?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "25×(4×9)=(25×4)×9"
+                },
+                {
+                  "id": "b",
+                  "label": "25×(4+9)=(25×4)+9"
+                },
+                {
+                  "id": "c",
+                  "label": "25×36=(25+4)×9"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "36=4×9. La asociatividad permite calcular 100×9=900.",
+            "incorrect": "Cambiar un producto por una suma altera el número 36 o deja un factor sin aplicar."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cortes_iguales",
+          "prompt": "Dos cintas miden 72 cm y 108 cm. Se cortan por completo en piezas de igual longitud entera, sin desperdicio. ¿Cuál es la mayor longitud posible de cada pieza, en cm?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La longitud debe dividir ambas medidas. Su mayor divisor común es 36 cm.",
+            "incorrect": "Un múltiplo común sería mayor que las cintas y no produciría piezas completas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 6"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coincidencia_positiva",
+          "prompt": "Dos señales se activan juntas en el minuto 0; una vuelve cada 8 minutos y otra cada 12. ¿En qué minuto positivo coinciden por primera vez?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "24"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera coincidencia positiva es 24, múltiplo de 8 y de 12.",
+            "incorrect": "La pregunta excluye la coincidencia inicial en 0. Un divisor común no mide el intervalo buscado."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factorizacion_126",
+          "prompt": "Completa la factorización prima 126=2 elevado a un exponente, por 3 elevado a otro, por 7 elevado a otro.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "dos",
+                  "type": "numeric",
+                  "label": "Exponente de 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "tres",
+                  "type": "numeric",
+                  "label": "Exponente de 3",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "siete",
+                  "type": "numeric",
+                  "label": "Exponente de 7",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "dos": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "tres": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "siete": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "126=2×63=2×3×3×7. Los exponentes son 1, 2 y 1.",
+            "incorrect": "Los exponentes cuentan cuántas veces aparece cada factor primo, no el valor del factor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reconstruir_unidad",
+          "prompt": "Tres quintos de una cuerda miden 24 m. ¿Cuánto mide la cuerda completa, en m?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "40"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Un quinto mide 8 m; cinco quintos miden 40 m.",
+            "incorrect": "24 m corresponde a tres partes, no a toda la cuerda ni a una sola parte."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 7"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "impropia_a_mixta",
+          "prompt": "Escribe 13/4 como número mixto con una parte fraccionaria propia y reducida, con denominador positivo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "entero",
+                  "type": "numeric",
+                  "label": "Parte entera",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador de la parte fraccionaria",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador positivo",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "entero": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "num": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Trece cuartos contienen tres unidades completas y un cuarto: 3+1/4.",
+            "incorrect": "Cada unidad reúne cuatro cuartos; el residuo debe ser menor que cuatro."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "signos_denominadores",
+          "prompt": "Compara (−7)/(−9) y 5/6.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "menor",
+                  "label": "(−7)/(−9) < 5/6"
+                },
+                {
+                  "id": "igual",
+                  "label": "(−7)/(−9) = 5/6"
+                },
+                {
+                  "id": "mayor",
+                  "label": "(−7)/(−9) > 5/6"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "menor"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dos signos negativos dan 7/9. Con denominador 18, 14/18<15/18.",
+            "incorrect": "Normaliza los signos antes de comparar. Un denominador negativo no vuelve negativo un cociente de dos negativos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_racionales",
+          "prompt": "Calcula −5/8+3/4−1/6.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "-1/24"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con partes de tamaño 1/24: −15/24+18/24−4/24=−1/24.",
+            "incorrect": "Conserva cada signo al cambiar la partición y no sumes los denominadores."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 8"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_racional",
+          "prompt": "Calcula (9/14)×(21/10).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "27/20"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Al cancelar el factor 7 queda 27/20. El resultado supera uno.",
+            "incorrect": "Multiplica factores completos; que haya fracciones no obliga a que su producto sea menor que uno."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "division_racional",
+          "prompt": "Calcula (−7/10)÷(−21/25).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/6"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplicar por −25/21 da 5/6. El producto (5/6)×(−21/25) recupera −7/10.",
+            "incorrect": "Invierte el divisor, conserva ambos signos y comprueba con un producto."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inverso_racional",
+          "prompt": "Escribe el inverso multiplicativo de −9/11.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "-11/9"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−11/9 multiplicado por −9/11 produce 1.",
+            "incorrect": "El opuesto y el inverso son distintos: uno cancela mediante suma y otro mediante producto."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 9"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "decimal_reducido",
+          "prompt": "Escribe 0,072 como fracción irreducible con denominador positivo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "9"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "125"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "72/1000 se reduce mediante MCD 8 a 9/125.",
+            "incorrect": "Hay tres posiciones decimales; la partición inicial es en milésimos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "residuo_que_repite",
+          "prompt": "Al dividir 1 entre 6, tras obtener la primera cifra decimal queda residuo 4. Para la cifra siguiente divides 40 entre 6. Da esa cifra y el nuevo residuo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cifra",
+                  "type": "numeric",
+                  "label": "Cifra siguiente",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "resto",
+                  "type": "numeric",
+                  "label": "Nuevo residuo",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cifra": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "resto": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La cifra es 6 y queda residuo 4 otra vez. El mismo residuo vuelve a generar el mismo paso; comienza la repetición.",
+            "incorrect": "La cifra es el cociente entero del paso, no el residuo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "redondeo_con_acarreo",
+          "prompt": "Redondea 2,995 a centésimas, usando la regla de aumentar la última cifra conservada cuando la siguiente es 5 o mayor.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La cifra de milésimas es 5. El acarreo pasa de 2,99 a 3,00, cuyo valor numérico es 3.",
+            "incorrect": "Redondear puede cambiar también la parte entera. Truncar daría 2,99."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 10"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "origen_no_basta",
+          "prompt": "Una tabla da los pares (0,0), (1,1), (2,4), (3,9). ¿Por qué pasar por el origen no demuestra proporcionalidad directa?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Porque las razones y/x para x positivo son 1, 2 y 3, y no un mismo factor."
+                },
+                {
+                  "id": "b",
+                  "label": "Porque ninguna relación que contiene cero puede ser proporcional."
+                },
+                {
+                  "id": "c",
+                  "label": "Porque una tabla nunca permite comprobar proporcionalidad."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La condición requiere el mismo factor para todos los pares. El origen es necesario en una relación directa, pero por sí solo no basta.",
+            "incorrect": "Compara las razones en varios pares; no decidas por un único punto."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "parte_porcentual",
+          "prompt": "Calcula el 18% de 250 unidades.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "45"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "10% son 25; 8% son 20. En total, 45 unidades.",
+            "incorrect": "El 18 es una cantidad por cada cien de la base 250, no una cantidad que se suma directamente a 250."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cambio_relativo",
+          "prompt": "Una cantidad pasa de 12 a 15. Da el aumento absoluto y el porcentaje de aumento respecto de 12.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cambio",
+                  "type": "numeric",
+                  "label": "Aumento absoluto",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "porcentaje",
+                  "type": "numeric",
+                  "label": "Porcentaje de aumento, sin símbolo %",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cambio": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "porcentaje": {
+                    "type": "numeric",
+                    "expected": "25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El aumento es 3. Compararlo con la base inicial da 3/12=25%.",
+            "incorrect": "No uses el valor final como base cuando se pide aumento respecto del inicial."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 11"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "volumen_a_capacidad",
+          "prompt": "Convierte 0,0018 m³ a litros. Un metro cúbico equivale a 1000 litros.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "9/5"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El volumen equivale a 1,8 L. La conversión conserva la cantidad y cambia la unidad.",
+            "incorrect": "No apliques un factor de longitud a una unidad de volumen."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "masa_por_volumen",
+          "prompt": "Una muestra homogénea tiene masa de 300 g y volumen de 120 cm³. ¿Cuál es su densidad, en g/cm³?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "300/120=2,5 g/cm³: cada centímetro cúbico corresponde a 2,5 g.",
+            "incorrect": "La densidad aquí es masa dividida entre volumen; invertir el cociente cambiaría la unidad."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "note",
+          "text": "Después de comprobar, explica qué dato o condición decidió tu procedimiento. Si tu respuesta dependió de copiar una solución, vuelve a resolver una actividad distinta del mismo tema y regresa a esta tanda en otra sesión."
+        }
+      ]
+    }
+  ]
+}

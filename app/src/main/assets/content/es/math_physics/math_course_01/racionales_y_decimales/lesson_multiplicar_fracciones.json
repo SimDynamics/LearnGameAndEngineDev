@@ -24,14 +24,14 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "porcion_de_porcion",
-          "prompt": "Una lámina disponible equivale a 3/4 de una lámina completa. Se usa 2/3 de la porción disponible. ¿Qué fracción de la lámina completa se usa?",
+          "prompt": "Quedan 5/6 de una lámina. Se usa 3/5 de lo disponible. ¿Qué fracción de la lámina completa se usa?",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "usada",
+              "id": "valor",
               "type": "math_numeric_input",
-              "label": "Fracción de la lámina completa",
+              "label": "Resultado",
               "keyboard": "FRACTION",
               "validator": {
                 "type": "numeric",
@@ -40,8 +40,8 @@
             }
           ],
           "feedback": {
-            "correct": "Se usa (2/3) × (3/4) = 1/2 de la lámina completa. Dos tercios describe la parte tomada de los tres cuartos disponibles.",
-            "incorrect": "2/3 toma la lámina completa como referencia en vez de la porción disponible. 5/7 suma numeradores y denominadores, que no representa tomar una parte de otra. El resultado debe ser menor que 3/4."
+            "correct": "Se usa 3/5 de 5/6: el producto es 15/30 = 1/2 de la lámina completa.",
+            "incorrect": "3/5 toma la lámina completa como base y olvida que solo había 5/6. Sumar las fracciones no significa tomar una parte de lo disponible."
           }
         }
       ]
@@ -200,7 +200,7 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "dimensiones_racionales",
-          "prompt": "Ajusta el ancho a 2 m y el alto a 3/2 m. Después escribe el área del rectángulo en metros cuadrados.",
+          "prompt": "Ajusta el ancho a 3/2 m y el alto a 5/2 m. Después escribe el área en metros cuadrados.",
           "representations": [],
           "tools": [],
           "responses": [
@@ -235,11 +235,11 @@
                 "values": {
                   "ancho": {
                     "type": "numeric",
-                    "expected": "2"
+                    "expected": "3/2"
                   },
                   "alto": {
                     "type": "numeric",
-                    "expected": "3/2"
+                    "expected": "5/2"
                   }
                 }
               }
@@ -251,37 +251,344 @@
               "keyboard": "NUMERIC",
               "validator": {
                 "type": "numeric",
-                "expected": "3"
+                "expected": "15/4"
               }
             }
           ],
           "feedback": {
-            "correct": "Ancho 2 y alto 1,5 producen 2 × 3/2 = 3 m². El dibujo cambia con las dimensiones; la respuesta de área usa su producto.",
-            "incorrect": "Sumar 2 + 1,5 calcula 3,5 m de longitudes reunidas, no un área. Ajusta ambos controles: el área numérica correcta por sí sola no describe las dimensiones solicitadas."
+            "correct": "El producto es (3/2)×(5/2) = 15/4 m². Se combinan dos longitudes para medir área.",
+            "incorrect": "Sumar los lados da cuatro metros de longitudes reunidas, no un área. Deben ajustarse ambos lados y calcular su producto; la unidad final es m²."
           }
         },
         {
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "dos_rondas",
-          "prompt": "En cada ronda de un juego se conserva 3/4 de los puntos que había al empezar esa ronda. ¿Qué fracción de los puntos iniciales queda después de dos rondas?",
+          "prompt": "En cada ronda se conservan 2/3 de los puntos disponibles al empezar. ¿Qué fracción de los puntos iniciales queda después de tres rondas?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "8/27"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los factores sucesivos son (2/3)×(2/3)×(2/3) = 8/27. Cada ronda actúa sobre el resultado anterior.",
+            "incorrect": "Sumar tres veces 2/3 trata las rondas como cantidades independientes de la base inicial. Restar tres veces 1/3 también olvida que la base disminuye."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Factores mayores que uno, signos y cero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Multiplicar por 5/2 equivale a tomar dos veces y media una cantidad. No describe siempre extraer una parte del objeto disponible: también puede escalar una medida. Las fracciones mayores que uno amplían una magnitud positiva; las menores que uno la reducen. El cero sigue siendo absorbente y uno sigue siendo neutro."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "fraccion_por_entero",
+          "prompt": "Se usan 5/12 de cada uno de dieciocho metros de cinta. ¿Qué longitud total se usa?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "15/2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "18×5/12 = 15/2 m. Cada metro aporta cinco doceavos; el total es siete metros y medio.",
+            "incorrect": "18/12 solo toma un doceavo por metro; 5/30 suma términos que aquí son factores."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escalar_mas_de_uno",
+          "prompt": "Una pieza mide 2/3 m y una copia debe medir 9/4 veces esa longitud. Calcula la copia y elige qué comparación la comprueba.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Longitud de la copia, en m",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/2"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La copia debe ser menor que 2/3 m porque se usó una fracción."
+                },
+                {
+                  "id": "b",
+                  "label": "La copia debe ser mayor que 2/3 m porque el factor 9/4 supera uno."
+                },
+                {
+                  "id": "c",
+                  "label": "La copia siempre debe tener igual longitud."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La copia mide 3/2 m. Una fracción impropia puede ser un factor de ampliación.",
+            "incorrect": "Ser una fracción no significa ser menor que uno. Aquí 9/4 es dos unidades y un cuarto."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_signo_uno_cero",
+          "prompt": "Calcula los tres productos. Trata cero y uno como números, sin cambiar sus propiedades.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "negativo",
+                  "type": "numeric",
+                  "label": "(−5/7)×(14/15)"
+                },
+                {
+                  "id": "cero",
+                  "type": "numeric",
+                  "label": "0×(−11/6)"
+                },
+                {
+                  "id": "neutro",
+                  "type": "numeric",
+                  "label": "1×(−13/8)"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "negativo": {
+                    "type": "numeric",
+                    "expected": "-2/3"
+                  },
+                  "cero": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "neutro": {
+                    "type": "numeric",
+                    "expected": "-13/8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los resultados son −2/3, cero y −13/8. Un único factor negativo da signo negativo; cero absorbe y uno conserva.",
+            "incorrect": "Un denominador positivo no elimina un signo negativo. Cero por un negativo tampoco se vuelve negativo: sigue siendo cero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_factores",
+          "prompt": "Calcula (−3/5)×(10/9)×(−3/4) en forma reducida con denominador positivo.",
           "representations": [],
           "tools": [],
           "responses": [
             {
               "id": "fraccion",
-              "type": "math_numeric_input",
-              "label": "Fracción restante",
-              "keyboard": "FRACTION",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador de la forma reducida"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador positivo"
+                }
+              ],
               "validator": {
-                "type": "numeric",
-                "expected": "9/16"
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "Dos factores negativos producen signo positivo. Tras reagrupar factores y reducir, el producto es 1/2.",
+            "incorrect": "Cuenta los signos de todos los factores. La cancelación puede hacerse entre factores del numerador y denominador totales, no entre dos numeradores."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La acción determina si se resta o multiplica"
+        },
+        {
+          "type": "paragraph",
+          "text": "Retirar 1/4 L de un contenido es una resta de una cantidad fija. Retirar 1/4 del contenido es tomar una fracción de una base que puede ser distinta de un litro. Si había 1/2 L, los retiros serían 1/4 L y 1/8 L respectivamente. Leer la referencia evita elegir una operación correcta para una pregunta distinta."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "retiro_fijo_y_fraccion",
+          "prompt": "Dos recipientes contienen 7/8 L cada uno. De A se retiran 1/4 L; de B se retira 1/4 de lo que contiene. ¿Cuántos litros quedan en cada uno?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Quedan en A, en L"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Quedan en B, en L"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "5/8"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "21/32"
+                  }
+                }
               }
             }
           ],
           "feedback": {
-            "correct": "Queda (3/4) × (3/4) = 9/16 de los puntos iniciales. La segunda fracción actúa sobre el resultado de la primera ronda.",
-            "incorrect": "3/2 sumaría las fracciones como si ambas fueran cantidades independientes de la misma base inicial. 1/2 resta dos cuartos de la base original y olvida que la segunda base es menor."
+            "correct": "En A quedan 5/8 L. En B se conservan tres cuartos de 7/8 L: quedan 21/32 L. Los retiros usan bases diferentes.",
+            "incorrect": "En B no se retira un cuarto de litro: se retiran 7/32 L. Las palabras «de litro» y «del contenido» definen cantidades distintas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distribuir_producto",
+          "prompt": "Calcula (1/3)×(3/4+9/8). Puedes sumar primero o distribuir el factor.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La suma es 15/8 y un tercio de ella es 5/8. Distribuir da 1/4+3/8 = 5/8; ambos caminos conservan el valor.",
+            "incorrect": "Cancelar el tres dentro de un solo sumando no divide la suma completa. La distributividad aplica el factor a cada sumando."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_propiedad",
+          "prompt": "¿Qué propiedad permite cambiar (2/7)×(7/3)×(9/4) por (2/7)×((7/3)×(9/4)) sin cambiar el producto?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Asociatividad: cambia la agrupación de factores."
+                },
+                {
+                  "id": "b",
+                  "label": "Conmutatividad: se cambió el orden de los factores."
+                },
+                {
+                  "id": "c",
+                  "label": "La división es asociativa."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Solo cambian los paréntesis; el orden de los factores permanece. Eso es asociatividad de la multiplicación.",
+            "incorrect": "Conmutar exige cambiar el orden, cosa que aquí no se hizo. La división no hereda automáticamente la asociatividad."
           }
         }
       ]

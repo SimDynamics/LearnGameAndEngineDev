@@ -1,0 +1,340 @@
+{
+  "id": "math_course_01__razones_y_proporcionalidad__relaciones_y_condiciones",
+  "title": "Relaciones y condiciones para predecir",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué muestran los datos y qué autoriza el contexto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una tabla puede ajustarse a varios modelos en las filas observadas. Comprobar cocientes o productos sirve para aceptar o refutar compatibilidad con un modelo. Extender la tabla requiere además una condición que mantenga la relación. Conviene distinguir tres tareas: describir datos, justificar un modelo y usarlo para predecir."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para refutar una afirmación universal basta un caso que no la cumpla. Para declarar una proporcionalidad entre cantidades positivas, todas las filas que se comparan deben satisfacer su invariante. Si una fila rompe el producto o el cociente, no se ignora para conservar la regla preferida."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_cociente",
+          "prompt": "¿Qué relación es compatible con todos los pares de esta tabla?",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "x",
+                "y"
+              ],
+              "rows": [
+                [
+                  "2",
+                  "6"
+                ],
+                [
+                  "3",
+                  "9"
+                ],
+                [
+                  "5",
+                  "15"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Directa: y/x = 3."
+                },
+                {
+                  "id": "b",
+                  "label": "Inversa: x×y = 3."
+                },
+                {
+                  "id": "c",
+                  "label": "Ninguna: y aumenta."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los cocientes 6/2, 9/3 y 15/5 valen 3. Los productos varían.",
+            "incorrect": "Aumentar no prueba proporcionalidad; aquí la prueba concreta es el cociente común."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_producto",
+          "prompt": "¿Qué relación es compatible con todos los pares de esta tabla?",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "x",
+                "y"
+              ],
+              "rows": [
+                [
+                  "2",
+                  "12"
+                ],
+                [
+                  "3",
+                  "8"
+                ],
+                [
+                  "6",
+                  "4"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Directa: y/x = 24."
+                },
+                {
+                  "id": "b",
+                  "label": "Inversa: x×y = 24."
+                },
+                {
+                  "id": "c",
+                  "label": "Ninguna: x e y son diferentes."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2×12, 3×8 y 6×4 valen 24.",
+            "incorrect": "Las cantidades no tienen que ser iguales. En una relación inversa importa el producto constante, no el cociente."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar lo que se mantiene fijo"
+        },
+        {
+          "type": "paragraph",
+          "text": "La misma bomba puede generar una relación directa o una inversa. Si su caudal se fija, volumen y tiempo conservan volumen/tiempo. Si se fija el volumen y comparamos caudales posibles, caudal y duración conservan caudal×duración. El nombre de una magnitud no decide el modelo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una tarifa de 10 pesos iniciales y 4 por hora conserva incrementos de cuatro por hora, pero no costo/tiempo. Un depósito que pierde una cantidad fija por minuto disminuye de manera aditiva. Ambas situaciones requieren conservar el valor inicial al calcular."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "misma_bomba_otro_fijo",
+          "prompt": "Elige la descripción correcta de estos dos casos: I, una bomba de 3 L/min durante tiempos distintos; II, llenar siempre 60 L con caudales distintos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Ambos casos son directos porque incluyen litros."
+                },
+                {
+                  "id": "b",
+                  "label": "I: volumen y tiempo son directos. II: caudal y tiempo son inversos."
+                },
+                {
+                  "id": "c",
+                  "label": "Ambos casos son inversos porque aparece tiempo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "I conserva 3 L/min; II conserva 60 L como producto caudal×tiempo.",
+            "incorrect": "El modelo se decide por la cantidad fija y el invariante, no por el nombre de los datos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ninguna_relacion",
+          "prompt": "Una tarifa cobra 10 pesos iniciales más 4 por hora. ¿Qué afirmación describe costo y horas?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Son directos porque suben juntos."
+                },
+                {
+                  "id": "b",
+                  "label": "Son inversos porque una tarifa contiene una división."
+                },
+                {
+                  "id": "c",
+                  "label": "No son directos ni inversos: no se conserva costo/horas ni costo×horas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Para 1 y 2 h los costos son 14 y 18: cocientes 14 y 9; productos 14 y 36.",
+            "incorrect": "Un cargo inicial impide escalar el costo total con las horas. La relación sigue siendo calculable sin regla de proporcionalidad."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un dato equivocado puede cambiar una predicción"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "fila_incompatible",
+          "prompt": "Se propone una proporcionalidad inversa con producto constante 36. ¿Qué fila de la tabla es incompatible con esa relación?",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "x",
+                "y"
+              ],
+              "rows": [
+                [
+                  "2",
+                  "18"
+                ],
+                [
+                  "3",
+                  "12"
+                ],
+                [
+                  "4",
+                  "8"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fila",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(2, 18)."
+                },
+                {
+                  "id": "b",
+                  "label": "(3, 12)."
+                },
+                {
+                  "id": "c",
+                  "label": "(4, 8)."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los productos de las dos primeras filas son 36; el de (4,8) es 32.",
+            "incorrect": "Que y disminuya no garantiza un producto constante. La fila incompatible no puede tratarse como si diera 36."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "predecir_con_una_fila",
+          "prompt": "Una máquina produjo 40 piezas en 5 min. Solo se registró ese intervalo. ¿Qué información permitiría predecir producción en 12 min mediante una tasa constante?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "condicion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Que 12 es mayor que 5."
+                },
+                {
+                  "id": "b",
+                  "label": "Que las cifras sean enteras."
+                },
+                {
+                  "id": "c",
+                  "label": "Que el ritmo se mantenga, sin pausas ni cambios de condiciones."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La condición permite usar 40/5 = 8 piezas/min para el nuevo intervalo.",
+            "incorrect": "La tabla registra un promedio. Ni el tamaño del número ni su condición de entero garantizan conservarlo."
+          }
+        }
+      ]
+    }
+  ]
+}

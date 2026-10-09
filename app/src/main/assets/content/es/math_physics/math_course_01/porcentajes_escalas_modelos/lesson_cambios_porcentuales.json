@@ -6,7 +6,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Del porcentaje al multiplicador"
+          "text": "Comprender la relación"
         },
         {
           "type": "paragraph",
@@ -19,6 +19,10 @@
         {
           "type": "paragraph",
           "text": "Para recuperar el inicio, deshacemos la multiplicación mediante una división. Si 590 es el precio después de un aumento de 18%, el inicio es 590/1,18 = 500. Restar el 18% de 590 daría 483,8 porque tomaría una base distinta. El inverso del factor 1,18 es 1/1,18, no 0,82."
+        },
+        {
+          "type": "note",
+          "text": "Una diferencia entre porcentajes se mide en puntos porcentuales. Pasar de 40% a 50% son diez puntos porcentuales, pero un aumento relativo de 10/40 = 25% sobre el valor 40."
         }
       ]
     },
@@ -26,7 +30,108 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Cambios sucesivos"
+          "text": "Separar la variación del resultado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aumentar 25% una cantidad de 160 añade 40 y produce 200. El cambio es 40; el final es 200. Disminuir 25% conserva 120. La base es la cantidad anterior al cambio. Estas tres cantidades deben distinguirse antes de componer varias operaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si conoces inicio y final, el cambio relativo se obtiene como diferencia/inicio. De 80 a 100 hay 20 adicionales y 20/80 = 25%. Usar el final como denominador contesta cuánto representa la diferencia dentro del final; es otra referencia."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "aumento_cambio_final",
+          "prompt": "Un depósito tenía 240 L y recibe una incorporación igual al 15% de lo que tenía. Calcula los litros añadidos y los litros finales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "delta",
+              "type": "math_numeric_input",
+              "label": "Litros añadidos",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              },
+              "unit": "L"
+            },
+            {
+              "id": "final",
+              "type": "math_numeric_input",
+              "label": "Litros finales",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "276"
+              },
+              "unit": "L"
+            }
+          ],
+          "feedback": {
+            "correct": "Se añaden 36 L y quedan 276 L. El factor final es 1,15.",
+            "incorrect": "36 es la incorporación, no todo el contenido final. 15 L trataría el número del porcentaje como una cantidad de litros."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "descuento_simple",
+          "prompt": "Un precio de 120 pesos recibe un descuento del 15%. ¿Cuál es el precio final?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Precio final",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "102"
+              },
+              "unit": "pesos"
+            }
+          ],
+          "feedback": {
+            "correct": "Se descuentan 18 y quedan 102 pesos; el factor es 0,85.",
+            "incorrect": "18 es el descuento. 105 pesos restaría 15 pesos aunque el cambio solicitado es un porcentaje de 120."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cambio_desde_extremos",
+          "prompt": "Una tarifa pasa de 125 a 150 pesos. ¿Cuál es el porcentaje de aumento respecto de la tarifa anterior?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Porcentaje de aumento",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "20"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La diferencia es 25; 25/125×100 = 20%.",
+            "incorrect": "Dividir entre 150 usa la tarifa final como base. La pregunta toma como referencia la tarifa anterior, 125."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencias, condiciones y primer ensayo"
         },
         {
           "type": "paragraph",
@@ -39,10 +144,6 @@
         {
           "type": "paragraph",
           "text": "Un aumento del 20% seguido de una disminución del 20% tampoco devuelve el inicio. Con 100 unidades: 100×1,20 = 120, y 120×0,80 = 96. El factor total 0,96 muestra una reducción del 4%. Para volver de 120 a 100 necesitamos dividir entre 1,20. Comparar el resultado con una estimación evita aceptar una conclusión basada solo en los nombres de los porcentajes."
-        },
-        {
-          "type": "note",
-          "text": "Una diferencia entre porcentajes se mide en puntos porcentuales. Pasar de 40% a 50% son diez puntos porcentuales, pero un aumento relativo de 10/40 = 25% sobre el valor 40."
         },
         {
           "type": "math_puzzle",
@@ -113,7 +214,82 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Componer y recuperar"
+          "text": "Deshacer descuentos y recuperar bases"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de descontar 20% queda el 80% del precio original. Si el final es 72, el original es 72/0,80 = 90. Añadir 20% a 72 da 86,4 y no invierte el descuento. El regreso se calcula con el recíproco del factor completo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aplicar un mismo factor varias veces exige multiplicarlo tantas veces como cambios haya. Dos aumentos de 10% producen factor 1,10×1,10 = 1,21. No son un aumento de 20% porque el segundo 10% toma una base actualizada."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inicial_tras_descuento",
+          "prompt": "Después de un descuento del 30%, un artículo cuesta 84 pesos. ¿Cuál era su precio anterior?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Precio anterior",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "120"
+              },
+              "unit": "pesos"
+            }
+          ],
+          "feedback": {
+            "correct": "84/0,70 = 120; descontar 36 a 120 recupera 84.",
+            "incorrect": "109,2 suma 30% al final y usa una base diferente. Se debe dividir entre el factor 0,70."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_repetido",
+          "prompt": "Un valor de 200 aumenta 10% y vuelve a aumentar 10% del nuevo valor. Calcula el final y el aumento total respecto del inicio.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "f",
+              "type": "math_numeric_input",
+              "label": "Valor final",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "242"
+              }
+            },
+            {
+              "id": "p",
+              "type": "math_numeric_input",
+              "label": "Porcentaje total de aumento",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "21"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "200×1,10×1,10 = 242. El factor total 1,21 equivale a aumento del 21%.",
+            "incorrect": "240 suma porcentajes con bases distintas. La segunda incorporación es 22, no 20."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Variar sin perder el significado"
         },
         {
           "type": "math_puzzle",
@@ -199,6 +375,60 @@
             "correct": "200×1,20×0,80 = 192. Se añadieron 40 y se quitaron 48, porque la segunda base era 240.",
             "incorrect": "Los signos opuestos no bastan para cancelar porcentajes. El descuento se calcula respecto del valor aumentado y por eso su cantidad es mayor."
           }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Puntos porcentuales con datos nuevos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una tasa que baja de 30% a 24% pierde seis puntos porcentuales. Respecto de 30, pierde 6/30 = 20% de su valor inicial. Un punto porcentual expresa una diferencia entre tasas; el cambio relativo expresa una razón con una base."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "puntos_y_reduccion",
+          "prompt": "La proporción de piezas defectuosas baja de 25% a 20%. Indica la reducción en puntos porcentuales y la reducción relativa respecto de la tasa inicial.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pp",
+              "type": "math_numeric_input",
+              "label": "Puntos porcentuales de reducción",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "5"
+              }
+            },
+            {
+              "id": "rel",
+              "type": "math_numeric_input",
+              "label": "Porcentaje de reducción relativa",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "20"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Baja cinco puntos porcentuales y un 20% de la tasa anterior.",
+            "incorrect": "5 puntos no significa reducción relativa del 5%. Ambas respuestas describen el mismo cambio con referencias diferentes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar y comprobar"
         },
         {
           "type": "math_puzzle",

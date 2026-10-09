@@ -1,0 +1,443 @@
+{
+  "id": "math_course_01__racionales_y_decimales__control_del_error",
+  "title": "Redondear y controlar el error en una decisión",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Redondeo, acarreo y empates"
+        },
+        {
+          "type": "paragraph",
+          "text": "Redondear a centésimas elige el múltiplo de 0,01 más cercano. El decimal 0,998 está entre 0,99 y 1,00 y más cerca de 1,00: el acarreo puede atravesar varias cifras. El valor redondeado puede escribirse como uno o como 1,00; no son valores distintos."
+        },
+        {
+          "type": "paragraph",
+          "text": "En un empate exacto adoptamos esta convención para positivos y negativos: elegir el vecino más alejado de cero. Así 0,245 se redondea a 0,25 y −0,245 a −0,25. Sin empate se elige siempre el vecino más cercano: −0,244 se redondea a −0,24. «Subir el cinco» sin explicar el signo puede confundir la decisión."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "acarreo_redondeo",
+          "prompt": "Redondea 1,995 a centésimas y 0,0496 a milésimas usando la convención acordada.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primero",
+                  "type": "numeric",
+                  "label": "1,995 a centésimas"
+                },
+                {
+                  "id": "segundo",
+                  "type": "numeric",
+                  "label": "0,0496 a milésimas"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primero": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "segundo": {
+                    "type": "numeric",
+                    "expected": "1/20"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "1,995 está exactamente a mitad entre 1,99 y 2,00; se elige 2,00. 0,0496 está más cerca de 0,050 que de 0,049; se elige 0,050.",
+            "incorrect": "En el primer caso se aplica la convención de empate. En el segundo, el seis exige avanzar una milésima y el acarreo convierte 49 en 50 milésimas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "redondeo_negativo",
+          "prompt": "Redondea −1,235 y −1,234 a centésimas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "empate",
+                  "type": "numeric",
+                  "label": "−1,235 a centésimas"
+                },
+                {
+                  "id": "cercano",
+                  "type": "numeric",
+                  "label": "−1,234 a centésimas"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "empate": {
+                    "type": "numeric",
+                    "expected": "-31/25"
+                  },
+                  "cercano": {
+                    "type": "numeric",
+                    "expected": "-123/100"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−1,235 es un empate y se elige −1,24, más alejado de cero. −1,234 queda más cerca de −1,23.",
+            "incorrect": "La misma frase «sube» puede referirse a una cifra o al valor del número y resultar ambigua. Compara distancias y usa la convención solo cuando hay empate."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "truncar_o_redondear",
+          "prompt": "Para 5/9 = 0,555555…, escribe el recorte de dos decimales y el redondeo a centésimas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "recorte",
+                  "type": "numeric",
+                  "label": "Recorte de dos decimales"
+                },
+                {
+                  "id": "redondeo",
+                  "type": "numeric",
+                  "label": "Redondeo a centésimas"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "recorte": {
+                    "type": "numeric",
+                    "expected": "11/20"
+                  },
+                  "redondeo": {
+                    "type": "numeric",
+                    "expected": "14/25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El recorte es 0,55; el redondeo es 0,56. El período continúa y el valor está más cerca de 0,56.",
+            "incorrect": "Recortar elimina cifras; redondear elige el vecino más cercano. No son procedimientos intercambiables."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar exactitud durante la cuenta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tres piezas de 1/6 m suman exactamente 1/2 m. Si cada pieza se aproxima primero por 0,17 m, la suma comunicada resulta 0,51 m. Si se conserva 1/6 hasta sumar y se redondea al final, resulta 0,50 m. Los errores intermedios pueden acumularse; una calculadora tampoco vuelve exactos los valores ya redondeados."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "redondear_antes_o_despues",
+          "prompt": "Se suman siete cantidades de 2/9 m. Camino A: redondear cada cantidad a centésimas y después sumar. Camino B: sumar exactamente y redondear la suma a centésimas. Calcula ambos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "antes",
+                  "type": "numeric",
+                  "label": "Resultado del camino A, en m"
+                },
+                {
+                  "id": "despues",
+                  "type": "numeric",
+                  "label": "Resultado del camino B, en m"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "antes": {
+                    "type": "numeric",
+                    "expected": "77/50"
+                  },
+                  "despues": {
+                    "type": "numeric",
+                    "expected": "39/25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A usa 0,22 m siete veces y obtiene 1,54 m. B conserva 14/9 = 1,555… m y redondea a 1,56 m. Los valores comunicados difieren 0,02 m.",
+            "incorrect": "Redondear no conserva una igualdad exacta. Las siete sustituciones pueden acumular su error; guardar el valor exacto hasta el final evita este cambio concreto."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cota_suma_errores",
+          "prompt": "Tres medidas se suman. Cada una tiene error absoluto máximo de 0,002 m. Sin saber si los errores van por arriba o por abajo, ¿qué error máximo conservador puede garantizarse para la suma?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0 m, porque los errores siempre se compensan."
+                },
+                {
+                  "id": "b",
+                  "label": "0,002 m, porque las tres usan la misma precisión."
+                },
+                {
+                  "id": "c",
+                  "label": "0,006 m: en el peor caso, los tres errores van en la misma dirección."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La suma de los tres límites es 0,006 m. Podría haber compensación, pero no se puede garantizar sin información adicional.",
+            "incorrect": "Tener igual precisión no hace que los errores desaparezcan. La cota considera un caso posible en el que los tres desvíos se acumulan."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pantalla_no_exactitud",
+          "prompt": "Una calculadora muestra 0,142857142857143 para 1/7. Selecciona todas las afirmaciones correctas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La pantalla prueba que el decimal termina en tres."
+                },
+                {
+                  "id": "b",
+                  "label": "Para un cálculo exacto posterior conviene conservar 1/7."
+                },
+                {
+                  "id": "c",
+                  "label": "El resultado mostrado es una aproximación del periódico."
+                },
+                {
+                  "id": "d",
+                  "label": "La aproximación no puede servir para ninguna decisión."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "1/7 tiene expansión periódica; la pantalla redondea a su capacidad. Ese decimal puede servir si su error cumple la necesidad, y la fracción conserva el valor exacto.",
+            "incorrect": "El límite de la pantalla no cambia el número. Una aproximación sí puede ser útil, pero hace falta comprobar la precisión solicitada."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una precisión útil para el contexto"
+        },
+        {
+          "type": "paragraph",
+          "text": "La unidad de la tolerancia importa. Un error de 0,002 m equivale a dos milímetros; no equivale automáticamente a 0,002 cm ni a un porcentaje. Una decisión de compra también puede exigir redondear hacia arriba para cubrir una necesidad: el entero más cercano no garantiza disponer de suficiente material."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "metros_y_milimetros",
+          "prompt": "La longitud exacta es 7/12 m. Se exige error absoluto máximo de 0,002 m. Selecciona todas las aproximaciones que sirven.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,580 m"
+                },
+                {
+                  "id": "b",
+                  "label": "0,582 m"
+                },
+                {
+                  "id": "c",
+                  "label": "0,584 m"
+                },
+                {
+                  "id": "d",
+                  "label": "0,590 m"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            },
+            {
+              "id": "milimetros",
+              "type": "math_numeric_input",
+              "label": "Máximo error permitido, en milímetros",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7/12 ≈ 0,583333 m. Los errores de 0,582 y 0,584 son 1/750 m y 1/1500 m; ambos son menores que 0,002 m, es decir, 2 mm.",
+            "incorrect": "0,580 tiene error 1/300 m y 0,590 tiene error 1/150 m: exceden dos milímetros. Convertir unidades requiere recordar que un metro contiene mil milímetros."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cubrir_necesidad",
+          "prompt": "Se necesitan 37/8 m de cinta y se vende en paquetes completos de 1/4 m. ¿Cuántos paquetes se deben comprar como mínimo y cuánto sobra?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "paquetes",
+                  "type": "numeric",
+                  "label": "Paquetes mínimos"
+                },
+                {
+                  "id": "resto",
+                  "type": "numeric",
+                  "label": "Sobrante, en m"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "paquetes": {
+                    "type": "numeric",
+                    "expected": "19"
+                  },
+                  "resto": {
+                    "type": "numeric",
+                    "expected": "1/8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se requieren 37/2 = 18,5 paquetes equivalentes. Dieciocho no bastan; se compran diecinueve y sobra 1/8 m.",
+            "incorrect": "El criterio es cubrir la necesidad, no comunicar el cociente con pocas cifras. El sobrante se mide en metros, no copiando la parte decimal del número de paquetes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "presupuesto_precision",
+          "prompt": "Un precio exacto calculado es 15,625 pesos. Se comunica a centavos con la convención de empate acordada. Elige el precio y calcula el error absoluto del redondeo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "15,62 pesos."
+                },
+                {
+                  "id": "b",
+                  "label": "15,63 pesos."
+                },
+                {
+                  "id": "c",
+                  "label": "15,60 pesos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            },
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Error absoluto, en pesos",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/200"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El empate entre 15,62 y 15,63 se resuelve alejándose de cero: 15,63. El error es 0,005 pesos, medio centavo.",
+            "incorrect": "15,62 usaría otra convención de empate. 15,60 redondea a décimas, no a centavos; el error debe medirse respecto del precio exacto."
+          }
+        }
+      ]
+    }
+  ]
+}

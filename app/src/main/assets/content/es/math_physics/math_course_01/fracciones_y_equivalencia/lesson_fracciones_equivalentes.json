@@ -195,6 +195,48 @@
             "correct": "18/24 se reduce entre seis a 3/4; 16/28 entre cuatro a 4/7; 14/35 entre siete a 2/5.",
             "incorrect": "El mismo divisor debe actuar arriba y abajo. Compartir una cifra escrita no significa compartir un factor; verifica cada igualdad multiplicando cruzado."
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "¿Por qué usar el MCD deja una fracción reducida? Escribe m = d×r y n = d×s, donde d es el MCD positivo. Si r y s todavía compartieran un factor e mayor que uno, m y n compartirían d×e. Ese divisor sería mayor que d, contradiciendo que d era el mayor. Por eso r y s solo comparten el divisor positivo uno. Para una fracción negativa hacemos esta comprobación con la magnitud del numerador y dejamos el denominador positivo."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "razon_coprima",
+          "prompt": "Se divide 72/120 entre su MCD 24 y queda 3/5. ¿Qué argumento garantiza que 3/5 está reducida?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Es reducida porque sus cifras son menores que diez."
+                },
+                {
+                  "id": "b",
+                  "label": "Si 3 y 5 compartieran e>1, 24×e dividiría 72 y 120 y superaría su MCD."
+                },
+                {
+                  "id": "c",
+                  "label": "Toda división por un divisor común deja una fracción reducida."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Un divisor común adicional produciría un divisor de 72 y 120 mayor que 24. Ese es el argumento general; no depende de que los términos sean pequeños.",
+            "incorrect": "Las cifras pequeñas no garantizan reducción: 4/6 no está reducida. Dividir 72/120 entre doce deja 6/10, que todavía comparte dos."
+          }
         }
       ]
     },
@@ -216,25 +258,25 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "cancelacion_error",
-          "prompt": "Una persona transforma (3 + 6)/3 en 1 + 6 tachando los tres. ¿Cuál es la reparación correcta?",
+          "prompt": "Una persona transforma (5+15)/5 en 1+15. Elige la reparación que conserva el valor.",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "reparacion",
+              "id": "decision",
               "type": "math_multiple_choice_single",
               "options": [
                 {
                   "id": "a",
-                  "label": "(3 + 6)/3 = 3/3 + 6/3 = 3."
+                  "label": "(5+15)/5 = 1+3 = 4."
                 },
                 {
                   "id": "b",
-                  "label": "(3 + 6)/3 = 6 porque los tres se cancelan."
+                  "label": "(5+15)/5 = 15, al borrar los cinco."
                 },
                 {
                   "id": "c",
-                  "label": "(3 + 6)/3 = 1 + 6 = 7."
+                  "label": "(5+15)/5 = 16, porque se dividió el primer sumando."
                 }
               ],
               "validator": {
@@ -246,8 +288,8 @@
             }
           ],
           "feedback": {
-            "correct": "Dividir una suma entre tres exige dividir ambos sumandos. Se obtiene 1 + 2 = 3; sumar primero da el mismo valor.",
-            "incorrect": "6 elimina un sumando y el denominador sin una igualdad válida. 7 divide solo el primer sumando. La división debe afectar a la suma completa."
+            "correct": "La división afecta al numerador completo: 20/5 = 4. También 5/5+15/5 = 1+3 = 4.",
+            "incorrect": "15 elimina un sumando y el denominador; 16 divide únicamente el primer sumando. Ninguno conserva la división de la suma completa."
           }
         },
         {
@@ -326,6 +368,318 @@
           "feedback": {
             "correct": "0/9 vale cero y se expresa en forma reducida como 0/1. Un denominador uno permite identificarlo con el entero cero.",
             "incorrect": "0/0 no representa cero: la división por cero no está definida. 0/9 conserva el valor, pero aquí se pidió expresamente la forma reducida 0/1."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Producir equivalencias y distinguir factores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para completar 3/10 = 9/d, el numerador se multiplicó por tres; el denominador también debe multiplicarse por tres. Si el cambio va hacia una partición más gruesa, dividimos ambos términos por el mismo factor. Una relación aditiva como «sumé seis arriba y abajo» no conserva en general el cociente."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "denominador_faltante",
+          "prompt": "Completa 7/12 = 35/d y 18/30 = n/5.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Denominador d"
+                },
+                {
+                  "id": "n",
+                  "type": "numeric",
+                  "label": "Numerador n"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d": {
+                    "type": "numeric",
+                    "expected": "60"
+                  },
+                  "n": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera igualdad multiplica ambos términos por cinco: d = 60. La segunda divide ambos entre seis: n = 3.",
+            "incorrect": "Sumar veintiocho arriba y abajo daría un denominador cuarenta, pero cambiaría el valor. En la segunda igualdad hay que dividir también el numerador."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cambio_aditivo",
+          "prompt": "Se comparan 2/7 y 5/10. ¿Añadir tres al numerador y al denominador conservó el número?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí: se realizó la misma suma arriba y abajo."
+                },
+                {
+                  "id": "b",
+                  "label": "No: 2×10 = 20 y 5×7 = 35, que son distintos."
+                },
+                {
+                  "id": "c",
+                  "label": "Sí: ambas fracciones son menores que uno."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "No son equivalentes: 2/7 es menor que un medio y 5/10 es un medio. La igualdad exige el mismo factor multiplicativo, no la misma suma.",
+            "incorrect": "Realizar la misma operación escrita en los dos términos no garantiza equivalencia. Ser menores que uno tampoco los hace iguales."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reducir_negativo_simple",
+          "prompt": "Reduce 63/−105 con denominador positivo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador de la forma reducida"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador positivo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "Un solo signo negativo produce −63/105. El MCD es 21 y la forma reducida es −3/5.",
+            "incorrect": "3/5 pierde el signo; −9/15 conserva el valor, pero todavía tiene un factor común tres."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reducir_impropia",
+          "prompt": "Reduce 150/84 con denominador positivo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador de la forma reducida"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador positivo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "25"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "14"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "El MCD de 150 y 84 es 6: queda 25/14. Ser impropia no impide que esté reducida.",
+            "incorrect": "Una forma reducida no tiene que ser menor que uno. Dividir solo el numerador cambia el valor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factorizar_suma",
+          "prompt": "Para reducir (8+12)/30, elige todas las transformaciones válidas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(8+12)/30 = 20/30 = 2/3."
+                },
+                {
+                  "id": "b",
+                  "label": "(8+12)/30 = 4×(2+3)/(6×5) = 4/6 = 2/3."
+                },
+                {
+                  "id": "c",
+                  "label": "(8+12)/30 = (8+2)/3, tachando el uno de doce y el cero de treinta."
+                },
+                {
+                  "id": "d",
+                  "label": "(8+12)/30 = 8/30+12/30."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Sumar primero, factorizar toda la suma o dividir ambos sumandos son caminos válidos. En b, (2+3) vale cinco y se cancela el factor cinco del numerador y denominador completos.",
+            "incorrect": "Tachar cifras no cancela factores. (8+2)/3 vale 10/3, distinto de 2/3; la posición de una cifra no autoriza eliminarla."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "equivalencia_en_rectas",
+          "prompt": "Las dos rectas usan el mismo cero y la misma unidad. Sus marcas ocupan la misma posición. Selecciona todas las escrituras de ese número.",
+          "representations": [
+            {
+              "type": "math_number_line",
+              "mode": "read_value",
+              "min": 0,
+              "max": 1,
+              "step": 0.25,
+              "value": 0.75,
+              "closed": true,
+              "direction": "none",
+              "showValueLabel": false
+            },
+            {
+              "type": "math_number_line",
+              "mode": "read_value",
+              "min": 0,
+              "max": 1,
+              "step": 0.125,
+              "value": 0.75,
+              "closed": true,
+              "direction": "none",
+              "showValueLabel": false
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "3/4"
+                },
+                {
+                  "id": "b",
+                  "label": "6/8"
+                },
+                {
+                  "id": "c",
+                  "label": "3/8"
+                },
+                {
+                  "id": "d",
+                  "label": "9/12"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/4 = 6/8 = 9/12. Afinar la partición cambia cuántas partes contamos, sin mover la posición.",
+            "incorrect": "3/8 conserva el numerador, pero hace las partes la mitad de grandes; ocupa una posición diferente."
           }
         }
       ]

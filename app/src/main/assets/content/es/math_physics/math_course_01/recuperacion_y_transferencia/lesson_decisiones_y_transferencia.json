@@ -1,0 +1,921 @@
+{
+  "id": "math_course_01__recuperacion_y_transferencia__decisiones_y_transferencia",
+  "title": "Decidir y comprobar en situaciones nuevas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decidir y comprobar en situaciones nuevas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las situaciones siguientes mezclan magnitudes, referencias y restricciones. Antes de operar, identifica qué cantidad se conserva y cuál cambia. Comprueba el resultado con una relación inversa, una unidad o un total; no basta con reconocer una palabra del enunciado. Dos preguntas consecutivas sobre las mismas tarifas forman una comprobación guiada de una sola decisión, no dos resoluciones independientes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 1"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "trayecto_racional",
+          "prompt": "Un robot empieza en −5/2 m de una recta. Avanza 7/6 m en sentido positivo y luego 2/3 m en sentido negativo. Da su posición final, su cambio dirigido total y la longitud recorrida.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "final",
+                  "type": "numeric",
+                  "label": "Posición final, en m",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "cambio",
+                  "type": "numeric",
+                  "label": "Cambio total, en m",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "recorrido",
+                  "type": "numeric",
+                  "label": "Longitud recorrida, en m",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "final": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "cambio": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "recorrido": {
+                    "type": "numeric",
+                    "expected": "11/6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cambio es 1/2 m, la posición final es −2 m y el recorrido es 11/6 m. El recorrido suma longitudes de ambos tramos.",
+            "incorrect": "No confundas posición inicial, desplazamiento y recorrido. Al regresar, la longitud se suma aunque el cambio dirigido sea negativo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_materiales",
+          "prompt": "Hay 66 piezas claras, 90 oscuras y 114 grises. Se forman tantos paquetes idénticos como sea posible, usando todo. Cada paquete contiene piezas de los tres colores. Da el número de paquetes y cuántas piezas de cada color contiene uno.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "paquetes",
+                  "type": "numeric",
+                  "label": "Paquetes",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "claras",
+                  "type": "numeric",
+                  "label": "Claras por paquete",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "oscuras",
+                  "type": "numeric",
+                  "label": "Oscuras por paquete",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "grises",
+                  "type": "numeric",
+                  "label": "Grises por paquete",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "paquetes": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "claras": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "oscuras": {
+                    "type": "numeric",
+                    "expected": "15"
+                  },
+                  "grises": {
+                    "type": "numeric",
+                    "expected": "19"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El mayor número que divide las tres cantidades es 6. Cada paquete contiene 11, 15 y 19 piezas, respectivamente.",
+            "incorrect": "La cantidad de paquetes debe dividir cada disponibilidad. El contenido de cada paquete se obtiene después al dividir."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_ciclos",
+          "prompt": "Tres señales coinciden en el minuto 0 y luego se repiten cada 7, 10 y 14 minutos, respectivamente. ¿En qué minuto positivo vuelven a coincidir las tres por primera vez?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "70"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El minuto 70 es divisible entre 7, 10 y 14. Es la primera coincidencia positiva.",
+            "incorrect": "Multiplicar los tres periodos cuenta factores compartidos más de una vez."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 2"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "fraccion_y_razon",
+          "prompt": "De 45 tarjetas, dos quintos son rojas y las restantes azules. Da ambas cantidades y la razón rojas/azules en forma irreducible.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "rojas",
+                  "type": "numeric",
+                  "label": "Tarjetas rojas",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "azules",
+                  "type": "numeric",
+                  "label": "Tarjetas azules",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador de rojas/azules",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador de rojas/azules",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "rojas": {
+                    "type": "numeric",
+                    "expected": "18"
+                  },
+                  "azules": {
+                    "type": "numeric",
+                    "expected": "27"
+                  },
+                  "num": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Hay 18 rojas y 27 azules. La razón parte-parte es 18/27=2/3; la fracción parte-total era 2/5.",
+            "incorrect": "El denominador cambia de referencia: total de tarjetas y tarjetas azules no son la misma cantidad."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tarifas_dos_encargos",
+          "prompt": "A cobra 12 pesos de preparación más 6 por metro; B cobra 8 pesos por metro sin preparación. Da los pagos de A y B para encargos de 5 m y de 9 m, suponiendo la misma calidad.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a5",
+                  "type": "numeric",
+                  "label": "A para 5 m, en pesos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b5",
+                  "type": "numeric",
+                  "label": "B para 5 m, en pesos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "a9",
+                  "type": "numeric",
+                  "label": "A para 9 m, en pesos",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b9",
+                  "type": "numeric",
+                  "label": "B para 9 m, en pesos",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a5": {
+                    "type": "numeric",
+                    "expected": "42"
+                  },
+                  "b5": {
+                    "type": "numeric",
+                    "expected": "40"
+                  },
+                  "a9": {
+                    "type": "numeric",
+                    "expected": "66"
+                  },
+                  "b9": {
+                    "type": "numeric",
+                    "expected": "72"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Para 5 m: A=42 y B=40. Para 9 m: A=66 y B=72. El proveedor conveniente cambia con la cantidad.",
+            "incorrect": "El cargo fijo se paga una sola vez por encargo. Comparar únicamente el precio por metro no decide ambos casos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_proveedor",
+          "prompt": "En las tarifas A=12 pesos de preparación más 6 por metro y B=8 por metro, ¿qué decisión corresponde a los encargos de 5 m y 9 m?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "B para 5 m; A para 9 m."
+                },
+                {
+                  "id": "b",
+                  "label": "A para ambos porque su precio por metro es menor."
+                },
+                {
+                  "id": "c",
+                  "label": "B para ambos porque no tiene preparación."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La decisión se verifica con los pagos totales 42 frente a 40, y 66 frente a 72.",
+            "incorrect": "Un mismo proveedor no tiene por qué convenir para todas las cantidades."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 3"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "llenar_sin_perdidas",
+          "prompt": "Un depósito de 18 L se llena sin pérdidas. Una bomba tiene caudal constante de 3/4 L/min y otra de 3/2 L/min. Da los tiempos de llenado.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Primera bomba, en min",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Segunda bomba, en min",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "24"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "12"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los tiempos son 24 min y 12 min. Al duplicar el caudal, el tiempo se reduce a la mitad porque se conserva el volumen.",
+            "incorrect": "Aquí permanece fijo el producto caudal×tiempo, no el cociente tiempo/caudal."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_dos_tramos",
+          "prompt": "Una persona recorre 6 km a 3 km/h y otros 6 km a 6 km/h, sin paradas. ¿Cuál es su velocidad media en todo el recorrido, en km/h?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "4"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Recorre 12 km en 2+1=3 h. La velocidad media es 4 km/h.",
+            "incorrect": "Las velocidades no duran el mismo tiempo; su promedio aritmético 4,5 no representa este recorrido."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mezcla_en_razon",
+          "prompt": "Se prepara una mezcla ideal con volúmenes aditivos de pigmento y agua en razón 3:8. El volumen total será 55 mL. Da cada volumen.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "pigmento",
+                  "type": "numeric",
+                  "label": "Pigmento, en mL",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "agua",
+                  "type": "numeric",
+                  "label": "Agua, en mL",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "pigmento": {
+                    "type": "numeric",
+                    "expected": "15"
+                  },
+                  "agua": {
+                    "type": "numeric",
+                    "expected": "40"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las once partes valen 5 mL cada una: 15 de pigmento y 40 de agua. Su suma es 55.",
+            "incorrect": "La razón 3:8 es parte-parte. No tomes tres octavos del total como si fuera parte-total."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 4"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "hallar_escala_y_usarla",
+          "prompt": "En un plano, 4,8 cm representan 144 m reales. Usa 1 m=100 cm. Da el denominador de la escala 1:n y cuántos centímetros ocupará en el plano una longitud real de 75 m.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "escala",
+                  "type": "numeric",
+                  "label": "n en la escala 1:n",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "plano",
+                  "type": "numeric",
+                  "label": "Longitud en el plano, en cm",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "escala": {
+                    "type": "numeric",
+                    "expected": "3000"
+                  },
+                  "plano": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "144 m son 14400 cm; 14400/4,8=3000. Para 75 m, 7500/3000=2,5 cm.",
+            "incorrect": "Primero expresa ambas longitudes en la misma unidad. Plano→real y real→plano usan sentidos inversos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "caja_ampliada",
+          "prompt": "Una caja rectangular tiene medidas internas 4 cm, 8 cm y 2 cm. Otra caja multiplica cada longitud por 3/2. Da el volumen de cada una, en cm³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "original",
+                  "type": "numeric",
+                  "label": "Volumen original",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "nuevo",
+                  "type": "numeric",
+                  "label": "Volumen ampliado",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "original": {
+                    "type": "numeric",
+                    "expected": "64"
+                  },
+                  "nuevo": {
+                    "type": "numeric",
+                    "expected": "216"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El volumen original es 64 cm³. Los nuevos lados son 6, 12 y 3 cm; su producto es 216 cm³.",
+            "incorrect": "La ampliación actúa sobre tres longitudes; multiplicar el volumen solo por 3/2 no conserva ese modelo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tara_y_densidad",
+          "prompt": "Un recipiente vacío tiene masa 60 g. Con 125 cm³ de una sustancia homogénea tiene masa total 310 g. Da la masa de la sustancia y su densidad en g/cm³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "masa",
+                  "type": "numeric",
+                  "label": "Masa de la sustancia, en g",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "densidad",
+                  "type": "numeric",
+                  "label": "Densidad, en g/cm³",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "masa": {
+                    "type": "numeric",
+                    "expected": "250"
+                  },
+                  "densidad": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La sustancia pesa 250 g; 250/125=2 g/cm³. La masa del recipiente no forma parte de la muestra.",
+            "incorrect": "Usar 310 g como masa de sustancia incluye la tara y altera la densidad."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 5"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diluir_y_evaporar",
+          "prompt": "Hay 8 L de una mezcla ideal con 25% de soluto por volumen. Se añaden 2 L de agua pura; después se evaporan exactamente esos 2 L de agua, sin pérdida de soluto. Los volúmenes se consideran aditivos. Da el volumen de soluto y los porcentajes después de añadir y después de evaporar.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "soluto",
+                  "type": "numeric",
+                  "label": "Soluto, en L",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "diluida",
+                  "type": "numeric",
+                  "label": "Porcentaje tras añadir agua, sin %",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "final",
+                  "type": "numeric",
+                  "label": "Porcentaje tras evaporar, sin %",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "soluto": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "diluida": {
+                    "type": "numeric",
+                    "expected": "20"
+                  },
+                  "final": {
+                    "type": "numeric",
+                    "expected": "25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se conservan 2 L de soluto. Con 10 L totales representan 20%; con 8 L representan otra vez 25%.",
+            "incorrect": "La base total cambia aunque el soluto no cambie. Evaporar solo agua no equivale a retirar mezcla homogénea."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "deposito_y_vasos",
+          "prompt": "Un depósito rectangular tiene medidas internas 30 cm, 20 cm y 10 cm. Cada 1000 cm³ equivalen a 1 L. Se reserva el 15% de su capacidad y el resto llena vasos de 0,3 L, sin pérdidas. Da la capacidad en litros, el volumen disponible y el número de vasos completos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "capacidad",
+                  "type": "numeric",
+                  "label": "Capacidad, en L",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "disponible",
+                  "type": "numeric",
+                  "label": "Disponible, en L",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "vasos",
+                  "type": "numeric",
+                  "label": "Vasos completos",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "capacidad": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "disponible": {
+                    "type": "numeric",
+                    "expected": "51/10"
+                  },
+                  "vasos": {
+                    "type": "numeric",
+                    "expected": "17"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La capacidad es 6 L; el 85% disponible es 5,1 L y alcanza exactamente para 17 vasos.",
+            "incorrect": "La reserva se aplica a la capacidad completa. El tamaño de cada vaso es una cantidad, no un porcentaje."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "redondear_durante",
+          "prompt": "Se necesitan siete tramos de exactamente 2/7 m. Compara sumar sus longitudes exactas con redondear primero cada tramo a 0,29 m. Da el total exacto, el total obtenido al redondear cada tramo y el error absoluto entre ambos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "exacto",
+                  "type": "numeric",
+                  "label": "Total exacto, en m",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "redondeado",
+                  "type": "numeric",
+                  "label": "Total de los tramos redondeados, en m",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "error",
+                  "type": "numeric",
+                  "label": "Error absoluto, en m",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "exacto": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "redondeado": {
+                    "type": "numeric",
+                    "expected": "203/100"
+                  },
+                  "error": {
+                    "type": "numeric",
+                    "expected": "3/100"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El total exacto es 2 m; el otro es 2,03 m. El error absoluto es 0,03 m: las aproximaciones se acumulan.",
+            "incorrect": "No declares exacta la suma de datos ya redondeados. Conservar las fracciones hasta el total evita este error."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tanda 6"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "trabajo_y_condiciones",
+          "prompt": "Cinco personas terminaron un encargo en dos horas. Solo con esa información, ¿qué podemos concluir sobre el tiempo de diez personas?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Será exactamente una hora."
+                },
+                {
+                  "id": "b",
+                  "label": "Faltan condiciones sobre productividad, reparto del trabajo y posibles interferencias para asegurar una hora."
+                },
+                {
+                  "id": "c",
+                  "label": "Será exactamente cuatro horas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El producto personas×tiempo solo se conserva bajo un modelo de trabajo fijo y productividad comparable. La cantidad de personas por sí sola no garantiza el modelo.",
+            "incorrect": "Duplicar una cantidad no permite elegir directa o inversa sin comprobar lo que se conserva."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_grupos",
+          "prompt": "En un grupo de 120 personas, 25% eligió una actividad. En otro de 60, la eligió 40%. Da cuántas personas la eligieron en cada grupo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primero",
+                  "type": "numeric",
+                  "label": "Personas del primer grupo",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "segundo",
+                  "type": "numeric",
+                  "label": "Personas del segundo grupo",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primero": {
+                    "type": "numeric",
+                    "expected": "30"
+                  },
+                  "segundo": {
+                    "type": "numeric",
+                    "expected": "24"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Son 30 y 24 personas. Un porcentaje mayor sobre una base menor puede representar menos personas.",
+            "incorrect": "Compara las cantidades calculadas sobre cada base, no solo los porcentajes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisor_calculado",
+          "prompt": "Antes de calcular 14÷(3/4−6/8), ¿qué diagnóstico es correcto?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El divisor vale cero; esta división no está definida."
+                },
+                {
+                  "id": "b",
+                  "label": "La división vale cero porque el divisor se hace cero."
+                },
+                {
+                  "id": "c",
+                  "label": "Se invierte cada sumando y luego se resta."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/4 y 6/8 tienen el mismo valor. Su diferencia es cero, que no tiene inverso.",
+            "incorrect": "La comprobación del divisor debe hacerse después de evaluar toda su expresión."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "note",
+          "text": "Después de comprobar, explica qué dato o condición decidió tu procedimiento. Si tu respuesta dependió de copiar una solución, vuelve a resolver una actividad distinta del mismo tema y regresa a esta tanda en otra sesión."
+        }
+      ]
+    }
+  ]
+}

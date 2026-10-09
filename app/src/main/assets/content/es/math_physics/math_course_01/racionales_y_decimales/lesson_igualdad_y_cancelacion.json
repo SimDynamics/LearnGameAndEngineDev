@@ -1,0 +1,415 @@
+{
+  "id": "math_course_01__racionales_y_decimales__igualdad_y_cancelacion",
+  "title": "Igualdad, productos cruzados y cancelación",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Por qué funcionan los productos cruzados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora el inverso permite justificar una regla usada antes. Para b y d distintos de cero, si a/b = c/d, multiplicar ambos lados por b×d conserva la igualdad. En el primer lado b se combina con su inverso y queda a×d; en el segundo queda b×c. Por tanto, la igualdad de fracciones implica a×d = b×c."
+        },
+        {
+          "type": "paragraph",
+          "text": "También funciona al revés: si a×d = b×c, dividimos ambos lados por b×d, que no es cero, y recuperamos a/b = c/d. Las dos direcciones son necesarias: no solo comprobamos una condición que acompaña a la igualdad, sino una condición equivalente a ella."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cruzados_dos_direcciones",
+          "prompt": "Para 4/9 y 12/27, calcula los productos cruzados y elige qué permiten concluir.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izq",
+                  "type": "numeric",
+                  "label": "4×27"
+                },
+                {
+                  "id": "der",
+                  "type": "numeric",
+                  "label": "12×9"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izq": {
+                    "type": "numeric",
+                    "expected": "108"
+                  },
+                  "der": {
+                    "type": "numeric",
+                    "expected": "108"
+                  }
+                }
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Solo permiten aproximar ambos decimales."
+                },
+                {
+                  "id": "b",
+                  "label": "Demuestran igualdad exacta, porque los denominadores son no nulos."
+                },
+                {
+                  "id": "c",
+                  "label": "Demuestran que ambas fracciones están reducidas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Ambos productos son 108. La equivalencia de las dos condiciones demuestra igualdad exacta; no afirma que cada escritura esté reducida.",
+            "incorrect": "Productos cruzados iguales no son un redondeo. 12/27 todavía comparte tres, aunque representa 4/9."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "denominadores_hipotesis",
+          "prompt": "Se propone usar 0×5 = 0×7 para afirmar 0/0 = 7/5. ¿Qué falla?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La multiplicación 0×5 está mal calculada."
+                },
+                {
+                  "id": "b",
+                  "label": "El criterio exige denominadores no nulos; 0/0 no representa un número."
+                },
+                {
+                  "id": "c",
+                  "label": "Los productos cruzados solo funcionan con fracciones positivas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La multiplicación con cero está bien, pero la primera escritura tiene denominador cero. Sin la hipótesis no existe el cociente que se intenta comparar.",
+            "incorrect": "El criterio sí funciona con negativos cuando los denominadores no son cero. No basta con hallar dos productos iguales fuera de su dominio."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "equivalencia_desconocida",
+          "prompt": "Completa 5/12 = 15/d con denominador no nulo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5×d = 15×12 = 180, por eso d = 36. Multiplicar ambos términos de 5/12 por tres obtiene la misma escritura.",
+            "incorrect": "Sumar diez al denominador imita un cambio aditivo que no conserva la fracción. El mismo factor tres debe actuar arriba y abajo."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cancelar exige un factor no nulo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si k×u = k×v y k no es cero, multiplicamos ambos lados por el inverso de k. La asociatividad permite formar k⁻¹×k = 1, y queda u = v. Cancelar un factor tiene esta razón matemática. Si k vale cero, el inverso no existe y ambos productos pueden ser iguales aunque u y v sean distintos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La misma idea explica (k×m)/(k×n) = m/n cuando k y n no son cero. Los productos cruzados quedan k×m×n y m×k×n, iguales por asociatividad y conmutatividad. No autoriza eliminar un sumando de una suma."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelar_en_igualdad",
+          "prompt": "Se sabe que (−3/4)×u = (−3/4)×(5/6). ¿Cuál es u y por qué?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Valor de u",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/6"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El factor común tiene inverso: aplicarlo a ambos lados deja iguales los otros factores."
+                },
+                {
+                  "id": "b",
+                  "label": "El factor común negativo obliga a cambiar el signo del factor que queda."
+                },
+                {
+                  "id": "c",
+                  "label": "u puede ser cualquier racional porque ambos lados son productos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El factor común −3/4 es no nulo y tiene inverso. Aplicarlo a los dos lados da u = 5/6.",
+            "incorrect": "El signo del factor aparece en ambos lados y no cambia el otro factor. Cancelar depende de que ese factor común no sea cero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelacion_cero_contraejemplo",
+          "prompt": "De 0×u = 0×v, ¿qué se puede concluir necesariamente?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "u = v."
+                },
+                {
+                  "id": "b",
+                  "label": "u y v deben valer cero."
+                },
+                {
+                  "id": "c",
+                  "label": "Nada obliga a que u y v sean iguales: u=2 y v=9 satisfacen la igualdad."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los productos valen cero con u=2 y v=9. El contraejemplo demuestra que cancelar cero sería inválido.",
+            "incorrect": "Una igualdad de productos con factor cero no recupera información sobre los otros factores. No hay inverso con el que cancelar."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_completo",
+          "prompt": "Selecciona todas las igualdades válidas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(6×(2+5))/(6×4) = 7/4."
+                },
+                {
+                  "id": "b",
+                  "label": "(6+5)/(6+4) = 5/4."
+                },
+                {
+                  "id": "c",
+                  "label": "(6×(2+5))/(6×4) = (2+5)/4."
+                },
+                {
+                  "id": "d",
+                  "label": "(6×2+6×5)/(6×4) = (2+5)/4."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En a, c y d, seis multiplica al numerador completo y al denominador; distribuir o factorizar muestra esa estructura.",
+            "incorrect": "b cancela sumandos y cambia 11/10 por 5/4. Ver el mismo seis escrito no garantiza que sea un factor del conjunto."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un producto cero revela un factor cero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si u×v = 0, al menos uno de los factores es cero. Si u ya vale cero, la afirmación está satisfecha. Si u no vale cero, multiplicar por su inverso deja v = 0. Este argumento usa dos casos y cubre todas las posibilidades. No demuestra que ambos deban ser cero."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_nulo_no_nulo",
+          "prompt": "Un racional t satisface (7/9)×t = 0. ¿Cuál es t?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Valor de t",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "0"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Como 7/9 no es cero, su inverso permite cancelar ese factor y obtener t = 0.",
+            "incorrect": "Un factor positivo pequeño no hace exactamente cero un producto con otro factor no nulo. Aquí se exige igualdad exacta."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_nulo_casos",
+          "prompt": "Si u×v = 0, selecciona todas las afirmaciones que siempre son verdaderas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "u = 0 o v = 0, o ambos."
+                },
+                {
+                  "id": "b",
+                  "label": "u = 0 y v = 0 necesariamente."
+                },
+                {
+                  "id": "c",
+                  "label": "Si u no es cero, v debe ser cero."
+                },
+                {
+                  "id": "d",
+                  "label": "Si u es cero, v puede ser cualquier racional."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Al menos uno es cero; cuando uno es no nulo, el otro debe ser cero. Si u es cero, la igualdad no restringe v.",
+            "incorrect": "No tienen que ser ambos cero: 0×8 = 0 es un contraejemplo. La prueba por casos evita cancelar cero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_distributividad",
+          "prompt": "Se conoce que 5×(p+q) = 0. ¿Qué conclusión está justificada?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "p = 0 y q = 0."
+                },
+                {
+                  "id": "b",
+                  "label": "p+q = 0, porque cinco es no nulo; p y q pueden ser opuestos."
+                },
+                {
+                  "id": "c",
+                  "label": "No se puede cancelar cinco porque el segundo factor es una suma."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cinco multiplica a toda la suma y es no nulo: se obtiene p+q = 0. Por ejemplo, p=3 y q=−3 satisfacen esa condición.",
+            "incorrect": "Un factor completo puede ser una suma. No se deduce que cada sumando sea cero: pueden compensarse."
+          }
+        }
+      ]
+    }
+  ]
+}

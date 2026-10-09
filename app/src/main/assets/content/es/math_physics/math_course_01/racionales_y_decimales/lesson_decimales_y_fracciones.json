@@ -24,7 +24,7 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "decimal_reducido",
-          "prompt": "Escribe −0,084 como fracción reducida, con denominador positivo. Cuenta todas las posiciones decimales, incluido el cero inicial.",
+          "prompt": "Escribe −0,072 como fracción reducida, con denominador positivo. Cuenta todas las posiciones decimales.",
           "representations": [],
           "tools": [],
           "responses": [
@@ -35,12 +35,12 @@
                 {
                   "id": "num",
                   "type": "numeric",
-                  "label": "Fracción reducida: numerador"
+                  "label": "Numerador de la forma reducida"
                 },
                 {
                   "id": "den",
                   "type": "numeric",
-                  "label": "Fracción reducida: denominador positivo"
+                  "label": "Denominador positivo"
                 }
               ],
               "validator": {
@@ -48,11 +48,11 @@
                 "fields": {
                   "num": {
                     "type": "numeric",
-                    "expected": "-21"
+                    "expected": "-9"
                   },
                   "den": {
                     "type": "numeric",
-                    "expected": "250"
+                    "expected": "125"
                   }
                 }
               },
@@ -70,8 +70,8 @@
             }
           ],
           "feedback": {
-            "correct": "−0,084 = −84/1000. Numerador y denominador se dividen entre cuatro para obtener −21/250.",
-            "incorrect": "−84/100 omite una posición decimal y multiplica el valor por diez. 21/250 pierde el signo. −84/1000 es equivalente, pero aún no está reducida."
+            "correct": "−0,072 = −72/1000. Dividir numerador y denominador entre ocho da −9/125.",
+            "incorrect": "−72/100 omite una posición decimal. 9/125 pierde el signo; −72/1000 conserva el valor, pero todavía no está reducida."
           }
         }
       ]
@@ -108,7 +108,7 @@
               "sources": [
                 {
                   "id": "a",
-                  "label": "3/8"
+                  "label": "5/16"
                 },
                 {
                   "id": "b",
@@ -126,7 +126,7 @@
                 },
                 {
                   "id": "y",
-                  "label": "0,375"
+                  "label": "0,3125"
                 },
                 {
                   "id": "z",
@@ -144,56 +144,56 @@
             }
           ],
           "feedback": {
-            "correct": "3/8 = 0,375; 7/20 = 0,35; 2/5 = 0,4. Comprobar el producto decimal por el denominador recupera el numerador.",
-            "incorrect": "La longitud del decimal no sigue directamente al tamaño del denominador. Convierte a una potencia de diez o divide; 7/20 = 35/100, no 7/100."
+            "correct": "5/16 = 0,3125; 7/20 = 0,35; 2/5 = 0,4. Multiplicar cada decimal por su denominador recupera el numerador.",
+            "incorrect": "El denominador cuenta partes iguales, no posiciones decimales. Convierte a una potencia de diez o realiza la división: 7/20 = 35/100."
           }
         },
         {
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "terminan",
-          "prompt": "Selecciona todas las fracciones cuya expansión decimal es finita. Reduce antes de inspeccionar los factores del denominador.",
+          "prompt": "Selecciona todas las fracciones cuya expansión decimal termina. Reduce antes de inspeccionar el denominador.",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "finitos",
+              "id": "decision",
               "type": "math_multiple_choice_multi",
               "options": [
                 {
                   "id": "a",
-                  "label": "7/40"
+                  "label": "9/45"
                 },
                 {
                   "id": "b",
-                  "label": "5/12"
+                  "label": "13/60"
                 },
                 {
                   "id": "c",
-                  "label": "3/14"
+                  "label": "7/28"
                 },
                 {
                   "id": "d",
-                  "label": "11/125"
+                  "label": "4/21"
                 },
                 {
                   "id": "e",
-                  "label": "6/15"
+                  "label": "9/80"
                 }
               ],
               "validator": {
                 "type": "choice",
                 "expected": [
                   "a",
-                  "d",
+                  "c",
                   "e"
                 ]
               }
             }
           ],
           "feedback": {
-            "correct": "7/40 y 11/125 tienen denominadores con factores dos y cinco. 6/15 se reduce a 2/5 y también termina.",
-            "incorrect": "5/12 conserva un factor tres y 3/14 un factor siete en el denominador reducido. Descartar 6/15 sin simplificar confunde la escritura inicial con el denominador que determina la expansión."
+            "correct": "9/45 = 1/5 y 7/28 = 1/4 terminan. 9/80 también, porque 80 solo tiene factores dos y cinco. 13/60 conserva un tres y 4/21 conserva tres y siete.",
+            "incorrect": "El criterio usa el denominador reducido. Ver un tres o siete en la escritura inicial no basta para descartar 9/45 o 7/28."
           }
         }
       ]
@@ -216,25 +216,25 @@
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "igualdad_periodica",
-          "prompt": "¿Qué afirmación describe correctamente 0,333 y 1/3?",
+          "prompt": "¿Qué relación exacta hay entre 0,1666 y 1/6?",
           "representations": [],
           "tools": [],
           "responses": [
             {
-              "id": "relacion",
+              "id": "decision",
               "type": "math_multiple_choice_single",
               "options": [
                 {
                   "id": "a",
-                  "label": "Son iguales porque se escribieron tres decimales."
+                  "label": "Son iguales porque hay cuatro decimales."
                 },
                 {
                   "id": "b",
-                  "label": "0,333 es menor que 1/3: le faltan los dígitos que seguirían en el período."
+                  "label": "0,1666 < 1/6: al multiplicarlo por seis se obtiene 0,9996, menor que uno."
                 },
                 {
                   "id": "c",
-                  "label": "0,333 es mayor porque 333 es mayor que uno."
+                  "label": "0,1666 > 1/6 porque 1666 supera uno."
                 }
               ],
               "validator": {
@@ -246,32 +246,108 @@
             }
           ],
           "feedback": {
-            "correct": "0,333 = 333/1000. Al multiplicarlo por tres resulta 0,999, menor que uno; por tanto es menor que 1/3.",
-            "incorrect": "Tener tres decimales no hace exacto un periódico recortado. Comparar 333 con uno sin denominadores ignora el valor posicional; 333/1000 está cerca de un tercio, pero por debajo."
+            "correct": "El producto 0,1666×6 = 0,9996 muestra que falta una cantidad positiva para llegar a uno. El recorte es menor que un sexto.",
+            "incorrect": "La cantidad de decimales no convierte un recorte en el valor exacto. Comparar 1666 con uno ignora el denominador 10000."
           }
+        },
+        {
+          "type": "paragraph",
+          "text": "En la división decimal, multiplicar el residuo por diez permite pasar a la siguiente posición. Por ejemplo, 1/4: diez décimas entre cuatro da dos décimas y residuo dos; veinte centésimas entre cuatro da cinco centésimas y residuo cero. Se obtiene 0,25. Las cifras se construyen por posición y el residuo explica si falta continuar."
         },
         {
           "type": "math_puzzle",
           "schemaVersion": 1,
           "id": "conversion_exacta",
-          "prompt": "Escribe el decimal finito exacto de 3/16. Puedes comprobarlo multiplicando tu respuesta por dieciséis.",
-          "representations": [],
+          "prompt": "Completa las cuatro cifras decimales de 3/16 y el residuo final. La primera división usa 30: al bajar un cero se expresa el residuo en partes diez veces menores.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Posición",
+                "Cantidad que se divide entre 16"
+              ],
+              "rows": [
+                [
+                  "Décimas",
+                  "30"
+                ],
+                [
+                  "Centésimas",
+                  "140"
+                ],
+                [
+                  "Milésimas",
+                  "120"
+                ],
+                [
+                  "Diezmilésimas",
+                  "80"
+                ]
+              ]
+            }
+          ],
           "tools": [],
           "responses": [
             {
-              "id": "decimal",
-              "type": "math_numeric_input",
-              "label": "Valor decimal exacto",
-              "keyboard": "NUMERIC",
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "decimas",
+                  "type": "numeric",
+                  "label": "Cifra de décimas"
+                },
+                {
+                  "id": "centesimas",
+                  "type": "numeric",
+                  "label": "Cifra de centésimas"
+                },
+                {
+                  "id": "milesimas",
+                  "type": "numeric",
+                  "label": "Cifra de milésimas"
+                },
+                {
+                  "id": "diezmilesimas",
+                  "type": "numeric",
+                  "label": "Cifra de diezmilésimas"
+                },
+                {
+                  "id": "residuo",
+                  "type": "numeric",
+                  "label": "Residuo final"
+                }
+              ],
               "validator": {
-                "type": "numeric",
-                "expected": "0.1875"
+                "type": "fields",
+                "fields": {
+                  "decimas": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "centesimas": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "milesimas": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "diezmilesimas": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "residuo": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
               }
             }
           ],
           "feedback": {
-            "correct": "3/16 = 1875/10000 = 0,1875. Multiplicar 0,1875 por dieciséis da exactamente tres.",
-            "incorrect": "0,18 o 0,19 son aproximaciones, no el decimal exacto pedido. El residuo aún no era cero después de dos posiciones; continúa hasta 0,1875."
+            "correct": "30÷16 da cifra 1 y residuo 14; 140÷16 da 8 y residuo 12; 120÷16 da 7 y residuo 8; 80÷16 da 5 y residuo cero. Así 3/16 = 0,1875 exactamente.",
+            "incorrect": "Cada cifra sale de dividir diez veces el residuo anterior entre dieciséis. Detenerse en 0,18 deja residuo doce y solo aproxima; el proceso termina cuando el residuo llega a cero."
           }
         },
         {
@@ -329,6 +405,225 @@
           "feedback": {
             "correct": "0,09 < 0,1 < 0,125 < 3/20 < 0,8. Tres veinteavos son 0,15; agregar ceros finales permite comparar posiciones.",
             "incorrect": "0,09 no supera 0,1: nueve centésimas son menos que diez centésimas. 0,125 no supera 0,8 por tener más dígitos; compara 125 milésimas con 800 milésimas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Por qué el denominador decide si termina"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una fracción reducida p/q tiene un decimal finito de n posiciones, puede escribirse como un entero dividido entre 10ⁿ. Al estar reducida, su denominador q debe dividir esa potencia de diez; por eso sus factores primos solo pueden ser dos y cinco."
+        },
+        {
+          "type": "paragraph",
+          "text": "La otra dirección construye el decimal: si q = 2ᵃ×5ᵇ, elige n igual al mayor de a y b. Multiplica q por los factores que faltan para obtener 2ⁿ×5ⁿ = 10ⁿ, y multiplica p por el mismo factor. Por ejemplo, para 3/20 falta un cinco: 3/20 = 15/100 = 0,15. La explicación usa factorización y equivalencia aprendidas antes."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_potencia_diez",
+          "prompt": "Para 11/40, transforma el denominador en la menor potencia de diez posible. Escribe esa potencia como número y el numerador equivalente.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador potencia de diez"
+                },
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador equivalente"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "den": {
+                    "type": "numeric",
+                    "expected": "1000"
+                  },
+                  "num": {
+                    "type": "numeric",
+                    "expected": "275"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "40 = 2³×5. La menor potencia compatible es 10³ = 1000; multiplicar ambos términos por 25 produce 275/1000 = 0,275.",
+            "incorrect": "100 no es múltiplo de cuarenta. Convertir el denominador sin cambiar el numerador no conserva el valor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cifras_y_factores",
+          "prompt": "Una fracción reducida tiene denominador 400 = 2⁴×5². ¿Cuántas posiciones decimales bastan para expresar su valor exactamente?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Dos: hay dos factores cinco."
+                },
+                {
+                  "id": "b",
+                  "label": "Cuatro: se necesitan cuatro factores de cada tipo para llegar a 10⁴."
+                },
+                {
+                  "id": "c",
+                  "label": "Seis: hay que sumar los exponentes cuatro y dos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "10⁴ contiene 2⁴×5⁴. Basta aportar dos factores cinco: 400×25 = 10000. Menos posiciones no contienen los cuatro factores dos necesarios.",
+            "incorrect": "Las potencias de diez exigen cantidades iguales de doses y cincos. El número de posiciones usa el mayor exponente, no su suma."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ceros_interiores",
+          "prompt": "Escribe 0,0405 como fracción reducida con denominador positivo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerador de la forma reducida"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Denominador positivo"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "81"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "2000"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "0,0405 son 405 diezmilésimas: 405/10000 = 81/2000. Los ceros interiores fijan las posiciones.",
+            "incorrect": "405/100 o 405/1000 cambia la escala. Un cero final puede omitirse, pero los ceros interiores no se eliminan sin cambiar el número."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ceros_y_comparacion",
+          "prompt": "Selecciona todas las igualdades exactas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0,070 = 0,07"
+                },
+                {
+                  "id": "b",
+                  "label": "0,070 = 0,7"
+                },
+                {
+                  "id": "c",
+                  "label": "0,204 = 204/1000"
+                },
+                {
+                  "id": "d",
+                  "label": "2,04 = 204/100"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cero final de 0,070 no cambia siete centésimas. 0,204 contiene milésimas y 2,04 contiene centésimas además de las unidades.",
+            "incorrect": "0,7 son siete décimas, diez veces 0,07. La posición de cada cifra decide qué denominador corresponde."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sumar_posiciones",
+          "prompt": "Calcula exactamente 2,4+0,036.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "609/250"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2,400+0,036 = 2,436. Igualar posiciones con ceros finales permite sumar milésimas.",
+            "incorrect": "No se alinean las últimas cifras: se alinean las comas y las posiciones. 2,76 reuniría décimas con centésimas de forma incorrecta."
           }
         }
       ]

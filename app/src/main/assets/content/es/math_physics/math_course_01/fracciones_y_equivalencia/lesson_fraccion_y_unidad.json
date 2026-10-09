@@ -172,9 +172,9 @@
               "type": "math_number_line",
               "mode": "read_value",
               "min": 0,
-              "max": 2,
+              "max": 3,
               "step": 0.25,
-              "value": 1.75,
+              "value": 2.25,
               "closed": true,
               "direction": "none",
               "showValueLabel": false
@@ -189,13 +189,13 @@
               "keyboard": "FRACTION",
               "validator": {
                 "type": "numeric",
-                "expected": "7/4"
+                "expected": "9/4"
               }
             }
           ],
           "feedback": {
-            "correct": "La marca está a siete cuartos de cero: cuatro cuartos completan uno y quedan tres. Su valor es 7/4.",
-            "incorrect": "Cuenta intervalos desde cero, no el número de rayitas visibles. La marca está entre uno y dos; una respuesta menor que uno no puede ocupar ese lugar."
+            "correct": "La marca está a nueve cuartos de cero: ocho cuartos completan dos unidades y queda un cuarto. Su valor es 9/4.",
+            "incorrect": "Cuenta intervalos desde cero. El punto supera dos unidades, así que 7/4 no puede representarlo; nueve marcas contadas sin atender a los intervalos tampoco darían la medida."
           }
         },
         {
@@ -234,6 +234,311 @@
           "feedback": {
             "correct": "Óscar toma 24 ÷ 3 = 8 m; Lina toma 12 ÷ 2 = 6 m. La fracción menor puede dar una longitud mayor si la unidad de referencia es más grande.",
             "incorrect": "La respuesta «Lina» compara fracciones de enteros distintos sin atender a su tamaño. «Ambos» confunde tomar una parte con tomar la misma cantidad. Compara las longitudes en metros."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruir el entero y cambiar de representación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si tres partes de un quinto miden 12 cm, cada quinto mide 4 cm y el entero mide 20 cm. La fracción expresa la relación con el entero; conocer una parte permite reconstruirlo. No multiplicamos 12 por cinco: 12 cm corresponde a tres partes, no a una sola."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reconstruir_entero",
+          "prompt": "Cuatro sextos de una cinta uniforme miden 18 cm. ¿Cuánto mide un sexto y cuánto mide la cinta completa?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "parte",
+                  "type": "numeric",
+                  "label": "Un sexto, en cm"
+                },
+                {
+                  "id": "entero",
+                  "type": "numeric",
+                  "label": "Cinta completa, en cm"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "parte": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  },
+                  "entero": {
+                    "type": "numeric",
+                    "expected": "27"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada sexto mide 18/4 = 9/2 cm. Los seis sextos miden 27 cm; cuatro de ellos reconstruyen los 18 cm dados.",
+            "incorrect": "18×6 trata cuatro sextos como un sexto. Dividir entre seis reparte la parte conocida entre todas las partes del entero; primero se divide entre las cuatro partes conocidas."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La división con residuo ofrece dos escrituras del mismo número. En 17/6 hay dos unidades completas y cinco sextos: 17 = 2×6+5. El residuo debe ser menor que seis, porque seis sextos formarían otra unidad."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "impropia_a_mixta",
+          "prompt": "Escribe 23/5 como unidades completas más una fracción propia. Introduce las unidades y el numerador de los quintos restantes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "enteros",
+                  "type": "numeric",
+                  "label": "Unidades completas"
+                },
+                {
+                  "id": "resto",
+                  "type": "numeric",
+                  "label": "Numerador de los quintos restantes"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "enteros": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "resto": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "23 = 4×5+3, de modo que 23/5 = 4+3/5. Cuatro unidades contienen veinte quintos.",
+            "incorrect": "El residuo es tres, no cinco ni veintitrés. 4+3/10 cambiaría el tamaño de las partes; aquí siguen siendo quintos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "unidad_en_tabla",
+          "prompt": "Cada ficha mide 1/8 m. Completa las longitudes de los dos conjuntos; ambos usan el mismo metro como unidad.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Conjunto",
+                "Fichas",
+                "Longitud de cada ficha"
+              ],
+              "rows": [
+                [
+                  "A",
+                  "3",
+                  "1/8 m"
+                ],
+                [
+                  "B",
+                  "10",
+                  "1/8 m"
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "tres",
+                  "type": "numeric",
+                  "label": "Longitud de 3 fichas, en m"
+                },
+                {
+                  "id": "diez",
+                  "type": "numeric",
+                  "label": "Longitud de 10 fichas, en m"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "tres": {
+                    "type": "numeric",
+                    "expected": "3/8"
+                  },
+                  "diez": {
+                    "type": "numeric",
+                    "expected": "5/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Tres fichas miden 3/8 m; diez miden 10/8 = 5/4 m. Ocho fichas completan el metro.",
+            "incorrect": "El denominador ocho indica el tamaño de cada ficha y se conserva al contar. 8/3 y 8/10 invierten cantidad de fichas y tamaño de parte."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparto_menor_unidad",
+          "prompt": "Dos litros se reparten por igual entre siete recipientes. Escribe los litros por recipiente y selecciona una comprobación.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Litros por recipiente",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "2/7"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Cada recipiente supera un litro porque siete es mayor que dos."
+                },
+                {
+                  "id": "b",
+                  "label": "Al multiplicar los litros de una porción por el número de recipientes se recuperan dos litros."
+                },
+                {
+                  "id": "c",
+                  "label": "Dos porciones de 7/2 L reconstruyen los dos litros."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada recipiente recibe 2/7 L. Siete veces 2/7 L son 2 L y cada porción es menor que un litro.",
+            "incorrect": "7/2 invierte el reparto. La cantidad por recipiente debe disminuir al repartir el mismo total entre más recipientes; la comprobación multiplica la porción por siete."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mitades_distinta_base",
+          "prompt": "Dos cajas contienen 30 y 18 fichas. Se toma 1/3 de la primera y 1/2 de la segunda. Escribe ambas cantidades y elige cuál es mayor.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Fichas de la primera"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Fichas de la segunda"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La segunda, porque 1/2 > 1/3."
+                },
+                {
+                  "id": "b",
+                  "label": "Son iguales porque ambas son partes de cajas."
+                },
+                {
+                  "id": "c",
+                  "label": "La primera: al expresar ambas porciones en fichas, la primera resulta mayor."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Un tercio de treinta son diez fichas; la mitad de dieciocho son nueve. Los enteros de referencia tienen tamaños distintos.",
+            "incorrect": "Comparar solo 1/3 y 1/2 no compara las cantidades de fichas. Primero expresa ambas cantidades en fichas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_y_enteros",
+          "prompt": "Un equipo recibe cero metros; otro recibe doce metros repartidos entre cuatro personas. Escribe la cantidad que recibe una persona del segundo equipo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Resultado",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12/4 = 3. Una fracción también puede representar un entero; 3 = 3/1.",
+            "incorrect": "4/12 invierte el reparto. El cero del otro equipo no entra en esta división: hay doce metros y cuatro personas."
           }
         }
       ]

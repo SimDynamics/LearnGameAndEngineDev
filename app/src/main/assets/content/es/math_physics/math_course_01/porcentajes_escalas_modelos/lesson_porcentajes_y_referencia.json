@@ -6,7 +6,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Por cada cien, respecto de qué"
+          "text": "Comprender la relación"
         },
         {
           "type": "paragraph",
@@ -19,6 +19,10 @@
         {
           "type": "paragraph",
           "text": "Si 36 de las 240 entradas de un acto fueron gratuitas, la fracción gratuita es 36/240 = 0,15. Para expresarla en porcentaje multiplicamos por cien y decimos 15%. En cambio, 36 entradas gratuitas frente a 204 pagadas dan otra razón. El porcentaje de gratuitas dentro del total toma 240 como referencia, no 204."
+        },
+        {
+          "type": "note",
+          "text": "En un campo rotulado «porcentaje», escribe el valor numérico sin el símbolo %: para quince por ciento, escribe 15. En un campo rotulado «factor», escribe 0,15. Identifica siempre qué cantidad corresponde al 100%."
         }
       ]
     },
@@ -26,7 +30,116 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Tres cantidades relacionadas"
+          "text": "Calcular partes con referencias sencillas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El 10% es una décima parte; el 1%, una centésima; el 25%, un cuarto y el 50%, una mitad. Estas equivalencias permiten calcular sin perder la base. Por ejemplo, el 15% de 80 es el 10% más el 5%: 8+4 = 12. Primero se identifican las partes de la misma referencia y después se suman."
+        },
+        {
+          "type": "paragraph",
+          "text": "El 2,5% equivale a 0,025 = 1/40. No es 2,5 veces la base. Un porcentaje fraccionario sigue siendo un factor racional; dividir entre cien conserva su valor. Cuando el porcentaje supera cien, la cantidad comparada puede superar la base."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "partes_mentales",
+          "prompt": "Un lote tiene 120 piezas. Calcula cuántas corresponden al 10%, al 25% y al 15% del mismo lote.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diez",
+              "type": "math_numeric_input",
+              "label": "10% del lote",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "12"
+              }
+            },
+            {
+              "id": "cuarto",
+              "type": "math_numeric_input",
+              "label": "25% del lote",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "30"
+              }
+            },
+            {
+              "id": "quince",
+              "type": "math_numeric_input",
+              "label": "15% del lote",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "18"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El 10% son 12; el 25%, 30; el 15% son 12+6 = 18. Todas las partes usan 120 como base.",
+            "incorrect": "El símbolo % divide entre cien. Para el 15%, el 5% es la mitad del 10%, no cinco piezas necesariamente."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "parte_porcentaje_decimal",
+          "prompt": "Un recipiente contiene 240 g de material. El 2,5% de esa masa es pigmento. ¿Cuántos gramos de pigmento contiene?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Pigmento",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              },
+              "unit": "g"
+            }
+          ],
+          "feedback": {
+            "correct": "2,5% = 1/40; 240/40 = 6 g.",
+            "incorrect": "60 g corresponde al 25%, diez veces la tasa solicitada. 2,5 g no se deduce del porcentaje sin usar la base."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "parte_mayor_base",
+          "prompt": "Una meta es fabricar 48 piezas. La producción real equivale al 125% de la meta. ¿Cuántas piezas se fabricaron?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Producción",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "60"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "125% = 1+1/4: 48+12 = 60 piezas.",
+            "incorrect": "12 piezas son solo el exceso del 25%. Aquí se pide toda la producción, incluido el 100% de la meta."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencias, condiciones y primer ensayo"
         },
         {
           "type": "paragraph",
@@ -39,10 +152,6 @@
         {
           "type": "paragraph",
           "text": "Un porcentaje puede superar 100 cuando la referencia no es un todo que contiene la cantidad. Si un depósito se diseñó para 200 unidades y se compara una producción de 250 con esa capacidad de referencia, la producción equivale al 125% de la capacidad. No significa que una parte contenida en 200 sea 250; se están comparando dos cantidades."
-        },
-        {
-          "type": "note",
-          "text": "En un campo rotulado «porcentaje», escribe el valor numérico sin el símbolo %: para quince por ciento, escribe 15. En un campo rotulado «factor», escribe 0,15. Identifica siempre qué cantidad corresponde al 100%."
         },
         {
           "type": "math_puzzle",
@@ -113,7 +222,91 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Encuentra la referencia"
+          "text": "La misma relación, tres preguntas"
+        },
+        {
+          "type": "paragraph",
+          "text": "En parte = base×factor, hallar la parte multiplica; hallar el factor divide parte/base; hallar la base divide parte/factor. Se puede comprobar cada resultado rehaciendo la multiplicación. No elijas la operación por ver el símbolo %: identifica primero cuál de las tres cantidades falta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si 45 piezas son el 75% de un lote, 45 no es la base. Dividir 45 entre 3/4 recupera 60. La comprobación 60×3/4 = 45 muestra por qué la base debe ser mayor que esa parte."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "base_por_fraccion",
+          "prompt": "Las 54 etiquetas impresas representan el 60% del encargo. ¿Cuántas etiquetas tiene el encargo completo?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Encargo completo",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "90"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "54÷3/5 = 90 y 3/5 de 90 es 54.",
+            "incorrect": "Multiplicar 54 por 60% calcula una parte de lo ya impreso. Para recuperar el total se deshace el factor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_tres_operaciones",
+          "prompt": "Selecciona todas las afirmaciones que usan correctamente la base y la operación.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cuentas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El 30% de 90 se obtiene con 90×0,30."
+                },
+                {
+                  "id": "b",
+                  "label": "Si 27 es el 30% de un total, el total es 27÷0,30."
+                },
+                {
+                  "id": "c",
+                  "label": "27 de 90 representa 27÷90×100 por ciento."
+                },
+                {
+                  "id": "d",
+                  "label": "Si 27 es el 30% de un total, el total es 27×0,30."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las tres primeras reconstruyen la misma relación: parte 27, base 90 y factor 0,30.",
+            "incorrect": "La última vuelve a tomar una parte de 27, que ya es la parte. No recupera el 100%."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Variar sin perder el significado"
         },
         {
           "type": "math_puzzle",
@@ -182,6 +375,84 @@
             "correct": "18 = total×0,12, así que total = 18/0,12 = 150. La comprobación es 150×0,12 = 18.",
             "incorrect": "18×0,12 calcula el 12% de la parte, no recupera el total. Dividir entre 12 omite la conversión del porcentaje al factor 0,12."
           }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "No sumar porcentajes de grupos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos porcentajes se complementan hasta cien cuando describen partes que agotan una misma base sin superponerse. Un 40% de un grupo y un 60% de otro no completan necesariamente un conjunto de cien unidades. Para combinar grupos se suman cantidades y se construye después la base conjunta."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_grupos_base_conjunta",
+          "prompt": "En un grupo de 20 personas asiste el 50%; en otro de 80 asiste el 25%. Calcula asistentes totales y porcentaje de asistencia de los dos grupos juntos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "n",
+              "type": "math_numeric_input",
+              "label": "Asistentes totales",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "30"
+              }
+            },
+            {
+              "id": "p",
+              "type": "math_numeric_input",
+              "label": "Porcentaje conjunto",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "30"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Asisten 10+20 = 30 de 100 personas: 30%.",
+            "incorrect": "37,5% promedia tasas dando igual peso a grupos de distinto tamaño. 75% suma porcentajes con bases diferentes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "parte_dato_complementario",
+          "prompt": "De un lote de 150 piezas, el 20% necesita reparación. Las demás están listas. ¿Cuántas están listas?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Piezas listas",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "120"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El complemento es 80% de la misma base: 150×0,80 = 120.",
+            "incorrect": "30 son las piezas que necesitan reparación. El complemento se aplica al total, no a esa parte."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar y comprobar"
         },
         {
           "type": "math_puzzle",

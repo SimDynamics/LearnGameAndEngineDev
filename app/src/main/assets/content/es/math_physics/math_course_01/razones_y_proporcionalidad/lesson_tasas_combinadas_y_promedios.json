@@ -1,0 +1,273 @@
+{
+  "id": "math_course_01__razones_y_proporcionalidad__tasas_combinadas_y_promedios",
+  "title": "Tasas combinadas y promedios",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Sumar cantidades antes de comparar"
+        },
+        {
+          "type": "paragraph",
+          "text": "La velocidad media de todo un recorrido es distancia total dividida entre tiempo total. Si recorres 6 km en una hora y 12 km en otra, recorres 18 km en 2 h y la media es 9 km/h. El promedio simple de las velocidades funciona aquí porque ambos intervalos duran lo mismo. Esa igualdad de tiempos es una condición, no una regla general."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si caminas una hora a 6 km/h y dos horas a 3 km/h, los tramos aportan 6 km y 6 km. La velocidad media es 12/3 = 4 km/h. Promediar 6 y 3 daría 4,5 y asignaría la misma importancia a intervalos de distinta duración. Reconstruir distancia y tiempo muestra el error."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_tiempos_iguales",
+          "prompt": "Un carrito recorre durante una hora a 4 km/h y durante otra a 8 km/h, sin pausas. Calcula distancia total y velocidad media.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "d",
+              "type": "math_numeric_input",
+              "label": "Distancia total",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "12"
+              },
+              "unit": "km"
+            },
+            {
+              "id": "v",
+              "type": "math_numeric_input",
+              "label": "Velocidad media",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              },
+              "unit": "km/h"
+            }
+          ],
+          "feedback": {
+            "correct": "Las distancias suman 12 km y los tiempos 2 h; la media es 6 km/h.",
+            "incorrect": "La media divide cantidades totales. El promedio simple de velocidades coincide porque los tiempos son iguales."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_tiempos_distintos",
+          "prompt": "Un ciclista avanza 1 h a 12 km/h y 2 h a 6 km/h, sin pausas. Calcula su velocidad media y elige la justificación.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "v",
+              "type": "math_numeric_input",
+              "label": "Velocidad media",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8"
+              },
+              "unit": "km/h"
+            },
+            {
+              "id": "razon",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Se promedian 12 y 6 porque hay dos tramos."
+                },
+                {
+                  "id": "b",
+                  "label": "Se dividen los 24 km totales entre las 3 h totales."
+                },
+                {
+                  "id": "c",
+                  "label": "Se usa solo la velocidad del tramo más largo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Son 12+12 = 24 km en 3 h: 8 km/h.",
+            "incorrect": "9 km/h promedia las velocidades ignorando que una se mantiene el doble de tiempo. 6 km/h ignora el primer tramo."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distancias iguales, pausas y datos suficientes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recorrer distancias iguales a velocidades diferentes no significa dedicar tiempos iguales. Se calcula el tiempo de cada tramo con distancia/velocidad; después se divide la suma de distancias entre la suma de tiempos. Una pausa añade tiempo y no añade distancia. Si se pide la media del viaje completo, la pausa pertenece al denominador."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conocer dos velocidades sin conocer cuánto duró cada tramo ni qué distancia cubrió cada uno no determina una media única. El dato faltante cambia el peso de cada velocidad. Una respuesta rigurosa puede ser reconocer que la información no alcanza."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_distancias_iguales",
+          "prompt": "Se recorren 12 km a 6 km/h y otros 12 km a 3 km/h, sin pausas. ¿Cuál es la velocidad media del recorrido completo?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Velocidad media",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "4"
+              },
+              "unit": "km/h"
+            }
+          ],
+          "feedback": {
+            "correct": "Los tiempos son 2 h y 4 h; 24 km/6 h = 4 km/h.",
+            "incorrect": "4,5 km/h supone tiempos iguales; aquí son iguales las distancias. Calcula cuánto tarda cada tramo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_con_pausa",
+          "prompt": "Una excursión avanza 12 km en 2 h y permanece parada 1 h antes de terminar. ¿Cuál es la velocidad media desde la salida hasta el final de esa pausa?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Velocidad media completa",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "4"
+              },
+              "unit": "km/h"
+            }
+          ],
+          "feedback": {
+            "correct": "Son 12 km en 3 h, incluidos movimiento y pausa: 4 km/h.",
+            "incorrect": "6 km/h solo describe la media mientras se avanza. La pregunta incluye la pausa, que añade tiempo sin distancia."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "promedio_sin_intervalos",
+          "prompt": "Solo sabemos que una persona se movió primero a 4 km/h y después a 8 km/h. ¿Puede determinarse la velocidad media del viaje?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí, siempre es 6 km/h."
+                },
+                {
+                  "id": "b",
+                  "label": "Sí, siempre es 12 km/h."
+                },
+                {
+                  "id": "c",
+                  "label": "No: falta conocer tiempos o distancias de los tramos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las velocidades por sí solas no indican qué distancia ni tiempo aporta cada tramo.",
+            "incorrect": "El promedio simple necesita tiempos iguales. La suma 12 km/h tampoco representa la tasa media del viaje."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar unidades y elegir una referencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al combinar tasas, conviértelas antes a una unidad común y reconstruye las cantidades de cada intervalo. Sumar tasas no equivale a calcular una media. Sumar caudales sí puede ser válido cuando dos entradas trabajan simultáneamente y sus volúmenes se agregan sin pérdida."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "velocidad_unidad_inversa",
+          "prompt": "Un vehículo mantiene 10 m/s. Expresa la misma velocidad en km/h usando 1 km = 1000 m y 1 h = 3600 s.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Velocidad",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              },
+              "unit": "km/h"
+            }
+          ],
+          "feedback": {
+            "correct": "En una hora recorre 36000 m, equivalentes a 36 km.",
+            "incorrect": "Dividir entre 3600 vuelve a expresar un intervalo de una hora como si fuera un segundo. Comprueba la distancia de una hora."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "caudales_simultaneos",
+          "prompt": "Dos entradas aportan simultáneamente 1/2 L/min y 1/3 L/min a un recipiente sin pérdidas. ¿Cuántos litros entran en 6 min?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Volumen",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "5"
+              },
+              "unit": "L"
+            }
+          ],
+          "feedback": {
+            "correct": "El caudal total es 3/6+2/6 = 5/6 L/min; en 6 min entran 5 L.",
+            "incorrect": "No sumes denominadores: 1/2+1/3 no es 2/5. Aquí los caudales se suman porque ambas entradas actúan durante el mismo intervalo."
+          }
+        }
+      ]
+    }
+  ]
+}

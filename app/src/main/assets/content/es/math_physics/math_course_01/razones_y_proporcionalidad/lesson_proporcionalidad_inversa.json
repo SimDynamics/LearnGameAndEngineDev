@@ -6,7 +6,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Una cantidad sube y la otra baja"
+          "text": "Comprender la relación"
         },
         {
           "type": "paragraph",
@@ -19,6 +19,10 @@
         {
           "type": "paragraph",
           "text": "Que una cantidad disminuya mientras otra aumenta no basta para afirmar proporcionalidad inversa. En un depósito que comienza con 30 litros y pierde 2 litros cada minuto, el tiempo aumenta y el agua restante disminuye. Pero el producto tiempo×agua no es constante: a los 5 minutos quedan 20 L; a los 10 quedan 10 L; a los 12 quedan 6 L."
+        },
+        {
+          "type": "note",
+          "text": "En una tabla inversa, multiplicar una cantidad por un factor obliga a dividir la otra por ese mismo factor. Comprueba el producto y las condiciones; no inviertas números por costumbre."
         }
       ]
     },
@@ -26,7 +30,86 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Repartir un trabajo fijo"
+          "text": "Factores recíprocos, también fraccionarios"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el producto x×y se mantiene en 36 y x pasa de 6 a 4, x se multiplica por 2/3. Para conservar 36, y debe multiplicarse por 3/2: pasa de 6 a 9. No se aplica el mismo factor a ambas cantidades. El factor de una es el recíproco del factor de la otra."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una cantidad fija positiva no puede escribirse como cero multiplicado por un tiempo finito. En un recorrido positivo, velocidad cero impide completar el trayecto en este modelo. Esto explica por qué no se permite sustituir cero en el denominador."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inversa_factor_fraccionario",
+          "prompt": "Un recorrido fijo tarda 6 h a 30 km/h. Sin paradas, la nueva velocidad constante es 20 km/h. ¿Cuánto tarda?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Duración",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "9"
+              },
+              "unit": "h"
+            }
+          ],
+          "feedback": {
+            "correct": "La distancia es 180 km; 180/20 = 9 h. La velocidad se multiplica por 2/3 y el tiempo por 3/2.",
+            "incorrect": "Restar diez horas confunde velocidad con duración. Aplicar 2/3 también al tiempo no conserva la distancia."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inversa_velocidad_cero",
+          "prompt": "Para completar un recorrido de 60 km, se propone usar velocidad constante cero y calcular 60/0. ¿Qué conclusión es válida?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "limite",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El viaje tarda cero horas."
+                },
+                {
+                  "id": "b",
+                  "label": "El viaje tarda 60 horas."
+                },
+                {
+                  "id": "c",
+                  "label": "No hay tiempo finito que complete el recorrido con velocidad cero."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cero multiplicado por cualquier tiempo finito da distancia cero, no 60 km. El cociente 60/0 no está definido.",
+            "incorrect": "Velocidad cero no es un recorrido instantáneo. La restricción se deduce de distancia = velocidad×tiempo."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencias, condiciones y primer ensayo"
         },
         {
           "type": "paragraph",
@@ -39,10 +122,6 @@
         {
           "type": "paragraph",
           "text": "La comparación con proporcionalidad directa evita confusiones. A caudal fijo, más tiempo entrega más agua: se conserva litros/minuto. Para llenar un depósito de volumen fijo, más caudal necesita menos tiempo: se conserva caudal×tiempo. La misma magnitud, tiempo, aparece en ambos modelos; lo que cambia es qué se mantiene constante y qué se compara."
-        },
-        {
-          "type": "note",
-          "text": "En una tabla inversa, multiplicar una cantidad por un factor obliga a dividir la otra por ese mismo factor. Comprueba el producto y las condiciones; no inviertas números por costumbre."
         },
         {
           "type": "math_puzzle",
@@ -102,7 +181,78 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Practica la elección del modelo"
+          "text": "Buscar otra incógnita y comprobar el supuesto"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inversa_buscar_caudal",
+          "prompt": "Una entrada debe llenar 84 L en 12 min, sin pérdidas y con caudal constante. ¿Qué caudal necesita?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Caudal",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              },
+              "unit": "L/min"
+            }
+          ],
+          "feedback": {
+            "correct": "84/12 = 7 L/min. Su producto por 12 min recupera 84 L.",
+            "incorrect": "El volumen fijo permite buscar tiempo o caudal con la misma relación. Multiplicar volumen por minutos no produce un caudal."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inversa_supuesto_ausente",
+          "prompt": "Dos personas terminaron un trabajo en ocho horas. Se añaden otras dos, pero no se conoce su rendimiento ni si las tareas pueden hacerse simultáneamente. ¿Puede asegurarse que tardarán cuatro horas?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "alcance",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí: duplicar personas siempre divide el tiempo entre dos."
+                },
+                {
+                  "id": "b",
+                  "label": "No: falta justificar rendimiento y posibilidad de trabajo simultáneo."
+                },
+                {
+                  "id": "c",
+                  "label": "Sí: basta con que el trabajo sea el mismo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El total fijo no basta: también deben conservarse productividad y posibilidad de trabajar en paralelo.",
+            "incorrect": "El modelo ideal de horas-persona necesita todas sus condiciones. Añadir personas no garantiza duplicar la tasa total."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Variar sin perder el significado"
         },
         {
           "type": "math_puzzle",
@@ -166,6 +316,14 @@
             "correct": "El trabajo equivale a 4×9 = 36 horas-persona. Con seis personas: 36/6 = 6 h.",
             "incorrect": "Aumentar de cuatro a seis no significa restar dos horas. Conserva personas×horas. La predicción depende de los supuestos de rendimiento y reparto indicados."
           }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar y comprobar"
         },
         {
           "type": "math_puzzle",
