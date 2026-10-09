@@ -21,10 +21,12 @@ namespace {
 std::mutex s_runtime_mutex;
 constexpr const char *kTraceTag = "LGP-Wasmtime";
 void trace(const char *phase, const char *diagnostic_path = nullptr) {
+    // Called often in the JNI path: keep logging and fsync completely disabled
+    // unless the user explicitly requested a diagnostic build.
+    if (!diagnostic_path || !diagnostic_path[0]) return;
     __android_log_print(ANDROID_LOG_INFO, kTraceTag, "%s", phase);
     // Persist small, source-free checkpoints outside logcat, which some
     // vendor devices do not expose for a crashed instrumentation process.
-    if (!diagnostic_path || !diagnostic_path[0]) return;
     const int fd = open(diagnostic_path, O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0600);
     if (fd < 0) return;
     (void)write(fd, phase, strlen(phase));
