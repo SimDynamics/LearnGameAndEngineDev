@@ -17,7 +17,7 @@ $needed = (& $readelf --dynamic $library.FullName | Out-String)
 if ($LASTEXITCODE -ne 0) { throw "llvm-readelf falló." }
 
 Write-Host "DT_NEEDED de libapp.so:" -ForegroundColor Cyan
-$needed.Split([Environment]::NewLine) |
+($needed -split '\r?\n') |
     Where-Object { $_ -match "\bNEEDED\b" } |
     ForEach-Object { Write-Host $_ }
 
