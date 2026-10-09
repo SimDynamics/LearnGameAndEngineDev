@@ -12,6 +12,11 @@ plugins {
 val lgpEnableWasmtime =
     providers.gradleProperty("lgp.wasmtime").orNull.equals("true", ignoreCase = true)
 
+// Crash-stage files and verbose JNI logs are opt-in, never enabled by default.
+val lgpWasmtimeDiagnostics =
+    lgpEnableWasmtime &&
+        providers.gradleProperty("lgp.wasmtimeDiagnostics").orNull.equals("true", ignoreCase = true)
+
 android {
     namespace = "com.learngraphicsprogramming.app"
     compileSdk {
@@ -38,6 +43,7 @@ android {
             }
         }
         buildConfigField("boolean", "LGP_WASMTIME_ENABLED", lgpEnableWasmtime.toString())
+        buildConfigField("boolean", "LGP_WASMTIME_DIAGNOSTICS", lgpWasmtimeDiagnostics.toString())
     }
 
     buildTypes {
