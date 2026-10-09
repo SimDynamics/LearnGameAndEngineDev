@@ -83,7 +83,7 @@ android {
         }
     }
     sourceSets {
-        getByName("main").jniLibs.srcDir("build/generated/cppRuntime/jniLibs")
+        getByName("main").jniLibs.directories.add("build/generated/cppRuntime/jniLibs")
     }
     packaging {
         jniLibs.useLegacyPackaging = true
