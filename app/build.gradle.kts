@@ -243,8 +243,8 @@ val prepareWasiSdk34Reference by tasks.registering {
             it.isFile && it.name == "libc++abi.a"
         } ?: error("WASI SDK 34: falta libc++abi.a.")
 
-        logger.lifecycle("WASI SDK 34 verificado. Sysroot: \${sysroot.absolutePath}")
-        logger.lifecycle("Bibliotecas EH: \${unwind.absolutePath}, \${abi.absolutePath}")
+        logger.lifecycle("WASI SDK 34 verificado. Sysroot: ${sysroot.absolutePath}")
+        logger.lifecycle("Bibliotecas EH: ${unwind.absolutePath}, ${abi.absolutePath}")
         logger.lifecycle("Este SDK no se activará con FoldCode Clang 21: hace falta Clang 23 ARM64.")
     }
 }
