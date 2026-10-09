@@ -215,9 +215,9 @@ class Clang23AdvancedInstrumentedTest {
             }
         """.trimIndent()
         for (value in 1..4) {
-            val result = CppExecutionEngine(context).compileAndRun(source, "$"+"{value}\n")
+            val result = CppExecutionEngine(context).compileAndRun(source, "${value}\n")
             try {
-                assertSuccess(result, "$"+"{value * value + 1}\n")
+                assertSuccess(result, "${value * value + 1}\n")
             } finally {
                 result.compilation.workspace.deleteRecursively()
             }
