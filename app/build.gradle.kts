@@ -2,6 +2,7 @@ import java.io.File
 import java.net.URI
 import java.security.MessageDigest
 import java.util.zip.ZipFile
+import org.gradle.api.tasks.bundling.Zip
 
 plugins {
     alias(libs.plugins.android.application)
@@ -16,6 +17,14 @@ val lgpEnableWasmtime =
 // an independently built ARM64 bundle is explicitly imported and verified.
 val lgpEnableClang23 =
     providers.gradleProperty("lgp.clang23").orNull.equals("true", ignoreCase = true)
+
+// EH support is an opt-in experiment, never enabled for normal APKs.
+val lgpEnableCppExceptions =
+    providers.gradleProperty("lgp.cppExceptions").orNull.equals("true", ignoreCase = true)
+
+check(!lgpEnableCppExceptions || (lgpEnableClang23 && lgpEnableWasmtime)) {
+    "Experimental C++ exceptions require -Plgp.clang23=true and -Plgp.wasmtime=true."
+}
 
 // Crash-stage files and verbose JNI logs are opt-in, never enabled by default.
 val lgpWasmtimeDiagnostics =
@@ -49,6 +58,7 @@ android {
         }
         buildConfigField("boolean", "LGP_WASMTIME_ENABLED", lgpEnableWasmtime.toString())
         buildConfigField("boolean", "LGP_CLANG23_ENABLED", lgpEnableClang23.toString())
+        buildConfigField("boolean", "LGP_CPP_EXCEPTIONS_ENABLED", lgpEnableCppExceptions.toString())
         buildConfigField("boolean", "LGP_WASMTIME_DIAGNOSTICS", lgpWasmtimeDiagnostics.toString())
     }
 
@@ -84,6 +94,10 @@ android {
     }
     sourceSets {
         getByName("main").jniLibs.directories.add("build/generated/cppRuntime/jniLibs")
+        if (lgpEnableCppExceptions) {
+            // This optional overlay is absent from all normal builds.
+            getByName("main").assets.directories.add("build/generated/wasiEhRuntime/assets")
+        }
     }
     packaging {
         jniLibs.useLegacyPackaging = true
@@ -261,6 +275,34 @@ val prepareCppRuntime by tasks.registering {
         }
 
 
+    }
+}
+
+// Only experimental APKs package the official WASIp1 EH sysroot.
+// The standard, previously validated no-EH runtime asset is unchanged.
+// The SDK download/extraction task is incremental and SHA-256 verified.
+val prepareWasiEhRuntime by tasks.registering(Zip::class) {
+    group = "build setup"
+    description = "Package the official WASI SDK 34 wasm32-wasip1 exception sysroot for experimental Android tests."
+    dependsOn(prepareWasiSdk34Reference)
+
+    archiveFileName.set("wasi-eh-sysroot.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("generated/wasiEhRuntime/assets/runtime"))
+    isReproducibleFileOrder = true
+    isPreserveFileTimestamps = false
+
+    val officialSysroot = layout.buildDirectory.dir(
+        "generated/wasiSdk34/wasi-sdk-34.0-x86_64-linux/share/wasi-sysroot"
+    )
+    from(officialSysroot) {
+        include("include/**", "lib/wasm32-wasip1/**", "VERSION")
+        exclude(
+            "include/wasm32-wasip2/**",
+            "include/wasm32-wasip3/**",
+            "include/wasm32-wasip1-threads/**",
+            "lib/wasm32-wasip1/noeh/**",
+            "**/llvm-lto/**"
+        )
     }
 }
 
@@ -496,6 +538,9 @@ val prepareWasmtimeRuntime by tasks.registering {
 }
 
 tasks.configureEach {
+    if (lgpEnableCppExceptions && name.startsWith("merge") && name.endsWith("Assets")) {
+        dependsOn(prepareWasiEhRuntime)
+    }
     if (name.startsWith("merge") && name.endsWith("JniLibFolders")) {
         dependsOn(prepareCppRuntime)
         if (lgpEnableWasmtime) dependsOn(prepareWasmtimeRuntime)
