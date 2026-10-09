@@ -142,7 +142,7 @@ class Clang23ReliabilityInstrumentedTest {
     @Test
     fun handlesSourceFileWithOneThousandDeclarations() {
         val declarations = (0..1023).joinToString("\n") { index ->
-            "constexpr int value_$"+"{index} = $"+ "{index};"
+            "constexpr int value_${index} = ${index};"
         }
         val source = """
             #include <iostream>
