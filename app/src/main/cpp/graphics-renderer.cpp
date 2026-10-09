@@ -882,6 +882,7 @@ struct Session {
         if (window) ANativeWindow_release(window);
     }
     ANativeWindow *window;
+    lgp::PhysicsScene scene;
     std::unique_ptr<Renderer> renderer;
 };
 
@@ -933,7 +934,13 @@ Java_com_learngraphicsprogramming_app_graphics_GraphicsNative_draw(
     if (!handle) return JNI_FALSE;
     auto *session = reinterpret_cast<Session *>(handle);
     last_error.clear();
-    return session->renderer->draw(seconds, last_error) ? JNI_TRUE : JNI_FALSE;
+    const float aspect = static_cast<float>(
+        std::max(1, ANativeWindow_getWidth(session->window))) /
+        static_cast<float>(std::max(1, ANativeWindow_getHeight(session->window)));
+    session->scene.set_aspect(aspect);
+    session->scene.update(seconds);
+    return session->renderer->draw(seconds, session->scene, last_error)
+        ? JNI_TRUE : JNI_FALSE;
 }
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -948,6 +955,51 @@ extern "C" JNIEXPORT jstring JNICALL
 Java_com_learngraphicsprogramming_app_graphics_GraphicsNative_lastError(
     JNIEnv *env, jobject) {
     return env->NewStringUTF(last_error.c_str());
+}
+
+// All JNI calls below are dispatched from the same render thread.
+// No physics object is read while another thread mutates it.
+extern "C" JNIEXPORT void JNICALL
+Java_com_learngraphicsprogramming_app_graphics_GraphicsNative_touch(
+    JNIEnv *, jobject, jlong handle, jint action,
+    jfloat normalized_x, jfloat normalized_y,
+    jfloat velocity_x, jfloat velocity_y) {
+    if (!handle) return;
+    auto *session = reinterpret_cast<Session *>(handle);
+    lgp::PhysicsScene &scene = session->scene;
+    const float aspect = static_cast<float>(
+        std::max(1, ANativeWindow_getWidth(session->window))) /
+        static_cast<float>(std::max(1, ANativeWindow_getHeight(session->window)));
+    scene.set_aspect(aspect);
+    switch (action) {
+        case 0: scene.touch_down(normalized_x, normalized_y, aspect); break;
+        case 1: scene.drag_to(normalized_x, normalized_y, aspect); break;
+        case 2:
+            scene.drag_to(normalized_x, normalized_y, aspect);
+            scene.release(velocity_x, velocity_y);
+            break;
+        case 3: scene.cancel(); break;
+        case 4: scene.reset(); break;
+        default: break;
+    }
+}
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_learngraphicsprogramming_app_graphics_GraphicsNative_stats(
+    JNIEnv *env, jobject, jlong handle) {
+    if (!handle) return env->NewStringUTF("Escena no disponible");
+    const auto *session = reinterpret_cast<const Session *>(handle);
+    const auto &scene = session->scene;
+    std::ostringstream message;
+    message.setf(std::ios::fixed);
+    message.precision(1);
+    message << lgp::PhysicsScene::kBodyCount
+            << " esferas | gravedad 9.81 m/s2 | impacto "
+            << scene.recent_impact() << " m/s";
+    if (scene.selected_index() >= 0) {
+        message << " | objeto " << (scene.selected_index() + 1) << " seleccionado";
+    }
+    return env->NewStringUTF(message.str().c_str());
 }
 
 extern "C" JNIEXPORT void JNICALL
