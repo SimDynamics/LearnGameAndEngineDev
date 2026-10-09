@@ -71,7 +71,7 @@ try {
         "ADB no pudo crear logcat. Error: $collectionError" |
             Set-Content -Path $rawLog -Encoding UTF8
     }
-    $pattern = "LGP-Wasmtime|FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|SIGILL|crash_dump|tombstoned|Abort message|backtrace|libwasmtime|libapp.so|AndroidRuntime|DEBUG *:"
+    $pattern = "LGP-Wasmtime|LGP-CppEngine|TestRunner|INSTRUMENTATION_STATUS|FATAL EXCEPTION|Fatal signal|SIGSEGV|SIGABRT|SIGILL|crash_dump|tombstoned|Abort message|backtrace|libwasmtime|libapp.so|AndroidRuntime|DEBUG *:"
     $matches = Select-String -Path $rawLog -Pattern $pattern -Context 7,24
     if ($matches) {
         $matches | Out-String -Width 220 |
