@@ -372,7 +372,7 @@ val prepareWasiSdk34Reference by tasks.registering {
                 eachFile {
                     extractedFiles++
                     extractedBytes += size
-                    if (extractedFiles == 1 || extractedFiles % 25 == 0) {
+                    if (extractedFiles == 1 || extractedFiles % 500 == 0) {
                         logger.lifecycle(
                             "WASI SDK 34: $extractedFiles archivos del sysroot " +
                                 "(${(extractedBytes / 1048576.0).toInt()} MiB de datos)"
