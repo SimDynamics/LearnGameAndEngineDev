@@ -154,14 +154,15 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
 #ifdef WASMTIME_FEATURE_PARALLEL_COMPILATION
     wasmtime_config_parallel_compilation_set(config, false);
 #endif
-    // Diagnostic A/B test: force Winch instead of the default Cranelift JIT.
-    // Both backends compile to ARM64 machine code, but use independent
-    // compilers. Keep the compile-thread setting unchanged for comparison.
+    // Follow-up A/B test after separating WAMR and Wasmtime native symbols:
+    // require Cranelift explicitly instead of Winch to verify both engines
+    // work with the corrected linkage. Keep parallel compilation disabled
+    // to change only one experimental variable at a time.
 #ifdef WASMTIME_FEATURE_COMPILER
-    trace("02a selecting Winch baseline compiler", stage.get());
-    wasmtime_config_strategy_set(config, WASMTIME_STRATEGY_WINCH);
+    trace("02a selecting Cranelift optimizing compiler", stage.get());
+    wasmtime_config_strategy_set(config, WASMTIME_STRATEGY_CRANELIFT);
 #else
-    trace("02a compiler strategy not available in C API", stage.get());
+    trace("02a compiler strategy unavailable; Wasmtime default applies", stage.get());
 #endif
     wasmtime_config_consume_fuel_set(config, true);
     wasmtime_config_wasm_exceptions_set(config, true);
