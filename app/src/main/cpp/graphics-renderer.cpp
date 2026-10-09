@@ -973,7 +973,10 @@ Java_com_learngraphicsprogramming_app_graphics_GraphicsNative_touch(
     scene.set_aspect(aspect);
     switch (action) {
         case 0: scene.touch_down(normalized_x, normalized_y, aspect); break;
-        case 1: scene.drag_to(normalized_x, normalized_y, aspect); break;
+        case 1:
+            scene.drag_to(normalized_x, normalized_y, aspect);
+            scene.drag_velocity(velocity_x, velocity_y);
+            break;
         case 2:
             scene.drag_to(normalized_x, normalized_y, aspect);
             scene.release(velocity_x, velocity_y);
