@@ -392,16 +392,23 @@ val prepareWasiSdk34Reference by tasks.registering {
             "WASI SDK 34 oficial: no se encontró share/wasi-sysroot."
         }
 
-        val unwind = sysroot.walkTopDown().firstOrNull {
-            it.isFile && it.name == "libunwind.a"
-        } ?: error("WASI SDK 34: falta libunwind.a (EH).")
-        val abi = sysroot.walkTopDown().firstOrNull {
-            it.isFile && it.name == "libc++abi.a"
-        } ?: error("WASI SDK 34: falta libc++abi.a.")
+        // Do not discover archives by filename across the entire SDK:
+        // wasm32-wasip3/noeh and llvm-lto are different ABI configurations.
+        // All three non-LTO libraries must come from wasm32-wasip1/eh.
+        val exceptionLibraries = File(sysroot, "lib/wasm32-wasip1/eh")
+        check(exceptionLibraries.isDirectory) {
+            "WASI SDK 34: falta lib/wasm32-wasip1/eh."
+        }
+        listOf("libc++.a", "libc++abi.a", "libunwind.a").forEach { name ->
+            val library = File(exceptionLibraries, name)
+            check(library.isFile && library.length() > 0L) {
+                "WASI SDK 34: falta la biblioteca EH de wasm32-wasip1: ${library.absolutePath}"
+            }
+            logger.lifecycle("Biblioteca EH verificada: ${library.absolutePath}")
+        }
 
         logger.lifecycle("WASI SDK 34 verificado. Sysroot: ${sysroot.absolutePath}")
-        logger.lifecycle("Bibliotecas EH: ${unwind.absolutePath}, ${abi.absolutePath}")
-        logger.lifecycle("Este SDK no se activará con FoldCode Clang 21: hace falta Clang 23 ARM64.")
+        logger.lifecycle("Sysroot EH listo para experimentos Clang 23 + Wasmtime; APK sin cambios.")
     }
 }
 
