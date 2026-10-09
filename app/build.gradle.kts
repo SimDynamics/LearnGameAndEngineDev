@@ -181,6 +181,74 @@ val prepareCppRuntime by tasks.registering {
 
 // Official Wasmtime 49.0.2 aarch64-android-c-api release, hash from GitHub.
 // Extracted headers are used by NDK CMake; shared library is packaged in APK.
+// Reference sysroot from the official WASI SDK 34 (LLVM 23 generation).
+// Deliberately NOT merged into the Android APK while its Clang host binary is 21:
+// C++ exceptions require LLVM 22+ AND consistent exception-enabled libraries.
+val prepareWasiSdk34Reference by tasks.registering {
+    group = "build setup"
+    description = "Verify and extract the official exception-capable WASI SDK 34 sysroot."
+    notCompatibleWithConfigurationCache("Downloads a hashed 183 MiB tar.gz reference archive.")
+
+    val sdkDirectory = layout.buildDirectory.dir("generated/wasiSdk34")
+    outputs.dir(sdkDirectory)
+
+    doLast {
+        val name = "wasi-sdk-34.0-x86_64-linux.tar.gz"
+        val url =
+            "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/$name"
+        val expected =
+            "b761e3a0721dbae9c09a0059e5fdb2bf917d1b4a8a7b430fb3b5aafb0984b2c4"
+
+        val cache = rootProject.layout.projectDirectory.dir(".gradle/cpp-runtime-cache").asFile
+        cache.mkdirs()
+        val archive = File(cache, name)
+
+        fun hash(file: File): String {
+            val md = MessageDigest.getInstance("SHA-256")
+            file.inputStream().buffered().use { stream ->
+                val buffer = ByteArray(1024 * 1024)
+                while (true) {
+                    val count = stream.read(buffer)
+                    if (count < 0) break
+                    md.update(buffer, 0, count)
+                }
+            }
+            return md.digest().joinToString("") { "%02x".format(it) }
+        }
+        if (!archive.isFile || hash(archive) != expected) {
+            archive.delete()
+            logger.lifecycle("Descargando WASI SDK 34 oficial (183 MiB)...")
+            URI(url).toURL().openStream().buffered().use { src ->
+                archive.outputStream().buffered().use(src::copyTo)
+            }
+        }
+        check(hash(archive) == expected) { "El SHA256 de WASI SDK 34 no coincide." }
+
+        val root = sdkDirectory.get().asFile
+        root.deleteRecursively()
+        root.mkdirs()
+        val process = ProcessBuilder(
+            "tar", "-xf", archive.absolutePath, "-C", root.absolutePath
+        ).inheritIO().start()
+        check(process.waitFor() == 0) { "No se pudo extraer la distribución oficial de WASI." }
+
+        val sysroot = root.walkTopDown().firstOrNull {
+            it.isDirectory && it.name == "wasi-sysroot"
+        } ?: error("WASI SDK 34 oficial: no se encontró share/wasi-sysroot.")
+
+        val unwind = sysroot.walkTopDown().firstOrNull {
+            it.isFile && it.name == "libunwind.a"
+        } ?: error("WASI SDK 34: falta libunwind.a (EH).")
+        val abi = sysroot.walkTopDown().firstOrNull {
+            it.isFile && it.name == "libc++abi.a"
+        } ?: error("WASI SDK 34: falta libc++abi.a.")
+
+        logger.lifecycle("WASI SDK 34 verificado. Sysroot: \${sysroot.absolutePath}")
+        logger.lifecycle("Bibliotecas EH: \${unwind.absolutePath}, \${abi.absolutePath}")
+        logger.lifecycle("Este SDK no se activará con FoldCode Clang 21: hace falta Clang 23 ARM64.")
+    }
+}
+
 val prepareWasmtimeRuntime by tasks.registering {
     group = "build setup"
     description = "Download and verify the official Android ARM64 Wasmtime C API."
