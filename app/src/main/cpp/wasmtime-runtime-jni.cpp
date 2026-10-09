@@ -109,6 +109,7 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
     // a new store, with limited memory and finite instruction fuel.
     wasm_config_t *config = wasm_config_new();
     wasmtime_config_consume_fuel_set(config, true);
+    wasmtime_config_wasm_exceptions_set(config, true);
     wasm_engine_t *engine = wasm_engine_new_with_config(config);
 
     if (!engine) {
