@@ -31,7 +31,7 @@ class KokoroOfflineSessionConfigurationTest {
     }
 
     @Test fun lifecycleObserverIsRegisteredBeforeAnyActivityStarts() {
-        val app = File(main, "java/com/learngraphicsprogramming/app/LearnGraphicsApplication.kt").readText()
+        val app = File(main, "java/com/learngraphicsprogramming/app/UiLanguageSettings.kt").readText()
         val monitor = File(main, "java/com/learngraphicsprogramming/app/narration/KokoroNarrationSessionMonitor.kt").readText()
         val manifest = File(main, "AndroidManifest.xml").readText()
         assertTrue(manifest.contains("android:name=\".LearnGraphicsApplication\""))
