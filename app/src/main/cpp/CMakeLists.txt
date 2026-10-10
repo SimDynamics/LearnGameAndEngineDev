@@ -106,8 +106,9 @@ if (NOT LGP_ENABLE_WASMTIME)
     target_link_libraries(${CMAKE_PROJECT_NAME} wamr_runtime)
 endif ()
 
-# Optional Wasmtime 49.0.2 Android ARM64 C API, kept separate from WAMR.
-# Activate with: gradlew :app:installDebug "-Plgp.wasmtime=true"
+# Wasmtime 49.0.2 Android ARM64 C API, separate from WAMR.
+# Android Gradle builds enable Wasmtime by default. Use -Plgp.clang23=false
+# for the complete Clang 21 + WAMR fallback build.
 if (LGP_ENABLE_WASMTIME)
     set(LGP_WASMTIME_SHARED "${LGP_WASMTIME_ROOT}/lib/libwasmtime.so")
     set(LGP_WASMTIME_HEADER "${LGP_WASMTIME_ROOT}/include/wasmtime.h")
