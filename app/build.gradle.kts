@@ -282,12 +282,14 @@ val prepareCppRuntime by tasks.registering {
     val cacheDirectoryPath =
         rootProject.layout.projectDirectory.dir(".gradle/cpp-runtime-cache").asFile.absolutePath
     val enableExperimentalCompiler = lgpEnableClang23
+    val enableWasmtimeRuntime = lgpEnableWasmtime
     val experimentalClang = File(experimentalDirectory, "liblgp_clang23.so")
     val experimentalLld = File(experimentalDirectory, "liblgp_lld23.so")
 
     // Without these inputs Gradle can wrongly reuse the old APK's Clang
     // when switching -Plgp.clang23=true on/off.
     inputs.property("lgpEnableClang23", lgpEnableClang23)
+    inputs.property("lgpEnableWasmtime", lgpEnableWasmtime)
     if (lgpEnableClang23) {
         inputs.files(experimentalClang, experimentalLld)
     }
@@ -298,6 +300,15 @@ val prepareCppRuntime by tasks.registering {
         val nativeDirectory = outputDirectory.get().asFile
         cacheDirectory.mkdirs()
         nativeDirectory.mkdirs()
+
+        // A WAMR-only build must not inherit Wasmtime from a prior APK build.
+        // The Wasmtime preparation task restores the library when enabled.
+        if (!enableWasmtimeRuntime) {
+            val staleWasmtime = File(nativeDirectory, "libwasmtime.so")
+            check(!staleWasmtime.exists() || staleWasmtime.delete()) {
+                "No se pudo retirar Wasmtime del APK WAMR: ${staleWasmtime.absolutePath}"
+            }
+        }
 
         fun sha256(file: File): String {
             val digest = MessageDigest.getInstance("SHA-256")
