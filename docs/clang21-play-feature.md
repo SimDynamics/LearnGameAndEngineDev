@@ -18,8 +18,9 @@ encontró resultados.
 El APK base dispone ahora de `Clang21FeatureDelivery`, un gestor que consulta
 el estado del split y puede solicitar instalación, informar del progreso,
 cancelar y gestionar confirmación de Google Play. No inicia descargas por sí
-mismo. También se añadió `LearnGraphicsApplication` para inicializar
-`SplitCompat` cuando el módulo dinámico está habilitado.
+mismo. La clase preexistente `LearnGraphicsApplication` ahora inicializa
+`SplitCompat` cuando el módulo dinámico está habilitado, sin perder la
+inicialización del idioma.
 
 La pantalla `CppPrototypeActivity` tiene ahora un panel visible **solo
 cuando se compila con el módulo experimental habilitado**. Antes de descargar
