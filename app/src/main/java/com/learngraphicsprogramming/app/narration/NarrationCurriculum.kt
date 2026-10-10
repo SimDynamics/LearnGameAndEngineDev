@@ -45,7 +45,9 @@ internal object NarrationCurriculum {
                         for (pageIndex in 0 until pages.length()) {
                             val language = NarrationLanguage.forLesson(json, pageIndex, preference.language)
                             val options = NarrationSettingsRepository.forLanguage(context, language)
-                            val texts = LessonNarrationText.page(json, pageIndex, language)
+                            val texts = LessonNarrationText.page(json, pageIndex, language) { blockType ->
+                                NarrationUiInstructions.forBlock(context, blockType)
+                            }
                             for (text in NarrationSegments.sentences(texts)) {
                                 yield(Sentence(
                                     text, language, options.kokoroVoice,
