@@ -70,10 +70,17 @@ def main() -> int:
     try:
         manifest = json.loads(raw)
         entries = manifest["entries"]
-        ids = {entry["lesson"] for entry in entries}
-        if (manifest.get("format") != 1 or ids != LESSONS or not entries or
+        # Deduplication is intentional: two lessons can say exactly the same
+        # sentence with the same voice. It is then exported ONCE and reused.
+        # Verify all lesson IDs from the manifest, not only the first owner
+        # attached to each unique audio hash.
+        lessons = manifest["lessons"]
+        if (manifest.get("format") != 1 or set(lessons) != LESSONS or
+                len(lessons) != len(LESSONS) or not entries or
+                manifest.get("uniqueSentences") != len(entries) or
                 len({entry["hash"] for entry in entries}) != len(entries) or
-                any(not PATTERN.fullmatch(entry["hash"]) for entry in entries)):
+                any(entry["lesson"] not in LESSONS or
+                    not PATTERN.fullmatch(entry["hash"]) for entry in entries)):
             raise ValueError("Invalid or incomplete three-lesson manifest")
     except (ValueError, KeyError, TypeError) as error:
         print(f"Invalid Android first-unit manifest: {error}", file=sys.stderr)
