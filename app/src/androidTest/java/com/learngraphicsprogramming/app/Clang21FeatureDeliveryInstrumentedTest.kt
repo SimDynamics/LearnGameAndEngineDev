@@ -81,6 +81,26 @@ class Clang21FeatureDeliveryInstrumentedTest {
     }
 
     @Test
+    fun installedMeansAndroidHasTheActualModuleSplit() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val installer = Clang21FeatureDelivery(context)
+        try {
+            val installed = installer.currentState().phase ==
+                Clang21FeatureDelivery.Phase.INSTALLED
+            val realSplit = context.packageManager.getPackageInfo(
+                context.packageName, 0
+            ).splitNames?.contains(Clang21FeatureDelivery.MODULE_NAME) == true
+            assertEquals(
+                "Fake SplitCompat installations must not count as executable native splits",
+                realSplit && BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED,
+                installed
+            )
+        } finally {
+            installer.close()
+        }
+    }
+
+    @Test
     fun installerDoesNotRequestAnythingOnCreation() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val installer = Clang21FeatureDelivery(context)
@@ -91,7 +111,8 @@ class Clang21FeatureDeliveryInstrumentedTest {
                 assertTrue(
                     "An optional feature must initially be absent or installed",
                     state.phase == Clang21FeatureDelivery.Phase.NOT_INSTALLED ||
-                        state.phase == Clang21FeatureDelivery.Phase.INSTALLED
+                        state.phase == Clang21FeatureDelivery.Phase.INSTALLED ||
+                        state.phase == Clang21FeatureDelivery.Phase.EMULATED
                 )
             } else {
                 assertEquals(
