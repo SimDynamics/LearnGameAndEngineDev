@@ -43,6 +43,17 @@ def adb_read(adb: str, package: str, relative: str) -> tuple[bytes, int, str]:
     return result.stdout, result.returncode, result.stderr.decode("utf-8", errors="replace").strip()
 
 
+def missing_file_reply(data: bytes) -> bool:
+    """Android's run-as/exec-out can return 'cat: ... No such file...' on
+    stdout with exit code ZERO even though no source file exists.
+    That means 'not synthesized yet', not a damaged WAV.
+    """
+    if not data.startswith(b"cat: "):
+        return False
+    low = data.lower()
+    return b"no such file or directory" in low or b"not found" in low
+
+
 def inspect_wav(data: bytes) -> str | None:
     """Match the exact RIFF/PCM16/24k mono format used by Android's cache."""
     if len(data) < 44:
@@ -145,6 +156,9 @@ def main() -> int:
             f"files/kokoro-narration-cache/{entry['hash']}.wav",
         )
         label = f"{entry['lesson']}: {entry['hash'][:12]}"
+        if missing_file_reply(data):
+            missing.append(f"{label} (not synthesized yet)")
+            continue
         if status != 0 or not data:
             missing.append(f"{label} (ADB {status}: {stderr or 'file absent or empty'})")
             continue
