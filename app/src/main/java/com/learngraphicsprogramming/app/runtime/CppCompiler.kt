@@ -17,6 +17,23 @@ internal class CppCompiler(private val context: Context) {
         private const val RUNTIME_VERSION = "wasi-sdk-34-noeh-0f338c64"
         private const val COMPILER_TIMEOUT_SECONDS = 60L
         private const val TIMEOUT_EXIT_CODE = -2
+        private val CLANG_21_NATIVE_LIBRARIES = listOf(
+            "libc++_shared.so", "libfoldclang.so", "libLLVM.so", "libclang-cpp.so",
+            "libffi.so", "libfoldlldcore.so", "libiconv.so", "libicudataxxx.so",
+            "libicuucxxx.so", "libxml2xxx.so", "libzstdxx.so", "libzzz.so",
+            "liblgp_wasm_ld.so"
+        )
+
+        fun isClang21Available(context: Context): Boolean =
+            if (BuildConfig.LGP_CLANG23_ENABLED) isOptionalClang21Available(context)
+            else hasExecutableClang21Libraries(context)
+
+        private fun hasExecutableClang21Libraries(context: Context): Boolean {
+            val nativeDirectory = File(context.applicationInfo.nativeLibraryDir)
+            return CLANG_21_NATIVE_LIBRARIES.all { name ->
+                File(nativeDirectory, name).let { it.isFile && it.canExecute() }
+            }
+        }
 
         /**
          * Only executable, platform-installed native libraries may be used as
@@ -28,16 +45,11 @@ internal class CppCompiler(private val context: Context) {
                 !BuildConfig.LGP_CLANG23_ENABLED
             ) return false
 
-            val nativeDirectory = File(context.applicationInfo.nativeLibraryDir)
-            return listOf(
-                "libfoldclang.so",
-                "libfoldlldcore.so",
-                "libLLVM.so",
-                "libclang-cpp.so",
-                "liblgp_wasm_ld.so"
-            ).all { name ->
-                File(nativeDirectory, name).let { it.isFile && it.canExecute() }
-            }
+            val platformInstalled = runCatching {
+                context.packageManager.getPackageInfo(context.packageName, 0)
+                    .splitNames?.contains(Clang21FeatureDelivery.MODULE_NAME) == true
+            }.getOrDefault(false)
+            return platformInstalled && hasExecutableClang21Libraries(context)
         }
     }
 
@@ -46,17 +58,17 @@ internal class CppCompiler(private val context: Context) {
         compilerVariant: CppCompilerVariant = CppCompilerVariant.DEFAULT
     ): CppCompilationResult {
         val startedAt = System.nanoTime()
+        if (compilerVariant == CppCompilerVariant.OPTIONAL_CLANG_21) {
+            check(isOptionalClang21Available(context)) {
+                UiLanguageSettings.localizedContext(context)
+                    .getString(R.string.clang21_selected_unavailable)
+            }
+        }
         val runtimeDirectory = prepareRuntime()
         val workspace = File(context.cacheDir, "cpp-jobs/${UUID.randomUUID()}").apply { mkdirs() }
         val sourceFile = File(workspace, "main.cpp").apply { writeText(source) }
         val wasmFile = File(workspace, "program.wasm")
         val nativeDirectory = File(context.applicationInfo.nativeLibraryDir)
-        if (compilerVariant == CppCompilerVariant.OPTIONAL_CLANG_21) {
-            check(isOptionalClang21Available(context)) {
-                "Clang 21 no está disponible como ejecutable nativo instalado."
-            }
-        }
-
         // Legacy -Plgp.clang23=false APKs continue using their original toolchain.
         val useClang21 = !BuildConfig.LGP_CLANG23_ENABLED ||
             compilerVariant == CppCompilerVariant.OPTIONAL_CLANG_21
