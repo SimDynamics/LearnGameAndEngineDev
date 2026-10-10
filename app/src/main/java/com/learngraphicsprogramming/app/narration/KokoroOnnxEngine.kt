@@ -51,7 +51,11 @@ class KokoroOnnxEngine(directory: File) : AutoCloseable {
             vocabulary = KokoroOnnxInputs.loadVocabulary(ownedFile("tokenizer.json"))
             environment = OrtEnvironment.getEnvironment()
             OrtSession.SessionOptions().use { options ->
-                options.setIntraOpNumThreads(2)
+                // Use several CPU cores for one inference, without saturating
+                // every core and starving the Android UI or audio player.
+                options.setIntraOpNumThreads(
+                    Runtime.getRuntime().availableProcessors().coerceIn(1, 4)
+                )
                 options.setInterOpNumThreads(1)
                 options.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
                 createdSession = environment.createSession(ownedFile("model.onnx").absolutePath, options)
@@ -266,5 +270,49 @@ internal object KokoroOnnxInputs {
         floats.get(style)
         require(style.all { it.isFinite() }) { "El estilo de voz contiene valores no válidos" }
         return style
+    }
+}
+
+/**
+ * Kokoro accepts at most 510 phoneme symbols per inference. Split ONLY when
+ * necessary, preserving every character and favoring punctuation / word
+ * boundaries. The controller then joins all PCM parts into one WAV so an
+ * authored paragraph never stops at an intermediate MediaPlayer boundary.
+ */
+internal object KokoroPhonemeChunks {
+    fun split(
+        phonemes: String,
+        maxSymbols: Int = KokoroModelManifest.maximumPhonemeTokens
+    ): List<String> {
+        require(maxSymbols >= 2 && phonemes.isNotBlank())
+        if (phonemes.length <= maxSymbols) return listOf(phonemes)
+
+        val chunks = mutableListOf<String>()
+        var start = 0
+        while (phonemes.length - start > maxSymbols) {
+            val limit = start + maxSymbols
+            val preferFrom = start + maxSymbols / 2
+            val punctuation = (limit - 1 downTo preferFrom).firstOrNull { index ->
+                phonemes[index] in ".!?;:," &&
+                    (index + 1 == phonemes.length || phonemes[index + 1].isWhitespace())
+            }
+            val whitespace = (limit - 1 downTo preferFrom).firstOrNull { index ->
+                phonemes[index].isWhitespace()
+            }
+            var end = when {
+                punctuation != null -> punctuation + 1
+                whitespace != null -> whitespace + 1
+                else -> limit
+            }
+            if (end < phonemes.length && phonemes[end - 1].isHighSurrogate() &&
+                phonemes[end].isLowSurrogate()
+            ) end--
+            check(end > start)
+            chunks.add(phonemes.substring(start, end))
+            start = end
+        }
+        if (start < phonemes.length) chunks.add(phonemes.substring(start))
+        check(chunks.all { it.length <= maxSymbols && it.isNotBlank() })
+        return chunks
     }
 }
