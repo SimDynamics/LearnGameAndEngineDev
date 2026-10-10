@@ -3,38 +3,26 @@ package com.learngraphicsprogramming.app.narration
 import android.content.Context
 import android.os.SystemClock
 import android.util.Log
-import androidx.work.BackoffPolicy
-import androidx.work.Constraints
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequest
-import androidx.work.WorkManager
-import androidx.work.Worker
-import androidx.work.WorkerParameters
 import com.learngraphicsprogramming.app.narration.phonemes.EnglishMisakiG2P
 import com.learngraphicsprogramming.app.narration.phonemes.FrenchFluidG2P
 import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
 import java.io.File
-import java.util.concurrent.TimeUnit
 
 /**
- * Resumable best-effort background pre-rendering. Never takes audio focus.
- *
- * Android limits ordinary WorkManager jobs. Render for up to four minutes
- * per job, then chain the next job; complete WAVs are persisted independently.
- * On interruption the next run scans the syllabus and resumes from its first
- * missing sentence. This also detects any selectively deleted audio.
+ * Resumable offline synthesis controlled by a session-scoped foreground
+ * service. One bounded pass resumes from the first missing curriculum sentence.
+ * Bundled Opus/WAV audio and previously generated WAVs are always reused.
+ * Playback, compiler and graphics have priority; no audio focus is taken.
  */
-internal class KokoroBackgroundNarrationWorker(
-    context: Context, parameters: WorkerParameters
-) : Worker(context, parameters) {
-
-    private val app = applicationContext
+internal class KokoroBackgroundNarrationWorker(private val app: Context) {
+    enum class Outcome { COMPLETE, MORE, BUSY, PAUSED, UNAVAILABLE, RETRY }
     @Volatile private var engine: KokoroOnnxEngine? = null
 
-    override fun doWork(): Result {
+    /** Called on the service's private thread, with a bounded CPU wake lock. */
+    fun runSlice(activeSession: () -> Boolean): Outcome {
         val settings = NarrationSettingsRepository.get(app)
-        if (!settings.enabled || settings.engine == NarrationEngine.ANDROID) return Result.success()
-        if (NarrationWorkPriority.isBusy) return Result.retry()
+        if (!settings.enabled || settings.engine == NarrationEngine.ANDROID) return Outcome.PAUSED
+        if (!activeSession() || NarrationWorkPriority.isBusy) return Outcome.BUSY
 
         // Respect the user's chosen storage budget and ALWAYS leave 1 GiB
         // physically free. Existing audio is never evicted.
@@ -43,7 +31,7 @@ internal class KokoroBackgroundNarrationWorker(
             )
         ) {
             Log.i(TAG, "Offline narration paused: storage limit or reserve reached")
-            return Result.success()
+            return Outcome.PAUSED
         }
 
         val modelStore = KokoroModelStore(app)
@@ -59,7 +47,7 @@ internal class KokoroBackgroundNarrationWorker(
 
         try {
             for (item in NarrationCurriculum.sentences(app)) {
-                if (isStopped || NarrationWorkPriority.isBusy) return Result.retry()
+                if (!activeSession() || NarrationWorkPriority.isBusy) return Outcome.BUSY
 
                 if (KokoroNarrationCache.lookup(
                         app, item.language.tag, item.voice, item.text
@@ -72,18 +60,18 @@ internal class KokoroBackgroundNarrationWorker(
                     )
                 ) {
                     Log.i(TAG, "Offline narration paused: user-selected storage budget reached")
-                    return Result.success()
+                    return Outcome.PAUSED
                 }
 
                 if (root == null) {
                     root = modelStore.directory()
-                    if (!File(root, "model.onnx").isFile) return Result.success()
+                    if (!File(root, "model.onnx").isFile) return Outcome.UNAVAILABLE
                 }
                 val modelRoot = requireNotNull(root)
                 val voice = KokoroVoiceCatalog.find(item.voice)
                 if (voice == null || !File(modelRoot, voice.artifact.fileName).isFile) {
-                    // Another voice may be installed later; retry on the next app launch.
-                    return Result.success()
+                    // Missing voices do not prevent generating other installed languages.
+                    continue
                 }
 
                 // Two ORT/XNNPACK threads, no NNAPI GPU access in background.
@@ -95,7 +83,7 @@ internal class KokoroBackgroundNarrationWorker(
                 }
 
                 val active = {
-                    !isStopped && !NarrationWorkPriority.isBusy
+                    activeSession() && !NarrationWorkPriority.isBusy
                 }
                 val phonemes = when (item.language) {
                     NarrationLanguage.SPANISH -> {
@@ -115,13 +103,13 @@ internal class KokoroBackgroundNarrationWorker(
                     else -> (english ?: EnglishMisakiG2P(modelRoot).also { english = it })
                         .phonemize(item.text, item.language == NarrationLanguage.BRITISH_ENGLISH, active)
                 }
-                if (!active()) return Result.retry()
+                if (!active()) return Outcome.BUSY
                 val parts = mutableListOf<FloatArray>()
                 for (part in KokoroPhonemeChunks.split(phonemes)) {
-                    if (!active()) return Result.retry()
+                    if (!active()) return Outcome.BUSY
                     parts += engine!!.synthesizePhonemes(part, item.voice, 1f) { !active() }
                 }
-                if (!active()) return Result.retry()
+                if (!active()) return Outcome.BUSY
 
                 val temporary = File(app.cacheDir, "kokoro-offline-${System.nanoTime()}.wav")
                 try {
@@ -133,7 +121,7 @@ internal class KokoroBackgroundNarrationWorker(
                         )
                     ) {
                         Log.i(TAG, "Offline narration suspended before committing the new WAV")
-                        return Result.success()
+                        return Outcome.PAUSED
                     }
                     checkNotNull(KokoroNarrationCache.store(
                         app, item.language.tag, item.voice, item.text, temporary
@@ -141,18 +129,18 @@ internal class KokoroBackgroundNarrationWorker(
                 } finally { temporary.delete() }
 
                 Log.i(TAG, "Cached lesson speech: ${item.location}")
-                // Close work in a bounded slice so JobScheduler can
-                // stop/restart cleanly without losing already rendered audio.
+                // Release the synthesis engine periodically while keeping all finished WAVs.
                 if (SystemClock.elapsedRealtime() - started >= SLICE_MS) {
-                    scheduleNext(app)
-                    return Result.success()
+                    return Outcome.MORE
                 }
             }
             if (!hadMissing) Log.i(TAG, "All available lesson sentences are cached")
-            return Result.success()
+            return Outcome.COMPLETE
+        } catch (_: InterruptedException) {
+            return Outcome.BUSY
         } catch (error: Exception) {
             Log.w(TAG, "Offline narration interrupted or resources unavailable", error)
-            return Result.retry()
+            return Outcome.RETRY
         } finally {
             interruption.close()
             runCatching { engine?.close() }
@@ -165,29 +153,12 @@ internal class KokoroBackgroundNarrationWorker(
 
     companion object {
         private const val TAG = "KokoroBackground"
-        private const val WORK_NAME = "kokoro-offline-curriculum-v1"
         private const val SLICE_MS = 4L * 60 * 1000
-        // Avoid starting a sentence if less than 4 MiB of budget remains.
         private const val MIN_SENTENCE_HEADROOM_BYTES = 4L * NarrationStorageBudget.MIB
 
-        private fun request() =
-            OneTimeWorkRequest.Builder(KokoroBackgroundNarrationWorker::class.java)
-                .setConstraints(
-                    Constraints.Builder().setRequiresBatteryNotLow(true).build()
-                )
-                .setBackoffCriteria(BackoffPolicy.LINEAR, 20, TimeUnit.SECONDS)
-                .build()
-
+        /** Retains call sites while the lifecycle manager owns scheduling. */
         fun start(context: Context) {
-            WorkManager.getInstance(context.applicationContext).enqueueUniqueWork(
-                WORK_NAME, ExistingWorkPolicy.KEEP, request()
-            )
-        }
-
-        private fun scheduleNext(context: Context) {
-            WorkManager.getInstance(context).beginUniqueWork(
-                WORK_NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, request()
-            ).enqueue()
+            KokoroNarrationSessionMonitor.refresh(context)
         }
     }
 }
