@@ -64,9 +64,15 @@ object SpanishFluidG2P {
         val namedCode = text.replace(Regex("(?<![\\p{L}\\p{N}])C\\+\\+(?!\\+)", RegexOption.IGNORE_CASE), "ce más más")
             .replace(Regex("(?<![\\p{L}\\p{N}])C\\s+más\\s+más\\b", RegexOption.IGNORE_CASE), "ce más más")
         val math = SpanishMathSpeech.text(namedCode)
-        val words = numberRuns.replace(math) { match -> " ${SpanishMathSpeech.text(match.value)} " }
+        // In authored lesson titles, " · " separates clauses (for example,
+        // "Prueba de navegación 1 · Contenido provisional"). This symbol is
+        // NOT in Kokoro's token alphabet. Preserve the pause as a comma;
+        // arithmetic middot remains spoken as multiplication ("por").
+        val separator = math.replace(Regex("\\s+·\\s+(?=\\p{Lu})"), ", ")
+        val words = numberRuns.replace(separator) { match -> " ${SpanishMathSpeech.text(match.value)} " }
         return words.replace("%", " por ciento ").replace("=", " es igual a ")
-            .replace("+", " más ").replace("×", " por ").replace("÷", " dividido entre ")
+            .replace("+", " más ").replace("×", " por ").replace("·", " por ")
+            .replace("÷", " dividido entre ")
             .replace("/", " barra ").replace("\\", " barra inversa ")
             .replace("[", "(").replace("]", ")").replace("-", "—")
             .replace(Regex("\\s+"), " ").trim()
