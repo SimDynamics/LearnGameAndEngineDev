@@ -122,6 +122,8 @@ class LessonSystemBackInstrumentedTest {
                     root.findViewWithTag<View>("programming_fullscreen_overlay")
                 )
                 assertFalse("Back should not exit the lesson on the first gesture", activity.isFinishing)
+                activity.onBackPressedDispatcher.onBackPressed()
+                assertTrue("Second Back must exit the lesson after fullscreen closes", activity.isFinishing)
             }
         }
     }
@@ -150,6 +152,8 @@ class LessonSystemBackInstrumentedTest {
                     control.contentDescription.toString()
                 )
                 assertFalse("The lesson must remain open after closing the compiler", activity.isFinishing)
+                activity.onBackPressedDispatcher.onBackPressed()
+                assertTrue("Second Back should exit the normal lesson", activity.isFinishing)
             }
         }
     }
