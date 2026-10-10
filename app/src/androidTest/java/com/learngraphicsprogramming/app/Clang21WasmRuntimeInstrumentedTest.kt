@@ -14,8 +14,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Verifies the selected Clang 21 compiler through Wasmtime and also tests
- * the previously compiled WebAssembly module created independently via adb.
+ * Verifies the optional Clang 21 compiler through Wasmtime, then independently
+ * compiles another WebAssembly program for direct Wasmtime execution.
  */
 @RunWith(AndroidJUnit4::class)
 class Clang21WasmRuntimeInstrumentedTest {
@@ -44,21 +44,38 @@ class Clang21WasmRuntimeInstrumentedTest {
     }
 
     @Test
-    fun executesPreviouslyCompiledClang21WasmWithWasmtime() {
+    fun executesClang21CompiledWasmDirectlyWithWasmtime() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         assertTrue(
             "Esta variante debe utilizar Wasmtime.",
             BuildConfig.LGP_WASMTIME_ENABLED
         )
+        assumeTrue(
+            "The optional module is not installed as executable native libraries.",
+            CppCompiler.isOptionalClang21Available(context)
+        )
 
-        val wasm = File(context.cacheDir, "clang21-verify/iostream.wasm")
+        // Compile an independent test program instead of relying on an adb-pushed
+        // artifact that disappears whenever the app is reinstalled or reset.
+        val source = """
+            #include <iostream>
+            int main() {
+                std::cout << "Hola desde Clang 21" << '\n';
+            }
+        """.trimIndent()
+        val compilation = CppCompiler(context).compile(
+            source,
+            compilerVariant = CppCompilerVariant.OPTIONAL_CLANG_21
+        )
+        assertEquals(compilation.stderr, 0, compilation.exitCode)
+        val wasm = compilation.wasmFile
         assertTrue(
-            "Falta el archivo compilado con Clang 21: ${wasm.absolutePath}",
-            wasm.isFile && wasm.length() > 0L
+            "Clang 21 no generó un módulo WebAssembly válido.",
+            wasm?.isFile == true && wasm.length() > 0L
         )
 
         val workspace = File(context.cacheDir, "clang21-verify/wasmtime-run")
-        val execution = WasiRuntime.run(wasm.readBytes(), workspace)
+        val execution = WasiRuntime.run(requireNotNull(wasm).readBytes(), workspace)
 
         assertEquals(execution.stderr, 0, execution.exitCode)
         assertEquals("Hola desde Clang 21\n", execution.stdout)
