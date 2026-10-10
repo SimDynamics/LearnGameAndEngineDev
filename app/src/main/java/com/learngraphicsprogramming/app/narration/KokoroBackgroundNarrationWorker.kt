@@ -1,7 +1,6 @@
 package com.learngraphicsprogramming.app.narration
 
 import android.content.Context
-import android.os.StatFs
 import android.os.SystemClock
 import android.util.Log
 import androidx.work.BackoffPolicy
@@ -37,10 +36,13 @@ internal class KokoroBackgroundNarrationWorker(
         if (!settings.enabled || settings.engine == NarrationEngine.ANDROID) return Result.success()
         if (NarrationWorkPriority.isBusy) return Result.retry()
 
-        // Never exhaust storage to fill a nonessential educational audio cache.
-        val storage = StatFs(app.filesDir.absolutePath)
-        if (storage.availableBytes < MIN_FREE_BYTES) {
-            Log.w(TAG, "Offline narration paused: low storage")
+        // Respect the user's chosen storage budget and ALWAYS leave 1 GiB
+        // physically free. Existing audio is never evicted.
+        if (!NarrationStorageBudget.fitsNext(
+                NarrationStorageBudget.snapshot(app), MIN_SENTENCE_HEADROOM_BYTES
+            )
+        ) {
+            Log.i(TAG, "Offline narration paused: storage limit or reserve reached")
             return Result.success()
         }
 
@@ -65,8 +67,11 @@ internal class KokoroBackgroundNarrationWorker(
                 ) continue
 
                 hadMissing = true
-                if (StatFs(app.filesDir.absolutePath).availableBytes < MIN_FREE_BYTES) {
-                    Log.w(TAG, "Offline narration paused before storage becomes exhausted")
+                if (!NarrationStorageBudget.fitsNext(
+                        NarrationStorageBudget.snapshot(app), MIN_SENTENCE_HEADROOM_BYTES
+                    )
+                ) {
+                    Log.i(TAG, "Offline narration paused: user-selected storage budget reached")
                     return Result.success()
                 }
 
@@ -121,6 +126,15 @@ internal class KokoroBackgroundNarrationWorker(
                 val temporary = File(app.cacheDir, "kokoro-offline-${System.nanoTime()}.wav")
                 try {
                     NarrationWavWriter.writeChunks(temporary, parts)
+                    // Budget may have changed during a long ONNX inference.
+                    // Do not add a new persistent file above the selected limit.
+                    if (!NarrationStorageBudget.fitsNext(
+                            NarrationStorageBudget.snapshot(app), temporary.length()
+                        )
+                    ) {
+                        Log.i(TAG, "Offline narration suspended before committing the new WAV")
+                        return Result.success()
+                    }
                     checkNotNull(KokoroNarrationCache.store(
                         app, item.language.tag, item.voice, item.text, temporary
                     )) { "No se pudo guardar el audio generado" }
@@ -153,7 +167,8 @@ internal class KokoroBackgroundNarrationWorker(
         private const val TAG = "KokoroBackground"
         private const val WORK_NAME = "kokoro-offline-curriculum-v1"
         private const val SLICE_MS = 4L * 60 * 1000
-        private const val MIN_FREE_BYTES = 1024L * 1024 * 1024
+        // Avoid starting a sentence if less than 4 MiB of budget remains.
+        private const val MIN_SENTENCE_HEADROOM_BYTES = 4L * NarrationStorageBudget.MIB
 
         private fun request() =
             OneTimeWorkRequest.Builder(KokoroBackgroundNarrationWorker::class.java)
