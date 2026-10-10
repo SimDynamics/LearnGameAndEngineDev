@@ -10,10 +10,21 @@ el split opcional, no para el APK base Clang 23.** En la máquina de desarrollo,
 Gradle reutiliza o descarga los paquetes oficiales FoldCode, verifica SHA-256,
 extrae las doce bibliotecas y comprueba sus cabeceras ELF64 AArch64.
 
-**Pendiente:** confirmar que el App Bundle contiene físicamente las doce
-bibliotecas en el split. Todavía no hay descarga desde la interfaz Android
-ni selección del compilador; eso requiere Play Feature Delivery y una ruta
-segura para cargar los ejecutables tras instalar el módulo.
+**Validado en el Honor X8a durante el desarrollo:** el App Bundle contiene
+exactamente las doce bibliotecas bajo `clang21/lib/arm64-v8a/`, y la búsqueda
+de `libfoldclang.so`, `libfoldlldcore.so` y `libLLVM.so` en `base` no
+encontró resultados.
+
+El APK base dispone ahora de `Clang21FeatureDelivery`, un gestor que consulta
+el estado del split y puede solicitar instalación, informar del progreso,
+cancelar y gestionar confirmación de Google Play. No inicia descargas por sí
+mismo. También se añadió `LearnGraphicsApplication` para inicializar
+`SplitCompat` cuando el módulo dinámico está habilitado.
+
+**Pendiente:** conectar el gestor a un botón de interfaz y cargar correctamente
+las bibliotecas nativas del split instalado antes de permitir seleccionar
+Clang 21. Todavía no hay descarga accesible desde la interfaz ni una prueba
+de instalación real mediante Google Play.
 
 Las compilaciones normales siguen usando Clang 23 + Wasmtime + WASI EH.
 El APK alternativo completo se conserva con `-Plgp.clang23=false`.
@@ -52,10 +63,35 @@ como dependencia de otras bibliotecas Android; la última búsqueda no la
 utiliza para declarar independencia. Antes de distribuir, comprobar
 compatibilidad si hay versiones distintas del mismo SONAME entre splits.
 
+## Gestor de instalación y prueba segura
+
+La dependencia usada es
+`com.google.android.play:feature-delivery:2.1.0` (biblioteca oficial).
+El gestor Kotlin vive en
+`app/src/main/java/com/learngraphicsprogramming/app/runtime/Clang21FeatureDelivery.kt`.
+Solo permite solicitar `clang21` si se compiló con
+`-Plgp.playClang21Feature=true`; no altera `CppCompiler`.
+
+Para comprobar que la nueva infraestructura Android compila y que no intenta
+descargar el módulo automáticamente, ejecutar:
+
+```powershell
+.\gradlew :app:connectedDebugAndroidTest "-Plgp.playClang21Feature=true" "-Pandroid.testInstrumentationRunnerArguments.class=com.learngraphicsprogramming.app.Clang21FeatureDeliveryInstrumentedTest" --console=plain
+```
+
+Resultado esperado: **2/2 pruebas**, incluyendo la clase
+`LearnGraphicsApplication` declarada en el manifiesto.
+Estas pruebas no llaman a `startInstall` y, por tanto, no ejercitan
+descargas reales ni la confirmación de Google Play.
+
+Para volver al build convencional sin módulo dinámico, omitir
+`-Plgp.playClang21Feature=true`. El gestor informará `NOT_IN_BUILD` en
+vez de solicitar un módulo que no existe en ese APK.
+
 ## Arquitectura pendiente de completar
 
-1. Añadir instalación bajo demanda mediante la biblioteca Play Feature
-   Delivery, con progreso, errores, cancelación y confirmación.
+1. Conectar el gestor a una interfaz de usuario que solicite la descarga
+   solo tras la acción explícita del usuario.
 2. Resolver las rutas nativas reales después de instalar el split;
    no asumir que viven en `applicationInfo.nativeLibraryDir` del APK base.
 3. Verificar carga de dependencias y enlace con el `wasm-ld` del módulo base.
