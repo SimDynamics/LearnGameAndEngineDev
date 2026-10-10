@@ -1,5 +1,7 @@
 package com.learngraphicsprogramming.app
 
+import android.view.View
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.learngraphicsprogramming.app.runtime.Clang21FeatureDelivery
@@ -25,6 +27,28 @@ class Clang21FeatureDeliveryInstrumentedTest {
             "AndroidManifest.xml must resolve LearnGraphicsApplication",
             app is LearnGraphicsApplication
         )
+    }
+
+    @Test
+    fun downloadPanelAppearsOnlyForFeatureBuilds() {
+        ActivityScenario.launch(CppPrototypeActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                val section = activity.findViewById<View>(
+                    R.id.clang21FeatureSection
+                )
+                assertEquals(
+                    if (BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED)
+                        View.VISIBLE
+                    else
+                        View.GONE,
+                    section.visibility
+                )
+                assertTrue(
+                    "The default Clang 23 run button must remain available",
+                    activity.findViewById<View>(R.id.runButton).isEnabled
+                )
+            }
+        }
     }
 
     @Test
