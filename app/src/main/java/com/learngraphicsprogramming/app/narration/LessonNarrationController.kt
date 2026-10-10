@@ -15,6 +15,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.os.Process
+import android.os.PowerManager
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.speech.tts.Voice
@@ -41,6 +42,20 @@ class LessonNarrationController(
     private val worker = Handler(workerThread.looper)
     private val models = KokoroModelStore(appContext)
     private val audioManager = appContext.getSystemService(AudioManager::class.java)
+    private val synthesisWakeLock = appContext.getSystemService(PowerManager::class.java)
+        ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "LearnGraphicsProgramming:KokoroSynthesis")
+        ?.apply { setReferenceCounted(false) }
+
+    // MediaPlayer holds its own partial lock while playing. The synthesis lock
+    // keeps the CPU awake only while a neural/audio file is being generated.
+    private fun holdSynthesisCpu() {
+        if (synthesisWakeLock?.isHeld != true) {
+            synthesisWakeLock?.acquire(210_000L)
+        }
+    }
+    private fun releaseSynthesisCpu() {
+        if (synthesisWakeLock?.isHeld == true) synthesisWakeLock.release()
+    }
     private val attributes = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
     private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
@@ -245,6 +260,7 @@ class LessonNarrationController(
             kokoro?.cancelCurrentRun()
             english?.cancelCurrentRun()
             pending.clear()
+            releaseSynthesisCpu()
             watchdogs.values.forEach(main::removeCallbacks)
             watchdogs.clear()
             segments.forEachIndexed { current, segment ->
@@ -284,6 +300,7 @@ class LessonNarrationController(
             return
         }
         if (!pending.add(next)) return
+        holdSynthesisCpu()
         val session = directory ?: return
         val request = Synthesis(generation, configuration, next, segment.text,
             File(session, configuration.toString() + "_" + next + ".wav"),
@@ -467,6 +484,7 @@ class LessonNarrationController(
                 if (!isCurrent(request)) { worker.post { request.file.delete() }; return@post }
                 watchdogs.remove(request.id)?.let(main::removeCallbacks)
                 pending.remove(request.index)
+                if (pending.isEmpty()) releaseSynthesisCpu()
                 segments[request.index].file = request.file
                 segments[request.index].duration = duration
                 if (request.index == index && player == null) preparePlayer(segments[index])
@@ -495,6 +513,7 @@ class LessonNarrationController(
         val currentIndex = index
         try {
             val media = MediaPlayer()
+            media.setWakeMode(appContext, PowerManager.PARTIAL_WAKE_LOCK)
             player = media
             playerReady = false
             media.setAudioAttributes(attributes)
@@ -581,7 +600,8 @@ class LessonNarrationController(
         english?.cancelCurrentRun()
         val wasPlaying = playing
         playing = false
-        directory = null; segments.clear(); pending.clear(); index = 0; offset = 0; finished = false
+        directory = null; segments.clear(); pending.clear(); releaseSynthesisCpu()
+        index = 0; offset = 0; finished = false
         reportedFallback = false; warnedNetwork = false
         watchdogs.values.forEach(main::removeCallbacks); watchdogs.clear()
         releasePlayer(); releaseFocus()
