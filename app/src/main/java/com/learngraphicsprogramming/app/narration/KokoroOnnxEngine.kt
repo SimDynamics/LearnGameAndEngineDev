@@ -29,7 +29,11 @@ class KokoroSynthesisException(message: String, cause: Throwable? = null) :
  * obtain Kokoro-compatible phonemes from the selected G2P implementation before invoking it.
  * Neither this class nor its constructor downloads files.
  */
-class KokoroOnnxEngine(directory: File, preferAccelerator: Boolean = true) : AutoCloseable {
+class KokoroOnnxEngine(
+    directory: File,
+    preferAccelerator: Boolean = true,
+    cpuThreads: Int? = null
+) : AutoCloseable {
     private val root: File
     private val environment: OrtEnvironment
     private val session: OrtSession
@@ -57,7 +61,8 @@ class KokoroOnnxEngine(directory: File, preferAccelerator: Boolean = true) : Aut
             }
             vocabulary = KokoroOnnxInputs.loadVocabulary(ownedFile("tokenizer.json"))
             environment = OrtEnvironment.getEnvironment()
-            val cpuCores = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
+            val cpuCores = cpuThreads?.coerceIn(1, Runtime.getRuntime().availableProcessors().coerceAtLeast(1))
+                ?: Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
             fun openSession(hardware: Boolean = false, optimizedCpu: Boolean = false): OrtSession =
                 OrtSession.SessionOptions().use { options ->
                     // XNNPACK manages its own CPU pool. Avoid two competing
