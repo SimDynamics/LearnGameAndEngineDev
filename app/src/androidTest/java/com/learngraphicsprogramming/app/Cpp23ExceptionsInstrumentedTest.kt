@@ -86,4 +86,118 @@ class Cpp23ExceptionsInstrumentedTest {
             "mensaje de prueba\n"
         )
     }
+
+    @Test
+    fun propagatesExceptionAcrossThreeFunctions() {
+        verifyProgram(
+            """
+            #include <iostream>
+
+            void deepest() { throw 73; }
+            void middle() { deepest(); }
+            void outer() { middle(); }
+
+            int main() {
+                try {
+                    outer();
+                } catch (int number) {
+                    std::cout << "propagada: " << number << '\n';
+                }
+            }
+            """,
+            "propagada: 73\n"
+        )
+    }
+
+    @Test
+    fun destroysLocalObjectsInReverseOrderDuringStackUnwinding() {
+        verifyProgram(
+            """
+            #include <iostream>
+
+            struct Guard {
+                const char* label;
+                ~Guard() { std::cout << "destructor: " << label << '\n'; }
+            };
+
+            void raise() {
+                Guard first{"interno-1"};
+                Guard second{"interno-2"};
+                throw 5;
+            }
+
+            int main() {
+                try {
+                    Guard outside{"externo"};
+                    raise();
+                } catch (int code) {
+                    std::cout << "capturada: " << code << '\n';
+                }
+            }
+            """,
+            "destructor: interno-2\ndestructor: interno-1\ndestructor: externo\ncapturada: 5\n"
+        )
+    }
+
+    @Test
+    fun bareRethrowPreservesOriginalException() {
+        verifyProgram(
+            """
+            #include <iostream>
+            #include <stdexcept>
+
+            int main() {
+                try {
+                    try {
+                        throw std::runtime_error("mensaje original");
+                    } catch (const std::runtime_error& error) {
+                        std::cout << "primera: " << error.what() << '\n';
+                        throw;
+                    }
+                } catch (const std::exception& error) {
+                    std::cout << "segunda: " << error.what() << '\n';
+                }
+            }
+            """,
+            "primera: mensaje original\nsegunda: mensaje original\n"
+        )
+    }
+
+    @Test
+    fun recoversOriginalCauseFromNestedException() {
+        verifyProgram(
+            """
+            #include <exception>
+            #include <iostream>
+            #include <stdexcept>
+
+            void lowLevel() {
+                throw std::runtime_error("causa original");
+            }
+
+            void highLevel() {
+                try {
+                    lowLevel();
+                } catch (...) {
+                    std::throw_with_nested(std::logic_error("contexto adicional"));
+                }
+            }
+
+            int main() {
+                try {
+                    highLevel();
+                } catch (const std::exception& error) {
+                    std::cout << "externa: " << error.what() << '\n';
+                    try {
+                        std::rethrow_if_nested(error);
+                    } catch (const std::exception& cause) {
+                        std::cout << "interna: " << cause.what() << '\n';
+                    }
+                }
+            }
+            """,
+            "externa: contexto adicional\ninterna: causa original\n"
+        )
+    }
+
 }
