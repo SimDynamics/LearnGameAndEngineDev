@@ -12,6 +12,7 @@ import com.learngraphicsprogramming.app.runtime.CppExecutionEngine
 import com.learngraphicsprogramming.app.runtime.WasiRuntime
 import com.learngraphicsprogramming.app.runtime.WasiExecutionResult
 import java.io.File
+import java.io.FileOutputStream
 import java.util.UUID
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -173,29 +174,123 @@ class CppRuntimeAcceptanceInstrumentedTest {
         verifyNextStdinJob()
     }
 
-    @Test fun malformedModulesAndGuestTrapsStayControlledAndTheNextStdinJobRecovers() {
+    @Test fun malformedModuleIsRejectedWithoutCrashingTheAndroidProcess() {
+        val diagnostics = createDiagnostics("malformed-module")
         val fixture = createFixture()
         val priority = NarrationWorkPriority.beginInteractive()
         try {
-            val invalid = WasiRuntime.run(byteArrayOf(0, 1, 2, 3), fixture)
+            checkpoint(diagnostics, "I00 invoking malformed-module JNI")
+            val invalid = WasiRuntime.run(byteArrayOf(0, 1, 2, 3), fixture,
+                diagnosticPath = diagnostics.absolutePath)
+            checkpoint(diagnostics, "I01 malformed-module JNI returned exit=${invalid.exitCode}")
             assertTrue("A malformed module returns a controlled error", invalid.exitCode != 0)
             assertTrue("The actual native parse error must be retained", invalid.stderr.isNotBlank())
             assertEquals("Malformed modules never produce guest output", "", invalid.stdout)
-            withProgram("""
-                int main() { __builtin_trap(); }
-            """) { result ->
-                val trapped = requireExecution(result)
-                assertTrue("Guest traps must not crash the Android process", trapped.exitCode != 0)
-                assertTrue("Retain the actual Wasmtime trap diagnostic: ${trapped.stderr}",
-                    trapped.stderr.contains("trap", ignoreCase = true) || trapped.stderr.contains("unreachable", ignoreCase = true))
-            }
-            verifyNextStdinJob()
+            checkpoint(diagnostics, "I02 malformed-module assertions passed")
+        } catch (error: Throwable) {
+            checkpoint(diagnostics, "I03 test failed type=${error.javaClass.name}")
+            throw error
         } finally {
             try { removeOwnedFixture(fixture) } finally { priority.close() }
         }
     }
 
-    private fun verifyNextStdinJob() = withProgram("""
+    @Test fun guestTrapReturnsControlledDiagnosticWithoutCrashingTheAndroidProcess() {
+        val diagnostics = createDiagnostics("guest-trap")
+        try {
+            withProgram("""
+                int main() { __builtin_trap(); }
+            """, diagnostics = diagnostics) { result ->
+                val trapped = requireExecution(result)
+                assertTrue("Guest traps must not crash the Android process", trapped.exitCode != 0)
+                assertTrue("Retain the actual Wasmtime trap diagnostic: ${trapped.stderr}",
+                    trapped.stderr.contains("trap", ignoreCase = true) || trapped.stderr.contains("unreachable", ignoreCase = true))
+            }
+            checkpoint(diagnostics, "T00 guest-trap assertions passed")
+        } catch (error: Throwable) {
+            checkpoint(diagnostics, "T01 test failed type=${error.javaClass.name}")
+            throw error
+        }
+    }
+
+    @Test fun freshStdinAndGetlineJobRecoversIndependentRuntimeAndStreams() {
+        val diagnostics = createDiagnostics("stdin-recovery")
+        try {
+            verifyNextStdinJob(diagnostics)
+            checkpoint(diagnostics, "R00 stdin/getline/Unicode/EOF assertions passed")
+        } catch (error: Throwable) {
+            checkpoint(diagnostics, "R01 test failed type=${error.javaClass.name}")
+            throw error
+        }
+    }
+
+    @Test fun linearMemoryCannotGrowBeyondTheGuestBudgetAndTheNextJobRecovers() {
+        withProgram("""
+            #include <iostream>
+            int main() {
+                unsigned before = __builtin_wasm_memory_size(0);
+                auto oversized = __builtin_wasm_memory_grow(0, 4097u - before);
+                unsigned after = __builtin_wasm_memory_size(0);
+                bool limited = oversized == static_cast<decltype(oversized)>(-1)
+                    && before == after && after <= 4096;
+                std::cout << (limited ? "MEMORY_LIMITED" : "MEMORY_ESCAPED") << '\n';
+                return limited ? 0 : 9;
+            }
+        """) { result ->
+            val execution = requireExecution(result)
+            assertEquals(execution.stderr, 0, execution.exitCode)
+            assertEquals("MEMORY_LIMITED\n", execution.stdout)
+        }
+        verifyNextStdinJob()
+    }
+
+    @Test fun outOfBoundsGuestMemoryReturnsControlledTrapAndTheNextJobRecovers() {
+        withProgram("""
+            int main() {
+                volatile unsigned* outside = reinterpret_cast<volatile unsigned*>(0xfffffff0u);
+                return *outside;
+            }
+        """) { result ->
+            val execution = requireExecution(result)
+            assertTrue("Guest memory faults must not close the Android process", execution.exitCode != 0)
+            assertTrue("Keep the actual memory bounds diagnostic: ${execution.stderr}",
+                execution.stderr.contains("out of bounds", ignoreCase = true))
+        }
+        verifyNextStdinJob()
+    }
+
+    @Test fun epochDeadlineStopsBoundedHostWorkBeforeFuelAndTheNextJobRecovers() {
+        // Each random_get fills a bounded buffer and returns to Wasm. Its cost
+        // is host work, so instruction fuel alone cannot bound elapsed time.
+        val diagnostics = createDiagnostics("epoch-deadline")
+        withProgram("""
+            #include <wasi/api.h>
+            unsigned char bytes[8 * 1024 * 1024];
+            int main() {
+                for (;;) {
+                    if (__wasi_random_get(bytes, sizeof bytes)) return 10;
+                }
+            }
+        """, diagnostics = diagnostics) { result ->
+            val execution = requireExecution(result)
+            assertEquals("The native deadline must return its controlled timeout code: ${execution.stderr}", -2, execution.exitCode)
+            assertTrue("Termination must come from the epoch watchdog, not fuel: ${execution.stderr}",
+                execution.stderr.contains("epoch deadline", ignoreCase = true))
+            assertEquals("A deadline failure must not leave its watchdog alive", emptyList<String>(), activeWatchdogs())
+            val phases = diagnostics.readLines()
+            val began = phases.single { it.contains("P03 before native WASI invocation") }.substringBefore(' ').toLong()
+            val ended = phases.single { it.contains("P04 native WASI returned") }.substringBefore(' ').toLong()
+            assertTrue("The 30-second deadline must not return prematurely; native elapsed=${ended - began}ms",
+                ended - began >= 29_000)
+        }
+        verifyNextStdinJob()
+    }
+
+    private fun activeWatchdogs(): List<String> = File("/proc/self/task").listFiles().orEmpty()
+        .mapNotNull { task -> runCatching { File(task, "comm").readText().trim() }.getOrNull() }
+        .filter { it == "LGP-WasmLimit" }
+
+    private fun verifyNextStdinJob(diagnostics: File? = null) = withProgram("""
         #include <iostream>
         #include <limits>
         #include <string>
@@ -209,22 +304,54 @@ class CppRuntimeAcceptanceInstrumentedTest {
             std::cout << value << '|' << line << '|' << (eof ? "EOF" : "EXTRA") << '\n';
             return 0;
         }
-    """, "7\nlínea con espacios ñ\n") { result ->
+    """, "7\nlínea con espacios ñ\n", diagnostics) { result ->
         val execution = requireExecution(result)
         assertEquals("A later native job must recover its own streams and runtime store: ${execution.stderr}", 0, execution.exitCode)
         assertEquals("7|línea con espacios ñ|EOF\n", execution.stdout)
         assertEquals("No previous diagnostic leaks into the recovered job", "", execution.stderr)
+        assertEquals("Every completed job must join its watchdog before releasing its runtime", emptyList<String>(), activeWatchdogs())
     }
 
-    private fun withProgram(source: String, input: String = "", verify: (CppEngineResult) -> Unit) {
+    private fun withProgram(source: String, input: String = "", diagnostics: File? = null,
+                            verify: (CppEngineResult) -> Unit) {
         val started = SystemClock.elapsedRealtime()
-        val result = CppExecutionEngine(context).compileAndRun(source.trimIndent(), input)
+        val result = if (diagnostics == null) CppExecutionEngine(context).compileAndRun(source.trimIndent(), input)
+            else compileDiagnosticProgram(source.trimIndent(), input, diagnostics)
         try {
             verify(result)
             // An observed-device acceptance bound, not a universal wall-clock guarantee.
             assertTrue("This native compile/run completed within 90 seconds on the test device; elapsed=${SystemClock.elapsedRealtime() - started}ms",
                 SystemClock.elapsedRealtime() - started < 90_000)
         } finally { removeOwnedWorkspace(result.compilation.workspace) }
+    }
+
+    /** Same compiler/runtime path, with a unique native trace that survives a process crash. */
+    private fun compileDiagnosticProgram(source: String, input: String, diagnostics: File): CppEngineResult {
+        val priority = NarrationWorkPriority.beginInteractive()
+        try {
+            checkpoint(diagnostics, "P01 before Clang compilation")
+            val compilation = CppCompiler(context).compile(source)
+            checkpoint(diagnostics, "P02 Clang returned exit=${compilation.exitCode} wasm=${compilation.wasmFile != null}")
+            val wasm = compilation.wasmFile ?: return CppEngineResult(compilation, null)
+            checkpoint(diagnostics, "P03 before native WASI invocation")
+            val execution = WasiRuntime.run(wasm.readBytes(), compilation.workspace, input, diagnostics.absolutePath)
+            checkpoint(diagnostics, "P04 native WASI returned exit=${execution.exitCode}")
+            return CppEngineResult(compilation, execution)
+        } finally { priority.close() }
+    }
+
+    private fun createDiagnostics(case: String): File =
+        File(context.filesDir, "cpp-runtime-acceptance-$case-${UUID.randomUUID()}.log").also {
+            assertTrue("Every run preserves a fresh diagnostic file", it.createNewFile())
+            checkpoint(it, "P00 case=$case started")
+        }
+
+    /** Fixed phase labels and result codes only: no source, stdin, user paths or output. */
+    private fun checkpoint(file: File, phase: String) {
+        FileOutputStream(file, true).use { output ->
+            output.write("${SystemClock.elapsedRealtime()} $phase\n".toByteArray(Charsets.UTF_8))
+            output.fd.sync()
+        }
     }
 
     private fun assertCompiled(compilation: CppCompilationResult) {

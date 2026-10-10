@@ -5,13 +5,18 @@
 #include <android/log.h>
 
 #include <cstdint>
+#include <chrono>
+#include <condition_variable>
 #include <cstdio>
 #include <cstring>
 #include <fcntl.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <system_error>
+#include <thread>
 
 #include <wasmtime.h>
 #include <wasi.h>
@@ -35,8 +40,74 @@ void trace(const char *phase, const char *diagnostic_path = nullptr) {
     close(fd);
 }
 constexpr jint kFailure = -1;
+constexpr jint kExecutionTimeout = -2;
 constexpr size_t kMaxModuleBytes = 32 * 1024 * 1024;
 constexpr int64_t kMemoryLimitBytes = 256 * 1024 * 1024;
+constexpr int64_t kTableElementLimit = 1000000;
+constexpr auto kExecutionDeadline = std::chrono::seconds(30);
+
+// Epochs interrupt guest execution at Wasm checkpoints. Host WASI calls and
+// Cranelift compilation are not interrupted by this execution deadline.
+class ExecutionDeadline {
+public:
+    ExecutionDeadline(wasm_engine_t *engine, const char *diagnostic_path)
+        : engine_(engine), diagnostic_path_(diagnostic_path) {}
+
+    ~ExecutionDeadline() { finish(); }
+
+    bool start() {
+        const auto deadline = std::chrono::steady_clock::now() + kExecutionDeadline;
+        try {
+            worker_ = std::thread([this, deadline] {
+                (void)pthread_setname_np(pthread_self(), "LGP-WasmLimit");
+                std::unique_lock<std::mutex> lock(mutex_);
+                if (changed_.wait_until(lock, deadline, [this] { return finished_; })) {
+                    return;
+                }
+                expired_ = true;
+                lock.unlock();
+                // This is the only engine API used from the watchdog; Wasmtime
+                // documents it as safe from any thread. Never touch the store,
+                // context or JNI from here.
+                wasmtime_engine_increment_epoch(engine_);
+                trace("12a execution deadline reached after 30 seconds", diagnostic_path_);
+            });
+            return true;
+        } catch (const std::system_error &) {
+            return false;
+        }
+    }
+
+    bool finish() {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            finished_ = true;
+        }
+        changed_.notify_all();
+        if (worker_.joinable()) worker_.join();
+        // join happens before the borrowed engine and diagnostic path can be
+        // destroyed, including every early-return/error path in the scope.
+        return expired_;
+    }
+
+    ExecutionDeadline(const ExecutionDeadline &) = delete;
+    ExecutionDeadline &operator=(const ExecutionDeadline &) = delete;
+
+private:
+    wasm_engine_t *engine_;
+    const char *diagnostic_path_;
+    std::mutex mutex_;
+    std::condition_variable changed_;
+    bool finished_ = false;
+    bool expired_ = false;
+    std::thread worker_;
+};
+
+void report_execution_timeout(FILE *file) {
+    if (!file) return;
+    fprintf(file, "Wasmtime: límite de ejecución de 30 segundos alcanzado (epoch deadline).\n");
+    fflush(file);
+}
 
 class JniString {
 public:
@@ -151,7 +222,12 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
     trace("02a compiler strategy unavailable; Wasmtime default applies", stage.get());
 #endif
     wasmtime_config_consume_fuel_set(config, true);
+    wasmtime_config_epoch_interruption_set(config, true);
     wasmtime_config_wasm_exceptions_set(config, true);
+    // ART and Android's native libraries share process signal handlers.
+    // Explicit Wasm trap/bounds checks keep unreachable and invalid memory
+    // access inside the runtime instead of terminating the Android process.
+    wasmtime_config_signals_based_traps_set(config, false);
     trace("03 constructing engine", stage.get());
     wasm_engine_t *engine = wasm_engine_new_with_config(config);
     trace("04 engine creation returned", stage.get());
@@ -174,7 +250,9 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 fprintf(diagnostics, "Wasmtime: no se pudo crear el almacén.\n");
                 break;
             }
-            wasmtime_store_limiter(store, kMemoryLimitBytes, -1, 1, 2, 2);
+            // C++ WASI uses one linear memory, so this is also the total guest
+            // linear-memory budget. Native/JIT allocations are not included.
+            wasmtime_store_limiter(store, kMemoryLimitBytes, kTableElementLimit, 1, 2, 1);
             wasmtime_context_t *context = wasmtime_store_context(store);
             error = wasmtime_context_set_fuel(context, 1000000000ULL);
             if (error) {
@@ -221,12 +299,30 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
                 break;
             }
 
+            // An instance can execute its own Wasm start function while being
+            // created; arm the same deadline before that and keep it through
+            // the exported WASI _start call.
+            wasmtime_context_set_epoch_deadline(context, 1);
+            ExecutionDeadline deadline(engine, stage.get());
+            if (!deadline.start()) {
+                diagnostics = fopen(err.get(), "a");
+                if (diagnostics) {
+                    fprintf(diagnostics, "Wasmtime: no se pudo activar el límite de ejecución.\n");
+                }
+                break;
+            }
+            trace("10a execution deadline armed for 30 seconds", stage.get());
             trace("10 instantiating WASM module", stage.get());
             wasmtime_instance_t instance{};
             wasm_trap_t *trap = nullptr;
             error = wasmtime_linker_instantiate(linker, context, module, &instance, &trap);
             if (error || trap) {
+                const bool timed_out = deadline.finish();
                 diagnostics = fopen(err.get(), "a");
+                if (timed_out) {
+                    code = kExecutionTimeout;
+                    report_execution_timeout(diagnostics);
+                }
                 report_error(diagnostics, error);
                 report_trap(diagnostics, trap);
                 break;
@@ -237,15 +333,25 @@ Java_com_learngraphicsprogramming_app_runtime_WasmtimeRuntime_execute(
             if (!wasmtime_instance_export_get(context, &instance, "_start", 6, &function) ||
                 function.kind != WASMTIME_EXTERN_FUNC) {
                 diagnostics = fopen(err.get(), "a");
-                fprintf(diagnostics, "Wasmtime: falta la función WASI _start.\n");
+                if (diagnostics) fprintf(diagnostics, "Wasmtime: falta la función WASI _start.\n");
                 break;
             }
 
             trace("12 calling _start", stage.get());
             error = wasmtime_func_call(context, &function.of.func,
                                       nullptr, 0, nullptr, 0, &trap);
+            const bool timed_out = deadline.finish();
             trace("13 _start call returned", stage.get());
+            trace("13a execution deadline watchdog joined", stage.get());
             wasmtime_extern_delete(&function);
+            if (timed_out) {
+                code = kExecutionTimeout;
+                diagnostics = fopen(err.get(), "a");
+                report_execution_timeout(diagnostics);
+                report_error(diagnostics, error);
+                report_trap(diagnostics, trap);
+                break;
+            }
             if (error) {
                 int exit_status = 0;
                 if (wasmtime_error_exit_status(error, &exit_status)) {
