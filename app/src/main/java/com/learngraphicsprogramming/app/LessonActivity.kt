@@ -577,7 +577,7 @@ class LessonActivity : AppCompatActivity() {
         buttonNarrationToggle.setOnClickListener {
             val enabled = !NarrationSettingsRepository.get(this).enabled
             NarrationSettingsRepository.saveEnabled(this, enabled)
-            if (enabled) narrationController?.warmUp()
+            if (enabled) prefetchVisibleNarration()
             else narrationController?.settingsChanged()
             updateNarrationVisibility()
         }
@@ -709,7 +709,8 @@ class LessonActivity : AppCompatActivity() {
                 .getBoolean("swipeNavigationEnabled", true)
 
         narrationController?.settingsChanged()
-        narrationController?.warmUp()
+        // The page cache is consulted before loading the large ONNX model.
+        // A cached lesson starts promptly without an unnecessary warm-up.
         prefetchVisibleNarration()
         narrationControls?.refresh(narrationController?.isPlaying == true)
         updateNarrationVisibility()
