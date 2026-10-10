@@ -228,6 +228,7 @@ android {
         buildConfigField("boolean", "LGP_WASMTIME_ENABLED", lgpEnableWasmtime.toString())
         buildConfigField("boolean", "LGP_CLANG23_ENABLED", lgpEnableClang23.toString())
         buildConfigField("boolean", "LGP_CPP_EXCEPTIONS_ENABLED", lgpEnableCppExceptions.toString())
+        buildConfigField("boolean", "LGP_PLAY_CLANG21_FEATURE_ENABLED", lgpEnablePlayClang21Feature.toString())
         buildConfigField("boolean", "LGP_WASMTIME_DIAGNOSTICS", lgpWasmtimeDiagnostics.toString())
     }
 
@@ -630,6 +631,9 @@ dependencies {
      * una compra única permanente.
      */
     implementation("com.android.billingclient:billing:9.1.0")
+
+    // Native on-demand Clang 21 delivery through Google Play, never GitHub in-app.
+    implementation("com.google.android.play:feature-delivery:2.1.0")
 
     testImplementation(libs.junit)
     // Android's org.json is a stub in local JVM tests; use its standalone implementation.
