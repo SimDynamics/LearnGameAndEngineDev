@@ -5,6 +5,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.learngraphicsprogramming.app.runtime.Clang21FeatureDelivery
+import com.learngraphicsprogramming.app.runtime.CppCompiler
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -46,6 +47,28 @@ class Clang21FeatureDeliveryInstrumentedTest {
                 assertTrue(
                     "The default Clang 23 run button must remain available",
                     activity.findViewById<View>(R.id.runButton).isEnabled
+                )
+                assertEquals(
+                    if (BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED)
+                        View.VISIBLE
+                    else
+                        View.GONE,
+                    activity.findViewById<View>(R.id.clangCompilerSelectorSection).visibility
+                )
+                val defaultRadio = activity.findViewById<android.widget.RadioButton>(
+                    R.id.clang23RadioButton
+                )
+                val optionalRadio = activity.findViewById<android.widget.RadioButton>(
+                    R.id.clang21RadioButton
+                )
+                assertTrue("Clang 23 must stay the initial choice", defaultRadio.isChecked)
+                val featureInstalled = Clang21FeatureDelivery(activity).use { installer ->
+                    installer.currentState().phase == Clang21FeatureDelivery.Phase.INSTALLED
+                }
+                assertEquals(
+                    "Clang 21 must only be selectable with an executable native installation",
+                    featureInstalled && CppCompiler.isOptionalClang21Available(activity),
+                    optionalRadio.isEnabled
                 )
             }
         }
