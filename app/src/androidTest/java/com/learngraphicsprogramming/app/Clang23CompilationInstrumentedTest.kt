@@ -15,26 +15,24 @@ import org.junit.runner.RunWith
 import java.io.File
 
 /**
- * End-to-end Android ARM64 verification for the experimental Clang 23 + LLD 23 pair.
+ * End-to-end Android ARM64 regression for default Clang 23 + LLD 23.
  *
- * This is deliberately separate from the existing Clang 21 regression tests.
- * Each case compiles C++ on the phone, links WebAssembly with LLD and then
- * executes the produced module through the selected WAMR/Wasmtime backend.
+ * Each test compiles C++ directly on Android, links WebAssembly with LLD,
+ * then executes the WASI module with the selected runtime.
+ * The default build uses Wasmtime and WebAssembly C++ exceptions.
  *
- * Run the first smoke test before the whole suite:
+ * Run the smoke test without extra toolchain flags:
+ * .\gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.learngraphicsprogramming.app.Clang23CompilationInstrumentedTest#compilesLinksAndExecutesHelloWorld"
  *
- * .\gradlew :app:connectedDebugAndroidTest "-Plgp.clang23=true" "-Pandroid.testInstrumentationRunnerArguments.class=com.learngraphicsprogramming.app.Clang23CompilationInstrumentedTest#compilesLinksAndExecutesHelloWorld"
- *
- * Then run the class (WAMR), followed by the class with -Plgp.wasmtime=true.
- * The packaged WASI sysroot currently uses -fno-exceptions; these tests do
- * not claim that C++ exceptions or the entire C++23 library are supported.
+ * To compare against WAMR, add -Plgp.wasmtime=false (EH is disabled).
+ * Exception handling itself is tested separately by Cpp23ExceptionsInstrumentedTest.
  */
 @RunWith(AndroidJUnit4::class)
 class Clang23CompilationInstrumentedTest {
 
     @Before
     fun requireClang23() {
-        assertTrue("Use -Plgp.clang23=true for this suite", BuildConfig.LGP_CLANG23_ENABLED)
+        assertTrue("This suite requires Clang 23; omit -Plgp.clang23=false", BuildConfig.LGP_CLANG23_ENABLED)
     }
 
     private fun verifyProgram(
