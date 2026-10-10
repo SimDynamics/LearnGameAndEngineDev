@@ -11,6 +11,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.learngraphicsprogramming.app.narration.NarrationWorkPriority
 import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
@@ -43,6 +44,7 @@ class GraphicsDemoActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private var surfaceReady = false
     private var inForeground = false
     private var rendererThread: Thread? = null
+    private var graphicsPriority: AutoCloseable? = null
     private var velocityTracker: VelocityTracker? = null
     private val pendingTouches = ConcurrentLinkedQueue<TouchCommand>()
 
@@ -239,12 +241,16 @@ class GraphicsDemoActivity : AppCompatActivity(), SurfaceHolder.Callback {
     override fun onResume() {
         super.onResume()
         inForeground = true
+        // Both the GPU benchmark and real-time physics preempt optional TTS.
+        if (graphicsPriority == null) graphicsPriority = NarrationWorkPriority.beginInteractive()
         startRenderer()
     }
 
     override fun onPause() {
         inForeground = false
         stopRenderer()
+        graphicsPriority?.close()
+        graphicsPriority = null
         super.onPause()
     }
 
