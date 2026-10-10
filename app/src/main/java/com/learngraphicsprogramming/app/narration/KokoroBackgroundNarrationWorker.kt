@@ -33,7 +33,8 @@ internal class KokoroBackgroundNarrationWorker(
     @Volatile private var engine: KokoroOnnxEngine? = null
 
     override fun doWork(): Result {
-        if (!NarrationSettingsRepository.get(app).enabled) return Result.success()
+        val settings = NarrationSettingsRepository.get(app)
+        if (!settings.enabled || settings.engine == NarrationEngine.ANDROID) return Result.success()
         if (NarrationWorkPriority.isBusy) return Result.retry()
 
         // Never exhaust storage to fill a nonessential educational audio cache.
