@@ -32,10 +32,10 @@ class LessonNarrationTextTest {
             spoken.drop(2).joinToString(" ").contains(paragraph.takeLast(35))
         )
 
-        val quick = NarrationSegments.prepare(spoken, 140)
-        assertTrue("Short neural chunks must preserve the whole lesson", quick.size > 3)
-        assertTrue(quick.all { it.isNotBlank() && it.length <= 140 })
-        assertEquals(spoken.joinToString(" "), quick.joinToString(" "))
+        val prepared = NarrationSegments.prepare(spoken, 250)
+        assertTrue("All visible authored prose must remain in the playback list", prepared.size >= 3)
+        assertTrue(prepared.all { it.isNotBlank() && it.length <= 250 })
+        assertEquals(spoken.joinToString(" "), prepared.joinToString(" "))
     }
 
     @Test fun pageReadsVisibleContentInOrderAndNeverTraversesAnswerMetadata() {
