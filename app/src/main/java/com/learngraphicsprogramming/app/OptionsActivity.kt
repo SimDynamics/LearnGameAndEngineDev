@@ -137,6 +137,11 @@ class OptionsActivity : AppCompatActivity() {
                 R.id.buttonResetProgrammingRoute
             )
 
+        val buttonResetMathPhysicsRoute =
+            findViewById<Button>(
+                R.id.buttonResetMathPhysicsRoute
+            )
+
         val buttonResetProgrammingWrapExceptions =
             findViewById<Button>(
                 R.id.buttonResetProgrammingWrapExceptions
@@ -1864,39 +1869,33 @@ class OptionsActivity : AppCompatActivity() {
          * Es una acción inmediata.
          * No necesita utilizar Guardar cambios.
          */
-        buttonResetProgrammingRoute
-            .setOnClickListener {
-
-                AlertDialog.Builder(
-                    this
-                )
-                    .setTitle(
-                        getString(R.string.settings_programming_progress_reset)
-                    )
-                    .setMessage(
-                        getString(R.string.settings_programming_progress_confirmation)
-                    )
-                    .setNegativeButton(
-                        getString(R.string.settings_cancel),
-                        null
-                    )
-                    .setPositiveButton(
-                        getString(R.string.settings_reset)
-                    ) { _, _ ->
-
-                        ProgressRepository
-                            .resetProgrammingRoute(
-                                this
-                            )
-
-                        Toast.makeText(
-                            this,
-                            getString(R.string.settings_programming_progress_reset_success),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                    .show()
+        fun bindRouteReset(button: Button, routeId: String, title: Int, message: Int, success: Int) {
+            button.setOnClickListener {
+                AlertDialog.Builder(this)
+                    .setTitle(getString(title))
+                    .setMessage(getString(message))
+                    .setNegativeButton(getString(R.string.settings_cancel), null)
+                    .setPositiveButton(getString(R.string.settings_reset)) { _, _ ->
+                        ProgressRepository.resetRoute(this, routeId)
+                        Toast.makeText(this, getString(success), Toast.LENGTH_SHORT).show()
+                    }.show()
             }
+        }
+
+        bindRouteReset(
+            buttonResetProgrammingRoute,
+            AppearanceSettingsRepository.ROUTE_PROGRAMMING,
+            R.string.settings_programming_progress_reset,
+            R.string.settings_programming_progress_confirmation,
+            R.string.settings_programming_progress_reset_success
+        )
+        bindRouteReset(
+            buttonResetMathPhysicsRoute,
+            AppearanceSettingsRepository.ROUTE_MATH_PHYSICS,
+            R.string.settings_math_physics_progress_reset,
+            R.string.settings_math_physics_progress_confirmation,
+            R.string.settings_math_physics_progress_reset_success
+        )
 
         /*
  * RESTABLECER EXCEPCIONES DE AJUSTE

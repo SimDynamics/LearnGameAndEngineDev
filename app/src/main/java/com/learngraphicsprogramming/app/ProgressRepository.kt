@@ -1274,48 +1274,37 @@ object ProgressRepository {
     }
 
 
-    /*
-     * REINICIAR TODA LA RUTA
-     * DE PROGRAMACIÓN
-     */
-
     fun resetProgrammingRoute(
         context: Context
     ) {
+        resetRoute(context, AppearanceSettingsRepository.ROUTE_PROGRAMMING)
+    }
 
-        val courses =
-            try {
+    fun resetMathPhysicsRoute(context: Context) {
+        resetRoute(context, AppearanceSettingsRepository.ROUTE_MATH_PHYSICS)
+    }
 
-                CourseRepository
-                    .loadCourses(
-                        context,
-                        AppearanceSettingsRepository.ROUTE_PROGRAMMING
-                    )
-
-            } catch (
-                exception: Exception
-            ) {
-
-                emptyList()
+    fun resetRoute(context: Context, routeId: String) {
+        val courseIds = CourseRepository.loadCourses(context, routeId).map { it.id }
+        val courseKeys = courseIds.map { "course_${it}_completed" }.toSet()
+        // The historical keys use globally unique semantic IDs, without a route prefix.
+        // Match the course delimiter so old answers and unavailable lessons are also reset.
+        val contentPrefixes = courseIds.flatMap { courseId ->
+            listOf("lesson_${courseId}__", "exercise_${courseId}__", "unit_${courseId}__")
+        }
+        val progress = preferences(context)
+        val editor = progress.edit()
+        for (key in progress.all.keys) {
+            if (key in courseKeys || contentPrefixes.any { key.startsWith(it) }) {
+                editor.remove(key)
             }
+        }
+        editor.apply()
 
-        /*
-         * Reiniciamos únicamente los cursos
-         * pertenecientes a la ruta Programación.
-         *
-         * No utilizamos SharedPreferences.clear()
-         * porque posteriormente tendremos
-         * Matemáticas y Física como otra ruta
-         * independiente.
-         */
-        for (
-        course in courses
-        ) {
-
-            resetCourse(
-                context,
-                course.id
-            )
+        val navigation = NavigationStateRepository.getState(context)
+        if (navigation.screen != NavigationStateRepository.SCREEN_ROUTES &&
+            navigation.routeId == routeId) {
+            NavigationStateRepository.saveCourses(context, routeId)
         }
     }
 
