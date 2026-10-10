@@ -92,6 +92,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Re-check after installing voices or returning from settings.
+        // KEEP prevents two concurrent background curriculum jobs.
+        KokoroBackgroundNarrationWorker.start(applicationContext)
         AppearanceUi.apply(this)
         // Do not overwrite the destination while it is being launched from onCreate.
         // The focused route picker is saved by onWindowFocusChanged instead.
