@@ -29,6 +29,21 @@ class KokoroOnnxInputsTest {
         assertEquals(512, KokoroOnnxInputs.tokenize("ˈ" + "a".repeat(509), vocabulary).size)
     }
 
+    @Test fun largePhonemeParagraphIsSplitAtTheActualModelLimitWithoutLosingSymbols() {
+        val source = ("ˈola " + "l".repeat(490) + ". ") +
+            ("ˈola " + "a".repeat(480) + "! ") +
+            ("ˈola " + "l".repeat(290))
+        val parts = KokoroPhonemeChunks.split(source)
+        assertEquals(source, parts.joinToString(""))
+        org.junit.Assert.assertTrue(parts.size > 1)
+        org.junit.Assert.assertTrue(parts.all { it.isNotBlank() && it.length <= 510 })
+    }
+
+    @Test fun exactlyMaximumPhonemeInputDoesNotRequireAnAudioBoundary() {
+        val source = "a".repeat(KokoroModelManifest.maximumPhonemeTokens)
+        assertEquals(listOf(source), KokoroPhonemeChunks.split(source))
+    }
+
     @Test fun limitsLongestStyleSelectionToLastExistingRow() {
         assertEquals(509, KokoroOnnxInputs.styleRow(509))
         assertEquals(509, KokoroOnnxInputs.styleRow(510))
