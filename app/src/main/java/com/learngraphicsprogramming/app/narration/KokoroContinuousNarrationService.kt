@@ -16,8 +16,9 @@ import com.learngraphicsprogramming.app.R
 
 /**
  * User-visible offline narration preparation that remains active when the
- * screen is locked. A bounded PARTIAL_WAKE_LOCK is held only during each
- * synthesis pass, not during playback priority waits or retry delays.
+ * screen is locked. A bounded PARTIAL_WAKE_LOCK is renewed during each
+ * synthesis slice and held while waiting for interactive work to finish, so
+ * screen-off idle time cannot indefinitely suspend the continuation.
  *
  * This is a directly launched foreground service, not a JobScheduler worker:
  * Android 16 job quotas can otherwise suspend long-running WorkManager jobs.
@@ -100,18 +101,20 @@ internal class KokoroContinuousNarrationService : Service() {
                 val selection = NarrationSettingsRepository.get(applicationContext)
                 if (!selection.enabled || selection.engine == NarrationEngine.ANDROID) break
                 if (NarrationWorkPriority.isBusy) {
+                    // With the screen locked, remain schedulable until the
+                    // higher-priority speech/editor operation is finished.
+                    if (!cpuWakeLock.isHeld) cpuWakeLock.acquire(5L * 60L * 1_000L)
                     Thread.sleep(1_000L)
                     continue
                 }
-                val outcome = try {
-                    cpuWakeLock.acquire(5L * 60L * 1_000L)
-                    KokoroBackgroundNarrationWorker(applicationContext).runSlice {
-                        val settings = NarrationSettingsRepository.get(applicationContext)
-                        running && !Thread.currentThread().isInterrupted &&
-                            settings.enabled && settings.engine != NarrationEngine.ANDROID
-                    }
-                } finally {
-                    if (cpuWakeLock.isHeld) cpuWakeLock.release()
+                // A slice lasts at most four minutes; renew the five-minute
+                // lock before each pass. Delayed retries remain schedulable.
+                if (cpuWakeLock.isHeld) cpuWakeLock.release()
+                cpuWakeLock.acquire(5L * 60L * 1_000L)
+                val outcome = KokoroBackgroundNarrationWorker(applicationContext).runSlice {
+                    val settings = NarrationSettingsRepository.get(applicationContext)
+                    running && !Thread.currentThread().isInterrupted &&
+                        settings.enabled && settings.engine != NarrationEngine.ANDROID
                 }
                 when (outcome) {
                     KokoroBackgroundNarrationWorker.Outcome.MORE -> continue
