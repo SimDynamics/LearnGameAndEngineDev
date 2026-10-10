@@ -13,42 +13,75 @@ import java.util.zip.ZipInputStream
 
 internal class CppCompiler(private val context: Context) {
 
-    fun compile(source: String): CppCompilationResult {
+    companion object {
+        /**
+         * Only executable, platform-installed native libraries may be used as
+         * external subprocesses. SplitCompat's app-private extracted copies
+         * are not executable on Android 10+.
+         */
+        fun isOptionalClang21Available(context: Context): Boolean {
+            if (!BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED ||
+                !BuildConfig.LGP_CLANG23_ENABLED
+            ) return false
+
+            val nativeDirectory = File(context.applicationInfo.nativeLibraryDir)
+            return listOf(
+                "libfoldclang.so",
+                "libfoldlldcore.so",
+                "libLLVM.so",
+                "libclang-cpp.so",
+                "liblgp_wasm_ld.so"
+            ).all { name ->
+                File(nativeDirectory, name).let { it.isFile && it.canExecute() }
+            }
+        }
+    }
+
+    fun compile(
+        source: String,
+        compilerVariant: CppCompilerVariant = CppCompilerVariant.DEFAULT
+    ): CppCompilationResult {
         val startedAt = System.nanoTime()
         val runtimeDirectory = prepareRuntime()
         val workspace = File(context.cacheDir, "cpp-jobs/${UUID.randomUUID()}").apply { mkdirs() }
         val sourceFile = File(workspace, "main.cpp").apply { writeText(source) }
         val wasmFile = File(workspace, "program.wasm")
         val nativeDirectory = File(context.applicationInfo.nativeLibraryDir)
-        // Clang 23 + LLD 23 is the validated default Android toolchain.
-        // FoldCode Clang 21 remains available via -Plgp.clang23=false.
+        if (compilerVariant == CppCompilerVariant.OPTIONAL_CLANG_21) {
+            check(isOptionalClang21Available(context)) {
+                "Clang 21 no está disponible como ejecutable nativo instalado."
+            }
+        }
+
+        // Legacy -Plgp.clang23=false APKs continue using their original toolchain.
+        val useClang21 = !BuildConfig.LGP_CLANG23_ENABLED ||
+            compilerVariant == CppCompilerVariant.OPTIONAL_CLANG_21
         val clang = File(
             nativeDirectory,
-            if (BuildConfig.LGP_CLANG23_ENABLED) "liblgp_clang23.so"
-            else "libfoldclang.so"
+            if (useClang21) "libfoldclang.so" else "liblgp_clang23.so"
         )
         val lldCore = File(nativeDirectory, "libfoldlldcore.so")
         val linkerExecutable = File(
             nativeDirectory,
-            if (BuildConfig.LGP_CLANG23_ENABLED) "liblgp_lld23.so"
-            else "liblgp_wasm_ld.so"
+            if (useClang21) "liblgp_wasm_ld.so" else "liblgp_lld23.so"
         )
-        val linkerDirectory = File(runtimeDirectory, "bin").apply { mkdirs() }
+        // Never share a mutable wasm-ld symlink between competing toolchains.
+        val linkerDirectory = File(workspace, "bin").apply { mkdirs() }
         val linker = File(linkerDirectory, "wasm-ld")
 
         check(clang.isFile) { UiLanguageSettings.localizedContext(context).getString(R.string.math_ui_clang_missing) }
         check(linkerExecutable.isFile) { UiLanguageSettings.localizedContext(context).getString(R.string.math_ui_llvm_missing) }
-        // FoldCode's LLD core belongs to the Clang 21 linker wrapper only.
-        if (!BuildConfig.LGP_CLANG23_ENABLED) {
+        if (useClang21) {
             check(lldCore.isFile) { UiLanguageSettings.localizedContext(context).getString(R.string.math_ui_llvm_missing) }
         }
 
-        linker.delete()
         Os.symlink(linkerExecutable.absolutePath, linker.absolutePath)
 
         val sysroot = File(runtimeDirectory, "sysroot")
         val resourceDirectory = File(runtimeDirectory, "resource")
-        val useCppExceptions = BuildConfig.LGP_CPP_EXCEPTIONS_ENABLED
+        // The optional Clang 21 variant uses the tested non-EH WASI toolchain;
+        // Clang 23 preserves modern WebAssembly exceptions as before.
+        val useCppExceptions = BuildConfig.LGP_CPP_EXCEPTIONS_ENABLED && !useClang21
 
         // Official WASI SDK 34 has distinct EH and no-EH C++ headers.
         val cppHeaders = File(
@@ -98,7 +131,7 @@ internal class CppCompiler(private val context: Context) {
             .directory(workspace)
             .apply {
                 environment()["LD_LIBRARY_PATH"] = nativeDirectory.absolutePath
-                if (!BuildConfig.LGP_CLANG23_ENABLED) {
+                if (useClang21) {
                     environment()["LGP_LLD_CORE"] = lldCore.absolutePath
                 }
                 environment()["PATH"] = "${linkerDirectory.absolutePath}:/system/bin:/system/xbin"
