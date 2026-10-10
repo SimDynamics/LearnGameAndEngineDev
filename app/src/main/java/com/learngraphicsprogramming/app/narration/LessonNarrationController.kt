@@ -159,6 +159,16 @@ class LessonNarrationController(
         if (closed) return@onMain
         val selected = NarrationSettingsRepository.forLanguage(appContext, pageLanguage)
         if (!selected.enabled || selected.engine == NarrationEngine.ANDROID) return@onMain
+        // AUTO should not silently launch Android TTS just because a page
+        // appeared: passive preparation is only for installed Kokoro files.
+        val installed = runCatching {
+            val root = models.directory()
+            File(root, "model.onnx").isFile &&
+                (KokoroVoiceCatalog.find(selected.kokoroVoice)?.let { voice ->
+                    File(root, voice.artifact.fileName).isFile
+                } == true)
+        }.getOrDefault(false)
+        if (!installed) return@onMain
         val prepared = narrationParts(texts, selected)
         if (prepared.isEmpty()) return@onMain
         if (language == pageLanguage && segments.map { it.text } == prepared) return@onMain
