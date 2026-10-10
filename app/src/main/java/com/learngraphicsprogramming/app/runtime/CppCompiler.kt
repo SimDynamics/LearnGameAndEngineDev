@@ -14,6 +14,10 @@ import java.util.zip.ZipInputStream
 internal class CppCompiler(private val context: Context) {
 
     companion object {
+        private const val RUNTIME_VERSION = "wasi-sdk-34-noeh-0f338c64"
+        private const val COMPILER_TIMEOUT_SECONDS = 60L
+        private const val TIMEOUT_EXIT_CODE = -2
+
         /**
          * Only executable, platform-installed native libraries may be used as
          * external subprocesses. SplitCompat's app-private extracted copies
@@ -453,11 +457,6 @@ internal class CppCompiler(private val context: Context) {
         return runtimeDirectory
     }
 
-    private companion object {
-        const val RUNTIME_VERSION = "wasi-sdk-34-noeh-0f338c64"
-        const val COMPILER_TIMEOUT_SECONDS = 60L
-        const val TIMEOUT_EXIT_CODE = -2
-    }
 }
 
 internal data class CppCompilationResult(
