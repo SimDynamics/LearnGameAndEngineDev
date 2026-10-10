@@ -33,6 +33,19 @@ class LessonSystemBackInstrumentedTest {
     private val preferenceSnapshots = linkedMapOf<String, Map<String, *>>()
 
     @Before
+    fun verifyApplicationHasCurrentNavigationFix() {
+        // Gradle may build the test APK while a previous app bundle is
+        // still installed. Detect that before interpreting any navigation.
+        assertTrue(
+            "The installed app is older than the Back fix. Rebuild :app:bundleDebug " +
+                "and reinstall base,clang21 before running the tests.",
+            LessonActivity::class.java.declaredFields.any {
+                it.name == "compilerFullscreenBackExit"
+            }
+        )
+    }
+
+    @Before
     fun preserveProgress() {
         listOf("navigation_state", "learning_progress").forEach { name ->
             preferenceSnapshots[name] =
@@ -135,11 +148,12 @@ class LessonSystemBackInstrumentedTest {
         ActivityScenario.launch<LessonActivity>(programmingIntent()).use { scenario ->
             scenario.onActivity { activity ->
                 val root = activity.findViewById<ViewGroup>(android.R.id.content)
-                val control = findDescendants(root).firstOrNull {
-                    it.contentDescription == activity.getString(R.string.exercise_fullscreen) &&
-                        it.isShown
-                }
-                assertNotNull("Expected the compiler fullscreen control on page eight", control)
+                val control = root.findViewWithTag<View>("cpp_compiler_fullscreen")
+                assertNotNull(
+                    "Expected the compiler fullscreen control on page eight; " +
+                        "check that the application APK is current and the page was loaded",
+                    control
+                )
                 assertTrue(control!!.performClick())
                 assertEquals(
                     activity.getString(R.string.exercise_exit_fullscreen),
@@ -158,12 +172,4 @@ class LessonSystemBackInstrumentedTest {
         }
     }
 
-    private fun findDescendants(root: View): List<View> = buildList {
-        add(root)
-        if (root is ViewGroup) {
-            for (index in 0 until root.childCount) {
-                addAll(findDescendants(root.getChildAt(index)))
-            }
-        }
-    }
 }
