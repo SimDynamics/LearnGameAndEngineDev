@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.learngraphicsprogramming.app.databinding.ActivityMainBinding
 import com.learngraphicsprogramming.app.graphics.GraphicsDemoActivity
+import com.learngraphicsprogramming.app.narration.KokoroBackgroundNarrationWorker
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -14,6 +15,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // One durable queue, enqueued on first launch and on later launches.
+        // WorkManager decides when background constraints permit execution.
+        KokoroBackgroundNarrationWorker.start(applicationContext)
 
         /*
          * Al iniciar la aplicación consultamos
