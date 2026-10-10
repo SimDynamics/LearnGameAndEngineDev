@@ -171,6 +171,47 @@
 
         </LinearLayout>
 
+        <!-- Clang 23 is always the initial selection in feature builds. -->
+        <LinearLayout
+            android:id="@+id/clangCompilerSelectorSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/clang_compiler_selector_title"
+                android:textColor="#E6EDF3"
+                android:textSize="16sp" />
+
+            <RadioGroup
+                android:id="@+id/clangCompilerRadioGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/clang23RadioButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/clang_compiler_23"
+                    android:textColor="#E6EDF3" />
+
+                <RadioButton
+                    android:id="@+id/clang21RadioButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:enabled="false"
+                    android:text="@string/clang_compiler_21"
+                    android:textColor="#E6EDF3" />
+            </RadioGroup>
+        </LinearLayout>
+
         <Button
             android:id="@+id/runButton"
             android:layout_width="match_parent"
@@ -202,8 +243,7 @@
             android:textIsSelectable="true"
             android:textSize="18sp" />
 
-        <!-- The optional Play module is hidden in ordinary APKs.
-             This panel never changes the active Clang 23 compiler. -->
+        <!-- Optional Play download panel; Clang 23 stays the default. -->
         <LinearLayout
             android:id="@+id/clang21FeatureSection"
             android:layout_width="match_parent"
@@ -237,6 +277,16 @@
                 android:text="@string/clang21_not_installed"
                 android:textColor="#D5DBE6"
                 android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/clang21ExecutionUnavailable"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/clang21_installed_unavailable"
+                android:textColor="#F0C280"
+                android:textSize="14sp"
+                android:visibility="gone" />
 
             <ProgressBar
                 android:id="@+id/clang21FeatureProgress"
