@@ -382,7 +382,9 @@ class LessonActivity : AppCompatActivity() {
                     val language = com.learngraphicsprogramming.app.narration.NarrationLanguage.forLesson(
                         lessonJson, currentPage, NarrationSettingsRepository.get(this).language)
                     narrationController?.toggle(
-                        LessonNarrationText.page(lessonJson, currentPage, language), language
+                        LessonNarrationText.page(lessonJson, currentPage, language),
+                        language,
+                        quickStart = true
                     )
                 }
             },
@@ -393,7 +395,11 @@ class LessonActivity : AppCompatActivity() {
                 else if (::lessonJson.isInitialized) {
                     val language = com.learngraphicsprogramming.app.narration.NarrationLanguage.forLesson(
                         lessonJson, currentPage, NarrationSettingsRepository.get(this).language)
-                    narrationController?.toggle(LessonNarrationText.page(lessonJson, currentPage, language), language)
+                    narrationController?.toggle(
+                        LessonNarrationText.page(lessonJson, currentPage, language),
+                        language,
+                        quickStart = true
+                    )
                 }
             }
         )
@@ -562,6 +568,8 @@ class LessonActivity : AppCompatActivity() {
         buttonNarrationToggle.setOnClickListener {
             val enabled = !NarrationSettingsRepository.get(this).enabled
             NarrationSettingsRepository.saveEnabled(this, enabled)
+            if (enabled) narrationController?.warmUp()
+            else narrationController?.settingsChanged()
             updateNarrationVisibility()
         }
 
@@ -692,6 +700,7 @@ class LessonActivity : AppCompatActivity() {
                 .getBoolean("swipeNavigationEnabled", true)
 
         narrationController?.settingsChanged()
+        narrationController?.warmUp()
         narrationControls?.refresh(narrationController?.isPlaying == true)
         updateNarrationVisibility()
 
