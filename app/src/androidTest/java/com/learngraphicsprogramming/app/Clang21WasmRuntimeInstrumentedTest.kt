@@ -14,11 +14,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Runs the Clang 21 + LLD 21 output already generated on the device.
- *
- * This test deliberately does not compile, download, or select a toolchain.
- * It verifies only that the unchanged Wasmtime backend can execute the
- * C++23/iostream WASI module created independently via adb.
+ * Verifies the selected Clang 21 compiler through Wasmtime and also tests
+ * the previously compiled WebAssembly module created independently via adb.
  */
 @RunWith(AndroidJUnit4::class)
 class Clang21WasmRuntimeInstrumentedTest {
@@ -33,7 +30,7 @@ class Clang21WasmRuntimeInstrumentedTest {
         val source = """
             #include <iostream>
             int main() {
-                std::cout << "Clang 21 desde el selector" << '\\n';
+                std::cout << "Clang 21 desde el selector" << '\n';
             }
         """.trimIndent()
         val result = CppExecutionEngine(context).compileAndRun(
@@ -43,7 +40,7 @@ class Clang21WasmRuntimeInstrumentedTest {
         assertEquals(result.compilation.stderr, 0, result.compilation.exitCode)
         assertTrue(result.compilation.wasmFile?.isFile == true)
         assertEquals(result.execution?.stderr, 0, result.execution?.exitCode)
-        assertEquals("Clang 21 desde el selector\\n", result.execution?.stdout)
+        assertEquals("Clang 21 desde el selector\n", result.execution?.stdout)
     }
 
     @Test
