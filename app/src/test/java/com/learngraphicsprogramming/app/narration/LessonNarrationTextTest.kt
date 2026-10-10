@@ -8,6 +8,36 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LessonNarrationTextTest {
+    @Test fun firstProgrammingPageNarratesTheBodyNotOnlyTitleAndHeading() {
+        val assets = listOf(File("src/main/assets"), File("app/src/main/assets"))
+            .first { it.isDirectory }
+        val source = File(
+            assets,
+            "content/es/programming/cpp_fundamentals/intro_programming/lesson_what_is_programming.json"
+        )
+        val lesson = JSONObject(source.readText())
+        val blocks = lesson.getJSONArray("pages").getJSONObject(0).getJSONArray("blocks")
+        val paragraph = blocks.getJSONObject(1).getString("text")
+
+        val spoken = LessonNarrationText.page(lesson, 0)
+        assertTrue("Title, heading and lesson body must be narrated", spoken.size >= 3)
+        assertEquals(lesson.getString("title"), spoken.first())
+        assertEquals(blocks.getJSONObject(0).getString("text"), spoken[1])
+        assertTrue(
+            "First page must contain its actual explanation",
+            spoken.drop(2).joinToString(" ").contains("La programación consiste en describir")
+        )
+        assertTrue(
+            "Do not skip the end of the explanation",
+            spoken.drop(2).joinToString(" ").contains(paragraph.takeLast(35))
+        )
+
+        val quick = NarrationSegments.prepare(spoken, 140)
+        assertTrue("Short neural chunks must preserve the whole lesson", quick.size > 3)
+        assertTrue(quick.all { it.isNotBlank() && it.length <= 140 })
+        assertEquals(spoken.joinToString(" "), quick.joinToString(" "))
+    }
+
     @Test fun pageReadsVisibleContentInOrderAndNeverTraversesAnswerMetadata() {
         val lesson = JSONObject("""{
           "title":"Lección",
