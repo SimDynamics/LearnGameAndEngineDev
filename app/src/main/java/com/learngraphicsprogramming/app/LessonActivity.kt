@@ -52,6 +52,7 @@ import com.learngraphicsprogramming.app.math.MathKeyboardHost
 import com.learngraphicsprogramming.app.narration.LessonNarrationController
 import com.learngraphicsprogramming.app.narration.LessonNarrationControls
 import com.learngraphicsprogramming.app.narration.LessonNarrationText
+import com.learngraphicsprogramming.app.narration.NarrationUiInstructions
 import com.learngraphicsprogramming.app.narration.NarrationSettingsRepository
 import com.learngraphicsprogramming.app.math.MathTextRenderer
 import com.learngraphicsprogramming.app.math.MathDevelopmentMode
@@ -369,13 +370,20 @@ class LessonActivity : AppCompatActivity() {
     private var narrationController: LessonNarrationController? = null
     private var narrationControls: LessonNarrationControls? = null
 
+    /** Identical text for page prefetch, Play and Restart. */
+    private fun pageNarrationText(
+        language: com.learngraphicsprogramming.app.narration.NarrationLanguage
+    ): List<String> = LessonNarrationText.page(lessonJson, currentPage, language) { blockType ->
+        NarrationUiInstructions.forBlock(this, blockType)
+    }
+
     private fun prefetchVisibleNarration() {
         if (!::lessonJson.isInitialized || !NarrationSettingsRepository.get(this).enabled) return
         val language = com.learngraphicsprogramming.app.narration.NarrationLanguage.forLesson(
             lessonJson, currentPage, NarrationSettingsRepository.get(this).language
         )
         narrationController?.prefetchPage(
-            LessonNarrationText.page(lessonJson, currentPage, language),
+            pageNarrationText(language),
             language
         )
     }
@@ -393,7 +401,7 @@ class LessonActivity : AppCompatActivity() {
                     val language = com.learngraphicsprogramming.app.narration.NarrationLanguage.forLesson(
                         lessonJson, currentPage, NarrationSettingsRepository.get(this).language)
                     narrationController?.toggle(
-                        LessonNarrationText.page(lessonJson, currentPage, language),
+                        pageNarrationText(language),
                         language
                     )
                 }
@@ -406,7 +414,7 @@ class LessonActivity : AppCompatActivity() {
                     val language = com.learngraphicsprogramming.app.narration.NarrationLanguage.forLesson(
                         lessonJson, currentPage, NarrationSettingsRepository.get(this).language)
                     narrationController?.toggle(
-                        LessonNarrationText.page(lessonJson, currentPage, language),
+                        pageNarrationText(language),
                         language
                     )
                 }
