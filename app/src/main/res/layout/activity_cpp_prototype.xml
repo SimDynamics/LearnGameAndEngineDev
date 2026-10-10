@@ -1,13 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<ScrollView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#101114"
-    android:clipChildren="false"
-    android:clipToPadding="false"
-    android:fillViewport="true">
+    android:orientation="vertical">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -325,4 +331,28 @@
 
     </LinearLayout>
 
-</ScrollView>
+    </ScrollView>
+
+    <!-- Igual que LessonActivity: barra visible sólo mientras el editor
+         está enfocado y el teclado de Android está abierto. -->
+    <HorizontalScrollView
+        android:id="@+id/programmingKeyboardBar"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="#181A1F"
+        android:fillViewport="false"
+        android:overScrollMode="never"
+        android:scrollbars="none"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/programmingKeyboardBarContent"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp" />
+    </HorizontalScrollView>
+
+</LinearLayout>
