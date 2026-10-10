@@ -3,6 +3,7 @@ package com.learngraphicsprogramming.app.runtime
 import android.content.Context
 import android.util.Log
 import com.learngraphicsprogramming.app.BuildConfig
+import com.learngraphicsprogramming.app.narration.NarrationWorkPriority
 import java.io.File
 
 internal class CppExecutionEngine(context: Context) {
@@ -26,6 +27,10 @@ internal class CppExecutionEngine(context: Context) {
         standardInput: String = "",
         compilerVariant: CppCompilerVariant = CppCompilerVariant.DEFAULT
     ): CppEngineResult {
+        // Stop optional background narration before BOTH compilation and WASM
+        // execution, releasing the priority only when execution finishes.
+        val foreground = NarrationWorkPriority.beginInteractive()
+        try {
         // Recreated for each test invocation; safe if the process ends suddenly.
         checkpoint("K00 starting Clang compilation", reset = true)
         val compilation = compiler.compile(source, compilerVariant)
@@ -48,6 +53,9 @@ internal class CppExecutionEngine(context: Context) {
         )
         checkpoint("K04 $backend returned: exit=${execution.exitCode}")
         return CppEngineResult(compilation, execution)
+        } finally {
+            foreground.close()
+        }
     }
 }
 
