@@ -73,7 +73,7 @@ internal class KokoroBackgroundNarrationWorker(
                     root = modelStore.directory()
                     if (!File(root, "model.onnx").isFile) return Result.success()
                 }
-                val modelRoot = root
+                val modelRoot = requireNotNull(root)
                 val voice = KokoroVoiceCatalog.find(item.voice)
                 if (voice == null || !File(modelRoot, voice.artifact.fileName).isFile) {
                     // Another voice may be installed later; retry on the next app launch.
