@@ -233,6 +233,12 @@ class LessonActivity : AppCompatActivity() {
         false
 
     /*
+     * La salida fullscreen del compilador depende de las Views de la página.
+     * Solo se guarda mientras el editor está realmente expandido.
+     */
+    private var compilerFullscreenBackExit: (() -> Unit)? = null
+
+    /*
  * FULLSCREEN GENÉRICO DE EJERCICIOS.
  *
  * Es independiente del fullscreen
@@ -449,20 +455,32 @@ class LessonActivity : AppCompatActivity() {
         setContentView(R.layout.activity_lesson)
 
         /*
- * Programming conserva su política de Atrás.
- * Matemáticas cierra primero la tarjeta fullscreen;
- * fuera de fullscreen usa la navegación normal de Android.
- */
+         * Atrás del sistema (botón o deslizamiento desde el borde).
+         *
+         * Ambas rutas siguen la misma jerarquía:
+         * 1. Cerrar el fullscreen genérico sin destruir sus Views.
+         * 2. Salir del fullscreen del compilador usando su salida normal.
+         * 3. Fuera de fullscreen, delegar la navegación a Android.
+         *
+         * No interpretamos gestos táctiles de forma manual. Así conservamos
+         * los arrastres del editor y el swipe entre páginas de la lección.
+         */
         onBackPressedDispatcher.addCallback(
             this,
             object : OnBackPressedCallback(true) {
-
                 override fun handleOnBackPressed() {
-                    if (currentRouteId != AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) return
                     if (exerciseFullscreenActive) {
                         closeExerciseFullscreenHost()
                         return
                     }
+
+                    if (compilerFullscreenActive) {
+                        compilerFullscreenBackExit?.invoke()
+                        return
+                    }
+
+                    // Se desactiva temporalmente para no interceptar
+                    // nuestra propia delegación al sistema.
                     isEnabled = false
                     try {
                         onBackPressedDispatcher.onBackPressed()
@@ -8450,6 +8468,7 @@ class LessonActivity : AppCompatActivity() {
 
             compilerFullscreenActive =
                 false
+            compilerFullscreenBackExit = null
 
             updateNarrationVisibility()
 
@@ -8583,6 +8602,9 @@ class LessonActivity : AppCompatActivity() {
 
             } else {
 
+                // Usamos exactamente el mismo cierre para el botón
+                // fullscreen y para Atrás del sistema.
+                compilerFullscreenBackExit = { exitCompilerFullscreen() }
                 enterCompilerFullscreen()
             }
         }
