@@ -53,6 +53,7 @@ class NarrationOptionsSection(private val activity: Activity) {
     private val storageExplanation = text(s(R.string.narration_storage_explanation), 14f)
     private var storageSnapshot: NarrationStorageBudget.Snapshot? = null
     private var storageRefreshRunning = false
+    private var storageRefreshRequested = false
     private var storageDragging = false
     private val storageStepBytes = NarrationStorageBudget.MIB
     private val systemStatus = text(s(R.string.narration_checking_android), 15f)
@@ -130,22 +131,30 @@ class NarrationOptionsSection(private val activity: Activity) {
     }
 
     private fun refreshStorage() {
-        if (closed || storageRefreshRunning) return
+        if (closed) return
+        if (storageRefreshRunning) {
+            storageRefreshRequested = true
+            return
+        }
         storageRefreshRunning = true
         Thread({
             val snapshot = runCatching { NarrationStorageBudget.snapshot(activity.applicationContext) }.getOrNull()
             handler.post {
                 storageRefreshRunning = false
-                if (closed || !active || snapshot == null || storageDragging) return@post
-                storageSnapshot = snapshot
-                storageSlider.max = (snapshot.maximumBytes / storageStepBytes)
-                    .coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-                storageSlider.progress = (snapshot.effectiveBytes / storageStepBytes)
-                    .coerceAtMost(storageSlider.max.toLong()).toInt()
-                displayStorageLimit(storageSlider.progress.toLong() * storageStepBytes)
-                storageMaximum.text = s(
-                    R.string.narration_storage_maximum, formatGiB(snapshot.maximumBytes)
-                )
+                val refreshAgain = storageRefreshRequested
+                storageRefreshRequested = false
+                if (!closed && active && snapshot != null && !storageDragging) {
+                    storageSnapshot = snapshot
+                    storageSlider.max = (snapshot.maximumBytes / storageStepBytes)
+                        .coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                    storageSlider.progress = (snapshot.effectiveBytes / storageStepBytes)
+                        .coerceAtMost(storageSlider.max.toLong()).toInt()
+                    displayStorageLimit(storageSlider.progress.toLong() * storageStepBytes)
+                    storageMaximum.text = s(
+                        R.string.narration_storage_maximum, formatGiB(snapshot.maximumBytes)
+                    )
+                }
+                if (refreshAgain && !closed && active) refreshStorage()
             }
         }, "NarrationStorageSettings").start()
     }
