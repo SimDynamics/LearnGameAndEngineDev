@@ -36,6 +36,41 @@ class NarrationSegmentsTest {
     }
 
     @Test
+    fun kokoroCanStartAtEachFullSentenceWithoutDroppingWords() {
+        val source = "Un programa organiza instrucciones. " +
+            "La computadora las ejecuta una por una. " +
+            "Así termina el ejemplo."
+        val result = NarrationSegments.sentences(listOf(source))
+        assertEquals(
+            listOf(
+                "Un programa organiza instrucciones.",
+                "La computadora las ejecuta una por una.",
+                "Así termina el ejemplo."
+            ),
+            result
+        )
+        assertEquals(source, result.joinToString(" "))
+    }
+
+    @Test
+    fun sentenceBoundaryPreservesDecimalsAndAuthoredParagraphOrder() {
+        val texts = listOf(
+            "El valor 3.1415 es aproximado. Ahora continuamos.",
+            "Otro párrafo completo."
+        )
+        val sentences = NarrationSegments.sentences(texts)
+        assertEquals(
+            listOf(
+                "El valor 3.1415 es aproximado.",
+                "Ahora continuamos.",
+                "Otro párrafo completo."
+            ),
+            sentences
+        )
+        assertTrue(sentences.all { it.length <= 2_000 })
+    }
+
+    @Test
     fun decimalsStayInOneSegmentWhenTheNumberFits() {
         val input = "El valor esperado es 3.14159265 y después se redondea con cuidado."
         val segments = NarrationSegments.prepare(listOf(input), 35)
