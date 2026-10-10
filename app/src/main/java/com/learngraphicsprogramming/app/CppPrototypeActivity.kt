@@ -3,7 +3,7 @@ package com.learngraphicsprogramming.app
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.app.AlertDialog
+import androidx.appcompat.app.AlertDialog
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
