@@ -21,10 +21,16 @@ cancelar y gestionar confirmación de Google Play. No inicia descargas por sí
 mismo. También se añadió `LearnGraphicsApplication` para inicializar
 `SplitCompat` cuando el módulo dinámico está habilitado.
 
-**Pendiente:** conectar el gestor a un botón de interfaz y cargar correctamente
-las bibliotecas nativas del split instalado antes de permitir seleccionar
-Clang 21. Todavía no hay descarga accesible desde la interfaz ni una prueba
-de instalación real mediante Google Play.
+La pantalla `CppPrototypeActivity` tiene ahora un panel visible **solo
+cuando se compila con el módulo experimental habilitado**. Antes de descargar
+muestra una confirmación; después informa del progreso y permite cancelar.
+Clang 23 sigue siendo el compilador activo aunque Clang 21 se instale.
+
+**Pendiente:** validar la interfaz en un dispositivo, instalar el módulo real
+con Google Play/bundletool y resolver las bibliotecas nativas del split
+antes de permitir seleccionar Clang 21. Las instalaciones bajo demanda no
+funcionan necesariamente en un APK instalado directamente mediante ADB,
+porque no equivale a una instalación desde Play.
 
 Las compilaciones normales siguen usando Clang 23 + Wasmtime + WASI EH.
 El APK alternativo completo se conserva con `-Plgp.clang23=false`.
@@ -79,10 +85,11 @@ descargar el módulo automáticamente, ejecutar:
 .\gradlew :app:connectedDebugAndroidTest "-Plgp.playClang21Feature=true" "-Pandroid.testInstrumentationRunnerArguments.class=com.learngraphicsprogramming.app.Clang21FeatureDeliveryInstrumentedTest" --console=plain
 ```
 
-Resultado esperado: **2/2 pruebas**, incluyendo la clase
-`LearnGraphicsApplication` declarada en el manifiesto.
-Estas pruebas no llaman a `startInstall` y, por tanto, no ejercitan
-descargas reales ni la confirmación de Google Play.
+Resultado esperado: **3/3 pruebas**, incluyendo la clase
+`LearnGraphicsApplication` declarada en el manifiesto y la visibilidad
+condicional del panel de descarga. Estas pruebas **no** pulsan el botón ni
+llaman a `startInstall`; no ejercitan descargas reales ni confirmaciones
+de Google Play.
 
 Para volver al build convencional sin módulo dinámico, omitir
 `-Plgp.playClang21Feature=true`. El gestor informará `NOT_IN_BUILD` en
@@ -90,12 +97,13 @@ vez de solicitar un módulo que no existe en ese APK.
 
 ## Arquitectura pendiente de completar
 
-1. Conectar el gestor a una interfaz de usuario que solicite la descarga
-   solo tras la acción explícita del usuario.
-2. Resolver las rutas nativas reales después de instalar el split;
+1. Validar la pantalla de descarga y sus textos localizados en el teléfono.
+2. Probar un ciclo de instalación, progreso, errores y cancelación con
+   `bundletool --local-testing` y posteriormente con Google Play.
+3. Resolver las rutas nativas reales después de instalar el split;
    no asumir que viven en `applicationInfo.nativeLibraryDir` del APK base.
-3. Verificar carga de dependencias y enlace con el `wasm-ld` del módulo base.
-4. Validar con `bundletool --local-testing` y posteriormente con Google Play.
+4. Verificar carga de dependencias y enlace con el `wasm-ld` del módulo base.
+5. Añadir selección explícita de Clang 21 después de validar su ejecución.
 
 El módulo opcional **no incluye WAMR**: la aplicación base conserva Wasmtime.
 El cambio `-Plgp.clang23=false` sigue construyendo el APK anterior completo;
