@@ -520,6 +520,9 @@ val prepareWasmtimeRuntime by tasks.registering {
 
     val sdkDir = layout.buildDirectory.dir("generated/wasmtime/sdk")
     outputs.dir(sdkDir)
+    // This library is also an output: after a WAMR fallback build removes it,
+    // Gradle must rerun this task when Wasmtime is selected again.
+    outputs.file(packagedLibraryFile)
 
     doLast {
         val archiveName = "wasmtime-v49.0.2-aarch64-android-c-api.tar.xz"
