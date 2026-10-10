@@ -7,7 +7,7 @@ import android.util.Log
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
@@ -155,7 +155,7 @@ internal class KokoroBackgroundNarrationWorker(
         private const val MIN_FREE_BYTES = 1024L * 1024 * 1024
 
         private fun request() =
-            OneTimeWorkRequestBuilder<KokoroBackgroundNarrationWorker>()
+            OneTimeWorkRequest.Builder(KokoroBackgroundNarrationWorker::class.java)
                 .setConstraints(
                     Constraints.Builder().setRequiresBatteryNotLow(true).build()
                 )
