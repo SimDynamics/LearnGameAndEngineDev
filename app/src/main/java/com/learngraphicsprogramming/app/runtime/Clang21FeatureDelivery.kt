@@ -36,6 +36,7 @@ internal class Clang21FeatureDelivery(context: Context) : AutoCloseable {
         INSTALLING,
         NEEDS_CONFIRMATION,
         INSTALLED,
+        EMULATED,
         FAILED,
         CANCELING,
         CANCELED,
@@ -51,18 +52,29 @@ internal class Clang21FeatureDelivery(context: Context) : AutoCloseable {
         val message: String? = null
     )
 
+    private val applicationContext = context.applicationContext
     private val manager: SplitInstallManager =
-        SplitInstallManagerFactory.create(context.applicationContext)
+        SplitInstallManagerFactory.create(applicationContext)
 
     private var listener: SplitInstallStateUpdatedListener? = null
     private var sessionId: Int? = null
     private var awaitingConfirmation: SplitInstallSessionState? = null
 
+    // In --local-testing, Play's fake manager can report a SplitCompat-emulated
+    // feature as installed even though PackageManager has no executable split.
+    // Clang launches a subprocess: extracted app-private files cannot be exec'd
+    // on Android 10+, so delivery and executable installation must be distinct.
+    private fun isPlatformSplitInstalled(): Boolean = runCatching {
+        applicationContext.packageManager
+            .getPackageInfo(applicationContext.packageName, 0)
+            .splitNames?.contains(MODULE_NAME) == true
+    }.getOrDefault(false)
+
     fun currentState(): State = when {
         !BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED ->
             State(Phase.NOT_IN_BUILD)
-        manager.installedModules.contains(MODULE_NAME) ->
-            State(Phase.INSTALLED)
+        isPlatformSplitInstalled() -> State(Phase.INSTALLED)
+        manager.installedModules.contains(MODULE_NAME) -> State(Phase.EMULATED)
         else -> State(Phase.NOT_INSTALLED)
     }
 
@@ -110,7 +122,10 @@ internal class Clang21FeatureDelivery(context: Context) : AutoCloseable {
 
             onUpdate(
                 State(
-                    phase = phase,
+                    phase = if (phase == Phase.INSTALLED && !isPlatformSplitInstalled())
+                        Phase.EMULATED
+                    else
+                        phase,
                     downloadedBytes = update.bytesDownloaded(),
                     totalBytes = update.totalBytesToDownload(),
                     sessionId = update.sessionId(),
@@ -139,7 +154,7 @@ internal class Clang21FeatureDelivery(context: Context) : AutoCloseable {
                     sessionId = id
                     // Google Play returns zero when the module is already present.
                     if (id == 0) {
-                        onUpdate(State(Phase.INSTALLED))
+                        onUpdate(currentState())
                         stopObserving()
                     }
                 }
