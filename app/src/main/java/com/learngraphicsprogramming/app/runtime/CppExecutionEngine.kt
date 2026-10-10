@@ -21,10 +21,14 @@ internal class CppExecutionEngine(context: Context) {
         Log.i("LGP-CppEngine", message)
     }
 
-    fun compileAndRun(source: String, standardInput: String = ""): CppEngineResult {
+    fun compileAndRun(
+        source: String,
+        standardInput: String = "",
+        compilerVariant: CppCompilerVariant = CppCompilerVariant.DEFAULT
+    ): CppEngineResult {
         // Recreated for each test invocation; safe if the process ends suddenly.
         checkpoint("K00 starting Clang compilation", reset = true)
-        val compilation = compiler.compile(source)
+        val compilation = compiler.compile(source, compilerVariant)
         checkpoint(
             "K01 Clang finished: exit=${compilation.exitCode}, wasm=${compilation.wasmFile != null}"
         )
