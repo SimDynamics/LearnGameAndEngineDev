@@ -32,6 +32,24 @@ class NarrationWavWriterTest {
         } finally { assertTrue(file.delete()) }
     }
 
+    @Test fun mergesMultipleNeuralRunsIntoOneContinuousWaveform() {
+        val file = Files.createTempFile("kokoro-continuous-paragraph", ".wav").toFile()
+        try {
+            NarrationWavWriter.writeChunks(
+                file,
+                listOf(floatArrayOf(-0.5f, 0f), floatArrayOf(0.5f, 1f))
+            )
+            val bytes = file.readBytes()
+            val buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN)
+            assertEquals(44 + 4 * 2, bytes.size)
+            assertEquals(8, buffer.getInt(40))
+            assertEquals(-16_383, buffer.getShort(44).toInt())
+            assertEquals(0, buffer.getShort(46).toInt())
+            assertEquals(16_383, buffer.getShort(48).toInt())
+            assertEquals(32_767, buffer.getShort(50).toInt())
+        } finally { assertTrue(file.delete()) }
+    }
+
     @Test fun rejectsInvalidModelSamplesAndEmptyAudio() {
         val file = Files.createTempFile("narration-wave-invalid", ".wav").toFile()
         try {
