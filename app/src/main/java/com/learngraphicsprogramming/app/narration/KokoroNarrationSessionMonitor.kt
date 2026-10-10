@@ -40,7 +40,7 @@ internal object KokoroNarrationSessionMonitor {
         // MainActivity calls this inside onCreate. Registration must happen
         // NOW, before Android dispatches the first onActivityStarted callback.
         if (Looper.myLooper() == Looper.getMainLooper()) update()
-        else main.post(update)
+        else main.post { update() }
     }
 
     private fun install(app: Application) {
