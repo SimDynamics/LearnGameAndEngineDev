@@ -1,157 +1,74 @@
 # Clang 21 como módulo descargable (Play Feature Delivery)
 
-## Estado de esta etapa
+## Estado
 
-El proyecto dispone del módulo experimental Android `:clang21` con el plugin
-`com.android.dynamic-feature` y entrega `<dist:on-demand />`. **Ahora
-empaqueta las 12 bibliotecas ARM64 de FoldCode Clang 21 exclusivamente en este
-split opcional**, obtenidas durante la compilación de archivos oficiales con
-SHA-256 verificado. La aplicación **todavía no instala el módulo desde Google
-Play ni ofrece selección del compilador en la interfaz**.
+El módulo Android `:clang21` usa `com.android.dynamic-feature` y declara
+`<dist:on-demand />`. Se activa únicamente con `-Plgp.playClang21Feature=true`.
 
-La compilación Android normal permanece intacta y sigue usando Clang 23,
-LLD 23, Wasmtime y WASI SDK 34 EH. Para compilar la alternativa clásica,
-todavía puede utilizarse `-Plgp.clang23=false`.
+**Las 12 bibliotecas nativas ARM64 de FoldCode Clang 21 se preparan para
+el split opcional, no para el APK base Clang 23.** En la máquina de desarrollo,
+Gradle reutiliza o descarga los paquetes oficiales FoldCode, verifica SHA-256,
+extrae las doce bibliotecas y comprueba sus cabeceras ELF64 AArch64.
 
-El módulo se activa **solamente al compilar** con:
-`-Plgp.playClang21Feature=true`.
+**Pendiente:** confirmar que el App Bundle contiene físicamente las doce
+bibliotecas en el split. Todavía no hay descarga desde la interfaz Android
+ni selección del compilador; eso requiere Play Feature Delivery y una ruta
+segura para cargar los ejecutables tras instalar el módulo.
 
-## Verificar la inclusión del módulo
+Las compilaciones normales siguen usando Clang 23 + Wasmtime + WASI EH.
+El APK alternativo completo se conserva con `-Plgp.clang23=false`.
 
-Primero confirmar que Gradle detecta ambos proyectos:
-
-```powershell
-.\gradlew projects "-Plgp.playClang21Feature=true" --console=plain
-```
-
-La salida debería incluir `:app` y `:clang21`.
-
-Después construir el Android App Bundle de depuración:
+## Compilar el App Bundle experimental
 
 ```powershell
 .\gradlew :app:bundleDebug "-Plgp.playClang21Feature=true" --console=plain
 ```
 
-En la carpeta `app/build/outputs/bundle/debug/` debería generarse
-`app-debug.aab`. Un App Bundle es un **archivo ZIP**, pero su existencia por
-sí sola no valida que Google Play entregue e instale correctamente el módulo.
+Resultado esperado: `BUILD SUCCESSFUL` y
+`app/build/outputs/bundle/debug/app-debug.aab`.
 
-Para examinar su índice con el ejecutable `jar` del JDK:
+## Verificar la separación del compilador
 
-```powershell
-jar tf .\app\build\outputs\bundle\debug\app-debug.aab |
-    Select-String "clang21/"
-```
-
-Se esperan entradas para los dos manifiestos y **doce bibliotecas FoldCode**
-dentro de `clang21/lib/arm64-v8a/`. Para comprobarlo en PowerShell:
+El App Bundle es un archivo ZIP. Inspeccionar su índice en PowerShell:
 
 ```powershell
-$bundleEntries = jar tf ".\\app\\build\\outputs\\bundle\\debug\\app-debug.aab"
-$clang21Libraries = @($bundleEntries | Select-String '^clang21/lib/arm64-v8a/.*[.]so
-
-## Arquitectura prevista
-
-1. Mantener la aplicación base con Clang 23 y Wasmtime, ya validados.
-2. **Implementado, pendiente de verificar en AAB:** las 12 bibliotecas nativas
-   FoldCode Clang 21 ahora pertenecen al módulo opcional. No se incluye
-   WAMR, ya que Clang 21 también se ha probado con Wasmtime.
-3. Preparar el instalador `SplitInstallManager` y `SplitCompat` con el
-   módulo de nombre `clang21`. Consultar disponibilidad antes de ofrecer
-   su ejecución e informar al usuario del tamaño, progreso y errores.
-4. Resolver la ruta de las bibliotecas nativas desde el *split* instalado,
-   sin asumir que se encuentran en `applicationInfo.nativeLibraryDir` del
-   APK base. Validar carga de dependencias JNI y resolución de símbolos.
-5. Comprobar instalación, uso, cancelación y reinicio mediante
-   `bundletool --local-testing` y pruebas reales de Google Play antes de
-   publicarlo.
-
-**Importante:** `-Plgp.clang23=false` construye el *APK alternativo completo*
-para regresiones y no equivale a instalar el módulo descargable sobre la
-aplicación predeterminada. Tampoco debe mezclarse en la misma compilación
-con `-Plgp.playClang21Feature=true`.
-
-La descarga del módulo dentro de Android debe usar Google Play Feature
-Delivery, no descargas arbitrarias de ejecutables desde GitHub. Las descargas
-oficiales FoldCode realizadas por **Gradle en la máquina de desarrollo** son
-otra operación distinta. Aún falta verificar instalación y carga de las
-bibliotecas mediante los APK divididos entregados por Play/bundletool.
-
-## Fuentes oficiales
-
-- https://developer.android.com/guide/playcore/feature-delivery
-- https://developer.android.com/guide/playcore/feature-delivery/on-demand
-)
+$bundleEntries = jar tf ".\app\build\outputs\bundle\debug\app-debug.aab"
+$clang21Libraries = @($bundleEntries | Select-String '^clang21/lib/arm64-v8a/.*[.]so$')
 $clang21Libraries
 "Bibliotecas Clang 21 en el split: $($clang21Libraries.Count)"
-$bundleEntries | Select-String '^base/lib/arm64-v8a/(libfoldclang|libfoldlldcore|libLLVM)[.]so
-
-## Arquitectura prevista
-
-1. Mantener la aplicación base con Clang 23 y Wasmtime, ya validados.
-2. Mover únicamente las bibliotecas necesarias de FoldCode Clang 21 al
-   módulo opcional. **No es necesario duplicar WAMR**, porque Clang 21 ya
-   se probó con Wasmtime.
-3. Preparar el instalador `SplitInstallManager` y `SplitCompat` con el
-   módulo de nombre `clang21`. Consultar disponibilidad antes de ofrecer
-   su ejecución e informar al usuario del tamaño, progreso y errores.
-4. Resolver la ruta de las bibliotecas nativas desde el *split* instalado,
-   sin asumir que se encuentran en `applicationInfo.nativeLibraryDir` del
-   APK base. Validar carga de dependencias JNI y resolución de símbolos.
-5. Comprobar instalación, uso, cancelación y reinicio mediante
-   `bundletool --local-testing` y pruebas reales de Google Play antes de
-   publicarlo.
-
-**Importante:** `-Plgp.clang23=false` construye el *APK alternativo completo*
-para regresiones y no equivale a instalar el módulo descargable sobre la
-aplicación predeterminada. Tampoco debe mezclarse en la misma compilación
-con `-Plgp.playClang21Feature=true`.
-
-La implementación de descarga debe usar Google Play Feature Delivery,
-no descargas arbitrarias de ejecutables desde GitHub dentro de la app.
-
-## Fuentes oficiales
-
-- https://developer.android.com/guide/playcore/feature-delivery
-- https://developer.android.com/guide/playcore/feature-delivery/on-demand
-
+$bundleEntries | Select-String '^base/lib/arm64-v8a/(libfoldclang|libfoldlldcore|libLLVM)[.]so$'
 ```
 
-Se espera `12` y ninguna entrada en la última búsqueda. Esta verificación
-no presupone ausencia de `libc++_shared.so` en el módulo principal porque otras
-dependencias Android podrían requerir una biblioteca con ese nombre.
+Resultado esperado: **12** rutas bajo `clang21/lib/arm64-v8a/` y **ninguna**
+ruta en la última búsqueda del módulo `base`. Las bibliotecas son:
 
-La preparación `:clang21:prepareClang21FeatureLibraries` utiliza los mismos
-dos archivos FoldCode fijados mediante SHA-256 que la alternativa Clang 21
-probada anteriormente, extrae solo las bibliotecas ARM64 seleccionadas y
-comprueba sus encabezados ELF64 AArch64. Es una **operación de compilación**;
-no realiza descargas desde la aplicación Android.
+- `libc++_shared.so` y `libfoldclang.so` del paquete FoldCode base.
+- `libLLVM.so`, `libclang-cpp.so`, `libffi.so`, `libfoldlldcore.so`,
+  `libiconv.so`, `libicudataxxx.so`, `libicuucxxx.so`,
+  `libxml2xxx.so`, `libzstdxx.so` y `libzzz.so` del paquete C++.
 
-## Arquitectura prevista
+La biblioteca `libc++_shared.so` puede existir también en el módulo base
+como dependencia de otras bibliotecas Android; la última búsqueda no la
+utiliza para declarar independencia. Antes de distribuir, comprobar
+compatibilidad si hay versiones distintas del mismo SONAME entre splits.
 
-1. Mantener la aplicación base con Clang 23 y Wasmtime, ya validados.
-2. Mover únicamente las bibliotecas necesarias de FoldCode Clang 21 al
-   módulo opcional. **No es necesario duplicar WAMR**, porque Clang 21 ya
-   se probó con Wasmtime.
-3. Preparar el instalador `SplitInstallManager` y `SplitCompat` con el
-   módulo de nombre `clang21`. Consultar disponibilidad antes de ofrecer
-   su ejecución e informar al usuario del tamaño, progreso y errores.
-4. Resolver la ruta de las bibliotecas nativas desde el *split* instalado,
-   sin asumir que se encuentran en `applicationInfo.nativeLibraryDir` del
-   APK base. Validar carga de dependencias JNI y resolución de símbolos.
-5. Comprobar instalación, uso, cancelación y reinicio mediante
-   `bundletool --local-testing` y pruebas reales de Google Play antes de
-   publicarlo.
+## Arquitectura pendiente de completar
 
-**Importante:** `-Plgp.clang23=false` construye el *APK alternativo completo*
-para regresiones y no equivale a instalar el módulo descargable sobre la
-aplicación predeterminada. Tampoco debe mezclarse en la misma compilación
-con `-Plgp.playClang21Feature=true`.
+1. Añadir instalación bajo demanda mediante la biblioteca Play Feature
+   Delivery, con progreso, errores, cancelación y confirmación.
+2. Resolver las rutas nativas reales después de instalar el split;
+   no asumir que viven en `applicationInfo.nativeLibraryDir` del APK base.
+3. Verificar carga de dependencias y enlace con el `wasm-ld` del módulo base.
+4. Validar con `bundletool --local-testing` y posteriormente con Google Play.
 
-La implementación de descarga debe usar Google Play Feature Delivery,
-no descargas arbitrarias de ejecutables desde GitHub dentro de la app.
+El módulo opcional **no incluye WAMR**: la aplicación base conserva Wasmtime.
+El cambio `-Plgp.clang23=false` sigue construyendo el APK anterior completo;
+no equivale a descargar el módulo sobre el APK base.
 
-## Fuentes oficiales
+Durante la compilación Gradle obtiene archivos de FoldCode con hashes
+fijados, pero la app nunca descarga ejecutables de GitHub.
+
+## Documentación oficial
 
 - https://developer.android.com/guide/playcore/feature-delivery
 - https://developer.android.com/guide/playcore/feature-delivery/on-demand
