@@ -7,6 +7,7 @@ before packaging, never silently ships a partial initial voice pack.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import pathlib
 import re
@@ -24,27 +25,58 @@ LESSONS = {
 }
 
 
-def adb_read(adb: str, package: str, relative: str) -> bytes | None:
-    result = subprocess.run(
-        [adb, "exec-out", "run-as", package, "cat", relative],
-        capture_output=True,
-        check=False,
-    )
-    if result.returncode:
-        return None
-    return result.stdout
+def adb_read(adb: str, package: str, relative: str) -> tuple[bytes, int, str]:
+    """Read app-private bytes without terminal newline conversion.
+
+    Capturing stderr and the real exit status distinguishes absent files,
+    run-as errors and incomplete ADB transfers from corrupt audio.
+    """
+    try:
+        result = subprocess.run(
+            [adb, "exec-out", "run-as", package, "cat", relative],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+    except OSError as error:
+        raise RuntimeError(f"Cannot launch ADB: {error}") from error
+    return result.stdout, result.returncode, result.stderr.decode("utf-8", errors="replace").strip()
+
+
+def inspect_wav(data: bytes) -> str | None:
+    """Match the exact RIFF/PCM16/24k mono format used by Android's cache."""
+    if len(data) < 44:
+        return f"Only {len(data)} bytes received; expected at least 44"
+    if data[:4] != b"RIFF" or data[8:12] != b"WAVE":
+        excerpt = repr(data[:72])
+        return f"Not a RIFF/WAVE stream; first bytes: {excerpt}"
+    riff_length = int.from_bytes(data[4:8], "little") + 8
+    if riff_length != len(data):
+        return f"Truncated/inconsistent RIFF: expected {riff_length} bytes; got {len(data)}"
+    if data[12:16] != b"fmt " or data[36:40] != b"data":
+        return f"Unexpected WAV chunk layout (first 44 bytes: {data[:44].hex()})"
+    audio_length = int.from_bytes(data[40:44], "little")
+    if audio_length <= 0 or 44 + audio_length != len(data):
+        return f"PCM data length {audio_length}; transferred {len(data)} bytes"
+    try:
+        with wave.open(io.BytesIO(data), "rb") as source:
+            if (source.getnchannels(), source.getframerate(), source.getsampwidth()) != (1, 24000, 2):
+                return (
+                    "Unexpected audio format: channels="
+                    f"{source.getnchannels()}, rate={source.getframerate()}, "
+                    f"sample_width={source.getsampwidth()}"
+                )
+            if source.getnframes() == 0:
+                return "No PCM frames"
+    except (OSError, EOFError, wave.Error) as error:
+        return f"Python WAV decoder failed: {error}"
+    return None
 
 
 def valid_wav(path: pathlib.Path) -> bool:
     try:
-        with wave.open(str(path), "rb") as source:
-            return (
-                source.getnchannels() == 1
-                and source.getframerate() == 24000
-                and source.getsampwidth() == 2
-                and source.getnframes() > 0
-            )
-    except (OSError, EOFError, wave.Error):
+        return inspect_wav(path.read_bytes()) is None
+    except OSError:
         return False
 
 
@@ -58,12 +90,18 @@ def main() -> int:
                         default=ROOT / "app/src/main/assets/narration/prerendered")
     args = parser.parse_args()
 
-    raw = adb_read(args.adb, args.package, f"files/{MANIFEST}")
-    if not raw:
+    try:
+        raw, manifest_status, manifest_error = adb_read(
+            args.adb, args.package, f"files/{MANIFEST}"
+        )
+    except RuntimeError as error:
+        print(error, file=sys.stderr)
+        return 2
+    if manifest_status != 0 or not raw:
         print(
-            "No manifest found. Install/open the new debug APK, wait until "
-            "it finishes initializing, and try again. 'run-as' requires a "
-            "debuggable application.",
+            f"Cannot read the first-unit manifest (ADB exit {manifest_status}): "
+            f"{manifest_error or 'no data returned'}. "
+            "Open the installed debug app first; run-as requires a debug build.",
             file=sys.stderr,
         )
         return 2
@@ -88,24 +126,46 @@ def main() -> int:
 
     args.workspace.mkdir(parents=True, exist_ok=True)
     missing: list[str] = []
+    invalid: list[str] = []
     extracted = 0
+    print(
+        f"First-unit manifest: {len(entries)} unique sentences, "
+        f"voice(s): {', '.join(sorted({e['voice'] for e in entries}))}",
+        flush=True,
+    )
     for entry in entries:
         source = args.workspace / f"{entry['hash']}.wav"
         if source.is_file() and valid_wav(source):
             continue
-        data = adb_read(
+        if source.exists():
+            # This is a local export; never remove audio from the phone.
+            source.unlink()
+        data, status, stderr = adb_read(
             args.adb, args.package,
             f"files/kokoro-narration-cache/{entry['hash']}.wav",
         )
-        if not data:
-            missing.append(f"{entry['lesson']}: {entry['hash'][:12]}")
+        label = f"{entry['lesson']}: {entry['hash'][:12]}"
+        if status != 0 or not data:
+            missing.append(f"{label} (ADB {status}: {stderr or 'file absent or empty'})")
+            continue
+        reason = inspect_wav(data)
+        if reason is not None:
+            invalid.append(f"{label} ({len(data)} bytes, ADB {status}: {reason})")
             continue
         source.write_bytes(data)
-        if not valid_wav(source):
-            source.unlink(missing_ok=True)
-            print(f"Invalid WAV on device: {entry['hash']}", file=sys.stderr)
-            return 3
         extracted += 1
+
+    if invalid:
+        print(
+            f"Cannot verify {len(invalid)} exported WAV(s); {extracted} valid "
+            "new WAVs were preserved on the PC. Nothing was changed on Android.",
+            file=sys.stderr,
+        )
+        for label in invalid[:10]:
+            print(f"  INVALID {label}", file=sys.stderr)
+        if missing:
+            print(f"Also missing: {len(missing)} WAV(s)", file=sys.stderr)
+        return 3
 
     if missing:
         print(
