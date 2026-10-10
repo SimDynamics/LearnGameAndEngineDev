@@ -15,14 +15,15 @@ import java.util.UUID
  * Never caches Android TTS fallback audio under a Kokoro voice key.
  *
  * A matching pre-recorded WAV can also ship inside the APK at:
- * assets/narration/prerendered/<key>.wav
+ * assets/narration/prerendered/<key>.ogg (Opus preferred on Android 10+)
+ * or assets/narration/prerendered/<key>.wav (lossless fallback).
  * The same validation applies to bundled files and local synthesized files.
  */
 internal object KokoroNarrationCache {
     private const val VERSION = "kokoro-wav-v1"
     private const val DIRECTORY = "kokoro-narration-cache"
     private const val MAX_BYTES = 384L * 1024 * 1024
-    private val validName = Regex("^[a-f0-9]{64}\\.wav$")
+    private val validName = Regex("^[a-f0-9]{64}\\.(wav|ogg)$")
 
     fun key(language: String, voice: String, text: String): String {
         val payload = listOf(VERSION, KokoroModelManifest.revision, language, voice, text)
@@ -54,38 +55,56 @@ internal object KokoroNarrationCache {
             pcm.getInt(40).toLong() + 44L == file.length()
     }.getOrDefault(false)
 
+    private fun validatedOpus(file: File): Boolean = runCatching {
+        if (!file.isFile || file.length() !in 64L..(96L * 1024 * 1024)) return@runCatching false
+        val header = ByteArray(128)
+        val count = file.inputStream().use { it.read(header) }
+        count >= 48 &&
+            String(header, 0, 4, Charsets.US_ASCII) == "OggS" &&
+            String(header, 0, count, Charsets.ISO_8859_1).contains("OpusHead")
+    }.getOrDefault(false)
+
+    private fun validatedAudio(file: File): Boolean = when (file.extension) {
+        "wav" -> validatedWav(file)
+        "ogg" -> validatedOpus(file)
+        else -> false
+    }
+
     @Synchronized
     fun lookup(context: Context, language: String, voice: String, text: String): File? {
         val hash = key(language, voice, text)
-        val output = File(root(context), "$hash.wav")
-        if (validatedWav(output)) {
-            output.setLastModified(System.currentTimeMillis())
-            return output
+        val directory = root(context)
+        for (extension in listOf("ogg", "wav")) {
+            val cached = File(directory, "$hash.$extension")
+            if (validatedAudio(cached)) {
+                cached.setLastModified(System.currentTimeMillis())
+                return cached
+            }
+            if (cached.isFile) cached.delete()
         }
-        if (output.isFile) output.delete()
 
-        // Optional build-time pre-rendered assets. Missing assets are normal:
-        // a device can still synthesize and cache its own speech.
-        val staged = File(root(context), ".$hash-${UUID.randomUUID()}.part")
-        return try {
-            context.assets.open("narration/prerendered/$hash.wav").use { source ->
-                staged.outputStream().use { destination -> source.copyTo(destination) }
-            }
-            if (!validatedWav(staged) || !staged.renameTo(output)) {
+        // Optional build-time assets. Prefer compressed Opus to PCM WAV.
+        // The absence of pre-rendered files is normal on development builds.
+        for (extension in listOf("ogg", "wav")) {
+            val output = File(directory, "$hash.$extension")
+            val staged = File(directory, ".$hash-${UUID.randomUUID()}.$extension")
+            try {
+                context.assets.open("narration/prerendered/$hash.$extension").use { source ->
+                    staged.outputStream().use { destination -> source.copyTo(destination) }
+                }
+                if (validatedAudio(staged) && staged.renameTo(output)) {
+                    Log.i("KokoroInference", "Loaded pre-rendered $extension narration from APK")
+                    return output
+                }
+            } catch (_: FileNotFoundException) {
+                // Try the next format or fall back to the installed model.
+            } catch (error: Exception) {
+                Log.w("KokoroInference", "Pre-rendered audio unavailable", error)
+            } finally {
                 staged.delete()
-                null
-            } else {
-                Log.i("KokoroInference", "Loaded pre-rendered narration from APK")
-                output
             }
-        } catch (_: FileNotFoundException) {
-            null
-        } catch (error: Exception) {
-            Log.w("KokoroInference", "Pre-rendered audio unavailable", error)
-            null
-        } finally {
-            staged.delete()
         }
+        return null
     }
 
     @Synchronized
