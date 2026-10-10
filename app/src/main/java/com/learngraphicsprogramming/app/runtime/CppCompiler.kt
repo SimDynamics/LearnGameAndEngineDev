@@ -20,8 +20,8 @@ internal class CppCompiler(private val context: Context) {
         val sourceFile = File(workspace, "main.cpp").apply { writeText(source) }
         val wasmFile = File(workspace, "program.wasm")
         val nativeDirectory = File(context.applicationInfo.nativeLibraryDir)
-        // Experimental LLVM 23 uses its own native Clang + LLD pair.
-        // Normal builds continue to use the validated FoldCode LLVM 21 pair.
+        // Clang 23 + LLD 23 is the validated default Android toolchain.
+        // FoldCode Clang 21 remains available via -Plgp.clang23=false.
         val clang = File(
             nativeDirectory,
             if (BuildConfig.LGP_CLANG23_ENABLED) "liblgp_clang23.so"
