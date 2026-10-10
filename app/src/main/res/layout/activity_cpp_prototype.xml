@@ -202,6 +202,77 @@
             android:textIsSelectable="true"
             android:textSize="18sp" />
 
+        <!-- The optional Play module is hidden in ordinary APKs.
+             This panel never changes the active Clang 23 compiler. -->
+        <LinearLayout
+            android:id="@+id/clang21FeatureSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/clang21_feature_title"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/clang21_panel_description"
+                android:textColor="#AEB4BE"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/clang21FeatureStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:accessibilityLiveRegion="polite"
+                android:text="@string/clang21_not_installed"
+                android:textColor="#D5DBE6"
+                android:textSize="15sp" />
+
+            <ProgressBar
+                android:id="@+id/clang21FeatureProgress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:max="100"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/clang21DownloadButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/clang21_download"
+                    android:textAllCaps="false" />
+
+                <Button
+                    android:id="@+id/clang21CancelButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/clang21_cancel_download"
+                    android:textAllCaps="false"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </LinearLayout>
+
     </LinearLayout>
 
 </ScrollView>
