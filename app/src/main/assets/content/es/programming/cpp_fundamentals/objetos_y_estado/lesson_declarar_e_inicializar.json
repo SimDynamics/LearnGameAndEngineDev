@@ -1,0 +1,211 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__declarar_e_inicializar",
+  "title": "Declarar e inicializar con seguridad",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Hacer que un dato exista con un valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una declaración introduce un nombre y su tipo. En los programas pequeños de esta unidad, int filas = 5; también es una definición: crea el objeto filas y establece su valor inicial. No es sólo un anuncio de que el nombre existe. La palabra inicialización designa esa primera preparación del valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "El punto y coma termina la declaración. La declaración debe aparecer antes de usar el nombre. En C++, el compilador no busca una definición posterior para adivinar lo que una variable local debería significar en una instrucción anterior."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int filas = 5;\n    std::cout << filas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Escribe sólo el valor inicial para crear una variable que empiece con ocho turnos.",
+          "code": "#include <iostream>\n\nint main() {\n    int turnos = ___;\n    std::cout << turnos;\n    return 0;\n}\n",
+          "answers": [
+            "8"
+          ],
+          "explanation": "8 es el inicializador. La variable existe con ese valor antes de mostrarse."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "No leer una cantidad sin preparar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribir int filas; crea una variable local entera, pero no le da un valor inicial que podamos leer con seguridad. No supongas que contiene cero ni que el compilador la completará por ti. Leerla así no tiene un resultado que podamos prometer. El programa puede incluso compilar: que una herramienta acepte código no convierte esa lectura en correcta."
+        },
+        {
+          "type": "note",
+          "text": "No ejecutaremos lecturas de variables locales sin inicializar. La reparación consiste en establecer el valor antes de usarlo, no en experimentar hasta que parezca aparecer un número razonable."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Debes mostrar inicialmente cero solicitudes. ¿Qué definición prepara un valor válido para esa primera salida?",
+          "options": [
+            "int solicitudes;",
+            "int solicitudes = 0;",
+            "std::cout << solicitudes;"
+          ],
+          "correctIndex": 1,
+          "explanation": "La segunda definición da un valor inicial. La primera no permite asumir cero y la tercera no define el objeto."
+        },
+        {
+          "type": "order_code",
+          "question": "Ordena este programa para que muestre 10 usando una variable definida antes de leerla.",
+          "fragments": [
+            "    std::cout << boletos;",
+            "}\n",
+            "#include <iostream>\n\nint main() {",
+            "    return 0;",
+            "    int boletos = 10;"
+          ],
+          "correctOrder": [
+            2,
+            4,
+            0,
+            3,
+            1
+          ],
+          "explanation": "Primero se abre main, luego se define boletos, después se lee su valor y finalmente se termina la función."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Llaves para expresar una inicialización"
+        },
+        {
+          "type": "paragraph",
+          "text": "int filas{5}; y int filas = 5; crean un entero con valor 5. Las llaves tienen una protección útil: rechazan conversiones que podrían perder información. Por ejemplo, intentar int filas{5.8}; no expresa un entero exacto; el compilador debe señalar la conversión no permitida. No es una manera de redondear 5.8. Estudiaremos la diferencia entre enteros y decimales antes de decidir cómo tratar esa cantidad."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int filas{5};\n    std::cout << filas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué intención expresa int asientos{0};?",
+          "options": [
+            "Crear un entero preparado con valor cero.",
+            "Crear texto que contiene 0.",
+            "Dejar el valor para que el compilador elija."
+          ],
+          "correctIndex": 0,
+          "explanation": "El inicializador 0 está escrito explícitamente y cabe como entero."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa los dos inicializadores para comenzar con tres pisos y doce ventanas.",
+          "template": "#include <iostream>\n\nint main() {\n    int pisos{[]};\n    int ventanas{[]};\n    std::cout << pisos << \" \" << ventanas;\n    return 0;\n}\n",
+          "answers": [
+            "3",
+            "12"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Razón de la solución anterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los inicializadores son 3 y 12, en ese orden. Cada variable tiene su propia definición y su propio valor. Las llaves no conectan ambas cantidades. La salida es 3 12."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La consigna dice que un depósito comienza vacío. ¿Qué razón justifica inicializar cantidad con cero?",
+          "options": [
+            "Porque cualquier variable entera empieza automáticamente en cero.",
+            "Porque el valor inicial debe representar la situación que especifica la consigna.",
+            "Porque cero siempre es la cantidad final."
+          ],
+          "correctIndex": 1,
+          "explanation": "La inicialización debe describir el estado de partida. No garantiza el estado final de un programa que luego modifique la variable."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "La cantidad inicial es cuatro. Escribe sólo el dígito que completa la inicialización con llaves.",
+          "code": "#include <iostream>\n\nint main() {\n    int tramos{___};\n    std::cout << tramos;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "El dígito 4 establece el valor inicial; la definición completa crea tramos y termina con punto y coma."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción independiente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe un programa con dos cantidades iniciales: cajas = 4 y sobres = 9. Debe producir Cajas: 4 en la primera línea y Sobres: 9 en la segunda. Decide tú cómo escribir las definiciones y las salidas. Después cambia las cantidades a 0 y 2, respectivamente, sin reescribir el texto de salida. Comprueba las dos versiones contra los resultados previstos."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, revisa que cada nombre se haya definido y tenga un valor inicial. Si hay un error de compilación, localiza el primer diagnóstico y compara el código real con esa comprobación. No compiles un archivo distinto del que acabas de editar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar sin confundir estilo y significado"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas{4};\n    int sobres = 9;\n    std::cout << \"Cajas: \" << cajas << \"\\n\";\n    std::cout << \"Sobres: \" << sobres;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para estos enteros pequeños, las dos notaciones establecen valores seguros. Lo esencial es que ambos datos estén preparados antes de su primera lectura. Las llaves añaden protección frente a estrechamientos; no hacen más grande el rango del tipo."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Recupera tipo, valor y formato: escribe ambas líneas de salida.",
+          "code": "#include <iostream>\n\nint main() {\n    int nivel{2};\n    std::cout << \"nivel=\" << nivel << \"\\n\";\n    std::cout << \"Listo\";\n    return 0;\n}\n",
+          "answers": [
+            "nivel=2\nListo"
+          ],
+          "explanation": "La definición prepara 2; el texto nivel= y el salto provienen de literales."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El programa compiló, pero olvidaste dar valor a una variable local que luego lees. ¿Qué conclusión corresponde?",
+          "options": [
+            "Ya es seguro: el compilador eligió cero.",
+            "Compilar no demuestra que esa lectura sea correcta; hay que establecer el valor antes de leerla.",
+            "Debe bastar con añadir un comentario que diga cero."
+          ],
+          "correctIndex": 1,
+          "explanation": "El código necesita inicialización efectiva. Un comentario comunica intención, pero no modifica el objeto."
+        }
+      ]
+    }
+  ]
+}

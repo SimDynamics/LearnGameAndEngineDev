@@ -1,0 +1,201 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__condicion_cuerpo_y_progreso",
+  "title": "Repetir: condición, cuerpo y progreso",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué cambia al repetir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una decisión ejecuta una alternativa según una condición. Un bucle permite volver a comprobar una condición y repetir una acción. Si queremos preparar varios puestos, no necesitamos copiar una instrucción para cada uno: podemos describir cómo avanzar de un puesto al siguiente y cuándo terminar. El ahorro de escritura es útil, pero el cambio fundamental es que el programa coordina una secuencia de estados."
+        },
+        {
+          "type": "paragraph",
+          "text": "La forma while (condicion) { cuerpo } comprueba la condición antes de entrar en el cuerpo. Si es verdadera, ejecuta el cuerpo y vuelve a comprobarla; si es falsa, continúa después del bucle. La condición no se conserva como una decisión tomada para siempre: se evalúa de nuevo con el estado que exista en ese momento."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int puesto{2};\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 1;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera comprobación usa puesto=2. El cuerpo muestra 2: y cambia puesto a 3. Después las comprobaciones usan 3,4 y finalmente 5. Con 5 la condición es falsa y ya no se ejecuta el cuerpo. El programa llega a la salida Fin. El estado final del contador no es el último valor mostrado: la última actualización ocurrió después de mostrar 4."
+        },
+        {
+          "type": "output_prediction",
+          "id": "while_otro_inicio",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{3};\n    while (n < 6) {\n        std::cout << n << \";\";\n        n = n + 1;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "3;4;5;Fin"
+          ],
+          "explanation": "El cuerpo usa 3,4 y 5; la comprobación con 6 permite salir."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Antes del cuerpo puede no haber ninguna repetición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Mientras la condición se evalúa primero, no existe una promesa de ejecutar el cuerpo al menos una vez. Si el estado inicial ya hace falsa la condición, el bucle tiene cero iteraciones. Esto es un comportamiento definido y muchas veces necesario: una lista vacía o un trabajo ya terminado no requiere una acción ficticia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para razonar, escribe el estado anterior a la primera comprobación y evalúa la condición. No empieces imaginando una ejecución del cuerpo. Así puedes distinguir cero iteraciones, una y varias. Esas tres situaciones revelan errores que un caso largo puede ocultar."
+        },
+        {
+          "type": "output_prediction",
+          "id": "while_cero",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{7};\n    while (n < 7) {\n        std::cout << \"Trabajo\";\n        n = n + 1;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Fin"
+          ],
+          "explanation": "La primera condición 7<7 es falsa. Se omite todo el cuerpo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "while_una",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{8};\n    while (n < 9) {\n        std::cout << n << \":\";\n        n = n + 1;\n    }\n    std::cout << n;\n    return 0;\n}\n",
+          "answers": [
+            "8:9"
+          ],
+          "explanation": "Se muestra 8 una vez, se cambia a 9 y se sale."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "primer_paso_traza",
+          "question": "Antes de trazar while (saldo > 0), ¿qué necesitas conocer?",
+          "options": [
+            "El valor de saldo con el que se evalúa la primera condición.",
+            "Únicamente cuántas líneas ocupa el archivo.",
+            "El color del texto en el editor."
+          ],
+          "correctIndex": 0,
+          "explanation": "La entrada al cuerpo depende del estado, no del aspecto del código."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La actualización pertenece al procedimiento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una repetición útil necesita una relación entre el estado y el criterio de salida. En un recorrido ascendente, el contador aumenta hacia un límite; en una cuenta descendente, disminuye hacia otro. No basta añadir cualquier modificación: debe acercarnos a una situación que haga falsa la condición, o debe existir otra salida explícita que podamos justificar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes usar ++n como abreviatura de n=n+1 cuando el incremento es una instrucción independiente. Aquí no combinaremos incremento y lectura del mismo objeto en expresiones complicadas. Separar pasos mantiene visible qué valor usa cada acción. Los ejemplos del curso trabajan con valores pequeños que caben en int."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cuenta_descendente",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int quedan{4};\n    while (quedan > 1) {\n        std::cout << quedan << \" \";\n        --quedan;\n    }\n    std::cout << \"Resto=\" << quedan;\n    return 0;\n}\n",
+          "answers": [
+            "4 3 2 Resto=1"
+          ],
+          "explanation": "El cuerpo se ejecuta con 4,3,2; al llegar a 1 se cumple el criterio de salida."
+        },
+        {
+          "type": "fill_code",
+          "id": "actualizacion_unica",
+          "question": "Escribe únicamente el operador de incremento para avanzar n una unidad en cada iteración.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{0};\n    while (n < 3) {\n        std::cout << n;\n        ___n;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "++"
+          ],
+          "explanation": "++n cambia el estado antes de la siguiente comprobación."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "actualizacion_ausente",
+          "question": "Se analiza, sin ejecutarlo, while (n < 3) { std::cout << n; } con n=0 y ninguna otra modificación. ¿Qué impide justificar la salida?",
+          "options": [
+            "La condición no cambia: n sigue siendo 0.",
+            "std::cout siempre aumenta n automáticamente.",
+            "La primera salida cambia 3 por 0."
+          ],
+          "correctIndex": 0,
+          "explanation": "La salida de texto no modifica el contador. El mismo estado hace verdadera la condición una y otra vez."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Agrupar el cuerpo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llaves permiten que varias instrucciones formen el cuerpo del bucle. Sin un bloque, while controla una sola instrucción. Por ejemplo, separar visualmente una salida y una actualización no demuestra que ambas pertenezcan al cuerpo. La indentación ayuda al lector, pero la estructura de C++ queda determinada por las instrucciones y las llaves."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al revisar un bucle localiza cuatro elementos: estado inicial, comprobación, acciones del cuerpo y avance. Sigue las llaves antes de confiar en el sangrado. Un fallo de agrupación puede dejar fuera la actualización o repetir una acción que debía ocurrir una sola vez. No ejecutes una versión cuya terminación no puedas explicar; primero corrige su estructura."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "agrupar_dos_acciones",
+          "question": "Quieres mostrar n y aumentarlo en cada vuelta. ¿Qué estructura reúne ambas acciones como cuerpo?",
+          "options": [
+            "while (n<4) { std::cout<<n; ++n; }",
+            "while (n<4) std::cout<<n; ++n;",
+            "while (n<4); std::cout<<n; ++n;"
+          ],
+          "correctIndex": 0,
+          "explanation": "El bloque incluye la salida y el avance. En la segunda forma el incremento queda fuera; la tercera repite una instrucción vacía."
+        },
+        {
+          "type": "output_prediction",
+          "id": "estado_despues_del_cuerpo",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int nivel{1};\n    while (nivel < 4) {\n        ++nivel;\n        std::cout << nivel << \":\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "2:3:4:Fin"
+          ],
+          "explanation": "La actualización precede a la salida. Se comprueba 1 al principio, pero el primer valor mostrado es 2."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Experimentar con límites conocidos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice la salida del laboratorio y compruébala. Cambia sólo el valor inicial a 0 y después a 5, manteniendo el límite 5. Compara cuándo el cuerpo se omite y cuántas veces actúa. Después restaura el valor inicial a 0, cambia el avance a dos unidades y vuelve a trazar antes de ejecutar. Usa valores iniciales entre 0 y 5 y avances positivos pequeños."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int puesto{1};\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 1;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Registra el valor comprobado, el valor mostrado y el valor después de actualizar en cada vuelta. Esa traza permite localizar la causa de una diferencia; ejecutar repetidamente sin una predicción aporta menos información."
+        }
+      ]
+    }
+  ]
+}

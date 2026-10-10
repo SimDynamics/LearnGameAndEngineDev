@@ -1,0 +1,180 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__seleccionar_durante_un_recorrido",
+  "title": "Seleccionar y resumir durante un recorrido",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La decisión pertenece a cada caso"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un bucle y una decisión responden a preguntas diferentes: el bucle determina qué casos visitamos; el if determina qué hacemos con el caso actual. Para reservar los puestos pares entre 1 y 6, primero recorremos todos los números y después comprobamos si el número actual satisface la regla. El contador del recorrido avanza también cuando rechazamos un puesto."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int puesto{1}; puesto <= 6; ++puesto) {\n        if (puesto % 2 == 0) {\n            std::cout << puesto << \":\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El cuerpo del for se visita seis veces; la salida dentro del if se ejecuta tres veces. Visitar y aceptar no son la misma cantidad. El resto puesto%2 es cero cuando puesto es divisible entre 2. El divisor es la constante distinta de cero 2; los datos son enteros pequeños."
+        },
+        {
+          "type": "output_prediction",
+          "id": "filtrar_multiplos_tres",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{2}; n <= 8; ++n) {\n        if (n % 3 == 0) {\n            std::cout << n << \";\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "3;6;Fin"
+          ],
+          "explanation": "Se visitan todos los valores del 2 al 8; sólo 3 y 6 dejan resto cero al dividir entre 3."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contar aceptados y sumar sus contribuciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para contar los casos aceptados, aumenta un contador dentro de la rama de aceptación. Para sumar sus valores, añade el valor actual a otro objeto. Si necesitas ambas respuestas, mantén ambos resúmenes. El objetivo determina qué magnitud acumular; no el hecho de que todos los objetos sean int."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cantidad_y_suma_filtradas",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    int suma{0};\n    for (int n{1}; n <= 7; ++n) {\n        if (n % 2 != 0) {\n            ++cantidad;\n            suma += n;\n        }\n    }\n    std::cout << cantidad << \":\" << suma;\n    return 0;\n}\n",
+          "answers": [
+            "4:16"
+          ],
+          "explanation": "Los aceptados son 1,3,5,7: cuatro casos y suma 16."
+        },
+        {
+          "type": "output_prediction",
+          "id": "ningun_aceptado",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int n{1}; n < 4; ++n) {\n        if (n > 9) {\n            ++cantidad;\n        }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "El recorrido tiene tres iteraciones, pero ninguna satisface la selección."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "contador_en_sitio_equivocado",
+          "question": "Quieres contar únicamente puestos divisibles entre 3. Colocas ++aceptados después del if, dentro del for. ¿Qué cuenta esa ubicación?",
+          "options": [
+            "Todos los puestos visitados, aunque no cumplan la regla.",
+            "Únicamente los múltiplos de 3.",
+            "El último número divisible entre 3."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una instrucción fuera de la rama se ejecuta también cuando la condición es falsa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una salida por caso y un resumen al terminar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una salida dentro del bucle describe estados intermedios. Una salida posterior al bucle describe el resultado después de incorporar todos los casos. No muevas una instrucción sólo por su apariencia: indica primero si debe ejecutarse por caso o una sola vez al terminar. Un else puede clasificar los casos que la primera condición rechaza."
+        },
+        {
+          "type": "output_prediction",
+          "id": "clasificar_casos",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{3}; n <= 5; ++n) {\n        if (n < 5) {\n            std::cout << \"R\" << n << \";\";\n        } else {\n            std::cout << \"L\" << n << \";\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "R3;R4;L5;Fin"
+          ],
+          "explanation": "La condición se vuelve a evaluar: 3 y 4 usan la primera rama, 5 usa else."
+        },
+        {
+          "type": "output_prediction",
+          "id": "resumen_fuera",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 4; ++n) {\n        if (n >= 3) {\n            suma += n;\n        }\n    }\n    std::cout << \"Total=\" << suma;\n    return 0;\n}\n",
+          "answers": [
+            "Total=7"
+          ],
+          "explanation": "Sólo se incorporan 3 y 4. La salida posterior se ejecuta una vez."
+        },
+        {
+          "type": "fill_code",
+          "id": "condicion_de_filtro",
+          "question": "Completa el divisor positivo para aceptar únicamente múltiplos de 4. Escribe sólo el número.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int n{1}; n <= 9; ++n) {\n        if (n % ___ == 0) {\n            ++cantidad;\n        }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "La regla n%4==0 acepta 4 y 8 en ese intervalo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Progreso en todas las rutas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si usas while, revisa todas las rutas que pueden volver a comprobar la condición. Una actualización dentro del if puede dejar detenido el contador cuando la selección es falsa. Para un recorrido de todos los puestos, avanzar debe ocurrir después de la decisión completa. Un programa que se atasca con un caso rechazado no puede comprobarse haciendo sólo pruebas donde todos los casos son aceptados."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "avance_solo_aceptados",
+          "question": "Analiza sin ejecutar: n empieza en 1; while(n<=4) contiene if(n%2==0){ ++n; }. No hay otra actualización. ¿Qué ocurre con el primer caso?",
+          "options": [
+            "Es rechazado y n permanece en 1; no se avanza hacia la salida.",
+            "Se cambia a 2 porque toda condición falsa incrementa el contador.",
+            "Se salta automáticamente al final del intervalo."
+          ],
+          "correctIndex": 0,
+          "explanation": "La ruta falsa no ejecuta ++n. Es necesario justificar progreso también en las rutas rechazadas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "avance_despues_clasificar",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{1};\n    int aceptados{0};\n    while (n <= 5) {\n        if (n % 2 == 0) {\n            ++aceptados;\n        }\n        ++n;\n    }\n    std::cout << aceptados << \":\" << n;\n    return 0;\n}\n",
+          "answers": [
+            "2:6"
+          ],
+          "explanation": "Se visitan 1,2,3,4,5; se aceptan 2 y 4; todas las rutas avanzan hasta 6."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio de clasificación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa visita piezas de peso entre 1 y 6. Añade dos resúmenes: cantidad de piezas cuyo peso es al menos 4 y suma de sus pesos. Muestra ambos después del recorrido. Antes de ejecutarlo, escribe tus resultados esperados. Repite con límite final 3: tiene casos visitados y cero aceptados. Conserva el avance del recorrido fuera de la rama."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int peso{1}; peso <= 6; ++peso) {\n        if (peso >= 4) {\n            std::cout << \"Aceptada \" << peso << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ]
+}

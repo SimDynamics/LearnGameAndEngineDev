@@ -1,0 +1,136 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__limpiar_sin_cambiar_el_comportamiento",
+  "title": "Limpiar el programa conservando su comportamiento",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar una responsabilidad que ya reconoces"
+        },
+        {
+          "type": "paragraph",
+          "text": "Refactorizar es cambiar la organización interna conservando el comportamiento que acordamos. Extraer la comprobación de piezas a una función bool con nombre puede facilitar lectura y reutilización. No aproveches la extracción para cambiar la frontera, el significado del cero o la señal de error sin declararlo: eso sería también un cambio de requisito."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(3) << \":\" << estimar(11);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "piezas_validas sólo expresa el dominio. estimar conserva la responsabilidad de producir minutos o la señal -1. main decide cómo presentar. Una función útil separa una idea reconocible; no es necesario dividir cada operador en una función. Después de extraer, vuelve a comprobar fronteras y casos previos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "reglas_extraidas_conservadas",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "answers": [
+            "-1:5:23"
+          ],
+          "explanation": "La nueva organización conserva rechazo, primer pedido y frontera superior."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "refactor_o_regla_nueva",
+          "question": "Al extraer piezas_validas cambias piezas<=10 por piezas<10. ¿Qué alteraste?",
+          "options": [
+            "También el comportamiento: ahora se rechaza una frontera que antes se aceptaba.",
+            "Sólo el formato del código, sin afectar ninguna entrada.",
+            "La forma de imprimir, pero no la validez del dato."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una edición de comparación cambia el dominio, aunque se haga durante una extracción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los nombres y comentarios expresan intención"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un nombre como piezas_validas comunica una pregunta del dominio. Un comentario útil declara límites, unidades, motivo de una decisión o una restricción que el código no hace evidente. Repetir «suma dos» junto a +2 suele añadir ruido. Un comentario que promete datos de 0 a 10 mientras el código permite hasta 12 confunde al llamador: revisa ambos como parte de la interfaz."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "comentario_util",
+          "question": "La función devuelve minutos y acepta de 0 a 10 piezas. ¿Qué comentario ayuda al llamador?",
+          "options": [
+            "Devuelve minutos; -1 indica cantidad fuera de 0 a 10.",
+            "Aquí hay una llave de apertura.",
+            "Esta línea escribe la palabra return."
+          ],
+          "correctIndex": 0,
+          "explanation": "El comentario explica unidades, dominio y señal de error."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "comentario_desactualizado",
+          "question": "El comentario dice «acepta hasta 10», pero se cambió la validación a <=12. ¿Qué debes resolver?",
+          "options": [
+            "Acordar el requisito y hacer coherentes código, comentario y pruebas.",
+            "Suponer que el compilador valida la verdad del comentario.",
+            "Ocultar el comentario sin comprobar si la ampliación era intencional."
+          ],
+          "correctIndex": 0,
+          "explanation": "El comentario no se evalúa como regla del programa; puede contradecir el comportamiento."
+        },
+        {
+          "type": "fill_code",
+          "id": "frontera_preservada",
+          "question": "Extraes la comprobación de dominio. Completa sólo el operador para conservar 10 como valor aceptado.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas ___ 10;\n}\n\nint main() {\n    std::cout << piezas_validas(10);\n    return 0;\n}\n",
+          "answers": [
+            "<="
+          ],
+          "explanation": "La frontera original incluye 10. La extracción debe conservar ese caso."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una prueba de regresión conecta antes y después"
+        },
+        {
+          "type": "output_prediction",
+          "id": "version_limpiada_con_defecto",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas < 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(9) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "answers": [
+            "21:-1"
+          ],
+          "explanation": "La nueva comparación excluye 10. El caso interior pasa, pero la frontera revela el cambio no solicitado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "estrategia_de_extraccion",
+          "question": "¿Qué secuencia conserva evidencia al extraer una función?",
+          "options": [
+            "Anotar comportamiento y pruebas actuales, extraer una responsabilidad y volver a ejecutar esas pruebas.",
+            "Cambiar dominio y salida a la vez, y probar sólo la entrada que ya conoces.",
+            "Eliminar las pruebas porque el código tiene más funciones."
+          ],
+          "correctIndex": 0,
+          "explanation": "Cambios pequeños y comparaciones preservadas permiten detectar una alteración accidental."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el laboratorio extrae piezas_validas y úsala dentro de estimar. Mantén las cuatro salidas originales. Después añade pruebas para -1,1 y 11. No cambies tiempos, dominio ni señal de error en esa etapa. Cuando la extracción esté comprobada, amplía la frontera a 12 como un cambio distinto y añade pruebas 12 y 13."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\" << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ]
+}

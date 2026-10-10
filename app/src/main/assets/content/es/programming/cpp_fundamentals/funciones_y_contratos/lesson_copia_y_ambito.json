@@ -1,0 +1,188 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__copia_y_ambito",
+  "title": "Parámetros por valor y ámbito",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Por valor: un parámetro recibe una copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "En int aumentar(int total), el parámetro total es un objeto local de la llamada, inicializado con el valor del argumento. Cambiar ese parámetro cambia la copia local, sin cambiar el objeto que aportó el argumento. Una función puede devolver un resultado distinto del dato original sin modificar al llamador."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint aumentar(int total) {\n    total = total + 2;\n    return total;\n}\n\nint main() {\n    int cantidad = 4;\n    const int propuesta = aumentar(cantidad);\n    std::cout << cantidad << \" \" << propuesta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es 4 6. El argumento aportó 4; total cambió a 6 dentro de aumentar y ese valor se devolvió. cantidad no recibió una asignación. Para conservar el cambio en main se puede escribir cantidad = aumentar(cantidad);: esa asignación es una decisión visible del llamador."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice el resultado y el estado del dato original.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint ajustar(int nivel) {\n    nivel = nivel * 2;\n    return nivel - 1;\n}\n\nint main() {\n    int nivel = 3;\n    const int resultado = ajustar(nivel);\n    std::cout << resultado << \" \" << nivel;\n    return 0;\n}\n",
+          "answers": [
+            "5 3"
+          ],
+          "explanation": "El parámetro local se convierte en 6 y la función entrega 5. El nivel de main sigue siendo 3."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cada llamada tiene sus propios locales"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los parámetros y las variables locales normales de estos ejemplos se crean para cada llamada. No conservan automáticamente el estado de una llamada anterior. La función recibe de nuevo sus argumentos y ejecuta su cuerpo con sus propios locales. Dos funciones también pueden usar un parámetro llamado cantidad sin que esos objetos sean el mismo."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Los argumentos están entre 0 y 10. Sigue las dos llamadas y predice sus resultados.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint contar_pasos(int repeticiones) {\n    int cuenta = 0;\n    for (int paso = 0; paso < repeticiones; ++paso) {\n        ++cuenta;\n    }\n    return cuenta;\n}\n\nint main() {\n    const int primera = contar_pasos(3);\n    const int segunda = contar_pasos(1);\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "3 1"
+          ],
+          "explanation": "cuenta comienza en 0 en cada llamada. La segunda no continúa con el 3 de la primera."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué dato necesita contar_pasos para repetir un número distinto de veces en otra llamada?",
+          "options": [
+            "El estado oculto de la llamada anterior.",
+            "Un nuevo argumento para repeticiones.",
+            "Un nombre distinto para cada variable local."
+          ],
+          "correctIndex": 1,
+          "explanation": "La interfaz aporta el dato que determina el recorrido de esa llamada."
+        },
+        {
+          "type": "note",
+          "text": "Aquí no hay variables globales modificables ni locales persistentes. Los datos necesarios entran por parámetros y los resultados salen por return."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ámbito: dónde se puede usar un nombre"
+        },
+        {
+          "type": "paragraph",
+          "text": "El ámbito es la parte del texto en la que un nombre está disponible. Un parámetro pertenece a su función. Un nombre declarado dentro de un bloque se puede usar desde su declaración hasta el final de ese bloque, también desde sus bloques internos. Un nombre declarado dentro de un if no queda disponible fuera de ese bloque."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint preparar(int base) {\n    int salida = 0;\n    if (base > 0) {\n        const int parcial = base + 2;\n        salida = parcial;\n    }\n    return salida;\n}\n\nint main() {\n    std::cout << preparar(4);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "salida está declarada en el bloque de la función y se puede devolver al final. parcial sólo se usa dentro de la rama que lo declara. La asignación copia su valor a salida antes de terminar ese bloque. No es necesario ampliar el ámbito de parcial para devolver el resultado."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Dónde puede usarse el nombre parcial del ejemplo?",
+          "options": [
+            "En cualquier función del programa.",
+            "Dentro del bloque que lo declara, desde esa declaración.",
+            "Sólo en main."
+          ],
+          "correctIndex": 1,
+          "explanation": "Su ámbito está delimitado por el bloque del if. main no comparte los locales de preparar."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Si main y una función auxiliar tienen ambos un objeto local llamado nivel, ¿qué los distingue?",
+          "options": [
+            "Sus ámbitos; son objetos locales distintos.",
+            "Nada: siempre representan un único objeto compartido.",
+            "Sólo los comentarios."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un nombre igual en ámbitos distintos no une los objetos ni comparte su estado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: propuesta y actualización explícita"
+        },
+        {
+          "type": "paragraph",
+          "text": "estado está declarado en main con 3. La primera llamada calcula una propuesta; la segunda se usa en una asignación que actualiza estado. Predice ambas líneas antes de ejecutar. Después prueba estado inicial igual a 0 y a 8. Mantén el estado inicial entre 0 y 20. Explica en qué instrucción se cambia realmente el objeto de main."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint siguiente(int actual) {\n    const int nuevo = actual + 1;\n    return nuevo;\n}\n\nint main() {\n    int estado = 3;\n    const int propuesta = siguiente(estado);\n    std::cout << estado << \" \" << propuesta << \"\\n\";\n    estado = siguiente(estado);\n    std::cout << estado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué instrucción cambia estado en el programa inicial?",
+          "options": [
+            "La declaración del parámetro actual.",
+            "estado = siguiente(estado);",
+            "return nuevo; por sí solo modifica cualquier argumento."
+          ],
+          "correctIndex": 1,
+          "explanation": "El retorno aporta un valor; la asignación del llamador lo guarda en estado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade una segunda instrucción estado = siguiente(estado); antes de la última salida. Predice el nuevo estado final y ejecuta. Cada llamada recibe el estado que existe en ese momento, no necesariamente el de la primera llamada. Después restaura el programa inicial."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruir una función y su uso"
+        },
+        {
+          "type": "order_code",
+          "question": "Ordena el programa: inclusión y definición completa, apertura de main, dato inicial, llamada que depende del dato y salida con cierre.",
+          "fragments": [
+            "    const int fin = elevar(inicio);",
+            "#include <iostream>\n\nint elevar(int valor) {\n    return valor + 4;\n}\n\nint main() {",
+            "    std::cout << fin;\n    return 0;\n}",
+            "    const int inicio = 2;"
+          ],
+          "correctOrder": [
+            1,
+            3,
+            0,
+            2
+          ],
+          "explanation": "elevar está definido antes de la llamada. inicio debe existir antes de aportar su valor y fin antes de mostrar el resultado 6."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una función recibe un int por valor y devuelve otro int. Su llamada se ejecuta, pero el programa descarta el resultado. ¿Qué puede conservar un cambio en el objeto original?",
+          "options": [
+            "Nada por el mero paso por valor; hace falta una asignación explícita del resultado u otro mecanismo de modificación.",
+            "El mismo nombre del parámetro y del argumento.",
+            "La existencia de una instrucción return dentro de la función."
+          ],
+          "correctIndex": 0,
+          "explanation": "El paso por valor trabaja con una copia. Devolver un valor no lo asigna automáticamente al argumento."
+        },
+        {
+          "type": "note",
+          "text": "Mantén locales los nombres que sólo necesita un cálculo. Un ámbito reducido permite leer qué instrucciones pueden usar y cambiar cada dato. Las funciones libres de la unidad se definen fuera de otras funciones."
+        }
+      ]
+    }
+  ]
+}

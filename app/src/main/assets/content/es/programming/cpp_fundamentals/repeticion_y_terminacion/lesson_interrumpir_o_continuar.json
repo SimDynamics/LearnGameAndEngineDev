@@ -1,0 +1,198 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__interrumpir_o_continuar",
+  "title": "Interrumpir el recorrido o continuar con el siguiente caso",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos cambios de control diferentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "break termina el bucle más interno que lo contiene, salvo que esté dentro de un switch más interno: estudiaremos ese caso aparte. continue omite el resto del cuerpo de la iteración actual y pasa al punto desde el que el bucle prepara o comprueba la siguiente iteración. No significa terminar todo el programa. Usa cada instrucción cuando comunica una regla concreta, no para esconder un recorrido que no puedes explicar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 6; ++n) {\n        if (n == 4) {\n            break;\n        }\n        std::cout << n << \":\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al llegar a 4 se ejecuta break antes de la salida del cuerpo. Se abandona el for y se alcanza Fin. Una condición del encabezado y una salida anticipada pueden coexistir: el recorrido termina por la primera regla de salida que se alcance."
+        },
+        {
+          "type": "output_prediction",
+          "id": "corte_antes_de_mostrar",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{2}; n <= 7; ++n) {\n        if (n == 5) {\n            break;\n        }\n        std::cout << n << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "2;3;4;Fin"
+          ],
+          "explanation": "El caso 5 activa la salida antes de imprimirse."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El lugar del corte importa"
+        },
+        {
+          "type": "output_prediction",
+          "id": "corte_despues_de_mostrar",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{2}; n <= 7; ++n) {\n        std::cout << n << \";\";\n        if (n == 5) {\n            break;\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "2;3;4;5;Fin"
+          ],
+          "explanation": "El caso 5 se imprime antes de comprobar la regla de corte."
+        },
+        {
+          "type": "output_prediction",
+          "id": "corte_en_primer_caso",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{8}; n <= 10; ++n) {\n        if (n > 6) {\n            break;\n        }\n        suma += n;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "El primer cuerpo llega al corte sin incorporar ningún aporte."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "salida_posterior_al_break",
+          "question": "Un break abandona el único bucle de main. Después del bucle hay una salida de texto y return 0. ¿Qué sigue normalmente?",
+          "options": [
+            "Se ejecuta la salida posterior y después return 0.",
+            "El programa termina en el break y omite siempre todo main.",
+            "El bucle vuelve automáticamente al primer caso."
+          ],
+          "correctIndex": 0,
+          "explanation": "break transfiere el control después de la estructura que abandona."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "continue en un for"
+        },
+        {
+          "type": "paragraph",
+          "text": "En for, continue pasa a la actualización del encabezado y luego se vuelve a comprobar la condición. Así podemos rechazar un caso sin eliminar el avance del contador. La salida anterior al continue ya ocurrió; la posterior se omite. No interpretes continue como borrar la iteración completa del historial."
+        },
+        {
+          "type": "output_prediction",
+          "id": "omitir_un_caso",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        if (n == 3) {\n            continue;\n        }\n        std::cout << n << \":\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "1:2:4:5:Fin"
+          ],
+          "explanation": "Con 3 se omite la salida, pero el encabezado incrementa a 4."
+        },
+        {
+          "type": "output_prediction",
+          "id": "accion_antes_continue",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 3; ++n) {\n        std::cout << \"A\" << n;\n        if (n == 2) {\n            continue;\n        }\n        std::cout << \"B\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "A1BA2A3BFin"
+          ],
+          "explanation": "La salida A2 precede al continue; únicamente se omite B en ese caso."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contar_despues_filtro",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int n{1}; n <= 6; ++n) {\n        if (n % 2 == 0) {\n            continue;\n        }\n        ++cantidad;\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Se omiten los pares. El contador aumenta para 1,3,5."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "continue en un while"
+        },
+        {
+          "type": "paragraph",
+          "text": "En while, continue vuelve a evaluar la condición directamente. No existe un paso de actualización oculto. Si colocas tu avance al final del cuerpo, un continue anterior puede saltárselo. Examina cada camino que regresa a la condición. Una alternativa simple es efectuar el avance antes de una ruta que pueda continuar; otra es usar if para ejecutar sólo la acción aceptada y avanzar después de la decisión."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "continue_salta_avance",
+          "question": "Analiza sin ejecutar: n=1; while(n<=3){ if(n==2){continue;} ++n; }. ¿Por qué no se justifica la terminación?",
+          "options": [
+            "Al llegar a 2, continue evita ++n y se repite la comprobación con 2.",
+            "continue siempre suma una unidad incluso en while.",
+            "La condición n<=3 modifica n."
+          ],
+          "correctIndex": 0,
+          "explanation": "while no aporta un incremento implícito. La ruta de continue conserva el mismo estado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "avance_antes_continue",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{0};\n    while (n < 4) {\n        ++n;\n        if (n == 2) {\n            continue;\n        }\n        std::cout << n << \":\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "1:3:4:Fin"
+          ],
+          "explanation": "El avance ya ocurrió al llegar al continue. La siguiente condición observa ese estado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la instrucción por el objetivo"
+        },
+        {
+          "type": "fill_code",
+          "id": "rechazar_sin_terminar",
+          "question": "El recorrido debe mostrar todos los números de 1 a 5 excepto 4 y continuar después del rechazo. Completa sólo la palabra clave.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        if (n == 4) {\n            ___;\n        }\n        std::cout << n;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "continue"
+          ],
+          "explanation": "continue omite ese cuerpo restante y permite visitar 5. break impediría llegar a 5."
+        },
+        {
+          "type": "fill_code",
+          "id": "terminar_al_limite",
+          "question": "El recorrido debe detenerse por completo antes de procesar 4. Completa sólo la palabra clave.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 8; ++n) {\n        if (n == 4) {\n            ___;\n        }\n        std::cout << n;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "break"
+          ],
+          "explanation": "break abandona el recorrido antes de mostrar 4; continue seguiría con 5."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el laboratorio, primero omite el caso 3 sin terminar el recorrido. Después crea otra versión que termine antes del caso 3. Predice y compara ambas salidas. Conserva el límite pequeño; la tarea consiste en explicar el cambio de control, no en probar cuántas iteraciones soporta el dispositivo."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        std::cout << n << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ]
+}

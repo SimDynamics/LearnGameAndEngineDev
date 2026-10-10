@@ -1,0 +1,272 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__acumular_contar_y_seleccionar",
+  "title": "Acumular, contar y formar otra colección",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un resumen conserva lo ya visitado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para obtener el total, prepara suma = 0 antes del bucle. Cada visita añade su valor a suma. Después de visitar un prefijo de la colección, suma representa el total de ese prefijo. Al terminar representa el total completo. Cero es el valor inicial apropiado porque todavía no hemos añadido ningún dato."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 6, 2};\n    int suma = 0;\n    for (int valor : datos) {\n        suma += valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La suma pasa por cero, tres, nueve y once. La variable existe fuera del cuerpo para conservar el trabajo entre visitas y permitir presentar el resultado después."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El vacío y los signos también tienen significado"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, -2, 0};\n    int suma = 0;\n    for (int valor : datos) {\n        suma += valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "2"
+          ],
+          "explanation": "El signo de cada valor participa en la suma; el cero también es una visita."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    int suma = 0;\n    for (int valor : datos) {\n        suma += valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "La suma de ningún dato es cero según la definición de este resumen."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Dónde debe inicializarse la suma para conservar lo acumulado entre visitas?",
+          "options": [
+            "Antes del bucle.",
+            "Dentro de cada vuelta, justo antes de añadir.",
+            "Sólo después de imprimir."
+          ],
+          "correctIndex": 0,
+          "explanation": "Reiniciar en cada vuelta borraría el trabajo de las anteriores."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una reinicialización cambia la tarea"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 8, 3};\n    int suma = 0;\n    for (int valor : datos) {\n        suma = 0;\n        suma += valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Esta versión pierde las visitas anteriores y termina con el último valor; no calcula el total."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Repara sólo el operador de actualización para añadir cada valor a lo conservado.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{5, 2};\n    int suma = 0;\n    for (int valor : datos) {\n        suma ___ valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "+="
+          ],
+          "explanation": "+= añade el valor sin reemplazar la suma por sólo ese dato."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una salida puede ser perfectamente válida como número y describir la tarea equivocada. Contrasta siempre con una colección cuyo total sea distinto del último elemento; un solo dato no detecta esta reinicialización."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contar coincidencias no es sumar sus valores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para contar cuántos valores cumplen una condición, aumenta un contador en uno por coincidencia. Para sumar los valores que cumplen, añade ese valor. Son preguntas distintas: con {2, 5, 8}, hay dos valores pares, y su suma es diez."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 6, 4, 3};\n    int cantidad = 0;\n    int suma = 0;\n    for (int valor : datos) {\n        if (valor % 2 == 0) {\n            ++cantidad;\n            suma += valor;\n        }\n    }\n    std::cout << cantidad << \" \" << suma;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "2 10"
+          ],
+          "explanation": "Se cuentan dos coincidencias y se suman sus valores seis y cuatro."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Debes contar mediciones mayores que cinco. ¿Qué agregas al contador por cada coincidencia?",
+          "options": [
+            "Uno.",
+            "El valor de la medición.",
+            "El tamaño completo del vector."
+          ],
+          "correctIndex": 0,
+          "explanation": "El contador representa una cantidad de coincidencias, no su magnitud."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una colección de resultados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si además necesitamos conservar los valores elegidos, prepara otro vector vacío. Recorre el origen y usa push_back en el resultado cuando se cumple la condición. Leer un vector y hacer crecer otro conserva las referencias y límites del origen. Los elegidos mantienen el orden en que se encontraron."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> origen{7, 2, 9, 4};\n    std::vector<int> elegidos;\n    for (int valor : origen) {\n        if (valor > 5) {\n            elegidos.push_back(valor);\n        }\n    }\n    for (int valor : elegidos) {\n        std::cout << valor << \";\";\n    }\n    std::cout << \"Origen=\" << origen.size();\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "7;9;Origen=4"
+          ],
+          "explanation": "Se añaden dos valores al resultado; el origen conserva cuatro elementos."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa sólo el nombre de la operación que añade y la variable visitada.",
+          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> origen{1, 4};\n    std::vector<int> elegidos;\n    for (int valor : origen) {\n        if (valor > 2) {\n            elegidos.[]([]);\n        }\n    }\n    std::cout << elegidos.size();\n    return 0;\n}\n",
+          "answers": [
+            "push_back",
+            "valor"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ninguno, algunos y todos"
+        },
+        {
+          "type": "paragraph",
+          "text": "El relleno anterior añade valor mediante push_back. Si ningún elemento cumple la condición, el resultado permanece vacío; si todos cumplen, contiene tantos elementos como el origen. No inventamos un cero para representar que no hubo coincidencias: eso crearía un dato que no estaba allí."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{-1, -4};\n    int positivos = 0;\n    for (int valor : datos) {\n        if (valor > 0) {\n            ++positivos;\n        }\n    }\n    std::cout << positivos;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Ninguno cumple la condición; no se suma uno por cada visita, sólo por cada coincidencia."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Filtras valores mayores que diez y no hay ninguno. ¿Qué colección corresponde al resultado?",
+          "options": [
+            "Un vector vacío.",
+            "Un vector con un cero inventado.",
+            "Una copia completa del origen."
+          ],
+          "correctIndex": 0,
+          "explanation": "Ausencia de coincidencias significa cero elementos elegidos."
+        },
+        {
+          "type": "order_code",
+          "question": "Ordena para calcular el total de {2, 5} y mostrar 7 después de recorrer.",
+          "fragments": [
+            "    suma += valor;",
+            "    std::cout << suma;",
+            "#include <iostream>\n#include <vector>\n\nint main() {",
+            "    for (int valor : datos) {",
+            "    std::vector<int> datos{2, 5};\n    int suma = 0;",
+            "    }",
+            "    return 0;\n}"
+          ],
+          "correctOrder": [
+            2,
+            4,
+            3,
+            0,
+            5,
+            1,
+            6
+          ],
+          "explanation": "La colección y la suma se preparan antes del recorrido; la salida observa el resumen completo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción de un resumen con selección"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye el informe de {2, 7, 4, 1}: suma todos los valores y conserva en otro vector los que sean al menos cuatro. Presenta Total: 14, Elegidos: 2 y Valores:7;4; en tres líneas. Repite con {}, {4}, {1} y {6, 8}. Predice el total, el tamaño del resultado y sus valores para cada caso antes de compilar."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Usa como máximo veinte enteros entre -50 y 50, de modo que la suma permanezca pequeña. Aparte del resultado mostrado, revisa que la colección original siga teniendo los mismos datos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y recuperación de copia"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 7, 4, 1};\n    int total = 0;\n    std::vector<int> elegidos;\n    for (int valor : datos) {\n        total += valor;\n        if (valor >= 4) {\n            elegidos.push_back(valor);\n        }\n    }\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elegidos: \" << elegidos.size() << \"\\nValores:\";\n    for (int valor : elegidos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n    std::vector<int> copia = datos;\n    for (auto& valor : copia) {\n        valor += 2;\n    }\n    std::cout << datos.at(0) << \" \" << copia.at(0);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "3 5"
+          ],
+          "explanation": "Copiar el vector crea otra colección con copias de sus elementos. Modificar la copia no altera el origen."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Por qué conviene probar al menos una colección con varios valores diferentes?",
+          "options": [
+            "Porque puede revelar reinicializaciones y diferencias entre contar y sumar que un solo dato oculta.",
+            "Porque un vector vacío no existe.",
+            "Porque siempre deben existir cuatro elementos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Elegimos los casos por lo que permiten comprobar, no por una cuota."
+        }
+      ]
+    }
+  ]
+}

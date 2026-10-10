@@ -1,0 +1,194 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__combinar_condiciones",
+  "title": "Combinar condiciones con lógica",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos requisitos que deben cumplirse juntos"
+        },
+        {
+          "type": "paragraph",
+          "text": "A veces una condición depende de dos preguntas. Para aceptar una temperatura entre 15 y 25, incluidos ambos extremos, deben cumplirse temperatura >= 15 y temperatura <= 25. El operador && significa «y»: produce true sólo cuando las dos condiciones son true. Si cualquiera es false, el resultado es false."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int temperatura = 18;\n    const bool alcanza_minimo = temperatura >= 15;\n    const bool no_supera_maximo = temperatura <= 25;\n    const bool en_intervalo = alcanza_minimo && no_supera_maximo;\n    std::cout << en_intervalo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa muestra 1. También se puede escribir (temperatura >= 15) && (temperatura <= 25). Los paréntesis delimitan cada comparación. No traduzcas un intervalo matemático como 15 <= temperatura <= 25: en C++ esa escritura encadena comparaciones y la segunda recibe la respuesta bool de la primera, no una nueva comparación de temperatura con 25."
+        },
+        {
+          "type": "fill_code",
+          "question": "El contador es válido de 2 a 9, incluidos ambos. Escribe sólo el operador lógico que exige las dos comparaciones.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int contador = 6;\n    const bool valido = (contador >= 2) ___ (contador <= 9);\n    std::cout << valido;\n    return 0;\n}\n",
+          "answers": [
+            "&&"
+          ],
+          "explanation": "Para pertenecer al intervalo se debe alcanzar el mínimo y no superar el máximo a la vez."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una conjunción A && B recibe A igual a true y B igual a false. ¿Cuál es su resultado?",
+          "options": [
+            "true",
+            "false",
+            "No se puede obtener un bool."
+          ],
+          "correctIndex": 1,
+          "explanation": "La conjunción exige las dos respuestas verdaderas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Basta con que se cumpla una alternativa"
+        },
+        {
+          "type": "paragraph",
+          "text": "El operador || significa «o»: produce true cuando al menos una de las condiciones es true. Es una alternativa inclusiva: también produce true cuando ambas son true. Sólo produce false si las dos son false. Por ejemplo, un taller de dibujo permite trabajar con lápices o rotuladores; disponer de ambos también satisface ese requisito."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool trae_lapices = false;\n    const bool trae_rotuladores = true;\n    const bool tiene_material = trae_lapices || trae_rotuladores;\n    std::cout << tiene_material;\n    return 0;\n}\n"
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa las condiciones según su finalidad: ambos sólo debe ser true si se cumplen los dos requisitos; alguno debe ser true si se cumple al menos uno. Escribe sólo un operador lógico por hueco.",
+          "template": "#include <iostream>\n\nint main() {\n    const bool conoce_clave = true;\n    const bool trae_tarjeta = false;\n    const bool ambos = conoce_clave [] trae_tarjeta;\n    const bool alguno = conoce_clave [] trae_tarjeta;\n    std::cout << ambos << \" \" << alguno;\n    return 0;\n}\n",
+          "answers": [
+            "&&",
+            "||"
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Si A y B son ambos true, ¿qué produce A || B?",
+          "options": [
+            "true, porque al menos una condición es verdadera.",
+            "false, porque hay dos condiciones verdaderas.",
+            "Un número distinto de true y false."
+          ],
+          "correctIndex": 0,
+          "explanation": "|| no significa «exactamente una». La alternativa inclusiva admite que ambas se cumplan."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Negar una pregunta y agrupar una regla"
+        },
+        {
+          "type": "note",
+          "text": "En la actividad anterior, ambos es false y alguno es true. Con una respuesta true y otra false, && y || responden preguntas distintas."
+        },
+        {
+          "type": "paragraph",
+          "text": "El operador ! niega una respuesta bool: !true es false y !false es true. Si bloqueado indica un impedimento, !bloqueado indica que ese impedimento no está presente. Para negar una comparación completa, escribe !(cantidad < minimo). Los paréntesis dejan claro qué pregunta se niega."
+        },
+        {
+          "type": "paragraph",
+          "text": "En lógica, ! tiene prioridad sobre &&, y && sobre ||. Aun conociendo esa prioridad, conviene agrupar según el requisito. En (sensor_a || sensor_b) && !silenciado, cualquiera de los sensores puede pedir la señal, pero silenciado debe ser false. La agrupación hace que ese último requisito se aplique a las dos alternativas."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Este es un panel de práctica. Predice si el programa muestra 1 o 0.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool sensor_a = true;\n    const bool sensor_b = false;\n    const bool silenciado = true;\n    const bool senal = (sensor_a || sensor_b) && !silenciado;\n    std::cout << senal;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Los sensores satisfacen la alternativa, pero !silenciado es false. La conjunción completa es false."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Fuera del intervalo de 4 a 10, incluidos sus extremos, significa estar por debajo de 4 o por encima de 10. ¿Qué condición lo expresa?",
+          "options": [
+            "(valor < 4) || (valor > 10)",
+            "(valor < 4) && (valor > 10)",
+            "(valor >= 4) && (valor <= 10)"
+          ],
+          "correctIndex": 0,
+          "explanation": "Una cantidad no puede estar a ambos lados a la vez. || acepta cualquiera de las dos formas de quedar fuera."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: alternativas dentro de un requisito común"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los tres datos están declarados como bool. La regla permite entrar si la sala está abierta y se cuenta con pase o invitación. Predice el resultado inicial y ejecuta. Después cambia sólo sala_abierta a false. Restaura true y prueba sin pase ni invitación. Finalmente prueba con ambos. Explica cada resultado a partir de la regla, sin cambiarla para conseguir una salida deseada."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const bool tiene_pase = false;\n    const bool tiene_invitacion = true;\n    const bool sala_abierta = true;\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Con pase e invitación ambos true, pero sala_abierta igual a false, ¿qué exige la regla?",
+          "options": [
+            "Permitir, porque ya hay dos credenciales.",
+            "Denegar, porque la apertura es un requisito común.",
+            "Ejecutar las dos ramas."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las credenciales satisfacen la alternativa, pero la conjunción requiere además que la sala esté abierta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si omites los paréntesis y escribes tiene_pase || tiene_invitacion && sala_abierta, la prioridad agrupa sólo invitación con apertura. Con un pase true, esa expresión podría aceptar una sala cerrada. La agrupación debe responder al requisito; una compilación correcta no garantiza esa correspondencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Probar relaciones entre requisitos"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Recupera aritmética, prioridad, comparación y salida. Predice la línea completa.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 7 + 3 * 2;\n    const bool en_rango = (cantidad >= 12) && (cantidad <= 14);\n    std::cout << cantidad << \" \" << en_rango;\n    return 0;\n}\n",
+          "answers": [
+            "13 1"
+          ],
+          "explanation": "La cantidad es 13. Las dos comparaciones son true y su conjunción también."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Para observar todas las combinaciones de dos datos bool independientes, ¿qué plan es completo?",
+          "options": [
+            "Probar sólo true/true y false/false.",
+            "Probar false/false, false/true, true/false y true/true.",
+            "Probar cuatro veces true/true."
+          ],
+          "correctIndex": 1,
+          "explanation": "Cada dato puede ser true o false. Hay cuatro combinaciones distintas; repetir una no cubre otra."
+        },
+        {
+          "type": "paragraph",
+          "text": "No todas las condiciones de un problema son independientes. En un intervalo ordenado, valor < minimo y valor > maximo no pueden ser true a la vez. Elige casos a partir de los datos posibles y las reglas, además de los valores bool teóricos. Para un intervalo, conserva pruebas en ambos extremos y justo fuera de ellos."
+        },
+        {
+          "type": "note",
+          "text": "Nombra condiciones cuando eso ayude a explicar su significado. && exige ambas, || admite al menos una y ! invierte una respuesta. Los próximos ejemplos usarán además una propiedad de evaluación de && y || para proteger operaciones."
+        }
+      ]
+    }
+  ]
+}

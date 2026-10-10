@@ -1,0 +1,203 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__validez_y_cortocircuito",
+  "title": "Validez de datos y cortocircuito",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una condición puede proteger la que viene después"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los operadores && y || tienen una regla de evaluación llamada cortocircuito. && evalúa primero su operando izquierdo; si es false, el resultado ya es false y no evalúa el derecho. || también evalúa primero el izquierdo; si es true, el resultado ya es true y no evalúa el derecho. Si ese primer resultado no decide la respuesta, sí se evalúa el segundo operando."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int piezas = 19;\n    const int capacidad = 0;\n    const bool alcanza_tres = (capacidad > 0) && (piezas / capacidad >= 3);\n    std::cout << alcanza_tres;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es 0. La primera comparación es false; por eso la división no se evalúa. Con capacidad positiva, la segunda comparación sí se evalúa. La comprobación debe aparecer a la izquierda de && y la operación que depende de ella, a la derecha. Esta es una garantía concreta de esos operadores; la prioridad aritmética estudiada antes no garantiza por sí sola un orden general de evaluación."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En A && B, A resulta false. ¿Qué ocurre con B?",
+          "options": [
+            "Se evalúa siempre para mostrar su valor.",
+            "No se evalúa; el resultado completo ya es false.",
+            "Se evalúa antes que A."
+          ],
+          "correctIndex": 1,
+          "explanation": "La conjunción se decide con el primer false y omite su operando derecho."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar la precondición antes del resto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una precondición es un requisito que los datos deben cumplir antes de una operación. Para repartir una cantidad no negativa, exigiremos capacidad positiva. La condición (capacidad > 0) && (cantidad % capacidad == 0) responde si la capacidad es válida y el reparto es exacto. Si capacidad es cero o negativa, el segundo operando se omite."
+        },
+        {
+          "type": "fill_code",
+          "question": "El modelo acepta únicamente divisores positivos. Completa el operador de comparación que protege el resto; escribe sólo ese operador.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 24;\n    const int divisor = 0;\n    const bool exacto_y_valido = (divisor ___ 0) && (cantidad % divisor == 0);\n    std::cout << exacto_y_valido;\n    return 0;\n}\n",
+          "answers": [
+            ">"
+          ],
+          "explanation": "> admite sólo divisores positivos. Con divisor igual a 0, la primera condición es false y % no se evalúa."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué orden permite comprobar el divisor antes de calcular el resto?",
+          "options": [
+            "(cantidad % divisor == 0) && (divisor > 0)",
+            "(divisor > 0) && (cantidad % divisor == 0)",
+            "Ambos órdenes protegen por igual, porque && significa «y»."
+          ],
+          "correctIndex": 1,
+          "explanation": "Sólo la comprobación a la izquierda puede evitar que se evalúe el resto. El significado lógico no elimina esta dependencia de evaluación."
+        },
+        {
+          "type": "note",
+          "text": "No ejecutes una versión que haga el resto antes de comprobar un divisor igual a cero. Esa versión no ofrece una salida válida para comparar. El ejemplo correcto evita la operación, en lugar de confiar en lo que parezca suceder en un dispositivo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una alternativa puede reconocer el rechazo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con || también se puede proteger una operación. La condición (capacidad <= 0) || (cantidad % capacidad != 0) responde si la capacidad es inválida o si quedan sobrantes. Para una capacidad inválida, el primer operando ya es true y se omite el resto. Para una capacidad positiva, se comprueba la segunda pregunta."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice la salida de este detector de un reparto que requiere revisión.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 0;\n    const bool requiere_revision = (capacidad <= 0) || (cantidad % capacidad != 0);\n    std::cout << requiere_revision;\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "explanation": "La capacidad no es positiva. El primer operando es true y || omite el cálculo del resto."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En A || B, ¿cuándo hace falta evaluar B para conocer el resultado?",
+          "options": [
+            "Cuando A es false.",
+            "Cuando A es true.",
+            "Nunca."
+          ],
+          "correctIndex": 0,
+          "explanation": "Si A es false, B todavía puede hacer verdadera la alternativa. Si A es true, el resultado ya está decidido."
+        },
+        {
+          "type": "paragraph",
+          "text": "El aviso de revisión reúne dos motivos distintos. true no dice por sí solo si la capacidad era inválida o si había sobrantes. Cuando necesites mensajes diferentes, conserva las preguntas por separado y elige el recorrido que permita distinguirlas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: dividir sólo después de validar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los datos están declarados. total vale 28 y capacidad vale 4. Para los experimentos, usa total entre 0 y 120 y capacidades positivas entre 1 y 12. También prueba capacidades 0 y -1 para observar su rechazo sin hacer / ni %. Predice el caso inicial, ejecútalo y después prueba capacidad igual a 0, -1 y 6, una por vez. La primera línea informa si la capacidad es positiva y el reparto exacto; la segunda muestra los grupos completos sólo cuando la capacidad es positiva. El programa comprueba esa positividad; conservar los otros límites es parte de este experimento."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    const int capacidad = 4;\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n    std::cout << valido_y_exacto << \"\\n\";\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Al cambiar únicamente capacidad a 0, ¿qué salida corresponde al programa?",
+          "options": [
+            "0\nCapacidad invalida",
+            "0\nGrupos: 0",
+            "1\nCapacidad invalida"
+          ],
+          "correctIndex": 0,
+          "explanation": "&& omite % y produce false. El if también omite / y muestra el rechazo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con capacidad igual a 6, la capacidad es válida aunque el reparto no sea exacto: hay 4 grupos completos y 4 sobrantes. Con 0 o -1, el modelo rechaza la capacidad. Esos motivos son distintos aunque la primera línea tenga el mismo valor bool."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir pruebas para una condición protectora"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Con total igual a 28, ¿qué plan observa capacidad negativa, cero, reparto exacto y reparto con sobrantes?",
+          "options": [
+            "Capacidades -1, 0, 4 y 6.",
+            "Capacidades 4, 4, 4 y 4.",
+            "Capacidades 4 y 7."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los dos primeros valores prueban rechazo; 4 produce resto 0 y 6 produce resto 4. Cada caso responde una pregunta distinta."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Recupera el resto y una condición compuesta con datos válidos. Escribe los dos valores mostrados.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int unidades = 22;\n    const int capacidad = 5;\n    const bool valido_y_exacto = (capacidad > 0) && (unidades % capacidad == 0);\n    std::cout << valido_y_exacto << \" \" << unidades % capacidad;\n    return 0;\n}\n",
+          "answers": [
+            "0 2"
+          ],
+          "explanation": "El divisor es positivo y el resto se evalúa. El resto 2 hace falsa la pregunta sobre exactitud."
+        },
+        {
+          "type": "note",
+          "text": "Cambiar el orden de dos condiciones puede cambiar la seguridad del programa, aunque parezcan decir lo mismo con palabras. Una comprobación debe preceder a la operación que protege y decidir si ésta se evalúa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una respuesta false no explica todo el estado"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "valido_y_exacto es false para (capacidad > 0) && (total % capacidad == 0). ¿Qué puedes concluir sin conocer los datos?",
+          "options": [
+            "La capacidad es necesariamente cero.",
+            "El reparto es necesariamente válido y tiene sobrantes.",
+            "No se cumplen juntos validez y exactitud; falta distinguir el motivo."
+          ],
+          "correctIndex": 2,
+          "explanation": "Puede ser una capacidad rechazada o un reparto válido con sobrantes. La conjunción no conserva cuál de sus requisitos falló."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para explicar un resultado, vuelve a los datos y a la condición que lo produjo. Una respuesta bool comprime información: true o false es útil para elegir, pero puede reunir varios motivos. La siguiente lección organizará decisiones para producir mensajes diferentes y probar cada uno."
+        },
+        {
+          "type": "note",
+          "text": "Las garantías de cortocircuito utilizadas aquí corresponden a && y || con operandos bool. Todos los cálculos ejecutados usan cantidades pequeñas, divisores positivos y resultados representables. Los datos rechazados no llegan a / ni a %."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,244 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__modificar_con_referencias",
+  "title": "Modificar elementos mediante referencias",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Nombrar el elemento durante la visita"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para modificar el elemento visitado, la variable del recorrido debe referirse a ese elemento. for (int& valor : datos) usa una referencia: valor nombra el elemento existente durante esa vuelta, en lugar de contener una copia independiente. El signo & forma parte de la declaración y expresa esa relación; aquí no estamos definiendo punteros ni direcciones manualmente."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5};\n    for (int& valor : datos) {\n        valor += 1;\n    }\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los elementos quedan en tres y seis. Al ejecutar la actualización a través de la referencia, cambia el objeto que forma parte del vector. El tamaño no aumenta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La diferencia que debe verse después"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 7};\n    for (int valor : datos) {\n        valor *= 2;\n    }\n    for (int& valor : datos) {\n        valor += 3;\n    }\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "7 10"
+          ],
+          "explanation": "El primer recorrido sólo cambia copias; el segundo suma tres a los originales."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Para dejar cada elemento aumentado en dos, ¿qué declaración del recorrido responde a esa intención?",
+          "options": [
+            "for (int valor : datos)",
+            "for (int& valor : datos)",
+            "Ambas dejan siempre el mismo estado."
+          ],
+          "correctIndex": 1,
+          "explanation": "La referencia permite cambiar el elemento que pertenece a la colección."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el signo que conserva acceso al elemento original.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n    for (int___ valor : datos) {\n        valor = 8;\n    }\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ],
+          "explanation": "int& declara una referencia, no una copia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "auto& conserva la relación de referencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "for (auto& valor : datos) deduce el tipo del elemento y conserva explícitamente la referencia mediante &. Con este vector de enteros equivale a la visita con int&. Borrar & cambia el comportamiento aunque auto siga deduciendo int. Elegir auto no permite omitir la decisión entre copia y referencia."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 3};\n    for (auto& valor : datos) {\n        valor *= 2;\n    }\n    for (auto valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "2;6;"
+          ],
+          "explanation": "El primer recorrido modifica los elementos; el segundo lee copias para mostrarlos."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa sólo el signo para modificar las dos cadenas originales.",
+          "template": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> etiquetas{\"A\", \"B\"};\n    for (auto[] etiqueta : etiquetas) {\n        etiqueta += \"!\";\n    }\n    std::cout << etiquetas.at(0) << etiquetas.at(1);\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modificar una cadena o sólo su copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "La respuesta anterior es &: las cadenas originales pasan a A! y B!. Una referencia no requiere que el elemento sea entero; también permite operar sobre una cadena. Si se desea sólo crear una versión de presentación, se puede modificar una copia y conservar los datos originales."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> nombres{\"Luz\", \"Sol\"};\n    for (auto nombre : nombres) {\n        nombre += \"?\";\n        std::cout << nombre << \" \";\n    }\n    std::cout << nombres.at(0);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "Luz? Sol? Luz"
+          ],
+          "explanation": "Las versiones con ? son copias de presentación; Luz sigue en el vector."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Debes añadir \"-activo\" permanentemente a cada etiqueta. ¿Qué recorrido usarías?",
+          "options": [
+            "auto& etiqueta para actualizar los originales.",
+            "auto etiqueta y confiar en que el nombre mantiene un enlace.",
+            "Leer size() sin visitar elementos."
+          ],
+          "correctIndex": 0,
+          "explanation": "La elección debe reflejar si el resultado queda almacenado o sólo se presenta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer mediante una referencia constante"
+        },
+        {
+          "type": "paragraph",
+          "text": "for (const auto& texto : etiquetas) lee mediante una referencia que no permite modificar el elemento a través de texto. const expresa esa intención de sólo lectura; & evita crear la copia de cada cadena. Lo usamos cuando sólo queremos observar, especialmente con objetos que podrían requerir más trabajo al copiar. No garantiza que ningún otro código pueda modificar el vector."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> etiquetas{\"Norte\", \"Sur\"};\n    for (const auto& texto : etiquetas) {\n        std::cout << texto << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En for (const auto& texto : etiquetas), ¿qué intención expresa la declaración?",
+          "options": [
+            "Leer el elemento a través de una referencia sin modificarlo por texto.",
+            "Crear siempre una copia modificable.",
+            "Aumentar el número de elementos."
+          ],
+          "correctIndex": 0,
+          "explanation": "const y & expresan decisiones diferentes: permiso de modificación y relación con el elemento."
+        },
+        {
+          "type": "note",
+          "text": "En esta unidad no añadimos ni quitamos elementos del vector que estamos recorriendo por rango. Un crecimiento puede invalidar la referencia al elemento y las posiciones internas del recorrido. Si necesitas una colección nueva, construye otro vector; estudiaremos después los detalles de validez."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Aplicar una transformación selectiva"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0, 2, 5};\n    for (auto& valor : datos) {\n        if (valor < 3) {\n            valor += 4;\n        }\n    }\n    for (int valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "4;6;5;"
+          ],
+          "explanation": "Se decide con cada valor anterior y se cambia sólo ese elemento cuando cumple la condición."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Se ejecuta un recorrido por referencia sobre un vector vacío. ¿Qué sucede?",
+          "options": [
+            "No se crea ninguna visita y la colección permanece vacía.",
+            "Se crea automáticamente un elemento.",
+            "Hay que leer el índice cero para terminar."
+          ],
+          "correctIndex": 0,
+          "explanation": "Las referencias se vinculan sólo cuando existen elementos que visitar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción y contraste de estados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un programa con {2, 6, 1}. Aumenta en tres los elementos menores que cuatro y presenta la colección al terminar: 5;6;4;. Repite con {}, {4} y {0}; deben resultar respectivamente ningún valor, 4; y 3;. Compara después el mismo programa borrando sólo & en el primer recorrido: explica qué cambios dejan de almacenarse."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice tanto la salida final como el estado del vector. Un mensaje correcto dentro del bucle no demuestra que los datos originales hayan cambiado; hay que observarlos después de la transformación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y una recuperación espaciada"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 6, 1};\n    for (auto& valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n    int copia = datos.at(0);\n    for (auto& valor : datos) {\n        ++valor;\n    }\n    std::cout << copia << \" \" << datos.at(0);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "3 4"
+          ],
+          "explanation": "La copia anterior sigue independiente, aunque el elemento se modifique mediante una referencia."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué evidencia distingue la transformación por referencia de una transformación de copias?",
+          "options": [
+            "Leer la colección después del recorrido y comparar sus elementos con los de partida.",
+            "Contar cuántas veces compilaste.",
+            "Cambiar el nombre de valor por original."
+          ],
+          "correctIndex": 0,
+          "explanation": "La relación se expresa en la declaración efectiva, no en el nombre ni en la cantidad de intentos."
+        }
+      ]
+    }
+  ]
+}

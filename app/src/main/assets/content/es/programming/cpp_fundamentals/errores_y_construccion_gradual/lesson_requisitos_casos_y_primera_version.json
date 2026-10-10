@@ -1,0 +1,157 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__requisitos_casos_y_primera_version",
+  "title": "Precisar requisitos y construir una primera versión",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una función necesita una pregunta concreta"
+        },
+        {
+          "type": "paragraph",
+          "text": "El encargo «calcula cuánto tarda un pedido» deja decisiones pendientes. ¿Cuántas piezas puede tener? ¿Qué unidad usa el resultado? ¿Hay preparación inicial? ¿Se acepta un pedido vacío? Si decides esas reglas mientras corriges código, puedes cambiar lo que significaba resolver el problema sin advertirlo. Escribe un requisito que permita a otra persona distinguir un resultado correcto de uno incorrecto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nuestro microtaller estima minutos: acepta entre 0 y 10 piezas. Un pedido vacío tarda 0 minutos; un pedido no vacío necesita 3 minutos de preparación y 2 por pieza. La estimación no modifica pedidos ni muestra mensajes. Los datos se fijan en el código en estos laboratorios; no son entrada interactiva. Más adelante separaremos también lectura y procesamiento de datos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "requisito_observable",
+          "question": "¿Qué frase define un comportamiento comprobable para un pedido de 4 piezas?",
+          "options": [
+            "El programa debe parecer moderno.",
+            "El cálculo devuelve 11 minutos y no cambia el pedido.",
+            "El programa debe usar tantas funciones como sea posible."
+          ],
+          "correctIndex": 1,
+          "explanation": "El resultado 3+2*4 y la ausencia de modificación forman una promesa concreta."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "pregunta_pendiente",
+          "question": "El requisito dice «aceptar pedidos pequeños», sin definir pequeño. ¿Qué debes precisar antes de comprobar la aceptación?",
+          "options": [
+            "Una frontera numérica y qué ocurre exactamente en esa frontera.",
+            "Sólo la longitud del nombre de la función.",
+            "El orden alfabético de las cabeceras."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una categoría vaga no permite escoger pruebas ni evaluar un resultado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Casos manuales que preceden al programa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Calcula antes los resultados para 0,1,4 y 10 piezas. El cero activa una regla distinta: no hay preparación. Uno comprueba el primer pedido real. Cuatro comprueba un caso normal. Diez comprueba la frontera superior. La operación 3+2*piezas es segura en este dominio pequeño; no estamos ofreciendo una función para multiplicar cualquier int."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_vacio_estimacion",
+          "question": "Según el requisito, ¿cuántos minutos requiere un pedido vacío?",
+          "options": [
+            "3, porque siempre se suma la preparación.",
+            "0, porque el requisito excluye preparación en el caso vacío.",
+            "2, porque el cero cuenta como una pieza."
+          ],
+          "correctIndex": 1,
+          "explanation": "El caso vacío tiene una regla explícita y debe probarse por separado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_frontera_estimacion",
+          "question": "El pedido tiene 10 piezas, la frontera aceptada. ¿Cuál es el resultado?",
+          "options": [
+            "20 minutos.",
+            "13 minutos.",
+            "23 minutos."
+          ],
+          "correctIndex": 2,
+          "explanation": "Hay preparación de 3 minutos y 20 minutos por las piezas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una primera versión puede suponer datos válidos si lo declara claramente y si las llamadas del prototipo respetan esa restricción. No confundas un prototipo limitado con una versión terminada. Construimos primero la regla válida y después añadimos validación y una política de error explícitas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prototipo pequeño que ya hace algo comprobable"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Precondicion del prototipo: 0 <= piezas <= 10.\nint estimar(int piezas) {\n    if (piezas == 0) {\n        return 0;\n    }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(4);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función tiene una sola responsabilidad: estimar para datos de su dominio. main usa dos llamadas y presenta resultados. Esta separación permite probar el cálculo sin copiar su regla dentro de cada salida. La siguiente actividad cambia las entradas: predice usando el requisito, no ejecutando primero."
+        },
+        {
+          "type": "output_prediction",
+          "id": "prototipo_otros_pedidos",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(1) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "answers": [
+            "5:23"
+          ],
+          "explanation": "El primer pedido real requiere 3+2=5; la frontera requiere 3+20=23."
+        },
+        {
+          "type": "fill_code",
+          "id": "conservar_preparacion",
+          "question": "Completa sólo los minutos de preparación para pedidos no vacíos, según el requisito.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) { return 0; }\n    return ___ + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(3);\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "La preparación es 3; la contribución por pieza se conserva como 2*piezas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una ampliación cambia una promesa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora se propone permitir hasta 12 piezas manteniendo los mismos tiempos. La ampliación afecta al dominio y a sus pruebas; no obliga a cambiar la fórmula de los pedidos no vacíos. Otra propuesta, cobrar preparación también por el pedido vacío, sí cambia una salida que antes era correcta. Escribe cuál de las promesas cambia antes de editar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cambio_de_dominio",
+          "question": "Si el único cambio es aceptar hasta 12 piezas, ¿qué par de pruebas nuevas distingue frontera y primer rechazo?",
+          "options": [
+            "12 aceptado y 13 rechazado.",
+            "0 y 1 aceptados.",
+            "4 aceptado, repetido dos veces."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los casos previos siguen siendo útiles, pero no comprueban la frontera ampliada."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el laboratorio reconstruye estimar para el requisito original, sin consultar el prototipo. main debe mostrar los casos 0,2,7 y 10. Comprueba sus resultados manuales. Después cambia sólo la preparación a 4 para pedidos no vacíos: predice qué resultados cambian y cuál se conserva. Mantén las llamadas dentro de 0 a 10; la validación de datos se desarrolla más adelante en esta unidad."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int piezas{7};\n    std::cout << \"Pedido de \" << piezas << \" piezas\\n\";\n    std::cout << \"Estimacion pendiente\";\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ]
+}

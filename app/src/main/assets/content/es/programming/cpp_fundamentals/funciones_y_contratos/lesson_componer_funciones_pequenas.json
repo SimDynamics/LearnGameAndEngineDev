@@ -1,0 +1,198 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__componer_funciones_pequenas",
+  "title": "Componer funciones pequeñas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar el cálculo de su presentación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función que devuelve un cálculo puede usarse para mostrarlo, compararlo o alimentar otro cálculo. Si imprime mientras calcula, su uso obliga también a aceptar ese formato de salida. Separar responsabilidades hace visible qué datos entran, qué resultado se obtiene y dónde se decide el mensaje."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint faltantes(int necesarias, int disponibles) {\n    if (necesarias <= disponibles) {\n        return 0;\n    }\n    return necesarias - disponibles;\n}\n\nvoid mostrar_faltantes(int cantidad) {\n    std::cout << \"Faltan: \" << cantidad;\n}\n\nint main() {\n    const int resultado = faltantes(7, 3);\n    mostrar_faltantes(resultado);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "faltantes calcula con cantidades entre 0 y 20; mostrar_faltantes presenta el resultado. La salida es Faltan: 4. Un cambio de texto se puede concentrar en la función de presentación sin cambiar la regla del cálculo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quieres comprobar faltantes con 5 necesarias y 8 disponibles sin exigir un formato de texto. ¿Qué resultado debes contrastar?",
+          "options": [
+            "El valor devuelto, que debe ser 0.",
+            "La cantidad de letras del nombre de la función.",
+            "La presencia de cout dentro de faltantes."
+          ],
+          "correctIndex": 0,
+          "explanation": "La promesa del cálculo es una cantidad, no un mensaje concreto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una función puede llamar a otra"
+        },
+        {
+          "type": "paragraph",
+          "text": "Componer funciones significa usar resultados de unas en el trabajo de otras. Cada llamada debe cumplir su contrato. En este ejemplo, con_reserva suma 2 a una cantidad de 0 a 20. posiciones usa ese resultado para calcular tres posiciones por unidad. Los valores intermedios, hasta 22 y 66, siguen siendo representables."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Sigue la llamada interior antes de completar el resultado exterior.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint con_reserva(int cantidad) {\n    return cantidad + 2;\n}\n\nint posiciones(int cantidad) {\n    const int preparadas = con_reserva(cantidad);\n    return preparadas * 3;\n}\n\nint main() {\n    std::cout << posiciones(4);\n    return 0;\n}\n",
+          "answers": [
+            "18"
+          ],
+          "explanation": "con_reserva(4) entrega 6. posiciones multiplica ese resultado por 3."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué debe revisarse si una función llama a otra con un resultado intermedio?",
+          "options": [
+            "Que ese resultado esté dentro del dominio exigido por la función llamada.",
+            "Sólo que ambas funciones tengan nombres distintos.",
+            "Que las dos impriman el mismo mensaje."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un contrato también importa entre funciones auxiliares, no sólo en las llamadas realizadas desde main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reutilizar una inspección de colección"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los recorridos conocidos pueden convertirse en cálculos con nombre. Una función bool puede utilizar el total devuelto por otra para responder una pregunta. El siguiente ejercicio trabaja con hasta 8 elementos de 0 a 20 y un mínimo de 0 a 160. Completa la composición según el requisito, incluida la igualdad."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "cumple_minimo debe usar la función de suma definida y responder true si el total alcanza el mínimo. Completa el nombre de la función y el operador de comparación; escribe sólo esos elementos.",
+          "template": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nbool cumple_minimo(const std::vector<int>& datos, int minimo) {\n    return [](datos) [] minimo;\n}\n\nint main() {\n    const std::vector<int> datos = {3, 2};\n    std::cout << cumple_minimo(datos, 5);\n    return 0;\n}\n",
+          "answers": [
+            "sumar",
+            ">="
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La función de inspección recibe const std::vector<int>&. ¿Qué conserva main después de la llamada?",
+          "options": [
+            "El vector original con los mismos elementos.",
+            "Un vector vacío, porque sumar consume los elementos.",
+            "Un resultado sin relación con los datos."
+          ],
+          "correctIndex": 0,
+          "explanation": "El recorrido lee valores y acumula en un objeto local; no modifica la colección a través de la referencia const."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Proyecto: planificar contenedores para un lote"
+        },
+        {
+          "type": "note",
+          "text": "La composición anterior usa sumar y >=. Con total 5 y mínimo 5, la igualdad se acepta y la respuesta es true."
+        },
+        {
+          "type": "paragraph",
+          "text": "El lote y la capacidad están declarados. El contrato permite hasta 6 pedidos, cada uno entre 0 y 20, y una capacidad de 1 a 10. Primero se valida; después se suman las unidades, se calculan contenedores suficientes y se presenta el plan. Una cantidad sobrante requiere un contenedor adicional. El lote vacío es válido y necesita cero contenedores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice el plan inicial para {3, 4, 5} con capacidad 5 y ejecuta. Después prueba {}, {5}, {5, 5} y {6}. Cambia una colección por vez y conserva capacidad 5. Por último prueba capacidad 0 y un pedido negativo para confirmar que no se llega a los cálculos. Cada función representa una responsabilidad que puedes explicar por separado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    const std::vector<int> pedidos = {3, 4, 5};\n    const int capacidad = 5;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Con el lote vacío y capacidad 5, ¿qué plan corresponde al contrato?",
+          "options": [
+            "Unidades: 0\nContenedores: 0",
+            "Datos fuera del dominio",
+            "Unidades: 0\nContenedores: 1"
+          ],
+          "correctIndex": 0,
+          "explanation": "La colección vacía cumple los límites. Su suma es 0 y no deja sobrantes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar un cálculo sin repetir todo el proyecto"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Sólo se prueba el cálculo de contenedores, con datos que cumplen su contrato. Predice el resultado.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nint main() {\n    std::cout << contenedores_necesarios(25, 4);\n    return 0;\n}\n",
+          "answers": [
+            "7"
+          ],
+          "explanation": "Seis contenedores completos guardan 24 unidades y hace falta uno adicional para la restante."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué casos distinguen el cálculo con resto del reparto exacto y del total cero, usando capacidad 4?",
+          "options": [
+            "Totales 0, 8 y 9.",
+            "Totales 8, 8 y 8.",
+            "Sólo total 25."
+          ],
+          "correctIndex": 0,
+          "explanation": "0 comprueba ausencia de contenedores, 8 reparto exacto y 9 el contenedor adicional."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para el proyecto, total_unidades requiere el lote validado; contenedores_necesarios requiere total entre 0 y 120 y capacidad entre 1 y 10. La validación del lote garantiza el límite de la suma. Mantener estas relaciones permite razonar sobre el plan sin ocultar supuestos en los cálculos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar responsabilidades y permisos"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué reparto de responsabilidades permite cambiar el formato sin alterar la suma ni el número de contenedores?",
+          "options": [
+            "Validar datos, calcular valores y pasar esos valores a una función de presentación.",
+            "Imprimir cada elemento dentro de todas las funciones y mezclar los mensajes con la suma.",
+            "Hacer que cada función cambie el vector aunque sólo necesite leerlo."
+          ],
+          "correctIndex": 0,
+          "explanation": "Las funciones de cálculo devuelven datos. La función de presentación decide cómo mostrarlos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función pequeña no se define por un número fijo de líneas. Tiene una responsabilidad que se puede nombrar, datos necesarios visibles y un resultado o cambio claro. Si necesitas muchas explicaciones distintas para describir lo que hace, busca cálculos o acciones que puedan separarse y probarse."
+        },
+        {
+          "type": "note",
+          "text": "El proyecto reúne colecciones, recorridos, condiciones, contratos y llamadas. Sus programas siguen siendo de un solo archivo; la separación en archivos, las clases y otros mecanismos de organización se estudiarán después."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,242 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__buscar_y_representar_ausencia",
+  "title": "Buscar y representar que no se encontró",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una búsqueda necesita una respuesta negativa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Buscar un valor puede terminar con una coincidencia o sin ninguna. El programa debe representar ambos resultados. Para preguntar sólo si existe, prepara bool encontrado = false; y cambia a true cuando una visita coincide. Si no hubo coincidencia, false conserva un significado válido; no necesitamos acceder a una posición inventada."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{5, 2, 8};\n    int objetivo = 2;\n    bool encontrado = false;\n    for (int valor : datos) {\n        if (valor == objetivo) {\n            encontrado = true;\n        }\n    }\n    if (encontrado) {\n        std::cout << \"Encontrado\";\n    } else {\n        std::cout << \"No encontrado\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "encontrado describe si alguna visita anterior coincidió. Una visita posterior distinta no debe devolverlo a false y borrar una coincidencia que ya existió."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar la evidencia de una coincidencia"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 1, 9};\n    bool encontrado = false;\n    for (int valor : datos) {\n        if (valor == 4) {\n            encontrado = true;\n        }\n    }\n    std::cout << encontrado;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "1"
+          ],
+          "explanation": "Encontrar cuatro al comienzo sigue siendo evidencia válida tras visitar otros valores."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    bool encontrado = false;\n    for (int valor : datos) {\n        if (valor == 0) {\n            encontrado = true;\n        }\n    }\n    std::cout << encontrado;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "El vector vacío no contiene un cero; ninguna visita cambia el estado."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un programa asigna encontrado = (valor == objetivo) en cada vuelta. ¿Qué pregunta responderá al final?",
+          "options": [
+            "Si alguna visita coincidió, siempre.",
+            "Si el último valor visitado coincidió, borrando posibles coincidencias anteriores.",
+            "Cuántos elementos tiene el vector."
+          ],
+          "correctIndex": 1,
+          "explanation": "Reemplazar la bandera en cada visita pierde evidencia anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Si necesitamos la primera posición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para saber dónde apareció el objetivo, conservamos un índice. Inicializamos posicion = datos.size() como marca de no encontrado: ese número no es un índice válido. Un recorrido desde cero reemplaza esa marca al encontrar la primera coincidencia y puede detenerse. Sólo usamos posicion para acceder cuando sabemos que es menor que size()."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{6, 3, 6};\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == 6) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << \"Indice: \" << posicion;\n    } else {\n        std::cout << \"No encontrado\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La segunda parte de la condición mantiene las visitas mientras no exista coincidencia. El orden desde cero y la detención hacen que el índice conservado sea el primero. La marca igual al tamaño nunca se usa como subíndice."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Repetidos y primera coincidencia"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{2, 7, 7, 1};\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == 7) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << posicion << \":\" << datos.at(posicion);\n    } else {\n        std::cout << \"Ausente\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "1:7"
+          ],
+          "explanation": "La primera coincidencia está en uno y el recorrido ya no busca otra."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Si no hubiera una condición para detenerse y cada coincidencia reemplazara posicion, ¿qué índice quedaría?",
+          "options": [
+            "El de la primera coincidencia.",
+            "El de la última coincidencia.",
+            "Siempre cero."
+          ],
+          "correctIndex": 1,
+          "explanation": "El resultado depende de qué actualizaciones permites después de encontrar."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre de la operación usada como marca de ausencia.",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{1, 3};\n    std::size_t posicion = datos.___();\n    std::cout << posicion;\n    return 0;\n}\n",
+          "answers": [
+            "size"
+          ],
+          "explanation": "El tamaño está fuera del dominio y se puede reservar como marca sin usarlo para acceder."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La ausencia exige una rama propia"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{1, 4};\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == 9) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << datos.at(posicion);\n    } else {\n        std::cout << \"No encontrado\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "No encontrado"
+          ],
+          "explanation": "Ninguna visita cambia la marca; la rama evita acceder al índice dos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Por qué no usamos -1 como un índice std::size_t de ausencia?",
+          "options": [
+            "Porque el tipo sin signo no representa -1 y ese valor no serviría como acceso válido.",
+            "Porque no existe la resta en C++.",
+            "Porque todos los vectores contienen uno."
+          ],
+          "correctIndex": 0,
+          "explanation": "La marca elegida debe tener un significado explícito y comprobarse antes de acceder."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una posición cero encontrada es distinta de false. No uses if (posicion) para decidir si existe: el primer índice válido vale cero. La condición posicion < size() expresa la existencia que necesitamos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Buscar texto con la misma estructura"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> zonas{\"Patio\", \"Norte\", \"Sur\"};\n    bool existe = false;\n    for (const auto& zona : zonas) {\n        if (zona == \"Norte\") {\n            existe = true;\n        }\n    }\n    std::cout << existe;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "1"
+          ],
+          "explanation": "La comparación decide si una cadena coincide con la etiqueta buscada."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Buscas \"sur\" en una colección que sólo contiene \"Sur\". ¿Coinciden estas cadenas en la comparación exacta utilizada?",
+          "options": [
+            "Sí, las mayúsculas siempre se ignoran.",
+            "No, son secuencias de caracteres diferentes.",
+            "Sólo si se cambia el tipo a int."
+          ],
+          "correctIndex": 1,
+          "explanation": "La búsqueda debe usar las reglas de igualdad que requiere la tarea; aquí distingue mayúsculas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción con resultados comprobables"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye una búsqueda de la primera aparición de ocho en {3, 8, 8, 2}. Si existe, muestra Indice: 1; si no, muestra No encontrado. Comprueba después {}, {8}, {2} y {8, 4, 8}: los resultados son ausencia, índice cero, ausencia e índice cero. Conserva el objetivo en una variable para poder cambiarlo sin modificar el algoritmo."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade después la salida del valor encontrado, pero sólo dentro de la rama que demuestra que su índice existe. Justifica por qué el caso con repetidos distingue primera aparición de última aparición."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y recuperación de estado"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{3, 8, 8, 2};\n    int objetivo = 8;\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == objetivo) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << \"Indice: \" << posicion;\n    } else {\n        std::cout << \"No encontrado\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{6, 1};\n    int objetivo = 6;\n    bool encontrado = false;\n    for (int valor : datos) {\n        if (valor == objetivo) {\n            encontrado = true;\n        }\n    }\n    objetivo = 1;\n    std::cout << encontrado << \" \" << objetivo;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "1 1"
+          ],
+          "explanation": "La bandera conserva el resultado de la búsqueda anterior; cambiar el objetivo después no ejecuta de nuevo el recorrido."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué conjunto de casos ayuda a verificar esta primera aparición?",
+          "options": [
+            "Objetivo al comienzo, al final, repetido y ausente; también colección vacía.",
+            "Únicamente una colección donde coincida el primer valor.",
+            "Sólo cambiar el mensaje."
+          ],
+          "correctIndex": 0,
+          "explanation": "Cada caso prueba una propiedad distinta: posición, detención y representación de ausencia."
+        }
+      ]
+    }
+  ]
+}

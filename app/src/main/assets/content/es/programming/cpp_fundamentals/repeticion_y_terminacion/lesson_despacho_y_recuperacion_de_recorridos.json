@@ -1,0 +1,198 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__despacho_y_recuperacion_de_recorridos",
+  "title": "Construir un despacho y recuperar lo aprendido",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Del requisito al estado del programa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una terminal de despacho recibe pedidos numerados desde 1 hasta ultimo, con ultimo entre 0 y 8. Cada pedido impar requiere 2 cajas; cada pedido par requiere 1. Necesitamos mostrar por pedido su cantidad y, al terminar, mostrar cantidad de pedidos y total de cajas. Es un problema nuevo que combina recorrido, clasificación y dos resúmenes; una salida correcta debe corresponder al requisito completo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de programar, resuelve a mano los casos ultimo=0, ultimo=1 y ultimo=4. Determina qué objetos representan el pedido actual, cantidad atendida y cajas reunidas. Identifica qué se reinicia por pedido y qué debe conservarse durante todo el procedimiento. El caso cero debe producir un resumen válido sin inventar un pedido."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "estado_persistente_del_despacho",
+          "question": "¿Qué estado debe conservarse entre pedidos para producir el total final?",
+          "options": [
+            "El acumulador de cajas, declarado antes del recorrido.",
+            "Un nuevo total de cero declarado dentro de cada vuelta y usado sólo allí.",
+            "El literal de texto que nombra el archivo."
+          ],
+          "correctIndex": 0,
+          "explanation": "El resumen combina contribuciones de varios casos y debe durar durante todo el recorrido."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "plan_de_pruebas_despacho",
+          "question": "¿Qué conjunto comprueba ausencia de pedidos, primer caso, ambos tipos y extremo permitido?",
+          "options": [
+            "ultimo igual a 0,1,4 y 8.",
+            "Sólo ultimo igual a 4, repetido varias veces.",
+            "Sólo valores negativos que el dominio prohíbe."
+          ],
+          "correctIndex": 0,
+          "explanation": "Las pruebas ejercitan comportamientos distintos, incluidos cero y la frontera superior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir antes de comparar con una solución"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el laboratorio inicial hay un recorrido de los números del 1 al último. Completa la selección de cajas y los dos resúmenes por tu cuenta. Muestra el resumen después del bucle. Conserva ultimo entre 0 y 8, y evita reutilizar el acumulador de cajas como contador de pedidos. Comprueba los casos que resolviste a mano antes de continuar a los ejercicios de lectura."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        std::cout << \"Pedido \" << pedido << \"\\n\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Verificar una construcción por su comportamiento"
+        },
+        {
+          "type": "output_prediction",
+          "id": "despacho_otro_limite",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{5};\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << pedidos << \":\" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "5:8"
+          ],
+          "explanation": "Los cinco aportes son 2,1,2,1,2. Hay cinco pedidos y ocho cajas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "despacho_cero",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        if (pedido % 2 != 0) {\n            cajas += 2;\n        } else {\n            cajas += 1;\n        }\n    }\n    std::cout << \"Cajas=\" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "Cajas=0"
+          ],
+          "explanation": "La condición inicial es falsa y el acumulador conserva la identidad cero."
+        },
+        {
+          "type": "fill_code",
+          "id": "aporte_par",
+          "question": "Completa sólo el aporte de cajas de un pedido par, según el requisito.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas{0};\n    for (int pedido{1}; pedido <= 6; ++pedido) {\n        if (pedido % 2 != 0) {\n            cajas += 2;\n        } else {\n            cajas += ___;\n        }\n    }\n    std::cout << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "explanation": "Cada pedido par aporta una caja. El número del pedido determina la categoría, no la cantidad que se suma."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisión de errores que conservan código válido"
+        },
+        {
+          "type": "output_prediction",
+          "id": "reiniciar_acumulador_error_logico",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{1}; aporte <= 3; ++aporte) {\n        total = 0;\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Reiniciar total en cada vuelta destruye las contribuciones anteriores. El programa compila, pero no suma todos los aportes."
+        },
+        {
+          "type": "output_prediction",
+          "id": "copiar_no_seguir_estado",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    int copia{total};\n    for (int n{1}; n <= 3; ++n) {\n        total += n;\n    }\n    std::cout << total << \":\" << copia;\n    return 0;\n}\n",
+          "answers": [
+            "6:0"
+          ],
+          "explanation": "copia recibió el valor inicial de total; no sigue sus cambios posteriores."
+        },
+        {
+          "type": "output_prediction",
+          "id": "division_entera_en_recorrido",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 4; ++n) {\n        suma += n / 2;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Los cocientes enteros son 0,1,1,2. No se están sumando mitades en double."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "compilar_no_basta",
+          "question": "Tu despacho compila y termina, pero reinicia el total de cajas al comenzar cada pedido. ¿Qué verificación falta?",
+          "options": [
+            "Comparar el resultado con el requisito y con un caso manual de varios pedidos.",
+            "Repetir la compilación sin cambiar nada hasta aceptar el resultado.",
+            "Cambiar el nombre del archivo para que el total se conserve."
+          ],
+          "correctIndex": 0,
+          "explanation": "Compilar, terminar y resolver correctamente son propiedades distintas. Un caso con varios aportes revela el reinicio."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar y transferir a un tablero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una segunda tarea usa otro significado para los mismos recursos: visitar casillas de un tablero de 3 filas y 2 columnas, numeradas desde 0, y contar sólo las casillas con fila distinta de columna. Antes de leer el ejercicio, enumera las parejas en papel. No dependas de reconocer el texto despacho: busca qué se recorre, qué se acepta y qué se resume."
+        },
+        {
+          "type": "output_prediction",
+          "id": "tablero_seleccionado",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int fila{0}; fila < 3; ++fila) {\n        for (int columna{0}; columna < 2; ++columna) {\n            if (fila != columna) {\n                ++cantidad;\n            }\n        }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Las seis parejas incluyen dos diagonales iguales: (0,0) y (1,1). Las otras cuatro se aceptan."
+        },
+        {
+          "type": "output_prediction",
+          "id": "recuperar_corte_y_suma",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 7; ++n) {\n        if (n == 4) {\n            break;\n        }\n        if (n == 2) {\n            continue;\n        }\n        suma += n;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Se incorpora 1, se omite 2, se incorpora 3 y se termina antes de 4."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cierra la unidad explicando sin mirar ejemplos cómo justificarías inicio, visita de casos, actualización, conservación del resumen y salida. Vuelve a una construcción anterior con un límite distinto y predice antes de ejecutar. La soltura requiere recuperar estas ideas más adelante: las colecciones y las funciones volverán a exigirlas en problemas que ya no presentan los datos como una simple cuenta."
+        },
+        {
+          "type": "note",
+          "text": "Base conceptual: Programming: Principles and Practice Using C++, tercera edición, capítulo 3: cómputo, selección e iteración. Esta unidad desarrolla ejemplos propios y recuperación de conceptos previos. Referencia de semántica: borrador público de C++, secciones stmt.for, stmt.cont, stmt.break y stmt.switch."
+        }
+      ]
+    }
+  ]
+}

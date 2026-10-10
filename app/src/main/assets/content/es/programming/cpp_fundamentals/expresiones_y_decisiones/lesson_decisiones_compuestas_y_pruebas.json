@@ -1,0 +1,259 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__decisiones_compuestas_y_pruebas",
+  "title": "Decisiones compuestas y casos de prueba",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir entre más de dos resultados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una cadena if, else if, else organiza más de dos alternativas. Se comprueba la primera condición; si es true, se ejecuta su bloque y se omite el resto de la cadena. Si es false, se pasa a la siguiente condición. El else final recoge los datos que no satisficieron ninguna de las anteriores. Como máximo se ejecuta un bloque de esa cadena."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int energia = 7;\n    if (energia < 4) {\n        std::cout << \"Baja\";\n    } else if (energia < 9) {\n        std::cout << \"Media\";\n    } else {\n        std::cout << \"Alta\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa muestra Media. Para llegar a esa rama ya se sabe que energia < 4 fue false. Por eso esa segunda rama representa desde 4 hasta 8, aunque su condición sólo diga energia < 9. El significado de una rama depende también de las condiciones que se descartaron antes."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Clasifica una cantidad usando esta cadena. Predice su única línea de salida.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int lecturas = 3;\n    if (lecturas < 3) {\n        std::cout << \"Inicio\";\n    } else if (lecturas < 7) {\n        std::cout << \"En marcha\";\n    } else {\n        std::cout << \"Completo\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "En marcha"
+          ],
+          "explanation": "3 no es menor que 3, pero sí es menor que 7. Se elige la segunda rama y se omite el else final."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En una cadena if/else if/else, dos condiciones resultarían true para los datos actuales. ¿Qué bloque se ejecuta?",
+          "options": [
+            "Los dos bloques cuyas condiciones serían true.",
+            "El de la primera condición true de la cadena.",
+            "Sólo el else final."
+          ],
+          "correctIndex": 1,
+          "explanation": "La cadena detiene su elección en la primera condición satisfecha."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una cadena y dos decisiones independientes son diferentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos if independientes pueden ejecutar sus dos bloques. Una cadena con else if elige como máximo uno. Decide cuál de esas estructuras pide el requisito. Si una condición general y otra más específica se solapan dentro de una cadena, su orden importa: poner primero la general puede impedir que se alcance la específica."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Aquí se deben mostrar todos los reconocimientos que correspondan. Predice la salida completa.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int aciertos = 8;\n    if (aciertos >= 5) {\n        std::cout << \"Superado\\n\";\n    }\n    if (aciertos >= 8) {\n        std::cout << \"Destacado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Superado\nDestacado"
+          ],
+          "explanation": "Son decisiones independientes y ambas condiciones son true. Por eso se muestran los dos reconocimientos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Otro requisito pide una sola categoría: Destacado desde 8; Superado desde 5 si no llega a 8; Pendiente en otro caso. ¿Qué orden de una cadena representa ese requisito?",
+          "options": [
+            "Primero >= 5, después else if >= 8 y finalmente else.",
+            "Primero >= 8, después else if >= 5 y finalmente else.",
+            "Dos if independientes, sin else."
+          ],
+          "correctIndex": 1,
+          "explanation": "La categoría más específica debe comprobarse primero. Si >= 5 estuviera antes, absorbería también los valores desde 8."
+        },
+        {
+          "type": "note",
+          "text": "La estructura debe representar si las respuestas son excluyentes o pueden coexistir. No agregues else únicamente para acortar el programa: cambiaría qué bloques pueden ejecutarse."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una decisión puede depender de otra"
+        },
+        {
+          "type": "paragraph",
+          "text": "También se puede colocar un if dentro de un bloque de otro if. Esa decisión anidada sólo se alcanza cuando se ejecuta el bloque exterior. Las llaves y la sangría permiten seguir los niveles. En este ejemplo, el permiso se revisa antes de decidir si alcanza la cantidad disponible."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool permiso = true;\n    const int solicitadas = 5;\n    const int disponibles = 4;\n    if (permiso) {\n        if (solicitadas <= disponibles) {\n            std::cout << \"Alcanza\\n\";\n        } else {\n            std::cout << \"No alcanza\\n\";\n        }\n    } else {\n        std::cout << \"Sin permiso\\n\";\n    }\n    std::cout << \"Revision terminada\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es No alcanza y después Revision terminada. Si permiso fuera false, no se llegaría a la decisión interior y se mostraría Sin permiso. El mensaje final está fuera de toda la selección. Agrupa cada else con el if indicado por sus llaves; no deduzcas ese vínculo sólo por la cercanía visual de las palabras."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Ahora permiso es true, solicitadas vale 3 y disponibles vale 3. ¿Qué mensajes produce esa estructura con estos nuevos datos?",
+          "options": [
+            "No alcanza y Revision terminada.",
+            "Alcanza y Revision terminada.",
+            "Sin permiso y Revision terminada."
+          ],
+          "correctIndex": 1,
+          "explanation": "La rama exterior permite llegar a la comparación. <= incluye la igualdad 3 y el mensaje posterior se ejecuta después de la selección."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Proyecto breve: un despacho con reglas explícitas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un microtaller recibe una solicitud declarada en el programa. Las reglas, en este orden, son: aceptar cantidades de 1 a 12; para otra cantidad mostrar Cantidad invalida; con una cantidad válida pero sin permiso mostrar Sin permiso; con permiso y suficientes piezas mostrar Completo; en otro caso mostrar cuántas piezas faltan. disponibles es un dato conocido entre 0 y 12. Los datos pequeños y esos dominios hacen representables los cálculos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice primero el caso inicial: solicitadas vale 6, disponibles vale 4 y permiso es true. Ejecuta para contrastar. Cambia sólo solicitadas para probar 0, 1, 4, 5, 12 y 13. Mantén disponibles en 4. Antes de cada ejecución, escribe la salida esperada a partir de las reglas, incluida la cantidad pendiente cuando corresponda."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int solicitadas = 6;\n    const int disponibles = 4;\n    const bool permiso = true;\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pendiente: \" << faltantes;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después restaura solicitadas igual a 6 y cambia permiso a false. Finalmente combina solicitadas igual a 0 con permiso false: la prioridad declarada exige informar primero Cantidad invalida. Observa que faltantes sólo existe y se calcula en la rama donde la cantidad es válida, hay permiso y solicitadas supera disponibles."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Según la prioridad del requisito, solicitadas igual a 0 y permiso false deben producir:",
+          "options": [
+            "Sin permiso",
+            "Cantidad invalida",
+            "Pendiente: 0"
+          ],
+          "correctIndex": 1,
+          "explanation": "La validación de cantidad precede a la revisión de permiso. Se informa el primer motivo aplicable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Relacionar cada caso con el error que puede revelar"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el despacho, 0 y 13 comprueban el rechazo justo fuera del dominio; 1 y 12 comprueban que se admiten sus extremos. Con disponibles igual a 4, los casos 4 y 5 comprueban la frontera entre Completo y Pendiente. Una cantidad válida con permiso false prueba el rechazo por permiso. Una cantidad inválida junto con permiso false comprueba la prioridad entre motivos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Otra entrega acepta cantidades de 2 a 9 y dispone de 5 piezas, con permiso true. ¿Qué conjunto prueba ambos extremos del nuevo dominio, sus vecinos externos y la transición entre disponibilidad suficiente e insuficiente?",
+          "options": [
+            "1, 2, 5, 6, 9 y 10",
+            "2, 3, 4 y 5",
+            "1 y 10"
+          ],
+          "correctIndex": 0,
+          "explanation": "En las nuevas reglas, 1/2 y 9/10 prueban el dominio; 5/6 prueba la disponibilidad. Hay que derivar los casos del requisito actual, no copiar los del despacho anterior."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Otro despacho tiene una cantidad válida y suficiente, pero no cuenta con permiso. Predice el mensaje según estas reglas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int solicitadas = 3;\n    const int disponibles = 8;\n    const bool permiso = false;\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Cantidad invalida\";\n    } else if (!permiso) {\n        std::cout << \"Sin permiso\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Completo\";\n    } else {\n        std::cout << \"Pendiente: \" << solicitadas - disponibles;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Sin permiso"
+          ],
+          "explanation": "La cantidad pasa la validación, pero la falta de permiso decide la cadena antes de comparar la disponibilidad."
+        },
+        {
+          "type": "note",
+          "text": "Un caso de prueba consta de datos y una salida esperada. Cuenta qué propiedad revisa cada caso. Repetir un dato que ya pasa no prueba automáticamente una frontera ni una prioridad que todavía no se ha observado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar varios aprendizajes en una lectura"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Sin ejecutar primero, sigue copias, asignación, resta y decisión. Escribe la salida completa.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int disponibles = 11;\n    int usados = 3;\n    const int antes = usados;\n    usados = usados + 4;\n    const int libres = disponibles - usados;\n    const bool queda_espacio = libres > 0;\n    if (queda_espacio) {\n        std::cout << \"Libres: \" << libres << \"\\n\";\n    } else {\n        std::cout << \"Completo\\n\";\n    }\n    std::cout << \"Antes: \" << antes;\n    return 0;\n}\n",
+          "answers": [
+            "Libres: 4\nAntes: 3"
+          ],
+          "explanation": "antes conserva 3. usados cambia a 7, libres resulta 4 y la condición elige la primera rama. El mensaje posterior muestra la copia."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Se necesita una mitad con fracción para un dato int llamado cantidad. ¿Qué declaración convierte antes de dividir?",
+          "options": [
+            "const double mitad = cantidad / 2;",
+            "const double mitad = static_cast<double>(cantidad) / 2;",
+            "const int mitad = cantidad / 2;"
+          ],
+          "correctIndex": 1,
+          "explanation": "La conversión de un operando hace que / use double. Cambiar sólo el destino ocurre después de la división entera."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si tu predicción falla, vuelve al primer punto donde tu lectura y el programa difieren. ¿Era una copia, el tipo de la división, la agrupación, la igualdad en una frontera o el recorrido elegido? Esa explicación decide qué cambiar; volver a ejecutar sin una hipótesis no identifica la causa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisar una condición que compila pero expresa otra regla"
+        },
+        {
+          "type": "paragraph",
+          "text": "Alguien escribe (cantidad < 1) && (cantidad > 12) para detectar cantidades fuera del intervalo de 1 a 12. Esa conjunción pide que una misma cantidad esté debajo de 1 y encima de 12 a la vez. Para estos enteros no puede ser true. El error pertenece a la traducción del requisito, aunque los operadores y los tipos sean válidos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué combinación de diagnóstico, reparación y pruebas responde a ese problema?",
+          "options": [
+            "Cambiar && por || y probar 0, 1, 12 y 13 contra las salidas esperadas.",
+            "Conservar && y probar sólo 6, porque está dentro del intervalo.",
+            "Cambiar todos los int por double sin revisar las condiciones."
+          ],
+          "correctIndex": 0,
+          "explanation": "Fuera del intervalo basta cualquiera de los dos lados. Los casos alrededor de ambos extremos comprueban rechazo e inclusión de la igualdad."
+        },
+        {
+          "type": "fill_code",
+          "question": "Ahora expresa la aceptación: la cantidad debe alcanzar 1 y no superar 12. Completa únicamente el operador lógico que exige esas dos comparaciones.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 13;\n    const bool aceptada = (cantidad >= 1) ___ (cantidad <= 12);\n    if (aceptada) {\n        std::cout << \"Aceptada\";\n    } else {\n        std::cout << \"Rechazada\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "&&"
+          ],
+          "explanation": "La aceptación exige las dos condiciones. Con 13 falla el máximo y se muestra Rechazada."
+        },
+        {
+          "type": "note",
+          "text": "Antes de avanzar, explica una decisión con sus datos, condiciones, ramas y salida esperada. Ya puedes construir programas finitos que calculan y eligen. La repetición se estudiará después, con su propia condición de terminación."
+        }
+      ]
+    }
+  ]
+}

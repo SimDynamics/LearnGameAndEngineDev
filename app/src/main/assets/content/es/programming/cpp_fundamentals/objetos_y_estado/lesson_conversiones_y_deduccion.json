@@ -1,0 +1,295 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__conversiones_y_deduccion",
+  "title": "Conversiones deliberadas y deducción de tipo",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un valor puede pasar a otra representación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al inicializar double longitud = 3;, el valor entero tres se convierte a double. La conversión cambia la representación usada para conservar ese valor; no modifica un objeto entero anterior si sólo se lo leyó como dato. Para estas cantidades pequeñas no se pierde información. En general, conviene preguntar si el tipo destino puede representar el valor con la precisión necesaria."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int unidades = 3;\n    double medida = unidades;\n    std::cout << unidades << \" \" << medida;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La conversión opuesta puede perder una parte del valor. Si double medida = 3.75; y después int unidades = medida;, unidades queda en 3: se descarta la fracción. No se redondea automáticamente al entero más cercano."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    double medida = 6.5;\n    int unidades = medida;\n    std::cout << unidades << \" \" << medida;\n    return 0;\n}\n",
+          "answers": [
+            "6 6.5"
+          ],
+          "explanation": "La conversión a int descarta .5; leer medida para esa conversión no modifica el double."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Truncar hacia cero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando un valor decimal que cabe en el entero se convierte a int, se elimina su parte fraccionaria: 3.75 pasa a 3 y -3.75 pasa a -3. Esta operación se llama truncamiento hacia cero. No equivale a redondear al valor más cercano ni a ir siempre hacia el menor entero. No conviertas un valor fuera del rango del entero: en ese caso no podemos prometer un resultado seguro."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    double positivo = 2.9;\n    double negativo = -2.9;\n    int a = positivo;\n    int b = negativo;\n    std::cout << a << \" \" << b;\n    return 0;\n}\n",
+          "answers": [
+            "2 -2"
+          ],
+          "explanation": "Se eliminan las partes fraccionarias hacia cero. -2 es distinto de -3."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Convertir -4.8 a int, dentro del rango del tipo, produce…",
+          "options": [
+            "-5",
+            "-4",
+            "4"
+          ],
+          "correctIndex": 1,
+          "explanation": "La fracción se descarta hacia cero; el signo de la parte entera se conserva."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una cantidad medida necesita conservar 2.75. ¿Qué decisión mantiene el dato requerido?",
+          "options": [
+            "Guardarla directamente en double.",
+            "Convertirla a int y recuperar después .75 automáticamente.",
+            "Cambiar sólo el comentario para que el entero sea decimal."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una conversión que descartó la fracción no conserva la información necesaria para recuperarla."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Llaves que rechazan una pérdida implícita"
+        },
+        {
+          "type": "paragraph",
+          "text": "La notación int cantidad{3.75}; pide una inicialización con llaves y una conversión decimal a entero. Esa conversión es un estrechamiento y el compilador debe rechazarla. La versión con = puede aceptarse aunque pierda la fracción; por eso que compile no basta para decidir si representa la intención."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{3.75}; // Error intencional: estrechamiento con llaves.\n    std::cout << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La consigna necesita conservar 3.75 sin redondeo. ¿Qué reparación responde a esa intención?",
+          "options": [
+            "double cantidad{3.75};",
+            "int cantidad{3};",
+            "Borrar la salida y conservar el error."
+          ],
+          "correctIndex": 0,
+          "explanation": "Cambiar el tipo a double permite conservar la parte fraccionaria necesaria; reemplazar el dato por 3 cambiaría la consigna."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el tipo para conservar 1.5 en una inicialización con llaves.",
+          "code": "#include <iostream>\n\nint main() {\n    ___ distancia{1.5};\n    std::cout << distancia;\n    return 0;\n}\n",
+          "answers": [
+            "double"
+          ],
+          "explanation": "El tipo double conserva esta fracción, que también es exactamente representable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convertir antes de calcular"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si ya tienes total y partes como enteros, puedes expresar una conversión antes de dividir: static_cast<double>(total) produce el valor de total convertido a double. La notación static_cast<tipo>(expresión) indica de forma explícita el tipo al que conviertes; no redefine total ni cambia su tipo. Aquí la usamos para que la división calcule un resultado decimal."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 11;\n    int partes = 2;\n    double medida = static_cast<double>(total) / partes;\n    std::cout << medida << \" \" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es 5.5 11. Convertir el resultado de total / partes después de dividir seguiría dando 5: la conversión debe ocurrir antes de la operación que perdería la fracción."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 13;\n    int partes = 4;\n    double tarde = static_cast<double>(total / partes);\n    double antes = static_cast<double>(total) / partes;\n    std::cout << tarde << \" \" << antes;\n    return 0;\n}\n",
+          "answers": [
+            "3 3.25"
+          ],
+          "explanation": "tarde convierte el cociente entero tres; antes convierte un operando y calcula 3.25."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Escribe sólo el tipo destino de la conversión para conservar 6.5 al dividir trece entre dos.",
+          "template": "#include <iostream>\n\nint main() {\n    int total = 13;\n    double mitad = static_cast<[]>(total) / 2;\n    std::cout << mitad;\n    return 0;\n}\n",
+          "answers": [
+            "double"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Razón de la conversión"
+        },
+        {
+          "type": "paragraph",
+          "text": "La conversión anterior es a double. El valor de total continúa siendo un entero de valor 13: la expresión convertida es la que participa en la división. Una conversión explícita expresa intención, pero no hace seguro cualquier valor. Si se usa para descartar información o para un destino fuera de rango, hace falta justificar y controlar esa decisión."
+        },
+        {
+          "type": "heading",
+          "text": "Deducir el tipo con auto"
+        },
+        {
+          "type": "paragraph",
+          "text": "auto cantidad = 6; pide al compilador deducir el tipo a partir del inicializador: aquí es int. auto medida = 6.5; deduce double. La deducción ocurre al definir la variable. No significa que el objeto cambiará de tipo cada vez que se le asigne otro valor."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    auto cantidad = 6;\n    auto medida = 6.5;\n    std::cout << cantidad << \" \" << medida;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En auto cantidad = 6;, ¿qué tipo tiene cantidad?",
+          "options": [
+            "Un tipo nuevo llamado auto que cambia en ejecución.",
+            "int, deducido del literal entero 6.",
+            "double porque cualquier número puede dividirse."
+          ],
+          "correctIndex": 1,
+          "explanation": "auto solicita deducir el tipo inicial; el literal 6 tiene tipo int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deducción con una expresión completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "El tipo se deduce del inicializador completo, no de la intención del nombre. auto mitad = 9 / 2; deduce int porque el cociente se calculó con enteros. auto mitad = 9.0 / 2; deduce double. Usa auto cuando el inicializador haga evidente lo que quieres y no busques una conversión a otro tipo. Para representar texto mediante std::string, escribiremos ese tipo expresamente en la próxima lección."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    auto primera = 9 / 2;\n    auto segunda = 9.0 / 2;\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "4 4.5"
+          ],
+          "explanation": "auto conserva el tipo que produce cada división; no cambia una división entera a decimal."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quieres una medida decimal de valor cuatro aunque el dato inicial sea el entero 4. ¿Qué definición expresa directamente esa conversión?",
+          "options": [
+            "double medida = 4;",
+            "auto medida = 4;",
+            "int medida = 4;"
+          ],
+          "correctIndex": 0,
+          "explanation": "double indica el tipo deseado. auto deduciría int a partir de ese inicializador."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el dígito de la parte entera para que auto deduzca double y el valor inicial sea ocho.",
+          "code": "#include <iostream>\n\nint main() {\n    auto medida = ___.0;\n    std::cout << medida;\n    return 0;\n}\n",
+          "answers": [
+            "8"
+          ],
+          "explanation": "8.0 es un literal double, aunque cout muestre el valor como 8."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Experimenta con el momento de la conversión"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un programa con total = 15 y partes = 2, ambos enteros. Muestra dos líneas: Entero: 7 y Decimal: 7.5. Decide dónde debe suceder la conversión y escribe las instrucciones sin huecos. Luego usa total = 14: ambas líneas deben mostrar 7. Explica por qué resultados iguales en ese caso no demuestran que ambos cálculos tengan el mismo tipo."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación de casos impares y pares permite ver una diferencia que un solo caso podría ocultar. Mantén los valores pequeños y el divisor dos. No uses una lectura inválida ni desbordamientos como datos de este experimento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y recuperación de estado"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 15;\n    int partes = 2;\n    auto entero = total / partes;\n    double decimal = static_cast<double>(total) / partes;\n    std::cout << \"Entero: \" << entero << \"\\n\";\n    std::cout << \"Decimal: \" << decimal;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "entero conserva el resultado entero; decimal se calcula con un operando convertido antes de dividir. Con 14 ambas cantidades valen siete; la igualdad de los valores visibles no borra la diferencia de representación."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    double medida = 4.5;\n    int copia = medida;\n    medida = 7.5;\n    std::cout << copia << \" \" << medida;\n    return 0;\n}\n",
+          "answers": [
+            "4 7.5"
+          ],
+          "explanation": "copia recibió el valor truncado 4 antes del cambio. No mantiene un enlace con medida."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué permite distinguir una conversión deliberada de una pérdida inadvertida?",
+          "options": [
+            "Explicar qué información puede perderse y por qué esa pérdida es aceptable para la tarea.",
+            "Usar siempre auto, sin mirar el inicializador.",
+            "Confiar sólo en que el programa compiló."
+          ],
+          "correctIndex": 0,
+          "explanation": "El tipo y el momento de la conversión deben responder al significado del resultado, además de cumplir la sintaxis."
+        }
+      ]
+    }
+  ]
+}

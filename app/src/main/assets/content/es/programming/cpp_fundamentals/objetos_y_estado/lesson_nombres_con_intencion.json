@@ -1,0 +1,210 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__nombres_con_intencion",
+  "title": "Nombres que comunican la intención",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Nombrar también es explicar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un nombre permite localizar un dato y comunicar qué representa. int bicicletas = 7; ofrece más información que int x2 = 7; si la cantidad pertenece a un alquiler. El compilador podría aceptar ambos nombres; la diferencia está en lo que un lector entiende. En problemas pequeños, nombres breves y específicos reducen confusiones entre datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Elegiremos nombres formados por letras latinas sin acento, cifras y guiones bajos, comenzando por una letra: bicicletas, nivel2, paquetes_recibidos. Es una convención sencilla y segura para este curso. C++ admite otros identificadores; no necesitamos todas esas posibilidades para expresar bien estos programas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int paquetes_recibidos = 6;\n    int paquetes_enviados = 2;\n    std::cout << paquetes_recibidos - paquetes_enviados;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Regla del lenguaje o elección de estilo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un nombre no puede tener un espacio interior ni un guion de resta: paquetes nuevos y paquetes-nuevos no son identificadores únicos válidos. Tampoco puede empezar con una cifra. Palabras como int, return y bool tienen función reservada y no se pueden reutilizar como nombres de variables. Evita además los nombres con guion bajo inicial y los de la biblioteca: así no interfieres con identificadores reservados o ampliamente usados."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Cuál es un nombre válido según la convención del curso?",
+          "options": [
+            "2cajas",
+            "cajas_totales",
+            "cajas totales"
+          ],
+          "correctIndex": 1,
+          "explanation": "cajas_totales comienza con una letra y usa un guion bajo para separar palabras."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué impide usar int como nombre de una variable?",
+          "options": [
+            "Es demasiado corto.",
+            "Es una palabra reservada del lenguaje.",
+            "Sólo se permite en nombres de archivos."
+          ],
+          "correctIndex": 1,
+          "explanation": "int ya identifica un tipo del lenguaje; no es una etiqueta disponible para nombrar un dato."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Sustituye el hueco por el nombre cajas_recibidas, escrito exactamente como se solicita.",
+          "code": "#include <iostream>\n\nint main() {\n    int ___ = 8;\n    std::cout << cajas_recibidas;\n    return 0;\n}\n",
+          "answers": [
+            "cajas_recibidas"
+          ],
+          "explanation": "La salida usa el mismo identificador que se ha definido; no hay un espacio interior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Las mayúsculas forman parte del nombre"
+        },
+        {
+          "type": "paragraph",
+          "text": "cajas y Cajas son nombres distintos. Si defines cajas y después intentas leer Cajas, el compilador no puede suponer que son lo mismo. Mantener una forma consistente ayuda a distinguir un error de escritura de dos datos realmente diferentes. Tampoco conviene crear dos variables cuya única diferencia sea una mayúscula si describen cosas diferentes: nombres más claros explican mejor sus funciones."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 5;\n    std::cout << Cajas; // Error intencional: este nombre no se ha definido.\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué reparación conserva la variable ya definida en el ejemplo?",
+          "options": [
+            "Cambiar Cajas por cajas en la salida.",
+            "Añadir comillas a Cajas para imprimir el valor cinco.",
+            "Borrar la cabecera iostream."
+          ],
+          "correctIndex": 0,
+          "explanation": "Leer cajas usa el identificador definido. Escribir \"Cajas\" sólo imprime ese texto."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 4;\n    std::cout << \"total=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "total=4"
+          ],
+          "explanation": "El texto fijo y la variable cumplen funciones distintas aunque contengan las mismas letras."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir por función, no por longitud"
+        },
+        {
+          "type": "paragraph",
+          "text": "saldo_pendiente puede ser más útil que saldo si existe también un saldo_pagado. Un nombre demasiado largo dificulta leer; uno abreviado sin contexto obliga a adivinar. El objetivo es una descripción suficiente. No elijas nombres que prometan algo que el código no mantiene: anterior requiere guardar el momento anterior, no sólo llevar ese nombre."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Se guardan dos cantidades: libros prestados y libros devueltos. ¿Qué pareja comunica mejor la diferencia?",
+          "options": [
+            "a y A",
+            "libros_prestados y libros_devueltos",
+            "numero y numero2"
+          ],
+          "correctIndex": 1,
+          "explanation": "Los nombres explican qué cantidad corresponde a cada etapa del problema."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "x1 es un nombre válido, pero en un inventario sin más contexto resulta poco claro. ¿Qué clase de problema tiene?",
+          "options": [
+            "Una falta de claridad para el lector.",
+            "Una violación obligatoria de la gramática.",
+            "Un valor numérico fuera de rango."
+          ],
+          "correctIndex": 0,
+          "explanation": "La validez del identificador y su utilidad para comprender el código son preguntas diferentes."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa con el nombre indicado por la consigna: se reciben seis sobres y se imprime esa misma cantidad. Usa sobres_recibidos en ambos lugares.",
+          "template": "#include <iostream>\n\nint main() {\n    int [] = 6;\n    std::cout << [];\n    return 0;\n}\n",
+          "answers": [
+            "sobres_recibidos",
+            "sobres_recibidos"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Renombrar sin cambiar el comportamiento"
+        },
+        {
+          "type": "paragraph",
+          "text": "El relleno anterior define y lee sobres_recibidos. En el laboratorio, el código produce 7. Reescribe los nombres a, b y c para indicar respectivamente cajas_iniciales, cajas_agregadas y cajas_finales. Actualiza todas sus apariciones. Antes y después debe imprimirse 7; el cambio mejora la lectura, no modifica la cantidad."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int a = 4;\n    int b = 3;\n    int c = a + b;\n    std::cout << c;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después escribe una frase sobre la función de cada variable sin consultar el nombre antiguo. Si olvidaste renombrar una aparición, identifica el diagnóstico en lugar de crear una variable extra sólo para silenciarlo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el significado de una secuencia"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas_iniciales = 4;\n    int cajas_agregadas = 3;\n    int cajas_finales = cajas_iniciales + cajas_agregadas;\n    std::cout << cajas_finales;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La solución conserva las mismas operaciones y datos. Los nombres dejan visible qué se suma y qué representa el resultado."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int inicial = 2;\n    int actualizado = inicial;\n    actualizado += 5;\n    std::cout << inicial << \":\" << actualizado;\n    return 0;\n}\n",
+          "answers": [
+            "2:7"
+          ],
+          "explanation": "Los dos objetos son independientes. Actualizar uno no modifica el valor del otro."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué debe verificarse después de renombrar una variable?",
+          "options": [
+            "Que todas las referencias al mismo dato usen el nombre nuevo y que el resultado siga cumpliendo la consigna.",
+            "Que el nombre tenga el mayor número posible de letras.",
+            "Que el programa imprima siempre el nombre en vez del valor."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un renombrado coherente mejora comunicación y conserva comportamiento."
+        }
+      ]
+    }
+  ]
+}

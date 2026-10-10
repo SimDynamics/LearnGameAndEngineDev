@@ -1,0 +1,171 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__nombrar_calculos_y_llamar",
+  "title": "Nombrar cálculos y llamar funciones",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dar un nombre a un cálculo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya puedes calcular, decidir y recorrer datos. Una función reúne instrucciones bajo un nombre para representar un cálculo o una acción. Su definición indica cómo se llama, qué datos recibe y qué resultado entrega. Su cuerpo contiene las instrucciones que se ejecutan cuando otra parte del programa la llama. Escribir la definición no ejecuta ese cuerpo por adelantado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint doble(int cantidad) {\n    return cantidad * 2;\n}\n\nint main() {\n    const int fichas = 7;\n    const int resultado = doble(fichas);\n    std::cout << resultado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En int doble(int cantidad), el primer int es el tipo del resultado. doble es el nombre. int cantidad declara un parámetro: el dato con el que trabajará el cuerpo en cada llamada. doble(fichas) es una llamada; fichas aporta el argumento, aquí 7. return entrega el resultado 14 a quien llamó. main lo usa para inicializar resultado y después lo muestra."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En la llamada doble(fichas), ¿qué papel cumple fichas?",
+          "options": [
+            "Es el nombre de la función.",
+            "Es el argumento que aporta un valor para el parámetro.",
+            "Es una instrucción return."
+          ],
+          "correctIndex": 1,
+          "explanation": "El argumento pertenece a la llamada; el parámetro cantidad pertenece a la definición."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una llamada produce un valor utilizable"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una llamada a una función que devuelve int puede aparecer donde se necesita un valor int: en una inicialización, una suma, una comparación o una salida. Los paréntesis forman parte de la llamada. No basta con escribir el nombre de la función para pedir su cálculo. Los argumentos van dentro de los paréntesis y deben corresponder a los parámetros."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice la salida. Esta función recibe cantidades de 0 a 20 y añade una reserva fija.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint con_reserva(int cantidad) {\n    return cantidad + 3;\n}\n\nint main() {\n    const int preparado = con_reserva(4);\n    const int total = preparado + con_reserva(2);\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "12"
+          ],
+          "explanation": "La primera llamada entrega 7. La segunda entrega 5. La suma de ambos resultados da 12."
+        },
+        {
+          "type": "fill_code",
+          "question": "Completa únicamente el nombre para llamar a la función definida. Los paréntesis y el argumento ya están escritos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint por_tres(int cantidad) {\n    return cantidad * 3;\n}\n\nint main() {\n    const int total = ___(5);\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "por_tres"
+          ],
+          "explanation": "por_tres(5) ejecuta el cálculo con el argumento 5 y entrega 15."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos parámetros representan dos datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función puede recibir varios parámetros, separados por comas. Los argumentos se relacionan con ellos por su posición. En separar(total, usados), el primer argumento aporta total y el segundo usados; los nombres escritos en main no tienen que ser idénticos a los nombres de los parámetros."
+        },
+        {
+          "type": "output_prediction",
+          "question": "La función calcula lo que queda. Para estos datos, predice el número mostrado.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint restantes(int total, int usados) {\n    return total - usados;\n}\n\nint main() {\n    const int disponibles = 14;\n    const int retiradas = 5;\n    std::cout << restantes(disponibles, retiradas);\n    return 0;\n}\n",
+          "answers": [
+            "9"
+          ],
+          "explanation": "El primer argumento inicializa total con 14 y el segundo usados con 5. El resultado es 14 - 5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "restantes requiere dos datos: primero total y después usados. ¿Qué llamada expresa 12 disponibles y 4 usados?",
+          "options": [
+            "restantes(4, 12)",
+            "restantes(12, 4)",
+            "restantes(12)"
+          ],
+          "correctIndex": 1,
+          "explanation": "La posición conecta cada argumento con su parámetro. Invertirlos cambiaría el cálculo."
+        },
+        {
+          "type": "note",
+          "text": "Los ejemplos usan datos pequeños y cálculos representables. Al modificar cantidades en esta lección, mantenlas entre 0 y 20; en restantes, usados no debe superar total. Más adelante formalizaremos estos requisitos como contratos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: reutilizar la regla en varios casos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los datos están declarados en main. Una caja de práctica necesita cantidad * 2 + 1 separadores. Predice los dos resultados para cantidades 3 y 5; ejecuta para contrastar. Después cambia sólo el primer argumento a 0 y después a 8. Conserva las cantidades entre 0 y 20. Si cambia la regla común, debe cambiar la función, no cada llamada por separado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint separadores(int cantidad) {\n    return cantidad * 2 + 1;\n}\n\nint main() {\n    const int primera = separadores(3);\n    const int segunda = separadores(5);\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Al cambiar sólo la primera llamada a separadores(0), ¿qué salida se obtiene?",
+          "options": [
+            "1 11",
+            "0 11",
+            "1 1"
+          ],
+          "correctIndex": 0,
+          "explanation": "La primera llamada calcula 0 * 2 + 1. La segunda mantiene su argumento 5 y entrega 11."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora modifica el cuerpo a return cantidad * 2 + 2; y predice ambos resultados antes de ejecutar. Esa modificación afecta cada llamada posterior porque cambia la regla definida. Restaura el + 1 y explica qué información necesitó cada llamada para producir su resultado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar la diferencia entre calcular y mostrar"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Esta función no contiene una salida. Predice lo que sí muestra main.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint triple(int valor) {\n    return valor * 3;\n}\n\nint main() {\n    const int calculado = triple(4);\n    std::cout << \"Resultado: \" << calculado;\n    return 0;\n}\n",
+          "answers": [
+            "Resultado: 12"
+          ],
+          "explanation": "La función devuelve 12; main decide mostrar ese valor y el texto que lo acompaña."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué ventaja concreta aporta separar un cálculo pequeño con un nombre claro?",
+          "options": [
+            "Permite llamarlo con distintos datos y comprobar su resultado por separado.",
+            "Hace que todo resultado se imprima automáticamente.",
+            "Elimina la necesidad de saber qué datos son válidos."
+          ],
+          "correctIndex": 0,
+          "explanation": "La separación aclara el propósito y permite reutilizar y probar el cálculo. Su dominio sigue siendo necesario."
+        },
+        {
+          "type": "note",
+          "text": "Al leer una llamada, identifica qué función se usa, qué valores aporta cada argumento y qué se hará con el resultado. Sigue después la secuencia de main, igual que en las unidades anteriores."
+        }
+      ]
+    }
+  ]
+}

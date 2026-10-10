@@ -1,0 +1,264 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__recorrer_indices_con_seguridad",
+  "title": "Recorrer índices y justificar cada acceso",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuando también importa la posición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un recorrido por rango proporciona cada valor. Si debemos mostrar la posición, comparar vecinos o recorrer una parte de la colección, podemos usar un for con índice. La regla de acceso sigue siendo la misma: antes de leer datos[i], debemos saber que i es menor que size() y que representa una posición no negativa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para los tamaños e índices de nuestros vectores usaremos std::size_t, disponible con <cstddef>. Es un tipo entero sin signo: representa cero y cantidades positivas dentro de un rango finito. No representa un índice negativo. Usarlo aquí mantiene coherencia con los tamaños de estas colecciones; no significa que sea el tipo adecuado para cualquier cantidad del programa."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{8, 3, 6};\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        std::cout << i << \":\" << datos[i] << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es 0:8;1:3;2:6;. La condición se comprueba antes de cada acceso. Al llegar i a tres, es falsa y el cuerpo ya no se ejecuta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La condición protege el cuerpo"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{7, 2};\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        std::cout << i << \"=\" << datos.at(i) << \";\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "0=7;1=2;"
+          ],
+          "explanation": "Hay dos índices válidos, cero y uno."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el operador de comparación que excluye el tamaño del dominio.",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{3, 5};\n    for (std::size_t i = 0; i ___ datos.size(); ++i) {\n        std::cout << datos[i];\n    }\n    return 0;\n}\n",
+          "answers": [
+            "<"
+          ],
+          "explanation": "< impide ejecutar el cuerpo cuando i vale size()."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Por qué i <= datos.size() no protege este acceso?",
+          "options": [
+            "Porque permite que i sea igual al tamaño, una posición inexistente.",
+            "Porque comienza siempre en uno.",
+            "Porque size() cambia al leer."
+          ],
+          "correctIndex": 0,
+          "explanation": "El límite superior del dominio está excluido. No ejecutamos la versión con <=."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cero y una visita"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos;\n    std::cout << \"[\";\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        std::cout << datos[i];\n    }\n    std::cout << \"]\";\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "[]"
+          ],
+          "explanation": "Cero es menor que cero: falso. No ocurre ningún acceso."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{9};\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        std::cout << i << \":\" << datos[i];\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "0:9"
+          ],
+          "explanation": "La única posición existente es cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "No guardaremos size() en int por costumbre: una colección general puede tener un tamaño que no quepa en ese tipo. Nuestros ejemplos mantienen los índices y tamaños en un tipo adecuado, y las sumas pequeñas de valores en int cuando corresponde."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar vecinos sin inventar uno anterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para comparar datos[i] con datos[i - 1], empezamos en i = 1. Así existe la posición anterior cero. La condición i < size() garantiza la posición actual. En vacío y en una colección de un elemento no hay pares vecinos y el cuerpo se ejecuta cero veces."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{4, 4, 2, 2};\n    int iguales = 0;\n    for (std::size_t i = 1; i < datos.size(); ++i) {\n        if (datos[i] == datos[i - 1]) {\n            ++iguales;\n        }\n    }\n    std::cout << iguales;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Coinciden los pares de posiciones 0/1 y 2/3. No contamos valores distintos globalmente."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Con un solo elemento, ¿cuántos pares de vecinos se comparan?",
+          "options": [
+            "Uno.",
+            "Cero.",
+            "Dos."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un par requiere dos posiciones; comenzar en uno evita inventar un vecino anterior."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa sólo el dígito inicial y el nombre de la operación de tamaño para comparar vecinos.",
+          "template": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{2, 2};\n    int iguales = 0;\n    for (std::size_t i = []; i < datos.[](); ++i) {\n        if (datos[i] == datos[i - 1]) {\n            ++iguales;\n        }\n    }\n    std::cout << iguales;\n    return 0;\n}\n",
+          "answers": [
+            "1",
+            "size"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recorrer hacia atrás con una cuenta pendiente"
+        },
+        {
+          "type": "paragraph",
+          "text": "La solución anterior comienza en uno y usa size(). Para ir hacia atrás, no usaremos una condición i >= 0 con un entero sin signo: esa condición nunca detecta un valor negativo y una resta desde cero no produce el -1 que quizás esperabas. Podemos contar cuántos elementos quedan: cuenta empieza en size(), y sólo cuando cuenta > 0 accedemos a cuenta - 1."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{2, 8, 5};\n    for (std::size_t cuenta = datos.size(); cuenta > 0; --cuenta) {\n        std::cout << datos[cuenta - 1] << \";\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "5;8;2;"
+          ],
+          "explanation": "Las cuentas son tres, dos y uno; sus índices son dos, uno y cero."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué hace segura la resta cuenta - 1 en este cuerpo?",
+          "options": [
+            "La condición cuenta > 0 ya se cumplió.",
+            "Un entero sin signo siempre representa -1.",
+            "El vector crea un elemento al restar."
+          ],
+          "correctIndex": 0,
+          "explanation": "Con cuenta positiva, la resta identifica un índice existente y la cuenta no supera el tamaño."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modificar por posición"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{1, 4, 6};\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        if (i % 2 == 0) {\n            datos[i] += 2;\n        }\n    }\n    for (int valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "3;4;8;"
+          ],
+          "explanation": "La condición se refiere al índice: cambia posiciones cero y dos, no todos los valores pares."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Debes aumentar los valores pares, independientemente de su posición. ¿Qué debe examinar la condición?",
+          "options": [
+            "El índice i % 2.",
+            "El valor datos[i] % 2.",
+            "Sólo size()."
+          ],
+          "correctIndex": 1,
+          "explanation": "Índice y valor tienen significados diferentes, aunque ambos sean números."
+        },
+        {
+          "type": "note",
+          "text": "No hacemos crecer el vector durante estos recorridos. Cada ejemplo usa una colección finita preparada antes del bucle, y todos los accesos quedan dentro de su dominio."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción e informe por posición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un informe con {3, 7, 1}: muestra Sesion 1: 3, Sesion 2: 7 y Sesion 3: 1 en líneas distintas. El índice empieza en cero, pero la etiqueta para una persona empieza en uno. Después prueba {} y {0}: el vacío no presenta sesiones; el único cero se muestra como Sesion 1: 0. No accedas a un índice adicional para imprimir la última línea."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Como segunda variante, presenta sólo los valores en orden inverso, separados por punto y coma. Justifica por escrito la primera posición y la última de ambos recorridos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y recuperación de condición"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{3, 7, 1};\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        std::cout << \"Sesion \" << i + 1 << \": \" << datos[i] << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{5};\n    for (std::size_t cuenta = datos.size(); cuenta > 0; --cuenta) {\n        std::cout << datos.at(cuenta - 1);\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "5Fin"
+          ],
+          "explanation": "La cuenta uno permite el índice cero; después se termina sin restar desde cero en el cuerpo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué debes conservar al cambiar una condición de recorrido?",
+          "options": [
+            "La justificación de que todos los índices usados existen y de que el bucle termina.",
+            "Sólo el nombre de i.",
+            "Que siempre haya tres visitas."
+          ],
+          "correctIndex": 0,
+          "explanation": "La condición define qué visitas son posibles y cuándo cesa el recorrido."
+        }
+      ]
+    }
+  ]
+}

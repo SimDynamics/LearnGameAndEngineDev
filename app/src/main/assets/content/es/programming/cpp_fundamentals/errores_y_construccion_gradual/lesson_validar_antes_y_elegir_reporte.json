@@ -1,0 +1,169 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__validar_antes_y_elegir_reporte",
+  "title": "Validar antes del cálculo y elegir cómo informar",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un tipo correcto todavía puede contener un dato inválido"
+        },
+        {
+          "type": "paragraph",
+          "text": "int puede representar -1 y 11; eso no los convierte en cantidades válidas para el microtaller que acepta de 0 a 10 piezas. La validación comprueba reglas del dominio que el tipo por sí solo no expresa. Hazla antes de las operaciones que dependen de ellas. Una condición escrita después de dividir, acceder o modificar no protege la operación que ya ocurrió."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{11};\n    if (piezas < 0 || piezas > 10) {\n        std::cout << \"Pedido invalido\";\n    } else if (piezas == 0) {\n        std::cout << 0;\n    } else {\n        std::cout << 3 + 2 * piezas;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "validacion_frontera_aceptada",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{10};\n    if (piezas < 0 || piezas > 10) {\n        std::cout << \"Invalido\";\n    } else {\n        std::cout << \"Aceptado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Aceptado"
+          ],
+          "explanation": "El dominio incluye 10. Las comparaciones estrictas sólo rechazan fuera del intervalo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "validacion_negativa",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{-1};\n    if (piezas < 0 || piezas > 10) {\n        std::cout << \"Invalido\";\n    } else {\n        std::cout << \"Aceptado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Invalido"
+          ],
+          "explanation": "-1 incumple la frontera inferior aunque tenga tipo int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Validar el dato que realmente se usará"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprobar una cantidad inicial y después restarle algo puede producir una cantidad inválida para la siguiente función. Si quedan debe ser no negativo, verifica las relaciones antes de la resta que representa completar piezas. El contrato de una función no se mantiene automáticamente por haber validado otro dato en una etapa anterior."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "completar_mas_de_lo_disponible",
+          "question": "Hay 5 piezas pendientes y se propone completar 7. La operación debe conservar un número de pendientes no negativo. ¿Qué comprobación corresponde antes de modificar?",
+          "options": [
+            "Comprobar que completadas esté entre 0 y pendientes.",
+            "Restar 7 y aceptar el resultado porque 5 era válido.",
+            "Cambiar pendientes a unsigned para que nunca parezca negativo."
+          ],
+          "correctIndex": 0,
+          "explanation": "La relación entre los dos datos protege el significado del estado. Cambiar la representación no convierte una operación imposible en válida."
+        },
+        {
+          "type": "output_prediction",
+          "id": "rechazo_preserva_estado",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int pendientes{5};\n    int completadas{7};\n    if (completadas < 0 || completadas > pendientes) {\n        std::cout << \"Rechazado:\";\n    } else {\n        pendientes -= completadas;\n    }\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "answers": [
+            "Rechazado:5"
+          ],
+          "explanation": "Se decide antes de modificar. El estado original sigue válido al informar el rechazo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "aceptacion_modifica_estado",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int pendientes{5};\n    int completadas{2};\n    if (completadas < 0 || completadas > pendientes) {\n        std::cout << \"Rechazado:\";\n    } else {\n        pendientes -= completadas;\n    }\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "La cantidad aceptada puede restarse sin violar la regla de pendientes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un valor especial necesita un contrato inequívoco"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función puede devolver un valor especial para informar un error si ese valor queda fuera de todos los resultados válidos y el llamador lo comprueba. Para una estimación de minutos no negativa, -1 puede representar pedido inválido. Cero no sería una señal inequívoca: ya representa el pedido vacío válido. El resultado especial debe estar documentado; no obliga por sí solo al llamador a tratarlo correctamente."
+        },
+        {
+          "type": "output_prediction",
+          "id": "valor_especial_comprobado",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Devuelve -1 si piezas esta fuera de 0..10.\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int resultado{estimar(12)};\n    if (resultado == -1) {\n        std::cout << \"Pedido invalido\";\n    } else {\n        std::cout << resultado;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Pedido invalido"
+          ],
+          "explanation": "El llamador reconoce la señal antes de usarla como minutos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cero_como_error_ambiguo",
+          "question": "Una función devuelve 0 tanto para pedido vacío válido como para dato inválido. ¿Qué pierde un llamador que recibe únicamente ese int?",
+          "options": [
+            "La posibilidad de distinguir éxito vacío de fracaso mediante ese resultado.",
+            "La capacidad de imprimir cualquier int.",
+            "La posibilidad de que una función devuelva 0."
+          ],
+          "correctIndex": 0,
+          "explanation": "El mismo valor representa dos situaciones que el llamador necesita distinguir."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "olvidar_comprobar_senal",
+          "question": "La función usa -1 para error, pero el llamador suma todos sus resultados como si fueran minutos. ¿Qué defecto existe?",
+          "options": [
+            "El llamador incorpora un error al cálculo porque omitió comprobar el contrato del resultado.",
+            "Devolver un int obliga al lenguaje a comprobar -1 automáticamente.",
+            "El resultado especial convierte la suma en una excepción por sí mismo."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un código de error puede ignorarse. Necesita una política explícita en cada punto que lo usa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Detectar e informar tienen responsabilidades distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función de cálculo conoce su dominio y puede detectar un dato inválido. El llamador conoce el contexto y decide si muestra un mensaje, rechaza un pedido o intenta procesar el siguiente. Poner toda presentación dentro del cálculo reduce su reutilización y puede producir mensajes duplicados. La unidad de excepciones desarrolla otra forma de separar detección y tratamiento. Su práctica ejecutable permanece pendiente del soporte necesario en el motor."
+        },
+        {
+          "type": "fill_code",
+          "id": "rechazo_fuera_dominio",
+          "question": "Completa sólo el operador lógico: basta que cualquiera de las dos fronteras se incumpla para rechazar.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{4};\n    if (piezas < 0 ___ piezas > 10) {\n        std::cout << \"Invalido\";\n    } else {\n        std::cout << \"Valido\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "||"
+          ],
+          "explanation": "El rechazo es menor que cero o mayor que diez. Usar && exigiría dos desigualdades incompatibles."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe en el laboratorio una función estimar que devuelva -1 para datos fuera de 0 a 10 y que cumpla la regla anterior para datos válidos. Procesa la colección: muestra Invalido para la señal de error y los minutos para los demás. Conserva un total sólo de estimaciones válidas. Prueba también una colección vacía. Decide los resultados manuales antes de ejecutar."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Piezas=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ]
+}

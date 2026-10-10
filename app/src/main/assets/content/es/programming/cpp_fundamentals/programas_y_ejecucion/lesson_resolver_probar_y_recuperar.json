@@ -1,0 +1,197 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__resolver_probar_y_recuperar",
+  "title": "Resolver, probar y recuperar lo aprendido",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un requisito nuevo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vamos a construir un aviso para una estación: debe mostrar exactamente las dos líneas Estacion abierta y Acceso por el norte. Primero formula la salida esperada; después decide cómo producirla con las instrucciones conocidas. El programa no necesita leer datos ni realizar cálculos. Una solución pequeña es adecuada porque el problema también es pequeño."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribir la salida esperada antes del código ayuda a distinguir lo que queremos de lo que terminamos escribiendo. Cuando haya una diferencia, podemos señalarla con precisión: texto equivocado, ausencia de separador o orden distinto. Una impresión vaga de que el programa «se ve bien» no cumple esa función."
+        },
+        {
+          "type": "fill_code",
+          "id": "literal_informe",
+          "question": "Escribe un solo literal, con comillas dobles y el escape de salto, para mostrar Estacion abierta y Acceso por el norte en dos líneas. No añadas un salto final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "\"Estacion abierta\\nAcceso por el norte\""
+          ],
+          "explanation": "El salto separa las dos líneas dentro de un único literal."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "evidencia_aviso",
+          "question": "¿Qué debe compararse para comprobar ese aviso?",
+          "options": [
+            "Sólo el número de líneas del código fuente.",
+            "La salida observada con las dos líneas requeridas y su orden.",
+            "Sólo la presencia de un comentario con el objetivo."
+          ],
+          "correctIndex": 1,
+          "explanation": "El criterio pertenece al resultado visible: contenido, separación y orden."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparación guiada de otra versión"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera la salida requerida en la página anterior y observa otra manera de producirla. Esta comprobación guiada permite relacionar distintas organizaciones del código con un mismo comportamiento. Después tendrás que construir un aviso nuevo en el laboratorio."
+        },
+        {
+          "type": "output_prediction",
+          "id": "aviso_por_partes",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Estacion\" << \" abierta\\n\";\n    std::cout << \"Acceso por el norte\";\n    return 0;\n}\n",
+          "answers": [
+            "Estacion abierta\nAcceso por el norte"
+          ],
+          "explanation": "Las partes del primer texto conservan su espacio; el escape inicia la segunda línea."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dos_soluciones",
+          "question": "Dos programas organizan sus inserciones de forma distinta, pero producen exactamente el aviso requerido. ¿Qué criterio permite aceptar ambos para esta tarea?",
+          "options": [
+            "Su salida cumple el requisito, aunque el código no sea idéntico.",
+            "Todo programa de distinto texto debe dar una salida distinta.",
+            "Se deben eliminar todos los espacios del mensaje."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una tarea puede admitir varias expresiones correctas. Comparar el comportamiento permite reconocerlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Que existan varias soluciones válidas no significa que todas las diferencias sean irrelevantes. Aquí se exige una salida concreta; después podremos comparar también facilidad de lectura, cambio y comprobación. La equivalencia se establece respecto de una propiedad definida, no por el aspecto superficial del código."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar símbolos y contexto"
+        },
+        {
+          "type": "output_prediction",
+          "id": "recuperar_comentarios",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    // Muestra un separador entre zonas.\n    std::cout << \"Este\" << \" | \" << \"Oeste\";\n    return 0;\n}\n",
+          "answers": [
+            "Este | Oeste"
+          ],
+          "explanation": "El comentario explica intención; el literal central produce el separador y sus espacios."
+        },
+        {
+          "type": "output_prediction",
+          "id": "recuperar_comillas",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Codigo: \\\"A7\\\"\\nFin\";\n    return 0;\n}\n",
+          "answers": [
+            "Codigo: \"A7\"\nFin"
+          ],
+          "explanation": "Las comillas escapadas forman parte del dato y el salto sitúa Fin en otra línea."
+        },
+        {
+          "type": "fill_code",
+          "id": "recuperar_punto_coma",
+          "question": "Completa únicamente el terminador de la instrucción, sin cambiar su mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Caja 8\"___\n    return 0;\n}\n",
+          "answers": [
+            ";"
+          ],
+          "explanation": "Recuperamos el terminador de una instrucción de salida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción independiente en el laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Usa el laboratorio para crear una tarjeta de tres líneas: Taller, Turno B y Material preparado. Antes de escribir, anota esa salida esperada fuera del editor. Completa el cuerpo de main; utiliza las partes que has practicado y decide dónde introducir los saltos. Compila, compara la salida con tu predicción y corrige diferencias concretas."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui las instrucciones de la tarjeta.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "El laboratorio permite escribir varias soluciones. Esta tarea se comprueba observando la salida; no tiene una calificación automática del código. Después de probar una versión correcta, cambia el turno a C sin modificar las otras líneas y comprueba qué se conserva."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cambio_localizado",
+          "question": "Cambias el mensaje Turno B por Turno C y conservas las otras inserciones. ¿Qué debe cambiar en la tarjeta?",
+          "options": [
+            "Sólo el turno mostrado.",
+            "main debe cambiar de nombre.",
+            "La declaración de iostream debe desaparecer."
+          ],
+          "correctIndex": 0,
+          "explanation": "El cambio de un dato del mensaje no exige alterar la estructura del programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir cómo investigar un fallo"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_compilacion",
+          "question": "La herramienta rechaza el programa antes de ejecutarlo. ¿Qué primera acción corresponde?",
+          "options": [
+            "Comparar únicamente mensajes de salida que no se han producido.",
+            "Leer el diagnóstico y revisar la sintaxis y los nombres del contexto indicado.",
+            "Suponer que compilar y ejecutar son exactamente lo mismo."
+          ],
+          "correctIndex": 1,
+          "explanation": "Primero necesitamos una versión válida que pueda construirse; después compararemos su comportamiento."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_logica",
+          "question": "La versión compila y ejecuta, pero las dos palabras aparecen juntas cuando se necesitaba un espacio. ¿Qué debes revisar?",
+          "options": [
+            "Qué instrucción aporta el separador requerido.",
+            "La cantidad de comentarios, sin mirar la salida.",
+            "Sólo el nombre del archivo."
+          ],
+          "correctIndex": 0,
+          "explanation": "El separador debe formar parte de los caracteres insertados; el espacio del código fuera del literal no lo produce."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de continuar, explica con tus palabras qué parte declara el recurso de salida, dónde comienza la ejecución, cómo se aporta el mensaje y cómo se comprueba. Si puedes copiar el ejemplo pero no modificarlo para cumplir otra salida, vuelve a las actividades de construcción. En las siguientes unidades recuperaremos estas ideas mientras los programas incorporan datos y decisiones."
+        },
+        {
+          "type": "note",
+          "text": "Fuente principal de esta unidad: Stroustrup, B. (2024). Programming: Principles and practice using C++ (3.ª ed.). Addison-Wesley. Capítulos 0–1. Explicaciones, ejemplos y ejercicios de este curso redactados para esta ruta."
+        }
+      ]
+    }
+  ]
+}

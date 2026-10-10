@@ -1,0 +1,183 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__division_y_resto",
+  "title": "División, resto y datos válidos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El tipo de los operandos decide la división"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la unidad anterior viste que 7 / 2 y 7.0 / 2 producen resultados de tipos distintos. Ahora usa esa diferencia para elegir un cálculo. Si ambos operandos son int, / realiza división entera: obtiene el cociente y descarta la parte fraccionaria hacia cero. Con operandos positivos, 11 / 4 produce 2. Si al menos un operando es double, 11.0 / 4 produce 2.75."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int entero = 11 / 4;\n    const double fraccion = 11.0 / 4;\n    const double despues = 11 / 4;\n    std::cout << entero << \" \" << fraccion << \" \" << despues;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es 2 2.75 2. En despues, la división entera ya produjo 2 antes de convertirlo a double para inicializar el objeto. Cambiar sólo el tipo del destino no recupera una fracción descartada. Si necesitas la división en double y los datos son int, convierte un operando antes de dividir, por ejemplo static_cast<double>(cantidad) / grupos."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice los dos resultados. Mantén un espacio entre ellos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int distancia = 9;\n    const int tramos = 4;\n    const double primero = distancia / tramos;\n    const double segundo = static_cast<double>(distancia) / tramos;\n    std::cout << primero << \" \" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "2 2.25"
+          ],
+          "explanation": "primero recibe el cociente entero 2. La conversión en segundo ocurre antes de /, por lo que se obtiene 2.25."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El resto conserva lo que no completa un grupo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El operador % obtiene el resto de una división entera. En 17 / 5 caben 3 grupos completos y 17 % 5 da 2 elementos sobrantes: 17 = 3 * 5 + 2. / y % responden preguntas distintas sobre los mismos datos. % requiere operandos enteros; no se usa con double. % comparte prioridad con * y /, por encima de + y -. Si combinas esas operaciones, agrupa con paréntesis el cálculo que pide el requisito."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta lección las cantidades son enteros no negativos y el tamaño de grupo es un entero positivo. En ese dominio, el resto está entre 0 y tamaño - 1. El resto 0 significa que la cantidad se reparte exactamente. Esta interpretación de elementos sobrantes depende del dominio elegido; no estamos definiendo un reparto de cantidades negativas."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Hay 29 fichas y caben 6 en cada bandeja. Escribe el cociente y el resto que muestra el programa.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 29;\n    const int por_bandeja = 6;\n    std::cout << fichas / por_bandeja << \" \" << fichas % por_bandeja;\n    return 0;\n}\n",
+          "answers": [
+            "4 5"
+          ],
+          "explanation": "Cuatro bandejas contienen 24 fichas y quedan 5. 4 * 6 + 5 reconstruye las 29 fichas."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Con una cantidad no negativa y grupos de tamaño 4, ¿qué restos son posibles?",
+          "options": [
+            "0, 1, 2 y 3",
+            "1, 2, 3 y 4",
+            "Cualquier número mayor que 4"
+          ],
+          "correctIndex": 0,
+          "explanation": "Si sobraran 4 elementos habría otro grupo completo. El resto puede ser 0 y siempre es menor que 4."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el operador según la pregunta"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int piezas = 23;\n    const int capacidad = 4;\n    const int cajas_completas = piezas / capacidad;\n    const int sobrantes = piezas % capacidad;\n    std::cout << \"Cajas: \" << cajas_completas << \"\\n\";\n    std::cout << \"Sobrantes: \" << sobrantes;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este informe muestra 5 cajas completas y 3 piezas sobrantes. No calcula las cajas totales necesarias para guardar todas las piezas: esa pregunta también debe considerar una caja incompleta. Antes de programar, concreta qué significa cada resultado."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa los operadores para informar cuántos grupos completos se pueden formar y cuántos elementos quedan fuera de esos grupos. Escribe sólo un operador por hueco, según la finalidad de cada resultado.",
+          "template": "#include <iostream>\n\nint main() {\n    const int cantidad = 31;\n    const int capacidad = 5;\n    const int grupos_completos = cantidad [] capacidad;\n    const int sobrantes = cantidad [] capacidad;\n    std::cout << grupos_completos << \" \" << sobrantes;\n    return 0;\n}\n",
+          "answers": [
+            "/",
+            "%"
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué comprueba que 6 grupos y 1 sobrante corresponden a 31 elementos con capacidad 5?",
+          "options": [
+            "6 + 1 = 31",
+            "6 * 5 + 1 = 31",
+            "31 * 5 = 6 + 1"
+          ],
+          "correctIndex": 1,
+          "explanation": "Cada grupo representa 5 elementos; los sobrantes se añaden al total agrupado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: horas completas y minutos restantes"
+        },
+        {
+          "type": "note",
+          "text": "En la actividad anterior, / produce 6 y % produce 1. Los nombres del resultado ayudaban a elegir la operación antes de calcular."
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa recibe sus datos mediante constantes declaradas: total_minutos vale 137 y una hora tiene 60 minutos. Predice el informe y ejecútalo. Después cambia sólo total_minutos a 127; vuelve a predecir. Finalmente prueba 0 y 60. Mantén los minutos entre 0 y 600 y el divisor en 60. El formato solicitado muestra números normales, sin añadir un cero delante de un minuto de una cifra."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n    std::cout << horas << \" h \" << minutos << \" min\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Después de cambiar total_minutos a 127, ¿qué informe cumple este formato?",
+          "options": [
+            "2 h 7 min",
+            "2 h 07 min",
+            "2 h 67 min"
+          ],
+          "correctIndex": 0,
+          "explanation": "Dos horas consumen 120 minutos y quedan 7. El programa no contiene una instrucción para agregar un cero a ese número."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los casos 0 y 60 ayudan a comprobar el resto 0. Cambiar los datos de uno en uno facilita explicar una diferencia. Para cualquier minuto del dominio elegido, puedes reconstruir el total como horas * 60 + minutos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una operación también necesita datos válidos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar / o % con enteros, su divisor debe ser distinto de cero. Una división o un resto con divisor cero no tiene un resultado válido que debamos predecir. Que el programa compile no garantiza que los valores sean adecuados al ejecutar. Por ahora, cada programa declara divisores positivos; más adelante usaremos decisiones para rechazar datos inválidos antes de calcular."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un informe usa capacidad como divisor para formar cajas. ¿Qué dato debes verificar además del requisito sobre la cantidad?",
+          "options": [
+            "Que capacidad sea positiva para este modelo de reparto.",
+            "Que capacidad tenga un nombre corto.",
+            "Que la salida contenga al menos dos líneas."
+          ],
+          "correctIndex": 0,
+          "explanation": "El modelo necesita cajas con una capacidad positiva; así el divisor tampoco será cero."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Recupera paréntesis y división entera. Predice la salida.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int registrados = 8;\n    const int nuevos = 3;\n    const int pares_completos = (registrados + nuevos) / 2;\n    std::cout << pares_completos;\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "explanation": "La suma agrupada da 11. La división entera entre 2 cuenta 5 pares completos."
+        },
+        {
+          "type": "note",
+          "text": "La división entera descarta hacia cero, no redondea al entero más próximo. Los ejercicios usan valores pequeños cuya representación y resultados caben en int, sin depender de cuántos bits tenga ese tipo en una plataforma."
+        }
+      ]
+    }
+  ]
+}

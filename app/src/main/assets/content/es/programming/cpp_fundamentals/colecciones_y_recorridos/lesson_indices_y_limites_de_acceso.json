@@ -1,0 +1,290 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__indices_y_limites_de_acceso",
+  "title": "Acceder a elementos dentro de sus límites",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una posición no es su valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "En un vector con valores {12, 4, 9}, el primer elemento tiene índice cero, el segundo uno y el tercero dos. Escribir datos[1] accede al elemento de índice uno, cuyo valor es cuatro. Un índice identifica una posición; no indica cuántos elementos hay ni busca el valor uno."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{12, 4, 9};\n    std::cout << datos[0] << \" \" << datos[1] << \" \" << datos[2];\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En {6, 10, 3}, ¿cuál es el índice del valor diez?",
+          "options": [
+            "10",
+            "1",
+            "2"
+          ],
+          "correctIndex": 1,
+          "explanation": "La primera posición tiene índice cero; diez está en la segunda, índice uno."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el dígito del índice para leer el tercer elemento.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{5, 8, 2};\n    std::cout << datos[___];\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "El tercer elemento ocupa el índice dos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "size() es el límite excluido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un vector tiene tamaño tres, sus índices válidos son cero, uno y dos. El índice tres ya está fuera. El dominio comienza en cero e incluye todos los enteros menores que size(); el tamaño mismo está excluido. En un vector vacío no existe ningún índice válido, ni siquiera cero."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un vector tiene tamaño cuatro. ¿Qué lista contiene exactamente sus índices válidos?",
+          "options": [
+            "1, 2, 3, 4",
+            "0, 1, 2, 3",
+            "0, 1, 2, 3, 4"
+          ],
+          "correctIndex": 1,
+          "explanation": "Son cuatro posiciones desde cero; cuatro es el límite excluido."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué acceso puede hacerse en un vector vacío?",
+          "options": [
+            "El índice cero.",
+            "El índice size().",
+            "Ningún acceso a un elemento."
+          ],
+          "correctIndex": 2,
+          "explanation": "Vacío significa que no hay elementos que leer o modificar."
+        },
+        {
+          "type": "note",
+          "text": "No ejecutaremos accesos fuera del dominio. En std::vector estándar, [] exige un índice válido y no garantiza informar del error. Un acceso inválido no tiene una salida segura que debamos descubrir probando."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer y modificar un elemento"
+        },
+        {
+          "type": "paragraph",
+          "text": "datos[1] = 7; cambia el valor de una posición existente. No crea un elemento adicional; el tamaño continúa igual. Leer datos[1] después observa el valor nuevo. Igual que en una variable individual, la actualización depende de qué objeto se indica a la izquierda."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> cajas{2, 5, 8};\n    int copia = cajas[1];\n    cajas[1] += 3;\n    std::cout << copia << \" \" << cajas[1] << \" \" << cajas.size();\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "5 8 3"
+          ],
+          "explanation": "copia conserva cinco; la segunda posición cambia a ocho sin alterar el tamaño."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el dígito del índice para duplicar el primer valor, manteniendo tres elementos.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 6, 9};\n    datos[___] *= 2;\n    std::cout << datos[0] << \" \" << datos.size();\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "El índice cero ya existe. La actualización cambia cuatro a ocho."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un vector de dos elementos recibe push_back(7). ¿Qué diferencia hay frente a asignar siete al índice uno?",
+          "options": [
+            "Ambas acciones aumentan siempre el tamaño.",
+            "push_back añade una tercera posición; la asignación cambia la segunda que ya existía.",
+            "La asignación busca todas las apariciones de siete."
+          ],
+          "correctIndex": 1,
+          "explanation": "Añadir y reemplazar describen operaciones diferentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "at() añade una comprobación"
+        },
+        {
+          "type": "paragraph",
+          "text": "datos.at(1) también accede al elemento de índice uno, pero comprueba el dominio. Si el índice no existe, señala un error mediante una excepción; aprenderemos a manejar excepciones después. [] estándar no promete esa comprobación. El soporte PPP del libro puede sustituir vector por una versión comprobada: aquí usamos std::vector estándar y mantenemos todos los accesos válidos."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{6, 3};\n    datos.at(1) = 8;\n    std::cout << datos[1] << \" \" << datos.at(0);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "8 6"
+          ],
+          "explanation": "Ambas operaciones acceden a posiciones válidas del mismo vector."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué diferencia describe correctamente at() y [] para std::vector?",
+          "options": [
+            "at() comprueba el índice; [] requiere que ya sea válido.",
+            "[] añade elementos automáticamente.",
+            "at() permite cualquier índice sin error."
+          ],
+          "correctIndex": 0,
+          "explanation": "La comprobación no sustituye decidir qué hacer si la posición no existe."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para estas prácticas usamos la condición de dominio antes de acceder y at() cuando queremos comprobar el acceso. No necesitamos provocar un error ni atraparlo para aprender a justificar una posición válida."
+        },
+        {
+          "type": "note",
+          "text": "at() comprueba el rango en C++ estándar. En la app usamos sólo índices válidos y guardas previas: su ejecutor actual no admite todavía recuperar un fallo mediante out_of_range. Para practicar el manejo de esa excepción hace falta un entorno con soporte de excepciones; aquí no provocamos un acceso fallido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar la existencia antes de acceder"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    if (datos.empty()) {\n        std::cout << \"Sin registros\";\n    } else {\n        std::cout << datos.at(0);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0};\n    if (datos.empty()) {\n        std::cout << \"Sin registros\";\n    } else {\n        std::cout << \"Primero: \" << datos.at(0);\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "Primero: 0"
+          ],
+          "explanation": "Un elemento cero existe; la rama de lectura es válida."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    auto indice = datos.size();\n    if (indice < datos.size()) {\n        std::cout << datos.at(indice);\n    } else {\n        std::cout << \"Indice no disponible\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "Indice no disponible"
+          ],
+          "explanation": "El tamaño es el límite excluido, así que esa posición no se lee."
+        },
+        {
+          "type": "paragraph",
+          "text": "auto deduce aquí el tipo que devuelve size(), por lo que la comparación usa tipos coherentes. Estudiaremos después cómo nombrar ese tipo al recorrer índices."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El último requiere una colección no vacía"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si existen elementos, el último índice es size() - 1. Si no existen, restar uno no fabrica una posición válida. Por eso la prueba de vacío debe ocurrir antes de calcular y usar esa posición."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 9, 6};\n    if (!datos.empty()) {\n        auto ultimo = datos.size() - 1;\n        std::cout << datos.at(ultimo);\n    } else {\n        std::cout << \"Sin ultimo\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "6"
+          ],
+          "explanation": "El tamaño tres permite el último índice dos; la condición protege también el caso vacío."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quieres acceder al último elemento para cualquier colección. ¿Qué orden es seguro?",
+          "options": [
+            "Primero acceder; después comprobar el vacío.",
+            "Primero comprobar que no está vacía; dentro de esa rama usar size() - 1.",
+            "Usar siempre size() como índice."
+          ],
+          "correctIndex": 1,
+          "explanation": "La existencia se demuestra antes de calcular y leer la última posición."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción y casos límite"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe un programa con {3, 7, 2}. Si hay elementos, añade cuatro al primero y muestra Primero: 7 y Ultimo: 2 en líneas distintas. Si no hay elementos, muestra Sin datos. Comprueba también {5}, que debe mostrar Primero: 9 y Ultimo: 9: en una colección de un elemento ambas posiciones designan el mismo objeto."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de compilar, anota por qué existe cada posición utilizada. Prueba después el vector vacío, sin ejecutar ningún acceso en esa rama. Cambiar un elemento no debe cambiar size()."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y una copia que conserva su momento"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 7, 2};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        datos.at(0) += 4;\n        std::cout << \"Primero: \" << datos.at(0) << \"\\n\";\n        std::cout << \"Ultimo: \" << datos.at(datos.size() - 1);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{9, 4};\n    int anterior = datos.at(0);\n    datos.at(0) = datos.at(1);\n    std::cout << anterior << \" \" << datos.at(0);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "9 4"
+          ],
+          "explanation": "La copia anterior recibió nueve antes de reemplazar la primera posición."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Con un solo elemento, ¿qué ocurre al modificar el primero y luego leer el último?",
+          "options": [
+            "Se observa la modificación: son la misma posición.",
+            "Se crea una segunda posición.",
+            "El último mantiene una copia independiente."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los nombres primero y último describen el mismo índice cero cuando el tamaño es uno."
+        }
+      ]
+    }
+  ]
+}

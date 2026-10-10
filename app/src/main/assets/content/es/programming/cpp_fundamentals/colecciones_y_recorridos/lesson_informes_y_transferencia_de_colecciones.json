@@ -1,0 +1,263 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__informes_y_transferencia_de_colecciones",
+  "title": "Informes y transferencia con datos propios",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el significado antes del recorrido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vamos a integrar la unidad en dos tareas distintas. En ambas, comienza por decidir qué representa cada dato, qué resúmenes existen en vacío y qué orden debes conservar. Después elige entre recorrido por valor, referencia e índice. Una salida correcta para un ejemplo no sustituye explicar esas decisiones ni comprobar otros casos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer proyecto: las cantidades de asistentes de una actividad se registran en orden de sesión. Conserva hasta veinte enteros entre cero y cincuenta. El informe debe mostrar N y Total para cualquier colección. Cuando hay datos, también debe mostrar Min, Max, Media y Mediana. En vacío muestra Sin sesiones para esa segunda parte. Ordenar una copia permite calcular la mediana y conservar el orden de sesión."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una especificación que se puede comprobar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para {2, 8, 3, 3}, la salida solicitada tiene tres líneas: N=4 Total=16; Min=2 Max=8 Media=4 Mediana=3; Orden:2;8;3;3;. Los puntos y coma dentro de Orden son separadores de sus valores; los que separan estas tres descripciones en el párrafo no forman parte de la salida. Con {}, muestra N=0 Total=0, después Sin sesiones, después Orden:, cada mensaje en su línea."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué cálculo requiere ordenar una copia en este proyecto?",
+          "options": [
+            "La mediana.",
+            "La suma necesariamente.",
+            "La cantidad de elementos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los extremos y la suma pueden calcularse por recorrido; la mediana usa el orden por valor."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué dato no existe para la colección vacía según esta especificación?",
+          "options": [
+            "El total cero.",
+            "La cantidad cero.",
+            "Una media de sesiones."
+          ],
+          "correctIndex": 2,
+          "explanation": "N y total admiten resúmenes vacíos; media, mediana y extremos necesitan elementos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción independiente del informe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe el programa completo desde la especificación, sin consultar la solución posterior. Comprueba {2, 8, 3, 3}, {}, {0}, {5}, {1, 2} y {6, 6, 6}. Para cada caso escribe de antemano N, total, existencia de resúmenes, posiciones centrales y orden original. Conserva los valores acotados para que la suma entera quede dentro de un rango pequeño."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Como variante, aumenta en uno los elementos del vector mediante auto& antes de calcular el informe. Predice qué resúmenes cambian y verifica que el orden de sesión permanece. Para recuperar el estado anterior, realiza una copia antes de la transformación y presenta ambas versiones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una solución posible"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{2, 8, 3, 3};\n    int total = 0;\n    for (int valor : datos) { total += valor; }\n    std::cout << \"N=\" << datos.size() << \" Total=\" << total << \"\\n\";\n    if (datos.empty()) {\n        std::cout << \"Sin sesiones\\n\";\n    } else {\n        int menor = datos.at(0);\n        int mayor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) { menor = valor; }\n            if (valor > mayor) { mayor = valor; }\n        }\n        double media = static_cast<double>(total) / static_cast<double>(datos.size());\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Min=\" << menor << \" Max=\" << mayor << \" Media=\" << media << \" Mediana=\" << mediana << \"\\n\";\n    }\n    std::cout << \"Orden:\";\n    for (int valor : datos) { std::cout << valor << \";\"; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia ordenada se usa para el centro y los datos originales para el orden de sesión. Los resúmenes que requieren un dato viven dentro de la rama no vacía. Compara tu versión por sus propiedades y resultados; no hace falta que use exactamente las mismas líneas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperación con un caso nuevo"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 3};\n    auto anterior = datos;\n    for (auto& valor : datos) { valor += 2; }\n    int suma = 0;\n    for (int valor : datos) { suma += valor; }\n    double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n    std::cout << anterior.at(0) << \" \" << datos.at(0) << \" \" << media;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "1 3 4"
+          ],
+          "explanation": "La copia conserva uno; la colección cambia a tres y cinco, cuya media es cuatro."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el signo necesario para que los cambios queden en la colección.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 4};\n    for (auto___ valor : datos) { ++valor; }\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ],
+          "explanation": "auto& conserva referencia a los elementos; auto por valor sólo cambiaría copias."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu informe funciona con {4}, pero falla con {}. ¿Qué falta revisar?",
+          "options": [
+            "La rama de ausencia antes de acceder o dividir, no inventar un dato inicial.",
+            "La longitud del nombre del vector.",
+            "La cantidad de comentarios."
+          ],
+          "correctIndex": 0,
+          "explanation": "La colección de uno no pone a prueba el caso vacío."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Segundo proyecto: un catálogo de etiquetas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva hasta veinte etiquetas en std::vector<std::string>, en su orden de llegada. Debes informar si aparece exactamente \"taller\", mostrar su primera posición si existe y contar cuántas etiquetas distintas hay. Para contar distintos, ordena una copia y compara vecinos con protección del primero. Conserva las repeticiones y el orden del original."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para {\"patio\", \"taller\", \"patio\", \"sala\"}, presenta Primera:1 y Distintas:3 en dos líneas. Para {}, presenta No encontrado y Distintas:0. Para {\"taller\", \"taller\"}, presenta Primera:0 y Distintas:1. La igualdad es exacta: \"Taller\" no coincide con \"taller\" en esta tarea."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué significa el índice que debemos presentar?",
+          "options": [
+            "La primera posición en el orden de llegada original.",
+            "La primera posición después de ordenar la copia.",
+            "El número de etiquetas distintas."
+          ],
+          "correctIndex": 0,
+          "explanation": "La especificación fija a qué secuencia pertenece esa posición."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción y transferencia a texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye el catálogo sin huecos y verifica los tres casos especificados. Añade {\"sala\"}, {\"Taller\", \"taller\"} y {\"taller\", \"patio\", \"taller\"}. Explica cuáles son las diferencias frente al proyecto de asistentes: no tiene sentido sumar etiquetas, pero sí buscar por igualdad, conservar orden y contar valores distintos."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Como variante, selecciona las etiquetas iguales a \"patio\" en otro vector, preservando su orden. No añadas al vector que estás recorriendo. Comprueba un caso sin coincidencias y uno con varias."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución del catálogo"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> etiquetas{\"patio\", \"taller\", \"patio\", \"sala\"};\n    std::size_t posicion = etiquetas.size();\n    for (std::size_t i = 0; i < etiquetas.size() && posicion == etiquetas.size(); ++i) {\n        if (etiquetas[i] == \"taller\") { posicion = i; }\n    }\n    if (posicion < etiquetas.size()) { std::cout << \"Primera:\" << posicion; }\n    else { std::cout << \"No encontrado\"; }\n    auto ordenadas = etiquetas;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    int distintas = 0;\n    for (std::size_t i = 0; i < ordenadas.size(); ++i) {\n        if (i == 0 || ordenadas[i] != ordenadas[i - 1]) { ++distintas; }\n    }\n    std::cout << \"\\nDistintas:\" << distintas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La búsqueda usa el original; la comparación de vecinos usa la copia ordenada. La marca de ausencia no se usa como índice, y || protege el vecino anterior en la primera posición. El conteo no borra repeticiones de ninguna colección."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar la protección de vecinos"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{7, 7, 2};\n    std::sort(datos.begin(), datos.end());\n    int distintos = 0;\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        if (i == 0 || datos[i] != datos[i - 1]) { ++distintos; }\n    }\n    std::cout << distintos << \" \" << datos.size();\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "2 3"
+          ],
+          "explanation": "Dos valores distintos no eliminan las tres observaciones originales."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué cambio rompería la protección del primer vecino?",
+          "options": [
+            "Evaluar datos[i - 1] antes de comprobar que i es cero, sin otra guarda.",
+            "Mantener i < size().",
+            "Ordenar una copia."
+          ],
+          "correctIndex": 0,
+          "explanation": "La justificación depende del orden de evaluación; no ejecutamos la versión de acceso inválido."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué diferencia decisiva hay entre los dos proyectos?",
+          "options": [
+            "El tipo y el significado de los datos determinan los resúmenes pertinentes.",
+            "Los vectores de texto no pueden estar vacíos.",
+            "Las cantidades nunca pueden repetirse."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una estructura compartida no convierte todas las operaciones en significativas para todos los datos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Volver después con datos propios"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una sesión posterior, construye desde una consigna nueva uno de los informes sin mirar las soluciones. Elige datos distintos dentro de los límites del laboratorio, registra tus predicciones y justifica las guardas. Después comprueba el otro proyecto para intercalar valores numéricos, texto, posición y estado. Recupera especialmente auto frente a auto&, copia frente a original, size frente a índice y ausencia frente a cero."
+        },
+        {
+          "type": "note",
+          "text": "El editor de la app no ofrece entrada estándar ni guarda permanentemente los experimentos al reabrir la lección. Usa valores definidos en el código y conserva fuera de la app las consignas, pruebas y versiones que quieras recuperar. Todos estos proyectos terminan y acceden únicamente a posiciones existentes."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué evidencia muestra transferencia más allá de recordar una solución?",
+          "options": [
+            "Construir con datos y contexto nuevos, anticipar casos límite y explicar por qué cada acceso y resumen son válidos.",
+            "Repetir la misma salida copiada sin justificarla.",
+            "Completar cierto número fijo de ejecuciones."
+          ],
+          "correctIndex": 0,
+          "explanation": "La evidencia se apoya en decisiones explicadas y comprobadas; no calificamos dominio por un recuento de actividades."
+        }
+      ]
+    }
+  ]
+}

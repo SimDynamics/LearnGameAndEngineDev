@@ -1,0 +1,169 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar",
+  "title": "Referencias para modificar el estado",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modificar el objeto del llamador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un parámetro int& nivel se refiere al objeto que aporta el argumento. Una asignación a nivel modifica ese mismo objeto, no una copia. La función puede devolver void porque su resultado observable es el cambio de estado. Ese propósito debe estar claro en su nombre y en su interfaz."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid aumentar_nivel(int& nivel) {\n    nivel = nivel + 2;\n}\n\nint main() {\n    int nivel = 5;\n    aumentar_nivel(nivel);\n    std::cout << nivel;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es 7. La referencia del parámetro se vinculó con el nivel de main. No hubo una asignación de un resultado devuelto: la función cambió el objeto directamente. Para los ejercicios de incremento mantendremos el nivel inicial entre 0 y 20, de modo que el resultado hasta 22 sea representable."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Compara una copia y una modificación por referencia. Predice ambas líneas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint preparar_copia(int dato) {\n    dato = 0;\n    return dato;\n}\n\nvoid poner_cero(int& dato) {\n    dato = 0;\n}\n\nint main() {\n    int original = 7;\n    const int copia = preparar_copia(original);\n    std::cout << original << \" \" << copia << \"\\n\";\n    poner_cero(original);\n    std::cout << original;\n    return 0;\n}\n",
+          "answers": [
+            "7 0\n0"
+          ],
+          "explanation": "La primera función cambia su copia y entrega 0. La segunda se refiere a original y lo modifica."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El argumento debe permitir la modificación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una referencia modificable necesita un objeto del tipo adecuado que pueda modificarse. Un literal como 3 no es una variable en la que el llamador quiera conservar un cambio. Un objeto const tampoco ofrece permiso de modificación. Esta diferencia se comunica en la declaración del parámetro, antes de entrar al cuerpo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Para void aumentar_nivel(int& nivel), main declara int actual = 3;. ¿Qué llamada aporta ese objeto modificable?",
+          "options": [
+            "aumentar_nivel(actual);",
+            "aumentar_nivel(3);",
+            "aumentar_nivel(\"actual\");"
+          ],
+          "correctIndex": 0,
+          "explanation": "actual nombra un objeto int modificable. El parámetro puede vincularse con él."
+        },
+        {
+          "type": "fill_code",
+          "question": "Completa sólo el símbolo de referencia para que la función modifique el int aportado por el llamador.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid reiniciar(int___ contador) {\n    contador = 0;\n}\n\nint main() {\n    int contador = 9;\n    reiniciar(contador);\n    std::cout << contador;\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ],
+          "explanation": "int& refiere al contador de main. La asignación lo deja en 0."
+        },
+        {
+          "type": "note",
+          "text": "Una referencia const sirve para lectura; una referencia sin const puede permitir cambios. Usa el permiso que requiere la tarea, sin atribuirlo sólo al tamaño de los datos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modificar una colección sin salir de sus elementos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función puede recibir std::vector<int>& para modificar el vector original. En un recorrido for (int& valor : datos), valor es una referencia al elemento actual. Si el recorrido usara int valor, cambiaría sólo una copia local. El siguiente cálculo reemplaza valores negativos por cero y conserva los demás."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-3, 5, -1};\n    quitar_negativos(datos);\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se muestran 0, 5 y 0 en líneas separadas. El recorrido llega sólo a los elementos existentes y no cambia el tamaño del vector. No necesita calcular índices ni acceder a una posición de una colección vacía. El vector vacío simplemente no ejecuta el cuerpo."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice los elementos después de aplicar un límite superior de 6.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid limitar_altos(std::vector<int>& datos, int limite) {\n    for (int& valor : datos) {\n        if (valor > limite) {\n            valor = limite;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {3, 9, 6};\n    limitar_altos(datos, 6);\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "3\n6\n6"
+          ],
+          "explanation": "Sólo 9 supera el límite y se reemplaza por 6. El elemento igual al límite se conserva."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: observar el estado después de una llamada"
+        },
+        {
+          "type": "paragraph",
+          "text": "La colección declarada es {-2, 4, -1, 6}. Predice sus elementos después de quitar_negativos y ejecuta. Después prueba un vector vacío, uno sin valores negativos y {-12, 0, 12}. Usa hasta 8 elementos entre -12 y 12. El requisito es cambiar cada valor negativo a cero sin modificar los no negativos ni el número de elementos."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-2, 4, -1, 6};\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Si cambias sólo for (int& valor : datos) por for (int valor : datos) dentro de la función, ¿qué sucede con los elementos originales negativos?",
+          "options": [
+            "Se cambian igual porque el vector entra por referencia.",
+            "Se conservan: la asignación cambia las copias locales del recorrido.",
+            "Desaparecen y el vector se hace más corto."
+          ],
+          "correctIndex": 1,
+          "explanation": "La referencia al contenedor y la referencia al elemento son decisiones distintas. Sin & en valor, se modifica una copia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba esa variante con los datos iniciales y restaura int&. El programa de la variante tiene un comportamiento definido; su salida permite detectar que ya no cumple el requisito de modificación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comunicar qué datos pueden cambiar"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una función sólo cuenta elementos y otra debe reemplazar negativos. ¿Qué interfaces expresan respectivamente lectura y modificación del vector original?",
+          "options": [
+            "Ambas con std::vector<int> por valor.",
+            "La primera con const std::vector<int>& y la segunda con std::vector<int>&.",
+            "La primera con std::vector<int>& y la segunda con const std::vector<int>&."
+          ],
+          "correctIndex": 1,
+          "explanation": "La primera recibe permiso de lectura y la segunda permiso de modificación, sin copiar el contenedor."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Recupera parámetros por valor y referencia en una misma llamada.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid fijar(int& destino, int nuevo) {\n    destino = nuevo;\n    nuevo = nuevo + 1;\n    std::cout << \"Local: \" << nuevo << \"\\n\";\n}\n\nint main() {\n    int destino = 2;\n    const int origen = 8;\n    fijar(destino, origen);\n    std::cout << destino << \" \" << origen;\n    return 0;\n}\n",
+          "answers": [
+            "Local: 9\n8 8"
+          ],
+          "explanation": "destino se modifica por referencia. nuevo es una copia de origen: su incremento local no cambia origen."
+        },
+        {
+          "type": "note",
+          "text": "Antes de una llamada, revisa los permisos de sus parámetros. Después, observa qué objetos pueden haber cambiado. Prefiere devolver un valor cuando el objetivo sea un cálculo y usa referencias modificables cuando cambiar el estado forme parte del propósito."
+        }
+      ]
+    }
+  ]
+}

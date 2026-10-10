@@ -1,0 +1,271 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida",
+  "title": "Leer datos con una entrada especificada",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Datos que llegan al programa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta ahora definimos los valores en el propio código. Otra posibilidad es leer datos que se entregan al programa. std::cin es el flujo de entrada estándar, disponible con <iostream>. La expresión std::cin >> cantidad; solicita leer un valor y guardarlo en cantidad. El símbolo >> apunta aquí a la extracción desde el flujo hacia la variable; << seguía usándose para la salida."
+        },
+        {
+          "type": "note",
+          "text": "En esta lección analizamos código con una entrada especificada en el enunciado. El laboratorio de la app no ofrece entrada estándar: no puedes introducir allí datos para cin. Para comprobar una lectura real hace falta un entorno C++ que admita esa entrada; los laboratorios de esta unidad usan valores definidos en el código."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    std::cin >> cantidad;\n    std::cout << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se entrega el dato 8, la lectura válida reemplaza el cero inicial por ocho y la salida muestra 8. Aquí la cantidad no se calcula a partir del valor anterior: se recibe de la entrada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un prompt pertenece a la salida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un prompt es un mensaje que indica qué dato se espera. Escribir ese mensaje no lee nada: la lectura la realiza cin. Tampoco imprime automáticamente el dato que se entregó. En nuestras predicciones distinguimos la entrada indicada por el enunciado de los caracteres que el programa envía a cout."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Se entrega la entrada 12. Escribe sólo la salida producida por cout, sin añadir una copia extra de la entrada.",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Cantidad: \";\n    int cantidad = 0;\n    std::cin >> cantidad;\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "Cantidad: 12"
+          ],
+          "explanation": "El primer cout produce el prompt; cin recibe 12; el último cout muestra el valor leído."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa únicamente el operador que lee el entero desde cin hacia cajas.",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n    std::cin ___ cajas;\n    std::cout << cajas;\n    return 0;\n}\n",
+          "answers": [
+            ">>"
+          ],
+          "explanation": ">> realiza la extracción; << corresponde a la salida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El tipo destino guía la lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "La variable que recibe el dato tiene un tipo. Al leer hacia un int, el flujo intenta interpretar un entero. Al leer hacia un double, intenta interpretar un número con posible parte fraccionaria. Al leer hacia std::string, obtiene texto hasta un separador de espacio en blanco. La extracción no adivina cuál era nuestra intención fuera de esas reglas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Se entrega la entrada 2.5. ¿Qué imprime el programa?",
+          "code": "#include <iostream>\n\nint main() {\n    double metros = 0.0;\n    std::cin >> metros;\n    std::cout << \"Metros: \" << metros;\n    return 0;\n}\n",
+          "answers": [
+            "Metros: 2.5"
+          ],
+          "explanation": "La lectura guarda un double válido de valor 2.5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El dato que se entregará es una longitud de 1.75. ¿Qué variable permite leerla conservando su parte fraccionaria?",
+          "options": [
+            "int longitud = 0;",
+            "double longitud = 0.0;",
+            "bool longitud = false;"
+          ],
+          "correctIndex": 1,
+          "explanation": "El tipo destino double permite interpretar esa longitud decimal."
+        },
+        {
+          "type": "paragraph",
+          "text": "En ejemplos de consola se suele pulsar Enter para entregar la línea escrita. Ese detalle del entorno no significa que el salto se guarde automáticamente como parte del token leído. Un flujo también puede recibir sus datos de un archivo o de otra fuente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Texto separado por espacios"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::cin >> nombre; lee una palabra hacia una cadena, omitiendo los espacios iniciales. Espacios, tabulaciones y saltos de línea separan tokens. Con la entrada Ana Maria, una sola extracción hacia std::string recibe Ana; Maria queda disponible para una extracción posterior. Para leer una línea completa con sus espacios hacen falta otras operaciones que estudiaremos después."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Se entrega la entrada Ana Maria. Escribe la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string primera;\n    std::string segunda;\n    std::cin >> primera >> segunda;\n    std::cout << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "Ana:Maria"
+          ],
+          "explanation": "Dos extracciones reciben dos tokens. El separador de salida : lo añade cout."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "La entrada es tres espacios, Norte, dos espacios y 6. ¿Qué imprime?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona;\n    int cantidad = 0;\n    std::cin >> zona >> cantidad;\n    std::cout << zona << \" \" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "Norte 6"
+          ],
+          "explanation": "Los espacios iniciales se omiten; Norte se lee como texto y 6 como entero."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Se entrega Sector Oeste y se ejecuta una sola extracción cin >> zona hacia std::string. ¿Qué texto recibe zona?",
+          "options": [
+            "Sector Oeste",
+            "Sector",
+            "Una cadena vacía porque existe un espacio."
+          ],
+          "correctIndex": 1,
+          "explanation": "La extracción de string recibe un token; el espacio termina el primero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Varias extracciones y un carácter"
+        },
+        {
+          "type": "paragraph",
+          "text": "En std::cin >> zona >> cantidad;, las extracciones se hacen en ese orden: primero el texto, después el entero. Se pueden entregar tokens en la misma línea o en líneas distintas. Con char, la extracción usual omite espacios iniciales y recibe un carácter. Puede servir para leer un código sencillo tras un número."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Se entrega la entrada 4B. ¿Qué imprime?",
+          "code": "#include <iostream>\n\nint main() {\n    int numero = 0;\n    char zona = '?';\n    std::cin >> numero >> zona;\n    std::cout << zona << \"-\" << numero;\n    return 0;\n}\n",
+          "answers": [
+            "B-4"
+          ],
+          "explanation": "Primero se lee 4 como entero; después B como carácter, aunque la entrada no tenga un espacio intermedio."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Se entrega Lia en una línea y 5 en la siguiente. ¿Qué muestra cout?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int unidades = 0;\n    std::cin >> nombre >> unidades;\n    unidades += 2;\n    std::cout << nombre << \" \" << unidades;\n    return 0;\n}\n",
+          "answers": [
+            "Lia 7"
+          ],
+          "explanation": "La entrada establece cinco unidades y la actualización posterior aumenta ese estado en dos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "No toda entrada cumple lo esperado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se solicita un entero y llega la palabra muchos, esa extracción no entrega el entero esperado. No debe usarse el resultado como si la lectura hubiera sido válida. Tampoco se debe confiar en que el valor inicial se conserve siempre tras fallar: el flujo tiene un estado que debe comprobarse. Aprenderemos a comprobarlo y decidir cómo responder al introducir control y validación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Además, leer un entero no comprueba que toda la entrada sea exactamente un entero. Con 8.5, una extracción hacia int puede recibir 8 y dejar .5 sin consumir. El programa debe especificar qué formato admite y verificar lo que necesita, en lugar de afirmar que interpretó correctamente una medida de ocho y medio."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Debes leer una cantidad entera, pero la entrada entregada es muchos. ¿Qué conclusión es válida?",
+          "options": [
+            "La lectura debe considerarse válida porque la variable tenía un cero inicial.",
+            "No se obtuvo el dato entero esperado; antes de usarlo hay que detectar y manejar el fallo.",
+            "cin convierte cualquier palabra a su cantidad equivalente."
+          ],
+          "correctIndex": 1,
+          "explanation": "El tipo no garantiza que la entrada tenga el formato esperado, y un inicializador no sustituye comprobar el resultado de la lectura."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Leer hacia int desde 8.5 obtiene un prefijo entero. ¿Qué evita concluir eso sobre la entrada completa?",
+          "options": [
+            "Que toda la entrada haya sido consumida y aceptada con el formato que necesitábamos.",
+            "Que el tipo int tenga nombres.",
+            "Que el código pueda incluir iostream."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una extracción válida de un prefijo no demuestra que el resto de datos cumpla la especificación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un modelo con valores fijados en la app"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye aquí una simulación explícita de datos recibidos: nombre = \"Rita\" y cajas = 4 ya estarán definidos en el código. Incrementa cajas en tres y muestra Rita: 7. Cambia después los datos a \"Leo\" y 2: debe mostrar Leo: 5. Este laboratorio comprueba el procesamiento y la salida; no comprueba que cin haya recibido entrada real."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para practicar la lectura de verdad, lleva el código de la página siguiente a un entorno que admita entrada estándar, entrega Rita 4 y luego Leo 2, y compara sus resultados con la simulación. Mantener clara esa diferencia permite saber qué parte del programa hemos comprobado y qué habilidad falta practicar en un laboratorio con stdin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lectura real y recuperación de sus etapas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre >> cajas;\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con entrada Rita 4, la lectura fija nombre y cajas; después se procesa la cantidad y se presenta el resultado Rita: 7. En la simulación, las definiciones sustituyen únicamente la etapa de lectura. El programa mostrado presupone que esos datos concretos se entregan correctamente; la versión que acepta cualquier entrada necesita comprobar el flujo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué parte verificó directamente el laboratorio con nombre y cajas definidos en el código?",
+          "options": [
+            "El procesamiento y la salida para esos datos.",
+            "Que una persona pudo introducir datos en cin dentro de la app.",
+            "Que cualquier entrada inválida está bien manejada."
+          ],
+          "correctIndex": 0,
+          "explanation": "La simulación tiene datos de partida conocidos; no sustituye la prueba de entrada real ni la validación de errores."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Se entrega la entrada 6. Recupera copia y estado: ¿qué imprime?",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n    std::cin >> cajas;\n    int recibidas = cajas;\n    cajas += 1;\n    std::cout << recibidas << \" \" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "6 7"
+          ],
+          "explanation": "La lectura da seis; la copia conserva seis antes del incremento a siete."
+        }
+      ]
+    }
+  ]
+}

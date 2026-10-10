@@ -1,0 +1,168 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_leer",
+  "title": "Referencias const para leer datos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer el objeto original sin copiarlo completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pasar un int por valor es una forma sencilla de recibir un dato pequeño. Una cadena o un vector pueden contener muchos elementos. Si una función sólo necesita inspeccionarlos, no hace falta crear una copia completa. Un parámetro const std::string& texto es una referencia al objeto aportado: la función lo lee a través de ese nombre y no puede modificarlo mediante el parámetro const."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nbool tiene_texto(const std::string& texto) {\n    return !texto.empty();\n}\n\nint main() {\n    const std::string etiqueta = \"panel\";\n    std::cout << tiene_texto(etiqueta);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "empty() pregunta si la cadena está vacía. ! invierte esa respuesta; el programa muestra 1. & en la declaración indica referencia, y const impide modificar el objeto a través de ella. La llamada conserva su forma habitual: tiene_texto(etiqueta). El resultado bool se devuelve por valor."
+        },
+        {
+          "type": "output_prediction",
+          "question": "La función compara dos cadenas sin modificarlas. Predice su respuesta.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nbool coincide(const std::string& observado, const std::string& esperado) {\n    return observado == esperado;\n}\n\nint main() {\n    const std::string observado = \"ruta\";\n    const std::string esperado = \"rutas\";\n    std::cout << coincide(observado, esperado);\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Las cadenas no son iguales. Las referencias permiten leerlas y la comparación devuelve false."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un recorrido puede leer un vector por referencia const"
+        },
+        {
+          "type": "paragraph",
+          "text": "const std::vector<int>& datos permite inspeccionar el vector original sin copiar el contenedor. Dentro de un recorrido for (int valor : datos), valor sí es una copia pequeña del elemento actual. Son dos decisiones distintas: cómo recibe la función el contenedor y cómo lee el recorrido cada elemento."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {2, 4, 3};\n    std::cout << sumar(datos);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función entrega 9 y el vector conserva sus elementos. Para los ejercicios de suma, se permiten hasta 8 elementos y cada uno está entre 0 y 20: el total no supera 160. El vector vacío produce 0 porque el acumulador empieza en 0 y el recorrido no ejecuta su cuerpo."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Cuenta los elementos estrictamente mayores que el límite. Predice el resultado.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_superiores(const std::vector<int>& datos, int limite) {\n    int cuenta = 0;\n    for (int valor : datos) {\n        if (valor > limite) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    const std::vector<int> datos = {1, 6, 3, 6};\n    std::cout << contar_superiores(datos, 3);\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Los dos valores 6 superan 3. El elemento igual al límite no cuenta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Const expresa la intención de lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "const en un parámetro de referencia restringe lo que esa función puede hacer a través del parámetro. No significa que cualquier otro nombre del programa se vuelva constante. La interfaz comunica que este cálculo inspecciona los datos y entrega una respuesta sin modificarlos por esa vía."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa el parámetro para leer el vector original sin copiarlo y sin permitir modificación a través de datos. Escribe const en el primer hueco y & en el segundo.",
+          "template": "#include <iostream>\n#include <vector>\n\nbool tiene_datos([] std::vector<int>[] datos) {\n    return !datos.empty();\n}\n\nint main() {\n    const std::vector<int> datos = {4, 7};\n    std::cout << tiene_datos(datos);\n    return 0;\n}\n",
+          "answers": [
+            "const",
+            "&"
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué parámetro expresa lectura del vector original y además impide modificarlo a través de ese parámetro?",
+          "options": [
+            "std::vector<int> datos",
+            "std::vector<int>& datos",
+            "const std::vector<int>& datos"
+          ],
+          "correctIndex": 2,
+          "explanation": "La primera opción copia; la segunda permite modificar. const con & expresa lectura del original."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: sumar sin cambiar la colección"
+        },
+        {
+          "type": "note",
+          "text": "La firma anterior queda const std::vector<int>& datos. La función recibe una referencia de lectura y devuelve bool; no necesita una copia del vector."
+        },
+        {
+          "type": "paragraph",
+          "text": "La colección está declarada: {5, 0, 3}. Predice el total y el número de elementos, y ejecuta. Después prueba {} y {2, 4, 6, 8}. Mantén hasta 8 elementos de 0 a 20. Observa que main puede usar la colección después de la llamada: el cálculo no la modifica. Para probar el máximo permitido, usa ocho elementos iguales a 20 y calcula el total esperado antes de ejecutar."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {5, 0, 3};\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué informe corresponde al vector vacío en este programa?",
+          "options": [
+            "Total: 0\nElementos: 0",
+            "Total: 0\nElementos: 1",
+            "No existe resultado para una colección vacía."
+          ],
+          "correctIndex": 0,
+          "explanation": "El acumulador inicial 0 se devuelve sin recorrer elementos; size() también es 0."
+        },
+        {
+          "type": "paragraph",
+          "text": "La cantidad de elementos y sus valores forman parte de los datos del cálculo. Recibirlos por referencia const no valida automáticamente su dominio; el programa que llama debe cumplir los límites establecidos para estas actividades."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir paso por valor o referencia de lectura"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una función inspecciona una etiqueta string y debe conservarla. No necesita una copia independiente. ¿Qué parámetro comunica ese propósito?",
+          "options": [
+            "const std::string& etiqueta",
+            "std::string& etiqueta",
+            "int etiqueta"
+          ],
+          "correctIndex": 0,
+          "explanation": "La referencia const lee la cadena original sin permitir modificarla mediante ese parámetro."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Recupera cadena vacía, llamada y elección de rama.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nbool tiene_texto(const std::string& texto) {\n    return !texto.empty();\n}\n\nint main() {\n    const std::string etiqueta = \"\";\n    if (tiene_texto(etiqueta)) {\n        std::cout << etiqueta;\n    } else {\n        std::cout << \"Sin etiqueta\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Sin etiqueta"
+          ],
+          "explanation": "empty() es true, la negación devuelve false y main elige el aviso."
+        },
+        {
+          "type": "note",
+          "text": "Usamos retorno por valor para los resultados y referencias const para las entradas que sólo se leen. La referencia es un vínculo con un objeto, no una cadena o un vector nuevo con los mismos elementos."
+        }
+      ]
+    }
+  ]
+}

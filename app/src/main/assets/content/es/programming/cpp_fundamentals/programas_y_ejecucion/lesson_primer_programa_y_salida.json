@@ -1,0 +1,201 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida",
+  "title": "Construir y leer un primer programa",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un programa pequeño y completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vamos a producir un resultado visible con C++. Lee el programa completo como una estructura que contiene una acción. No necesitas comprender hoy todas las reglas del lenguaje; sí necesitas relacionar cada parte con su función y comprobar qué modifica la salida. Usaremos nombres como std::cout de forma consistente para reconocer que pertenecen a la biblioteca estándar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Inicio confirmado\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La línea #include <iostream> pone a disposición las declaraciones necesarias para usar la entrada y salida estándar. El cuerpo de main está delimitado por llaves y contiene las instrucciones que ejecutaremos. La instrucción con std::cout envía el texto a la salida. return 0 termina main con un resultado que indica éxito al entorno que ejecuta el programa. Ese cero no se imprime: devolver un resultado y mostrar texto son acciones diferentes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "accion_visible",
+          "question": "¿Qué parte del ejemplo produce el mensaje visible?",
+          "options": [
+            "std::cout << \"Inicio confirmado\";",
+            "return 0;",
+            "#include <iostream>"
+          ],
+          "correctIndex": 0,
+          "explanation": "La inserción en std::cout produce la salida. La inclusión permite conocer la biblioteca y return comunica un resultado al entorno."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comillas, contenido y terminador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las comillas dobles delimitan un literal de texto. En \"Puerto listo\", el contenido es Puerto listo; las comillas pertenecen a la escritura del programa y no al mensaje mostrado. El punto y coma que termina la instrucción también pertenece a la sintaxis. Ni las comillas ni ese terminador se agregan automáticamente al texto de salida."
+        },
+        {
+          "type": "paragraph",
+          "text": "El operador << que aparece junto a std::cout indica que el valor a su derecha se inserta en ese flujo de salida. Aquí trabajamos con texto. No lo confundas con un solo signo < ni con una flecha dibujada en la pantalla: dos caracteres concretos forman el operador de este uso de C++."
+        },
+        {
+          "type": "output_prediction",
+          "id": "literal_independiente",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Archivo preparado\";\n    return 0;\n}\n",
+          "answers": [
+            "Archivo preparado"
+          ],
+          "explanation": "Se muestran los caracteres entre las comillas; no se muestran las comillas ni el punto y coma."
+        },
+        {
+          "type": "fill_code",
+          "id": "literal_construido",
+          "question": "Escribe un único literal de texto, con comillas dobles, para mostrar Muelle cerrado.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "\"Muelle cerrado\""
+          ],
+          "explanation": "Las comillas delimitan el literal; std::cout recibe su contenido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El cuerpo de main y la biblioteca"
+        },
+        {
+          "type": "paragraph",
+          "text": "En estos programas de consola, main es el punto de entrada del programa. El nombre se escribe exactamente así. int es una palabra del lenguaje que aquí indica el tipo de resultado de main; estudiaremos los tipos con detalle en la siguiente unidad. Los paréntesis y las llaves tienen papeles distintos: () pertenece a la declaración de la función, mientras { y } delimitan su cuerpo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada instrucción de salida de nuestros ejemplos termina con ;. No conviertas esa observación en la regla de añadir ; a cualquier línea: #include <iostream> es una directiva y no lleva ese terminador. Las llaves delimitan una estructura; tampoco son un mensaje de salida. Aprender una forma correcta y comprender esas diferencias evita cambios hechos al azar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "nombre_entrada",
+          "question": "En el programa que estamos construyendo, ¿qué nombre debe conservarse como punto de entrada?",
+          "options": [
+            "Main",
+            "main",
+            "inicio"
+          ],
+          "correctIndex": 1,
+          "explanation": "C++ distingue mayúsculas y minúsculas. El punto de entrada de este programa es main."
+        },
+        {
+          "type": "fill_code",
+          "id": "operador_salida",
+          "question": "Escribe únicamente el operador de dos caracteres que inserta el texto en std::cout.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout ___ \"Puerta abierta\";\n    return 0;\n}\n",
+          "answers": [
+            "<<"
+          ],
+          "explanation": "El operador de inserción en este flujo es <<, con dos signos."
+        },
+        {
+          "type": "fill_code",
+          "id": "terminador_salida",
+          "question": "Escribe únicamente el carácter que termina esta instrucción de salida.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Turno iniciado\"___\n    return 0;\n}\n",
+          "answers": [
+            ";"
+          ],
+          "explanation": "El punto y coma termina esta instrucción; no es parte del mensaje."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir la estructura completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora relacionaremos piezas que ya conocemos. La declaración de la biblioteca debe estar disponible antes de usar std::cout. La acción visible debe quedar dentro de main. Terminamos el cuerpo después de las instrucciones. Esta actividad no pide adivinar una estructura nueva: pide recuperar y coordinar las funciones de sus partes."
+        },
+        {
+          "type": "order_code",
+          "id": "armar_programa",
+          "question": "Ordena las piezas para construir un programa que muestre Acceso autorizado.",
+          "fragments": [
+            "    std::cout << \"Acceso autorizado\";",
+            "#include <iostream>",
+            "    return 0;\n}",
+            "int main() {"
+          ],
+          "correctOrder": [
+            1,
+            3,
+            0,
+            2
+          ],
+          "explanation": "Primero la declaración de biblioteca; después se abre main, se escribe la salida y se termina el cuerpo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "return_no_imprime",
+          "question": "Un programa ejecuta std::cout << \"Listo\"; y después return 0;. ¿Qué salida de texto produce?",
+          "options": [
+            "Listo0",
+            "Listo",
+            "0"
+          ],
+          "correctIndex": 1,
+          "explanation": "return no inserta el cero en std::cout. El mensaje visible sigue siendo Listo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Primera ejecución y modificación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de pulsar Compilar y ejecutar, predice el mensaje. Después observa la salida. Cambia únicamente el texto para que el programa muestre Zona segura y vuelve a ejecutarlo. Finalmente cambia ese mensaje por Caja recibida. Conserva la estructura que ya has comprobado. La comparación de esas versiones permite relacionar una modificación concreta con un cambio concreto del resultado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Zona inicial\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Esta práctica usa un programa sin entrada de teclado. Conserva fuera del laboratorio una copia de los cambios que quieras guardar para otra sesión."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cambiar_mensaje",
+          "question": "Después del experimento, ¿qué cambio modifica directamente el mensaje sin cambiar la estructura de main?",
+          "options": [
+            "Cambiar los caracteres dentro de las comillas del literal.",
+            "Cambiar main por un nombre cualquiera.",
+            "Eliminar la declaración de iostream."
+          ],
+          "correctIndex": 0,
+          "explanation": "El literal proporciona el texto. Cambiar el punto de entrada o quitar una declaración necesaria rompe otra parte del programa."
+        }
+      ]
+    }
+  ]
+}

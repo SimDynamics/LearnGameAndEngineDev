@@ -1,0 +1,191 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__seleccion_discreta_con_switch",
+  "title": "Elegir entre valores discretos con switch",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una selección por igualdad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando una decisión compara una misma categoría con varios valores constantes, switch puede expresar directamente esa selección. En estos primeros ejemplos la categoría tiene tipo int o char. Un case marca el punto al que se transfiere el control si su valor coincide; default recibe los valores que no coinciden con ningún case. No uses switch para intervalos, condiciones con && o cadenas std::string: conserva if para esas reglas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{2};\n    switch (opcion) {\n    case 1:\n        std::cout << \"Guardar\";\n        break;\n    case 2:\n        std::cout << \"Mostrar\";\n        break;\n    default:\n        std::cout << \"Desconocida\";\n        break;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con opcion igual a 2 se entra en case 2 y se muestra Mostrar. break termina el switch. El programa continúa después de sus llaves. Las etiquetas no son preguntas if que se evalúan una tras otra: primero se selecciona el punto de entrada y después se ejecutan las instrucciones que se alcanzan desde él."
+        },
+        {
+          "type": "output_prediction",
+          "id": "opcion_distinta",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{1};\n    switch (opcion) {\n    case 1: std::cout << \"Abrir\"; break;\n    case 2: std::cout << \"Cerrar\"; break;\n    default: std::cout << \"Otra\"; break;\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Abrir:Fin"
+          ],
+          "explanation": "Se entra por case 1 y su break conduce a la salida posterior al switch."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valores no previstos y ausencia de default"
+        },
+        {
+          "type": "output_prediction",
+          "id": "opcion_desconocida",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{9};\n    switch (opcion) {\n    case 1: std::cout << \"A\"; break;\n    case 2: std::cout << \"B\"; break;\n    default: std::cout << \"?\"; break;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "?Fin"
+          ],
+          "explanation": "Ningún case coincide; default define una respuesta explícita."
+        },
+        {
+          "type": "output_prediction",
+          "id": "sin_coincidencia_sin_default",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{3};\n    switch (opcion) {\n    case 1: std::cout << \"A\"; break;\n    case 2: std::cout << \"B\"; break;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Fin"
+          ],
+          "explanation": "Sin coincidencia ni default, no se ejecuta ninguna instrucción del cuerpo de switch."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cuando_if_es_directo",
+          "question": "Debes comprobar si peso está entre 4 y 9, incluidos los extremos. ¿Qué construcción expresa directamente esa condición?",
+          "options": [
+            "if (peso >= 4 && peso <= 9)",
+            "switch (peso >= 4 && peso <= 9) con un case para cada peso",
+            "case peso >= 4 && peso <= 9: dentro de cualquier función"
+          ],
+          "correctIndex": 0,
+          "explanation": "if recibe la condición del intervalo. Los case son valores constantes de selección, no condiciones de intervalo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Las etiquetas no detienen la ejecución"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si alcanzas el final de las instrucciones de un case sin break ni otra transferencia de control, la ejecución continúa con las instrucciones siguientes, aunque estén bajo otra etiqueta. Esto se llama caída al caso siguiente. El valor de la categoría no cambia por pasar junto a otra etiqueta. Para alternativas exclusivas, coloca una salida explícita al terminar cada acción."
+        },
+        {
+          "type": "output_prediction",
+          "id": "caida_controlada",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{1};\n    switch (opcion) {\n    case 1: std::cout << \"A\";\n    case 2: std::cout << \"B\"; break;\n    default: std::cout << \"C\"; break;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "ABFin"
+          ],
+          "explanation": "Se entra en case 1; la ausencia de break permite alcanzar la salida B. El break posterior evita C."
+        },
+        {
+          "type": "output_prediction",
+          "id": "entra_en_segundo",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{2};\n    switch (opcion) {\n    case 1: std::cout << \"A\";\n    case 2: std::cout << \"B\"; break;\n    default: std::cout << \"C\"; break;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "B"
+          ],
+          "explanation": "La entrada ocurre directamente en case 2; no se ejecutan las instrucciones anteriores."
+        },
+        {
+          "type": "fill_code",
+          "id": "cerrar_alternativa",
+          "question": "Cada alternativa debe ejecutar solamente su propia salida. Completa la palabra clave ausente.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{1};\n    switch (opcion) {\n    case 1: std::cout << \"A\"; ___;\n    case 2: std::cout << \"B\"; break;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "break"
+          ],
+          "explanation": "break termina el switch antes de alcanzar las instrucciones del segundo caso."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Agrupar etiquetas y seleccionar caracteres"
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes colocar varias etiquetas seguidas antes de una misma acción: es una forma explícita de compartir la respuesta. Cada case usa un valor constante, y dos case del mismo switch no pueden tener el mismo valor. Para char, escribe literales de un carácter con comillas simples; \"g\" sería un literal de cadena diferente. No dependas de códigos numéricos particulares de los caracteres."
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_etiquetas_una_accion",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    switch (comando) {\n    case 'G':\n    case 'g':\n        std::cout << \"Guardar\";\n        break;\n    case 'm':\n        std::cout << \"Mostrar\";\n        break;\n    default:\n        std::cout << \"Desconocido\";\n        break;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Guardar"
+          ],
+          "explanation": "Las etiquetas G y g comparten la misma acción sin ejecutar una acción diferente entre ellas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "etiquetas_duplicadas",
+          "question": "En un mismo switch aparecen dos etiquetas case 2:. ¿Qué problema hay?",
+          "options": [
+            "No puede haber dos case con el mismo valor en ese switch.",
+            "Se ejecutan ambas como dos decisiones independientes.",
+            "El compilador elige la etiqueta de texto más largo."
+          ],
+          "correctIndex": 0,
+          "explanation": "Cada valor de selección debe identificar un punto de entrada sin etiquetas duplicadas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "switch dentro de un bucle"
+        },
+        {
+          "type": "paragraph",
+          "text": "break abandona la estructura breakable más interna: un bucle o un switch. Si el switch está dentro del for y el break está dentro del switch, ese break termina el switch; no termina el for que lo rodea. Esta regla se lee por anidamiento, no por cercanía visual en columnas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "break_solo_switch",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 3; ++n) {\n        switch (n) {\n        case 2: std::cout << \"B\"; break;\n        default: std::cout << \"A\"; break;\n        }\n        std::cout << n << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "A1;B2;A3;Fin"
+          ],
+          "explanation": "Cada break termina únicamente el switch. La salida posterior y el avance del for siguen ocurriendo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transforma el laboratorio en un selector de comandos char: g guarda, m muestra, cualquier otro valor produce Desconocido. Prueba cada alternativa por separado cambiando la constante inicial. Cada acción debe ser exclusiva y el texto Fin debe aparecer después del switch en todos los casos."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    std::cout << \"Comando=\" << comando << \"\\n\";\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,262 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__media_y_cantidad_de_datos",
+  "title": "Calcular la media cuando existen datos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Total dividido por cantidad de elementos"
+        },
+        {
+          "type": "paragraph",
+          "text": "La media aritmética es la suma de los valores dividida por la cantidad de valores. El denominador no es el último índice: un vector de cuatro elementos tiene tamaño cuatro y último índice tres. Tampoco es la cantidad de valores distintos; cada observación cuenta, aunque repita una magnitud."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero comprobamos si existen datos. Si la colección está vacía no definimos su media mediante esta fórmula, porque el denominador sería cero. Presentamos una respuesta de ausencia. Para conservar fracciones convertimos las cantidades a double antes de dividir."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5};\n    if (datos.empty()) {\n        std::cout << \"Sin media\";\n    } else {\n        int suma = 0;\n        for (int valor : datos) { suma += valor; }\n        double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n        std::cout << media;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí siete dividido por dos produce 3.5. La conversión ocurre antes del cociente. Mantendremos sumas de enteros pequeñas; double no vuelve seguro un desbordamiento que ya hubiera ocurrido al sumar en int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tres resúmenes diferentes"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 6, 6};\n    int suma = 0;\n    for (int valor : datos) { suma += valor; }\n    double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n    std::cout << datos.size() << \" \" << suma << \" \" << media;\n    return 0;\n}\n",
+          "question": "La colección tiene los datos mostrados. Escribe tamaño, suma y media en el orden de cout.",
+          "answers": [
+            "3 15 5"
+          ],
+          "explanation": "Tres observaciones suman quince y su media es cinco. Las dos apariciones de seis cuentan."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una colección contiene {1, 1, 7}. ¿Cuál es el denominador de su media?",
+          "options": [
+            "Dos valores distintos.",
+            "Tres elementos.",
+            "El último índice dos."
+          ],
+          "correctIndex": 1,
+          "explanation": "La media considera todas las observaciones, incluidas las repetidas."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el tipo al que convertimos la suma: debe ser el mismo tipo declarado para media.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4};\n    int suma = 0;\n    for (int valor : datos) { suma += valor; }\n    double media = static_cast<___>(suma) / static_cast<double>(datos.size());\n    std::cout << media;\n    return 0;\n}\n",
+          "answers": [
+            "double"
+          ],
+          "explanation": "La conversión del numerador a double ocurre antes de la división."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cero como dato y ausencia de datos"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0};\n    if (datos.empty()) {\n        std::cout << \"Sin media\";\n    } else {\n        double suma = 0.0;\n        for (int valor : datos) { suma += valor; }\n        std::cout << suma / static_cast<double>(datos.size());\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Una observación de valor cero tiene media cero; el denominador vale uno."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    if (datos.empty()) {\n        std::cout << \"Sin media\";\n    } else {\n        double suma = 0.0;\n        for (int valor : datos) { suma += valor; }\n        std::cout << suma / static_cast<double>(datos.size());\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "Sin media"
+          ],
+          "explanation": "La rama vacía evita calcular un cociente con denominador cero."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Por qué no asignamos una media cero al vacío por costumbre?",
+          "options": [
+            "Porque sería confundir ausencia de observaciones con una media válida de valor cero.",
+            "Porque cero no existe en double.",
+            "Porque un vector nunca está vacío."
+          ],
+          "correctIndex": 0,
+          "explanation": "El mensaje debe expresar qué resultado existe según los datos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Negativos y conversión de tamaños"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{-4, -1};\n    int suma = 0;\n    for (int valor : datos) { suma += valor; }\n    double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n    std::cout << media;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "-2.5"
+          ],
+          "explanation": "Convertir antes de dividir conserva el signo y la fracción del total negativo."
+        },
+        {
+          "type": "paragraph",
+          "text": "size() devuelve un tamaño sin signo. No mezclaremos una suma negativa int directamente con ese tamaño para un cociente entero: las conversiones entre tipos podrían cambiar el significado del cálculo. Convertir expresamente ambas cantidades a double en esta fórmula deja clara la representación deseada."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quieres una media fraccionaria. ¿Qué secuencia conserva la información?",
+          "options": [
+            "Dividir dos enteros y convertir el cociente después.",
+            "Convertir las cantidades a double antes de dividir y comprobar que existen datos.",
+            "Cambiar sólo el nombre del resultado a decimal."
+          ],
+          "correctIndex": 1,
+          "explanation": "El momento de la conversión importa, y no sustituye la comprobación de vacío."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mediciones ya representadas como double"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con mediciones fraccionarias podemos usar std::vector<double> y una suma double desde el principio. Los valores y su suma siguen teniendo precisión finita. Elegimos datos sencillos para que el razonamiento del recorrido y la media sea visible; no interpretamos una salida corta como garantía de exactitud para cualquier medición."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<double> medidas{1.5, 2.5, 5.0};\n    double suma = 0.0;\n    for (double medida : medidas) { suma += medida; }\n    std::cout << suma / static_cast<double>(medidas.size());\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Las tres mediciones suman nueve; la media vale tres."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una media igual a tres apareció como 3 en cout. ¿Qué demuestra sobre su tipo?",
+          "options": [
+            "Que el resultado necesariamente es int.",
+            "Sólo el formato visible del valor; puede seguir siendo double.",
+            "Que hubo tres visitas."
+          ],
+          "correctIndex": 1,
+          "explanation": "El texto presentado no revela por sí solo el tipo ni el número de observaciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La media de un subconjunto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la pregunta pide la media de valores seleccionados, el denominador es la cantidad seleccionada, no el tamaño del origen. Puede no haber seleccionados aunque el origen tenga elementos. Hay que comprobar ese segundo vacío antes de dividir."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 8};\n    double suma = 0.0;\n    int cantidad = 0;\n    for (int valor : datos) {\n        if (valor >= 4) {\n            suma += valor;\n            ++cantidad;\n        }\n    }\n    if (cantidad == 0) {\n        std::cout << \"Sin elegidos\";\n    } else {\n        std::cout << suma / cantidad;\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "6"
+          ],
+          "explanation": "Se suman cuatro y ocho y se divide por dos elegidos, no por los tres datos originales."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El origen contiene tres valores, pero ninguno cumple la condición. ¿Qué respuesta corresponde a la media seleccionada?",
+          "options": [
+            "Dividir cero por tres y llamarla media seleccionada.",
+            "Indicar que no hay valores elegidos, sin dividir por cero.",
+            "Inventar un valor seleccionado."
+          ],
+          "correctIndex": 1,
+          "explanation": "La existencia del origen no garantiza la existencia del subconjunto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción y comparación de casos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un informe de media para {1, 4, 7}: debe mostrar Media: 4. Para {} muestra Sin datos. Comprueba también {5}, {1, 2}, {-3, -1} y {0, 0}: sus medias son cinco, 1.5, -2 y cero. Añade como segunda pregunta la media de valores mayores que dos y prueba un caso donde ninguno sea elegido."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe qué representa cada denominador. Una media que parece correcta en un caso divisible no demuestra que conserves las fracciones; el caso {1, 2} pone a prueba esa parte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y recuperación de transformación"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma = 0;\n        for (int valor : datos) { suma += valor; }\n        double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n        std::cout << \"Media: \" << media;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 4};\n    for (auto& valor : datos) { valor += 1; }\n    double suma = 0.0;\n    for (int valor : datos) { suma += valor; }\n    std::cout << suma / static_cast<double>(datos.size());\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "4"
+          ],
+          "explanation": "La media se calcula después de transformar los datos a tres y cinco."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué comprueba repetir el laboratorio con una sola observación?",
+          "options": [
+            "Que la media coincide con ese valor y el denominador es uno.",
+            "Que se debe dividir por el índice cero.",
+            "Que siempre hay que redondear."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un solo dato prueba un caso distinto del vacío y de varios datos."
+        }
+      ]
+    }
+  ]
+}

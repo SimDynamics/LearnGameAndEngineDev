@@ -1,0 +1,158 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__estimar_comprobar_y_no_exceder_el_dominio",
+  "title": "Estimar resultados y respetar el dominio de cálculo",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una propiedad puede revelar un resultado imposible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes del cálculo exacto, identifica propiedades que un resultado válido debe cumplir. Si reúnes cantidades no negativas pequeñas, la suma no debe ser menor que una de sus contribuciones; si calculas una media de datos dentro de un intervalo, la media también debe estar entre el menor y el mayor. Estas propiedades detectan ciertos errores, pero no sustituyen la comprobación exacta del requisito."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para 2,4 y 6, la media aritmética suma los tres datos y divide entre su cantidad. Es 12/3=4. Una media de 12 sería mayor que el máximo 6 y revelaría que se olvidó dividir. Una media de 5 sería plausible por su rango, pero todavía incorrecta para esos datos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "plausible_no_es_exactamente_correcto",
+          "question": "Los datos son 2,4,6 y el programa informa media 5. ¿Qué puede concluir una comprobación que sólo verifica rango entre 2 y 6?",
+          "options": [
+            "Que el resultado es plausible por esa propiedad, pero aún necesita la comparación exacta.",
+            "Que la media exacta queda demostrada.",
+            "Que el programa necesariamente provocó un error de compilación."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una condición necesaria no es siempre suficiente. La media exacta es 4."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "detectar_division_omitida",
+          "question": "Los datos son 1,3,5 y se informa media 9. ¿Qué propiedad permite rechazar ese resultado sin conocer más del código?",
+          "options": [
+            "Una media de esos datos debe estar entre 1 y 5.",
+            "Todo resultado impar es inválido.",
+            "Una media siempre debe ser igual al último dato."
+          ],
+          "correctIndex": 0,
+          "explanation": "La media queda dentro del rango de los datos; 9 no cumple esa condición necesaria."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Proteger el caso vacío antes de dividir"
+        },
+        {
+          "type": "paragraph",
+          "text": "La media necesita al menos un dato. Una secuencia vacía no tiene un promedio ordinario que podamos obtener dividiendo por cero. Decide una respuesta del dominio y ejecuta el cálculo sólo cuando exista una cantidad positiva. No empieces intentando la división para ver qué sucede; la ausencia de datos ya permite tomar la decisión."
+        },
+        {
+          "type": "output_prediction",
+          "id": "media_de_vacio_controlada",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        double media{static_cast<double>(suma) / datos.size()};\n        std::cout << media;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Sin datos"
+          ],
+          "explanation": "La rama vacía evita el cálculo. No se evalúa ningún cociente sin datos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "media_fraccionaria_controlada",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 3};\n    int suma{0};\n    for (int dato : datos) { suma += dato; }\n    double media{static_cast<double>(suma) / datos.size()};\n    std::cout << media;\n    return 0;\n}\n",
+          "answers": [
+            "2.5"
+          ],
+          "explanation": "La conversión ocurre antes de dividir y conserva la media fraccionaria."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "conversion_tardia_media",
+          "question": "Con suma=5 y cantidad=2, se calcula static_cast<double>(suma/cantidad). ¿Qué pierde?",
+          "options": [
+            "La parte fraccionaria ya descartada por la división entera.",
+            "Toda la parte entera del resultado.",
+            "La posibilidad de convertir un int a double."
+          ],
+          "correctIndex": 0,
+          "explanation": "Convertir el cociente entero después no recupera la información que la división perdió."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un resultado positivo no protege de una operación inválida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para multiplicar enteros con signo, los operandos y el resultado deben caber en el tipo. No multipliques primero para comprobar después si el resultado parece negativo: si hubo desbordamiento, esa operación ya salió del comportamiento definido. En este curso declaramos dominios pequeños antes del cálculo. Un sistema con datos generales necesitaría comprobar límites de representación antes de operar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si piezas está entre 0 y 10 y minutosPorPieza entre 1 y 100, su producto queda entre 0 y 1000. Esos valores caben incluso en el rango mínimo que C++ exige para int. La justificación usa el dominio; no presupone que int tenga exactamente 32 bits. Verifica ambos argumentos antes de multiplicar."
+        },
+        {
+          "type": "output_prediction",
+          "id": "producto_dominio_rechazado",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{11};\n    int minutosPorPieza{20};\n    if (piezas < 0 || piezas > 10 || minutosPorPieza < 1 || minutosPorPieza > 100) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        std::cout << piezas * minutosPorPieza;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Fuera del dominio"
+          ],
+          "explanation": "La regla rechaza 11 antes de realizar el producto dentro de la rama válida."
+        },
+        {
+          "type": "output_prediction",
+          "id": "producto_fronteras_validas",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{10};\n    int minutosPorPieza{100};\n    if (piezas < 0 || piezas > 10 || minutosPorPieza < 1 || minutosPorPieza > 100) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        std::cout << piezas * minutosPorPieza;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "1000"
+          ],
+          "explanation": "Ambos extremos se incluyen y el producto está dentro del dominio seguro justificado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "revisar_dominio_ampliado",
+          "question": "Se cambia el dominio de dos argumentos pequeños a «cualquier int positivo». ¿Qué revisión exige el producto?",
+          "options": [
+            "Comprobar antes que el producto sea representable, además de que ambos argumentos sean positivos.",
+            "Conservar sólo la prueba posterior resultado>0.",
+            "Suponer que el tipo se amplía automáticamente para guardar el producto."
+          ],
+          "correctIndex": 0,
+          "explanation": "La positividad no limita cuánto puede crecer el producto. La antigua prueba ya no justifica el nuevo dominio."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio de una propiedad y una comparación exacta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para la colección inicial, calcula a mano suma, media, mínimo y máximo. Completa la media usando conversión antes de dividir, y muestra si está dentro del rango. Después prueba {1,2}, un dato {5} y la colección vacía: la última debe informar Sin datos antes de cualquier cálculo de media o acceso a un elemento. Mantén como máximo cinco datos y valores entre 0 y 10. Una comprobación de plausibilidad complementa la expectativa exacta, no la reemplaza."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        std::cout << \"Suma=\" << suma;\n    }\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ]
+}

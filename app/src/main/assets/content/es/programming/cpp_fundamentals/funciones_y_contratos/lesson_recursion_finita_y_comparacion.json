@@ -1,0 +1,172 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion",
+  "title": "Recursión finita y comparación con bucles",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una función puede llamarse a sí misma"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función recursiva se llama directa o indirectamente a sí misma. Para usarla aquí, necesitamos un caso base que devuelva un resultado sin otra llamada y un paso que acerque los datos a ese caso. El dominio debe hacer posible ese progreso. El siguiente cálculo recibe pendientes entre 0 y 8."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint pasos_hasta_cero(int pendientes) {\n    if (pendientes == 0) {\n        return 0;\n    }\n    return 1 + pasos_hasta_cero(pendientes - 1);\n}\n\nint main() {\n    std::cout << pasos_hasta_cero(3);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La llamada con 3 espera 1 más el resultado de la llamada con 2; ésta espera el resultado de la llamada con 1; y la llamada con 0 devuelve 0 sin continuar. Después se completan los resultados pendientes: 1, 2 y 3. Cada llamada tiene su propio parámetro. Que el nombre sea el mismo no hace que todos los pendientes sean un único objeto."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué dos elementos justifican el fin de este cálculo para un argumento entre 0 y 8?",
+          "options": [
+            "El caso 0 que regresa y el argumento que disminuye en 1.",
+            "Sólo el nombre de la función.",
+            "Que return aparezca después de una suma."
+          ],
+          "correctIndex": 0,
+          "explanation": "El descenso no negativo alcanza 0 y el caso base no hace otra llamada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Esperar un resultado para completar otro"
+        },
+        {
+          "type": "output_prediction",
+          "question": "La función suma los enteros desde 1 hasta tope, con tope entre 0 y 8. Predice su resultado.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint suma_hasta(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_hasta(tope - 1);\n}\n\nint main() {\n    std::cout << suma_hasta(4);\n    return 0;\n}\n",
+          "answers": [
+            "10"
+          ],
+          "explanation": "Se completan 4 + 3 + 2 + 1 + 0. El caso base aporta 0 y permite regresar por las llamadas pendientes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para tope igual a 3, piensa en suma_hasta(3) como 3 + suma_hasta(2), no como una sustitución de todos los parámetros por el último valor. Cada llamada conserva lo necesario para completar su propia suma al recibir el resultado de la siguiente. El resultado máximo de este dominio es 36 y hay como máximo 9 llamadas activas."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué resultado corresponde al caso base suma_hasta(0)?",
+          "options": [
+            "0, sin llamar otra vez.",
+            "1, porque toda función recursiva debe sumar uno.",
+            "Otra llamada con -1."
+          ],
+          "correctIndex": 0,
+          "explanation": "La suma de ningún entero positivo es 0. El caso base regresa directamente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El mismo resultado mediante un bucle"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se puede representar esta suma con un acumulador y un bucle. La versión iterativa avanza el contador hacia el límite; la recursiva reduce el argumento hacia cero. Las dos necesitan un dominio, un estado inicial adecuado y una justificación de terminación. Para este problema lineal, ambas son fáciles de contrastar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    std::cout << suma_iterativa(2) << \" \" << suma_recursiva(2);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué se compara al probar ambas versiones con los mismos datos válidos?",
+          "options": [
+            "Los valores devueltos y el resultado esperado del problema.",
+            "Sólo que tengan el mismo número de líneas.",
+            "Que las dos usen un parámetro por referencia."
+          ],
+          "correctIndex": 0,
+          "explanation": "La equivalencia se refiere al cálculo prometido. La organización interna puede ser distinta."
+        },
+        {
+          "type": "note",
+          "text": "Una llamada recursiva mantiene temporalmente su contexto mientras espera otra. Los detalles de esa implementación se estudian después. Aquí limitamos el dominio para que tanto profundidad como resultados sean pequeños; no usamos recursión sin límite."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: comparar base, interior y extremo"
+        },
+        {
+          "type": "paragraph",
+          "text": "tope está declarado con 3. Predice ambas respuestas y ejecuta. Después prueba 0, 1 y 8; para cada dato, calcula antes la suma esperada. Finalmente prueba -1 y 9: main debe rechazar ambos sin llamar a las funciones. Conserva la validación y los pasos que acercan cada versión a su final."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 3;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Con tope igual a 8, ¿qué deben entregar las dos versiones?",
+          "options": [
+            "8 8",
+            "36 36",
+            "0 36"
+          ],
+          "correctIndex": 1,
+          "explanation": "La suma de 1 a 8 es 36. Los dos recorridos cumplen el mismo contrato."
+        },
+        {
+          "type": "paragraph",
+          "text": "Como contraste finito, cambia sólo el return 0 del caso base recursivo por return 1. Predice el caso tope igual a 0 y comprueba la diferencia con la versión iterativa. Restaura 0 después: el cambio permite terminar, pero ya no cumple la suma prometida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Explicar la terminación antes de ejecutar"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Para una llamada recursiva con pendientes positivo que debe alcanzar 0, ¿qué argumento aporta progreso hacia la base?",
+          "options": [
+            "pendientes - 1",
+            "pendientes",
+            "pendientes + 1"
+          ],
+          "correctIndex": 0,
+          "explanation": "La resta reduce un entero positivo y conserva un argumento no negativo hasta alcanzar 0."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué prueba aísla directamente el caso base de suma_recursiva sin realizar otras llamadas recursivas?",
+          "options": [
+            "tope igual a 0.",
+            "tope igual a 8.",
+            "Un argumento fuera del dominio."
+          ],
+          "correctIndex": 0,
+          "explanation": "0 entra en la base y regresa de inmediato. Un dato rechazado por main no prueba ese cuerpo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de aceptar una función recursiva, identifica el caso base, la medida que progresa, el dominio y el resultado que se conserva al volver. No pruebes una variante que repita indefinidamente la misma llamada. Este patrón volverá en problemas que pueden resolverse por partes, junto con la elección de una estructura adecuada."
+        },
+        {
+          "type": "note",
+          "text": "Ya puedes nombrar cálculos, comunicar sus dominios, distinguir lectura y modificación, componer funciones y justificar sus caminos. Las clases, la gestión de recursos y otros mecanismos del lenguaje ampliarán estas ideas después."
+        }
+      ]
+    }
+  ]
+}

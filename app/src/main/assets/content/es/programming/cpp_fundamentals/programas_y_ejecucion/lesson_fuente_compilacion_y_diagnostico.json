@@ -1,0 +1,195 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__fuente_compilacion_y_diagnostico",
+  "title": "Del código fuente a la ejecución",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué hace cada herramienta"
+        },
+        {
+          "type": "paragraph",
+          "text": "El texto de C++ que escribimos es código fuente. Un compilador lo analiza y lo traduce a una forma que puede participar en la construcción del programa ejecutable. El enlazador combina las partes necesarias, incluidas las de bibliotecas utilizadas. Después se ejecuta el resultado. Un botón puede coordinar varias etapas; ver un solo botón no significa que escribir, compilar y ejecutar sean una misma operación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un editor ayuda a modificar el texto. El resaltado de colores puede facilitar su lectura, pero no demuestra que sea válido ni que resuelva el problema. Una biblioteca ofrece recursos reutilizables: iostream permite trabajar con flujos estándar. No escribimos aquí desde cero todos los mecanismos para mostrar texto; usamos una interfaz de esa biblioteca."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "editor_compilador",
+          "question": "Has escrito un archivo en un editor y aún no has construido el programa. ¿Qué tienes en este punto?",
+          "options": [
+            "El código fuente que debe analizarse y construirse.",
+            "Una prueba de que todos los resultados son correctos.",
+            "La salida final del programa."
+          ],
+          "correctIndex": 0,
+          "explanation": "El archivo contiene la descripción en C++; todavía falta construir y ejecutar para observar su comportamiento."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "funcion_enlazador",
+          "question": "¿Qué tarea corresponde al enlazador en el modelo estudiado?",
+          "options": [
+            "Elegir automáticamente qué problema querías resolver.",
+            "Combinar las partes necesarias para formar el ejecutable.",
+            "Reescribir los comentarios para que sean verdaderos."
+          ],
+          "correctIndex": 1,
+          "explanation": "Combina partes del programa; no define la intención ni valida todos los requisitos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los detalles de sintaxis tienen significado"
+        },
+        {
+          "type": "paragraph",
+          "text": "El compilador utiliza las reglas del lenguaje, no una interpretación aproximada de nuestra intención. std::cout y std::Cout son nombres diferentes. El literal requiere sus comillas de cierre y una instrucción de salida requiere su terminador. Cuando una parte falta, otra marca posterior puede parecer el lugar del fallo. Por eso el diagnóstico ofrece una pista que debemos contrastar con el código cercano."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se omite el punto y coma antes de return, el compilador puede señalar la línea de return: allí descubre que la instrucción anterior no terminó como esperaba. No conviene cambiar indiscriminadamente la línea indicada ni memorizar un texto de error concreto. Diferentes herramientas pueden expresar el mismo problema de maneras distintas. Buscamos la causa y hacemos una modificación justificada."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "falta_terminador",
+          "question": "La salida anterior a return no tiene su ;. El diagnóstico señala return. ¿Qué conviene revisar primero?",
+          "options": [
+            "La terminación de la instrucción anterior y el contexto cercano.",
+            "Cambiar cualquier palabra al azar hasta que desaparezca el mensaje.",
+            "Añadir una nueva línea de salida sin revisar la anterior."
+          ],
+          "correctIndex": 0,
+          "explanation": "El lugar donde se detecta el problema no siempre es donde comenzó."
+        },
+        {
+          "type": "fill_code",
+          "id": "reparar_operador",
+          "question": "La siguiente instrucción debe mostrar Puesto 4. Sustituye el hueco por el operador de inserción correcto.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout ___ \"Puesto 4\";\n    return 0;\n}\n",
+          "answers": [
+            "<<"
+          ],
+          "explanation": "Dos signos << forman el operador que inserta el texto en el flujo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compilar no comprueba la intención completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un programa puede ser válido para C++ y producir un resultado distinto del solicitado. Si queríamos mostrar \"Pedido recibido\" y escribimos \"Pedido cancelado\", el compilador reconoce ambos literales como texto válido. Detectar esa diferencia exige comparar la ejecución con el requisito. Esta es una primera forma de error lógico: las operaciones tienen significado, pero no el que resuelve nuestra tarea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un error de compilación impide construir correctamente esa versión; un error de enlace aparece al combinar sus partes. Otros problemas sólo se manifiestan al ejecutar o al examinar los resultados. En esta unidad trabajamos sobre todo con sintaxis y mensajes, pero mantendremos esa distinción al aprender entrada, cálculos y decisiones. No necesitamos provocar errores peligrosos para entender que las etapas tienen responsabilidades distintas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mensaje_equivocado",
+          "question": "El requisito es mostrar Pedido recibido. El programa compila y muestra Pedido cancelado. ¿Qué queda por corregir?",
+          "options": [
+            "Un error respecto del requisito, aunque el literal sea C++ válido.",
+            "Nada: compilar demuestra que la solución cumple cualquier requisito.",
+            "La biblioteca debe elegir otro mensaje sin cambiar el código."
+          ],
+          "correctIndex": 0,
+          "explanation": "La sintaxis válida no garantiza que el texto corresponda a la tarea."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mayuscula_nombre",
+          "question": "Usamos std::cout, pero por error escribimos std::Cout. ¿Cuál es la corrección justificada?",
+          "options": [
+            "Mantener el cambio: la computadora interpreta ambos nombres igual.",
+            "Recuperar la escritura exacta std::cout.",
+            "Cambiar las palabras del mensaje."
+          ],
+          "correctIndex": 1,
+          "explanation": "C++ distingue nombres por sus caracteres, incluidas mayúsculas y minúsculas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar una cosa y observar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Trabajar con una versión pequeña que ya funciona facilita interpretar un fallo. Predice su salida, ejecútala y conserva una copia. Después cambia una sola cosa que tenga un propósito. Si el resultado cambia de manera inesperada, sabes qué modificación investigar. Cuando recuperas la versión correcta, puedes probar otra modificación sin mezclar varias causas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba en este laboratorio quitar sólo el ; de la instrucción de salida. Observa el diagnóstico y restaura el carácter. Luego cambia únicamente el mensaje a Revision completa y vuelve a ejecutar. El primer cambio examina una regla de sintaxis; el segundo examina la relación entre un literal y la salida. Son experimentos con preguntas diferentes."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision inicial\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_controlada",
+          "question": "Si cambias a la vez el nombre main, las comillas y el texto, ¿por qué cuesta más interpretar el primer fallo?",
+          "options": [
+            "Porque aparecen varias posibles causas de la diferencia.",
+            "Porque C++ prohíbe editar varios caracteres.",
+            "Porque los comentarios se vuelven instrucciones."
+          ],
+          "correctIndex": 0,
+          "explanation": "Separar cambios ayuda a relacionar una causa con un efecto; no es una prohibición del lenguaje."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Volver a la estructura sin el ejemplo"
+        },
+        {
+          "type": "drag_fill_code",
+          "id": "piezas_estructura",
+          "question": "Completa el programa que debe mostrar Revision lista. Cada ficha se usa como máximo una vez.",
+          "template": "#include <iostream>\nint []() {\n    std::cout [] \"Revision lista\"[]\n    return 0;\n}",
+          "choices": [
+            "main",
+            "<<",
+            ";",
+            "Main",
+            "<"
+          ],
+          "correctOrder": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar la estructura"
+        },
+        {
+          "type": "note",
+          "text": "Solución después de la práctica: main conserva el punto de entrada; << inserta el literal y ; termina la instrucción. Los distractores cambian el nombre o el operador. Compilar y comparar con el requisito siguen siendo comprobaciones distintas."
+        }
+      ]
+    }
+  ]
+}

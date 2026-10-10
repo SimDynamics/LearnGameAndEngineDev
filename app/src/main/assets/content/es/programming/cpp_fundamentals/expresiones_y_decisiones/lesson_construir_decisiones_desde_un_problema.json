@@ -1,0 +1,146 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__construir_decisiones_desde_un_problema",
+  "title": "Construir decisiones desde un problema",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un problema nuevo: preparar grupos de fichas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un programa para preparar fichas en grupos. Sus datos se declaran en el código: fichas es una cantidad entera, capacidad es el número de fichas por grupo y acepta_sobrantes es bool. La cantidad válida va de 0 a 30 y la capacidad válida de 1 a 6, incluidos los extremos. No se lee entrada del teclado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estos son los requisitos observables, en orden de prioridad. Con cualquier dato fuera de esos intervalos, muestra Datos invalidos. Con datos válidos y cero fichas, muestra Sin trabajo. Con fichas positivas y reparto exacto, muestra Grupos: seguido de un espacio y el número de grupos completos. Con sobrantes y acepta_sobrantes true, muestra esa línea de grupos y una segunda línea Sobrantes: seguida de un espacio y la cantidad sobrante. Con sobrantes y acepta_sobrantes false, muestra Reparto pendiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "No muestres mensajes adicionales. Los datos inválidos deben producir sólo el aviso, sin evaluar cálculos de reparto. Elige tú las condiciones y cómo organizar las alternativas. Puedes resolverlo con los tipos, operaciones y decisiones de esta unidad; no hacen falta bucles ni funciones auxiliares."
+        },
+        {
+          "type": "note",
+          "text": "Antes de escribir código, explica con tus palabras qué datos son válidos y qué pregunta distingue cada resultado. El enunciado especifica el comportamiento; la estructura de decisiones debe construirla tu programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar resultados esperados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Empieza con fichas 14, capacidad 4 y acepta_sobrantes true: deben aparecer Grupos: 3 y Sobrantes: 2 en dos líneas. Cambiar únicamente acepta_sobrantes a false debe producir Reparto pendiente. Con 12 fichas y capacidad 4 debe aparecer Grupos: 3, cualquiera que sea el valor de acepta_sobrantes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba también cero fichas con capacidad 4: Sin trabajo. En el extremo superior, 30 fichas y capacidad 6 deben producir Grupos: 5. Los casos -1 o 31 fichas con capacidad 4, y 12 fichas con capacidad 0 o 7, deben producir Datos invalidos. Incluye el caso cero fichas con capacidad 0: el dato inválido tiene prioridad sobre la ausencia de trabajo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una nueva prueba usa 10 fichas, capacidad 3 y acepta_sobrantes false. ¿Qué salida exige el enunciado?",
+          "options": [
+            "Grupos: 3",
+            "Reparto pendiente",
+            "Datos invalidos"
+          ],
+          "correctIndex": 1,
+          "explanation": "Los datos son válidos, queda una ficha y el modo elegido no acepta sobrantes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estos casos son un punto de partida. Añade una cantidad menor que una capacidad válida y predice qué ocurre con los grupos completos y los sobrantes. No derives lo esperado de la salida de tu programa: derívalo primero de las reglas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción libre"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor contiene sólo la estructura del programa. Declara los tres datos con el caso inicial 14, 4 y true, y escribe las instrucciones necesarias para cumplir los requisitos. No copies todavía una solución de comparación. Antes de ejecutar, sigue tu recorrido con capacidad cero y verifica que no llega a una división ni a un resto. Después ejecuta los casos que has preparado, cambiando los inicializadores entre ejecuciones."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando una salida difiera, localiza la primera condición o instrucción que no corresponde a tu predicción. Corrige una causa y repite el caso. Comprueba después que la corrección también conserva los otros resultados. La siguiente página ofrece una comparación con otros datos; llega a ella después de haber construido y probado tu versión."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar después de construir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta versión usa otros datos: 18 fichas, capacidad 5 y permiso para sobrantes. Sigue sus caminos y compárala con tu solución. Dos programas pueden organizar sus bloques de manera distinta y cumplir los mismos requisitos. Revisa dónde evita los cálculos con datos inválidos y cuándo llega a cada mensaje."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int capacidad = 5;\n    const bool acepta_sobrantes = true;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Otro caso usa 20 fichas, capacidad 6 y no acepta sobrantes. Predice la salida de esta versión.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 20;\n    int capacidad = 6;\n    const bool acepta_sobrantes = false;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else if (fichas == 0) {\n        std::cout << \"Sin trabajo\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Reparto pendiente"
+          ],
+          "explanation": "Los datos son válidos, sobran 2 fichas y ese modo no acepta sobrantes. No se muestra el cociente por separado en este camino."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir una regla sin instrucciones dictadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vuelve a tu programa y cambia el requisito: ahora una cantidad válida empieza en 1, de modo que cero fichas debe rechazarse. Decide qué parte necesitas cambiar y qué casos pueden detectar una modificación incompleta. Conserva la capacidad válida de 1 a 6 y los demás resultados. Formula lo esperado antes de ejecutar."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué caso distingue directamente el dominio original del nuevo, sin añadir otra causa de rechazo?",
+          "options": [
+            "Cero fichas con capacidad 4.",
+            "Cero fichas con capacidad 0.",
+            "31 fichas con capacidad 4."
+          ],
+          "correctIndex": 0,
+          "explanation": "Con capacidad válida, cero era Sin trabajo y ahora debe ser Datos invalidos. Los otros casos ya se rechazaban."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una prueba con cero fichas y capacidad cero muestra Sin trabajo. ¿Qué requisito original incumple?",
+          "options": [
+            "El rechazo de datos inválidos debe tener prioridad.",
+            "Todo bool debe mostrarse como texto.",
+            "Siempre debe haber al menos un grupo completo."
+          ],
+          "correctIndex": 0,
+          "explanation": "La capacidad cero es inválida y sólo debe producir Datos invalidos. La cantidad cero no debe ocultar ese rechazo."
+        },
+        {
+          "type": "note",
+          "text": "La construcción libre no se reduce a cambiar los datos de una solución entregada: elige expresiones, organiza alternativas y compara resultados. Conserva una explicación de cada caso y de la primera causa encontrada cuando una prueba falla."
+        }
+      ]
+    }
+  ]
+}

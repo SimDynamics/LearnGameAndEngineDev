@@ -1,0 +1,287 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__cadenas_y_texto",
+  "title": "Conservar y construir texto",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un dato también puede ser texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::string es un tipo de la biblioteca estándar para conservar una secuencia de caracteres. Para usarlo, añadimos #include <string>; seguimos incluyendo <iostream> porque también producimos salida. Esas cabeceras hacen disponibles recursos diferentes. std:: indica que el nombre pertenece a la biblioteca estándar."
+        },
+        {
+          "type": "paragraph",
+          "text": "En std::string zona = \"Norte\";, zona es una variable y \"Norte\" es un literal que le da su valor inicial. Las comillas delimitan el literal en el código; no forman parte de las letras que se conservan ni de la salida."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona = \"Norte\";\n    std::cout << zona;\n    return 0;\n}\n"
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el tipo de biblioteca que debe conservar la etiqueta Puerta A.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    ___ etiqueta = \"Puerta A\";\n    std::cout << etiqueta;\n    return 0;\n}\n",
+          "answers": [
+            "std::string"
+          ],
+          "explanation": "std::string representa una secuencia de caracteres; <string> hace disponible ese tipo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Texto vacío es un estado válido"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::string etiqueta; se prepara como una cadena vacía: no contiene caracteres. Esta garantía del tipo es diferente de int cantidad; para una variable local entera sin inicializador. También puedes escribir std::string etiqueta = \"\"; para hacer visible la intención de empezar sin texto. Vacío no significa que la variable no exista."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string etiqueta;\n    std::cout << \"[\" << etiqueta << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[]"
+          ],
+          "explanation": "La cadena se prepara vacía. Los dos corchetes provienen de los literales de salida."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué significa std::string mensaje = \"\";?",
+          "options": [
+            "Existe una variable de texto cuyo valor tiene cero caracteres.",
+            "El nombre mensaje no se ha definido.",
+            "Debe aparecer un número aleatorio al leerla."
+          ],
+          "correctIndex": 0,
+          "explanation": "El objeto existe y su valor es la cadena vacía, válida para std::string."
+        },
+        {
+          "type": "note",
+          "text": "Los valores iniciales dependen del tipo. No extiendas la preparación vacía de std::string a una variable local int sin inicializar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Asignación y copia de texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una cadena puede recibir un texto nuevo mediante asignación: zona = \"Sur\";. También puede inicializar otra cadena a partir de su valor. La copia es independiente como en los enteros que ya estudiamos. Una instrucción posterior debe actualizar expresamente la copia si queremos que conserve un texto nuevo."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona = \"Norte\";\n    std::string registro = zona;\n    zona = \"Sur\";\n    std::cout << registro << \" / \" << zona;\n    return 0;\n}\n",
+          "answers": [
+            "Norte / Sur"
+          ],
+          "explanation": "registro recibió una copia de Norte; modificar zona no cambia el registro."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Escribe sólo un literal para asignar la palabra Cerrado a la variable estado.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string estado = \"Abierto\";\n    estado = ___;\n    std::cout << estado;\n    return 0;\n}\n",
+          "answers": [
+            "\"Cerrado\""
+          ],
+          "explanation": "Las comillas dobles expresan un literal de texto; la asignación reemplaza el valor anterior."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué cambia al asignar \"Sur\" a una variable std::string?",
+          "options": [
+            "El valor de texto conservado.",
+            "El tipo se convierte en un número.",
+            "El nombre se renombra automáticamente a Sur."
+          ],
+          "correctIndex": 0,
+          "explanation": "El objeto conserva su tipo y su nombre; cambia la secuencia de caracteres almacenada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Concatenar no suma cantidades"
+        },
+        {
+          "type": "paragraph",
+          "text": "Concatenar significa construir una cadena poniendo una secuencia después de otra. Con variables std::string, + realiza esa operación: primera + segunda combina sus caracteres en orden. No inserta espacios por su cuenta. Si queremos uno, debe aparecer expresamente como texto. La concatenación crea un resultado; no modifica las variables que sólo se leen."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string sala = \"Sala\";\n    std::string numero = \"2\";\n    std::string nombre = sala + \" \" + numero;\n    std::cout << nombre;\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"Puerta\";\n    std::string b = \"B\";\n    std::cout << a + b << \"\\n\" << a + \" \" + b;\n    return 0;\n}\n",
+          "answers": [
+            "PuertaB\nPuerta B"
+          ],
+          "explanation": "El primer cálculo concatena sin separador; el segundo añade un espacio explícito."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa sólo los dos literales para producir Sector Oeste con un espacio entre las palabras.",
+          "template": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string primera = [];\n    std::string segunda = [];\n    std::cout << primera + \" \" + segunda;\n    return 0;\n}\n",
+          "answers": [
+            "\"Sector\"",
+            "\"Oeste\""
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La solución y el texto que parece un número"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los literales anteriores son \"Sector\" y \"Oeste\". La expresión añade el separador una sola vez. Observa que \"2\" es texto y 2 es un número entero: las mismas marcas visuales pueden representar datos con papeles distintos."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"12\";\n    std::string b = \"3\";\n    int x = 12;\n    int y = 3;\n    std::cout << a + b << \"\\n\" << x + y;\n    return 0;\n}\n",
+          "answers": [
+            "123\n15"
+          ],
+          "explanation": "Las cadenas se concatenan; los enteros se suman. No ocurre una interpretación automática de texto como cantidad."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dos etiquetas de texto contienen \"04\" y \"2\". ¿Qué produce concatenarlas en ese orden?",
+          "options": [
+            "\"6\"",
+            "\"042\"",
+            "Una cantidad entera de valor 42"
+          ],
+          "correctIndex": 1,
+          "explanation": "La concatenación conserva los caracteres, incluido el cero inicial; no suma números."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre que debe leerse para mostrar el valor guardado en cartel.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string cartel = \"Entrada\";\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "cartel"
+          ],
+          "explanation": "cartel lee el valor; \"cartel\" imprimiría las letras del nombre."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Añadir texto al estado existente"
+        },
+        {
+          "type": "paragraph",
+          "text": "cartel += \" abierto\"; concatena un sufijo y guarda el resultado en cartel. Con cadenas, += expresa añadir caracteres al texto actual; no suma una cantidad numérica. Debemos incluir el espacio inicial del sufijo si las palabras deben quedar separadas. No uses + como si cualquier pareja de literales entre comillas tuviera siempre la misma sintaxis de std::string: nuestros cálculos emplean al menos una cadena std::string."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string cartel = \"Taller\";\n    std::string anterior = cartel;\n    cartel += \" abierto\";\n    std::cout << anterior << \"\\n\" << cartel;\n    return 0;\n}\n",
+          "answers": [
+            "Taller\nTaller abierto"
+          ],
+          "explanation": "anterior conserva el texto inicial; += modifica cartel al añadir el sufijo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué dato depende de que escribamos el espacio en \" abierto\"?",
+          "options": [
+            "La separación visible entre Taller y abierto.",
+            "El tipo entero de la variable.",
+            "El nombre del archivo fuente."
+          ],
+          "correctIndex": 0,
+          "explanation": "Concatenar no inserta espacios que no estén en sus operandos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construye una etiqueta con datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el laboratorio, crea dos variables de texto: edificio = \"Aula\" y codigo = \"04\". Construye una tercera, etiqueta, que combine los datos con un guion: Aula-04. Muestra la etiqueta. Cambia luego codigo a \"07\" y comprueba que sólo cambie esa parte de la salida. Después experimenta asignando el nuevo código tras construir etiqueta: predice si la etiqueta ya construida se actualizará sola."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La segunda exploración recupera una idea sobre estado: un resultado guardado es un valor obtenido en un momento, no una fórmula que se ejecuta otra vez automáticamente cuando cambian sus operandos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y una predicción acumulativa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio = \"Aula\";\n    std::string codigo = \"04\";\n    std::string etiqueta = edificio + \"-\" + codigo;\n    std::cout << etiqueta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambiar el código antes de construir la etiqueta cambia el resultado. Cambiarlo después deja etiqueta como estaba; una nueva asignación debe reconstruir el texto si queremos actualizarlo."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Area\";\n    std::string codigo = \"1\";\n    std::string etiqueta = nombre + codigo;\n    codigo = \"2\";\n    std::cout << etiqueta << \" \" << codigo;\n    return 0;\n}\n",
+          "answers": [
+            "Area1 2"
+          ],
+          "explanation": "etiqueta recibió Area1 antes del cambio. codigo conserva ahora 2, pero etiqueta no se recalcula."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un código debe conservar la forma 0015 para imprimirlo. ¿Qué dato expresa mejor esa tarea?",
+          "options": [
+            "std::string codigo = \"0015\";",
+            "int codigo = 15;",
+            "double codigo = 15.0;"
+          ],
+          "correctIndex": 0,
+          "explanation": "La tarea necesita conservar una secuencia y su formato, no sólo una magnitud numérica."
+        }
+      ]
+    }
+  ]
+}

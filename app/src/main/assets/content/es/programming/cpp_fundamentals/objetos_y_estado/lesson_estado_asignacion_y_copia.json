@@ -1,0 +1,300 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__estado_asignacion_y_copia",
+  "title": "Seguir el estado: asignación y copia",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dar un valor nuevo a un objeto existente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un dato puede cambiar después de su preparación inicial. int reservas = 4; define e inicializa un objeto. La instrucción posterior reservas = 7; asigna un nuevo valor a ese objeto. No vuelve a declarar la variable ni añade otra caja: sustituye su contenido."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int reservas = 4;\n    std::cout << reservas << \"\\n\";\n    reservas = 7;\n    std::cout << reservas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida tiene dos momentos: primero 4 y después 7. Para entender un programa, sigue las instrucciones en su orden y pregunta qué valor conserva cada variable justo antes de usarla. Ese conjunto de valores es parte del estado del programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La derecha se calcula con el valor actual"
+        },
+        {
+          "type": "paragraph",
+          "text": "En reservas = reservas + 2;, la parte derecha usa el valor que ya existe. Si era 4, reservas + 2 produce 6; después la asignación guarda 6. No es una afirmación matemática de que un número sea igual a sí mismo más dos: = indica almacenar el nuevo resultado. Tampoco repite esa acción indefinidamente."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int reservas = 7;\n    reservas = reservas + 3;\n    std::cout << reservas;\n    return 0;\n}\n",
+          "answers": [
+            "10"
+          ],
+          "explanation": "La derecha usa el siete actual, suma tres y después se guarda diez."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int agua = 9;\n    std::cout << agua << \" \";\n    agua = agua - 3;\n    std::cout << agua;\n    return 0;\n}\n",
+          "answers": [
+            "9 6"
+          ],
+          "explanation": "La primera salida observa 9. Después se guardan 6 unidades y la siguiente lectura observa 6."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En cajas = cajas + 5;, cajas valía 2. ¿Cuál es el orden de acciones?",
+          "options": [
+            "Guardar 5 y después sumar 2.",
+            "Leer 2, calcular 2 + 5 y almacenar 7 en cajas.",
+            "Crear una segunda variable llamada cajas."
+          ],
+          "correctIndex": 1,
+          "explanation": "Una asignación usa el valor anterior para calcular su derecha y luego modifica el objeto indicado a la izquierda."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar no mantiene un enlace"
+        },
+        {
+          "type": "paragraph",
+          "text": "int copia = original; crea otra variable con una copia del valor actual. Si original vale 6, ambas contienen 6 en ese momento. Cambiar original después no actualiza copia: son dos objetos distintos. Esto es diferente de imprimir la misma variable dos veces."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int original = 6;\n    int copia = original;\n    original = 10;\n    std::cout << original << \" \" << copia;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es 10 6. El nombre copia conserva el valor recibido al inicializarla. Para darle después el valor actual de original, habría que escribir otra asignación explícita: copia = original;."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int salida = 5;\n    int registro = salida;\n    salida = 8;\n    registro = registro + 1;\n    std::cout << salida << \" \" << registro;\n    return 0;\n}\n",
+          "answers": [
+            "8 6"
+          ],
+          "explanation": "registro empieza con 5 y luego pasa a 6; salida cambia por separado a 8."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tras copiar cantidad a anterior, modificas cantidad. ¿Qué dato conserva anterior si no lo vuelves a asignar?",
+          "options": [
+            "El valor que recibió al copiar.",
+            "Siempre el valor más reciente de cantidad.",
+            "El nombre de cantidad como texto."
+          ],
+          "correctIndex": 0,
+          "explanation": "La copia guarda un valor, no una instrucción para mantener ambas variables sincronizadas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una tabla para hacer visibles las etapas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para int a = 2; int b = a; a = a + 3; b = a; las etapas son: a existe con 2; b se crea con 2; a cambia a 5 y b continúa en 2; por último b recibe 5. Escribe cada fila después de ejecutar una instrucción. No saltes directamente al estado final si una etapa te resulta confusa."
+        },
+        {
+          "type": "order_code",
+          "question": "Ordena las acciones para conservar primero el valor 3 en anterior y luego imprimir 8 3.",
+          "fragments": [
+            "    actual = actual + 5;",
+            "    std::cout << actual << \" \" << anterior;",
+            "    int anterior = actual;",
+            "#include <iostream>\n\nint main() {",
+            "    int actual = 3;",
+            "    return 0;\n}"
+          ],
+          "correctOrder": [
+            3,
+            4,
+            2,
+            0,
+            1,
+            5
+          ],
+          "explanation": "anterior se inicializa antes de modificar actual. Ese orden conserva 3 y permite imprimir 8 3."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el operador para aumentar invitados en cuatro a partir de su valor actual.",
+          "code": "#include <iostream>\n\nint main() {\n    int invitados = 6;\n    invitados = invitados ___ 4;\n    std::cout << invitados;\n    return 0;\n}\n",
+          "answers": [
+            "+"
+          ],
+          "explanation": "Se lee el 6 actual, se calcula 10 y se guarda el resultado."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int plazas = 7;\n    int informe = plazas;\n    plazas = 2;\n    informe = plazas;\n    std::cout << plazas << \" \" << informe;\n    return 0;\n}\n",
+          "answers": [
+            "2 2"
+          ],
+          "explanation": "La última asignación actualiza informe con el valor nuevo; por eso la copia inicial ya no es su valor final."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Actualizaciones compactas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para un entero, cantidad += 3; expresa sumar tres a su valor y guardarlo allí. cantidad -= 2; expresa restar dos. ++cantidad; aumenta en uno y --cantidad; reduce en uno. Aquí usamos el incremento y el decremento como instrucciones separadas; todavía no los combinamos con otras operaciones dentro de una expresión."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int pasos = 2;\n    pasos += 3;\n    ++pasos;\n    std::cout << pasos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El estado pasa de 2 a 5 y después a 6. La notación compacta hace visible la intención de actualizar. Mantén cantidades pequeñas en estos experimentos: un entero tiene un rango finito y no se debe asumir que aumentar sin límite devuelve un número válido."
+        },
+        {
+          "type": "drag_fill_code",
+          "question": "Completa para empezar con 10, restar tres y mostrar el resultado.",
+          "template": "#include <iostream>\n\nint main() {\n    int saldo = [];\n    saldo [] 3;\n    std::cout << saldo;\n    return 0;\n}\n",
+          "choices": [
+            "-=",
+            "10",
+            "+="
+          ],
+          "correctOrder": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobación del cambio"
+        },
+        {
+          "type": "paragraph",
+          "text": "El relleno anterior usa 10 y -=: el estado final es 7. No hay lectura de una entrada externa; toda la información está en las instrucciones del programa."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int puntos = 1;\n    ++puntos;\n    puntos += 4;\n    --puntos;\n    std::cout << puntos;\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "explanation": "Los valores sucesivos son 1, 2, 6 y 5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué versión expresa directamente aumentar en una unidad el entero turnos?",
+          "options": [
+            "++turnos;",
+            "turnos = 1;",
+            "int turnos = 1;"
+          ],
+          "correctIndex": 0,
+          "explanation": "La primera modifica el valor existente. Asignar 1 lo reemplaza por uno; volver a definirlo no es esa actualización."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa las partes derechas para duplicar 4 y luego reducir el resultado en dos.",
+          "template": "#include <iostream>\n\nint main() {\n    int cantidad = 4;\n    cantidad = cantidad [] 2;\n    cantidad = cantidad [] 2;\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "*",
+            "-"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir y justificar el orden"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los operadores del relleno anterior son * y -: los estados son 4, 8 y 6. En el laboratorio, construye un registro de entradas a una sala: aforo comienza en 5; anterior recibe una copia; aforo aumenta en 3; se muestra Antes: 5 y Ahora: 8 en líneas distintas. Después experimenta copiando anterior después del aumento y predice qué mensaje cambiará."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe una tabla para las dos versiones. Explica qué momento guarda anterior; no aceptes como explicación que el programa lo sabe. El código debe indicar ese momento por el orden de sus instrucciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y recuperación"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int aforo = 5;\n    int anterior = aforo;\n    aforo += 3;\n    std::cout << \"Antes: \" << anterior << \"\\n\";\n    std::cout << \"Ahora: \" << aforo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copiar antes de aumentar conserva una fotografía del estado inicial. Copiar después conservaría 8 y produciría Antes: 8. El nombre anterior sólo describe una intención: el orden efectivo debe hacerla verdadera."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 2;\n    std::cout << \"A: \" << cajas << \"\\n\";\n    cajas *= 3;\n    std::cout << \"B: \" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "A: 2\nB: 6"
+          ],
+          "explanation": "La salida permite observar estados distintos en orden. Multiplicar y asignar produce 6."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un comentario dice que el valor anterior es 4, pero el código copia después de asignar 9. ¿Qué determina la salida?",
+          "options": [
+            "El comentario obliga al programa a conservar 4.",
+            "Las instrucciones efectivas conservan 9; hay que corregir el código o la explicación según la intención.",
+            "El compilador elige entre ambos valores."
+          ],
+          "correctIndex": 1,
+          "explanation": "Los comentarios no se ejecutan; un nombre o comentario no puede sustituir una actualización correcta."
+        }
+      ]
+    }
+  ]
+}

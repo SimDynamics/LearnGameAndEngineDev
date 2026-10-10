@@ -1,0 +1,177 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__contratos_y_casos_de_prueba",
+  "title": "Contratos y casos de prueba",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una interfaz necesita un dominio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los tipos no describen todas las condiciones de uso. int permite declarar capacidad igual a cero, pero un cálculo de grupos completos no puede usarla como divisor. Un contrato precisa qué exige una función y qué promete cuando se cumplen esas exigencias. La precondición describe los datos válidos antes de llamar; la postcondición describe el resultado o estado que debe quedar después."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: 0 <= cantidad <= 120; 1 <= capacidad <= 12.\n// Post: devuelve el numero de grupos completos.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    std::cout << grupos_completos(25, 6);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El resultado es 4. El dominio incluye cantidad igual a cero, pero excluye capacidad igual a cero. Los límites superiores mantienen pequeños los valores y resultados, sin asumir un ancho fijo de int. Los comentarios comunican el contrato; por sí solos no comprueban los datos durante la ejecución."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué argumentos cumplen el contrato del ejemplo?",
+          "options": [
+            "cantidad 120 y capacidad 12",
+            "cantidad 7 y capacidad 0",
+            "cantidad 121 y capacidad 1"
+          ],
+          "correctIndex": 0,
+          "explanation": "Ambos argumentos deben estar en sus intervalos. El tipo int no distingue por sí solo los otros dos casos inválidos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Validar antes de llamar al cálculo"
+        },
+        {
+          "type": "paragraph",
+          "text": "En estos programas podemos separar una pregunta de validación y el cálculo que requiere su respuesta true. main comprueba los datos, llama al cálculo sólo si son válidos y muestra otro mensaje si quedan fuera del dominio. Así las pruebas con datos inválidos observan el rechazo sin ejecutar una división inválida."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice la salida siguiendo la validación antes de la llamada.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 0;\n    if (reparto_valido(cantidad, capacidad)) {\n        std::cout << grupos_completos(cantidad, capacidad);\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Fuera del dominio"
+          ],
+          "explanation": "La validación devuelve false y se omite la llamada que divide. El cálculo no recibe el divisor cero."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué orden protege la precondición de grupos_completos?",
+          "options": [
+            "Calcular primero y validar el resultado después.",
+            "Validar los argumentos y llamar sólo en el camino que cumple el contrato.",
+            "Escribir el contrato únicamente en un comentario y llamar con cualquier dato."
+          ],
+          "correctIndex": 1,
+          "explanation": "La comprobación debe controlar el camino que llega al cálculo, antes de ejecutar la operación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una postcondición expresa lo que prometemos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para una cantidad válida, el cociente q y el resto r deben reconstruirla: q * capacidad + r == cantidad. El resto debe ser no negativo y menor que capacidad. Son propiedades concretas que permiten contrastar un resultado. No basta con obtener un número o con saber que el programa terminó."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice cociente, resto y comprobación para estos datos válidos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 23;\n    const int capacidad = 5;\n    const int q = grupos_completos(cantidad, capacidad);\n    const int r = cantidad % capacidad;\n    const bool cumple = (q * capacidad + r == cantidad)\n        && (r >= 0) && (r < capacidad);\n    std::cout << q << \" \" << r << \" \" << cumple;\n    return 0;\n}\n",
+          "answers": [
+            "4 3 1"
+          ],
+          "explanation": "4 grupos contienen 20 elementos y quedan 3. La reconstrucción da 23 y el resto está entre 0 y 4."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un cálculo devuelve 0 grupos completos. ¿Qué se puede concluir sólo con ese resultado?",
+          "options": [
+            "Que los argumentos eran inválidos.",
+            "Que puede ser un resultado válido, por ejemplo con cantidad 0 o menor que capacidad.",
+            "Que todos los grupos tienen capacidad cero."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un resultado válido puede ser 0. La validez de los argumentos se establece antes y no se deduce de un número aislado."
+        },
+        {
+          "type": "note",
+          "text": "Una prueba de una propiedad concreta aporta evidencia sobre esa propiedad. Para justificar el cálculo completo, combina contrato, lectura del cuerpo y casos adecuados; una salida aislada no prueba todos los datos posibles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: dominio y resultado se revisan por separado"
+        },
+        {
+          "type": "paragraph",
+          "text": "cantidad vale 25 y capacidad vale 6, ambos declarados. Predice las tres respuestas y ejecuta. Después prueba cantidad 0 con capacidad 6; cantidad 120 con capacidad 12; capacidad 0 con cantidad 25; y cantidad -1 con capacidad 6. Establece primero si cada caso debe alcanzar el cálculo o mostrar el rechazo. Las condiciones de main protegen también el cálculo del resto."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 6;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué debe ocurrir con cantidad igual a 120 y capacidad igual a 12?",
+          "options": [
+            "Rechazar por estar exactamente en los límites superiores.",
+            "Mostrar 10 0 1, porque ambos extremos están incluidos y el reparto es exacto.",
+            "Mostrar 0 10 1."
+          ],
+          "correctIndex": 1,
+          "explanation": "El contrato incluye los extremos 120 y 12. Diez grupos consumen toda la cantidad."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con los datos iniciales, cambia temporalmente el cuerpo del cálculo a return cantidad / capacidad + 1;. Predice qué sucede con cumple y ejecuta. La modificación está definida para estos datos pequeños, pero contradice la postcondición. Restaura el cuerpo original después de observar la diferencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir datos que distingan reglas"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué plan revisa inclusión de los extremos y rechazo justo fuera del dominio de cantidad, usando capacidad válida igual a 6?",
+          "options": [
+            "Cantidades -1, 0, 120 y 121.",
+            "Cantidades 20, 30 y 40.",
+            "Cantidad 25 repetida cuatro veces."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los casos -1/0 prueban el extremo inferior y 120/121 el superior. Los datos interiores no distinguen una frontera mal escrita."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué nuevos casos revisan los límites de capacidad, con cantidad válida igual a 24?",
+          "options": [
+            "Capacidades 0, 1, 12 y 13.",
+            "Sólo capacidad 6.",
+            "Capacidades 6 y 6."
+          ],
+          "correctIndex": 0,
+          "explanation": "0 y 13 deben rechazarse; 1 y 12 deben aceptarse. Así se comprueban ambas fronteras."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un contrato también puede prometer que un parámetro de lectura no se modifica o que una transformación conserva la cantidad de elementos. En referencias modificables, describe qué cambio se permite y qué propiedades deben conservarse. Esa promesa ayuda a elegir pruebas del estado posterior, además de pruebas de valores devueltos."
+        },
+        {
+          "type": "note",
+          "text": "En esta unidad usamos comentarios, condiciones bool y caminos de llamada explícitos. La validación no se confunde con una postcondición: una comprueba qué entra y la otra qué queda al terminar."
+        }
+      ]
+    }
+  ]
+}

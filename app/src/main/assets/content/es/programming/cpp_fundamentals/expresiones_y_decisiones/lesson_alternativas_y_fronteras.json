@@ -1,0 +1,215 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__alternativas_y_fronteras",
+  "title": "Elegir alternativas y probar fronteras",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una condición cambia el recorrido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta ahora las instrucciones se ejecutaban en una secuencia sin elegir caminos. if permite ejecutar un bloque sólo cuando una condición es true. Si hay un else, ese otro bloque se ejecuta cuando la condición es false. Para un if con else se elige exactamente una de sus dos ramas; después el programa continúa con las instrucciones posteriores."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int plazas_libres = 2;\n    if (plazas_libres > 0) {\n        std::cout << \"Hay sitio\\n\";\n    } else {\n        std::cout << \"Completo\\n\";\n    }\n    std::cout << \"Revision terminada\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida tiene dos líneas: Hay sitio y Revision terminada. Las llaves delimitan las instrucciones de cada bloque. La última salida está fuera de ambas ramas, por eso se ejecuta después cualquiera que haya sido la elección. Usaremos llaves incluso para una sola instrucción, de modo que el alcance de cada decisión quede visible."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En un if con else, la condición es false. ¿Qué recorrido corresponde a esa decisión?",
+          "options": [
+            "Ejecutar ambas ramas y después continuar.",
+            "Ejecutar la rama else y después continuar.",
+            "Omitir todo lo que queda del programa."
+          ],
+          "correctIndex": 1,
+          "explanation": "else ofrece el camino para false. No termina el programa ni ejecuta la rama de true."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un bloque puede contener varias instrucciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llaves agrupan instrucciones, no datos. Todas las instrucciones del bloque elegido se ejecutan en su orden. Un if puede existir sin else: cuando su condición es false se omite su bloque y se continúa después. Una instrucción situada después de la llave de cierre no pertenece al bloque aunque su sangría parezca acercarla; la sangría ayuda a leer, las llaves determinan la estructura."
+        },
+        {
+          "type": "output_prediction",
+          "question": "La inspección adicional sólo se muestra si quedan pendientes. Predice la salida completa para estos datos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int pendientes = 0;\n    std::cout << \"Inicio\\n\";\n    if (pendientes > 0) {\n        std::cout << \"Inspeccion adicional\\n\";\n        std::cout << pendientes << \"\\n\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Inicio\nFin"
+          ],
+          "explanation": "pendientes > 0 es false. Se omiten ambas instrucciones del bloque y se conserva la salida posterior Fin."
+        },
+        {
+          "type": "fill_code",
+          "question": "La señal debe mostrarse sólo cuando nivel sea mayor que 7. Completa únicamente la palabra que inicia esa selección.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int nivel = 9;\n    ___ (nivel > 7) {\n        std::cout << \"Senal\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "if"
+          ],
+          "explanation": "if evalúa la condición y ejecuta el bloque en el caso true."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Traducir la regla antes de elegir símbolos"
+        },
+        {
+          "type": "paragraph",
+          "text": "El requisito «Listo con 6 piezas o más» incluye la cantidad 6. Una solución compara piezas >= 6. La regla «Más de 6» usaría > y daría otra respuesta exactamente en 6. Define qué salida se espera a cada lado y en la frontera antes de escribir el if."
+        },
+        {
+          "type": "output_prediction",
+          "question": "El lote está listo a partir de 6 piezas. ¿Qué línea se muestra?",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int piezas = 5;\n    if (piezas >= 6) {\n        std::cout << \"Listo\";\n    } else {\n        std::cout << \"Pendiente\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Pendiente"
+          ],
+          "explanation": "5 no alcanza el mínimo 6. Se ejecuta else."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una prueba debe revisar justo debajo de 10, en 10 y justo encima de 10. ¿Qué datos enteros corresponden a esas tres posiciones?",
+          "options": [
+            "0, 5 y 20",
+            "9, 10 y 11",
+            "10, 10 y 10"
+          ],
+          "correctIndex": 1,
+          "explanation": "9 y 11 son vecinos enteros de la frontera 10; el caso 10 comprueba si se incluye la igualdad."
+        },
+        {
+          "type": "paragraph",
+          "text": "No basta con llegar a las dos ramas: un programa con > en lugar de >= puede pasar una prueba con 5 y otra con 8, y aun así fallar con 6. Los casos de frontera comprueban el significado del requisito, además de los caminos ejecutados."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: señal y estado del resultado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los datos están declarados: nivel vale 4 y limite vale 4. Antes de ejecutar, predice el texto y la marca. Después prueba nivel igual a 3 y a 5, conservando limite. El requisito es mostrar Alerta desde el límite, incluida la igualdad, y guardar 1 en marca sólo cuando se muestra esa alerta. La salida posterior permite observar también una asignación dentro de la rama."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int nivel = 4;\n    const int limite = 4;\n    int marca = 0;\n    if (nivel >= limite) {\n        marca = 1;\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n    std::cout << \"Marca: \" << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Con los datos originales, ¿qué salida cumple la regla?",
+          "options": [
+            "Normal\nMarca: 0",
+            "Alerta\nMarca: 1",
+            "Alerta\nNormal\nMarca: 1"
+          ],
+          "correctIndex": 1,
+          "explanation": "La igualdad satisface >=. Se cambia marca, se muestra Alerta y después se muestra la marca actual."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora cambia >= por > sin modificar los datos. El programa sigue compilando, pero observa el caso nivel igual a limite. Explica la diferencia con la salida esperada y restaura la condición del requisito. Una prueba descubre un error cuando combina datos adecuados con un resultado esperado definido por adelantado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruir una decisión con su contexto"
+        },
+        {
+          "type": "order_code",
+          "question": "Ordena este programa: inclusión y apertura, dato declarado, decisión completa y cierre. La regla permite retirar hasta 4 elementos, incluidos 4.",
+          "fragments": [
+            "    if (cantidad <= 4) {\n        std::cout << \"Permitido\";\n    } else {\n        std::cout << \"Excede el limite\";\n    }",
+            "    return 0;\n}",
+            "    const int cantidad = 4;",
+            "#include <iostream>\n\nint main() {"
+          ],
+          "correctOrder": [
+            3,
+            2,
+            0,
+            1
+          ],
+          "explanation": "La condición lee cantidad después de su declaración. <= incluye la frontera 4 y muestra Permitido."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un programa compila y muestra Permitido para cantidad igual a 3. La regla exige permitir hasta 4. ¿Qué nueva prueba distingue <= 4 de < 4?",
+          "options": [
+            "Probar otra vez 3.",
+            "Probar 4 y exigir Permitido.",
+            "Cambiar el texto de un comentario."
+          ],
+          "correctIndex": 1,
+          "explanation": "Ambas condiciones aceptan 3; sólo el caso de igualdad distingue las dos versiones."
+        },
+        {
+          "type": "note",
+          "text": "Si un resultado no coincide, sigue la condición con los datos de esa ejecución, localiza la rama elegida y después revisa las instrucciones posteriores. Separa un error de condición, un error de estado y un error de formato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir una rama también puede evitar una operación inválida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un if puede comprobar un dato antes de usarlo. En este reparto, fichas es una cantidad no negativa y grupos debe ser positivo. Si grupos no es positivo, el programa muestra un aviso y omite la división. La operación está dentro del bloque protegido, así que no se calcula para los datos rechazados."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice la salida con el divisor declarado igual a cero. Lee qué rama se ejecuta antes de intentar calcular.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int grupos = 0;\n    if (grupos > 0) {\n        std::cout << fichas / grupos;\n    } else {\n        std::cout << \"Dato invalido\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Dato invalido"
+          ],
+          "explanation": "La condición es false y la división está en la rama omitida. Se muestra el aviso sin dividir entre cero."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Dónde debe situarse fichas / grupos para que esa comprobación lo proteja?",
+          "options": [
+            "Antes del if, aunque grupos todavía no se haya validado.",
+            "Dentro de la rama que sólo se ejecuta con grupos > 0.",
+            "En ambas ramas para obtener siempre un número."
+          ],
+          "correctIndex": 1,
+          "explanation": "La condición protege una operación sólo si se comprueba antes de ejecutarla y controla el camino que llega a ella."
+        },
+        {
+          "type": "note",
+          "text": "Un aviso explícito hace observable un dato rechazado. No atribuyas a una operación inválida una salida numérica supuesta: diseña el recorrido para evitarla."
+        }
+      ]
+    }
+  ]
+}

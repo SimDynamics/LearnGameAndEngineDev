@@ -1,0 +1,206 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__recorridos_anidados",
+  "title": "Recorridos anidados: una dimensión dentro de otra",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un recorrido completo por cada caso exterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un bucle puede contener otro. En una cuadrícula de dos filas y tres columnas, el recorrido exterior elige una fila y el interior visita todas las columnas de esa fila. La declaración del contador interior se vuelve a ejecutar cada vez que se alcanza su for. Por eso cada nueva fila comienza otra vez en la primera columna."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{1}; fila <= 2; ++fila) {\n        for (int columna{1}; columna <= 3; ++columna) {\n            std::cout << fila << \",\" << columna << \";\";\n        }\n        std::cout << \"|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El orden es 1,1; 1,2; 1,3; y después 2,1; 2,2; 2,3;. La salida | está después del bucle interior y dentro del exterior: aparece al terminar cada fila. El estado exterior permanece igual durante todo el recorrido interior. No aumentamos fila por cada columna."
+        },
+        {
+          "type": "output_prediction",
+          "id": "pares_otras_dimensiones",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 2; ++fila) {\n        for (int columna{2}; columna < 4; ++columna) {\n            std::cout << fila << \",\" << columna << \";\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "0,2;0,3;1,2;1,3;Fin"
+          ],
+          "explanation": "Para cada fila se reconstruye el recorrido de columnas 2 y 3."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dónde se ejecuta cada acción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuenta una ejecución del cuerpo interior por cada pareja visitada. Cuenta una ejecución de una instrucción después del interior por cada fila visitada. Una salida fuera de ambos bucles ocurre una sola vez, después de terminar el recorrido completo. Cuando los límites interiores son constantes e independientes de la fila, el número de parejas es filas por columnas; esa multiplicación no vale sin revisar un límite que dependa de la fila."
+        },
+        {
+          "type": "output_prediction",
+          "id": "marcadores_por_fila",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{1}; fila <= 3; ++fila) {\n        std::cout << \"F\" << fila << \":\";\n        for (int columna{1}; columna <= 2; ++columna) {\n            std::cout << columna;\n        }\n        std::cout << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "F1:12;F2:12;F3:12;Fin"
+          ],
+          "explanation": "El prefijo y el separador aparecen una vez por fila; los números aparecen una vez por columna."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contar_parejas",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int parejas{0};\n    for (int fila{0}; fila < 3; ++fila) {\n        for (int columna{0}; columna < 4; ++columna) {\n            ++parejas;\n        }\n    }\n    std::cout << parejas;\n    return 0;\n}\n",
+          "answers": [
+            "12"
+          ],
+          "explanation": "Se cuentan 3 recorridos interiores de 4 casos cada uno."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "incremento_fuera_interior",
+          "question": "En el programa anterior mueves ++parejas después del for interior, conservándolo dentro del exterior. ¿Qué cuenta ahora?",
+          "options": [
+            "Las tres filas visitadas.",
+            "Las doce parejas fila-columna.",
+            "Las cuatro columnas de la última fila."
+          ],
+          "correctIndex": 0,
+          "explanation": "La ubicación determina la frecuencia de la actualización."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dimensiones vacías y límites dependientes"
+        },
+        {
+          "type": "output_prediction",
+          "id": "interior_vacio",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{1}; fila <= 2; ++fila) {\n        for (int columna{0}; columna < 0; ++columna) {\n            std::cout << columna;\n        }\n        std::cout << \"F\" << fila << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "F1;F2;Fin"
+          ],
+          "explanation": "El interior tiene cero iteraciones en cada fila; las acciones exteriores siguen ocurriendo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "exterior_vacio",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 0; ++fila) {\n        for (int columna{1}; columna <= 2; ++columna) {\n            std::cout << columna;\n        }\n        std::cout << \"Fila\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Fin"
+          ],
+          "explanation": "Sin entrar en el exterior, tampoco se alcanza la inicialización ni el cuerpo del interior."
+        },
+        {
+          "type": "output_prediction",
+          "id": "limite_depende_fila",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int parejas{0};\n    for (int fila{1}; fila <= 3; ++fila) {\n        for (int columna{1}; columna <= fila; ++columna) {\n            ++parejas;\n        }\n    }\n    std::cout << parejas;\n    return 0;\n}\n",
+          "answers": [
+            "6"
+          ],
+          "explanation": "Los recorridos interiores tienen 1,2 y 3 casos: total 6."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reiniciar el contador interior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si declaras el contador interior antes de ambos bucles y no lo reinicias al comenzar cada fila, la primera fila puede agotarlo. Las filas siguientes encontrarán un contador que ya está fuera del límite. El programa puede terminar y compilar perfectamente, pero visitar menos parejas de las requeridas. Reconstruye el estado al comienzo de cada fila para comprobar si el recorrido empieza donde corresponde."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contador_sin_reinicio",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int columna{1};\n    for (int fila{1}; fila <= 2; ++fila) {\n        while (columna <= 2) {\n            std::cout << fila << \",\" << columna << \";\";\n            ++columna;\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "1,1;1,2;Fin"
+          ],
+          "explanation": "Al terminar la primera fila, columna vale 3. La segunda ya encuentra falsa su condición interior."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "restaurar_recorrido_interior",
+          "question": "Quieres recorrer columnas 1 y 2 en cada fila usando un while interior. ¿Dónde debe ejecutarse columna=1;?",
+          "options": [
+            "Dentro del cuerpo exterior, antes de comprobar el while interior de esa fila.",
+            "Sólo antes de comenzar el bucle exterior.",
+            "Después de terminar ambos bucles."
+          ],
+          "correctIndex": 0,
+          "explanation": "La inicialización debe repetirse por cada recorrido interior nuevo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un corte pertenece al bucle más interno"
+        },
+        {
+          "type": "output_prediction",
+          "id": "break_interior",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{1}; fila <= 2; ++fila) {\n        for (int columna{1}; columna <= 3; ++columna) {\n            if (columna == 2) {\n                break;\n            }\n            std::cout << fila << \",\" << columna << \";\";\n        }\n        std::cout << \"|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "1,1;|2,1;|Fin"
+          ],
+          "explanation": "Cada break termina el recorrido interior. La siguiente fila todavía se visita."
+        },
+        {
+          "type": "fill_code",
+          "id": "completar_extremo_interior",
+          "question": "El recorrido debe visitar columnas 0,1,2 para cada fila. Completa únicamente el extremo exclusivo.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 2; ++fila) {\n        for (int columna{0}; columna < ___; ++columna) {\n            std::cout << fila << \",\" << columna << \";\";\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Con columna<3 entran 0,1,2; 3 es el primer caso excluido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio de una cuadrícula en texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice la salida y luego ejecuta. Añade un salto de línea después de cada fila y conserva un marcador Fin fuera de ambos recorridos. Cambia dimensiones a 3 filas y 2 columnas, y después a 2 filas y 0 columnas. Explica por qué en el último caso aún existen dos acciones de final de fila. Mantén dimensiones entre 0 y 4; no necesitas dibujar una interfaz gráfica para comprobar el orden de las parejas."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 2; ++fila) {\n        for (int columna{0}; columna < 3; ++columna) {\n            std::cout << \"(\" << fila << \",\" << columna << \")\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,213 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__acumuladores_contadores_y_trazas",
+  "title": "Acumuladores, contadores y trazas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar un resumen del recorrido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un contador registra una cantidad de casos; un acumulador reúne una contribución de cada caso. Pueden empezar ambos en cero y aun así representar magnitudes distintas. Si recorremos pedidos, contar pedidos no es sumar piezas. Nombrar los objetos por su significado ayuda a evitar un cálculo que funciona mecánicamente pero responde a otra pregunta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para sumar contribuciones, el estado inicial del acumulador suele ser 0: todavía no hemos incorporado ninguna. En cada vuelta añadimos la contribución nueva al total anterior. La actualización total=total+aporte necesita conservar lo ya reunido; escribir total=aporte reemplaza el resumen por el último dato."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{1}; aporte <= 4; ++aporte) {\n        total = total + aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El ejemplo reúne 1,2,3,4: los totales sucesivos son 1,3,6,10. Estos valores pertenecen al acumulador; los aportes son 1,2,3,4. Si mezclas ambas columnas de una traza, puedes aparentar una actualización correcta sin saber qué representa cada objeto."
+        },
+        {
+          "type": "output_prediction",
+          "id": "suma_otro_recorrido",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 5; ++aporte) {\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "14"
+          ],
+          "explanation": "El acumulador reúne 2+3+4+5; += conserva lo anterior y agrega el aporte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observar el estado antes y después"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una traza no es sólo la lista de datos de entrada: registra qué valores usa cada instrucción. En una suma, distingue total antes de incorporar, aporte actual y total después. También decide si una salida ocurre antes o después de actualizar; ambas son operaciones válidas y muestran estados diferentes."
+        },
+        {
+          "type": "output_prediction",
+          "id": "mostrar_despues_acumular",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{1}; n <= 3; ++n) {\n        total += n;\n        std::cout << total << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "1;3;6;Fin"
+          ],
+          "explanation": "Se observan los totales después de incorporar 1,2,3."
+        },
+        {
+          "type": "output_prediction",
+          "id": "mostrar_antes_acumular",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{2}; n <= 4; ++n) {\n        std::cout << total << \";\";\n        total += n;\n    }\n    std::cout << \"Final=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "0;2;5;Final=9"
+          ],
+          "explanation": "Las salidas del cuerpo preceden a cada aporte. Al final ya se incorporó 4."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reemplazar_no_sumar",
+          "question": "El objetivo es reunir todos los aportes. En cada vuelta se escribe total=aporte. ¿Qué conserva al final esa actualización?",
+          "options": [
+            "Sólo el último aporte incorporado.",
+            "La suma de todos los aportes anteriores.",
+            "El número de vueltas, independientemente de los datos."
+          ],
+          "correctIndex": 0,
+          "explanation": "La asignación reemplaza el valor. Para reunir se combina el estado previo con la contribución."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir cuántos y cuánto"
+        },
+        {
+          "type": "output_prediction",
+          "id": "contar_y_sumar",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int casos{0};\n    int suma{0};\n    for (int n{3}; n <= 5; ++n) {\n        ++casos;\n        suma += n;\n    }\n    std::cout << casos << \":\" << suma;\n    return 0;\n}\n",
+          "answers": [
+            "3:12"
+          ],
+          "explanation": "Hay 3 casos, cuyas contribuciones son 3,4,5. Contar y sumar producen magnitudes distintas."
+        },
+        {
+          "type": "fill_code",
+          "id": "sumar_en_lugar_de_reemplazar",
+          "question": "Completa con += o = para conservar y sumar todos los valores de n.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{1}; n <= 3; ++n) {\n        total ___ n;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "+="
+          ],
+          "explanation": "+= combina el total anterior y el dato actual; = lo reemplaza."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "unidad_del_resumen",
+          "question": "n representa piezas aportadas por un pedido. ¿Qué representa suma+=n después de procesar varios pedidos?",
+          "options": [
+            "Piezas acumuladas.",
+            "Un número de segundos, sin otra conversión.",
+            "El texto del último pedido."
+          ],
+          "correctIndex": 0,
+          "explanation": "El acumulador conserva la magnitud de los aportes; el nombre y la presentación deben reflejarla."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El estado inicial importa también sin datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el recorrido no tiene vueltas, el acumulador conserva su inicialización. Un resumen de suma sobre ausencia de aportes debe producir 0, no un dato sin inicializar. Esa identidad conecta el significado del resumen con su implementación. Un total previo distinto de 0 puede ser correcto si representa una cantidad inicial que sí forma parte del problema."
+        },
+        {
+          "type": "paragraph",
+          "text": "No todos los resúmenes usan 0. Para multiplicar contribuciones, el valor que conserva el primer factor es 1. Inicializar producto en 0 anula todos los factores. En mínimos y máximos no elegiremos un inicio arbitrario sin justificarlo: cuando lleguemos a colecciones, comprobaremos primero si existe un dato inicial."
+        },
+        {
+          "type": "output_prediction",
+          "id": "suma_sin_vueltas",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{1}; n <= 0; ++n) {\n        total += n;\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Total=0"
+          ],
+          "explanation": "No hay aportes. El objeto conserva su valor inicial, que expresa la suma vacía."
+        },
+        {
+          "type": "output_prediction",
+          "id": "producto_acumulado",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int producto{1};\n    for (int factor{2}; factor <= 4; ++factor) {\n        producto *= factor;\n    }\n    std::cout << producto;\n    return 0;\n}\n",
+          "answers": [
+            "24"
+          ],
+          "explanation": "1 permite reunir 2×3×4 sin anularlos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "saldo_con_cantidad_inicial",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{6};\n    for (int lote{1}; lote <= 3; ++lote) {\n        piezas += 2;\n    }\n    std::cout << piezas;\n    return 0;\n}\n",
+          "answers": [
+            "12"
+          ],
+          "explanation": "El estado inicial 6 forma parte del total y se incorporan tres lotes de 2."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un resumen con varios objetos"
+        },
+        {
+          "type": "order_code",
+          "id": "orden_acumulacion",
+          "question": "Ordena las piezas para reunir 1,2,3 y mostrar el total después de terminar el recorrido.",
+          "fragments": [
+            "    std::cout << total;\n    return 0;\n}",
+            "        total += n;\n    }",
+            "#include <iostream>\nint main() {\n    int total{0};",
+            "    for (int n{1}; n <= 3; ++n) {"
+          ],
+          "correctOrder": [
+            2,
+            3,
+            1,
+            0
+          ],
+          "explanation": "El total empieza antes del recorrido, recibe cada aporte dentro y se muestra después."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el laboratorio modifica el límite a 1 y después a 5. Antes de ejecutar, predice cuántos aportes habrá y cuál será la suma. Después añade un contador independiente antes del recorrido, auméntalo una vez en cada vuelta y amplía la salida para mostrar también la cantidad de casos. No uses el total de piezas como si fuera cantidad de pedidos."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{1}; n <= 4; ++n) {\n        total += n;\n    }\n    std::cout << \"Piezas=\" << total;\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ]
+}

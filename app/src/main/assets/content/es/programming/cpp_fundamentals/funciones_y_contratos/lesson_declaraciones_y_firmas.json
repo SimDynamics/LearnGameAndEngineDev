@@ -1,0 +1,170 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas",
+  "title": "Declaraciones y tipos de las llamadas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conocer la interfaz antes de llamar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para reconocer una llamada, el compilador necesita haber visto una declaración de la función. Una definición con cuerpo también es una declaración, por eso las funciones anteriores se podían llamar desde main. Una declaración sin cuerpo termina con punto y coma y comunica el nombre, el tipo del resultado y los tipos de los parámetros. El cuerpo puede aparecer después."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint diferencia(int primero, int segundo);\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n\nint diferencia(int primero, int segundo) {\n    return primero - segundo;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La declaración permite reconocer diferencia(9, 2) antes de llegar al cuerpo. La definición posterior proporciona las instrucciones y entrega 7. Ambas describen la misma función y deben concordar. La declaración no es una llamada y su punto y coma no sustituye la necesidad de una definición para ejecutar el cálculo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué parte distingue una definición de función de una declaración sin definición?",
+          "options": [
+            "La definición contiene el cuerpo con las instrucciones.",
+            "La definición siempre aparece dentro de main.",
+            "La declaración sin cuerpo ejecuta primero el cálculo."
+          ],
+          "correctIndex": 0,
+          "explanation": "El cuerpo aporta la implementación. La declaración sin cuerpo describe cómo se puede usar la función."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los tipos describen lo que la llamada debe aportar"
+        },
+        {
+          "type": "paragraph",
+          "text": "La interfaz int combinar(int cajas, int piezas) indica dos parámetros int y un resultado int. El nombre no permite adivinar el significado completo de los datos, así que nombres y requisitos claros complementan los tipos. Una llamada debe aportar el número de argumentos previsto y datos adecuados a cada posición."
+        },
+        {
+          "type": "fill_code",
+          "question": "Completa el tipo del resultado en la declaración. La definición devuelve int y debe concordar.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n___ combinar(int cajas, int piezas);\n\nint main() {\n    std::cout << combinar(3, 4);\n    return 0;\n}\n\nint combinar(int cajas, int piezas) {\n    return cajas * piezas;\n}\n",
+          "answers": [
+            "int"
+          ],
+          "explanation": "La declaración y la definición describen un resultado int."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Para la interfaz int combinar(int cajas, int piezas), ¿qué llamada aporta exactamente dos argumentos int?",
+          "options": [
+            "combinar(3, 4)",
+            "combinar(3)",
+            "combinar(\"3\", \"4\")"
+          ],
+          "correctIndex": 0,
+          "explanation": "3 y 4 son literales int. Una cadena entre comillas no se interpreta automáticamente como ese entero."
+        },
+        {
+          "type": "note",
+          "text": "Las funciones de esta página usan cantidades entre 0 y 20; sus productos no superan 400. Una interfaz con int no afirma que cualquier multiplicación de valores int vaya a ser representable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una conversión puede ocurrir al entrar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pasar un argumento por valor inicializa el parámetro con ese valor. Si los tipos son distintos y existe una conversión admitida, ésta puede ocurrir antes de ejecutar el cuerpo. Recupera el ejemplo de conversiones de U2: un dato double con fracción no se convierte en int conservando la fracción. Conviene que la llamada exprese el tipo que necesita el cálculo."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice ambos resultados. La primera función recibe int y la segunda double.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint doble_entero(int valor) {\n    return valor * 2;\n}\n\ndouble doble_real(double valor) {\n    return valor * 2;\n}\n\nint main() {\n    const double dato = 3.5;\n    const int entero = doble_entero(static_cast<int>(dato));\n    const double real = doble_real(dato);\n    std::cout << entero << \" \" << real;\n    return 0;\n}\n",
+          "answers": [
+            "6 7"
+          ],
+          "explanation": "La conversión explícita entrega 3 al parámetro int, que produce 6. El parámetro double conserva 3.5 y produce 7."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una función recibe int. ¿Qué recupera la fracción si el argumento ya fue convertido desde 3.5 a 3?",
+          "options": [
+            "Declarar double el objeto que recibe el resultado al final.",
+            "Nada en el destino recupera esa fracción: debe elegirse el tipo adecuado antes del cálculo.",
+            "Cambiar el nombre del parámetro."
+          ],
+          "correctIndex": 1,
+          "explanation": "La pérdida ocurrió antes del cuerpo. Un destino double sólo recibe el resultado ya calculado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El mismo nombre con parámetros distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "C++ permite definir varias funciones con el mismo nombre si sus parámetros permiten distinguirlas. Esto se llama sobrecarga. Aquí hay una mitad para int y otra para double. Las llamadas usan exactamente esos tipos, así que la elección es inequívoca. Cambiar sólo el tipo de retorno no distingue dos funciones con los mismos parámetros."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint mitad(int cantidad) {\n    return cantidad / 2;\n}\n\ndouble mitad(double cantidad) {\n    return cantidad / 2;\n}\n\nint main() {\n    std::cout << mitad(5) << \" \" << mitad(5.0);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es 2 2.5. 5 es int y 5.0 es double; cada llamada selecciona la función correspondiente. El tipo del resultado se obtiene después de esa elección. En esta introducción no combinaremos sobrecargas con conversiones que ofrezcan varias elecciones posibles."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Usa el tipo de cada argumento para predecir la salida.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint mitad(int cantidad) {\n    return cantidad / 2;\n}\n\ndouble mitad(double cantidad) {\n    return cantidad / 2;\n}\n\nint main() {\n    const int a = 9;\n    const double b = 9.0;\n    std::cout << mitad(a) << \" \" << mitad(b);\n    return 0;\n}\n",
+          "answers": [
+            "4 4.5"
+          ],
+          "explanation": "El argumento int elige división entera; el double elige división con fracción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: reorganizar sin cambiar la interfaz"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa declara dias_completos antes de main y lo define después. horas está declarado con 53 y una jornada de práctica tiene 8 horas. Predice el resultado, ejecuta y prueba horas igual a 0, 8 y 16. Mantén horas entre 0 y 120. Después mueve la definición completa a la zona anterior a main y elimina la declaración aislada; comprueba que la misma llamada produce el mismo resultado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint dias_completos(int horas);\n\nint main() {\n    const int horas = 53;\n    std::cout << dias_completos(horas);\n    return 0;\n}\n\nint dias_completos(int horas) {\n    return horas / 8;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué debe conservarse al sustituir la declaración por una definición anterior a main?",
+          "options": [
+            "El nombre y los tipos que usa la llamada, además de un cuerpo que realice el cálculo.",
+            "Sólo el comentario sobre la función.",
+            "Una definición de dias_completos dentro del cuerpo de main."
+          ],
+          "correctIndex": 0,
+          "explanation": "La definición anterior ya declara la interfaz y aporta el cuerpo. Las funciones libres de esta unidad se definen fuera de main."
+        },
+        {
+          "type": "note",
+          "text": "Puedes organizar el texto mediante declaraciones previas o definiciones anteriores a las llamadas. Una interfaz clara permite leer lo necesario para usar una función sin estudiar todos los detalles de su cuerpo cada vez."
+        }
+      ]
+    }
+  ]
+}

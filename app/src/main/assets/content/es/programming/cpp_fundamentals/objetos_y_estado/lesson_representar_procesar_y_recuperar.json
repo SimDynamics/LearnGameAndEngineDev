@@ -1,0 +1,266 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__representar_procesar_y_recuperar",
+  "title": "Representar, procesar y recuperar datos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir qué datos necesita una tarea"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un informe de preparación debe describir una estación, su número de mesas y la longitud total de dos tramos. Antes de escribir, separa los datos: estación es texto; mesas es una cantidad entera; longitudes pueden tener fracciones. Después decide qué resultados se necesitan: el mensaje completo y la suma de las longitudes. El tipo, el nombre y la unidad ayudan a expresar el problema."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Debes conservar el nombre Puesto 03 y su cantidad de tres herramientas. ¿Qué elección distingue la etiqueta de la cantidad?",
+          "options": [
+            "std::string nombre = \"Puesto 03\"; e int herramientas = 3;",
+            "int nombre = 3; y bool herramientas = true;",
+            "Dos variables int de valor tres."
+          ],
+          "correctIndex": 0,
+          "explanation": "El nombre conserva texto y formato; la cantidad es un entero para contar."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Se sumarán medidas de 1.5 y 2.25 metros. ¿Qué representación necesita el resultado?",
+          "options": [
+            "Una representación numérica que conserve esas fracciones, como double.",
+            "Una cadena formada concatenando \"1.5\" y \"2.25\".",
+            "Un bool que sólo indique true."
+          ],
+          "correctIndex": 0,
+          "explanation": "La tarea pide sumar magnitudes, no unir sus símbolos como etiquetas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observar cuándo se conserva cada dato"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int disponibles = 8;\n    int al_inicio = disponibles;\n    disponibles -= 3;\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << disponibles;\n    return 0;\n}\n",
+          "answers": [
+            "Inicio: 8\nAhora: 5"
+          ],
+          "explanation": "La copia se hace antes del cambio. El salto organiza dos momentos del estado."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un informe se llama al_inicio, pero copia la cantidad después de modificarla. ¿Qué hay que corregir para conservar el estado inicial?",
+          "options": [
+            "El momento de la copia, antes de la modificación.",
+            "Sólo añadir otro comentario que diga inicial.",
+            "Eliminar el punto y coma del programa."
+          ],
+          "correctIndex": 0,
+          "explanation": "El nombre comunica una intención que las instrucciones deben realizar. La copia guarda el valor del momento en que se ejecuta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una secuencia con dependencias"
+        },
+        {
+          "type": "order_code",
+          "question": "Ordena el programa para construir Sala-02, guardar su texto inicial y luego ampliar sólo la etiqueta final. Debe imprimir Sala-02 / Sala-02 lista.",
+          "fragments": [
+            "    etiqueta += \" lista\";",
+            "    std::cout << inicial << \" / \" << etiqueta;",
+            "#include <iostream>\n#include <string>\n\nint main() {",
+            "    std::string etiqueta = \"Sala-02\";",
+            "    return 0;\n}",
+            "    std::string inicial = etiqueta;"
+          ],
+          "correctOrder": [
+            2,
+            3,
+            5,
+            0,
+            1,
+            4
+          ],
+          "explanation": "La copia debe conservar la etiqueta antes de añadir el sufijo; la salida se realiza después del cambio."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el operador para conservar la suma de ambas medidas.",
+          "code": "#include <iostream>\n\nint main() {\n    double primero = 1.5;\n    double segundo = 2.25;\n    double total = primero ___ segundo;\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "+"
+          ],
+          "explanation": "La suma numérica produce 3.75; no modifica los dos datos leídos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisar una intención que no llegó al resultado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un programador quiere una longitud de cinco metros repartida entre dos partes iguales. Guarda double mitad = 5 / 2; y muestra 2. No hubo un fallo sintáctico: el cálculo de enteros produjo dos antes de la conversión. La reparación debe responder a la intención de conservar 2.5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué cambio en el cálculo conserva 2.5?",
+          "options": [
+            "Escribir 5.0 / 2.",
+            "Mantener 5 / 2 y cambiar sólo el nombre de la variable.",
+            "Cambiar el literal del mensaje a \"2.5\" sin corregir el dato."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un operando double permite realizar la división decimal. Imprimir una respuesta fija ocultaría el cálculo incorrecto."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 5;\n    double mitad = static_cast<double>(total) / 2;\n    std::cout << \"Mitad: \" << mitad;\n    return 0;\n}\n",
+          "answers": [
+            "Mitad: 2.5"
+          ],
+          "explanation": "La conversión participa antes de dividir; la salida describe el resultado calculado."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué dato sería útil para comprobar si reparaste la división y no sólo el ejemplo de cinco metros?",
+          "options": [
+            "Otra longitud conocida, como ocho metros, cuyo resultado debe ser cuatro.",
+            "Sólo el número de letras del nombre mitad.",
+            "Un comentario idéntico al de la primera versión."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un caso nuevo comprueba la relación de cálculo, además de la salida esperada para el caso original."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: un informe completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un programa desde esta consigna. Una estación se llama Puesto 03, tiene 6 mesas y dos tramos de cable de 1.5 y 2.25 metros. Crea variables adecuadas, calcula el cable total y muestra exactamente tres líneas: Puesto 03; Mesas: 6; Cable: 3.75 m. Conserva el cero de la etiqueta y la unidad del resultado. No hace falta leer entrada."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, escribe qué valor conserva cada objeto y cuál es el resultado de la suma. Después comprueba la salida línea por línea. Modifica mesas a 0 y los dos tramos a 2.0 y 3.5: deben cambiar sólo las cantidades a Mesas: 0 y Cable: 5.5 m. Explica por qué los ceros del nombre permanecen."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una solución que hace visibles los datos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string estacion = \"Puesto 03\";\n    int mesas = 6;\n    double primer_tramo_metros = 1.5;\n    double segundo_tramo_metros = 2.25;\n    double cable_total_metros = primer_tramo_metros + segundo_tramo_metros;\n    std::cout << estacion << \"\\n\";\n    std::cout << \"Mesas: \" << mesas << \"\\n\";\n    std::cout << \"Cable: \" << cable_total_metros << \" m\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los nombres de las medidas conservan visible su unidad; la salida también la comunica. La etiqueta es texto, por lo que conserva 03. La suma lee las dos longitudes sin cambiarlas. Hay otras soluciones válidas con el mismo comportamiento: compara el significado, no sólo que tu código coincida carácter por carácter."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué evidencia muestra que el programa calcula el cable total a partir de sus datos?",
+          "options": [
+            "Que al cambiar un tramo conocido también cambia la suma de acuerdo con lo esperado.",
+            "Que siempre se imprime el literal \"3.75\".",
+            "Que existe un comentario que dice sumar."
+          ],
+          "correctIndex": 0,
+          "explanation": "La dependencia entre entradas fijadas y resultado debe aparecer en las instrucciones y responder al cambio de caso."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar sin una pista sobre el método"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Puesto\";\n    std::string codigo = \"03\";\n    std::string informe = nombre + \" \" + codigo;\n    int mesas = 4;\n    int registradas = mesas;\n    mesas += 2;\n    codigo = \"04\";\n    std::cout << informe << \"\\n\";\n    std::cout << registradas << \" \" << mesas;\n    return 0;\n}\n",
+          "answers": [
+            "Puesto 03\n4 6"
+          ],
+          "explanation": "informe se construyó con 03 y no se recalcula al cambiar codigo. registradas conserva 4 y mesas pasa a 6."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La ejecución coincide con la salida de un solo caso. ¿Qué conviene hacer para entender y comprobar la solución?",
+          "options": [
+            "Explicar los estados y repetir con datos que distingan los casos importantes.",
+            "Declarar que ya se domina cualquier problema de programación.",
+            "Dejar de comparar la salida con la consigna."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un acierto es evidencia de ese caso; explicación, variación y construcción independiente aportan evidencias distintas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Volver a construir con otra situación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sin copiar la solución anterior, construye ahora un registro de biblioteca: nombre = \"Modulo 02\", libros = 7, una copia al_inicio y una devolución de 3 libros que se añade a la cantidad actual. La salida debe tener tres líneas: Modulo 02; Inicio: 7; Ahora: 10. Después prueba libros = 0 y devolución de 2. Decide qué cambiar y qué debe conservarse."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el cambio de situación te hace olvidar la copia, dibuja la tabla de estados y reconstruye el orden. Si falla el formato, vuelve a separar literales, valores y saltos. Si el tipo elegido pierde información, revisa el significado del dato. La práctica posterior recuperará estas decisiones al introducir comparaciones, selección y repetición."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución del registro y criterio de revisión"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Modulo 02\";\n    int libros = 7;\n    int al_inicio = libros;\n    int devolucion = 3;\n    libros += devolucion;\n    std::cout << nombre << \"\\n\";\n    std::cout << \"Inicio: \" << al_inicio << \"\\n\";\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La copia anterior al aumento distingue el estado inicial del actual. Con libros = 0 y devolucion = 2 se obtienen Inicio: 0 y Ahora: 2; el nombre continúa siendo Modulo 02. Si puedes explicar esa dependencia, escribir una versión propia y probar sus casos, dispones de evidencia de comprensión y de práctica independiente. Seguiremos recuperando los fundamentos: terminar esta página no equivale a certificar dominio por una cantidad de aciertos."
+        }
+      ]
+    }
+  ]
+}

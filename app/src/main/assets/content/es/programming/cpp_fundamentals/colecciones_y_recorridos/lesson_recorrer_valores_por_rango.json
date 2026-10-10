@@ -1,0 +1,257 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__recorrer_valores_por_rango",
+  "title": "Recorrer una colección por sus valores",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una visita por elemento"
+        },
+        {
+          "type": "paragraph",
+          "text": "for (int valor : datos) recorre los elementos de datos en su orden. En cada vuelta crea una variable valor inicializada con una copia del elemento actual. Los dos puntos separan el nombre de esa variable de la colección. No son una condición de comparación ni un separador del for con contador."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 2, 7};\n    for (int valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es 4;2;7;. El cuerpo se ejecuta tres veces. No hay que calcular índices para visitar todos los elementos; la forma por rango expresa esa intención directamente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir las visitas"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 3, 1};\n    for (int valor : datos) {\n        std::cout << valor << \":\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "3:3:1:"
+          ],
+          "explanation": "Se visita cada elemento, incluidas las dos apariciones de tres."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué determina el orden del recorrido por rango?",
+          "options": [
+            "El orden actual de los elementos del vector.",
+            "Un orden ascendente calculado automáticamente.",
+            "Los nombres de las variables."
+          ],
+          "correctIndex": 0,
+          "explanation": "El recorrido no ordena los datos por sí solo."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre explícito del tipo de los elementos de datos para declarar una copia del mismo tipo.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 6};\n    for (___ valor : datos) {\n        std::cout << valor;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "int"
+          ],
+          "explanation": "Cada vuelta usa una copia de un elemento int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vacío y un solo elemento"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    std::cout << \"Inicio|\";\n    for (int valor : datos) {\n        std::cout << valor << \"|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "Inicio|Fin"
+          ],
+          "explanation": "El vector vacío provoca cero visitas; el código posterior sí se ejecuta."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0};\n    for (int valor : datos) {\n        std::cout << \"Dato=\" << valor;\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "Dato=0"
+          ],
+          "explanation": "Existe una visita: cero es un valor, no ausencia de elementos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El recorrido no entró al cuerpo porque el vector está vacío. ¿Es necesario acceder al índice cero para comprobarlo?",
+          "options": [
+            "Sí, siempre debe existir una primera visita.",
+            "No; cero visitas representa correctamente la colección vacía.",
+            "Sí, pero sólo con []."
+          ],
+          "correctIndex": 1,
+          "explanation": "La forma por rango no realiza un acceso inexistente al no haber elementos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar la copia no cambia el vector"
+        },
+        {
+          "type": "paragraph",
+          "text": "En for (int valor : datos), valor es un objeto distinto del elemento. valor += 1; modifica esa copia durante la vuelta. Puede afectar lo que se imprime en el cuerpo, pero los valores de datos continúan igual. Al terminar esa vuelta, esa variable local deja de estar disponible; la siguiente vuelta obtiene otra copia."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5};\n    for (int valor : datos) {\n        valor += 1;\n        std::cout << valor << \",\";\n    }\n    std::cout << \"Original=\" << datos.at(0);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "3,6,Original=2"
+          ],
+          "explanation": "Se muestran copias aumentadas; el primer elemento sigue siendo dos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quieres dejar todos los elementos aumentados en el vector. ¿Basta con cambiar valor en for (int valor : datos)?",
+          "options": [
+            "Sí, porque cualquier variable representa siempre el original.",
+            "No: ahí se modifica una copia; hace falta acceder a los elementos para cambiarlos.",
+            "Sólo si existen dos elementos."
+          ],
+          "correctIndex": 1,
+          "explanation": "Recupera la distinción entre copiar y mantener acceso al objeto original."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Visitar cadenas sin perder el orden"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> salas{\"Este\", \"Sur\"};\n    for (std::string sala : salas) {\n        std::cout << \"Sala: \" << sala << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> codigos{\"003\", \"021\"};\n    for (auto codigo : codigos) {\n        std::cout << codigo << \"|\";\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "003|021|"
+          ],
+          "explanation": "auto deduce std::string para esas copias y conserva las etiquetas."
+        },
+        {
+          "type": "paragraph",
+          "text": "auto puede deducir el tipo de la copia a partir de cada elemento, igual que deducía tipos en una definición. Aquí auto valor sigue haciendo una copia; no cambia por sí solo la relación con el elemento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar condición y salida"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5, 4};\n    for (int valor : datos) {\n        if (valor >= 4) {\n            std::cout << valor << \";\";\n        }\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "5;4;"
+          ],
+          "explanation": "Se visita todo; la condición elige qué visitas producen salida."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El programa imprime sólo valores mayores que tres. ¿Implica que el vector dejó de contener los demás?",
+          "options": [
+            "Sí, imprimir elimina los que no se muestran.",
+            "No, una condición de salida no modifica la colección.",
+            "Sólo si el vector está ordenado."
+          ],
+          "correctIndex": 1,
+          "explanation": "Leer y presentar valores no cambia los elementos existentes."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa sólo la colección que se recorre y el nombre que se imprime.",
+          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> turnos{1, 4};\n    for (int turno : []) {\n        std::cout << [] << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "turnos",
+            "turno"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción por intención"
+        },
+        {
+          "type": "paragraph",
+          "text": "El relleno anterior recorre turnos e imprime turno en cada visita. Ahora construye un programa con {6, 1, 4}: muestra sólo las cantidades pares, cada una seguida de un punto y coma. Debe resultar 6;4;. Después prueba el vector vacío y {3}: ninguno produce datos. Añade antes el texto Datos: y después Fin para hacer observable que cero visitas no detiene el programa."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe una tabla con el valor de cada visita y el resultado de su condición. No ordenes la colección para facilitar la respuesta: el orden original también forma parte de esta comprobación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y recuperación de copias"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{6, 1, 4};\n    std::cout << \"Datos:\";\n    for (int valor : datos) {\n        if (valor % 2 == 0) {\n            std::cout << valor << \";\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4};\n    for (auto valor : datos) {\n        valor = 9;\n        std::cout << valor << \" \";\n    }\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "9 4"
+          ],
+          "explanation": "auto sin & deduce una variable por valor: el cambio afecta la copia."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Cuándo resulta adecuada la forma por rango?",
+          "options": [
+            "Cuando queremos visitar cada valor de una colección sin necesitar su posición.",
+            "Sólo cuando hay exactamente tres elementos.",
+            "Cuando queremos que los valores se ordenen automáticamente."
+          ],
+          "correctIndex": 0,
+          "explanation": "Elegimos la forma del bucle por la información que necesita su cuerpo."
+        }
+      ]
+    }
+  ]
+}

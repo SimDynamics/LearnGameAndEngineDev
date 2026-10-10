@@ -1,0 +1,212 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__objetos_valores_y_tipos",
+  "title": "Objetos, valores y tipos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un lugar para conservar un dato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una estación tiene seis cascos disponibles. Si el programa necesita usar esa cantidad varias veces, puede conservarla en un objeto. Aquí objeto significa una parte de la memoria destinada a un dato; todavía no estamos hablando de clases ni de programación orientada a objetos. El tipo indica qué clase de valores y operaciones admite ese objeto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una variable da un nombre a ese objeto. En int cascos = 6, int indica el tipo entero, cascos es el nombre y 6 es el valor inicial. Un entero representa una cantidad sin parte fraccionaria dentro de un rango finito. Escribir cascos después permite pedir el valor conservado, sin repetir el número en cada instrucción."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cascos = 6;\n    std::cout << cascos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es 6. La instrucción de salida recibe el valor de la variable: no imprime el nombre cascos. El nombre pertenece al código que leemos; el valor es el dato con el que trabaja el programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar nombre, tipo y valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Piensa en una caja con una etiqueta. La etiqueta cascos permite identificarla; la indicación int especifica lo que puede contener; 6 es su contenido actual. La comparación ayuda a seguir programas, pero no significa que debamos dibujar el almacenamiento físico exacto. Cada objeto existe según las reglas de su tipo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En int visitantes = 14;, ¿qué representa visitantes?",
+          "options": [
+            "El tipo del objeto.",
+            "El nombre que permite referirse al objeto.",
+            "El valor numérico inicial."
+          ],
+          "correctIndex": 1,
+          "explanation": "int es el tipo, visitantes es el nombre y 14 es el valor inicial."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Escribe sólo el tipo de un objeto que conserva una cantidad entera de bicicletas.",
+          "code": "#include <iostream>\n\nint main() {\n    ___ bicicletas = 9;\n    std::cout << bicicletas;\n    return 0;\n}\n",
+          "answers": [
+            "int"
+          ],
+          "explanation": "int representa valores enteros; la definición conserva 9 bajo el nombre bicicletas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 12;\n    std::cout << \"cajas: \" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "cajas: 12"
+          ],
+          "explanation": "La parte entre comillas es texto fijo; cajas fuera de comillas proporciona el número conservado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer un dato no lo modifica"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una misma variable puede aparecer varias veces como dato de salida. Pedir su valor no lo borra ni lo reduce. En el siguiente programa, ninguna instrucción cambia el contenido de botellas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta, sin escribir las comillas del código.",
+          "code": "#include <iostream>\n\nint main() {\n    int botellas = 4;\n    std::cout << botellas << \" / \" << botellas;\n    return 0;\n}\n",
+          "answers": [
+            "4 / 4"
+          ],
+          "explanation": "Ambas lecturas observan el mismo valor. La salida no modifica la variable."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Escribe las dos líneas de salida, conservando el salto entre ellas.",
+          "code": "#include <iostream>\n\nint main() {\n    int saldo = 8;\n    std::cout << \"saldo\" << \"\\n\" << saldo;\n    return 0;\n}\n",
+          "answers": [
+            "saldo\n8"
+          ],
+          "explanation": "El literal imprime el nombre escrito; la variable imprime su valor."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué explica que las dos lecturas de una variable den el mismo valor si nada la modifica?",
+          "options": [
+            "Cada salida crea una variable diferente.",
+            "El valor se conserva entre las instrucciones.",
+            "La segunda salida recupera texto del primer mensaje."
+          ],
+          "correctIndex": 1,
+          "explanation": "La memoria conserva el dato; cout recibe sus valores, no reproduce mágicamente una salida anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir una representación"
+        },
+        {
+          "type": "paragraph",
+          "text": "No todos los datos son cantidades enteras. Una longitud de 1.25 metros necesita una representación numérica con fracciones; una etiqueta como Sector 4 es texto, aunque incluya un dígito; una respuesta de sí o no puede representarse mediante un valor lógico. Aprenderemos estas representaciones en las próximas lecciones. Elegir el tipo empieza por comprender qué significa el dato, no por mirar si contiene números."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un programa debe sumar cuántas mesas hay en dos salas. ¿Qué representación corresponde al dato cantidad de mesas?",
+          "options": [
+            "Texto que dice mesas.",
+            "Un entero que cuenta las mesas.",
+            "Un carácter que contiene la inicial del nombre."
+          ],
+          "correctIndex": 1,
+          "explanation": "Contar objetos completos requiere una cantidad entera; el texto puede describirla, pero no cumple la misma función."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El código de una caja es 0042 y deben conservarse los dos ceros iniciales. ¿Qué necesitamos representar?",
+          "options": [
+            "Una etiqueta de texto.",
+            "Una cantidad que se debe sumar.",
+            "Un resultado de división."
+          ],
+          "correctIndex": 0,
+          "explanation": "0042 es una identificación. Conservar sus símbolos importa más que interpretarla como cantidad."
+        },
+        {
+          "type": "note",
+          "text": "Un tipo restringe operaciones y valores posibles. No verifica por sí solo que el dato describa correctamente el mundo: un entero negativo puede ser legal en C++ y carecer de sentido como número de mesas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construye antes de comparar"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el laboratorio, escribe desde la consigna un programa que conserve la cantidad de llaves de un taller y muestre Llaves: 7. Usa una variable llamada llaves con valor 7. Después cambia sólo su valor inicial a 11: el mensaje debe pasar a Llaves: 11 sin cambiar la instrucción de salida. Predice ambos resultados antes de ejecutar."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba por separado el texto fijo, el valor y el espacio entre ellos. Si el mensaje no cambia al modificar la variable, revisa si imprimiste un número fijo o el nombre entre comillas. El laboratorio no guarda tu experimento al reabrir la lección; conserva fuera de él lo que quieras recuperar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una solución y una nueva lectura"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int llaves = 7;\n    std::cout << \"Llaves: \" << llaves;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La variable conserva el dato y la salida lo usa. Cambiar 7 por 11 en su definición cambia el contenido inicial; la misma instrucción de salida sigue expresando el mismo propósito."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Recupera lo aprendido sobre líneas: ¿cuáles son las dos líneas exactas de salida?",
+          "code": "#include <iostream>\n\nint main() {\n    int estantes = 3;\n    std::cout << \"Zona A\\n\";\n    std::cout << estantes << \" estantes\";\n    return 0;\n}\n",
+          "answers": [
+            "Zona A\n3 estantes"
+          ],
+          "explanation": "La primera instrucción produce texto y un salto. La segunda combina un valor con un texto explicativo."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa únicamente el nombre que debe leerse para imprimir 13.",
+          "code": "#include <iostream>\n\nint main() {\n    int paquetes = 13;\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "paquetes"
+          ],
+          "explanation": "El nombre permite acceder al valor del objeto; \"paquetes\" imprimiría texto fijo."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,162 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__pruebas_sistematicas_y_regresion",
+  "title": "Pruebas sistemáticas y regresión",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una prueba tiene entrada, resultado esperado y comparación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecutar y mirar la pantalla no define por sí solo una prueba. Un caso de prueba especifica datos, comportamiento esperado y una comparación con el comportamiento real. Calcula el resultado esperado desde el requisito, antes de ejecutar. Si lo obtienes copiando la fórmula de la función bajo prueba, puedes repetir el mismo error en la prueba y en el programa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para la estimación del microtaller, escoge -1,0,1,4,10 y 11 piezas. Los dos extremos exteriores comprueban rechazos. Cero comprueba la regla de pedido vacío. Uno comprueba el primer pedido real. Cuatro comprueba un caso interior. Diez comprueba el extremo aceptado. La función devuelve -1 para datos inválidos, 0 para cero y 3+2*piezas para los demás datos válidos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "resultado_esperado_independiente",
+          "question": "¿Cómo obtienes un resultado esperado útil para comprobar estimar(4)?",
+          "options": [
+            "Copiando sin revisar el cuerpo de estimar en otra función.",
+            "Calculando 3 minutos de preparación más 2 por cada una de las cuatro piezas, según el requisito.",
+            "Usando cualquier salida que el programa haya producido primero."
+          ],
+          "correctIndex": 1,
+          "explanation": "El requisito es la referencia. Repetir la implementación puede repetir su defecto."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_que_falta",
+          "question": "Sólo has probado pedidos de 2 y 6 piezas. ¿Qué caso es especialmente útil para revelar que siempre sumas preparación?",
+          "options": [
+            "0 piezas.",
+            "4 piezas.",
+            "8 piezas."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los casos positivos comparten preparación. El vacío exige una rama diferente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Hacer visible cada comparación"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(4)};\n    int esperado{11};\n    if (real == esperado) {\n        std::cout << \"Correcto\";\n    } else {\n        std::cout << \"Fallo: \" << real << \" esperado \" << esperado;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El verificador imprime el resultado real y el esperado cuando difieren. No modifica el resultado para que la prueba pase. Una prueba que falla aporta evidencia; comprueba también que su expectativa respete el requisito. El mensaje es una herramienta de investigación, no un sustituto de la causa."
+        },
+        {
+          "type": "output_prediction",
+          "id": "comparacion_con_defecto",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(0)};\n    int esperado{0};\n    if (real == esperado) {\n        std::cout << \"Correcto\";\n    } else {\n        std::cout << \"Fallo:\" << real << \":\" << esperado;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Fallo:3:0"
+          ],
+          "explanation": "La versión defectuosa añade preparación al pedido vacío. La expectativa independiente lo revela."
+        },
+        {
+          "type": "output_prediction",
+          "id": "expectativa_tambien_puede_fallar",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(2)};\n    int esperado{4};\n    std::cout << real << \":\" << esperado << \":\" << (real == esperado);\n    return 0;\n}\n",
+          "answers": [
+            "7:4:0"
+          ],
+          "explanation": "El cálculo devuelve correctamente 3+4=7. La expectativa 4 olvidó la preparación; hay que corregir la prueba."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Todas las pruebas deben ejecutarse"
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos reunir pruebas pequeñas en una función verificar que recibe entrada y expectativa y devuelve bool. Después de una reparación conviene ejecutar también las pruebas que antes pasaban: eso es comprobar regresión. No escribas verificar(caso1)&&verificar(caso2) si necesitas ejecutar las dos: el cortocircuito puede omitir la segunda cuando la primera falla. Registra cada resultado mediante llamadas independientes."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cortocircuito_oculta_segunda_prueba",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool verificar(int caso) {\n    std::cout << \"P\" << caso;\n    return caso != 0;\n}\n\nint main() {\n    bool todas{verificar(0) && verificar(1)};\n    std::cout << \":\" << todas;\n    return 0;\n}\n",
+          "answers": [
+            "P0:0"
+          ],
+          "explanation": "La primera llamada devuelve false; && no ejecuta la segunda. El resumen no prueba que se haya visitado cada caso."
+        },
+        {
+          "type": "output_prediction",
+          "id": "llamadas_independientes",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool verificar(int caso) {\n    std::cout << \"P\" << caso;\n    return caso != 0;\n}\n\nint main() {\n    bool primera{verificar(0)};\n    bool segunda{verificar(1)};\n    bool todas{primera && segunda};\n    std::cout << \":\" << todas;\n    return 0;\n}\n",
+          "answers": [
+            "P0P1:0"
+          ],
+          "explanation": "Las dos llamadas ya ocurrieron antes de combinar sus resultados."
+        },
+        {
+          "type": "fill_code",
+          "id": "detectar_desigualdad",
+          "question": "Completa sólo el operador para contar un fallo cuando resultado real y esperado son diferentes.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int real{7};\n    int esperado{7};\n    int fallos{0};\n    if (real ___ esperado) {\n        ++fallos;\n    }\n    std::cout << fallos;\n    return 0;\n}\n",
+          "answers": [
+            "!="
+          ],
+          "explanation": "Un fallo se cuenta cuando real y esperado difieren. El caso igual conserva cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pruebas pequeñas pueden cubrir un dominio pequeño entero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para una función con un dominio de entradas muy pequeño, puede ser razonable visitar todos sus valores permitidos. Eso no resuelve automáticamente los requisitos desconocidos ni demuestra una propiedad para un dominio mayor. Para programas que aceptan datos generales, casos representativos y argumentos de corrección se complementan. «Todas mis pruebas pasan» debe indicar qué comprobaron esas pruebas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "limite_de_evidencia",
+          "question": "Pasaron seis pruebas elegidas de la estimación. ¿Qué afirmación está respaldada directamente?",
+          "options": [
+            "La implementación produjo lo esperado en esos seis casos y las comparaciones realizadas.",
+            "Ya no puede existir ningún defecto en una ampliación futura.",
+            "Ningún usuario puede tener un requisito distinto."
+          ],
+          "correctIndex": 0,
+          "explanation": "La evidencia tiene un alcance concreto. Cambios de dominio o comportamiento requieren nuevas pruebas."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el laboratorio escribe la función verificar(int piezas, int esperado) que llama a estimar, muestra una comparación etiquetada y devuelve si coincide. Prueba de forma independiente -1,0,1,4,10 y 11 con expectativas -1,0,5,11,23 y -1. Cuenta fallos y muestra el total. Después introduce deliberadamente preparación en el caso cero, comprueba que se detecta y restaura la solución. El defecto modifica resultados; no introduce operaciones peligrosas."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Cero=\" << estimar(0) << \"\\n\";\n    std::cout << \"Cuatro=\" << estimar(4) << \"\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,258 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__extremos_sin_inventar_datos",
+  "title": "Encontrar extremos sin inventar datos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El mínimo necesita un dato real"
+        },
+        {
+          "type": "paragraph",
+          "text": "El menor y el mayor elemento describen valores que aparecen en la colección. En vacío no existen. Para una colección no vacía, podemos iniciar menor y mayor con el primer elemento; después cada visita permite actualizarlos. No elegimos cero por costumbre: puede no aparecer y podría falsear el resultado de todos los datos positivos o negativos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{7, 3, 9};\n    if (datos.empty()) {\n        std::cout << \"Sin extremos\";\n    } else {\n        int menor = datos.at(0);\n        int mayor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) {\n                menor = valor;\n            }\n            if (valor > mayor) {\n                mayor = valor;\n            }\n        }\n        std::cout << menor << \" \" << mayor;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los dos resúmenes empiezan como valores reales de la colección. Al volver a visitar el primero, no cambian; visitar todos con el mismo cuerpo mantiene simple el recorrido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La propiedad de cada etapa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de cada visita, menor es el mínimo entre los elementos vistos y mayor es su máximo. Si el valor nuevo es menor que el mínimo anterior, lo reemplaza; en caso contrario, ese mínimo sigue siendo correcto. La misma razón se aplica al máximo con la comparación inversa."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{5, 2, 8, 2};\n    int menor = datos.at(0);\n    int mayor = datos.at(0);\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n        if (valor > mayor) { mayor = valor; }\n    }\n    std::cout << menor << \":\" << mayor;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "2:8"
+          ],
+          "explanation": "Las repeticiones de dos no cambian el mínimo; ocho es el mayor valor."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "menor vale tres y la visita actual vale seis. ¿Qué debe ocurrir al buscar el mínimo?",
+          "options": [
+            "Conservar tres.",
+            "Reemplazarlo siempre por seis.",
+            "Sumar ambos valores."
+          ],
+          "correctIndex": 0,
+          "explanation": "La visita no ofrece un valor inferior al mínimo que ya teníamos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cero no sustituye un extremo"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 7};\n    int menor = 0;\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n    }\n    std::cout << menor;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Es una versión equivocada para el mínimo de estos datos: inventó cero como punto de partida."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué caso revela que iniciar mayor en cero puede ser incorrecto?",
+          "options": [
+            "Todos los valores negativos.",
+            "Una colección que contiene valores positivos mayores que cero.",
+            "Sólo nombres largos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Cero podría permanecer como máximo aunque no sea un dato de la colección."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el dígito del índice para partir de un dato real de esta colección no vacía.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{-4, -7};\n    int mayor = datos.at(___);\n    for (int valor : datos) {\n        if (valor > mayor) { mayor = valor; }\n    }\n    std::cout << mayor;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "El primer elemento existe y permite iniciar un máximo real, aunque todos los datos sean negativos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Negativos y un solo dato"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{-8, -2, -5};\n    int menor = datos.at(0);\n    int mayor = datos.at(0);\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n        if (valor > mayor) { mayor = valor; }\n    }\n    std::cout << menor << \" \" << mayor;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "-8 -2"
+          ],
+          "explanation": "El mayor negativo es el más cercano a cero; no inventamos un máximo cero."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{6};\n    int menor = datos.at(0);\n    int mayor = datos.at(0);\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n        if (valor > mayor) { mayor = valor; }\n    }\n    std::cout << menor << \" \" << mayor;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "6 6"
+          ],
+          "explanation": "Con un único elemento, ese dato es a la vez mínimo y máximo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Todos los datos valen cinco. ¿Qué relación habrá entre mínimo y máximo?",
+          "options": [
+            "Ambos valen cinco.",
+            "El mínimo debe ser cero.",
+            "El máximo será el número de elementos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los extremos resumen magnitudes, no posiciones ni cantidades de visitas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ausencia de extremos es distinta de cero"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    if (datos.empty()) {\n        std::cout << \"Sin extremos\";\n    } else {\n        int menor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) { menor = valor; }\n        }\n        std::cout << menor;\n    }\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "Sin extremos"
+          ],
+          "explanation": "La rama vacía se decide antes de leer la primera posición."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La colección vacía y la colección {0}…",
+          "options": [
+            "Tienen ambas un mínimo cero por defecto.",
+            "Se distinguen: la primera no tiene mínimo y la segunda sí, de valor cero.",
+            "No son representables."
+          ],
+          "correctIndex": 1,
+          "explanation": "No inventamos valores para sustituir una ausencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "El bloque de la rama no vacía da un alcance claro a menor y mayor: sólo existen donde tenemos elementos. No intentamos usar esos nombres después para representar un resultado que quizá nunca se pudo calcular."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valor extremo frente a su posición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Encontrar el menor valor no responde todavía dónde apareció. Si también necesitas su primera posición, recorre índices y cambia la posición sólo cuando el valor sea estrictamente menor que el mejor anterior. Una igualdad no reemplaza la primera coincidencia. El dominio de cada acceso sigue protegido por una colección no vacía y por i < size()."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{6, 2, 2};\n    std::size_t posicion = 0;\n    for (std::size_t i = 1; i < datos.size(); ++i) {\n        if (datos[i] < datos[posicion]) {\n            posicion = i;\n        }\n    }\n    std::cout << posicion << \":\" << datos[posicion];\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "1:2"
+          ],
+          "explanation": "La igualdad en el índice dos conserva la primera posición del mínimo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Si se reemplazara posicion también en una igualdad, ¿qué cambiaría con mínimos repetidos?",
+          "options": [
+            "Se conservaría la última aparición en vez de la primera.",
+            "El valor mínimo dejaría de existir.",
+            "El tamaño aumentaría."
+          ],
+          "correctIndex": 0,
+          "explanation": "La regla de empate decide qué posición representa el extremo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción y casos que distinguen errores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un informe para {4, 9, 2}: muestra Minimo: 2 y Maximo: 9 en dos líneas. En vacío muestra Sin datos. Repite con {0}, {-6}, {-7, -3, -5}, {5, 5} y {8, 2, 8}. Escribe los resultados antes de ejecutar y justifica cómo se preparan los extremos sin asumir que cero pertenece a los datos."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Como transferencia, añade la primera posición del mínimo sólo en la rama no vacía. Usa una colección con el mínimo repetido para comprobar tu regla de empate. No cambiaremos el orden de los datos para resolver este laboratorio."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y recuperación de referencias"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 9, 2};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int menor = datos.at(0);\n        int mayor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) { menor = valor; }\n            if (valor > mayor) { mayor = valor; }\n        }\n        std::cout << \"Minimo: \" << menor << \"\\nMaximo: \" << mayor;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 7};\n    int anterior = datos.at(0);\n    for (auto& valor : datos) { valor += 2; }\n    int menor = datos.at(0);\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n    }\n    std::cout << anterior << \" \" << menor;\n    return 0;\n}\n",
+          "question": "Predice la salida exacta, sin añadir comillas.",
+          "answers": [
+            "3 5"
+          ],
+          "explanation": "La copia anterior conserva tres; el mínimo se calcula sobre la colección ya transformada."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué comprueba el caso con todos los valores negativos?",
+          "options": [
+            "Que el máximo parte de un elemento real y no de un cero inventado.",
+            "Que los índices son negativos.",
+            "Que hay que convertir toda la colección a texto."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los casos se eligen para poner a prueba la justificación del estado inicial."
+        }
+      ]
+    }
+  ]
+}

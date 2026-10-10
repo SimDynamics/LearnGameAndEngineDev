@@ -1,0 +1,207 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__justificar_terminacion_y_elegir_bucle",
+  "title": "Justificar la terminación y elegir el bucle",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contar casos o esperar una condición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un for con inicio, extremo y avance visibles suele comunicar un recorrido regular. Un while suele comunicar que seguimos trabajando hasta que el estado satisface una condición. Ambos pueden expresar muchos de los mismos procedimientos: elige la forma que permita ver la regla de progreso y de salida. No conviertas la preferencia de estilo en una regla de que while sólo sirve para entrada o for sólo sirve para contar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para justificar una terminación identifica una magnitud que se aproxima al final y que no puede seguir cambiando indefinidamente dentro del dominio del problema. Para una cuenta pequeña, quedan disminuye hasta cero; para partir una cantidad entera positiva en mitades, la cantidad se reduce hasta cero. La condición debe rechazar el estado final. Los límites de representación del tipo también forman parte del razonamiento."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{10};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n    }\n    std::cout << pasos << \":\" << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La secuencia de cantidades después de actualizar es 5,2,1,0. La división es entera: al dividir 1 entre 2 se obtiene 0. No hay división entre cero: el divisor permanece en 2. Este procedimiento no exige conocer de antemano el número de pasos; lo determina el cambio del estado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "reducir_otra_cantidad",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{7};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n    }\n    std::cout << pasos << \":\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "3:0"
+          ],
+          "explanation": "Las actualizaciones producen 3,1,0: tres pasos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Casos de frontera y dominio"
+        },
+        {
+          "type": "output_prediction",
+          "id": "reduccion_desde_uno",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{1};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n    }\n    std::cout << pasos << \":\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "1:0"
+          ],
+          "explanation": "Un único paso basta para convertir 1 en 0 por división entera."
+        },
+        {
+          "type": "output_prediction",
+          "id": "reduccion_desde_cero",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n    }\n    std::cout << pasos << \":\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "0:0"
+          ],
+          "explanation": "La primera condición es falsa; no se realiza ninguna división ni incremento."
+        },
+        {
+          "type": "paragraph",
+          "text": "Que un bucle termine no garantiza que acepte el dominio correcto. Si el requisito sólo acepta cantidades de 0 a 20, un dato negativo debe tener un diagnóstico; no basta que la condición del while lo omita. Distingue validar los datos de controlar la repetición."
+        },
+        {
+          "type": "output_prediction",
+          "id": "dominio_antes_del_bucle",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{-2};\n    if (cantidad < 0 || cantidad > 20) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int pasos{0};\n        while (cantidad > 0) {\n            cantidad /= 2;\n            ++pasos;\n        }\n        std::cout << pasos;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Dato invalido"
+          ],
+          "explanation": "La validación rechaza el dato antes de iniciar el procedimiento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Avanzar y salir deben ser compatibles"
+        },
+        {
+          "type": "paragraph",
+          "text": "No todo cambio constituye progreso hacia la salida. Si n empieza en 1 y aumenta de dos en dos, una condición n!=4 nunca encuentra exactamente 4. Para recorrer valores inferiores a un extremo, n<4 expresa la frontera mejor que pedir llegar por igualdad. Mantén valores pequeños y analiza el procedimiento antes de ejecutarlo; no pruebes un bucle no terminante en el laboratorio."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "igualdad_incompatible",
+          "question": "Analiza sin ejecutar: n empieza en 1 y el procedimiento suma 2 mientras n!=4. ¿Qué defecto revela la secuencia inicial 1,3,5,7?",
+          "options": [
+            "El avance salta el valor que la condición exige alcanzar; no se ha justificado una salida.",
+            "El operador != cambia n a 4 cuando se supera ese valor.",
+            "Todo incremento positivo garantiza encontrar cualquier entero."
+          ],
+          "correctIndex": 0,
+          "explanation": "El criterio de salida debe ser compatible con la secuencia de estados. No se debe depender de desbordamientos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "frontera_en_lugar_igualdad",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{1};\n    while (n < 4) {\n        std::cout << n << \";\";\n        n += 2;\n    }\n    std::cout << \"Final=\" << n;\n    return 0;\n}\n",
+          "answers": [
+            "1;3;Final=5"
+          ],
+          "explanation": "Con 5, n<4 es falsa aunque el recorrido no haya usado exactamente 4."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "no_usar_desbordamiento",
+          "question": "Un recorrido incrementa un int sin límite pequeño justificable. ¿Por qué no debes proponer que terminará cuando el número se vuelva negativo por desbordamiento?",
+          "options": [
+            "El desbordamiento de enteros con signo no define una vuelta segura al inicio; hay que limitar el dominio antes.",
+            "Todo int se convierte automáticamente en double antes de desbordar.",
+            "El lenguaje garantiza que un desbordamiento termina el bucle."
+          ],
+          "correctIndex": 0,
+          "explanation": "La prueba de terminación debe mantenerse dentro de valores representables. Aquí no ejecutamos ejemplos con desbordamiento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuando el cuerpo debe actuar antes de comprobar"
+        },
+        {
+          "type": "paragraph",
+          "text": "do { cuerpo } while (condicion); evalúa la condición después del cuerpo. Su cuerpo se ejecuta al menos una vez al alcanzar la estructura. Puede expresar un procedimiento donde hay una primera acción obligatoria y luego se decide si repetir. No sustituye automáticamente a while: cambiar la posición de la comprobación cambia el comportamiento cuando la condición inicial es falsa. El punto y coma después de while(condicion) pertenece a la sintaxis de do-while."
+        },
+        {
+          "type": "output_prediction",
+          "id": "do_con_condicion_inicial_falsa",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{3};\n    do {\n        std::cout << n << \";\";\n        ++n;\n    } while (n < 3);\n    std::cout << \"Final=\" << n;\n    return 0;\n}\n",
+          "answers": [
+            "3;Final=4"
+          ],
+          "explanation": "El cuerpo se ejecuta antes de la primera comprobación, que ya encuentra 4<3 falsa."
+        },
+        {
+          "type": "output_prediction",
+          "id": "while_mismo_estado",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{3};\n    while (n < 3) {\n        std::cout << n << \";\";\n        ++n;\n    }\n    std::cout << \"Final=\" << n;\n    return 0;\n}\n",
+          "answers": [
+            "Final=3"
+          ],
+          "explanation": "Al comprobar antes del cuerpo, se omite incluso la primera acción."
+        },
+        {
+          "type": "fill_code",
+          "id": "do_condicion_despues",
+          "question": "Completa sólo la palabra clave que permite comprobar después del cuerpo.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{1};\n    do {\n        std::cout << n;\n        ++n;\n    } ___ (n < 3);\n    return 0;\n}\n",
+          "answers": [
+            "while"
+          ],
+          "explanation": "La sintaxis do-cuerpo-while realiza la comprobación al terminar cada cuerpo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir y comprobar de forma independiente"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "procedimiento_cero_casos",
+          "question": "El requisito permite una cantidad de trabajo de cero. Ninguna acción de preparación debe ocurrir si ya está terminado. ¿Dónde corresponde la primera comprobación?",
+          "options": [
+            "Antes del cuerpo, mediante while o un for apropiado.",
+            "Siempre después del cuerpo, mediante do-while.",
+            "Después de imprimir obligatoriamente el primer trabajo."
+          ],
+          "correctIndex": 0,
+          "explanation": "Cero casos es parte del requisito, por lo que la estructura debe poder omitir todo el cuerpo."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el laboratorio añade un contador de pasos y muestra cantidad después de cada actualización. Prueba 0,1,8 y 13, prediciendo primero. No cambies el divisor 2. Compara la cantidad de pasos de 8 y 13: tener datos diferentes no implica necesariamente un número diferente de pasos. Conserva cantidades iniciales entre 0 y 20."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int cantidad{13};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        std::cout << cantidad << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ]
+}

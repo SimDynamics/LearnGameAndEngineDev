@@ -1,0 +1,283 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato",
+  "title": "Texto, secuencia y formato de salida",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El programa no inventa separadores"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada instrucción de salida aporta los caracteres que se le entregan. Si mostramos \"Lado\" y después \"Norte\", los textos quedan unidos: LadoNorte. El hecho de que las instrucciones estén en líneas distintas del archivo no crea líneas distintas en la salida. El código fuente y el resultado visible son representaciones diferentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un espacio escrito dentro de un literal sí forma parte de su contenido. Por ejemplo, separar dos palabras requiere que alguna inserción aporte ese espacio. También puedes encadenar varias inserciones con std::cout << \"Sala\" << \" \" << \"Central\";. La secuencia importa y cada pieza tiene un papel observable."
+        },
+        {
+          "type": "output_prediction",
+          "id": "sin_espacio",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Roca\";\n    std::cout << \"Azul\";\n    return 0;\n}\n",
+          "answers": [
+            "RocaAzul"
+          ],
+          "explanation": "La segunda instrucción continúa donde quedó la primera; no añade un separador."
+        },
+        {
+          "type": "output_prediction",
+          "id": "espacio_interno",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Ruta\" << \" \" << \"Sur\";\n    return 0;\n}\n",
+          "answers": [
+            "Ruta Sur"
+          ],
+          "explanation": "La inserción central aporta el espacio entre las palabras."
+        },
+        {
+          "type": "output_prediction",
+          "id": "signo_interno",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"A\" << \":\" << \"B\";\n    return 0;\n}\n",
+          "answers": [
+            "A:B"
+          ],
+          "explanation": "Los tres literales aportan, en orden, A, dos puntos y B."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Salto de línea escrito dentro del texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "La secuencia de escritura \\n representa un salto de línea dentro de un literal de C++. Son dos caracteres en el código, barra inversa y n, que describen un carácter de control en el texto. Un salto de línea en el archivo y un salto de línea enviado a la salida no son la misma cosa. La posición de \\n determina dónde comienza la siguiente línea del mensaje."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Planta baja\\nPlanta alta\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este ejemplo hay un salto entre dos partes del literal. La salida tiene dos líneas. El compilador interpreta la secuencia de escape dentro del literal; la salida no contiene los caracteres barra y n. Para estas predicciones escribiremos el contenido visible, con saltos internos cuando existan; el salto final no se exige en el campo de respuesta."
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_lineas",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Entrada\\nSalida\";\n    return 0;\n}\n",
+          "answers": [
+            "Entrada\nSalida"
+          ],
+          "explanation": "El escape situado entre las palabras empieza una línea nueva."
+        },
+        {
+          "type": "output_prediction",
+          "id": "salto_en_otra_instruccion",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Rojo\";\n    std::cout << \"\\nVerde\";\n    return 0;\n}\n",
+          "answers": [
+            "Rojo\nVerde"
+          ],
+          "explanation": "La segunda inserción empieza enviando el salto; después muestra Verde."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "fuente_vs_salida",
+          "question": "Dos instrucciones aparecen en líneas distintas del código, sin \\n en sus textos. ¿Qué asegura eso sobre la salida?",
+          "options": [
+            "Que cada texto aparecerá en una línea diferente.",
+            "No asegura un salto: la salida depende de los caracteres insertados.",
+            "Que el programa no puede compilar."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las líneas del código ayudan a leer el programa; los caracteres enviados controlan el formato de salida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Representar comillas y barras"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si necesitas una comilla doble como parte del mensaje, una comilla sin escape terminaría el literal. La escritura \\\" representa una comilla incluida dentro de ese texto. De manera semejante, \\\\ representa una barra inversa del mensaje. El carácter que empieza un escape y el carácter resultante tienen funciones diferentes: uno pertenece a la notación del código, el otro al dato producido."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Nombre: \\\"Luna\\\"\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "No hay que agregar comillas a toda la respuesta de salida. Sólo se escriben en la respuesta cuando el propio programa las produce como contenido. La precisión aquí permite distinguir la notación que delimita un texto de los caracteres del texto. Leer esas dos capas será útil después con rutas, mensajes y datos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "comillas_en_mensaje",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Estado: \\\"Listo\\\"\";\n    return 0;\n}\n",
+          "answers": [
+            "Estado: \"Listo\""
+          ],
+          "explanation": "Las comillas escapadas forman parte del contenido mostrado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "barra_en_mensaje",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Nivel\\\\Uno\";\n    return 0;\n}\n",
+          "answers": [
+            "Nivel\\Uno"
+          ],
+          "explanation": "Dos barras inversas en el literal representan una barra en el mensaje."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "escape_no_literal",
+          "question": "En un literal válido, ¿qué representa \\n?",
+          "options": [
+            "Siempre dos letras visibles: barra y n.",
+            "Un salto de línea.",
+            "El final automático de main."
+          ],
+          "correctIndex": 1,
+          "explanation": "Dentro del literal, el escape describe un carácter de salto de línea."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comentarios y legibilidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Fuera de un literal, // comienza un comentario que llega hasta el final de esa línea. El comentario comunica algo a quien lee el programa y no es una instrucción de salida. Dentro de un literal, esos mismos dos signos son parte del contenido. La función de una marca depende del contexto en que aparece."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un comentario útil puede explicar la intención o una decisión que no resulte evidente. Repetir «muestra texto» junto a cada salida añade poco. Si el comentario afirma un resultado distinto del código, el compilador no corrige esa contradicción: el programa ejecuta el código. Por eso al modificar un programa también revisamos las explicaciones que dejamos para otras personas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "comentario_no_salida",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    // El mensaje identifica la segunda zona.\n    std::cout << \"Zona B\";\n    return 0;\n}\n",
+          "answers": [
+            "Zona B"
+          ],
+          "explanation": "La línea con // es un comentario; no se envía a std::cout."
+        },
+        {
+          "type": "output_prediction",
+          "id": "barras_en_literal",
+          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"A//B\";\n    return 0;\n}\n",
+          "answers": [
+            "A//B"
+          ],
+          "explanation": "Los signos están dentro del literal y forman parte de su contenido."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "comentario_contradictorio",
+          "question": "El comentario dice «Muestra Norte», pero la instrucción envía \"Sur\" a std::cout. ¿Qué se muestra?",
+          "options": [
+            "Norte, porque el comentario tiene prioridad.",
+            "Sur, porque esa es la instrucción ejecutada.",
+            "Ambas palabras automáticamente."
+          ],
+          "correctIndex": 1,
+          "explanation": "El comentario no altera la instrucción. La contradicción debe corregirse al revisar el programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Producir y ordenar mensajes"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "literal_y_operador",
+          "question": "Escribe el operador de inserción en el primer hueco y el literal exacto \"Carga lista\" en el segundo.",
+          "template": "#include <iostream>\nint main() {\n    std::cout [] [];\n    return 0;\n}",
+          "answers": [
+            "<<",
+            "\"Carga lista\""
+          ]
+        },
+        {
+          "type": "order_code",
+          "id": "orden_mensajes",
+          "question": "Ordena estas piezas para mostrar Paso uno y después Paso dos en líneas distintas.",
+          "fragments": [
+            "    std::cout << \"Paso dos\";",
+            "    return 0;\n}",
+            "#include <iostream>\nint main() {",
+            "    std::cout << \"Paso uno\\n\";"
+          ],
+          "correctOrder": [
+            2,
+            3,
+            0,
+            1
+          ],
+          "explanation": "El salto forma parte de la primera inserción y la segunda va después."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar la construcción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de responder: el operador que introduce el literal es << y el literal delimitado por comillas aporta Carga lista. En el orden solicitado, la instrucción de Paso uno debe ejecutarse antes que la de Paso dos. Recuerda comprobar la salida, no sólo que el código compile."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Experimento de un informe breve"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice la salida del laboratorio y ejecútalo. Modifícalo para producir tres líneas: Informe, Zona Este y Fin. Primero cambia los textos; después decide dónde deben aparecer los saltos. Puedes hacerlo con una inserción que contenga varios escapes o con varias instrucciones. Compara ambas versiones: la organización del código puede variar y la salida requerida debe conservarse."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Resumen\\nZona Oeste\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Comprueba que cada línea tenga el texto previsto y que no aparezcan los caracteres \\n como parte del mensaje. Anota tu predicción antes de ejecutar; así la observación comprueba una hipótesis."
+        }
+      ]
+    }
+  ]
+}

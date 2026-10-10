@@ -1,0 +1,179 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__retorno_y_caminos",
+  "title": "Retorno y caminos de una función",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Return termina la llamada actual"
+        },
+        {
+          "type": "paragraph",
+          "text": "return entrega un valor y termina la ejecución de esa llamada. El programa continúa donde se estaba usando su resultado. Un return dentro de una función auxiliar no termina main. Las instrucciones posteriores de esa misma función se omiten para la llamada que ya regresó."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint mayor(int a, int b) {\n    if (a >= b) {\n        return a;\n    }\n    return b;\n}\n\nint main() {\n    const int elegido = mayor(6, 4);\n    std::cout << elegido << \"\\n\";\n    std::cout << \"Main continua\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función entrega 6 desde la primera rama y no alcanza return b para ese caso. main recibe el valor, lo muestra y continúa con su siguiente salida. Para datos con a menor que b, el if se omite y return b cubre el otro camino."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice el valor devuelto y el mensaje posterior.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint menor(int a, int b) {\n    if (a <= b) {\n        return a;\n    }\n    return b;\n}\n\nint main() {\n    std::cout << menor(8, 3) << \"\\n\";\n    std::cout << \"Despues\";\n    return 0;\n}\n",
+          "answers": [
+            "3\nDespues"
+          ],
+          "explanation": "8 <= 3 es false. Se llega a return b con b igual a 3; después main sigue su secuencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cada camino con resultado debe entregar uno"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función declarada para devolver un valor debe entregar un valor adecuado en cada camino que termina normalmente. Tener un return dentro de un if no garantiza cubrir los datos para los que ese if es false. main tiene una regla especial de terminación; esa regla no se debe extender a todas las funciones int."
+        },
+        {
+          "type": "fill_code",
+          "question": "La función clasifica datos de -10 a 10: devuelve 1 para positivos y 0 para los demás. Completa sólo la palabra que entrega el resultado del camino restante.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint es_positivo(int valor) {\n    if (valor > 0) {\n        return 1;\n    }\n    ___ 0;\n}\n\nint main() {\n    std::cout << es_positivo(0);\n    return 0;\n}\n",
+          "answers": [
+            "return"
+          ],
+          "explanation": "El camino de valor igual a 0 necesita return 0. Una salida por cout no sustituye un resultado devuelto."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una función promete un resultado para un dato entero. ¿Qué revisión comprueba sus caminos?",
+          "options": [
+            "Contar el número de llaves sin seguir las condiciones.",
+            "Seguir cada alternativa posible y verificar qué valor entrega antes de salir.",
+            "Probar sólo un dato para el que el primer if sea true."
+          ],
+          "correctIndex": 1,
+          "explanation": "El resultado debe estar definido también en los caminos que no cumplen la primera condición."
+        },
+        {
+          "type": "note",
+          "text": "No ejecutes una función con valor de retorno cuyo recorrido cae al final sin devolverlo. Completa sus caminos antes de predecir una salida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Void representa una acción sin resultado devuelto"
+        },
+        {
+          "type": "paragraph",
+          "text": "void indica que una función no entrega un valor para usar en una expresión. Puede realizar una acción, como mostrar un mensaje. Su llamada se escribe como una instrucción. En una función void, return; termina la llamada sin valor, y llegar a su llave final también termina normalmente."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Esta acción omite el aviso cuando no hay pendientes. Predice la salida.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid mostrar_pendientes(int cantidad) {\n    if (cantidad == 0) {\n        return;\n    }\n    std::cout << \"Pendientes: \" << cantidad << \"\\n\";\n}\n\nint main() {\n    mostrar_pendientes(0);\n    mostrar_pendientes(3);\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Pendientes: 3\nFin"
+          ],
+          "explanation": "La primera llamada regresa sin mostrar. La segunda muestra el aviso y main imprime después Fin."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué uso corresponde a una función void llamada mostrar_pendientes?",
+          "options": [
+            "int resultado = mostrar_pendientes(3);",
+            "mostrar_pendientes(3);",
+            "mostrar_pendientes(3) + 1;"
+          ],
+          "correctIndex": 1,
+          "explanation": "La llamada realiza una acción; no aporta un valor para inicializar un int ni para sumar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una respuesta bool también se devuelve"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función puede resumir una pregunta mediante bool. Se puede devolver directamente el resultado de una comparación o una combinación lógica. Así el nombre describe la regla y main puede usar la respuesta en su propio if. El cálculo no necesita mostrar un mensaje para ser útil."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice el mensaje elegido por main.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool cabe(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= capacidad);\n}\n\nint main() {\n    if (cabe(5, 4)) {\n        std::cout << \"Cabe\";\n    } else {\n        std::cout << \"No cabe\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "No cabe"
+          ],
+          "explanation": "La función devuelve false porque 5 supera la capacidad 4. main elige el mensaje correspondiente."
+        },
+        {
+          "type": "drag_fill_code",
+          "question": "Esta función debe devolver bool. Completa el tipo y la palabra que entrega la comparación.",
+          "template": "#include <iostream>\n\n[] igual(int observado, int esperado) {\n    [] observado == esperado;\n}\n\nint main() {\n    const bool coincide = igual(4, 4);\n    std::cout << coincide;\n    return 0;\n}\n",
+          "choices": [
+            "return",
+            "void",
+            "bool",
+            "if"
+          ],
+          "correctOrder": [
+            2,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: limitar un resultado con caminos completos"
+        },
+        {
+          "type": "note",
+          "text": "En la actividad anterior, bool es el tipo del resultado y return entrega la comparación. La función muestra 1 sólo porque main envía su respuesta a cout."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función limita un nivel a la banda de 2 a 6: por debajo entrega 2, por encima entrega 6 y dentro conserva el dato. Los datos de prueba están declarados. Predice el caso inicial con nivel igual a 7; ejecuta y prueba 1, 2, 4 y 6. Cada caso debe devolver un resultado, incluida la igualdad en cada extremo. Mantén nivel entre -10 y 10."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint limitar(int nivel) {\n    if (nivel < 2) {\n        return 2;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nint main() {\n    const int nivel = 7;\n    std::cout << limitar(nivel);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué resultado corresponde a limitar(2)?",
+          "options": [
+            "1",
+            "2",
+            "6"
+          ],
+          "correctIndex": 1,
+          "explanation": "2 no está por debajo ni por encima de la banda. Se devuelve el dato de la llamada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Relaciona 1 con el primer retorno, 7 con el segundo y 2/4/6 con el último. Un mismo return puede cubrir muchos datos, y un caso de igualdad puede compartir camino con datos interiores. Lo que importa es el resultado prometido para cada dato."
+        }
+      ]
+    }
+  ]
+}

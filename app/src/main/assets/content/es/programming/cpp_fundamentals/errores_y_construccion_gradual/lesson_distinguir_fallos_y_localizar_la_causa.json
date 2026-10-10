@@ -1,0 +1,156 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa",
+  "title": "Distinguir fallos y localizar su causa",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La fase del fallo cambia la investigación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un error de compilación impide construir esa versión del programa hasta corregir los problemas de la fuente. Un error de enlace puede aparecer cuando una llamada tiene declaración pero falta la definición requerida en el programa. Un fallo detectado durante la ejecución ocurre después de construir el ejecutable. Un error lógico produce un comportamiento que incumple el requisito, aunque el programa compile y termine. La clasificación ayuda a elegir evidencia; no hace que todos los fallos tengan una única causa evidente."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "declaracion_sin_definicion",
+          "question": "Hay una declaración int estimar(int); y una llamada, pero no existe ninguna definición de estimar en el programa. ¿Qué etapa detecta normalmente esa definición ausente al construir el ejecutable?",
+          "options": [
+            "El enlace.",
+            "La comparación manual de resultados después de ejecutar correctamente.",
+            "La lectura de datos desde el teclado."
+          ],
+          "correctIndex": 0,
+          "explanation": "La declaración permite comprobar la llamada; el enlace necesita resolver su definición."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "resultado_incorrecto",
+          "question": "El requisito acepta 0 piezas sin preparación. La función siempre devuelve 3+2*piezas y el programa compila. ¿Qué caso revela un error lógico?",
+          "options": [
+            "0 piezas, porque devuelve 3 cuando se esperaba 0.",
+            "4 piezas, porque siempre debe provocar un error de compilación.",
+            "Cambiar sólo el nombre de main."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una prueba del caso especial revela una regla omitida. Compilar no comprueba el requisito."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer el primer diagnóstico útil"
+        },
+        {
+          "type": "paragraph",
+          "text": "El compilador informa ubicaciones y contexto; un primer error puede provocar otros diagnósticos posteriores. Busca primero qué regla incumple el código cercano al primer diagnóstico relevante. Un nombre sin declarar puede ser una errata o un ámbito incorrecto; no lo soluciones declarando objetos nuevos al azar. Un punto y coma ausente puede hacerse visible en la instrucción siguiente. La ubicación informada es una pista, no una promesa de que la causa ocupe exactamente esa columna."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_nombre",
+          "question": "Se declaró int pendientes{3}; y después se escribió std::cout << pendiente;. ¿Cuál es la corrección respaldada por esa evidencia?",
+          "options": [
+            "Usar pendientes, si la intención era mostrar el objeto declarado.",
+            "Añadir un objeto pendiente de cero sin comprobar la intención.",
+            "Cambiar todos los int a double."
+          ],
+          "correctIndex": 0,
+          "explanation": "La diferencia de nombres explica el diagnóstico; crear otro dato podría ocultar un error de intención."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cascada_diagnosticos",
+          "question": "Después de omitir una llave aparecen varios diagnósticos en funciones posteriores. ¿Qué conviene comprobar primero?",
+          "options": [
+            "La estructura de llaves alrededor del primer fallo relevante.",
+            "Eliminar todas las funciones posteriores sin leerlas.",
+            "Modificar cada línea informada de forma independiente y simultánea."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una ruptura de estructura puede producir una cascada. Corrige una hipótesis concreta y vuelve a construir."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una traza compara lo escrito con lo esperado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para un resultado incorrecto, conserva una entrada pequeña que lo reproduce y el resultado que el requisito exige. Sigue el estado paso a paso desde un punto conocido. Compara una columna de resultados esperados con los estados reales. Si el total de tres aportes parece el último aporte, investiga reinicios y asignaciones antes de cambiar la fórmula del problema."
+        },
+        {
+          "type": "output_prediction",
+          "id": "total_reiniciado_en_cada_vuelta",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n        std::cout << total << \";\";\n    }\n    std::cout << \"Final=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "2;3;4;Final=4"
+          ],
+          "explanation": "La traza confirma reemplazos, no una suma acumulada. La salida final responde al último aporte."
+        },
+        {
+          "type": "fill_code",
+          "id": "reparacion_respaldada",
+          "question": "La intención es reunir aportes 2,3,4. Completa sólo el operador de asignación compuesta que conserva el total anterior.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total ___ aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "+="
+          ],
+          "explanation": "+= añade cada aporte al total anterior; el resultado esperado es 9."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cambiar_sin_hipotesis",
+          "question": "Una salida falla. Cambias a la vez el límite, la actualización y la condición de aceptación, y ahora ese caso pasa. ¿Qué incertidumbre permanece?",
+          "options": [
+            "No sabes qué cambio explica la reparación ni qué comportamientos pudo alterar cada cambio.",
+            "El caso que pasó demuestra todos los casos posibles.",
+            "Tres cambios garantizan que las causas fueran tres."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una modificación por hipótesis y pruebas comparables conserva evidencia sobre la causa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar la reparación y recuperar el requisito"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un caso que dejó de fallar demuestra una mejora concreta, pero también prueba casos que antes funcionaban. Reparar un límite para incluir el último dato puede introducir un acceso fuera de rango si el dato final era un índice exclusivo. Formula la intención usando cantidad e índices válidos antes de cambiar < por <=. No ejecutes accesos inválidos para intentar averiguar su salida."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reparar_limite_de_vector",
+          "question": "v tiene tres elementos, con índices 0,1,2. El recorrido por índice debe visitar todos una vez. ¿Qué condición corresponde al extremo exclusivo 3?",
+          "options": [
+            "i < 3",
+            "i <= 3",
+            "i == 3"
+          ],
+          "correctIndex": 0,
+          "explanation": "El tamaño es el primer índice excluido, no el último índice válido."
+        },
+        {
+          "type": "paragraph",
+          "text": "El laboratorio reúne 2,3,4 pero muestra un resultado incorrecto para la suma total. Primero predice su salida real y escribe el resultado esperado. Repara una sola causa y comprueba también un único aporte y cero aportes. El código inicial termina y usa valores pequeños; el fallo es lógico y puede investigarse con seguridad."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+        }
+      ]
+    }
+  ]
+}

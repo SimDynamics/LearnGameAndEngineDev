@@ -1,0 +1,203 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__valores_expresiones_y_prioridad",
+  "title": "Valores, expresiones y prioridad",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "De datos conocidos a un valor nuevo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya puedes declarar objetos y darles valores. Una expresión permite obtener otro valor a partir de ellos. En 6 * 4, el operador * multiplica dos operandos y produce 24. En tarjetas * por_tarjeta, los nombres aportan los valores que guardan sus objetos en ese momento. El resultado de una expresión puede inicializar un objeto, aparecer a la derecha de una asignación o enviarse a la salida."
+        },
+        {
+          "type": "paragraph",
+          "text": "En los tipos numéricos conocidos, const int y const double declaran objetos cuyo valor se conserva después de inicializarlos: no admiten una reasignación posterior. const bool aplica la misma restricción a una respuesta true o false. Usaremos const para datos y resultados que no deben cambiar dentro de esa ejecución. Para comparar otros datos, puedes cambiar su inicializador en el código y volver a ejecutar; cada ejecución crea de nuevo el objeto. Esta explicación se refiere a esos tipos ya conocidos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int tarjetas = 6;\n    const int por_tarjeta = 4;\n    const int total = tarjetas * por_tarjeta;\n    std::cout << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La expresión tarjetas * por_tarjeta obtiene un valor. La declaración completa crea total con ese valor. El punto y coma termina la declaración. Una expresión y la instrucción que la contiene cumplen funciones distintas: calcular un resultado y situarlo dentro de las acciones del programa."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice la salida de este programa de distribución de asientos. Escribe sólo el resultado mostrado.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int mesas = 3;\n    const int sillas_por_mesa = 4;\n    const int sillas_sueltas = 2;\n    const int total = mesas * sillas_por_mesa + sillas_sueltas;\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "14"
+          ],
+          "explanation": "Primero se obtienen 12 sillas para las mesas y después se añaden las 2 sueltas."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En la declaración const int total = cajas * piezas;, ¿qué parte calcula el valor usado para inicializar total?",
+          "options": [
+            "const int",
+            "cajas * piezas",
+            "El punto y coma"
+          ],
+          "correctIndex": 1,
+          "explanation": "Los operandos y el operador forman la expresión que produce el valor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La agrupación cambia la pregunta"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una expresión aritmética, * y / tienen prioridad sobre + y -. Así, 2 + 5 * 3 se interpreta como 2 + (5 * 3) y produce 17. Para sumar antes de multiplicar se escribe (2 + 5) * 3, que produce 21. Los paréntesis permiten expresar la agrupación requerida por el problema; no son una decoración."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entre sumas y restas del mismo nivel, la agrupación es de izquierda a derecha. 18 - 5 - 4 significa (18 - 5) - 4 y produce 9. En cambio, 18 - (5 - 4) produce 17. Esta regla de agrupación se llama asociatividad. Describe qué operandos pertenecen a cada operador; no es una promesa general sobre el orden de ejecución de cualquier expresión de C++."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué valor produce 6 + 2 * 5?",
+          "options": [
+            "40",
+            "16",
+            "30"
+          ],
+          "correctIndex": 1,
+          "explanation": "La multiplicación produce 10; la suma da 16. Para obtener 40 sería necesario (6 + 2) * 5."
+        },
+        {
+          "type": "drag_fill_code",
+          "question": "Se necesitan 3 piezas por paquete, incluidos 4 paquetes grandes y 2 pequeños. Completa los dos operadores para sumar primero los paquetes y multiplicar después.",
+          "template": "#include <iostream>\n\nint main() {\n    const int grandes = 4;\n    const int pequenos = 2;\n    const int piezas_por_paquete = 3;\n    const int piezas = (grandes [] pequenos) [] piezas_por_paquete;\n    std::cout << piezas;\n    return 0;\n}\n",
+          "choices": [
+            "*",
+            "-",
+            "+",
+            "/"
+          ],
+          "correctOrder": [
+            2,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer la expresión con el estado de ese instante"
+        },
+        {
+          "type": "note",
+          "text": "En el ejercicio anterior, + suma los 6 paquetes dentro de los paréntesis y * obtiene 18 piezas. Sin esa agrupación, grandes + pequenos * piezas_por_paquete describiría otro cálculo y produciría 10."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera la asignación de la unidad anterior: puntos = puntos + 3 lee el valor actual de puntos, calcula la suma y guarda el resultado en el mismo objeto. No afirma una igualdad matemática permanente. Las instrucciones siguientes observan el nuevo estado; una copia realizada antes conserva su propio valor."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Sigue las instrucciones en orden. Escribe los dos números separados por un espacio.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int puntos = 5;\n    puntos = puntos + 3;\n    const int antes = puntos;\n    puntos = puntos * 2;\n    std::cout << antes << \" \" << puntos;\n    return 0;\n}\n",
+          "answers": [
+            "8 16"
+          ],
+          "explanation": "La primera asignación deja 8. antes copia ese 8. La segunda asignación cambia puntos a 16, sin cambiar antes."
+        },
+        {
+          "type": "order_code",
+          "question": "Ordena el programa: primero la inclusión y la apertura de main; después las declaraciones según sus dependencias; finalmente la salida y el cierre.",
+          "fragments": [
+            "    const int total = base + extra;",
+            "    std::cout << total;\n    return 0;\n}",
+            "#include <iostream>\n\nint main() {",
+            "    const int extra = base * 2;",
+            "    const int base = 3;"
+          ],
+          "correctOrder": [
+            2,
+            4,
+            3,
+            0,
+            1
+          ],
+          "explanation": "base debe existir para calcular extra; ambos deben existir para calcular total. El programa muestra 9."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: explicar qué se está contando"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los datos están declarados en el programa: hay 4 sobres, 3 fichas por sobre y 2 fichas sueltas. Antes de ejecutar, calcula la cantidad total. Ejecuta para contrastar tu predicción. Después cambia únicamente la expresión de total a (sobres + sueltas) * fichas_por_sobre y predice otra vez. Los datos no han cambiado; sí cambió la forma de agruparlos."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int sobres = 4;\n    const int fichas_por_sobre = 3;\n    const int sueltas = 2;\n    const int total = sobres * fichas_por_sobre + sueltas;\n    std::cout << \"Fichas: \" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara las dos salidas con el significado de cada dato. sueltas cuenta fichas, no sobres: sumarla a sobres y multiplicar todo por fichas_por_sobre cambia el modelo. Después restaura la expresión que cuenta las fichas correctamente. El compilador puede aceptar ambas expresiones; el requisito determina cuál resuelve la tarea."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Con los datos originales, ¿qué comparación explica el experimento?",
+          "options": [
+            "Ambas expresiones muestran 14 porque los paréntesis nunca cambian una suma.",
+            "La original muestra 14; la modificada muestra 18 y trata las fichas sueltas como si fueran sobres.",
+            "La original no puede compilar porque mezcla nombres y números."
+          ],
+          "correctIndex": 1,
+          "explanation": "4 * 3 + 2 produce 14. (4 + 2) * 3 produce 18 y cuenta una cantidad distinta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar y justificar sin ejecutar primero"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Recupera literales, nombres y prioridad. Escribe la línea completa que se muestra.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int reservas = 5;\n    const int nuevas = 4;\n    const int total = reservas + nuevas * 2;\n    std::cout << \"total \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "total 13"
+          ],
+          "explanation": "El literal muestra la palabra total. El nombre total aporta 13: primero 4 * 2 y después 5 + 8."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El requisito dice: «Suma los 8 elementos registrados y los 3 nuevos; después duplica esa suma». ¿Qué expresión lo representa?",
+          "options": [
+            "8 + 3 * 2",
+            "(8 + 3) * 2",
+            "8 * (3 + 2)"
+          ],
+          "correctIndex": 1,
+          "explanation": "La suma completa debe ser un operando de la multiplicación. Los paréntesis hacen visible ese requisito."
+        },
+        {
+          "type": "note",
+          "text": "Para resolver una expresión, identifica el significado y el tipo de los datos, agrupa los operadores y calcula con el estado actual. Aquí usamos enteros pequeños y resultados representables. Que una expresión compile no autoriza a ignorar los límites del tipo ni el significado de los datos."
+        }
+      ]
+    }
+  ]
+}

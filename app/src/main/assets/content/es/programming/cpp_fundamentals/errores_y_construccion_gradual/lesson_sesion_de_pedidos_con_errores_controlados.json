@@ -1,0 +1,147 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__sesion_de_pedidos_con_errores_controlados",
+  "title": "Construir una sesión de pedidos con errores controlados",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Requisito completo de una sesión"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una sesión contiene cantidades de piezas ya disponibles en una colección. Acepta cada cantidad de 0 a 10. Cada pedido válido se cuenta una vez, incluido el vacío; los minutos usan la regla de preparación ya establecida. Los datos inválidos se informan y no contribuyen a cantidad válida ni a minutos. El procesamiento continúa con el dato siguiente. Al final muestra cantidad válida, cantidad rechazada y minutos totales. Limita las sesiones de práctica a seis datos para mantener seguro el resumen entero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta versión procesa cantidades, no identifica todavía pedidos con varios campos. Cuando necesitemos relacionar identificador, cantidad y progreso, un tipo propio conservará esa asociación. No inventes vectores paralelos para esconder una relación que el diseño necesita expresar. Aquí el problema deliberado es conservar el resumen y tratar cada error por separado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "pedido_vacio_en_sesion",
+          "question": "En esta sesión, una cantidad 0 válida debe aportar ¿qué cambios?",
+          "options": [
+            "Un pedido válido más y cero minutos.",
+            "Un pedido rechazado más.",
+            "Ningún pedido válido, porque toda cantidad cero significa error."
+          ],
+          "correctIndex": 0,
+          "explanation": "El requisito distingue un pedido vacío válido de un dato fuera del dominio."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_despues_de_error",
+          "question": "La sesión contiene 2,11,3. El dato 11 se rechaza. ¿Qué exige la continuación?",
+          "options": [
+            "Conservar lo obtenido de 2 y seguir procesando 3 desde un estado válido.",
+            "Reiniciar siempre todo el resumen al rechazar 11.",
+            "Terminar la sesión sin visitar 3."
+          ],
+          "correctIndex": 0,
+          "explanation": "La política rechaza el dato fallido, no los válidos anteriores ni los siguientes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción independiente desde la especificación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de escribir, calcula los tres resúmenes para {2,11,0,3,-1}. Diseña funciones para validez y estimación, usando el contrato -1 para error. En main, registra cada decisión y conserva los resúmenes. No mires la siguiente página hasta haber construido y comprobado una primera versión. Prueba después una sesión vacía, una de sólo rechazos y una de frontera {10}. Cada registro debe dejar claro qué dato produjo el diagnóstico."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> piezas{2, 11, 0, 3, -1};\n    for (int cantidad : piezas) {\n        std::cout << \"Dato=\" << cantidad << \"\\n\";\n    }\n    std::cout << \"Fin de sesion\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar una sesión diferente"
+        },
+        {
+          "type": "output_prediction",
+          "id": "sesion_otros_datos",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> piezas{1, 12, 4, 0};\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        if (resultado == -1) {\n            ++rechazados;\n        } else {\n            ++validos;\n            minutos += resultado;\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos;\n    return 0;\n}\n",
+          "answers": [
+            "3:1:16"
+          ],
+          "explanation": "Se aceptan 1,4,0 con 5,11,0 minutos. Se rechaza 12."
+        },
+        {
+          "type": "output_prediction",
+          "id": "sesion_solo_rechazos",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> piezas{-1, 11};\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        if (resultado == -1) {\n            ++rechazados;\n        } else {\n            ++validos;\n            minutos += resultado;\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos;\n    return 0;\n}\n",
+          "answers": [
+            "0:2:0"
+          ],
+          "explanation": "Ambos datos se rechazan y ninguno entra en los resúmenes válidos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "error_sumado_como_minutos",
+          "question": "Una versión añade resultado a minutos antes de comprobar resultado==-1. ¿Qué viola?",
+          "options": [
+            "El total ya incorporó la señal de error como si fuera tiempo.",
+            "La posibilidad de que un resultado válido sea cero.",
+            "La obligación de recorrer la colección mediante un índice."
+          ],
+          "correctIndex": 0,
+          "explanation": "La decisión debe preceder a la actualización que usa el resultado como dato válido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un cambio conserva la historia de pruebas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Amplía ahora la frontera aceptada a 12. Conserva las pruebas antiguas con sus expectativas cuando el comportamiento no cambie. La sesión {1,12,4,0} pasa a tener cuatro pedidos válidos y 43 minutos; 12 aporta 27. El dato 13 debe seguir rechazado. Este es un cambio de requisito y una comprobación de regresión, no sólo un cambio para hacer pasar una salida."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_que_debe_cambiar",
+          "question": "Al ampliar únicamente de 10 a 12 piezas, ¿qué expectativa antigua necesariamente cambia?",
+          "options": [
+            "El rechazo de 12 pasa a una estimación válida de 27 minutos.",
+            "El pedido vacío pasa a necesitar preparación.",
+            "Todo pedido de 1 pieza pasa a rechazarse."
+          ],
+          "correctIndex": 0,
+          "explanation": "Sólo cambia el dominio superior; las reglas de tiempo dentro del dominio se conservan."
+        },
+        {
+          "type": "output_prediction",
+          "id": "recuperar_copia_en_resumen",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    int total{0};\n    int antes{total};\n    for (int aporte : std::vector<int>{2, 5}) {\n        total += aporte;\n    }\n    std::cout << antes << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "0:7"
+          ],
+          "explanation": "antes es una copia del estado inicial; el acumulador cambia de forma independiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para cerrar esta etapa, explica por qué cada dato inválido se excluye antes de actualizar, por qué un fallo no destruye el resumen anterior y qué pruebas protegen la ampliación. La programación con excepciones añade otra política de detección y tratamiento; su práctica ejecutable necesita soporte que el ejecutor actual todavía no ofrece."
+        },
+        {
+          "type": "note",
+          "text": "Base conceptual: Programming: Principles and Practice Using C++, tercera edición, capítulo 4 y etapas de desarrollo y pruebas de los capítulos 5 y 6. Ejemplos propios, sin biblioteca de apoyo PPP. La comprobación del dominio ocurre antes de operaciones dependientes; no se usa desbordamiento como prueba de error."
+        }
+      ]
+    }
+  ]
+}
