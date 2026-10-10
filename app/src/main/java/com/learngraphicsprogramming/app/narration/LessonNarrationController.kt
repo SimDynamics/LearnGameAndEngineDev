@@ -38,7 +38,10 @@ class LessonNarrationController(
         if (error is UiFailure) s(error.messageRes, *error.arguments) else s(fallback)
     private val appContext = context.applicationContext
     private val main = Handler(Looper.getMainLooper())
-    private val workerThread = HandlerThread("LessonNarration", Process.THREAD_PRIORITY_BACKGROUND).apply { start() }
+    private val workerThread = HandlerThread(
+        "LessonNarration",
+        Process.THREAD_PRIORITY_FOREGROUND
+    ).apply { start() }
     private val worker = Handler(workerThread.looper)
     private val models = KokoroModelStore(appContext)
     private val audioManager = appContext.getSystemService(AudioManager::class.java)
