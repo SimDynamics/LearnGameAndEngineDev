@@ -70,6 +70,12 @@ class Clang21FeatureDeliveryInstrumentedTest {
                     featureInstalled && CppCompiler.isOptionalClang21Available(activity),
                     optionalRadio.isEnabled
                 )
+                if (optionalRadio.isEnabled) {
+                    optionalRadio.performClick()
+                    assertTrue("Clang 21 must be selectable", optionalRadio.isChecked)
+                    defaultRadio.performClick()
+                    assertTrue("The user must be able to return to Clang 23", defaultRadio.isChecked)
+                }
             }
         }
     }
