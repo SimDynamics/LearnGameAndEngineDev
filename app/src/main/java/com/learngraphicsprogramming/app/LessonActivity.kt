@@ -2864,16 +2864,9 @@ class LessonActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    override fun onStop() {
-        super.onStop()
-        // Turning the screen off is NOT leaving the lesson. Retain the
-        // playback position, current WAV and neural model while locked.
-        // When the user navigates away with the screen on, keep the
-        // previous behavior and stop the narration.
-        val deviceInteractive = getSystemService(android.os.PowerManager::class.java)
-            ?.isInteractive != false
-        if (deviceInteractive && !isChangingConfigurations) narrationController?.stop()
-    }
+    // onStop is intentionally not used to stop the reader: Android can call
+    // both onPause and onStop when the screen locks. The controller is closed
+    // in onDestroy or stopped explicitly on a page change.
 
     private fun saveCurrentPageProgress() {
 
