@@ -84,7 +84,7 @@ class LessonNarrationController(
     private var voices: List<Voice> = emptyList()
     private val ttsPending = linkedMapOf<String, Synthesis>()
     private val removeResourceListener = NarrationResourceEvents.addListener {
-        if (!closed) stopInternal()
+        if (!closed) stopInternal(releaseNeuralResources = true)
     }
 
     private data class Segment(val text: String, var file: File? = null, var duration: Int? = null)
@@ -100,7 +100,8 @@ class LessonNarrationController(
 
     fun toggle(
         segments: List<String>,
-        language: NarrationLanguage = NarrationSettingsRepository.get(appContext).language
+        language: NarrationLanguage = NarrationSettingsRepository.get(appContext).language,
+        quickStart: Boolean = false
     ) = onMain {
         if (closed) return@onMain
         if (this.segments.isNotEmpty() && this.language == language) {
@@ -110,7 +111,10 @@ class LessonNarrationController(
         stopInternal()
         settings = NarrationSettingsRepository.forLanguage(appContext, language)
         if (!settings.enabled) return@onMain
-        val prepared = NarrationSegments.prepare(segments, 250)
+        // Shorter chunks for on-screen lessons: Kokoro can begin speaking
+        // without having to render a full 250-character paragraph first.
+        // Explicit API callers retain their existing 250-character contract.
+        val prepared = NarrationSegments.prepare(segments, if (quickStart) 140 else 250)
         if (prepared.isEmpty()) {
             onError(s(R.string.narration_no_text))
             return@onMain
@@ -119,6 +123,31 @@ class LessonNarrationController(
         this.segments = prepared.map { Segment(it) }.toMutableList()
         directory = File(appContext.cacheDir, "lesson-narration-" + UUID.randomUUID())
         resume()
+    }
+
+    /**
+     * Opens an already-installed neural model in the background while the lesson
+     * is visible. Never downloads files and never blocks the lesson UI thread.
+     * Sessions are reused across page changes and released on activity destroy.
+     */
+    fun warmUp() {
+        if (closed || !NarrationSettingsRepository.get(appContext).enabled) return
+        worker.post {
+            if (closed || kokoro != null) return@post
+            val preference = NarrationSettingsRepository.get(appContext)
+            if (!preference.enabled || preference.engine == NarrationEngine.ANDROID) return@post
+            runCatching {
+                val root = models.directory()
+                val voice = KokoroVoiceCatalog.find(preference.kokoroVoice) ?: return@post
+                if (!File(root, "model.onnx").isFile ||
+                    !File(root, voice.artifact.fileName).isFile
+                ) return@post
+                val engine = KokoroOnnxEngine(root)
+                if (closed) engine.close() else kokoro = engine
+            }
+            // Errors are reported through the existing fallback when Listen
+            // is pressed, not during passive lesson loading.
+        }
     }
 
     private fun pause() {
@@ -143,7 +172,11 @@ class LessonNarrationController(
         } else if (playerReady) {
             applyRate()
             runCatching { player?.start() }.onFailure { fail(s(R.string.narration_resume_error)) }
-        } else ensureSegment(index)
+        } else {
+            ensureSegment(index)
+            // Queue the next line immediately while the current audio prepares.
+            ensureSegment(index + 1)
+        }
     }
 
     fun stop() = onMain { stopInternal() }
@@ -179,7 +212,7 @@ class LessonNarrationController(
         val previous = settings
         settings = NarrationSettingsRepository.forLanguage(appContext, language)
         if (!settings.enabled) {
-            stopInternal()
+            stopInternal(releaseNeuralResources = true)
             return@onMain
         }
         if (settings.engine != previous.engine || settings.kokoroVoice != previous.kokoroVoice ||
@@ -429,7 +462,9 @@ class LessonNarrationController(
                     media.seekTo(offset.toInt())
                     applyRate()
                     if (playing && player === media) media.start()
-                    if (index + 1 < segments.size) ensureSegment(index + 1)
+                    // Have subsequent words ready before the current file finishes.
+                    ensureSegment(index + 1)
+                    ensureSegment(index + 2)
                 } catch (_: RuntimeException) { fail(s(R.string.narration_audio_start_error)) }
             }
             media.setOnCompletionListener {
@@ -495,7 +530,7 @@ class LessonNarrationController(
         player = null
     }
 
-    private fun stopInternal() {
+    private fun stopInternal(releaseNeuralResources: Boolean = false) {
         val previous = directory
         generation++
         kokoro?.cancelCurrentRun()
@@ -509,8 +544,13 @@ class LessonNarrationController(
         if (!closed) worker.post {
             runCatching { tts?.stop() }
             ttsPending.clear()
-            releaseKokoro()
-            releasePhonemizers()
+            // Keep the verified ONNX session and language frontends warm between
+            // pages of the SAME lesson. The audio files are still discarded.
+            // Remove them if narration is disabled, assets change or we close.
+            if (releaseNeuralResources) {
+                releaseKokoro()
+                releasePhonemizers()
+            }
             if (previous != null) cleanup(previous)
         }
         if (wasPlaying) onState(false)
@@ -553,7 +593,7 @@ class LessonNarrationController(
     }
     fun close() = onMain {
         if (closed) return@onMain
-        stopInternal(); closed = true; removeResourceListener()
+        stopInternal(releaseNeuralResources = true); closed = true; removeResourceListener()
         main.removeCallbacksAndMessages(null); models.close()
         worker.post {
             runCatching { tts?.shutdown() }; tts = null; releaseKokoro()
