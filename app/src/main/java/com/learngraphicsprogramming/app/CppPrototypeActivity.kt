@@ -646,10 +646,10 @@ class CppPrototypeActivity : AppCompatActivity() {
     private fun updateLineNumbers() {
 
         val lineCount =
-            binding.sourceCode.text
-                .count {
+            (binding.sourceCode.text
+                ?.count {
                     it == '\n'
-                } + 1
+                } ?: 0) + 1
 
         binding.lineNumbers.text =
             (1..lineCount)
