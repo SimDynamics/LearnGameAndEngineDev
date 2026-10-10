@@ -37,10 +37,15 @@ en el dispositivo; las visitas posteriores aprovechan la caché privada.
 **Tamaño y distribución:** elegir una sola voz predeterminada por idioma
 reduce mucho el tamaño inicial. Para muchos cursos o voces conviene
 distribuir packs de audio opcionales, no inflar todos los APK.
-La caché privada no elimina audios completos automáticamente. Para proteger
-el almacenamiento, la generación automática se detiene cuando queda menos
-de 1 GiB libre; al liberar espacio y volver a abrir la app se reprograma
-el trabajo. Los modelos Kokoro instalados no se eliminan.
+La caché privada no elimina audios completos automáticamente. En
+**Opciones globales → Lectura en voz alta → después de Instalar o eliminar
+voces** aparece un deslizador de almacenamiento. Su techo físico se calcula
+como bytes libres actuales + tamaño de audios existentes - 1 GiB. El límite
+elegido controla únicamente la pregeneración automática: si el consumo
+actual lo supera se suspende, sin borrar ningún archivo existente.
+La lectura solicitada por el usuario sigue teniendo prioridad.
+Al liberar espacio o aumentar el límite, abrir la app permite reprogramar
+el trabajo pendiente. Los modelos Kokoro instalados no se eliminan.
 
 ## Arquitectura automática (octubre de 2026)
 
@@ -73,6 +78,29 @@ restricciones del fabricante o cuotas. El trabajo termina por rebanadas para
 que Android pueda reprogramarlo. Mantener un proceso de inferencia activo
 indefinidamente con la pantalla apagada requeriría un servicio en primer
 plano, notificación persistente y gestión energética adicional.
+
+### Exportar y verificar el primer paquete Opus desde el teléfono
+
+La app de depuración escribe automáticamente el archivo
+`files/kokoro-first-unit-manifest.json` utilizando **exactamente el mismo
+texto narrado, idioma y voz** del lector. El archivo contiene la lista
+deduplicada de grabaciones necesarias para las tres primeras lecciones.
+
+Cuando el teléfono haya terminado de pregenerar esas grabaciones:
+
+```powershell
+python scripts/narration/export_first_unit_from_android.py
+```
+
+Requisitos: teléfono conectado con ADB, APK de depuración instalado, audio
+Kokoro realmente generado y `ffmpeg` con `libopus` accesible en PATH.
+El script usa `adb exec-out run-as`; no necesita root ni reinstalar Clang.
+Si falta una sola grabación, se detiene con la cantidad de oraciones que
+siguen pendientes y **NO presenta un paquete incompleto como válido**.
+Si están todas, extrae solo esos WAV, convierte a Opus y comprueba que
+los Ogg resultantes son válidos bajo
+`app/src/main/assets/narration/prerendered/`. Entonces sí se podrá
+recompilar el APK y verificar la voz lista para reproducción inmediata.
 
 ### Paquete inicial para primer curso, primera unidad
 
