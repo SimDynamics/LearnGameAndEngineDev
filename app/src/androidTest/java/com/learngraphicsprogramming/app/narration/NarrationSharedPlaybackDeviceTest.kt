@@ -240,16 +240,23 @@ class NarrationSharedPlaybackDeviceTest {
             assertFalse(current.hasNarration)
             assertNull(field<Any?>(current, "player"))
         }
-        await("Stopping a page must delete its audio cache and release neuronal resources", 10_000) {
-            !directory.exists() && field<Any?>(current, "kokoro") == null &&
-                field<Any?>(current, "english") == null && field<Any?>(current, "french") == null &&
-                field<Any?>(current, "spanishLexicon") == null
+        await("Stopping a page must delete its audio cache", 10_000) {
+            !directory.exists()
+        }
+        if (engine == NarrationEngine.KOKORO) {
+            assertNotNull("Keeping the neural session warm avoids reloading it on the next page",
+                field<Any?>(current, "kokoro"))
+            assertNotNull("The Spanish pronunciation dictionary must be reusable between pages",
+                field<Any?>(current, "spanishLexicon"))
         }
         onMain { current.close() }
         await("Closing must release the engine and worker", 10_000) { !field<Thread>(current, "workerThread").isAlive }
         onMain {
             assertNull(field<Any?>(current, "tts"))
             assertNull(field<Any?>(current, "kokoro"))
+            assertNull(field<Any?>(current, "english"))
+            assertNull(field<Any?>(current, "french"))
+            assertNull(field<Any?>(current, "spanishLexicon"))
             current.toggle(listOf(text), NarrationLanguage.SPANISH)
             assertFalse("A closed controller cannot revive a page", current.hasNarration)
             assertFalse(current.isPlaying)
