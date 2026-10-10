@@ -28,7 +28,9 @@ import java.io.File
  * After the test, read the persistent report with:
  * adb shell run-as com.learngraphicsprogramming.app cat files/cpp23-library-compatibility.txt
  *
- * Run with -Plgp.clang23=true, first WAMR, then -Plgp.wasmtime=true.
+ * The default Clang 23 + Wasmtime + EH build runs this catalog directly.
+ * Optional regressions can override -Plgp.wasmtime=false (WAMR/no-EH).
+ * Individual SUPPORTED/UNAVAILABLE/BROKEN statuses live in the device report.
  */
 @RunWith(AndroidJUnit4::class)
 class Cpp23LibraryCompatibilityInstrumentedTest {
