@@ -103,6 +103,10 @@ class MainActivity : AppCompatActivity() {
         // KEEP prevents two concurrent background curriculum jobs.
         KokoroBackgroundNarrationWorker.start(applicationContext)
         AppearanceUi.apply(this)
+        // Restore the dedicated, localized label after Activity recreation.
+        // Do not reuse another button's accessibility description.
+        binding.buttonOptions.text = getString(R.string.main_global_options_button)
+        binding.buttonOptions.contentDescription = getString(R.string.main_global_options_button)
         // Do not overwrite the destination while it is being launched from onCreate.
         // The focused route picker is saved by onWindowFocusChanged instead.
     }
