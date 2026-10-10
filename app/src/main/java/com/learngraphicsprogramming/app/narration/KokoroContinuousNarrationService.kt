@@ -9,8 +9,10 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
-import android.util.Log
+import android.os.SystemClock
 import com.learngraphicsprogramming.app.MainActivity
 import com.learngraphicsprogramming.app.R
 
@@ -25,9 +27,27 @@ import com.learngraphicsprogramming.app.R
  */
 internal class KokoroContinuousNarrationService : Service() {
     @Volatile private var running = false
-    private var thread: Thread? = null
+    @Volatile private var thread: Thread? = null
+    @Volatile private var worker: KokoroBackgroundNarrationWorker? = null
     private lateinit var cpuWakeLock: PowerManager.WakeLock
     private var foregroundStarted = false
+    // Main-thread only: a refresh received during an ending session must not be lost.
+    private var startEpoch = 0L
+    private val main = Handler(Looper.getMainLooper())
+    private var wakeRenewedAt = 0L
+    private val heartbeat = object : Runnable {
+        override fun run() {
+            if (!foregroundStarted) return
+            val current = thread
+            val fields = mapOf<String, Any>("serviceRunning" to running,
+                "serviceThreadAlive" to (current?.isAlive == true),
+                "serviceThreadState" to (current?.state?.name ?: "NONE"),
+                "wakeLockHeld" to cpuWakeLock.isHeld, "interactiveBusy" to NarrationWorkPriority.isBusy)
+            KokoroNarrationDiagnostics.update(applicationContext, fields)
+            KokoroNarrationDiagnostics.event(applicationContext, TAG, "Offline narration heartbeat", fields = fields)
+            main.postDelayed(this, HEARTBEAT_MS)
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -60,17 +80,17 @@ internal class KokoroContinuousNarrationService : Service() {
                 }
                 foregroundStarted = true
             } catch (error: RuntimeException) {
-                Log.e(TAG, "Cannot start foreground narration; Android denied the service", error)
+                KokoroNarrationDiagnostics.event(applicationContext, TAG, "Cannot start foreground narration; Android denied the service", error)
                 stopSelf()
                 return START_NOT_STICKY
             }
+            main.post(heartbeat)
         }
-        if (!running) {
-            running = true
-            thread = Thread({ runSession() }, "KokoroOfflineNarration").apply {
-                priority = Thread.MIN_PRIORITY
-                start()
-            }
+        KokoroNarrationDiagnostics.event(applicationContext, TAG, "Offline narration start command",
+            fields = mapOf("startId" to startId, "threadAlive" to (thread?.isAlive == true)))
+        startEpoch++
+        if (thread?.isAlive != true) {
+            launchSession()
         }
         return START_NOT_STICKY
     }
@@ -94,8 +114,23 @@ internal class KokoroContinuousNarrationService : Service() {
             .build()
     }
 
-    private fun runSession() {
-        Log.i(TAG, "Foreground offline narration session started")
+    private fun launchSession() {
+        val epoch = startEpoch
+        running = true
+        val next = Thread({ runSession(epoch) }, "KokoroOfflineNarration").apply {
+            priority = Thread.MIN_PRIORITY
+        }
+        thread = next
+        next.start()
+    }
+
+    private fun runSession(epoch: Long) {
+        val current = Thread.currentThread()
+        KokoroNarrationDiagnostics.update(applicationContext, mapOf("serviceRunning" to true,
+            "serviceThreadAlive" to true, "serviceThreadState" to current.state.name))
+        KokoroNarrationDiagnostics.event(applicationContext, TAG, "Foreground offline narration session started")
+        val currentWorker = KokoroBackgroundNarrationWorker(applicationContext)
+        worker = currentWorker
         try {
             while (running && !Thread.currentThread().isInterrupted) {
                 val selection = NarrationSettingsRepository.get(applicationContext)
@@ -103,46 +138,72 @@ internal class KokoroContinuousNarrationService : Service() {
                 if (NarrationWorkPriority.isBusy) {
                     // With the screen locked, remain schedulable until the
                     // higher-priority speech/editor operation is finished.
-                    if (!cpuWakeLock.isHeld) cpuWakeLock.acquire(5L * 60L * 1_000L)
+                    renewWakeLock()
                     Thread.sleep(1_000L)
                     continue
                 }
                 // A slice lasts at most four minutes; renew the five-minute
                 // lock before each pass. Delayed retries remain schedulable.
-                if (cpuWakeLock.isHeld) cpuWakeLock.release()
-                cpuWakeLock.acquire(5L * 60L * 1_000L)
-                val outcome = KokoroBackgroundNarrationWorker(applicationContext).runSlice {
+                renewWakeLock()
+                val outcome = currentWorker.runSlice {
                     val settings = NarrationSettingsRepository.get(applicationContext)
                     running && !Thread.currentThread().isInterrupted &&
                         settings.enabled && settings.engine != NarrationEngine.ANDROID
                 }
+                KokoroNarrationDiagnostics.update(applicationContext, mapOf("lastOutcome" to outcome.name))
                 when (outcome) {
                     KokoroBackgroundNarrationWorker.Outcome.MORE -> continue
                     KokoroBackgroundNarrationWorker.Outcome.BUSY -> Thread.sleep(1_000L)
                     KokoroBackgroundNarrationWorker.Outcome.RETRY -> Thread.sleep(20_000L)
                     KokoroBackgroundNarrationWorker.Outcome.COMPLETE -> {
-                        Log.i(TAG, "Foreground offline narration curriculum scan complete")
+                        KokoroNarrationDiagnostics.event(applicationContext, TAG, "Foreground offline narration curriculum scan complete")
                         break
                     }
                     KokoroBackgroundNarrationWorker.Outcome.PAUSED -> {
-                        Log.i(TAG, "Foreground offline narration paused (settings/storage)")
+                        KokoroNarrationDiagnostics.event(applicationContext, TAG, "Foreground offline narration paused (settings/storage)")
                         break
                     }
                     KokoroBackgroundNarrationWorker.Outcome.UNAVAILABLE -> {
-                        Log.i(TAG, "Foreground offline narration waiting for installed Kokoro resources")
+                        KokoroNarrationDiagnostics.event(applicationContext, TAG, "Foreground offline narration waiting for installed Kokoro resources")
                         break
                     }
                 }
             }
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
-        } catch (error: Exception) {
-            Log.e(TAG, "Foreground offline narration stopped by unexpected error", error)
+        } catch (error: Throwable) {
+            KokoroNarrationDiagnostics.event(applicationContext, TAG, "Foreground offline narration stopped by unexpected error", error)
         } finally {
-            if (cpuWakeLock.isHeld) cpuWakeLock.release()
-            running = false
-            Log.i(TAG, "Foreground offline narration session stopped")
-            stopSelf()
+            runCatching { KokoroEngineCoordinator.releaseIfIdle() }.onFailure { error ->
+                KokoroNarrationDiagnostics.event(applicationContext, TAG, "Could not release idle narration engine", error)
+            }
+            KokoroNarrationDiagnostics.event(applicationContext, TAG, "Foreground offline narration session stopped")
+            // All service lifecycle changes are serialized on main. An older
+            // finished thread must not stop a newer onStartCommand session.
+            main.post {
+                if (thread === current) {
+                    thread = null
+                    if (running && foregroundStarted && startEpoch != epoch) {
+                        // The old worker has completely finished. Its wake lock
+                        // remains held until this replacement can resume pending work.
+                        launchSession()
+                    } else {
+                        running = false
+                        if (cpuWakeLock.isHeld) cpuWakeLock.release()
+                        KokoroNarrationDiagnostics.update(applicationContext, mapOf("serviceRunning" to false,
+                            "serviceThreadAlive" to false, "serviceThreadState" to "TERMINATED", "wakeLockHeld" to false))
+                        stopSelf()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun renewWakeLock() {
+        val now = SystemClock.elapsedRealtime()
+        if (!cpuWakeLock.isHeld || now - wakeRenewedAt >= 60_000L) {
+            cpuWakeLock.acquire(5L * 60L * 1_000L)
+            wakeRenewedAt = now
         }
     }
 
@@ -154,7 +215,10 @@ internal class KokoroContinuousNarrationService : Service() {
 
     override fun onDestroy() {
         running = false
+        worker?.cancel()
         thread?.interrupt()
+        main.removeCallbacks(heartbeat)
+        foregroundStarted = false
         if (::cpuWakeLock.isInitialized && cpuWakeLock.isHeld) cpuWakeLock.release()
         super.onDestroy()
     }
@@ -165,5 +229,6 @@ internal class KokoroContinuousNarrationService : Service() {
         const val TAG = "KokoroBackground"
         const val CHANNEL_ID = "kokoro_offline_narration"
         const val NOTIFICATION_ID = 17023
+        const val HEARTBEAT_MS = 30_000L
     }
 }

@@ -2,21 +2,16 @@ package com.learngraphicsprogramming.app.narration
 
 import android.content.Context
 import android.os.SystemClock
-import android.util.Log
 import com.learngraphicsprogramming.app.narration.phonemes.EnglishMisakiG2P
 import com.learngraphicsprogramming.app.narration.phonemes.FrenchFluidG2P
 import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
 import java.io.File
 
-/**
- * Resumable offline synthesis controlled by a session-scoped foreground
- * service. One bounded pass resumes from the first missing curriculum sentence.
- * Bundled Opus/WAV audio and previously generated WAVs are always reused.
- * Playback, compiler and graphics have priority; no audio focus is taken.
- */
+/** Current-page work survives its activity; the curriculum resumes in its original order. */
 internal class KokoroBackgroundNarrationWorker(private val app: Context) {
     enum class Outcome { COMPLETE, MORE, BUSY, PAUSED, UNAVAILABLE, RETRY }
-    @Volatile private var engine: KokoroOnnxEngine? = null
+
+    fun cancel() { KokoroEngineCoordinator.cancel(this) }
 
     /** Called on the service's private thread, with a bounded CPU wake lock. */
     fun runSlice(activeSession: () -> Boolean): Outcome {
@@ -24,147 +19,166 @@ internal class KokoroBackgroundNarrationWorker(private val app: Context) {
         if (!settings.enabled || settings.engine == NarrationEngine.ANDROID) return Outcome.PAUSED
         if (!activeSession() || NarrationWorkPriority.isBusy) return Outcome.BUSY
 
-        // Respect the user's chosen storage budget and ALWAYS leave 1 GiB
-        // physically free. Existing audio is never evicted.
-        if (!NarrationStorageBudget.fitsNext(
-                NarrationStorageBudget.snapshot(app), MIN_SENTENCE_HEADROOM_BYTES
-            )
-        ) {
-            Log.i(TAG, "Offline narration paused: storage limit or reserve reached")
-            return Outcome.PAUSED
-        }
-
         val modelStore = KokoroModelStore(app)
         var english: EnglishMisakiG2P? = null
         var french: FrenchFluidG2P? = null
         var spanish: Map<String, String>? = null
         var root: File? = null
-        var hadMissing = false
         var skippedUninstalledVoices = false
+        var scanned = 0
+        var generated = 0
+        var reused = 0
+        val page = KokoroPagePreparationQueue.snapshot(app)
+        val pageRevision = page?.revision
         val started = SystemClock.elapsedRealtime()
-        val interruption = NarrationWorkPriority.onPreempt {
-            engine?.cancelCurrentRun()
+        val cancel: () -> Unit = {
+            KokoroEngineCoordinator.cancel(this)
+            english?.cancelCurrentRun()
+            Unit
+        }
+        val interruption = NarrationWorkPriority.onPreempt(cancel)
+        val pageChange = KokoroPagePreparationQueue.onChanged(cancel)
+        fun pageChanged() = KokoroPagePreparationQueue.snapshot(app)?.revision != pageRevision
+        fun active() = activeSession() && !NarrationWorkPriority.isBusy && !pageChanged()
+        fun state(value: String, item: NarrationCurriculum.Sentence? = null, scope: String = "") {
+            val fields = mutableMapOf<String, Any>("workerState" to value, "sliceScanned" to scanned,
+                "sliceGenerated" to generated, "sliceReused" to reused)
+            if (item != null) {
+                fields["currentHash"] = NarrationPageQueue.hash(item)
+                fields["currentLocation"] = item.location
+                fields["currentScope"] = scope
+                fields["language"] = item.language.tag
+                fields["voice"] = item.voice
+            }
+            KokoroNarrationDiagnostics.update(app, fields)
         }
 
         try {
-            for (item in NarrationCurriculum.sentences(app)) {
+            state("scanning")
+            page?.let { KokoroNarrationDiagnostics.page(app, it) }
+            // Validate every sentence, even when a previous pass marked it complete.
+            // Completion is a progress hint, never a stale cache guarantee.
+            val candidates = sequence {
+                page?.sentences?.forEach { yield(it to "page") }
+                NarrationCurriculum.sentences(app).forEach { yield(it to "curriculum") }
+            }
+            for ((item, scope) in candidates) {
+                if (pageChanged()) return Outcome.MORE
                 if (!activeSession() || NarrationWorkPriority.isBusy) return Outcome.BUSY
+                scanned++
+                val hash = NarrationPageQueue.hash(item)
+                if (KokoroNarrationCache.lookup(app, item.language.tag, item.voice, item.text) != null) {
+                    reused++
+                    if (scope == "page") KokoroPagePreparationQueue.markCompleted(app, requireNotNull(pageRevision), hash)
+                    if (scanned % 25 == 0) state("scanning", item, scope)
+                    continue
+                }
+                if (scope == "page") KokoroPagePreparationQueue.markPending(app, requireNotNull(pageRevision), hash)
 
-                if (KokoroNarrationCache.lookup(
-                        app, item.language.tag, item.voice, item.text
-                    ) != null
-                ) continue
-
-                hadMissing = true
-                if (!NarrationStorageBudget.fitsNext(
-                        NarrationStorageBudget.snapshot(app), MIN_SENTENCE_HEADROOM_BYTES
-                    )
-                ) {
-                    Log.i(TAG, "Offline narration paused: user-selected storage budget reached")
+                // Respect the configurable limit and 1 GiB reserve. Never evict audio.
+                if (!NarrationStorageBudget.fitsNext(NarrationStorageBudget.snapshot(app), MIN_SENTENCE_HEADROOM_BYTES)) {
+                    state("storage-paused", item, scope)
+                    KokoroNarrationDiagnostics.event(app, TAG, "Offline narration paused: storage limit or reserve reached")
                     return Outcome.PAUSED
                 }
-
                 if (root == null) {
                     root = modelStore.directory()
-                    if (!File(root, "model.onnx").isFile) return Outcome.UNAVAILABLE
+                    if (!File(root, "model.onnx").isFile) { state("model-unavailable"); return Outcome.UNAVAILABLE }
                 }
                 val modelRoot = requireNotNull(root)
                 val voice = KokoroVoiceCatalog.find(item.voice)
                 if (voice == null || !File(modelRoot, voice.artifact.fileName).isFile) {
-                    // Missing voices do not prevent generating other installed languages.
                     skippedUninstalledVoices = true
                     continue
                 }
 
-                // Two ORT/XNNPACK threads, no NNAPI GPU access in background.
-                // Foreground playback still selects its fastest available provider.
-                if (engine == null) {
-                    engine = KokoroOnnxEngine(
-                        modelRoot, preferAccelerator = false, cpuThreads = 2
-                    )
-                }
-
-                val active = {
-                    activeSession() && !NarrationWorkPriority.isBusy
-                }
+                state("phonemizing", item, scope)
                 val phonemes = when (item.language) {
                     NarrationLanguage.SPANISH -> {
                         if (spanish == null) {
                             val artifact = KokoroModelManifest.resources(item.language).single()
                             val file = File(modelRoot, artifact.fileName)
-                            require(KokoroModelManifest.verify(file, artifact)) {
-                                "No está instalado el diccionario español verificado"
-                            }
+                            require(KokoroModelManifest.verify(file, artifact)) { "No está instalado el diccionario español verificado" }
                             spanish = SpanishFluidG2P.loadLexicon(file)
                         }
                         SpanishFluidG2P.phonemize(item.text, spanish!!)
                     }
-                    NarrationLanguage.FRENCH ->
-                        (french ?: FrenchFluidG2P(modelRoot, File(modelRoot, "tokenizer.json"))
-                            .also { french = it }).phonemize(item.text)
+                    NarrationLanguage.FRENCH -> (french ?: FrenchFluidG2P(modelRoot, File(modelRoot, "tokenizer.json"))
+                        .also { french = it }).phonemize(item.text)
                     else -> (english ?: EnglishMisakiG2P(modelRoot).also { english = it })
-                        .phonemize(item.text, item.language == NarrationLanguage.BRITISH_ENGLISH, active)
+                        .phonemize(item.text, item.language == NarrationLanguage.BRITISH_ENGLISH, ::active)
                 }
-                if (!active()) return Outcome.BUSY
-                val parts = mutableListOf<FloatArray>()
-                for (part in KokoroPhonemeChunks.split(phonemes)) {
-                    if (!active()) return Outcome.BUSY
-                    parts += engine!!.synthesizePhonemes(part, item.voice, 1f) { !active() }
-                }
-                if (!active()) return Outcome.BUSY
-
-                val temporary = File(app.cacheDir, "kokoro-offline-${System.nanoTime()}.wav")
-                try {
-                    NarrationWavWriter.writeChunks(temporary, parts)
-                    // Budget may have changed during a long ONNX inference.
-                    // Do not add a new persistent file above the selected limit.
-                    if (!NarrationStorageBudget.fitsNext(
-                            NarrationStorageBudget.snapshot(app), temporary.length()
-                        )
-                    ) {
-                        Log.i(TAG, "Offline narration suspended before committing the new WAV")
-                        return Outcome.PAUSED
+                if (!active()) return if (pageChanged()) Outcome.MORE else Outcome.BUSY
+                state("waiting-engine", item, scope)
+                // ONE shared ONNX engine. Recheck under its exclusive lease: the
+                // interactive controller may have finished the same sentence while we waited.
+                KokoroEngineCoordinator.withEngine(this, modelRoot, { !active() }) { engine ->
+                    if (KokoroNarrationCache.lookup(app, item.language.tag, item.voice, item.text) != null) {
+                        reused++
+                        return@withEngine
                     }
-                    checkNotNull(KokoroNarrationCache.store(
-                        app, item.language.tag, item.voice, item.text, temporary
-                    )) { "No se pudo guardar el audio generado" }
-                } finally { temporary.delete() }
-
-                Log.i(TAG, "Cached lesson speech: ${item.location}")
-                // Release the synthesis engine periodically while keeping all finished WAVs.
-                if (SystemClock.elapsedRealtime() - started >= SLICE_MS) {
-                    return Outcome.MORE
+                    state("synthesizing", item, scope)
+                    val parts = KokoroPhonemeChunks.split(phonemes).map { part ->
+                        if (!active()) throw InterruptedException("Background narration yielded to higher priority work")
+                        engine.synthesizePhonemes(part, item.voice, 1f) { !active() }
+                    }
+                    if (!active()) throw InterruptedException("Background narration yielded to higher priority work")
+                    val temporary = File(app.cacheDir, "kokoro-offline-${System.nanoTime()}.wav")
+                    try {
+                        NarrationWavWriter.writeChunks(temporary, parts)
+                        state("saving", item, scope)
+                        if (!NarrationStorageBudget.fitsNext(NarrationStorageBudget.snapshot(app), temporary.length())) {
+                            throw StorageBudgetReached()
+                        }
+                        checkNotNull(KokoroNarrationCache.store(app, item.language.tag, item.voice, item.text, temporary)) {
+                            "No se pudo guardar el audio generado"
+                        }
+                        generated++
+                    } finally { temporary.delete() }
                 }
+                if (scope == "page") KokoroPagePreparationQueue.markCompleted(app, requireNotNull(pageRevision), hash)
+                state("sentence-complete", item, scope)
+                KokoroNarrationDiagnostics.event(app, TAG, "Cached lesson speech", fields = mapOf(
+                    "hash" to hash, "scope" to scope, "location" to item.location, "generated" to generated, "reused" to reused))
+                if (SystemClock.elapsedRealtime() - started >= SLICE_MS) return Outcome.MORE
             }
+            // A newly opened page may arrive while the final optional courses
+            // are being scanned, after the sequence's last yielded sentence.
+            if (pageChanged()) return Outcome.MORE
             if (skippedUninstalledVoices) {
-                Log.i(TAG, "Offline narration pending: some voices are not installed")
+                state("voice-unavailable")
+                KokoroNarrationDiagnostics.event(app, TAG, "Offline narration pending: some voices are not installed")
                 return Outcome.UNAVAILABLE
             }
-            if (!hadMissing) Log.i(TAG, "All available lesson sentences are cached")
+            state("complete")
+            KokoroNarrationDiagnostics.event(app, TAG, "All available lesson sentences are cached", fields = mapOf("scanned" to scanned))
             return Outcome.COMPLETE
+        } catch (_: StorageBudgetReached) {
+            state("storage-paused")
+            KokoroNarrationDiagnostics.event(app, TAG, "Offline narration paused before committing WAV: storage budget reached")
+            return Outcome.PAUSED
         } catch (_: InterruptedException) {
-            return Outcome.BUSY
+            state("preempted")
+            return if (pageChanged()) Outcome.MORE else Outcome.BUSY
         } catch (error: Exception) {
-            Log.w(TAG, "Offline narration interrupted or resources unavailable", error)
+            state("retry")
+            KokoroNarrationDiagnostics.event(app, TAG, "Offline narration interrupted or resources unavailable", error)
             return Outcome.RETRY
         } finally {
             interruption.close()
-            runCatching { engine?.close() }
-            engine = null
+            pageChange.close()
             runCatching { english?.close() }
             runCatching { (french as? AutoCloseable)?.close() }
             modelStore.close()
         }
     }
 
+    private class StorageBudgetReached : IllegalStateException()
+
     companion object {
         private const val TAG = "KokoroBackground"
         private const val SLICE_MS = 4L * 60 * 1000
         private const val MIN_SENTENCE_HEADROOM_BYTES = 4L * NarrationStorageBudget.MIB
-
-        /** Retains call sites while the lifecycle manager owns scheduling. */
-        fun start(context: Context) {
-            KokoroNarrationSessionMonitor.refresh(context)
-        }
+        fun start(context: Context) { KokoroNarrationSessionMonitor.refresh(context) }
     }
 }

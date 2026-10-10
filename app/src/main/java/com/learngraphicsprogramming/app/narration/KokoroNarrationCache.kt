@@ -71,6 +71,21 @@ internal object KokoroNarrationCache {
         else -> false
     }
 
+    /** Keep rejected bytes for diagnosis; never erase an existing recording. */
+    private fun preserveInvalid(context: Context, file: File): Boolean {
+        if (!file.exists()) return true
+        if (!file.isFile) return false
+        val preserved = File(file.parentFile,
+            "${file.nameWithoutExtension}.unverified-${UUID.randomUUID()}.${file.extension}")
+        if (!file.renameTo(preserved)) {
+            Log.w("KokoroInference", "Could not preserve invalid narration; leaving it intact")
+            return false
+        }
+        KokoroNarrationDiagnostics.event(context, "KokoroInference", "invalid-audio-preserved",
+            fields = mapOf("file" to preserved.name, "bytes" to preserved.length()))
+        return true
+    }
+
     @Synchronized
     fun lookup(context: Context, language: String, voice: String, text: String): File? {
         val hash = key(language, voice, text)
@@ -83,7 +98,7 @@ internal object KokoroNarrationCache {
                 cached.setLastModified(System.currentTimeMillis())
                 return cached
             }
-            if (cached.isFile) cached.delete()
+            if (cached.isFile) preserveInvalid(context, cached)
         }
 
         // Optional build-time assets. Prefer compressed Opus to PCM WAV.
@@ -95,8 +110,9 @@ internal object KokoroNarrationCache {
                 context.assets.open("narration/prerendered/$hash.$extension").use { source ->
                     staged.outputStream().use { destination -> source.copyTo(destination) }
                 }
-                if (validatedAudio(staged) && staged.renameTo(output)) {
-                    Log.i("KokoroInference", "Loaded pre-rendered $extension narration from APK")
+                if (validatedAudio(staged) && preserveInvalid(context, output) && staged.renameTo(output)) {
+                    KokoroNarrationDiagnostics.event(context, "KokoroInference", "packaged-audio-loaded",
+                        fields = mapOf("cacheKey" to hash, "format" to extension))
                     return output
                 }
             } catch (_: FileNotFoundException) {
@@ -117,13 +133,12 @@ internal object KokoroNarrationCache {
         val directory = root(context)
         val target = File(directory, "$hash.wav")
         if (validatedWav(target)) return target
-        if (target.isFile) target.delete()
         val staging = File(directory, ".$hash-${UUID.randomUUID()}.part")
         return try {
             wav.inputStream().use { input ->
                 staging.outputStream().use { output -> input.copyTo(output) }
             }
-            if (validatedWav(staging) && staging.renameTo(target)) target else null
+            if (validatedWav(staging) && preserveInvalid(context, target) && staging.renameTo(target)) target else null
         } catch (error: Exception) {
             Log.w("KokoroInference", "Could not preserve generated narration", error)
             null

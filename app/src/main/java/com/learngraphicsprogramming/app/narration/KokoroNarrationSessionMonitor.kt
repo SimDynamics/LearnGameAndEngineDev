@@ -12,7 +12,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
-import android.util.Log
 import androidx.work.WorkManager
 
 /**
@@ -54,12 +53,14 @@ internal object KokoroNarrationSessionMonitor {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
             override fun onActivityStarted(activity: Activity) {
                 startedActivities++
+                KokoroNarrationDiagnostics.update(application, mapOf("startedActivities" to startedActivities))
                 if (startedActivities == 1) startService()
             }
             override fun onActivityResumed(activity: Activity) = Unit
             override fun onActivityPaused(activity: Activity) = Unit
             override fun onActivityStopped(activity: Activity) {
                 startedActivities = (startedActivities - 1).coerceAtLeast(0)
+                KokoroNarrationDiagnostics.update(application, mapOf("startedActivities" to startedActivities))
                 if (startedActivities == 0) scheduleStop(2_500L)
             }
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
@@ -90,6 +91,7 @@ internal object KokoroNarrationSessionMonitor {
             // A lock screen can be ON while the app remains open behind it.
             // End only when the device is unlocked and our app is no longer visible.
             if (startedActivities == 0 && powerInteractive() && !keyguard.isKeyguardLocked) {
+                KokoroNarrationDiagnostics.event(application, TAG, "Ending unattended unlocked narration session")
                 application.stopService(Intent(application, KokoroContinuousNarrationService::class.java))
             }
         }, delayMillis)
@@ -99,6 +101,7 @@ internal object KokoroNarrationSessionMonitor {
         if (startedActivities <= 0) return
         val settings = NarrationSettingsRepository.get(application)
         if (!settings.enabled || settings.engine == NarrationEngine.ANDROID) {
+            KokoroNarrationDiagnostics.update(application, mapOf("sessionState" to "disabled-or-android-tts"))
             application.stopService(Intent(application, KokoroContinuousNarrationService::class.java))
             return
         }
@@ -109,7 +112,7 @@ internal object KokoroNarrationSessionMonitor {
         } catch (error: RuntimeException) {
             // Foreground launch restrictions can still be imposed by Android
             // or the phone manufacturer; report them, never silently swallow.
-            Log.e(TAG, "Could not start offline narration foreground service", error)
+            KokoroNarrationDiagnostics.event(application, TAG, "Could not start offline narration foreground service", error)
         }
     }
 }

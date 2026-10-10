@@ -13,6 +13,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import uuid
 import wave
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -91,6 +92,32 @@ def valid_wav(path: pathlib.Path) -> bool:
         return False
 
 
+def write_verified_wav(path: pathlib.Path, data: bytes) -> bool:
+    """Publish verified bytes without discarding any existing local export.
+
+    An earlier failed ADB transfer may have left shell text under a WAV name.
+    Preserve that original for diagnosis, and only rename it after a complete
+    valid replacement is available. A valid recording is always reused.
+    """
+    reason = inspect_wav(data)
+    if reason is not None:
+        raise ValueError(reason)
+    if valid_wav(path):
+        return False
+    staging = path.with_name(f".{path.name}-{uuid.uuid4().hex}.part")
+    try:
+        with staging.open("xb") as output:
+            output.write(data)
+        if path.exists():
+            backup = path.with_name(f"{path.stem}.unverified-{uuid.uuid4().hex}.wav")
+            path.rename(backup)
+        staging.rename(path)
+        return True
+    finally:
+        # Only a partial file created by this invocation; recordings stay intact.
+        staging.unlink(missing_ok=True)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--adb", default="adb")
@@ -148,9 +175,6 @@ def main() -> int:
         source = args.workspace / f"{entry['hash']}.wav"
         if source.is_file() and valid_wav(source):
             continue
-        if source.exists():
-            # This is a local export; never remove audio from the phone.
-            source.unlink()
         data, status, stderr = adb_read(
             args.adb, args.package,
             f"files/kokoro-narration-cache/{entry['hash']}.wav",
@@ -166,8 +190,8 @@ def main() -> int:
         if reason is not None:
             invalid.append(f"{label} ({len(data)} bytes, ADB {status}: {reason})")
             continue
-        source.write_bytes(data)
-        extracted += 1
+        if write_verified_wav(source, data):
+            extracted += 1
 
     if invalid:
         print(

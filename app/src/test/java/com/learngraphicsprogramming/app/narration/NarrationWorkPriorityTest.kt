@@ -35,4 +35,18 @@ class NarrationWorkPriorityTest {
         }
         assertFalse(NarrationWorkPriority.isBusy)
     }
+
+    @Test fun closingOneLeaseTwiceDoesNotReleaseAnotherInteractiveOperation() {
+        val audio = NarrationWorkPriority.beginInteractive()
+        val compiler = NarrationWorkPriority.beginInteractive()
+        try {
+            audio.close()
+            audio.close()
+            assertTrue(NarrationWorkPriority.isBusy)
+        } finally {
+            compiler.close()
+            audio.close()
+        }
+        assertFalse(NarrationWorkPriority.isBusy)
+    }
 }

@@ -1,14 +1,29 @@
 package com.learngraphicsprogramming.app.narration
 
 import android.content.Context
-import android.util.Log
 import com.learngraphicsprogramming.app.AppearanceSettingsRepository
 import com.learngraphicsprogramming.app.CourseRepository
 import com.learngraphicsprogramming.app.LessonRepository
 import com.learngraphicsprogramming.app.UnitRepository
+import java.io.FileNotFoundException
 
 /** Stable curriculum order: route > course > unit > lesson > page > sentence. */
 internal object NarrationCurriculum {
+    private val failures = NarrationCurriculumFailurePolicy()
+
+    private fun unavailable(context: Context, message: String, error: Throwable, fields: Map<String, Any>) {
+        val path = error.message?.takeIf { it.isNotBlank() }
+            ?: fields.values.joinToString("/")
+        when (failures.classify(path, error)) {
+            NarrationCurriculumFailurePolicy.Decision.FIRST_MISSING ->
+                KokoroNarrationDiagnostics.event(context, "KokoroBackground", "Curriculum content not packaged",
+                    fields = fields + mapOf("path" to path, "missingPaths" to failures.missingCount))
+            NarrationCurriculumFailurePolicy.Decision.REPEATED_MISSING -> Unit
+            NarrationCurriculumFailurePolicy.Decision.UNEXPECTED ->
+                KokoroNarrationDiagnostics.event(context, "KokoroBackground", message, error, fields)
+        }
+    }
+
     data class Sentence(
         val text: String,
         val language: NarrationLanguage,
@@ -24,20 +39,27 @@ internal object NarrationCurriculum {
         )
         for (route in routes) {
             val courses = runCatching { CourseRepository.loadCourses(context, route) }
+                .onFailure { unavailable(context, "Unavailable curriculum route", it,
+                    mapOf("route" to route)) }
                 .getOrDefault(emptyList()).sortedBy { it.number }
             for (course in courses) {
                 val units = runCatching { UnitRepository.loadUnits(context, route, course.id) }
+                    .onFailure { unavailable(context, "Unavailable curriculum course", it,
+                        mapOf("route" to route, "course" to course.id)) }
                     .getOrDefault(emptyList()).sortedBy { it.number }
                 for (unit in units) {
                     val lessons = runCatching {
                         LessonRepository.loadLessons(context, route, course.id, unit.id)
-                    }.getOrDefault(emptyList()).sortedBy { it.number }
+                    }.onFailure { unavailable(context, "Unavailable curriculum unit", it,
+                        mapOf("route" to route, "course" to course.id, "unit" to unit.id)) }
+                        .getOrDefault(emptyList()).sortedBy { it.number }
                     for (lesson in lessons) {
                         val parsed = runCatching {
                             LessonRepository.loadLessonJson(context, route, lesson.id)
                         }
                         if (parsed.isFailure) {
-                            Log.w("KokoroBackground", "Skipping unavailable lesson: ${lesson.id}", parsed.exceptionOrNull())
+                            unavailable(context, "Skipping unavailable lesson", requireNotNull(parsed.exceptionOrNull()),
+                                mapOf("lesson" to lesson.id))
                             continue
                         }
                         val json = parsed.getOrThrow()
@@ -59,5 +81,17 @@ internal object NarrationCurriculum {
                 }
             }
         }
+    }
+}
+
+/** Optional future-course assets are expected; corrupt installed JSON must keep its full error. */
+internal class NarrationCurriculumFailurePolicy {
+    enum class Decision { FIRST_MISSING, REPEATED_MISSING, UNEXPECTED }
+    private val missing = mutableSetOf<String>()
+    val missingCount: Int get() = synchronized(this) { missing.size }
+
+    @Synchronized fun classify(path: String, error: Throwable): Decision {
+        if (error !is FileNotFoundException) return Decision.UNEXPECTED
+        return if (missing.add(path)) Decision.FIRST_MISSING else Decision.REPEATED_MISSING
     }
 }

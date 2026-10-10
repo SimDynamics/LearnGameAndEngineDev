@@ -34,6 +34,7 @@ class LessonNarrationController(
     private val uiContext: Context get() = UiLanguageSettings.localizedContext(appContext)
     private fun s(id: Int, vararg args: Any): String = uiContext.getString(id, *args)
     private class UiFailure(val messageRes: Int, vararg val arguments: Any) : IllegalStateException()
+    private class PassiveStoragePause : IllegalStateException()
     private fun errorMessage(error: Exception, fallback: Int) =
         if (error is UiFailure) s(error.messageRes, *error.arguments) else s(fallback)
     private val appContext = context.applicationContext
@@ -99,7 +100,6 @@ class LessonNarrationController(
     private var warnedNetwork = false
 
     // Construction, inference and close belong to the worker; main may request cancellation.
-    @Volatile private var kokoro: KokoroOnnxEngine? = null
     @Volatile private var english: EnglishMisakiG2P? = null
     private var french: FrenchFluidG2P? = null
     private var spanishLexicon: Map<String, String>? = null
@@ -157,6 +157,9 @@ class LessonNarrationController(
         language = selected.language
         segments = prepared.map { Segment(it) }.toMutableList()
         directory = File(appContext.cacheDir, "lesson-narration-" + UUID.randomUUID())
+        if (selected.engine != NarrationEngine.ANDROID) {
+            preservePagePriority(prepared, selected)
+        }
         return true
     }
 
@@ -197,7 +200,7 @@ class LessonNarrationController(
     fun warmUp() {
         if (closed || !NarrationSettingsRepository.get(appContext).enabled) return
         worker.post {
-            if (closed || kokoro != null) return@post
+            if (closed) return@post
             val preference = NarrationSettingsRepository.get(appContext)
             if (!preference.enabled || preference.engine == NarrationEngine.ANDROID) return@post
             runCatching {
@@ -206,11 +209,13 @@ class LessonNarrationController(
                 if (!File(root, "model.onnx").isFile ||
                     !File(root, voice.artifact.fileName).isFile
                 ) return@post
-                val engine = KokoroOnnxEngine(root)
-                if (closed) engine.close() else kokoro = engine
+                KokoroEngineCoordinator.withEngine(this, root, { closed }, foreground = true) { }
             }
-            // Errors are reported through the existing fallback when Listen
-            // is pressed, not during passive lesson loading.
+                .onFailure { error ->
+                    if (error !is InterruptedException) {
+                        KokoroNarrationDiagnostics.event(appContext, "KokoroInference", "Warm-up failed", error)
+                    }
+                }
         }
     }
 
@@ -282,7 +287,7 @@ class LessonNarrationController(
             settings.androidVoice != previous.androidVoice
         ) {
             configuration++
-            kokoro?.cancelCurrentRun()
+            KokoroEngineCoordinator.cancel(this)
             english?.cancelCurrentRun()
             pending.clear()
             releaseSynthesisCpu()
@@ -297,6 +302,9 @@ class LessonNarrationController(
                 }
             }
             if (segments.isNotEmpty() && player == null) ensureSegment(index)
+            if (segments.isNotEmpty() && settings.engine != NarrationEngine.ANDROID) {
+                preservePagePriority(segments.map { it.text }, settings)
+            }
         }
         applyRate()
         worker.post {
@@ -329,7 +337,7 @@ class LessonNarrationController(
         val session = directory ?: return
         val request = Synthesis(generation, configuration, next, segment.text,
             File(session, configuration.toString() + "_" + next + ".wav"),
-            NarrationSettingsRepository.forLanguage(appContext, language))
+            settings)
         val timeout = Runnable {
             if (isCurrent(request) && pending.contains(next)) fail(s(R.string.narration_engine_timeout))
         }
@@ -358,6 +366,17 @@ class LessonNarrationController(
                 }
             }
             if (request.settings.engine != NarrationEngine.ANDROID) {
+                if (!playing && !NarrationStorageBudget.fitsNext(NarrationStorageBudget.snapshot(appContext),
+                        4L * NarrationStorageBudget.MIB)) {
+                    deferPassiveRequest(request)
+                    return
+                }
+                if (!playing && NarrationWorkPriority.isBusy) {
+                    // Passive page preparation yields to a compiler/graphics operation.
+                    // Keep the request and durable page queue; retry without switching engines.
+                    worker.postDelayed({ synthesize(request) }, 250L)
+                    return
+                }
                 // Cache misses that belong to the visible lesson outrank
                 // unrelated offline curriculum generation.
                 foregroundPreparation = NarrationWorkPriority.beginInteractive()
@@ -375,45 +394,44 @@ class LessonNarrationController(
                     val synthesisStarted = android.os.SystemClock.elapsedRealtime()
                     val phonemes = phonemize(request.text, request.settings.language, root) { isCurrent(request) }
                     if (!isCurrent(request)) return
-                    var engine = kokoro ?: KokoroOnnxEngine(root).also { kokoro = it }
-                    if (!isCurrent(request)) return
                     // All pieces become ONE seamless WAV for the current
                     // sentence. The next sentence is generated in advance.
                     val phonemeParts = KokoroPhonemeChunks.split(phonemes)
-                    fun renderWith(active: KokoroOnnxEngine): List<FloatArray> =
-                        phonemeParts.map { part ->
-                            if (!isCurrent(request)) throw InterruptedException("Se canceló la narración")
-                            active.synthesizePhonemes(part, request.settings.kokoroVoice, 1f) {
-                                !isCurrent(request)
+                    val ready = KokoroEngineCoordinator.withEngine(this, root, { !isCurrent(request) }, foreground = true,
+                        onProviderFailure = { error -> KokoroNarrationDiagnostics.event(appContext, "KokoroInference",
+                            "NNAPI request retried on CPU", error, mapOf("index" to request.index,
+                                "language" to request.settings.language.tag, "voice" to request.settings.kokoroVoice)) }) { active ->
+                        // Another owner may have completed the same sentence while
+                        // this page waited for the shared session.
+                        KokoroNarrationCache.lookup(appContext, request.settings.language.tag,
+                            request.settings.kokoroVoice, request.text) ?: run {
+                            val audioParts = phonemeParts.map { part ->
+                                if (!isCurrent(request)) throw InterruptedException("Se canceló la narración")
+                                active.synthesizePhonemes(part, request.settings.kokoroVoice, 1f) {
+                                    !isCurrent(request)
+                                }
                             }
+                            if (!isCurrent(request)) throw InterruptedException("Se canceló la narración")
+                            NarrationWavWriter.writeChunks(request.file, audioParts)
+                            if (!playing && !NarrationStorageBudget.fitsNext(NarrationStorageBudget.snapshot(appContext),
+                                    request.file.length())) {
+                                deleteTemporaryAudio(request.file)
+                                throw PassiveStoragePause()
+                            }
+                            KokoroNarrationDiagnostics.event(appContext, "KokoroInference", "Page sentence generated",
+                                fields = mapOf("index" to request.index, "language" to request.settings.language.tag,
+                                    "voice" to request.settings.kokoroVoice,
+                                    "hash" to KokoroNarrationCache.key(request.settings.language.tag,
+                                        request.settings.kokoroVoice, request.text),
+                                    "elapsedMs" to (android.os.SystemClock.elapsedRealtime() - synthesisStarted)))
+                            KokoroNarrationCache.store(appContext, request.settings.language.tag,
+                                request.settings.kokoroVoice, request.text, request.file) ?: request.file
                         }
-                    val audioParts = try {
-                        renderWith(engine)
-                    } catch (error: Exception) {
-                        if (error is InterruptedException || !engine.usesNnapi || !isCurrent(request)) throw error
-                        // Some devices accept NNAPI session creation but reject
-                        // a Kokoro operator at inference time. Retry the whole
-                        // sentence with multithreaded CPU, never losing words.
-                        android.util.Log.w("KokoroInference", "NNAPI run failed; reverting to CPU", error)
-                        releaseKokoro()
-                        engine = KokoroOnnxEngine(root, preferAccelerator = false).also { kokoro = it }
-                        renderWith(engine)
                     }
-                    if (!isCurrent(request)) return
-                    NarrationWavWriter.writeChunks(request.file, audioParts)
-                    android.util.Log.i(
-                        "KokoroInference",
-                        "Sentence ${request.index}: ${request.text.length} chars, " +
-                            "${phonemes.length} phonemes, ${audioParts.size} runs, " +
-                            "${android.os.SystemClock.elapsedRealtime() - synthesisStarted}ms"
-                    )
-                    val saved = runCatching {
-                        KokoroNarrationCache.store(
-                            appContext, request.settings.language.tag,
-                            request.settings.kokoroVoice, request.text, request.file
-                        )
-                    }.getOrNull()
-                    generated(if (saved != null) request.copy(file = saved) else request)
+                    generated(request.copy(file = ready))
+                    return
+                } catch (_: PassiveStoragePause) {
+                    deferPassiveRequest(request)
                     return
                 } catch (_: InterruptedException) {
                     // Cancellation invalidated the page/configuration before aborting its G2P.
@@ -422,14 +440,11 @@ class LessonNarrationController(
                     if (!isCurrent(request)) return
                     // The UI message is intentionally friendly, but never hide
                     // the actual cause of an unexpected neural-to-TTS fallback.
-                    android.util.Log.e(
-                        "KokoroInference",
-                        "Neural narration failed: segment=${request.index}, " +
-                            "language=${request.settings.language.tag}, " +
-                            "voice=${request.settings.kokoroVoice}, " +
-                            "textLength=${request.text.length}",
-                        error
-                    )
+                    KokoroNarrationDiagnostics.event(appContext, "KokoroInference", "Neural narration failed", error,
+                        mapOf("index" to request.index, "language" to request.settings.language.tag,
+                            "voice" to request.settings.kokoroVoice, "textLength" to request.text.length,
+                            "hash" to KokoroNarrationCache.key(request.settings.language.tag,
+                                request.settings.kokoroVoice, request.text)))
                     reportFallback(request, errorMessage(error, R.string.narration_neural_unavailable))
                 } catch (error: UnsatisfiedLinkError) {
                     if (!isCurrent(request)) return
@@ -446,7 +461,8 @@ class LessonNarrationController(
             if (!isCurrent(request)) return
             ttsPending[request.id] = request
             if (ttsReady) synthesizeAndroid(request) else initializeTts()
-        } catch (_: Exception) {
+        } catch (error: Exception) {
+            KokoroNarrationDiagnostics.event(appContext, "KokoroInference", "Temporary audio failed", error)
             synthesisFailed(request, s(R.string.narration_temporary_audio_error))
         } finally {
             foregroundPreparation?.close()
@@ -556,6 +572,16 @@ class LessonNarrationController(
                 retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toIntOrNull()
             } finally { retriever.release() }
             require(duration != null && duration > 0) { "El audio no tiene una duración válida" }
+            if (request.settings.engine != NarrationEngine.ANDROID &&
+                request.file.parentFile?.name == "kokoro-narration-cache") {
+                runCatching {
+                    KokoroPagePreparationQueue.snapshot(appContext)?.let { page ->
+                        KokoroPagePreparationQueue.markCompleted(appContext, page.revision,
+                            KokoroNarrationCache.key(request.settings.language.tag,
+                                request.settings.kokoroVoice, request.text))
+                    }
+                }.onFailure { KokoroNarrationDiagnostics.event(appContext, "KokoroInference", "Page progress could not be preserved", it) }
+            }
             // The persistent cache may hold hundreds of MB across lessons.
             // Only bound the active temporary page, never the global cache.
             val temporary = request.file.parentFile?.name?.startsWith("lesson-narration-") == true
@@ -580,7 +606,8 @@ class LessonNarrationController(
                     ensureSegment(request.index + 2)
                 }
             }
-        } catch (_: Exception) {
+        } catch (error: Exception) {
+            KokoroNarrationDiagnostics.event(appContext, "KokoroInference", "Generated audio validation failed", error)
             synthesisFailed(request, s(R.string.narration_invalid_audio))
         }
     }
@@ -689,7 +716,7 @@ class LessonNarrationController(
     private fun stopInternal(releaseNeuralResources: Boolean = false) {
         val previous = directory
         generation++
-        kokoro?.cancelCurrentRun()
+        KokoroEngineCoordinator.cancel(this)
         english?.cancelCurrentRun()
         val wasPlaying = playing
         playing = false
@@ -754,7 +781,21 @@ class LessonNarrationController(
         }
     }
 
-    private fun releaseKokoro() { runCatching { kokoro?.close() }; kokoro = null }
+    private fun releaseKokoro() { runCatching { KokoroEngineCoordinator.releaseIfIdle() } }
+    private fun deferPassiveRequest(request: Synthesis) {
+        main.post {
+            if (!isCurrent(request)) return@post
+            watchdogs.remove(request.id)?.let(main::removeCallbacks)
+            pending.remove(request.index)
+            if (pending.isEmpty()) releaseSynthesisCpu()
+            // A Play pressed during the budget check is an explicit request.
+            if (playing) ensureSegment(request.index)
+        }
+    }
+    private fun preservePagePriority(texts: List<String>, selected: NarrationSettings) {
+        runCatching { KokoroPagePreparationQueue.submit(appContext, texts, selected.language, selected.kokoroVoice) }
+            .onFailure { KokoroNarrationDiagnostics.event(appContext, "KokoroInference", "Page priority could not be preserved", it) }
+    }
     private fun releasePhonemizers() {
         fun release(resource: Any?) { if (resource is AutoCloseable) runCatching { resource.close() } }
         release(english); release(french)

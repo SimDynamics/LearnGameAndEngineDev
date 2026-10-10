@@ -2,6 +2,7 @@ package com.learngraphicsprogramming.app.narration
 
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Central arbitration for *optional* offline narration generation.
@@ -19,8 +20,9 @@ object NarrationWorkPriority {
         // Cancel any background ONNX Run immediately; it restarts from the
         // first missing sentence using the persistent WAV cache.
         interrupts.forEach { listener -> runCatching { listener() } }
+        val closed = AtomicBoolean()
         return AutoCloseable {
-            interactiveCount.updateAndGet { (it - 1).coerceAtLeast(0) }
+            if (closed.compareAndSet(false, true)) interactiveCount.decrementAndGet()
         }
     }
 

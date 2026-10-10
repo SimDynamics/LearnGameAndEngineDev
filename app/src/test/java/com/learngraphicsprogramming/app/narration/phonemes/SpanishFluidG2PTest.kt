@@ -48,6 +48,57 @@ class SpanishFluidG2PTest {
         assertEquals(SpanishFluidG2P.phonemize("raíz cuadrada de nueve"), SpanishFluidG2P.phonemize("√9"))
     }
 
+    @Test fun temperatureScalesAndAnglesAreSpokenWithoutDroppingTheirUnits() {
+        assertEquals(SpanishFluidG2P.phonemize("menos tres grados Celsius"),
+            SpanishFluidG2P.phonemize("-3 °C"))
+        assertEquals(SpanishFluidG2P.phonemize("cinco grados Celsius"),
+            SpanishFluidG2P.phonemize("5°C"))
+        assertEquals(SpanishFluidG2P.phonemize("treinta y dos grados Fahrenheit"),
+            SpanishFluidG2P.phonemize("32 °F"))
+        assertEquals(SpanishFluidG2P.phonemize("noventa grados"),
+            SpanishFluidG2P.phonemize("90°"))
+        assertTrue(SpanishFluidG2P.normalizeText("Una temperatura de -3 °C describe un estado.")
+            .contains("menos tres grados Celsius"))
+    }
+
+    @Test fun unicodeSubtractionAndParenthesizedNegativesKeepTheirMathematicalMeaning() {
+        val expected = "Contrasta menos cuatro menos tres y menos cuatro menos (menos tres)."
+        val unicode = "Contrasta −4 − 3 y −4 − (−3)."
+        assertEquals(SpanishFluidG2P.phonemize(expected), SpanishFluidG2P.phonemize(unicode))
+        assertEquals(SpanishFluidG2P.phonemize(unicode),
+            SpanishFluidG2P.phonemize("Contrasta -4 - 3 y -4 - (-3)."))
+        assertFalse("Subtraction is not a punctuation pause",
+            SpanishFluidG2P.normalizeText(unicode).contains('—'))
+    }
+
+    @Test fun comparisonsInAuthoredProseKeepTheirDirection() {
+        assertEquals(SpanishFluidG2P.phonemize("La segunda, porque un medio es mayor que un tercio."),
+            SpanishFluidG2P.phonemize("La segunda, porque un medio > un tercio."))
+        assertEquals(SpanishFluidG2P.phonemize("Dos sextos es menor que tres sextos."),
+            SpanishFluidG2P.phonemize("Dos sextos < tres sextos."))
+    }
+
+    @Test fun partiallySpokenBasesStillReadTheirNumericAndVariableExponents() {
+        assertEquals(SpanishFluidG2P.phonemize("En (dos al cubo) al cuadrado se repite un bloque."),
+            SpanishFluidG2P.phonemize("En (dos al cubo)² se repite un bloque."))
+        assertEquals(SpanishFluidG2P.phonemize("Calcula menos tres al cuadrado y (menos tres) al cuadrado."),
+            SpanishFluidG2P.phonemize("Calcula − tres al cuadrado y (−3)²."))
+        val normalized = SpanishFluidG2P.normalizeText("Para exponentes positivos, aᵐ × aⁿ = aᵐ⁺ⁿ.")
+        assertTrue(normalized.contains("elevado a eme"))
+        assertTrue(normalized.contains("elevado a ene"))
+        assertTrue(normalized.contains("eme más ene"))
+        assertFalse(normalized.any { it in "ᵐⁿ⁺" })
+        assertTrue(SpanishFluidG2P.normalizeText("La identidad k⁻¹ por k se conserva.").contains("menos uno"))
+        assertTrue(SpanishFluidG2P.phonemize("Completa (tres al cuadrado)² = 3ᵉ.").isNotBlank())
+    }
+
+    @Test fun visibleSquaredAndCubedCentimetresRemainUnitsRatherThanUnknownGlyphs() {
+        assertEquals(SpanishFluidG2P.phonemize("centímetros cuadrados"), SpanishFluidG2P.phonemize("cm²"))
+        assertEquals(SpanishFluidG2P.phonemize("centímetros cúbicos"), SpanishFluidG2P.phonemize("cm³"))
+        assertEquals(SpanishFluidG2P.phonemize("La unidad gramos barra centímetros cúbicos."),
+            SpanishFluidG2P.phonemize("La unidad gramos/cm³."))
+    }
+
     @Test fun spanishPrioritySentenceAndTerminologyProduceCompatibleStressAndPauses() {
         val phones = SpanishFluidG2P.phonemize("Las fracciones equivalentes representan la misma cantidad. Tres cuartos es igual a seis octavos.")
         assertEquals(2, phones.count { it == '.' })

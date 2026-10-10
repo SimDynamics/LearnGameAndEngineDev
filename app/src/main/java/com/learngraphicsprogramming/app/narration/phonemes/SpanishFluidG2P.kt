@@ -60,10 +60,25 @@ object SpanishFluidG2P {
     }
 
     internal fun normalizeText(text: String): String {
+        // Temperature and angle units are visible curricular content, not
+        // punctuation to discard. The degree sign is absent from Kokoro's
+        // token alphabet; pronounce the scale before processing numbers/math.
+        val units = text.replace('−', '-')
+            .replace(Regex("°\\s*C(?!\\p{L})", RegexOption.IGNORE_CASE), " grados Celsius ")
+            .replace(Regex("°\\s*F(?!\\p{L})", RegexOption.IGNORE_CASE), " grados Fahrenheit ")
+            .replace("°", " grados ")
+            .replace(Regex("(?<![\\p{L}\\p{N}])cm([²³])(?![\\p{L}\\p{N}])")) { match ->
+                val dimension = if (match.groupValues[1] == "²") "cuadrados" else "cúbicos"
+                " centímetros $dimension "
+            }
         // In authored code announcements C is the language name, not the consonant /k/.
-        val namedCode = text.replace(Regex("(?<![\\p{L}\\p{N}])C\\+\\+(?!\\+)", RegexOption.IGNORE_CASE), "ce más más")
+        val namedCode = units.replace(Regex("(?<![\\p{L}\\p{N}])C\\+\\+(?!\\+)", RegexOption.IGNORE_CASE), "ce más más")
             .replace(Regex("(?<![\\p{L}\\p{N}])C\\s+más\\s+más\\b", RegexOption.IGNORE_CASE), "ce más más")
-        val math = SpanishMathSpeech.text(namedCode)
+        // Auto math extraction may leave subtraction before a parenthesized
+        // operand in prose ("Contrasta -4 - (-3)"). Retain its mathematical
+        // meaning rather than turning that operator into a punctuation pause.
+        val math = residualMath(SpanishMathSpeech.text(namedCode))
+            .replace(Regex("(?<=[\\d)])\\s*-\\s*(?=[\\d(])"), " menos ")
         // In authored lesson titles, " · " separates clauses (for example,
         // "Prueba de navegación 1 · Contenido provisional"). This symbol is
         // NOT in Kokoro's token alphabet. Preserve the pause as a comma;
@@ -77,6 +92,25 @@ object SpanishFluidG2P {
             .replace("[", "(").replace("]", ")").replace("-", "—")
             .replace(Regex("\\s+"), " ").trim()
     }
+
+    /** Math extraction can already have spoken a base while leaving its exponent in prose. */
+    private fun residualMath(text: String): String {
+        val withBases = residualPower.replace(text) { match ->
+            val exponent = exponentText(match.groupValues[2])
+            SpanishMathSpeech.text("${match.groupValues[1]}^{$exponent}", "block")
+        }
+        return residualSuperscripts.replace(withBases) { match ->
+            when (val exponent = exponentText(match.value)) {
+                "2" -> " al cuadrado "
+                "3" -> " al cubo "
+                else -> " elevado a ${SpanishMathSpeech.text(exponent, "block")} "
+            }
+        }.replace("<", " es menor que ").replace(">", " es mayor que ")
+            .replace(Regex("(?<![\\p{L}\\p{N}])-(?![\\p{L}\\p{N}])"), " menos ")
+    }
+
+    private fun exponentText(value: String): String = value.map { superscriptCharacters.getValue(it) }
+        .joinToString("").replace(Regex("(?<=[a-z])(?=[a-z])"), " ")
 
     /** Exact upstream rule pipeline; input numbers must already have been verbalized. */
     internal fun phonemizeNormalized(text: String, lexicon: Map<String, String> = emptyMap()): String {
@@ -350,6 +384,9 @@ object SpanishFluidG2P {
     private fun stripAccent(char: Char): Char = when (char) { 'á' -> 'a'; 'é' -> 'e'; 'í' -> 'i'; 'ó' -> 'o'; 'ú', 'ü' -> 'u'; else -> char }
 
     private val numberRuns = Regex("[−-]?\\d+(?:[.,]\\d+)?")
+    private val superscriptCharacters = "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ᵉᵐⁿ".zip("0123456789+-emn").toMap()
+    private val residualSuperscripts = Regex("[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ᵉᵐⁿ]+")
+    private val residualPower = Regex("(?<![\\p{L}\\p{N}])([a-zA-Z]|-?\\d+)([⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ᵉᵐⁿ]+)")
     private val unstressedWords = setOf("de", "la", "el", "en", "que", "y", "los", "a", "las", "se", "del", "con", "su", "por", "o", "al", "sus", "si", "lo", "le", "sin", "tras", "e", "quien", "u", "nos", "mis", "me", "te", "mi", "tu", "tus", "les", "os")
     private val secondaryWords = setOf("para", "como", "entre", "pero", "cuando", "sobre", "desde", "hacia", "hasta", "quienes", "bajo", "aunque", "donde", "mientras", "porque", "nuestros", "nuestra", "nuestro", "nuestras", "ante", "cuanto")
     private val letterNames = mapOf('a' to "a", 'b' to "be", 'c' to "ce", 'd' to "de", 'e' to "e", 'f' to "efe", 'g' to "ge", 'h' to "ache", 'i' to "i", 'j' to "jota", 'k' to "ka", 'l' to "ele", 'm' to "eme", 'n' to "ene", 'ñ' to "eñe", 'o' to "o", 'p' to "pe", 'q' to "cu", 'r' to "ere", 's' to "ese", 't' to "te", 'u' to "u", 'v' to "uve", 'w' to "uvedoble", 'x' to "equis", 'y' to "igriega", 'z' to "zeta")
