@@ -88,6 +88,17 @@ class SpanishFluidG2PTest {
         } finally { file.delete() }
     }
 
+    @Test fun provisionalMathTitleSeparatorIsAValidKokoroPause() {
+        val title = "Prueba de navegación 1 · Contenido provisional de desarrollo"
+        val expected = "Prueba de navegación 1, Contenido provisional de desarrollo"
+        assertEquals(SpanishFluidG2P.phonemize(expected), SpanishFluidG2P.phonemize(title))
+        // Do not confuse a multiplication operator with a title separator.
+        assertEquals(SpanishFluidG2P.phonemize("tres por cuatro"),
+            SpanishFluidG2P.phonemize("3 · 4"))
+        assertEquals(SpanishFluidG2P.phonemize("tres por cuatro"),
+            SpanishFluidG2P.phonemize("3·4"))
+    }
+
     @Test fun unsupportedPunctuationAndResourceLimitsFailWithoutSilentTokenDropping() {
         assertThrows(IllegalArgumentException::class.java) { SpanishFluidG2P.phonemize("hola ☃") }
         assertThrows(IllegalArgumentException::class.java) { SpanishFluidG2P.phonemize("a".repeat(32_769)) }
