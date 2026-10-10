@@ -16,6 +16,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import com.learngraphicsprogramming.app.databinding.ActivityCppPrototypeBinding
 import com.learngraphicsprogramming.app.runtime.CppExecutionEngine
+import com.learngraphicsprogramming.app.runtime.CppCompiler
+import com.learngraphicsprogramming.app.runtime.CppCompilerVariant
 import com.learngraphicsprogramming.app.runtime.Clang21FeatureDelivery
 import com.learngraphicsprogramming.app.runtime.Clang21FeatureDelivery.Phase
 import java.util.concurrent.Executors
@@ -30,6 +32,7 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     private var clang21FeatureDelivery: Clang21FeatureDelivery? = null
     private var clang21ConfirmationSession: Int? = null
+    private var selectedCompiler = CppCompilerVariant.DEFAULT
 
     private val clang21ConfirmationLauncher =
         registerForActivityResult(
@@ -182,23 +185,40 @@ class CppPrototypeActivity : AppCompatActivity() {
             runPrototype()
         }
 
+        selectedCompiler =
+            if (savedInstanceState?.getBoolean(STATE_CLANG21_SELECTED) == true)
+                CppCompilerVariant.OPTIONAL_CLANG_21
+            else
+                CppCompilerVariant.DEFAULT
+
         setupClang21FeaturePanel()
     }
 
     /**
-     * The optional Play download is separate from the compiler:
-     * installing Clang 21 never changes the active Clang 23 toolchain.
+     * Merely installing Clang 21 does not switch compilers. The user must
+     * choose it explicitly, and only executable system-installed native
+     * libraries may back an external clang process.
      */
     private fun setupClang21FeaturePanel() {
         if (!BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED) {
             binding.clang21FeatureSection.visibility = View.GONE
+            binding.clangCompilerSelectorSection.visibility = View.GONE
             return
         }
 
         binding.clang21FeatureSection.visibility = View.VISIBLE
+        binding.clangCompilerSelectorSection.visibility = View.VISIBLE
         val installer = Clang21FeatureDelivery(this)
         clang21FeatureDelivery = installer
         updateClang21FeaturePanel(installer.currentState())
+
+        binding.clangCompilerRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            selectedCompiler =
+                if (checkedId == R.id.clang21RadioButton &&
+                    binding.clang21RadioButton.isEnabled
+                ) CppCompilerVariant.OPTIONAL_CLANG_21
+                else CppCompilerVariant.DEFAULT
+        }
 
         binding.clang21DownloadButton.setOnClickListener {
             AlertDialog.Builder(this)
@@ -286,6 +306,7 @@ class CppPrototypeActivity : AppCompatActivity() {
             Phase.UNKNOWN -> getString(R.string.clang21_other_status)
         }
         binding.clang21FeatureStatus.text = status
+        updateCompilerAvailability(phase == Phase.INSTALLED)
 
         if (phase == Phase.NEEDS_CONFIRMATION &&
             state.sessionId != clang21ConfirmationSession
@@ -307,6 +328,23 @@ class CppPrototypeActivity : AppCompatActivity() {
         ) {
             clang21ConfirmationSession = null
         }
+    }
+
+    private fun updateCompilerAvailability(moduleInstalled: Boolean) {
+        val available = moduleInstalled &&
+            CppCompiler.isOptionalClang21Available(this)
+        binding.clang21RadioButton.isEnabled = available && binding.runButton.isEnabled
+        binding.clang23RadioButton.isEnabled = binding.runButton.isEnabled
+        binding.clang21ExecutionUnavailable.visibility =
+            if (moduleInstalled && !available) View.VISIBLE else View.GONE
+
+        if (!available) selectedCompiler = CppCompilerVariant.DEFAULT
+        binding.clangCompilerRadioGroup.check(
+            if (selectedCompiler == CppCompilerVariant.OPTIONAL_CLANG_21)
+                R.id.clang21RadioButton
+            else
+                R.id.clang23RadioButton
+        )
     }
 
     private fun compactEditorSpaces(
@@ -509,9 +547,12 @@ class CppPrototypeActivity : AppCompatActivity() {
 
         val source =
             binding.sourceCode.text.toString()
+        val compilerForThisRun = selectedCompiler
 
         binding.runButton.isEnabled =
             false
+        binding.clang23RadioButton.isEnabled = false
+        binding.clang21RadioButton.isEnabled = false
 
         setStatus(
             R.string.cpp_runtime_running
@@ -529,7 +570,8 @@ class CppPrototypeActivity : AppCompatActivity() {
                     CppExecutionEngine(
                         this
                     ).compileAndRun(
-                        source
+                        source,
+                        compilerVariant = compilerForThisRun
                     )
                 }
 
@@ -537,6 +579,11 @@ class CppPrototypeActivity : AppCompatActivity() {
 
                 binding.runButton.isEnabled =
                     true
+                if (BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED) {
+                    updateCompilerAvailability(
+                        clang21FeatureDelivery?.currentState()?.phase == Phase.INSTALLED
+                    )
+                }
 
                 result.onSuccess { engineResult ->
 
@@ -625,6 +672,10 @@ class CppPrototypeActivity : AppCompatActivity() {
             rawOutput
         )
         outState.putBoolean(STATE_COMPILATION_TIMED_OUT, compilationTimedOut)
+        outState.putBoolean(
+            STATE_CLANG21_SELECTED,
+            selectedCompiler == CppCompilerVariant.OPTIONAL_CLANG_21
+        )
 
         outState.putBoolean(
             STATE_WRAP,
@@ -686,6 +737,9 @@ class CppPrototypeActivity : AppCompatActivity() {
 
         const val STATE_WRAP =
             "cpp_prototype_wrap"
+
+        const val STATE_CLANG21_SELECTED =
+            "cpp_prototype_clang21_selected"
 
         const val FOUR_SPACE_LINE =
             "\n    \n"
