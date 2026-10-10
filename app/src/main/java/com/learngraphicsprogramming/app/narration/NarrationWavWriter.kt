@@ -5,18 +5,29 @@ import java.io.OutputStream
 
 /** Streaming PCM16 WAV: only the current model waveform is retained in memory. */
 internal object NarrationWavWriter {
-    fun write(file: File, samples: FloatArray, sampleRate: Int = 24_000) {
-        require(sampleRate in 1..Int.MAX_VALUE / 2 && samples.isNotEmpty() && samples.size <= (Int.MAX_VALUE - 36) / 2)
+    fun write(file: File, samples: FloatArray, sampleRate: Int = 24_000) =
+        writeChunks(file, listOf(samples), sampleRate)
+
+    /**
+     * One continuous WAV per authored paragraph even when the ONNX phoneme
+     * budget requires multiple runs. Write without allocating a merged PCM.
+     */
+    fun writeChunks(file: File, chunks: List<FloatArray>, sampleRate: Int = 24_000) {
+        require(sampleRate in 1..Int.MAX_VALUE / 2 && chunks.isNotEmpty())
+        val count = chunks.sumOf { it.size.toLong() }
+        require(chunks.all { it.isNotEmpty() } && count in 1..((Int.MAX_VALUE - 36) / 2).toLong())
         file.outputStream().buffered().use { output ->
             fun littleInt(value: Int) { repeat(4) { output.write(value ushr (it * 8) and 0xff) } }
             fun littleShort(value: Int) { output.write(value and 0xff); output.write(value ushr 8 and 0xff) }
-            output.ascii("RIFF"); littleInt(36 + samples.size * 2); output.ascii("WAVE")
+            output.ascii("RIFF"); littleInt(36 + count.toInt() * 2); output.ascii("WAVE")
             output.ascii("fmt "); littleInt(16); littleShort(1); littleShort(1)
             littleInt(sampleRate); littleInt(sampleRate * 2); littleShort(2); littleShort(16)
-            output.ascii("data"); littleInt(samples.size * 2)
-            samples.forEach { sample ->
-                require(sample.isFinite()) { "Kokoro produced non-finite PCM" }
-                littleShort((sample.coerceIn(-1f, 1f) * 32_767f).toInt())
+            output.ascii("data"); littleInt(count.toInt() * 2)
+            chunks.forEach { samples ->
+                samples.forEach { sample ->
+                    require(sample.isFinite()) { "Kokoro produced non-finite PCM" }
+                    littleShort((sample.coerceIn(-1f, 1f) * 32_767f).toInt())
+                }
             }
         }
     }
