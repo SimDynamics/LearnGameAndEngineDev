@@ -8,6 +8,46 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LessonNarrationTextTest {
+    @Test fun firstLessonPagesSixAndSevenNarrateTheSmallVisibleInstructions() {
+        val assets = listOf(File("src/main/assets"), File("app/src/main/assets"))
+            .first { it.isDirectory }
+        val lesson = JSONObject(
+            File(
+                assets,
+                "content/es/programming/cpp_fundamentals/intro_programming/lesson_what_is_programming.json"
+            ).readText()
+        )
+        val orderInstruction =
+            "Mantén pulsado un bloque y arrástralo hasta la posición correcta."
+        val dragInstruction =
+            "Mantén pulsado un bloque y arrástralo hacia un espacio vacío."
+        val displayedText = { blockType: String ->
+            when (blockType) {
+                "order_code" -> orderInstruction
+                "drag_fill_code" -> dragInstruction
+                else -> ""
+            }
+        }
+
+        val pageSix = LessonNarrationText.page(
+            lesson, 5, NarrationLanguage.SPANISH, displayedText
+        )
+        val pageSeven = LessonNarrationText.page(
+            lesson, 6, NarrationLanguage.SPANISH, displayedText
+        )
+
+        assertTrue(pageSix.first().startsWith("Ordena los bloques"))
+        assertEquals(orderInstruction, pageSix[1])
+        assertTrue(pageSeven.first().startsWith("Completa el código"))
+        assertEquals(dragInstruction, pageSeven[1])
+        assertTrue("Order instruction must be included in offline synthesis",
+            NarrationSegments.sentences(pageSix).contains(orderInstruction))
+        assertTrue("Drag instruction must be included in offline synthesis",
+            NarrationSegments.sentences(pageSeven).contains(dragInstruction))
+        assertFalse("Never reveal solution feedback before the learner answers",
+            pageSix.joinToString(" ").contains("Primero incluimos la biblioteca"))
+    }
+
     @Test fun firstProgrammingPageNarratesTheBodyNotOnlyTitleAndHeading() {
         val assets = listOf(File("src/main/assets"), File("app/src/main/assets"))
             .first { it.isDirectory }
