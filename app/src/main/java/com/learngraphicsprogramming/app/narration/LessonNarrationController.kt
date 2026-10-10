@@ -498,6 +498,12 @@ class LessonNarrationController(
                 segments[request.index].file = request.file
                 segments[request.index].duration = duration
                 if (request.index == index && player == null) preparePlayer(segments[index])
+                if (request.settings.engine != NarrationEngine.ANDROID) {
+                    // Continue rendering the whole page in the background,
+                    // even before Play is pressed. A two-sentence window
+                    // bounds queued inference and keeps the first words ready.
+                    ensureSegment(request.index + 2)
+                }
             }
         } catch (_: Exception) {
             synthesisFailed(request, s(R.string.narration_invalid_audio))
