@@ -295,6 +295,7 @@ class CppPrototypeActivity : AppCompatActivity() {
             Phase.INSTALLING -> getString(R.string.clang21_installing)
             Phase.NEEDS_CONFIRMATION -> getString(R.string.clang21_confirming)
             Phase.INSTALLED -> getString(R.string.clang21_installed)
+            Phase.EMULATED -> getString(R.string.clang21_local_emulation)
             Phase.FAILED -> getString(
                 R.string.clang21_failure,
                 state.errorCode?.toString()
