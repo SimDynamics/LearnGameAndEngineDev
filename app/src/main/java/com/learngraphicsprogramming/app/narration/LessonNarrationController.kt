@@ -336,6 +336,7 @@ class LessonNarrationController(
                         ?: throw UiFailure(R.string.narration_voice_invalid)
                     if (!File(root, voice.artifact.fileName).isFile) throw UiFailure(R.string.narration_voice_missing)
                     if (!Build.SUPPORTED_ABIS.contains("arm64-v8a")) throw UiFailure(R.string.narration_requires_arm64)
+                    val synthesisStarted = android.os.SystemClock.elapsedRealtime()
                     val phonemes = phonemize(request.text, request.settings.language, root) { isCurrent(request) }
                     if (!isCurrent(request)) return
                     var engine = kokoro ?: KokoroOnnxEngine(root).also { kokoro = it }
@@ -364,6 +365,12 @@ class LessonNarrationController(
                     }
                     if (!isCurrent(request)) return
                     NarrationWavWriter.writeChunks(request.file, audioParts)
+                    android.util.Log.i(
+                        "KokoroInference",
+                        "Sentence ${request.index}: ${request.text.length} chars, " +
+                            "${phonemes.length} phonemes, ${audioParts.size} runs, " +
+                            "${android.os.SystemClock.elapsedRealtime() - synthesisStarted}ms"
+                    )
                     generated(request)
                     return
                 } catch (_: InterruptedException) {
