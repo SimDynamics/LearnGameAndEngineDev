@@ -3,7 +3,7 @@ package com.learngraphicsprogramming.app.narration
 import java.io.File
 import java.io.OutputStream
 
-/** Streaming PCM16 WAV: only the current model waveform is retained in memory. */
+/** Streams PCM16 WAV to disk without allocating a second, concatenated waveform. */
 internal object NarrationWavWriter {
     fun write(file: File, samples: FloatArray, sampleRate: Int = 24_000) =
         writeChunks(file, listOf(samples), sampleRate)
