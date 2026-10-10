@@ -40,6 +40,7 @@ internal class KokoroBackgroundNarrationWorker(private val app: Context) {
         var spanish: Map<String, String>? = null
         var root: File? = null
         var hadMissing = false
+        var skippedUninstalledVoices = false
         val started = SystemClock.elapsedRealtime()
         val interruption = NarrationWorkPriority.onPreempt {
             engine?.cancelCurrentRun()
@@ -71,6 +72,7 @@ internal class KokoroBackgroundNarrationWorker(private val app: Context) {
                 val voice = KokoroVoiceCatalog.find(item.voice)
                 if (voice == null || !File(modelRoot, voice.artifact.fileName).isFile) {
                     // Missing voices do not prevent generating other installed languages.
+                    skippedUninstalledVoices = true
                     continue
                 }
 
@@ -133,6 +135,10 @@ internal class KokoroBackgroundNarrationWorker(private val app: Context) {
                 if (SystemClock.elapsedRealtime() - started >= SLICE_MS) {
                     return Outcome.MORE
                 }
+            }
+            if (skippedUninstalledVoices) {
+                Log.i(TAG, "Offline narration pending: some voices are not installed")
+                return Outcome.UNAVAILABLE
             }
             if (!hadMissing) Log.i(TAG, "All available lesson sentences are cached")
             return Outcome.COMPLETE
