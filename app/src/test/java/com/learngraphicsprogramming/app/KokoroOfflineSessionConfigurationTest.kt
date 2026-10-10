@@ -30,6 +30,15 @@ class KokoroOfflineSessionConfigurationTest {
         assertTrue(service.contains("Outcome.BUSY"))
     }
 
+    @Test fun lifecycleObserverIsRegisteredBeforeAnyActivityStarts() {
+        val app = File(main, "java/com/learngraphicsprogramming/app/LearnGraphicsApplication.kt").readText()
+        val monitor = File(main, "java/com/learngraphicsprogramming/app/narration/KokoroNarrationSessionMonitor.kt").readText()
+        val manifest = File(main, "AndroidManifest.xml").readText()
+        assertTrue(manifest.contains("android:name=\".LearnGraphicsApplication\""))
+        assertTrue(app.contains("KokoroNarrationSessionMonitor.refresh(this)"))
+        assertTrue(monitor.contains("registerActivityLifecycleCallbacks"))
+    }
+
     @Test fun manifestDeclaresAndroid14ForegroundServicePermissionsAndSubtype() {
         val xml = File(main, "AndroidManifest.xml").readText()
         assertTrue(xml.contains("android.permission.FOREGROUND_SERVICE"))
