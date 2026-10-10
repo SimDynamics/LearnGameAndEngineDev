@@ -39,7 +39,7 @@ internal object KokoroNarrationCache {
     }
 
     private fun validatedWav(file: File): Boolean = runCatching {
-        if (!file.isFile || file.length() !in 46..(96L * 1024 * 1024)) return@runCatching false
+        if (!file.isFile || file.length() !in 46L..(96L * 1024 * 1024)) return@runCatching false
         val header = ByteArray(44)
         RandomAccessFile(file, "r").use { it.readFully(header) }
         val pcm = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
@@ -95,6 +95,7 @@ internal object KokoroNarrationCache {
         val directory = root(context)
         val target = File(directory, "$hash.wav")
         if (validatedWav(target)) return target
+        if (target.isFile) target.delete()
         val staging = File(directory, ".$hash-${UUID.randomUUID()}.part")
         return try {
             wav.inputStream().use { input ->
