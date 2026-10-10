@@ -92,6 +92,7 @@ class LessonNarrationController(
     private var player: MediaPlayer? = null
     private var playerReady = false
     private var focusHeld = false
+    private var foregroundPlayback: AutoCloseable? = null
     private val pending = mutableSetOf<Int>()
     private val watchdogs = mutableMapOf<String, Runnable>()
     private var reportedFallback = false
@@ -217,6 +218,8 @@ class LessonNarrationController(
         if (!playing) return
         playing = false
         if (playerReady) runCatching { player?.pause() }
+        foregroundPlayback?.close()
+        foregroundPlayback = null
         releaseFocus()
         onState(false)
     }
@@ -227,6 +230,7 @@ class LessonNarrationController(
             onError(s(R.string.narration_focus_error))
             return
         }
+        foregroundPlayback = foregroundPlayback ?: NarrationWorkPriority.beginInteractive()
         playing = true
         onState(true)
         if (finished) {
@@ -336,6 +340,7 @@ class LessonNarrationController(
 
     private fun synthesize(request: Synthesis) {
         if (!isCurrent(request)) return
+        var foregroundPreparation: AutoCloseable? = null
         try {
             if (request.settings.engine != NarrationEngine.ANDROID) {
                 // Disk cache (or an optional WAV bundled in the APK) is
@@ -351,6 +356,11 @@ class LessonNarrationController(
                     generated(request.copy(file = ready))
                     return
                 }
+            }
+            if (request.settings.engine != NarrationEngine.ANDROID) {
+                // Cache misses that belong to the visible lesson outrank
+                // unrelated offline curriculum generation.
+                foregroundPreparation = NarrationWorkPriority.beginInteractive()
             }
             val parent = request.file.parentFile ?: error("Directorio temporal no disponible")
             if (!parent.isDirectory && !parent.mkdirs()) error("No se pudo crear el audio temporal")
@@ -421,6 +431,8 @@ class LessonNarrationController(
             if (ttsReady) synthesizeAndroid(request) else initializeTts()
         } catch (_: Exception) {
             synthesisFailed(request, s(R.string.narration_temporary_audio_error))
+        } finally {
+            foregroundPreparation?.close()
         }
     }
 
@@ -598,6 +610,8 @@ class LessonNarrationController(
                 else {
                     finished = true
                     playing = false
+                    foregroundPlayback?.close()
+                    foregroundPlayback = null
                     releaseFocus()
                     onState(false)
                 }
@@ -662,6 +676,8 @@ class LessonNarrationController(
         english?.cancelCurrentRun()
         val wasPlaying = playing
         playing = false
+        foregroundPlayback?.close()
+        foregroundPlayback = null
         directory = null; segments.clear(); pending.clear(); releaseSynthesisCpu()
         index = 0; offset = 0; finished = false
         reportedFallback = false; warnedNetwork = false
