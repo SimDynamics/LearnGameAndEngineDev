@@ -11,7 +11,7 @@ import java.io.File
  * rather than total disk capacity, so unrelated apps/files keep their space.
  */
 internal object NarrationStorageBudget {
-    const val RESERVE_BYTES = 1L shl 30
+    const val RESERVE_BYTES = 1_073_741_824L
     private const val PREFERENCES = "lesson_narration_settings"
     private const val KEY_LIMIT = "offline_audio_budget_bytes"
     const val MIB = 1024L * 1024L
