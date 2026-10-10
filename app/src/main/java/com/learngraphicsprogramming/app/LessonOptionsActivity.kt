@@ -66,6 +66,22 @@ class LessonOptionsActivity : AppCompatActivity() {
             )
 
         /*
+         * NAVEGACIÓN POR DESLIZAMIENTO.
+         *
+         * Antes se alternaba desde la cabecera de la lección.
+         * Conserva el mismo almacenamiento y efecto inmediato.
+         * No depende de Guardar ajustes del curso.
+         */
+        val swipePreferences = getSharedPreferences("app_settings", MODE_PRIVATE)
+        val switchLessonSwipeNavigation =
+            findViewById<Switch>(R.id.switchLessonSwipeNavigation)
+        switchLessonSwipeNavigation.isChecked =
+            swipePreferences.getBoolean("swipeNavigationEnabled", true)
+        switchLessonSwipeNavigation.setOnCheckedChangeListener { _, enabled ->
+            swipePreferences.edit().putBoolean("swipeNavigationEnabled", enabled).apply()
+        }
+
+        /*
          * TAMAÑO DEL CURSO.
          */
         val switchUseGlobalTextSize =
