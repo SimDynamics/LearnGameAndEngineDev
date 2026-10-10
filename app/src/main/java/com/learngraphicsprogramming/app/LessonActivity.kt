@@ -479,14 +479,10 @@ class LessonActivity : AppCompatActivity() {
                         return
                     }
 
-                    // Se desactiva temporalmente para no interceptar
-                    // nuestra propia delegación al sistema.
-                    isEnabled = false
-                    try {
-                        onBackPressedDispatcher.onBackPressed()
-                    } finally {
-                        isEnabled = true
-                    }
+                    // Igual que el botón Volver de la lección.
+                    // Evitamos recursión: Android puede enviar una Activity
+                    // raíz al fondo sin marcarla como isFinishing.
+                    finish()
                 }
             }
         )
@@ -6340,6 +6336,9 @@ class LessonActivity : AppCompatActivity() {
 
         fullscreenButton.contentDescription =
             getString(R.string.exercise_fullscreen)
+
+        // Identificador estable para pruebas y lectores de interfaz.
+        fullscreenButton.tag = "cpp_compiler_fullscreen"
 
         fullscreenButton.isClickable =
             true
