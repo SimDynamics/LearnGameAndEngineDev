@@ -2,6 +2,7 @@ package com.learngraphicsprogramming.app.narration
 
 import android.app.Activity
 import android.app.Application
+import android.app.KeyguardManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -65,11 +66,15 @@ internal object KokoroNarrationSessionMonitor {
         // woke into another app rather than returning to LearnGraphics.
         app.registerReceiver(object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                if (intent.action == Intent.ACTION_SCREEN_ON && startedActivities == 0) {
+                if (intent.action in setOf(Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT) &&
+                    startedActivities == 0) {
                     scheduleStop(10_000L)
                 }
             }
-        }, IntentFilter(Intent.ACTION_SCREEN_ON))
+        }, IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_USER_PRESENT)
+        })
     }
 
     private fun powerInteractive(): Boolean =
@@ -77,7 +82,10 @@ internal object KokoroNarrationSessionMonitor {
 
     private fun scheduleStop(delayMillis: Long) {
         main.postDelayed({
-            if (startedActivities == 0 && powerInteractive()) {
+            val keyguard = application.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            // A lock screen can be ON while the app remains open behind it.
+            // End only when the device is unlocked and our app is no longer visible.
+            if (startedActivities == 0 && powerInteractive() && !keyguard.isKeyguardLocked) {
                 application.stopService(Intent(application, KokoroContinuousNarrationService::class.java))
             }
         }, delayMillis)
