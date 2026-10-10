@@ -44,6 +44,14 @@ class LessonNarrationController(
     ).apply { start() }
     private val worker = Handler(workerThread.looper)
     private val models = KokoroModelStore(appContext)
+
+    init {
+        // Prune once, before any cache file is opened for this lesson.
+        worker.post {
+            runCatching { KokoroNarrationCache.prune(appContext) }
+                .onFailure { android.util.Log.w("KokoroInference", "Cache pruning failed", it) }
+        }
+    }
     private val audioManager = appContext.getSystemService(AudioManager::class.java)
     private val synthesisWakeLock = appContext.getSystemService(PowerManager::class.java)
         ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "LearnGraphicsProgramming:KokoroSynthesis")
@@ -281,7 +289,7 @@ class LessonNarrationController(
                     val previousFile = segment.file
                     segment.file = null
                     segment.duration = null
-                    if (previousFile != null) worker.post { previousFile.delete() }
+                    if (previousFile != null) worker.post { deleteTemporaryAudio(previousFile) }
                 }
             }
             if (segments.isNotEmpty() && player == null) ensureSegment(index)
@@ -329,6 +337,21 @@ class LessonNarrationController(
     private fun synthesize(request: Synthesis) {
         if (!isCurrent(request)) return
         try {
+            if (request.settings.engine != NarrationEngine.ANDROID) {
+                // Disk cache (or an optional WAV bundled in the APK) is
+                // checked BEFORE G2P, ONNX initialization or inference.
+                val ready = runCatching {
+                    KokoroNarrationCache.lookup(
+                        appContext, request.settings.language.tag,
+                        request.settings.kokoroVoice, request.text
+                    )
+                }.getOrNull()
+                if (ready != null) {
+                    android.util.Log.i("KokoroInference", "Persistent narration cache hit: sentence ${request.index}")
+                    generated(request.copy(file = ready))
+                    return
+                }
+            }
             val parent = request.file.parentFile ?: error("Directorio temporal no disponible")
             if (!parent.isDirectory && !parent.mkdirs()) error("No se pudo crear el audio temporal")
             if (request.settings.engine != NarrationEngine.ANDROID) {
@@ -374,7 +397,13 @@ class LessonNarrationController(
                             "${phonemes.length} phonemes, ${audioParts.size} runs, " +
                             "${android.os.SystemClock.elapsedRealtime() - synthesisStarted}ms"
                     )
-                    generated(request)
+                    val saved = runCatching {
+                        KokoroNarrationCache.store(
+                            appContext, request.settings.language.tag,
+                            request.settings.kokoroVoice, request.text, request.file
+                        )
+                    }.getOrNull()
+                    generated(if (saved != null) request.copy(file = saved) else request)
                     return
                 } catch (_: InterruptedException) {
                     // Cancellation invalidated the page/configuration before aborting its G2P.
@@ -489,7 +518,7 @@ class LessonNarrationController(
     }
 
     private fun generated(request: Synthesis) {
-        if (!isCurrent(request)) { request.file.delete(); return }
+        if (!isCurrent(request)) { deleteTemporaryAudio(request.file); return }
         try {
             require(request.file.isFile && request.file.length() > 44) { "El motor produjo un archivo vacío" }
             val retriever = MediaMetadataRetriever()
@@ -498,10 +527,17 @@ class LessonNarrationController(
                 retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toIntOrNull()
             } finally { retriever.release() }
             require(duration != null && duration > 0) { "El audio no tiene una duración válida" }
-            val cachedBytes = request.file.parentFile?.listFiles()?.sumOf { it.length() } ?: 0L
-            require(cachedBytes <= 96L * 1024L * 1024L) { "La página excede el límite de audio temporal" }
+            // The persistent cache may hold hundreds of MB across lessons.
+            // Only bound the active temporary page, never the global cache.
+            val temporary = request.file.parentFile?.name?.startsWith("lesson-narration-") == true
+            val bytes = if (temporary) request.file.parentFile?.listFiles()?.sumOf { it.length() } ?: 0L
+                else request.file.length()
+            require(bytes <= 96L * 1024L * 1024L) { "La página excede el límite de audio temporal" }
             main.post {
-                if (!isCurrent(request)) { worker.post { request.file.delete() }; return@post }
+                if (!isCurrent(request)) {
+                    worker.post { deleteTemporaryAudio(request.file) }
+                    return@post
+                }
                 watchdogs.remove(request.id)?.let(main::removeCallbacks)
                 pending.remove(request.index)
                 if (pending.isEmpty()) releaseSynthesisCpu()
@@ -644,6 +680,16 @@ class LessonNarrationController(
             if (previous != null) cleanup(previous)
         }
         if (wasPlaying) onState(false)
+    }
+
+    /** Never remove a persistent audio file on stop, voice change or cancellation. */
+    private fun deleteTemporaryAudio(file: File) {
+        runCatching {
+            val parent = file.canonicalFile.parentFile ?: return
+            if (parent.parentFile == appContext.cacheDir.canonicalFile &&
+                parent.name.startsWith("lesson-narration-")
+            ) file.delete()
+        }
     }
 
     private fun cleanup(root: File) {
