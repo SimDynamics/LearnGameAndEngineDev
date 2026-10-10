@@ -181,6 +181,12 @@ val lgpEnableCppExceptions = lgpBooleanProperty(
     "lgp.cppExceptions", lgpEnableClang23 && lgpEnableWasmtime
 )
 
+// Experimental Play-delivered feature stub. Never included by normal builds.
+val lgpEnablePlayClang21Feature = lgpBooleanProperty("lgp.playClang21Feature", false)
+check(!lgpEnablePlayClang21Feature || (lgpEnableClang23 && lgpEnableWasmtime)) {
+    "The optional Clang 21 Play module requires a Clang 23 + Wasmtime base APK."
+}
+
 check(!lgpEnableCppExceptions || (lgpEnableClang23 && lgpEnableWasmtime)) {
     "C++ exceptions require Clang 23 and Wasmtime. " +
         "Use -Plgp.clang23=false for the Clang 21/WAMR fallback."
@@ -193,6 +199,9 @@ val lgpWasmtimeDiagnostics =
 
 android {
     namespace = "com.learngraphicsprogramming.app"
+    if (lgpEnablePlayClang21Feature) {
+        dynamicFeatures += setOf(":clang21")
+    }
     compileSdk {
         version = release(37)
     }
