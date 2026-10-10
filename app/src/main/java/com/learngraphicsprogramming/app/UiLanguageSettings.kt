@@ -3,6 +3,7 @@ package com.learngraphicsprogramming.app
 import android.app.Application
 import android.app.LocaleManager
 import android.content.Context
+import com.google.android.play.core.splitcompat.SplitCompat
 import android.content.res.Configuration
 import android.os.Build
 import android.os.LocaleList
@@ -65,7 +66,20 @@ object UiLanguageSettings {
     }
 }
 
+/**
+ * Main application entry point.
+ *
+ * Keep the existing language initialization and enable Play SplitCompat only
+ * for builds that actually package the optional Clang 21 dynamic feature.
+ */
 class LearnGraphicsApplication : Application() {
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        if (BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED) {
+            SplitCompat.install(this)
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         UiLanguageSettings.initialize(this)
