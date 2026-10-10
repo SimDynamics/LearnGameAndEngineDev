@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.res.Configuration
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.Typeface
@@ -176,7 +177,7 @@ class LessonActivity : AppCompatActivity() {
             }
         }
 
-    private lateinit var buttonSwipeToggle: TextView
+    private lateinit var buttonNarrationToggle: ImageButton
 
     private lateinit var imageAttemptRoute: ImageView
     private lateinit var imageAttemptFill: ImageView
@@ -404,6 +405,7 @@ class LessonActivity : AppCompatActivity() {
         narrationControls?.setVisible(enabled && !keyboardVisible && programmingImeAnimations.isEmpty() &&
             mathKeyboardHost?.isKeyboardVisible != true && !compilerFullscreenActive &&
             !exerciseFullscreenActive && hasWindowFocus())
+        updateNarrationToggleAppearance()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -554,40 +556,20 @@ class LessonActivity : AppCompatActivity() {
 
         setupProgrammingKeyboardBar()
 
-        buttonSwipeToggle =
-            findViewById(
-                R.id.buttonSwipeToggle
-            )
+        buttonNarrationToggle =
+            findViewById(R.id.buttonNarrationToggle)
 
-        val preferences =
-            getSharedPreferences(
-                "app_settings",
-                MODE_PRIVATE
-            )
-
-        swipeNavigationEnabled =
-            preferences.getBoolean(
-                "swipeNavigationEnabled",
-                true
-            )
-
-        updateSwipeToggle()
-
-        buttonSwipeToggle.setOnClickListener {
-
-            swipeNavigationEnabled =
-                !swipeNavigationEnabled
-
-            preferences
-                .edit()
-                .putBoolean(
-                    "swipeNavigationEnabled",
-                    swipeNavigationEnabled
-                )
-                .apply()
-
-            updateSwipeToggle()
+        buttonNarrationToggle.setOnClickListener {
+            val enabled = !NarrationSettingsRepository.get(this).enabled
+            NarrationSettingsRepository.saveEnabled(this, enabled)
+            updateNarrationVisibility()
         }
+
+        // La navegación de páginas sigue utilizando exactamente la misma
+        // preferencia; ahora se cambia desde los ajustes de la lección.
+        swipeNavigationEnabled =
+            getSharedPreferences("app_settings", MODE_PRIVATE)
+                .getBoolean("swipeNavigationEnabled", true)
 
         currentCourseId =
             intent.getStringExtra(
@@ -601,7 +583,7 @@ class LessonActivity : AppCompatActivity() {
 
         refreshAttemptIndicator()
 
-        updateSwipeToggle()
+        updateNarrationToggleAppearance()
         if (currentRouteId == AppearanceSettingsRepository.ROUTE_MATH_PHYSICS) {
             lessonContent.setPadding(0, dp(24), 0, dp(16))
             mathKeyboardHost = MathKeyboardHost.install(this)
@@ -702,6 +684,12 @@ class LessonActivity : AppCompatActivity() {
     override fun onResume() {
 
         super.onResume()
+
+        // Los ajustes de la lección pueden modificar esta preferencia
+        // mientras LessonActivity está pausada.
+        swipeNavigationEnabled =
+            getSharedPreferences("app_settings", MODE_PRIVATE)
+                .getBoolean("swipeNavigationEnabled", true)
 
         narrationController?.settingsChanged()
         narrationControls?.refresh(narrationController?.isPlaying == true)
@@ -3486,90 +3474,41 @@ class LessonActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateSwipeToggle() {
+    /*
+     * El icono de la cabeza hablando sustituye al antiguo botón Deslizar.
+     * Usa la misma preferencia que los ajustes generales de Narración.
+     * El estado refleja la preferencia incluso si el teclado oculta
+     * temporalmente la barra flotante.
+     */
+    private fun updateNarrationToggleAppearance() {
+        if (!::buttonNarrationToggle.isInitialized) return
 
-        val background =
-            GradientDrawable()
-
-        background.cornerRadius =
-            dp(18).toFloat()
-
-        buttonSwipeToggle.text =
-            getString(R.string.nav_swipe)
-
-        if (
-            swipeNavigationEnabled
-        ) {
-
-            val accentColor =
-                AppearanceSettingsRepository
-                    .getRouteAccentColor(
-                        this,
-                        currentRouteId
-                    )
-
-            background.setColor(
-                accentColor
-            )
-
-            /*
-             * Elegimos automáticamente texto
-             * negro o blanco según el brillo
-             * del color elegido.
-             */
-            val red =
-                Color.red(
-                    accentColor
-                )
-
-            val green =
-                Color.green(
-                    accentColor
-                )
-
-            val blue =
-                Color.blue(
-                    accentColor
-                )
-
-            val brightness =
-                (
-                        red * 299 +
-                                green * 587 +
-                                blue * 114
-                        ) / 1000
-
-            buttonSwipeToggle.setTextColor(
-                if (
-                    brightness >= 160
-                ) {
-                    Color.BLACK
-                } else {
-                    Color.WHITE
-                }
-            )
-
+        val enabled = NarrationSettingsRepository.get(this).enabled
+        val accent = AppearanceSettingsRepository.getRouteAccentColor(
+            this, currentRouteId
+        )
+        val backgroundColor = if (enabled) accent else Color.rgb(72, 74, 82)
+        val iconColor = if (enabled) {
+            val brightness = (
+                Color.red(accent) * 299 +
+                    Color.green(accent) * 587 +
+                    Color.blue(accent) * 114
+                ) / 1000
+            if (brightness >= 160) Color.BLACK else Color.WHITE
         } else {
-
-            background.setColor(
-                Color.rgb(
-                    72,
-                    74,
-                    82
-                )
-            )
-
-            buttonSwipeToggle.setTextColor(
-                Color.rgb(
-                    170,
-                    174,
-                    183
-                )
-            )
+            Color.rgb(170, 174, 183)
         }
 
-        buttonSwipeToggle.background =
-            background
+        buttonNarrationToggle.background = GradientDrawable().apply {
+            cornerRadius = dp(18).toFloat()
+            setColor(backgroundColor)
+        }
+        buttonNarrationToggle.imageTintList = ColorStateList.valueOf(iconColor)
+        buttonNarrationToggle.isActivated = enabled
+        buttonNarrationToggle.contentDescription = getString(
+            if (enabled) R.string.lesson_narration_hide_controls
+            else R.string.lesson_narration_show_controls
+        )
     }
 
     private fun saveCurrentPageState() {
