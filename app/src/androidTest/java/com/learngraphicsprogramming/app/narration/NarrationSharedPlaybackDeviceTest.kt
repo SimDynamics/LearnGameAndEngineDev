@@ -164,14 +164,20 @@ class NarrationSharedPlaybackDeviceTest {
             ready(current) && current.isPlaying && player(current).currentPosition >= 700
         }
         val directory = onMain { field<File>(current, "directory") }
-        val audio = directory.listFiles()!!.single { it.extension == "wav" }
+        val audio = onMain {
+            val first = field<List<*>>(current, "segments").first()!!
+            field<File>(first, "file")
+        }
         val fileLength = audio.length()
         val fileTimestamp = audio.lastModified()
         val generation = onMain { field<Long>(current, "generation") }
         assertTrue("Synthesis must produce actual audio", fileLength > 4_096L)
         assertTrue("The real sample must provide room for a five-second jump", onMain { player(current).duration } > 8_000)
         if (engine == NarrationEngine.KOKORO) {
-            assertNotNull("Kokoro must synthesize through its actual ONNX engine", field<Any?>(current, "kokoro"))
+            // A persistent cache hit intentionally bypasses ONNX entirely.
+            if (audio.parentFile?.name != "kokoro-narration-cache") {
+                assertNotNull("Uncached Kokoro audio must use its real ONNX engine", field<Any?>(current, "kokoro"))
+            }
             assertNull("Kokoro success must not initialize Android as a hidden fallback", field<Any?>(current, "tts"))
         } else {
             assertNotNull("Android must synthesize through the actual system TTS engine", field<Any?>(current, "tts"))
@@ -212,7 +218,9 @@ class NarrationSharedPlaybackDeviceTest {
             assertActualPlaybackRate(current, pausedPlayer, rate)
             assertPausedWithoutAdvance(current)
         }
-        assertEquals("Rate changes and seeks must not synthesize another file", listOf(audio.name), directory.listFiles()!!.map { it.name })
+        assertEquals("Rate changes and seeks must keep the same source file", audio, onMain {
+            field<File>(field<List<*>>(current, "segments").first()!!, "file")
+        })
         assertEquals("Cached audio bytes must be reused", fileLength, audio.length())
         assertEquals("Cached audio must not be rewritten", fileTimestamp, audio.lastModified())
         assertEquals("Changing playback position/rate must retain the page generation", generation, onMain { field<Long>(current, "generation") })
@@ -240,14 +248,16 @@ class NarrationSharedPlaybackDeviceTest {
             assertFalse(current.hasNarration)
             assertNull(field<Any?>(current, "player"))
         }
-        await("Stopping a page must delete its audio cache", 10_000) {
+        await("Stopping a page must delete temporary audio files", 10_000) {
             !directory.exists()
         }
         if (engine == NarrationEngine.KOKORO) {
-            assertNotNull("Keeping the neural session warm avoids reloading it on the next page",
-                field<Any?>(current, "kokoro"))
-            assertNotNull("The Spanish pronunciation dictionary must be reusable between pages",
-                field<Any?>(current, "spanishLexicon"))
+            assertTrue("Generated Kokoro narration persists across pages", audio.isFile)
+            // Reusing persisted audio may avoid loading either ONNX or G2P.
+            if (field<Any?>(current, "kokoro") != null) {
+                assertNotNull("The Spanish lexicon is reusable while ONNX stays open",
+                    field<Any?>(current, "spanishLexicon"))
+            }
         }
         onMain { current.close() }
         await("Closing must release the engine and worker", 10_000) { !field<Thread>(current, "workerThread").isAlive }
