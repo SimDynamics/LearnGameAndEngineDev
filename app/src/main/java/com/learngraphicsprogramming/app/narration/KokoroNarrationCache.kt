@@ -23,8 +23,8 @@ import java.util.UUID
 internal object KokoroNarrationCache {
     private const val VERSION = "kokoro-wav-v1"
     private const val DIRECTORY = "kokoro-narration-cache"
-    private const val MAX_BYTES = 384L * 1024 * 1024
-    private val validName = Regex("^[a-f0-9]{64}\\.(wav|ogg)$")
+    // Audio persists until the user deletes app data. Background work stops
+    // on low storage instead of evicting successfully generated lessons.
 
     fun key(language: String, voice: String, text: String): String {
         val payload = listOf(VERSION, KokoroModelManifest.revision, language, voice, text)
@@ -132,18 +132,13 @@ internal object KokoroNarrationCache {
         }
     }
 
-    /** Evict only at controller startup, before this controller can play a WAV. */
+    /** Remove only abandoned partial writes. Complete WAV/Opus files are permanent. */
     @Synchronized
     fun prune(context: Context) {
-        val files = root(context).listFiles().orEmpty()
-        files.filter { it.isFile && it.name.endsWith(".part") }.forEach { it.delete() }
-        val wavs = files.filter { it.isFile && validName.matches(it.name) }
-            .sortedBy { it.lastModified() }
-        var used = wavs.sumOf { it.length() }
-        for (file in wavs) {
-            if (used <= MAX_BYTES) break
-            val bytes = file.length()
-            if (file.delete()) used -= bytes
-        }
+        root(context).listFiles().orEmpty()
+            .filter { it.isFile && (it.name.endsWith(".part") ||
+                it.name.matches(Regex("^\\.[a-f0-9]{64}-[a-zA-Z0-9-]+\\.(wav|ogg)$"))) }
+            .forEach { it.delete() }
     }
+
 }
