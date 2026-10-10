@@ -103,8 +103,11 @@ internal class KokoroContinuousNarrationService : Service() {
                 }
                 val outcome = try {
                     cpuWakeLock.acquire(5L * 60L * 1_000L)
-                    KokoroBackgroundNarrationWorker(applicationContext)
-                        .runSlice { running && !Thread.currentThread().isInterrupted }
+                    KokoroBackgroundNarrationWorker(applicationContext).runSlice {
+                        val settings = NarrationSettingsRepository.get(applicationContext)
+                        running && !Thread.currentThread().isInterrupted &&
+                            settings.enabled && settings.engine != NarrationEngine.ANDROID
+                    }
                 } finally {
                     if (cpuWakeLock.isHeld) cpuWakeLock.release()
                 }
