@@ -5,15 +5,21 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.appcompat.app.AlertDialog
 import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.learngraphicsprogramming.app.databinding.ActivityCppPrototypeBinding
 import com.learngraphicsprogramming.app.runtime.CppExecutionEngine
 import com.learngraphicsprogramming.app.runtime.CppCompiler
@@ -33,6 +39,7 @@ class CppPrototypeActivity : AppCompatActivity() {
     private var clang21FeatureDelivery: Clang21FeatureDelivery? = null
     private var clang21ConfirmationSession: Int? = null
     private var selectedCompiler = CppCompilerVariant.DEFAULT
+    private var cppKeyboardVisible = false
 
     private val clang21ConfirmationLauncher =
         registerForActivityResult(
@@ -192,6 +199,106 @@ class CppPrototypeActivity : AppCompatActivity() {
                 CppCompilerVariant.DEFAULT
 
         setupClang21FeaturePanel()
+        setupCppKeyboardShortcuts()
+    }
+
+    /**
+     * The standalone compiler shares the lesson's saved programming shortcuts,
+     * including the fixed four-space TAB key. The bottom bar occupies the
+     * resized window above the IME instead of covering the source editor.
+     */
+    private fun setupCppKeyboardShortcuts() {
+        rebuildCppKeyboardShortcuts()
+
+        binding.sourceCode.setOnFocusChangeListener { _, _ ->
+            updateCppKeyboardShortcutVisibility()
+        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            cppKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+            updateCppKeyboardShortcutVisibility()
+            ViewCompat.onApplyWindowInsets(view, insets)
+        }
+
+        // Fallback for devices whose IME inset changes only with the layout.
+        binding.root.viewTreeObserver.addOnGlobalLayoutListener {
+            val visible = ViewCompat.getRootWindowInsets(binding.root)
+                ?.isVisible(WindowInsetsCompat.Type.ime()) == true
+            if (visible != cppKeyboardVisible) {
+                cppKeyboardVisible = visible
+                updateCppKeyboardShortcutVisibility()
+            }
+        }
+        ViewCompat.requestApplyInsets(binding.root)
+    }
+
+    private fun rebuildCppKeyboardShortcuts() {
+        binding.programmingKeyboardBarContent.removeAllViews()
+        addCppKeyboardShortcut(
+            getString(R.string.lesson_tab_label),
+            KeyboardShortcutSettingsRepository.getTabText()
+        )
+        KeyboardShortcutSettingsRepository.getShortcuts(this).forEach { shortcut ->
+            addCppKeyboardShortcut(shortcut, shortcut)
+        }
+    }
+
+    private fun addCppKeyboardShortcut(label: String, insertedText: String) {
+        val shortcut = TextView(this).apply {
+            text = label
+            typeface = Typeface.MONOSPACE
+            textSize = 16f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            minWidth = dp(
+                if (label == getString(R.string.lesson_tab_label)) 56 else 40
+            )
+            minimumHeight = dp(40)
+            setPadding(dp(10), dp(6), dp(10), dp(6))
+            isFocusable = false
+            isFocusableInTouchMode = false
+            isClickable = true
+            background = GradientDrawable().apply {
+                setColor(Color.rgb(37, 40, 46))
+                cornerRadius = dp(8).toFloat()
+                setStroke(
+                    dp(1),
+                    AppearanceSettingsRepository.getRouteAccentColor(
+                        this@CppPrototypeActivity,
+                        AppearanceSettingsRepository.ROUTE_PROGRAMMING
+                    )
+                )
+            }
+            setOnClickListener { insertCppKeyboardShortcut(insertedText) }
+        }
+        val params = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            dp(40)
+        ).apply { setMargins(dp(3), 0, dp(3), 0) }
+        binding.programmingKeyboardBarContent.addView(shortcut, params)
+    }
+
+    private fun insertCppKeyboardShortcut(text: String) {
+        val input = binding.sourceCode
+        val editable = input.text ?: return
+        val start = minOf(
+            input.selectionStart.coerceAtLeast(0),
+            input.selectionEnd.coerceAtLeast(0)
+        )
+        val end = maxOf(
+            input.selectionStart.coerceAtLeast(0),
+            input.selectionEnd.coerceAtLeast(0)
+        )
+        editable.replace(start, end, text)
+        input.setSelection(start + text.length)
+    }
+
+    private fun updateCppKeyboardShortcutVisibility() {
+        binding.programmingKeyboardBar.visibility =
+            if (cppKeyboardVisible && binding.sourceCode.hasFocus())
+                View.VISIBLE
+            else
+                View.GONE
     }
 
     /**
@@ -294,7 +401,11 @@ class CppPrototypeActivity : AppCompatActivity() {
             Phase.DOWNLOADED -> getString(R.string.clang21_downloaded)
             Phase.INSTALLING -> getString(R.string.clang21_installing)
             Phase.NEEDS_CONFIRMATION -> getString(R.string.clang21_confirming)
-            Phase.INSTALLED -> getString(R.string.clang21_installed)
+            Phase.INSTALLED ->
+                if (CppCompiler.isOptionalClang21Available(this))
+                    getString(R.string.clang21_ready)
+                else
+                    getString(R.string.clang21_installed)
             Phase.EMULATED -> getString(R.string.clang21_local_emulation)
             Phase.FAILED -> getString(
                 R.string.clang21_failure,
