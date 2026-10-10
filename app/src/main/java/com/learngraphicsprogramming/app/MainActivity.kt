@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.learngraphicsprogramming.app.databinding.ActivityMainBinding
 import com.learngraphicsprogramming.app.graphics.GraphicsDemoActivity
 import com.learngraphicsprogramming.app.narration.KokoroBackgroundNarrationWorker
+import com.learngraphicsprogramming.app.narration.FirstUnitNarrationPack
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -19,6 +20,12 @@ class MainActivity : AppCompatActivity() {
         // One durable queue, enqueued on first launch and on later launches.
         // WorkManager decides when background constraints permit execution.
         KokoroBackgroundNarrationWorker.start(applicationContext)
+        // Asset-to-speech manifest is independent of model installation and
+        // is generated off the UI thread for offline APK packaging.
+        Thread({
+            runCatching { FirstUnitNarrationPack.writeManifest(applicationContext) }
+                .onFailure { android.util.Log.w("KokoroFirstUnitPack", "Manifest unavailable", it) }
+        }, "FirstUnitSpeechManifest").start()
 
         /*
          * Al iniciar la aplicación consultamos
