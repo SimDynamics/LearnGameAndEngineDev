@@ -81,6 +81,35 @@ class Clang21FeatureDeliveryInstrumentedTest {
     }
 
     @Test
+    fun compilerSelectorAppearsAfterCompilationResults() {
+        ActivityScenario.launch(CppPrototypeActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                val run = activity.findViewById<View>(R.id.runButton)
+                val output = activity.findViewById<View>(R.id.outputText)
+                val selector = activity.findViewById<View>(R.id.clangCompilerSelectorSection)
+                val feature = activity.findViewById<View>(R.id.clang21FeatureSection)
+                val parent = output.parent as android.view.ViewGroup
+
+                assertTrue("Run button and output must share a container", run.parent === parent)
+                assertTrue("Compiler selector must share the output container", selector.parent === parent)
+                assertTrue("Download panel must share the output container", feature.parent === parent)
+                assertTrue(
+                    "The compilation output must remain below the Run button",
+                    parent.indexOfChild(run) < parent.indexOfChild(output)
+                )
+                assertTrue(
+                    "Compiler selection must appear below the result box",
+                    parent.indexOfChild(output) < parent.indexOfChild(selector)
+                )
+                assertTrue(
+                    "Optional module download controls must follow compiler selection",
+                    parent.indexOfChild(selector) < parent.indexOfChild(feature)
+                )
+            }
+        }
+    }
+
+    @Test
     fun installedMeansAndroidHasTheActualModuleSplit() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val installer = Clang21FeatureDelivery(context)
