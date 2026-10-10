@@ -616,6 +616,8 @@ tasks.configureEach {
 dependencies {
     // Inference runtime only. Kokoro weights are optional, never packaged in the APK.
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.30.0")
+    // Resumable, OS-managed offline narration queue; no always-on foreground service.
+    implementation("androidx.work:work-runtime:2.11.2")
     implementation("org.matheclipse:matheclipse-core:3.2.0")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation(libs.androidx.activity.ktx)
