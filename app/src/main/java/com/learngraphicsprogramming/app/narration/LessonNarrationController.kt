@@ -100,8 +100,7 @@ class LessonNarrationController(
 
     fun toggle(
         segments: List<String>,
-        language: NarrationLanguage = NarrationSettingsRepository.get(appContext).language,
-        quickStart: Boolean = false
+        language: NarrationLanguage = NarrationSettingsRepository.get(appContext).language
     ) = onMain {
         if (closed) return@onMain
         if (this.segments.isNotEmpty() && this.language == language) {
@@ -111,10 +110,10 @@ class LessonNarrationController(
         stopInternal()
         settings = NarrationSettingsRepository.forLanguage(appContext, language)
         if (!settings.enabled) return@onMain
-        // Shorter chunks for on-screen lessons: Kokoro can begin speaking
-        // without having to render a full 250-character paragraph first.
-        // Explicit API callers retain their existing 250-character contract.
-        val prepared = NarrationSegments.prepare(segments, if (quickStart) 140 else 250)
+        // Kokoro has a finite phoneme-token budget. Use the original
+        // 250-character safety bound rather than fragmenting lesson prose
+        // into unnecessarily small 140-character pieces.
+        val prepared = NarrationSegments.prepare(segments, 250)
         if (prepared.isEmpty()) {
             onError(s(R.string.narration_no_text))
             return@onMain
@@ -172,11 +171,7 @@ class LessonNarrationController(
         } else if (playerReady) {
             applyRate()
             runCatching { player?.start() }.onFailure { fail(s(R.string.narration_resume_error)) }
-        } else {
-            ensureSegment(index)
-            // Queue the next line immediately while the current audio prepares.
-            ensureSegment(index + 1)
-        }
+        } else ensureSegment(index)
     }
 
     fun stop() = onMain { stopInternal() }
@@ -462,9 +457,7 @@ class LessonNarrationController(
                     media.seekTo(offset.toInt())
                     applyRate()
                     if (playing && player === media) media.start()
-                    // Have subsequent words ready before the current file finishes.
-                    ensureSegment(index + 1)
-                    ensureSegment(index + 2)
+                    if (index + 1 < segments.size) ensureSegment(index + 1)
                 } catch (_: RuntimeException) { fail(s(R.string.narration_audio_start_error)) }
             }
             media.setOnCompletionListener {
