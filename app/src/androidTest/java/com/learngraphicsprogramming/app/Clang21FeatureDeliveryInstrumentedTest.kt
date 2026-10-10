@@ -110,6 +110,36 @@ class Clang21FeatureDeliveryInstrumentedTest {
     }
 
     @Test
+    fun realClang21InstallationDisplaysAccurateCompilerStatus() {
+        ActivityScenario.launch(CppPrototypeActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                val phase = Clang21FeatureDelivery(activity).use { installer ->
+                    installer.currentState().phase
+                }
+                if (phase == Clang21FeatureDelivery.Phase.INSTALLED) {
+                    val ready = CppCompiler.isOptionalClang21Available(activity)
+                    val expected = activity.getString(
+                        if (ready) R.string.clang21_ready else R.string.clang21_installed
+                    )
+                    assertEquals(
+                        expected,
+                        activity.findViewById<android.widget.TextView>(
+                            R.id.clang21FeatureStatus
+                        ).text.toString()
+                    )
+                    assertEquals(
+                        "The optional compiler choice follows native executable availability",
+                        ready,
+                        activity.findViewById<android.widget.RadioButton>(
+                            R.id.clang21RadioButton
+                        ).isEnabled
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
     fun installedMeansAndroidHasTheActualModuleSplit() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val installer = Clang21FeatureDelivery(context)
