@@ -369,6 +369,17 @@ class LessonActivity : AppCompatActivity() {
     private var narrationController: LessonNarrationController? = null
     private var narrationControls: LessonNarrationControls? = null
 
+    private fun prefetchVisibleNarration() {
+        if (!::lessonJson.isInitialized || !NarrationSettingsRepository.get(this).enabled) return
+        val language = com.learngraphicsprogramming.app.narration.NarrationLanguage.forLesson(
+            lessonJson, currentPage, NarrationSettingsRepository.get(this).language
+        )
+        narrationController?.prefetchPage(
+            LessonNarrationText.page(lessonJson, currentPage, language),
+            language
+        )
+    }
+
     private fun setupLessonNarration() {
         narrationController = LessonNarrationController(
             this,
@@ -699,6 +710,7 @@ class LessonActivity : AppCompatActivity() {
 
         narrationController?.settingsChanged()
         narrationController?.warmUp()
+        prefetchVisibleNarration()
         narrationControls?.refresh(narrationController?.isPlaying == true)
         updateNarrationVisibility()
 
@@ -2839,8 +2851,8 @@ class LessonActivity : AppCompatActivity() {
 
     override fun onPause() {
 
-        narrationController?.stop()
-
+        // Screen lock also calls onPause. Do NOT stop narration here:
+        // it would discard the current audio and restart from the title.
         findViewById<View>(
             R.id.attemptIndicator
         ).removeCallbacks(
@@ -2850,6 +2862,17 @@ class LessonActivity : AppCompatActivity() {
         saveCurrentPageProgress()
 
         super.onPause()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Turning the screen off is NOT leaving the lesson. Retain the
+        // playback position, current WAV and neural model while locked.
+        // When the user navigates away with the screen on, keep the
+        // previous behavior and stop the narration.
+        val deviceInteractive = getSystemService(android.os.PowerManager::class.java)
+            ?.isInteractive != false
+        if (deviceInteractive && !isChangingConfigurations) narrationController?.stop()
     }
 
     private fun saveCurrentPageProgress() {
@@ -9931,6 +9954,7 @@ class LessonActivity : AppCompatActivity() {
                 this,
                 currentRouteId
             )
+            prefetchVisibleNarration()
 
             return
         }
@@ -10147,6 +10171,7 @@ class LessonActivity : AppCompatActivity() {
             this,
             currentRouteId
         )
+        prefetchVisibleNarration()
     }
 
     private fun addMathPuzzle(block: JSONObject, blockIndex: Int) {
