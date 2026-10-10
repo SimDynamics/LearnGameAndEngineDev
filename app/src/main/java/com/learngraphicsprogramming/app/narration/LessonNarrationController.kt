@@ -311,17 +311,29 @@ class LessonNarrationController(
                     if (!Build.SUPPORTED_ABIS.contains("arm64-v8a")) throw UiFailure(R.string.narration_requires_arm64)
                     val phonemes = phonemize(request.text, request.settings.language, root) { isCurrent(request) }
                     if (!isCurrent(request)) return
-                    val engine = kokoro ?: KokoroOnnxEngine(root).also { kokoro = it }
+                    var engine = kokoro ?: KokoroOnnxEngine(root).also { kokoro = it }
                     if (!isCurrent(request)) return
-                    val audioParts = mutableListOf<FloatArray>()
-                    // Never truncate Kokoro's 510-phoneme input. Several runs
-                    // are concatenated BEFORE playback so words cannot be
-                    // interrupted by a MediaPlayer transition mid-paragraph.
-                    for (part in KokoroPhonemeChunks.split(phonemes)) {
-                        if (!isCurrent(request)) return
-                        audioParts += engine.synthesizePhonemes(
-                            part, request.settings.kokoroVoice, 1f
-                        ) { !isCurrent(request) }
+                    // All pieces become ONE seamless WAV for the current
+                    // sentence. The next sentence is generated in advance.
+                    val phonemeParts = KokoroPhonemeChunks.split(phonemes)
+                    fun renderWith(active: KokoroOnnxEngine): List<FloatArray> =
+                        phonemeParts.map { part ->
+                            if (!isCurrent(request)) throw InterruptedException("Se canceló la narración")
+                            active.synthesizePhonemes(part, request.settings.kokoroVoice, 1f) {
+                                !isCurrent(request)
+                            }
+                        }
+                    val audioParts = try {
+                        renderWith(engine)
+                    } catch (error: Exception) {
+                        if (error is InterruptedException || !engine.usesNnapi || !isCurrent(request)) throw error
+                        // Some devices accept NNAPI session creation but reject
+                        // a Kokoro operator at inference time. Retry the whole
+                        // sentence with multithreaded CPU, never losing words.
+                        android.util.Log.w("KokoroInference", "NNAPI run failed; reverting to CPU", error)
+                        releaseKokoro()
+                        engine = KokoroOnnxEngine(root, preferAccelerator = false).also { kokoro = it }
+                        renderWith(engine)
                     }
                     if (!isCurrent(request)) return
                     NarrationWavWriter.writeChunks(request.file, audioParts)
