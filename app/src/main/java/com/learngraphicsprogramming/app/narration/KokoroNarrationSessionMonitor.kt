@@ -33,10 +33,14 @@ internal object KokoroNarrationSessionMonitor {
 
     fun refresh(context: Context) {
         val app = context.applicationContext as Application
-        main.post {
+        val update = {
             if (!initialized) install(app)
             if (startedActivities > 0) startService()
         }
+        // MainActivity calls this inside onCreate. Registration must happen
+        // NOW, before Android dispatches the first onActivityStarted callback.
+        if (Looper.myLooper() == Looper.getMainLooper()) update()
+        else main.post(update)
     }
 
     private fun install(app: Application) {
@@ -50,7 +54,7 @@ internal object KokoroNarrationSessionMonitor {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
             override fun onActivityStarted(activity: Activity) {
                 startedActivities++
-                startService()
+                if (startedActivities == 1) startService()
             }
             override fun onActivityResumed(activity: Activity) = Unit
             override fun onActivityPaused(activity: Activity) = Unit
