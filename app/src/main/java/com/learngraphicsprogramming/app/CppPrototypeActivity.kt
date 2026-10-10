@@ -3,16 +3,21 @@ package com.learngraphicsprogramming.app
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.app.AlertDialog
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import com.learngraphicsprogramming.app.databinding.ActivityCppPrototypeBinding
 import com.learngraphicsprogramming.app.runtime.CppExecutionEngine
+import com.learngraphicsprogramming.app.runtime.Clang21FeatureDelivery
+import com.learngraphicsprogramming.app.runtime.Clang21FeatureDelivery.Phase
 import java.util.concurrent.Executors
 
 class CppPrototypeActivity : AppCompatActivity() {
@@ -22,6 +27,20 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     private val worker =
         Executors.newSingleThreadExecutor()
+
+    private var clang21FeatureDelivery: Clang21FeatureDelivery? = null
+    private var clang21ConfirmationSession: Int? = null
+
+    private val clang21ConfirmationLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartIntentSenderForResult()
+        ) { result ->
+            if (result.resultCode != RESULT_OK && !isFinishing && !isDestroyed) {
+                binding.clang21FeatureStatus.setText(
+                    R.string.clang21_confirmation_rejected
+                )
+            }
+        }
 
     private var lineWrapEnabled =
         false
@@ -161,6 +180,132 @@ class CppPrototypeActivity : AppCompatActivity() {
         binding.runButton.setOnClickListener {
 
             runPrototype()
+        }
+
+        setupClang21FeaturePanel()
+    }
+
+    /**
+     * The optional Play download is separate from the compiler:
+     * installing Clang 21 never changes the active Clang 23 toolchain.
+     */
+    private fun setupClang21FeaturePanel() {
+        if (!BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED) {
+            binding.clang21FeatureSection.visibility = View.GONE
+            return
+        }
+
+        binding.clang21FeatureSection.visibility = View.VISIBLE
+        val installer = Clang21FeatureDelivery(this)
+        clang21FeatureDelivery = installer
+        updateClang21FeaturePanel(installer.currentState())
+
+        binding.clang21DownloadButton.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.clang21_confirm_title)
+                .setMessage(R.string.clang21_confirm_message)
+                .setNegativeButton(R.string.clang21_confirm_no, null)
+                .setPositiveButton(R.string.clang21_confirm_yes) { _, _ ->
+                    installer.requestInstall { state ->
+                        runOnUiThread {
+                            if (!isFinishing && !isDestroyed) {
+                                updateClang21FeaturePanel(state)
+                            }
+                        }
+                    }
+                }
+                .show()
+        }
+
+        binding.clang21CancelButton.setOnClickListener {
+            binding.clang21FeatureStatus.setText(R.string.clang21_canceling)
+            installer.cancel { reason ->
+                runOnUiThread {
+                    if (!isFinishing && !isDestroyed) {
+                        binding.clang21FeatureStatus.text = getString(
+                            R.string.clang21_cancel_failure,
+                            reason ?: getString(R.string.clang21_failure_unknown)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateClang21FeaturePanel(state: Clang21FeatureDelivery.State) {
+        val phase = state.phase
+        val canDownload = phase == Phase.NOT_INSTALLED ||
+            phase == Phase.FAILED || phase == Phase.CANCELED
+        val active = phase == Phase.REQUESTED || phase == Phase.PENDING ||
+            phase == Phase.DOWNLOADING || phase == Phase.DOWNLOADED ||
+            phase == Phase.INSTALLING || phase == Phase.NEEDS_CONFIRMATION ||
+            phase == Phase.CANCELING
+
+        binding.clang21DownloadButton.isEnabled = canDownload
+        binding.clang21CancelButton.visibility =
+            if (active && state.sessionId != null) View.VISIBLE else View.GONE
+        binding.clang21FeatureProgress.visibility =
+            if (active) View.VISIBLE else View.GONE
+
+        val total = state.totalBytes
+        val downloaded = state.downloadedBytes
+        val determinate = phase == Phase.DOWNLOADING && total > 0L
+        binding.clang21FeatureProgress.isIndeterminate = !determinate
+        if (determinate) {
+            binding.clang21FeatureProgress.progress =
+                ((downloaded.coerceIn(0L, total) * 100L) / total).toInt()
+        }
+
+        val status = when (phase) {
+            Phase.NOT_IN_BUILD, Phase.NOT_INSTALLED ->
+                getString(R.string.clang21_not_installed)
+            Phase.REQUESTED -> getString(R.string.clang21_requesting)
+            Phase.PENDING -> getString(R.string.clang21_pending)
+            Phase.DOWNLOADING -> {
+                if (total > 0L) {
+                    getString(
+                        R.string.clang21_downloading,
+                        ((downloaded.coerceIn(0L, total) * 100L) / total).toInt()
+                    )
+                } else {
+                    getString(R.string.clang21_requesting)
+                }
+            }
+            Phase.DOWNLOADED -> getString(R.string.clang21_downloaded)
+            Phase.INSTALLING -> getString(R.string.clang21_installing)
+            Phase.NEEDS_CONFIRMATION -> getString(R.string.clang21_confirming)
+            Phase.INSTALLED -> getString(R.string.clang21_installed)
+            Phase.FAILED -> getString(
+                R.string.clang21_failure,
+                state.errorCode?.toString()
+                    ?: state.message
+                    ?: getString(R.string.clang21_failure_unknown)
+            )
+            Phase.CANCELING -> getString(R.string.clang21_canceling)
+            Phase.CANCELED -> getString(R.string.clang21_canceled)
+            Phase.UNKNOWN -> getString(R.string.clang21_other_status)
+        }
+        binding.clang21FeatureStatus.text = status
+
+        if (phase == Phase.NEEDS_CONFIRMATION &&
+            state.sessionId != clang21ConfirmationSession
+        ) {
+            clang21ConfirmationSession = state.sessionId
+            val shown = runCatching {
+                clang21FeatureDelivery?.requestUserConfirmation(
+                    clang21ConfirmationLauncher
+                ) == true
+            }.getOrDefault(false)
+            if (!shown) {
+                binding.clang21FeatureStatus.setText(
+                    R.string.clang21_confirmation_unavailable
+                )
+            }
+        }
+        if (phase == Phase.INSTALLED || phase == Phase.FAILED ||
+            phase == Phase.CANCELED
+        ) {
+            clang21ConfirmationSession = null
         }
     }
 
@@ -493,6 +638,8 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     override fun onDestroy() {
 
+        clang21FeatureDelivery?.close()
+        clang21FeatureDelivery = null
         worker.shutdownNow()
 
         super.onDestroy()
