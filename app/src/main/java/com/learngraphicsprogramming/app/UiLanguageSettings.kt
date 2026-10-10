@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.LocaleList
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
+import com.learngraphicsprogramming.app.narration.KokoroNarrationSessionMonitor
 
 /** UI locales only: educational assets and narration have their own selection policies. */
 object UiLanguageSettings {
@@ -83,5 +84,7 @@ class LearnGraphicsApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         UiLanguageSettings.initialize(this)
+        // Register before any activity starts, including direct lesson restore.
+        KokoroNarrationSessionMonitor.refresh(this)
     }
 }
