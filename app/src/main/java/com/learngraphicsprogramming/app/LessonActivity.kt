@@ -177,7 +177,7 @@ class LessonActivity : AppCompatActivity() {
             }
         }
 
-    private lateinit var buttonNarrationToggle: ImageButton
+    private lateinit var buttonNarrationToggle: ImageView
 
     private lateinit var imageAttemptRoute: ImageView
     private lateinit var imageAttemptFill: ImageView
@@ -3487,23 +3487,13 @@ class LessonActivity : AppCompatActivity() {
         val accent = AppearanceSettingsRepository.getRouteAccentColor(
             this, currentRouteId
         )
-        val backgroundColor = if (enabled) accent else Color.rgb(72, 74, 82)
-        val iconColor = if (enabled) {
-            val brightness = (
-                Color.red(accent) * 299 +
-                    Color.green(accent) * 587 +
-                    Color.blue(accent) * 114
-                ) / 1000
-            if (brightness >= 160) Color.BLACK else Color.WHITE
-        } else {
-            Color.rgb(170, 174, 183)
-        }
 
-        buttonNarrationToggle.background = GradientDrawable().apply {
-            cornerRadius = dp(18).toFloat()
-            setColor(backgroundColor)
-        }
-        buttonNarrationToggle.imageTintList = ColorStateList.valueOf(iconColor)
+        // El color corresponde a la silueta y a las ondas del icono;
+        // nunca coloreamos su fondo ni lo convertimos en una cápsula.
+        buttonNarrationToggle.setBackgroundColor(Color.TRANSPARENT)
+        buttonNarrationToggle.imageTintList = ColorStateList.valueOf(
+            if (enabled) accent else Color.rgb(170, 174, 183)
+        )
         buttonNarrationToggle.isActivated = enabled
         buttonNarrationToggle.contentDescription = getString(
             if (enabled) R.string.lesson_narration_hide_controls
