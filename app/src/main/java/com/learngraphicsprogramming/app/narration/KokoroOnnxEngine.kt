@@ -44,6 +44,7 @@ class KokoroOnnxEngine(directory: File, preferAccelerator: Boolean = true) : Aut
     init {
         requireWorker()
         var createdSession: OrtSession? = null
+        val startTime = android.os.SystemClock.elapsedRealtime()
         try {
             root = directory.canonicalFile
             if (!root.isDirectory) throw KokoroSynthesisException("El modelo Kokoro no está instalado")
@@ -75,7 +76,11 @@ class KokoroOnnxEngine(directory: File, preferAccelerator: Boolean = true) : Aut
             } else null
             usesNnapi = accelerated != null
             createdSession = accelerated ?: openSession(hardware = false)
-            Log.i("KokoroInference", "Execution provider: " + if (usesNnapi) "NNAPI hardware preferred" else "multicore CPU")
+            Log.i(
+                "KokoroInference",
+                "Model ready in ${android.os.SystemClock.elapsedRealtime() - startTime}ms, provider=" +
+                    (if (usesNnapi) "NNAPI hardware preferred" else "multicore CPU")
+            )
             val modelSession = createdSession ?: throw KokoroSynthesisException("No se pudo cargar Kokoro")
             validateInputs(modelSession)
             session = modelSession
