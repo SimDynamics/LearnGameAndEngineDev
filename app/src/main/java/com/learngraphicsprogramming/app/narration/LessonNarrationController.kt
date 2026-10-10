@@ -420,9 +420,26 @@ class LessonNarrationController(
                     return
                 } catch (error: Exception) {
                     if (!isCurrent(request)) return
+                    // The UI message is intentionally friendly, but never hide
+                    // the actual cause of an unexpected neural-to-TTS fallback.
+                    android.util.Log.e(
+                        "KokoroInference",
+                        "Neural narration failed: segment=${request.index}, " +
+                            "language=${request.settings.language.tag}, " +
+                            "voice=${request.settings.kokoroVoice}, " +
+                            "textLength=${request.text.length}",
+                        error
+                    )
                     reportFallback(request, errorMessage(error, R.string.narration_neural_unavailable))
-                } catch (_: UnsatisfiedLinkError) {
+                } catch (error: UnsatisfiedLinkError) {
                     if (!isCurrent(request)) return
+                    android.util.Log.e(
+                        "KokoroInference",
+                        "Native ONNX narration unavailable: segment=${request.index}, " +
+                            "language=${request.settings.language.tag}, " +
+                            "voice=${request.settings.kokoroVoice}",
+                        error
+                    )
                     reportFallback(request, s(R.string.narration_onnx_unavailable))
                 }
             }
