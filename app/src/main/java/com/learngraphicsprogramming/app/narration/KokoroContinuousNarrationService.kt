@@ -66,7 +66,7 @@ internal class KokoroContinuousNarrationService : Service() {
         }
         if (!running) {
             running = true
-            thread = Thread(::runSession, "KokoroOfflineNarration").apply {
+            thread = Thread({ runSession() }, "KokoroOfflineNarration").apply {
                 priority = Thread.MIN_PRIORITY
                 start()
             }
@@ -74,6 +74,7 @@ internal class KokoroContinuousNarrationService : Service() {
         return START_NOT_STICKY
     }
 
+    @Suppress("DEPRECATION")
     private fun createNotification(): Notification {
         val launch = Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -81,7 +82,7 @@ internal class KokoroContinuousNarrationService : Service() {
             this, 0, launch, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, CHANNEL_ID)
-            else @Suppress("DEPRECATION") Notification.Builder(this)
+            else Notification.Builder(this)
         return builder
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setContentTitle(getString(R.string.narration_background_notification_title))
