@@ -12,13 +12,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Experimental C++ exception handling, never used by the default compiler.
+ * End-to-end regression for the default C++23 exception handling mode.
  *
- * Requires the official WASI SDK 34 wasm32-wasip1/eh headers/libs, Clang 23,
- * and the Wasmtime runtime. Compile/link/run results are checked separately.
+ * Requires WASI SDK 34 wasm32-wasip1/eh, Clang 23, and Wasmtime.
+ * Compile/link/run results are checked separately.
  *
- * Run only with all three opt-in properties:
- * .\gradlew :app:connectedDebugAndroidTest "-Plgp.clang23=true" "-Plgp.wasmtime=true" "-Plgp.cppExceptions=true" "-Pandroid.testInstrumentationRunnerArguments.class=com.learngraphicsprogramming.app.Cpp23ExceptionsInstrumentedTest"
+ * Run with the new defaults (no extra Gradle toolchain flags):
+ * .\gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.learngraphicsprogramming.app.Cpp23ExceptionsInstrumentedTest"
  */
 @RunWith(AndroidJUnit4::class)
 class Cpp23ExceptionsInstrumentedTest {
