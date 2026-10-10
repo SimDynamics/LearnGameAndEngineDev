@@ -8,6 +8,7 @@
     android:orientation="vertical">
 
     <ScrollView
+        android:id="@+id/compilerScroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -16,6 +17,7 @@
         android:fillViewport="true">
 
     <LinearLayout
+        android:id="@+id/compilerContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:clipChildren="false"
@@ -55,6 +57,7 @@
             -->
 
             <LinearLayout
+                android:id="@+id/codeHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="#25282E"
@@ -114,6 +117,15 @@
                     android:paddingBottom="8dp"
                     android:drawableStart="@drawable/ic_code_copy" />
 
+                <TextView
+                    android:id="@+id/fullscreenCodeButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@string/exercise_fullscreen"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:drawableStart="@drawable/ic_code_fullscreen" />
+
             </LinearLayout>
 
             <!--
@@ -133,10 +145,17 @@
                     NÚMEROS DE LÍNEA
                 -->
 
-                <TextView
-                    android:id="@+id/lineNumbers"
+                <ScrollView
+                    android:id="@+id/lineNumberScroll"
                     android:layout_width="18dp"
                     android:layout_height="match_parent"
+                    android:scrollbars="none"
+                    android:overScrollMode="never">
+
+                <TextView
+                    android:id="@+id/lineNumbers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:background="#181A1F"
                     android:fontFamily="monospace"
                     android:gravity="top|end"
@@ -148,32 +167,61 @@
                     android:textColor="#6F7782"
                     android:textSize="18sp" />
 
+                </ScrollView>
+
                 <!--
                     CÓDIGO
                 -->
 
+                <FrameLayout
+                    android:id="@+id/editorContainer"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
+
                 <com.learngraphicsprogramming.app.FreeScrollEditText
                     android:id="@+id/sourceCode"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:background="@android:color/transparent"
                     android:fontFamily="monospace"
                     android:gravity="top|start"
                     android:includeFontPadding="false"
                     android:inputType="textMultiLine|textNoSuggestions"
-                    android:minHeight="200dp"
                     android:overScrollMode="never"
                     android:paddingStart="10dp"
                     android:paddingTop="16dp"
                     android:paddingEnd="16dp"
                     android:paddingBottom="16dp"
                     android:scrollHorizontally="true"
-                    android:scrollbars="horizontal"
+                    android:scrollbars="none"
                     android:textColor="#E6EDF3"
                     android:textSize="18sp" />
 
+                <SeekBar
+                    android:id="@+id/editorVerticalBar"
+                    android:layout_width="180dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="end|center_vertical"
+                    android:layout_marginEnd="-76dp"
+                    android:rotation="90"
+                    android:max="0"
+                    android:splitTrack="false"
+                    android:contentDescription="@string/code_scroll_vertical"
+                    android:visibility="gone" />
+
+                </FrameLayout>
+
             </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/editorHorizontalBar"
+                android:layout_width="match_parent"
+                android:layout_height="28dp"
+                android:max="0"
+                android:splitTrack="false"
+                android:contentDescription="@string/code_scroll_horizontal"
+                android:visibility="gone" />
 
         </LinearLayout>
 

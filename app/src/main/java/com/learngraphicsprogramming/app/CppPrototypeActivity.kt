@@ -3,6 +3,7 @@ package com.learngraphicsprogramming.app
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.res.Configuration
 import androidx.appcompat.app.AlertDialog
 import android.graphics.Color
 import android.graphics.Typeface
@@ -18,8 +19,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.OnBackPressedCallback
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.learngraphicsprogramming.app.databinding.ActivityCppPrototypeBinding
 import com.learngraphicsprogramming.app.runtime.CppExecutionEngine
 import com.learngraphicsprogramming.app.runtime.CppCompiler
@@ -40,6 +43,13 @@ class CppPrototypeActivity : AppCompatActivity() {
     private var clang21ConfirmationSession: Int? = null
     private var selectedCompiler = CppCompilerVariant.DEFAULT
     private var cppKeyboardVisible = false
+    private lateinit var editorViewport: CppEditorViewportController
+    private var fullscreen = false
+    private val normalChildVisibilities = mutableMapOf<View, Int>()
+    private var normalScreenScrollY = 0
+    private var normalSystemBars = 0
+    private var normalSystemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+    private lateinit var fullscreenBack: OnBackPressedCallback
 
     private val clang21ConfirmationLauncher =
         registerForActivityResult(
@@ -77,8 +87,17 @@ class CppPrototypeActivity : AppCompatActivity() {
             binding.root
         )
 
+        // Source, selection and scroll are restored from our Bundle; avoid
+        // a second native restoration of the Editable and its formatting spans.
+        binding.sourceCode.isSaveEnabled = false
+
         // Reutiliza exactamente las reglas de las consolas y el editor de página 8.
         CppCodeInputRules.install(binding.sourceCode)
+        editorViewport = CppEditorViewportController(
+            binding.sourceCode, binding.lineNumbers, binding.lineNumberScroll,
+            binding.codeEditorBody, binding.editorVerticalBar, binding.editorHorizontalBar,
+            { fullscreen }, { cppKeyboardVisible }
+        )
 
         styleCodeCard()
 
@@ -203,6 +222,138 @@ class CppPrototypeActivity : AppCompatActivity() {
 
         setupClang21FeaturePanel()
         setupCppKeyboardShortcuts()
+        setupFullscreen()
+        binding.sourceCode.post {
+            val textLength = binding.sourceCode.text?.length ?: 0
+            val start = savedInstanceState?.getInt(STATE_SELECTION_START) ?: binding.sourceCode.selectionStart
+            val end = savedInstanceState?.getInt(STATE_SELECTION_END) ?: binding.sourceCode.selectionEnd
+            binding.sourceCode.setSelection(start.coerceIn(0, textLength), end.coerceIn(0, textLength))
+            editorViewport.refresh()
+            if (savedInstanceState?.getBoolean(STATE_FULLSCREEN) == true) setFullscreen(true, savedInstanceState)
+            binding.sourceCode.post {
+                binding.sourceCode.scrollTo(
+                    savedInstanceState?.getInt(STATE_SCROLL_X) ?: 0,
+                    savedInstanceState?.getInt(STATE_SCROLL_Y) ?: 0
+                )
+            }
+        }
+    }
+
+    private fun setupFullscreen() {
+        fullscreenBack = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() { setFullscreen(false) }
+        }
+        onBackPressedDispatcher.addCallback(this, fullscreenBack)
+        binding.fullscreenCodeButton.setOnClickListener { setFullscreen(!fullscreen) }
+        binding.compilerScroll.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            updateEditorGeometry()
+        }
+    }
+
+    private fun setFullscreen(enabled: Boolean, restoredState: Bundle? = null) {
+        if (fullscreen == enabled) return
+        fullscreen = enabled
+        fullscreenBack.isEnabled = enabled
+        val bars = WindowInsetsCompat.Type.systemBars()
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        if (enabled) {
+            normalScreenScrollY = restoredState?.getInt(STATE_NORMAL_SCREEN_SCROLL, binding.compilerScroll.scrollY)
+                ?: binding.compilerScroll.scrollY
+            normalSystemBarsBehavior = restoredState?.getInt(STATE_NORMAL_BARS_BEHAVIOR, controller.systemBarsBehavior)
+                ?: controller.systemBarsBehavior
+            normalChildVisibilities.clear()
+            for (index in 0 until binding.compilerContent.childCount) {
+                val child = binding.compilerContent.getChildAt(index)
+                normalChildVisibilities[child] = child.visibility
+                if (child !== binding.codeCard) child.visibility = View.GONE
+            }
+            val insets = ViewCompat.getRootWindowInsets(binding.root)
+            normalSystemBars = (if (insets?.isVisible(WindowInsetsCompat.Type.statusBars()) == true)
+                WindowInsetsCompat.Type.statusBars() else 0) or
+                (if (insets?.isVisible(WindowInsetsCompat.Type.navigationBars()) == true)
+                    WindowInsetsCompat.Type.navigationBars() else 0)
+            normalSystemBars = restoredState?.getInt(STATE_NORMAL_BARS, normalSystemBars) ?: normalSystemBars
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.hide(bars)
+            binding.compilerContent.setPadding(0, 0, 0, 0)
+            binding.codeCard.translationX = 0f
+            binding.compilerScroll.scrollTo(0, 0)
+        } else {
+            normalChildVisibilities.forEach { (view, visibility) -> view.visibility = visibility }
+            normalChildVisibilities.clear()
+            controller.systemBarsBehavior = normalSystemBarsBehavior
+            controller.hide(bars and normalSystemBars.inv())
+            controller.show(normalSystemBars)
+            binding.compilerContent.setPadding(dp(24), dp(24), dp(24), dp(24))
+            makeCodeCardFullWidth()
+            binding.compilerScroll.post { binding.compilerScroll.scrollTo(0, normalScreenScrollY) }
+        }
+        binding.fullscreenCodeButton.contentDescription = getString(
+            if (enabled) R.string.exercise_exit_fullscreen else R.string.exercise_fullscreen
+        )
+        updateEditorGeometry()
+        binding.sourceCode.post { editorViewport.refresh() }
+    }
+
+    private fun updateEditorGeometry() {
+        if (!::editorViewport.isInitialized) return
+        val landscapeIme = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE && cppKeyboardVisible
+        binding.codeHeader.visibility = if (fullscreen && landscapeIme) View.GONE else View.VISIBLE
+        val top = if (landscapeIme) 0 else dp(16)
+        if (binding.sourceCode.paddingTop != top) {
+            binding.sourceCode.setPadding(dp(10), top, dp(16), binding.sourceCode.paddingBottom)
+        }
+        if (binding.lineNumbers.paddingTop != top) {
+            binding.lineNumbers.setPadding(0, top, dp(3), binding.lineNumbers.paddingBottom)
+        }
+        val card = binding.codeCard.layoutParams as LinearLayout.LayoutParams
+        val cardHeight = if (fullscreen && binding.compilerScroll.height > 0)
+            binding.compilerScroll.height else ViewGroup.LayoutParams.WRAP_CONTENT
+        val margin = if (fullscreen) 0 else dp(24)
+        if (card.height != cardHeight || card.topMargin != margin) {
+            card.width = ViewGroup.LayoutParams.MATCH_PARENT
+            card.height = cardHeight
+            card.topMargin = margin
+            binding.codeCard.layoutParams = card
+        }
+        if (fullscreen) {
+            val body = binding.codeEditorBody.layoutParams as LinearLayout.LayoutParams
+            if (body.height != 0 || body.weight != 1f) {
+                body.height = 0
+                body.weight = 1f
+                binding.codeEditorBody.layoutParams = body
+            }
+            // Retain focus and selection while reclaiming the resized IME viewport.
+            if (binding.codeEditorBody.minimumHeight != 0) binding.codeEditorBody.minimumHeight = 0
+        }
+        val keyboard = binding.programmingKeyboardBar.layoutParams
+        val barHeight = dp(if (landscapeIme) 32 else 52)
+        if (keyboard.height != barHeight) {
+            keyboard.height = barHeight
+            binding.programmingKeyboardBar.layoutParams = keyboard
+        }
+        for (index in 0 until binding.programmingKeyboardBarContent.childCount) {
+            val key = binding.programmingKeyboardBarContent.getChildAt(index) as TextView
+            val height = dp(if (landscapeIme) 28 else 40)
+            if (key.layoutParams.height != height) {
+                key.minimumHeight = height
+                key.layoutParams = key.layoutParams.apply { this.height = height }
+                key.textSize = if (landscapeIme) 14f else 16f
+                key.setPadding(dp(10), dp(if (landscapeIme) 3 else 6), dp(10), dp(if (landscapeIme) 3 else 6))
+            }
+        }
+        editorViewport.refresh()
+        if (cppKeyboardVisible && binding.sourceCode.hasFocus() && !binding.sourceCode.suppressCursorAutoScroll) {
+            editorViewport.ensureCursorVisible()
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        binding.compilerScroll.post {
+            if (!fullscreen) makeCodeCardFullWidth()
+            updateEditorGeometry()
+        }
     }
 
     /**
@@ -220,6 +371,7 @@ class CppPrototypeActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             cppKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
             updateCppKeyboardShortcutVisibility()
+            updateEditorGeometry()
             ViewCompat.onApplyWindowInsets(view, insets)
         }
 
@@ -230,6 +382,7 @@ class CppPrototypeActivity : AppCompatActivity() {
             if (visible != cppKeyboardVisible) {
                 cppKeyboardVisible = visible
                 updateCppKeyboardShortcutVisibility()
+                updateEditorGeometry()
             }
         }
         ViewCompat.requestApplyInsets(binding.root)
@@ -523,6 +676,8 @@ class CppPrototypeActivity : AppCompatActivity() {
 
         binding.codeCard.post {
 
+            if (fullscreen) return@post
+
             val parent =
                 binding.codeCard.parent
                         as? ViewGroup
@@ -584,6 +739,8 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     private fun updateWrapMode() {
 
+        if (::editorViewport.isInitialized) editorViewport.setWrapEnabled(lineWrapEnabled)
+
         if (
             lineWrapEnabled
         ) {
@@ -644,18 +801,7 @@ class CppPrototypeActivity : AppCompatActivity() {
     }
 
     private fun updateLineNumbers() {
-
-        val lineCount =
-            (binding.sourceCode.text
-                ?.count {
-                    it == '\n'
-                } ?: 0) + 1
-
-        binding.lineNumbers.text =
-            (1..lineCount)
-                .joinToString(
-                    "\n"
-                )
+        if (::editorViewport.isInitialized) editorViewport.updateLineNumbers()
     }
 
     private fun runPrototype() {
@@ -691,6 +837,8 @@ class CppPrototypeActivity : AppCompatActivity() {
                 }
 
             runOnUiThread {
+
+                if (isFinishing || isDestroyed) return@runOnUiThread
 
                 binding.runButton.isEnabled =
                     true
@@ -796,6 +944,14 @@ class CppPrototypeActivity : AppCompatActivity() {
             STATE_WRAP,
             lineWrapEnabled
         )
+        outState.putBoolean(STATE_FULLSCREEN, fullscreen)
+        outState.putInt(STATE_SELECTION_START, binding.sourceCode.selectionStart)
+        outState.putInt(STATE_SELECTION_END, binding.sourceCode.selectionEnd)
+        outState.putInt(STATE_SCROLL_X, binding.sourceCode.scrollX)
+        outState.putInt(STATE_SCROLL_Y, binding.sourceCode.scrollY)
+        outState.putInt(STATE_NORMAL_SCREEN_SCROLL, normalScreenScrollY)
+        outState.putInt(STATE_NORMAL_BARS, normalSystemBars)
+        outState.putInt(STATE_NORMAL_BARS_BEHAVIOR, normalSystemBarsBehavior)
 
         super.onSaveInstanceState(
             outState
@@ -804,6 +960,7 @@ class CppPrototypeActivity : AppCompatActivity() {
 
     override fun onDestroy() {
 
+        if (::editorViewport.isInitialized) editorViewport.dispose()
         clang21FeatureDelivery?.close()
         clang21FeatureDelivery = null
         worker.shutdownNow()
@@ -855,6 +1012,14 @@ class CppPrototypeActivity : AppCompatActivity() {
 
         const val STATE_CLANG21_SELECTED =
             "cpp_prototype_clang21_selected"
+        const val STATE_FULLSCREEN = "cpp_prototype_fullscreen"
+        const val STATE_SELECTION_START = "cpp_prototype_selection_start"
+        const val STATE_SELECTION_END = "cpp_prototype_selection_end"
+        const val STATE_SCROLL_X = "cpp_prototype_scroll_x"
+        const val STATE_SCROLL_Y = "cpp_prototype_scroll_y"
+        const val STATE_NORMAL_SCREEN_SCROLL = "cpp_prototype_normal_screen_scroll"
+        const val STATE_NORMAL_BARS = "cpp_prototype_normal_bars"
+        const val STATE_NORMAL_BARS_BEHAVIOR = "cpp_prototype_normal_bars_behavior"
 
         const val FOUR_SPACE_LINE =
             "\n    \n"

@@ -1,11 +1,14 @@
 package com.learngraphicsprogramming.app
 
 import android.content.Context
+import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatEditText
 
-class FreeScrollEditText(
-    context: Context
-) : AppCompatEditText(context) {
+class FreeScrollEditText @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = androidx.appcompat.R.attr.editTextStyle
+) : AppCompatEditText(context, attrs, defStyleAttr) {
 
     /*
      * false:
