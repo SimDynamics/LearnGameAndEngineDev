@@ -77,6 +77,9 @@ class CppPrototypeActivity : AppCompatActivity() {
             binding.root
         )
 
+        // Reutiliza exactamente las reglas de las consolas y el editor de página 8.
+        CppCodeInputRules.install(binding.sourceCode)
+
         styleCodeCard()
 
         makeCodeCardFullWidth()
