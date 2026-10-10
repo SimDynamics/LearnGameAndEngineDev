@@ -178,7 +178,8 @@ std::cout << std::to_underlying(Value::number) << '\n';""",
         val backend = if (BuildConfig.LGP_WASMTIME_ENABLED) "Wasmtime 49.0.2" else "WAMR 2.4.5"
         val lines = mutableListOf(
             "Clang 23.1.3 + LLD 23.1.3 / $backend",
-            "WASI sysroot: wasi-sdk-34 (no exceptions)",
+            "WASI sysroot: wasi-sdk-34 (" +
+                (if (BuildConfig.LGP_CPP_EXCEPTIONS_ENABLED) "WebAssembly EH enabled" else "no exceptions") + ")",
             "SUPPORTED = macro declared, compiled, linked, executed and verified",
             "UNAVAILABLE = feature header or feature-test macro missing",
             "BROKEN = declared but compilation, linking, runtime or output failed",
