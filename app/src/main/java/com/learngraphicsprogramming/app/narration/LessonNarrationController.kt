@@ -103,26 +103,53 @@ class LessonNarrationController(
         language: NarrationLanguage = NarrationSettingsRepository.get(appContext).language
     ) = onMain {
         if (closed) return@onMain
-        if (this.segments.isNotEmpty() && this.language == language) {
+        val selectedSettings = NarrationSettingsRepository.forLanguage(appContext, language)
+        val prepared = narrationParts(segments, selectedSettings)
+        if (this.segments.isNotEmpty() && this.language == language &&
+            this.segments.map { it.text } == prepared
+        ) {
             if (playing) pause() else resume()
             return@onMain
         }
+        if (!startPage(prepared, selectedSettings)) return@onMain
+        resume()
+    }
+
+    private fun narrationParts(texts: List<String>, selected: NarrationSettings): List<String> =
+        if (selected.engine == NarrationEngine.ANDROID) NarrationSegments.prepare(texts, 250)
+        else NarrationSegments.sentences(texts)
+
+    private fun startPage(prepared: List<String>, selected: NarrationSettings): Boolean {
         stopInternal()
-        settings = NarrationSettingsRepository.forLanguage(appContext, language)
-        if (!settings.enabled) return@onMain
-        // A visible paragraph remains one continuous playback file whenever
-        // possible. Kokoro's *phoneme* limit is handled after pronunciation,
-        // and longer paragraphs are joined into a single WAV.
-        val maxTextLength = if (settings.engine == NarrationEngine.ANDROID) 250 else 2_000
-        val prepared = NarrationSegments.prepare(segments, maxTextLength)
+        settings = selected
+        if (!settings.enabled) return false
         if (prepared.isEmpty()) {
             onError(s(R.string.narration_no_text))
-            return@onMain
+            return false
         }
-        this.language = language
-        this.segments = prepared.map { Segment(it) }.toMutableList()
+        language = selected.language
+        segments = prepared.map { Segment(it) }.toMutableList()
         directory = File(appContext.cacheDir, "lesson-narration-" + UUID.randomUUID())
-        resume()
+        return true
+    }
+
+    /**
+     * Start synthesis when a page is OPENED, without playing audio or taking
+     * audio focus. Replay uses the same cached WAV files; no new inference.
+     */
+    fun prefetchPage(
+        texts: List<String>,
+        pageLanguage: NarrationLanguage
+    ) = onMain {
+        if (closed) return@onMain
+        val selected = NarrationSettingsRepository.forLanguage(appContext, pageLanguage)
+        if (!selected.enabled || selected.engine == NarrationEngine.ANDROID) return@onMain
+        val prepared = narrationParts(texts, selected)
+        if (prepared.isEmpty()) return@onMain
+        if (language == pageLanguage && segments.map { it.text } == prepared) return@onMain
+        if (!startPage(prepared, selected)) return@onMain
+        ensureSegment(0)
+        ensureSegment(1)
     }
 
     /**
@@ -467,7 +494,9 @@ class LessonNarrationController(
                     media.seekTo(offset.toInt())
                     applyRate()
                     if (playing && player === media) media.start()
+                    // Build the following sentences while this one plays.
                     if (index + 1 < segments.size) ensureSegment(index + 1)
+                    if (index + 2 < segments.size) ensureSegment(index + 2)
                 } catch (_: RuntimeException) { fail(s(R.string.narration_audio_start_error)) }
             }
             media.setOnCompletionListener {
