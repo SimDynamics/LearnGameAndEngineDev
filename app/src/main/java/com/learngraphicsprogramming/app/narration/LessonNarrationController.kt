@@ -110,10 +110,11 @@ class LessonNarrationController(
         stopInternal()
         settings = NarrationSettingsRepository.forLanguage(appContext, language)
         if (!settings.enabled) return@onMain
-        // Kokoro has a finite phoneme-token budget. Use the original
-        // 250-character safety bound rather than fragmenting lesson prose
-        // into unnecessarily small 140-character pieces.
-        val prepared = NarrationSegments.prepare(segments, 250)
+        // A visible paragraph remains one continuous playback file whenever
+        // possible. Kokoro's *phoneme* limit is handled after pronunciation,
+        // and longer paragraphs are joined into a single WAV.
+        val maxTextLength = if (settings.engine == NarrationEngine.ANDROID) 250 else 2_000
+        val prepared = NarrationSegments.prepare(segments, maxTextLength)
         if (prepared.isEmpty()) {
             onError(s(R.string.narration_no_text))
             return@onMain
@@ -285,9 +286,18 @@ class LessonNarrationController(
                     if (!isCurrent(request)) return
                     val engine = kokoro ?: KokoroOnnxEngine(root).also { kokoro = it }
                     if (!isCurrent(request)) return
-                    val pcm = engine.synthesizePhonemes(phonemes, request.settings.kokoroVoice, 1f) { !isCurrent(request) }
+                    val audioParts = mutableListOf<FloatArray>()
+                    // Never truncate Kokoro's 510-phoneme input. Several runs
+                    // are concatenated BEFORE playback so words cannot be
+                    // interrupted by a MediaPlayer transition mid-paragraph.
+                    for (part in KokoroPhonemeChunks.split(phonemes)) {
+                        if (!isCurrent(request)) return
+                        audioParts += engine.synthesizePhonemes(
+                            part, request.settings.kokoroVoice, 1f
+                        ) { !isCurrent(request) }
+                    }
                     if (!isCurrent(request)) return
-                    NarrationWavWriter.write(request.file, pcm)
+                    NarrationWavWriter.writeChunks(request.file, audioParts)
                     generated(request)
                     return
                 } catch (_: InterruptedException) {
