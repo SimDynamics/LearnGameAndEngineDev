@@ -7,6 +7,35 @@ internal object NarrationSegments {
         return texts.flatMap { split(it.trim(), maxLength) }
     }
 
+    /**
+     * Keeps paragraphs in their original order, but synthesizes complete
+     * sentences early. No words are deleted, even for decimals like 3.14.
+     * Very long sentences remain bounded for language-specific phonemizers;
+     * Kokoro's actual 510-phoneme limit is enforced after G2P.
+     */
+    fun sentences(texts: List<String>): List<String> =
+        texts.flatMap { paragraph ->
+            val source = paragraph.trim()
+            if (source.isEmpty()) return@flatMap emptyList()
+            val result = mutableListOf<String>()
+            var start = 0
+            source.forEachIndexed { index, symbol ->
+                if (symbol !in ".!?;" ||
+                    (symbol == '.' && index > 0 && index + 1 < source.length &&
+                        source[index - 1].isDigit() && source[index + 1].isDigit()) ||
+                    (index + 1 < source.length && !source[index + 1].isWhitespace())
+                ) return@forEachIndexed
+                val sentence = source.substring(start, index + 1).trim()
+                if (sentence.isNotEmpty()) result += sentence
+                start = index + 1
+            }
+            if (start < source.length) {
+                val remainder = source.substring(start).trim()
+                if (remainder.isNotEmpty()) result += remainder
+            }
+            result.flatMap { split(it, 2_000) }
+        }
+
     private fun split(text: String, maxLength: Int): List<String> {
         val result = mutableListOf<String>()
         var remaining = text
