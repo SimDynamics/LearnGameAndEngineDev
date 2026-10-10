@@ -8,10 +8,18 @@ import org.json.JSONObject
 object LessonNarrationText {
     private const val MAX_SEGMENT_LENGTH = 700
 
-    fun page(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage = NarrationLanguage.SPANISH): List<String> =
-        Extractor(language).page(lesson, pageIndex)
+    fun page(
+        lesson: JSONObject,
+        pageIndex: Int,
+        language: NarrationLanguage = NarrationLanguage.SPANISH,
+        visibleInstruction: (String) -> String = { "" }
+    ): List<String> =
+        Extractor(language, visibleInstruction).page(lesson, pageIndex)
 
-    private class Extractor(private val speechLanguage: NarrationLanguage) {
+    private class Extractor(
+        private val speechLanguage: NarrationLanguage,
+        private val visibleInstruction: (String) -> String
+    ) {
     private fun localized(spanish: String, english: String, french: String): String = when (speechLanguage) {
         NarrationLanguage.SPANISH -> spanish
         NarrationLanguage.FRENCH -> french
@@ -41,6 +49,10 @@ object LessonNarrationText {
             }
             "fill_code", "inline_fill_code", "output_prediction", "order_code", "drag_fill_code" -> {
                 append(output, block.string("question"))
+                // The order/drag exercises show an additional instruction
+                // below the heading, built from Android UI string resources.
+                // Its absence from the JSON is NOT a reason to skip reading it.
+                append(output, visibleInstruction(type))
                 // Templates, source code, expected output and solutions remain on screen.
                 output.add(localized("Ejercicio de código", "Code exercise in", "Exercice de code") + " ${codeLanguage(block.string("language"))}.")
             }
