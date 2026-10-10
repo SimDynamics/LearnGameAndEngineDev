@@ -383,8 +383,7 @@ class LessonActivity : AppCompatActivity() {
                         lessonJson, currentPage, NarrationSettingsRepository.get(this).language)
                     narrationController?.toggle(
                         LessonNarrationText.page(lessonJson, currentPage, language),
-                        language,
-                        quickStart = true
+                        language
                     )
                 }
             },
@@ -397,8 +396,7 @@ class LessonActivity : AppCompatActivity() {
                         lessonJson, currentPage, NarrationSettingsRepository.get(this).language)
                     narrationController?.toggle(
                         LessonNarrationText.page(lessonJson, currentPage, language),
-                        language,
-                        quickStart = true
+                        language
                     )
                 }
             }
