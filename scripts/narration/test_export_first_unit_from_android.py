@@ -6,7 +6,7 @@ import io
 import unittest
 import wave
 
-from export_first_unit_from_android import inspect_wav
+from export_first_unit_from_android import inspect_wav, missing_file_reply
 
 
 def pcm24khz() -> bytes:
@@ -36,6 +36,21 @@ class AndroidWavExportTest(unittest.TestCase):
 
     def test_empty_file_reports_size(self) -> None:
         self.assertIn("0 bytes", inspect_wav(b""))
+
+    def test_nonzero_size_cat_error_with_zero_exit_code_means_missing_audio(self) -> None:
+        # Exact class of output encountered on the Honor X8a.
+        message = (
+            b"cat: files/kokoro-narration-cache/" + b"a" * 64 +
+            b".wav: No such file or directory\\n"
+        )
+        self.assertTrue(missing_file_reply(message))
+        self.assertIsNotNone(inspect_wav(message))
+        self.assertFalse(missing_file_reply(pcm24khz()))
+
+    def test_other_cat_error_is_not_misclassified_as_missing(self) -> None:
+        self.assertFalse(missing_file_reply(
+            b"cat: files/kokoro-narration-cache/item.wav: Permission denied"
+        ))
 
     def test_wrong_sample_rate_is_rejected(self) -> None:
         data = bytearray(pcm24khz())
