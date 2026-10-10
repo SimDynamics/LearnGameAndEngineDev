@@ -34,6 +34,7 @@ class KokoroOnnxEngine(directory: File, preferAccelerator: Boolean = true) : Aut
     private val environment: OrtEnvironment
     private val session: OrtSession
     val usesNnapi: Boolean
+    val usesXnnpack: Boolean
     private val vocabulary: Map<Char, Long>
     private var closed = false
     private val verifiedVoices = mutableSetOf<String>()
@@ -56,30 +57,44 @@ class KokoroOnnxEngine(directory: File, preferAccelerator: Boolean = true) : Aut
             }
             vocabulary = KokoroOnnxInputs.loadVocabulary(ownedFile("tokenizer.json"))
             environment = OrtEnvironment.getEnvironment()
-            fun openSession(hardware: Boolean): OrtSession =
+            val cpuCores = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
+            fun openSession(hardware: Boolean = false, optimizedCpu: Boolean = false): OrtSession =
                 OrtSession.SessionOptions().use { options ->
-                    // Use every CPU core when ORT must run on CPU; NNAPI routes
-                    // compatible operations to the device's accelerator.
-                    options.setIntraOpNumThreads(Runtime.getRuntime().availableProcessors().coerceAtLeast(1))
+                    // XNNPACK manages its own CPU pool. Avoid two competing
+                    // multithreaded pools as recommended by ONNX Runtime.
+                    options.setIntraOpNumThreads(if (optimizedCpu) 1 else cpuCores)
                     options.setInterOpNumThreads(1)
                     options.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
                     if (hardware) {
                         options.addNnapi(EnumSet.of(NNAPIFlags.CPU_DISABLED))
+                    } else if (optimizedCpu) {
+                        options.addConfigEntry("session.intra_op.allow_spinning", "0")
+                        options.addXnnpack(mapOf("intra_op_num_threads" to cpuCores.toString()))
                     }
                     environment.createSession(ownedFile("model.onnx").absolutePath, options)
                 }
 
             val accelerated = if (preferAccelerator && Build.VERSION.SDK_INT >= 29) {
                 runCatching { openSession(hardware = true) }.onFailure {
-                    Log.w("KokoroInference", "NNAPI hardware is unavailable, using multicore CPU", it)
+                    Log.w("KokoroInference", "NNAPI session unavailable; trying XNNPACK", it)
+                }.getOrNull()
+            } else null
+            val optimized = if (accelerated == null) {
+                runCatching { openSession(optimizedCpu = true) }.onFailure {
+                    Log.w("KokoroInference", "XNNPACK unavailable; using ordinary CPU", it)
                 }.getOrNull()
             } else null
             usesNnapi = accelerated != null
-            createdSession = accelerated ?: openSession(hardware = false)
+            usesXnnpack = optimized != null
+            createdSession = accelerated ?: optimized ?: openSession()
             Log.i(
                 "KokoroInference",
                 "Model ready in ${android.os.SystemClock.elapsedRealtime() - startTime}ms, provider=" +
-                    (if (usesNnapi) "NNAPI hardware preferred" else "multicore CPU")
+                    when {
+                        usesNnapi -> "NNAPI requested (actual GPU/NPU offload device-dependent)"
+                        usesXnnpack -> "XNNPACK optimized CPU ($cpuCores cores)"
+                        else -> "regular multicore CPU ($cpuCores cores)"
+                    }
             )
             val modelSession = createdSession ?: throw KokoroSynthesisException("No se pudo cargar Kokoro")
             validateInputs(modelSession)
