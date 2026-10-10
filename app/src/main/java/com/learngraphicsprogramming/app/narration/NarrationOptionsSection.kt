@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
@@ -43,6 +44,17 @@ class NarrationOptionsSection(private val activity: Activity) {
     private val languageButton = button(s(R.string.narration_language)) { chooseLanguage() }
     private val voiceButton = button(s(R.string.narration_installed_voice)) { chooseVoice() }
     private val voicesButton = button(s(R.string.narration_manage_voices)) { manageVoices() }
+    private val storageTitle = text(s(R.string.narration_storage_title), 17f).apply {
+        setTypeface(typeface, android.graphics.Typeface.BOLD)
+    }
+    private val storageDetail = text(s(R.string.narration_storage_checking), 15f)
+    private val storageSlider = SeekBar(activity).apply { max = 0 }
+    private val storageMaximum = text("", 14f)
+    private val storageExplanation = text(s(R.string.narration_storage_explanation), 14f)
+    private var storageSnapshot: NarrationStorageBudget.Snapshot? = null
+    private var storageRefreshRunning = false
+    private var storageDragging = false
+    private val storageStepBytes = NarrationStorageBudget.MIB
     private val systemStatus = text(s(R.string.narration_checking_android), 15f)
     private val modelStatus = text(s(R.string.narration_checking_model), 16f)
     private val languageStatus = text("", 15f)
@@ -86,7 +98,22 @@ class NarrationOptionsSection(private val activity: Activity) {
         listOf(engineButton, languageButton, voiceButton, systemStatus,
             text(s(R.string.narration_model_description), 16f), modelStatus, progress,
             downloadButton, cancelButton, removeButton, languageStatus, installLanguageButton,
-            removeLanguageButton, voicesButton, compatibility, auxiliaryStatus, importButton, removeAuxButton).forEach { host.addView(it) }
+            removeLanguageButton, voicesButton, storageTitle, storageDetail,
+            storageSlider, storageMaximum, storageExplanation,
+            compatibility, auxiliaryStatus, importButton, removeAuxButton).forEach { host.addView(it) }
+        storageSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onStartTrackingTouch(seekBar: SeekBar) { storageDragging = true }
+            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+                if (fromUser) displayStorageLimit(progress.toLong() * storageStepBytes)
+            }
+            override fun onStopTrackingTouch(seekBar: SeekBar) {
+                storageDragging = false
+                NarrationStorageBudget.saveLimit(activity, seekBar.progress.toLong() * storageStepBytes)
+                // A previously paused queue may continue after raising the limit.
+                KokoroBackgroundNarrationWorker.start(activity.applicationContext)
+                refreshStorage()
+            }
+        })
         host.addView(button(s(R.string.narration_configure_android)) { openSystem(Intent("com.android.settings.TTS_SETTINGS")) })
         host.addView(button(s(R.string.narration_install_android)) { openSystem(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)) })
         host.addView(button(s(R.string.narration_licenses_reading)) { showLicenses() })
@@ -99,7 +126,45 @@ class NarrationOptionsSection(private val activity: Activity) {
         loadAndroidVoices()
         handler.removeCallbacks(poll)
         handler.post(poll)
+        refreshStorage()
     }
+
+    private fun refreshStorage() {
+        if (closed || storageRefreshRunning) return
+        storageRefreshRunning = true
+        Thread({
+            val snapshot = runCatching { NarrationStorageBudget.snapshot(activity.applicationContext) }.getOrNull()
+            handler.post {
+                storageRefreshRunning = false
+                if (closed || !active || snapshot == null || storageDragging) return@post
+                storageSnapshot = snapshot
+                storageSlider.max = (snapshot.maximumBytes / storageStepBytes)
+                    .coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                storageSlider.progress = (snapshot.effectiveBytes / storageStepBytes)
+                    .coerceAtMost(storageSlider.max.toLong()).toInt()
+                displayStorageLimit(storageSlider.progress.toLong() * storageStepBytes)
+                storageMaximum.text = s(
+                    R.string.narration_storage_maximum, formatGiB(snapshot.maximumBytes)
+                )
+            }
+        }, "NarrationStorageSettings").start()
+    }
+
+    private fun displayStorageLimit(selectedBytes: Long) {
+        val snapshot = storageSnapshot ?: return
+        val limitText = if (selectedBytes == 0L) s(R.string.narration_storage_paused)
+            else formatGiB(selectedBytes)
+        storageDetail.text = s(
+            R.string.narration_storage_usage,
+            limitText,
+            formatGiB(snapshot.storedBytes)
+        ) + if (snapshot.storedBytes >= selectedBytes) {
+            " " + s(R.string.narration_storage_over_limit)
+        } else ""
+    }
+
+    private fun formatGiB(bytes: Long): String =
+        s(R.string.narration_storage_gib, bytes.toDouble() / NarrationStorageBudget.RESERVE_BYTES)
 
     fun onStop() { active = false; handler.removeCallbacks(poll) }
     fun close() { closed = true; onStop(); catalog.close(); models.close() }
