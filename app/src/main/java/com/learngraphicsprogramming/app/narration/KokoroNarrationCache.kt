@@ -1,6 +1,7 @@
 package com.learngraphicsprogramming.app.narration
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import java.io.File
 import java.io.FileNotFoundException
@@ -14,7 +15,7 @@ import java.util.UUID
  * Persistent, bounded audio cache for deterministic Kokoro sentences.
  * Never caches Android TTS fallback audio under a Kokoro voice key.
  *
- * A matching pre-recorded WAV can also ship inside the APK at:
+ * Matching pre-recorded audio can also ship inside the APK at:
  * assets/narration/prerendered/<key>.ogg (Opus preferred on Android 10+)
  * or assets/narration/prerendered/<key>.wav (lossless fallback).
  * The same validation applies to bundled files and local synthesized files.
@@ -74,7 +75,9 @@ internal object KokoroNarrationCache {
     fun lookup(context: Context, language: String, voice: String, text: String): File? {
         val hash = key(language, voice, text)
         val directory = root(context)
-        for (extension in listOf("ogg", "wav")) {
+        // Ogg/Opus playback is Android 10+. Earlier versions use WAV.
+        val formats = if (Build.VERSION.SDK_INT >= 29) listOf("ogg", "wav") else listOf("wav")
+        for (extension in formats) {
             val cached = File(directory, "$hash.$extension")
             if (validatedAudio(cached)) {
                 cached.setLastModified(System.currentTimeMillis())
@@ -85,7 +88,7 @@ internal object KokoroNarrationCache {
 
         // Optional build-time assets. Prefer compressed Opus to PCM WAV.
         // The absence of pre-rendered files is normal on development builds.
-        for (extension in listOf("ogg", "wav")) {
+        for (extension in formats) {
             val output = File(directory, "$hash.$extension")
             val staged = File(directory, ".$hash-${UUID.randomUUID()}.$extension")
             try {
