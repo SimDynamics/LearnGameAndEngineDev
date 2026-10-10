@@ -3,9 +3,163 @@ import java.net.URI
 import java.security.MessageDigest
 import java.util.zip.ZipFile
 import org.gradle.api.tasks.bundling.Zip
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.ArchiveOperations
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.TaskAction
+import javax.inject.Inject
 
 plugins {
     alias(libs.plugins.android.application)
+}
+
+// Configuration-cache-safe typed task; no script/project capture in the task action.
+abstract class PrepareWasiSdk34ReferenceTask : DefaultTask() {
+    @get:Input abstract val archiveUrl: Property<String>
+    @get:Input abstract val expectedSha256: Property<String>
+    @get:Internal abstract val archiveCacheDirectory: DirectoryProperty
+    @get:OutputDirectory abstract val extractedSdkDirectory: DirectoryProperty
+
+    @get:Inject abstract val archives: ArchiveOperations
+    @get:Inject abstract val files: FileSystemOperations
+
+    @TaskAction
+    fun extractVerifiedSysroot() {
+        val name = "wasi-sdk-34.0-x86_64-linux.tar.gz"
+        val url = archiveUrl.get()
+        val expected = expectedSha256.get()
+
+        val cache = archiveCacheDirectory.get().asFile
+        cache.mkdirs()
+        val archive = File(cache, name)
+
+        fun hash(file: File): String {
+            val md = MessageDigest.getInstance("SHA-256")
+            file.inputStream().buffered().use { stream ->
+                val buffer = ByteArray(1024 * 1024)
+                while (true) {
+                    val count = stream.read(buffer)
+                    if (count < 0) break
+                    md.update(buffer, 0, count)
+                }
+            }
+            return md.digest().joinToString("") { "%02x".format(it) }
+        }
+        if (!archive.isFile || hash(archive) != expected) {
+            archive.delete()
+            logger.lifecycle("Conectando a la descarga oficial de WASI SDK 34...")
+            val connection = URI(url).toURL().openConnection().apply {
+                connectTimeout = 30_000
+                readTimeout = 120_000
+            }
+            val contentLength = connection.contentLengthLong
+            val mib = 1024.0 * 1024.0
+            var downloadedBytes = 0L
+            var lastProgressNanos = System.nanoTime()
+            logger.lifecycle("Descargando WASI SDK 34; avance cada 4 segundos...")
+
+            try {
+                connection.getInputStream().buffered().use { src ->
+                    archive.outputStream().buffered().use { destination ->
+                        val buffer = ByteArray(1024 * 1024)
+                        while (true) {
+                            val count = src.read(buffer)
+                            if (count < 0) break
+                            destination.write(buffer, 0, count)
+                            downloadedBytes += count
+
+                            val now = System.nanoTime()
+                            if (now - lastProgressNanos >= 4_000_000_000L) {
+                                val downloadedMiB = (downloadedBytes / mib).toInt()
+                                if (contentLength > 0L) {
+                                    val percent = downloadedBytes * 100 / contentLength
+                                    logger.lifecycle(
+                                        "WASI SDK 34: ${downloadedMiB} MiB / " +
+                                            "${(contentLength / mib).toInt()} MiB (${percent}%)"
+                                    )
+                                } else {
+                                    logger.lifecycle("WASI SDK 34: ${downloadedMiB} MiB descargados")
+                                }
+                                lastProgressNanos = now
+                            }
+                        }
+                    }
+                }
+            } catch (error: Exception) {
+                archive.delete()
+                throw error
+            }
+            logger.lifecycle(
+                "Descarga completa: ${(downloadedBytes / mib).toInt()} MiB. Verificando SHA-256..."
+            )
+        } else {
+            logger.lifecycle("WASI SDK 34 encontrado en caché; SHA-256 correcto.")
+        }
+        check(hash(archive) == expected) { "El SHA256 de WASI SDK 34 no coincide." }
+        logger.lifecycle("SHA-256 correcto. Extrayendo bibliotecas WASI SDK 34...")
+
+        val root = extractedSdkDirectory.get().asFile
+        files.delete { delete(root) }
+        root.mkdirs()
+
+        // The Android app needs the WASI target sysroot, not Linux-host
+        // executables. Gradle's archive reader avoids Windows tar.exe stalls
+        // and allows us to extract only the required files.
+        val sdkFolderName = "wasi-sdk-34.0-x86_64-linux"
+        val sysrootPath = "$sdkFolderName/share/wasi-sysroot"
+        var extractedFiles = 0
+        var extractedBytes = 0L
+        logger.lifecycle("Extrayendo solamente $sysrootPath mediante Gradle...")
+        files.copy {
+            from(archives.tarTree(archives.gzip(archive))) {
+                include("$sysrootPath/**")
+                includeEmptyDirs = false
+                eachFile {
+                    extractedFiles++
+                    extractedBytes += size
+                    if (extractedFiles == 1 || extractedFiles % 500 == 0) {
+                        logger.lifecycle(
+                            "WASI SDK 34: $extractedFiles archivos del sysroot " +
+                                "(${(extractedBytes / 1048576.0).toInt()} MiB de datos)"
+                        )
+                    }
+                }
+            }
+            into(root)
+        }
+        logger.lifecycle("Extracción finalizada: $extractedFiles archivos del sysroot.")
+        check(extractedFiles > 0) {
+            "WASI SDK 34: no se encontraron archivos en $sysrootPath."
+        }
+
+        val sysroot = File(root, sysrootPath)
+        check(sysroot.isDirectory) {
+            "WASI SDK 34 oficial: no se encontró share/wasi-sysroot."
+        }
+
+        // Do not discover archives by filename across the entire SDK:
+        // wasm32-wasip3/noeh and llvm-lto are different ABI configurations.
+        // All three non-LTO libraries must come from wasm32-wasip1/eh.
+        val exceptionLibraries = File(sysroot, "lib/wasm32-wasip1/eh")
+        check(exceptionLibraries.isDirectory) {
+            "WASI SDK 34: falta lib/wasm32-wasip1/eh."
+        }
+        listOf("libc++.a", "libc++abi.a", "libunwind.a").forEach { name ->
+            val library = File(exceptionLibraries, name)
+            check(library.isFile && library.length() > 0L) {
+                "WASI SDK 34: falta la biblioteca EH de wasm32-wasip1: ${library.absolutePath}"
+            }
+            logger.lifecycle("Biblioteca EH verificada: ${library.absolutePath}")
+        }
+
+        logger.lifecycle("WASI SDK 34 verificado. Sysroot: ${sysroot.absolutePath}")
+        logger.lifecycle("Sysroot EH listo para experimentos Clang 23 + Wasmtime; APK sin cambios.")
+    }
 }
 
 // Controlled migration: -Plgp.wasmtime=true activates the verified Android
@@ -324,147 +478,16 @@ val prepareWasiEhRuntime by tasks.registering(Zip::class) {
 // Reference sysroot from the official WASI SDK 34 (LLVM 23 generation).
 // Deliberately NOT merged into the Android APK while its Clang host binary is 21:
 // C++ exceptions require LLVM 22+ AND consistent exception-enabled libraries.
-val prepareWasiSdk34Reference by tasks.registering {
+val prepareWasiSdk34Reference by tasks.registering(PrepareWasiSdk34ReferenceTask::class) {
     group = "build setup"
     description = "Verify and extract the official exception-capable WASI SDK 34 sysroot."
-    notCompatibleWithConfigurationCache("Downloads a hashed 183 MiB tar.gz reference archive.")
-
-    val sdkDirectory = layout.buildDirectory.dir("generated/wasiSdk34")
-    outputs.dir(sdkDirectory)
-
-    doLast {
-        val name = "wasi-sdk-34.0-x86_64-linux.tar.gz"
-        val url =
-            "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/$name"
-        val expected =
-            "b761e3a0721dbae9c09a0059e5fdb2bf917d1b4a8a7b430fb3b5aafb0984b2c4"
-
-        val cache = rootProject.layout.projectDirectory.dir(".gradle/cpp-runtime-cache").asFile
-        cache.mkdirs()
-        val archive = File(cache, name)
-
-        fun hash(file: File): String {
-            val md = MessageDigest.getInstance("SHA-256")
-            file.inputStream().buffered().use { stream ->
-                val buffer = ByteArray(1024 * 1024)
-                while (true) {
-                    val count = stream.read(buffer)
-                    if (count < 0) break
-                    md.update(buffer, 0, count)
-                }
-            }
-            return md.digest().joinToString("") { "%02x".format(it) }
-        }
-        if (!archive.isFile || hash(archive) != expected) {
-            archive.delete()
-            logger.lifecycle("Conectando a la descarga oficial de WASI SDK 34...")
-            val connection = URI(url).toURL().openConnection().apply {
-                connectTimeout = 30_000
-                readTimeout = 120_000
-            }
-            val contentLength = connection.contentLengthLong
-            val mib = 1024.0 * 1024.0
-            var downloadedBytes = 0L
-            var lastProgressNanos = System.nanoTime()
-            logger.lifecycle("Descargando WASI SDK 34; avance cada 4 segundos...")
-
-            try {
-                connection.getInputStream().buffered().use { src ->
-                    archive.outputStream().buffered().use { destination ->
-                        val buffer = ByteArray(1024 * 1024)
-                        while (true) {
-                            val count = src.read(buffer)
-                            if (count < 0) break
-                            destination.write(buffer, 0, count)
-                            downloadedBytes += count
-
-                            val now = System.nanoTime()
-                            if (now - lastProgressNanos >= 4_000_000_000L) {
-                                val downloadedMiB = (downloadedBytes / mib).toInt()
-                                if (contentLength > 0L) {
-                                    val percent = downloadedBytes * 100 / contentLength
-                                    logger.lifecycle(
-                                        "WASI SDK 34: ${downloadedMiB} MiB / " +
-                                            "${(contentLength / mib).toInt()} MiB (${percent}%)"
-                                    )
-                                } else {
-                                    logger.lifecycle("WASI SDK 34: ${downloadedMiB} MiB descargados")
-                                }
-                                lastProgressNanos = now
-                            }
-                        }
-                    }
-                }
-            } catch (error: Exception) {
-                archive.delete()
-                throw error
-            }
-            logger.lifecycle(
-                "Descarga completa: ${(downloadedBytes / mib).toInt()} MiB. Verificando SHA-256..."
-            )
-        } else {
-            logger.lifecycle("WASI SDK 34 encontrado en caché; SHA-256 correcto.")
-        }
-        check(hash(archive) == expected) { "El SHA256 de WASI SDK 34 no coincide." }
-        logger.lifecycle("SHA-256 correcto. Extrayendo bibliotecas WASI SDK 34...")
-
-        val root = sdkDirectory.get().asFile
-        root.deleteRecursively()
-        root.mkdirs()
-
-        // The Android app needs the WASI target sysroot, not Linux-host
-        // executables. Gradle's archive reader avoids Windows tar.exe stalls
-        // and allows us to extract only the required files.
-        val sdkFolderName = "wasi-sdk-34.0-x86_64-linux"
-        val sysrootPath = "$sdkFolderName/share/wasi-sysroot"
-        var extractedFiles = 0
-        var extractedBytes = 0L
-        logger.lifecycle("Extrayendo solamente $sysrootPath mediante Gradle...")
-        copy {
-            from(tarTree(resources.gzip(archive))) {
-                include("$sysrootPath/**")
-                includeEmptyDirs = false
-                eachFile {
-                    extractedFiles++
-                    extractedBytes += size
-                    if (extractedFiles == 1 || extractedFiles % 500 == 0) {
-                        logger.lifecycle(
-                            "WASI SDK 34: $extractedFiles archivos del sysroot " +
-                                "(${(extractedBytes / 1048576.0).toInt()} MiB de datos)"
-                        )
-                    }
-                }
-            }
-            into(root)
-        }
-        logger.lifecycle("Extracción finalizada: $extractedFiles archivos del sysroot.")
-        check(extractedFiles > 0) {
-            "WASI SDK 34: no se encontraron archivos en $sysrootPath."
-        }
-
-        val sysroot = File(root, sysrootPath)
-        check(sysroot.isDirectory) {
-            "WASI SDK 34 oficial: no se encontró share/wasi-sysroot."
-        }
-
-        // Do not discover archives by filename across the entire SDK:
-        // wasm32-wasip3/noeh and llvm-lto are different ABI configurations.
-        // All three non-LTO libraries must come from wasm32-wasip1/eh.
-        val exceptionLibraries = File(sysroot, "lib/wasm32-wasip1/eh")
-        check(exceptionLibraries.isDirectory) {
-            "WASI SDK 34: falta lib/wasm32-wasip1/eh."
-        }
-        listOf("libc++.a", "libc++abi.a", "libunwind.a").forEach { name ->
-            val library = File(exceptionLibraries, name)
-            check(library.isFile && library.length() > 0L) {
-                "WASI SDK 34: falta la biblioteca EH de wasm32-wasip1: ${library.absolutePath}"
-            }
-            logger.lifecycle("Biblioteca EH verificada: ${library.absolutePath}")
-        }
-
-        logger.lifecycle("WASI SDK 34 verificado. Sysroot: ${sysroot.absolutePath}")
-        logger.lifecycle("Sysroot EH listo para experimentos Clang 23 + Wasmtime; APK sin cambios.")
-    }
+    archiveUrl.set(
+        "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-34/" +
+            "wasi-sdk-34.0-x86_64-linux.tar.gz"
+    )
+    expectedSha256.set("b761e3a0721dbae9c09a0059e5fdb2bf917d1b4a8a7b430fb3b5aafb0984b2c4")
+    archiveCacheDirectory.set(rootProject.layout.projectDirectory.dir(".gradle/cpp-runtime-cache"))
+    extractedSdkDirectory.set(layout.buildDirectory.dir("generated/wasiSdk34"))
 }
 
 val prepareWasmtimeRuntime by tasks.registering {
