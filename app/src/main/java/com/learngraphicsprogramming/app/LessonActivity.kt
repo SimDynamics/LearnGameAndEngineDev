@@ -10261,13 +10261,12 @@ class LessonActivity : AppCompatActivity() {
 
         background.setStroke(
             dp(1),
-            /*
-            Ese pertenece específicamente a los bloques del puzzle. Lo dejamos para el punto:
-            10. Aplicar colores también a consolas/puzzles
-             */
+            // El borde de los bloques del puzzle sigue el tema
+            // de la ruta del curso, no el acento global de la app.
             AppearanceSettingsRepository
-                .getAccentColor(
-                    this
+                .getRouteAccentColor(
+                    this,
+                    currentRouteId
                 )
         )
 
