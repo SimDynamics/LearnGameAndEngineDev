@@ -97,6 +97,8 @@ internal class KokoroContinuousNarrationService : Service() {
         Log.i(TAG, "Foreground offline narration session started")
         try {
             while (running && !Thread.currentThread().isInterrupted) {
+                val selection = NarrationSettingsRepository.get(applicationContext)
+                if (!selection.enabled || selection.engine == NarrationEngine.ANDROID) break
                 if (NarrationWorkPriority.isBusy) {
                     Thread.sleep(1_000L)
                     continue
