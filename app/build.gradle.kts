@@ -162,22 +162,28 @@ abstract class PrepareWasiSdk34ReferenceTask : DefaultTask() {
     }
 }
 
-// Controlled migration: -Plgp.wasmtime=true activates the verified Android
-// Wasmtime C API. Without this property, existing WAMR/graphics remain intact.
-val lgpEnableWasmtime =
-    providers.gradleProperty("lgp.wasmtime").orNull.equals("true", ignoreCase = true)
+// Validated default: Clang 23 + Wasmtime 49 + C++23 WebAssembly EH.
+// A single -Plgp.clang23=false selects the previous Clang 21 + WAMR + no-EH
+// toolchain. Individual toggles remain available for regression experiments.
+// This is a build-time choice; the optional Play Feature module comes later.
+fun lgpBooleanProperty(name: String, defaultValue: Boolean): Boolean {
+    val requested = providers.gradleProperty(name).orNull ?: return defaultValue
+    check(requested.equals("true", ignoreCase = true) ||
+        requested.equals("false", ignoreCase = true)) {
+        "$name must be true or false; received '$requested'."
+    }
+    return requested.equals("true", ignoreCase = true)
+}
 
-// Experimental Android-native Clang 23.1.3 may only be selected after
-// an independently built ARM64 bundle is explicitly imported and verified.
-val lgpEnableClang23 =
-    providers.gradleProperty("lgp.clang23").orNull.equals("true", ignoreCase = true)
-
-// EH support is an opt-in experiment, never enabled for normal APKs.
-val lgpEnableCppExceptions =
-    providers.gradleProperty("lgp.cppExceptions").orNull.equals("true", ignoreCase = true)
+val lgpEnableClang23 = lgpBooleanProperty("lgp.clang23", true)
+val lgpEnableWasmtime = lgpBooleanProperty("lgp.wasmtime", lgpEnableClang23)
+val lgpEnableCppExceptions = lgpBooleanProperty(
+    "lgp.cppExceptions", lgpEnableClang23 && lgpEnableWasmtime
+)
 
 check(!lgpEnableCppExceptions || (lgpEnableClang23 && lgpEnableWasmtime)) {
-    "Experimental C++ exceptions require -Plgp.clang23=true and -Plgp.wasmtime=true."
+    "C++ exceptions require Clang 23 and Wasmtime. " +
+        "Use -Plgp.clang23=false for the Clang 21/WAMR fallback."
 }
 
 // Crash-stage files and verbose JNI logs are opt-in, never enabled by default.
@@ -375,7 +381,7 @@ val prepareCppRuntime by tasks.registering {
             checkAndroidArm64Pie(experimentalLld)
             experimentalClang.copyTo(clang23Output, overwrite = true)
             experimentalLld.copyTo(lld23Output, overwrite = true)
-            logger.lifecycle("Clang 23 experimental incluido; verificar --version en Android.")
+            logger.lifecycle("Clang 23 predeterminado preparado para Android ARM64.")
             // LLVM 23 and LLD 23 are independent of FoldCode's LLVM 21.
             // Remove stale Clang 21 libraries after switching build variants.
             foldcodeLibraries.forEach { name ->
@@ -385,7 +391,7 @@ val prepareCppRuntime by tasks.registering {
                 }
             }
         } else {
-            // Keep Clang 21 as the default, fully functional fallback.
+            // Keep Clang 21 as a fully functional opt-in fallback.
             clang23Output.delete()
             lld23Output.delete()
 
@@ -432,12 +438,12 @@ val prepareCppRuntime by tasks.registering {
     }
 }
 
-// Only experimental APKs package the official WASIp1 EH sysroot.
-// The standard, previously validated no-EH runtime asset is unchanged.
+// Default Clang 23 builds package the verified WASIp1 EH sysroot.
+// Clang 21 fallback builds omit this overlay and retain the no-EH runtime.
 // The SDK download/extraction task is incremental and SHA-256 verified.
 val prepareWasiEhRuntime by tasks.registering(Zip::class) {
     group = "build setup"
-    description = "Package the official WASI SDK 34 wasm32-wasip1 exception sysroot for experimental Android tests."
+    description = "Package the verified WASI SDK 34 wasm32-wasip1 EH sysroot for Clang 23."
     dependsOn(prepareWasiSdk34Reference)
 
     archiveFileName.set("wasi-eh-sysroot.zip")
@@ -473,11 +479,8 @@ val prepareWasiEhRuntime by tasks.registering(Zip::class) {
     }
 }
 
-// Official Wasmtime 49.0.2 aarch64-android-c-api release, hash from GitHub.
-// Extracted headers are used by NDK CMake; shared library is packaged in APK.
-// Reference sysroot from the official WASI SDK 34 (LLVM 23 generation).
-// Deliberately NOT merged into the Android APK while its Clang host binary is 21:
-// C++ exceptions require LLVM 22+ AND consistent exception-enabled libraries.
+// Official WASI SDK 34 sysroot, extracted from a verified release archive.
+// Default Clang 23 builds use the EH overlay; Clang 21 builds do not.
 val prepareWasiSdk34Reference by tasks.registering(PrepareWasiSdk34ReferenceTask::class) {
     group = "build setup"
     description = "Verify and extract the official exception-capable WASI SDK 34 sysroot."
