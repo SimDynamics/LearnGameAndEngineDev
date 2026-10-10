@@ -7,6 +7,10 @@ import ai.onnxruntime.OrtException
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.TensorInfo
 import android.os.Looper
+import android.os.Build
+import android.util.Log
+import ai.onnxruntime.providers.NNAPIFlags
+import java.util.EnumSet
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
@@ -25,10 +29,11 @@ class KokoroSynthesisException(message: String, cause: Throwable? = null) :
  * obtain Kokoro-compatible phonemes from the selected G2P implementation before invoking it.
  * Neither this class nor its constructor downloads files.
  */
-class KokoroOnnxEngine(directory: File) : AutoCloseable {
+class KokoroOnnxEngine(directory: File, preferAccelerator: Boolean = true) : AutoCloseable {
     private val root: File
     private val environment: OrtEnvironment
     private val session: OrtSession
+    val usesNnapi: Boolean
     private val vocabulary: Map<Char, Long>
     private var closed = false
     private val verifiedVoices = mutableSetOf<String>()
@@ -50,16 +55,27 @@ class KokoroOnnxEngine(directory: File) : AutoCloseable {
             }
             vocabulary = KokoroOnnxInputs.loadVocabulary(ownedFile("tokenizer.json"))
             environment = OrtEnvironment.getEnvironment()
-            OrtSession.SessionOptions().use { options ->
-                // Use several CPU cores for one inference, without saturating
-                // every core and starving the Android UI or audio player.
-                options.setIntraOpNumThreads(
-                    Runtime.getRuntime().availableProcessors().coerceIn(1, 4)
-                )
-                options.setInterOpNumThreads(1)
-                options.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
-                createdSession = environment.createSession(ownedFile("model.onnx").absolutePath, options)
-            }
+            fun openSession(hardware: Boolean): OrtSession =
+                OrtSession.SessionOptions().use { options ->
+                    // Use every CPU core when ORT must run on CPU; NNAPI routes
+                    // compatible operations to the device's accelerator.
+                    options.setIntraOpNumThreads(Runtime.getRuntime().availableProcessors().coerceAtLeast(1))
+                    options.setInterOpNumThreads(1)
+                    options.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
+                    if (hardware) {
+                        options.addNnapi(EnumSet.of(NNAPIFlags.CPU_DISABLED))
+                    }
+                    environment.createSession(ownedFile("model.onnx").absolutePath, options)
+                }
+
+            val accelerated = if (preferAccelerator && Build.VERSION.SDK_INT >= 29) {
+                runCatching { openSession(hardware = true) }.onFailure {
+                    Log.w("KokoroInference", "NNAPI hardware is unavailable, using multicore CPU", it)
+                }.getOrNull()
+            } else null
+            usesNnapi = accelerated != null
+            createdSession = accelerated ?: openSession(hardware = false)
+            Log.i("KokoroInference", "Execution provider: " + if (usesNnapi) "NNAPI hardware preferred" else "multicore CPU")
             val modelSession = createdSession ?: throw KokoroSynthesisException("No se pudo cargar Kokoro")
             validateInputs(modelSession)
             session = modelSession
