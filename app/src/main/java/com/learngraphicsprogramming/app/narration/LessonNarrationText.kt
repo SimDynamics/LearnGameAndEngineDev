@@ -174,7 +174,12 @@ object LessonNarrationText {
     }
 
     private fun append(output: MutableList<String>, source: String, mathMode: String = "auto") {
-        val spoken = MultilingualMathSpeech.text(source, mathMode, speechLanguage)
+        // Recognize quoted/embedded C++ before math can reinterpret its operators.
+        // Visible lesson content remains unchanged; only its spoken representation differs.
+        val contextual = if (speechLanguage == NarrationLanguage.SPANISH) {
+            SpanishTechnicalSpeech.prepare(source, mathMode).text
+        } else source
+        val spoken = MultilingualMathSpeech.text(contextual, mathMode, speechLanguage)
         if (spoken.isNotBlank()) output.add(spoken)
     }
 

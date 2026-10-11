@@ -1,6 +1,7 @@
 package com.learngraphicsprogramming.app.narration.phonemes
 
 import com.learngraphicsprogramming.app.narration.SpanishMathSpeech
+import com.learngraphicsprogramming.app.narration.SpanishTechnicalSpeech
 import java.io.File
 import java.text.Normalizer
 import java.util.Locale
@@ -63,7 +64,8 @@ object SpanishFluidG2P {
         // Temperature and angle units are visible curricular content, not
         // punctuation to discard. The degree sign is absent from Kokoro's
         // token alphabet; pronounce the scale before processing numbers/math.
-        val units = text.replace('−', '-')
+        val contextual = SpanishTechnicalSpeech.prepare(text).text
+        val units = contextual.replace('−', '-')
             .replace(Regex("°\\s*C(?!\\p{L})", RegexOption.IGNORE_CASE), " grados Celsius ")
             .replace(Regex("°\\s*F(?!\\p{L})", RegexOption.IGNORE_CASE), " grados Fahrenheit ")
             .replace("°", " grados ")
@@ -89,7 +91,7 @@ object SpanishFluidG2P {
             .replace("+", " más ").replace("×", " por ").replace("·", " por ")
             .replace("÷", " dividido entre ")
             .replace("/", " barra ").replace("\\", " barra inversa ")
-            .replace("[", "(").replace("]", ")").replace("-", "—")
+            .replace("-", "—")
             .replace(Regex("\\s+"), " ").trim()
     }
 
@@ -353,7 +355,11 @@ object SpanishFluidG2P {
         for (char in text) {
             if (char.isLetter()) { word.append(char); continue }
             if (word.isNotEmpty()) { output.add(Token(word.toString(), true)); word.clear() }
-            if (!char.isWhitespace() && !char.isDigit() && char != '_') output.add(Token(char.toString(), false))
+            if (char.isWhitespace()) continue
+            require(!char.isDigit() && char != '_') {
+                "La normalización española dejó un número o identificador sin pronunciar"
+            }
+            output.add(Token(char.toString(), false))
         }
         if (word.isNotEmpty()) output.add(Token(word.toString(), true))
         return output
@@ -375,7 +381,10 @@ object SpanishFluidG2P {
             val base = Normalizer.normalize(char.toString(), Normalizer.Form.NFD).filterNot {
                 Character.getType(it) in setOf(Character.NON_SPACING_MARK.toInt(), Character.COMBINING_SPACING_MARK.toInt(), Character.ENCLOSING_MARK.toInt())
             }
-            if (base.isNotEmpty() && base.all { it in spanishLetters }) append(base)
+            require(base.isNotEmpty() && base.all { it in spanishLetters }) {
+                "La pronunciación española no reconoce la letra $char"
+            }
+            append(base)
         }
     }
 
@@ -384,9 +393,9 @@ object SpanishFluidG2P {
     private fun stripAccent(char: Char): Char = when (char) { 'á' -> 'a'; 'é' -> 'e'; 'í' -> 'i'; 'ó' -> 'o'; 'ú', 'ü' -> 'u'; else -> char }
 
     private val numberRuns = Regex("[−-]?\\d+(?:[.,]\\d+)?")
-    private val superscriptCharacters = "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ᵉᵐⁿ".zip("0123456789+-emn").toMap()
-    private val residualSuperscripts = Regex("[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ᵉᵐⁿ]+")
-    private val residualPower = Regex("(?<![\\p{L}\\p{N}])([a-zA-Z]|-?\\d+)([⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ᵉᵐⁿ]+)")
+    private val superscriptCharacters = "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ᵃᵇᶜᵉᵐⁿ".zip("0123456789+-abcemn").toMap()
+    private val residualSuperscripts = Regex("[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ᵃᵇᶜᵉᵐⁿ]+")
+    private val residualPower = Regex("(?<![\\p{L}\\p{N}])([a-zA-Z]|-?\\d+)([⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ᵃᵇᶜᵉᵐⁿ]+)")
     private val unstressedWords = setOf("de", "la", "el", "en", "que", "y", "los", "a", "las", "se", "del", "con", "su", "por", "o", "al", "sus", "si", "lo", "le", "sin", "tras", "e", "quien", "u", "nos", "mis", "me", "te", "mi", "tu", "tus", "les", "os")
     private val secondaryWords = setOf("para", "como", "entre", "pero", "cuando", "sobre", "desde", "hacia", "hasta", "quienes", "bajo", "aunque", "donde", "mientras", "porque", "nuestros", "nuestra", "nuestro", "nuestras", "ante", "cuanto")
     private val letterNames = mapOf('a' to "a", 'b' to "be", 'c' to "ce", 'd' to "de", 'e' to "e", 'f' to "efe", 'g' to "ge", 'h' to "ache", 'i' to "i", 'j' to "jota", 'k' to "ka", 'l' to "ele", 'm' to "eme", 'n' to "ene", 'ñ' to "eñe", 'o' to "o", 'p' to "pe", 'q' to "cu", 'r' to "ere", 's' to "ese", 't' to "te", 'u' to "u", 'v' to "uve", 'w' to "uvedoble", 'x' to "equis", 'y' to "igriega", 'z' to "zeta")

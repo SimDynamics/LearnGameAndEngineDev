@@ -99,6 +99,22 @@ class SpanishFluidG2PTest {
             SpanishFluidG2P.phonemize("La unidad gramos/cm³."))
     }
 
+    @Test fun realFactorizationPromptsKeepEveryVariableExponent() {
+        val samples = listOf(
+            "Completa 90 = 2ᵃ por 3ᵇ por 5ᶜ." to
+                "Completa noventa es igual a dos elevado a a por tres elevado a be por cinco elevado a ce.",
+            "Escribe los exponentes que completan 72 = 2ᵃ por 3ᵇ." to
+                "Escribe los exponentes que completan setenta y dos es igual a dos elevado a a por tres elevado a be.",
+            "La otra dirección construye el decimal: si q = 2ᵃ por 5ᵇ, elige n igual al mayor de a y b." to
+                "La otra dirección construye el decimal: si q es igual a dos elevado a a por cinco elevado a be, elige n igual al mayor de a y b."
+        )
+        samples.forEach { (raw, spoken) ->
+            assertEquals(raw, SpanishFluidG2P.phonemize(spoken), SpanishFluidG2P.phonemize(raw))
+            assertFalse(SpanishFluidG2P.normalizeText(raw).any { it in "ᵃᵇᶜ" })
+        }
+        assertEquals("dos elevado a a por be", SpanishFluidG2P.normalizeText("dosᵃᵇ"))
+    }
+
     @Test fun spanishPrioritySentenceAndTerminologyProduceCompatibleStressAndPauses() {
         val phones = SpanishFluidG2P.phonemize("Las fracciones equivalentes representan la misma cantidad. Tres cuartos es igual a seis octavos.")
         assertEquals(2, phones.count { it == '.' })
@@ -152,6 +168,9 @@ class SpanishFluidG2PTest {
 
     @Test fun unsupportedPunctuationAndResourceLimitsFailWithoutSilentTokenDropping() {
         assertThrows(IllegalArgumentException::class.java) { SpanishFluidG2P.phonemize("hola ☃") }
+        assertThrows(IllegalArgumentException::class.java) { SpanishFluidG2P.phonemize("hola Ж") }
+        assertThrows(IllegalArgumentException::class.java) { SpanishFluidG2P.phonemizeNormalized("dato_1") }
+        assertThrows(IllegalArgumentException::class.java) { SpanishFluidG2P.phonemizeNormalized("quedan 12") }
         assertThrows(IllegalArgumentException::class.java) { SpanishFluidG2P.phonemize("a".repeat(32_769)) }
         assertThrows(IllegalArgumentException::class.java) { SpanishFluidG2P.phonemize("hola", mapOf("hola" to "ɬ")) }
     }

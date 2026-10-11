@@ -22,13 +22,23 @@ import java.util.UUID
  */
 internal object KokoroNarrationCache {
     private const val VERSION = "kokoro-wav-v1"
+    private const val SPANISH_TECHNICAL_REVISION = "spanish-technical-speech-v1"
     private const val DIRECTORY = "kokoro-narration-cache"
     // Audio persists until the user deletes app data. Background work stops
     // on low storage instead of evicting successfully generated lessons.
 
     fun key(language: String, voice: String, text: String): String {
-        val payload = listOf(VERSION, KokoroModelManifest.revision, language, voice, text)
-            .joinToString("\u0000")
+        val parts = mutableListOf(VERSION, KokoroModelManifest.revision, language, voice, text)
+        if (language == NarrationLanguage.SPANISH.tag) {
+            val prepared = SpanishTechnicalSpeech.prepare(text)
+            if (prepared.changed || text.any { it in "ᵃᵇᶜ" }) {
+                // Preserve every legacy key whose pronunciation is unchanged. New
+                // technical readings and previously lost exponents need fresh audio.
+                parts += SPANISH_TECHNICAL_REVISION
+                parts += prepared.text
+            }
+        }
+        val payload = parts.joinToString("\u0000")
         val digest = MessageDigest.getInstance("SHA-256")
             .digest(payload.toByteArray(Charsets.UTF_8))
         return digest.joinToString("") { "%02x".format(it.toInt() and 0xff) }
