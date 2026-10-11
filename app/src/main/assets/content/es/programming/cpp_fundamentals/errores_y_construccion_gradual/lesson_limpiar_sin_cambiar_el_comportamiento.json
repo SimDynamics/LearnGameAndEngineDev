@@ -83,7 +83,7 @@
         {
           "type": "fill_code",
           "id": "frontera_preservada",
-          "question": "Extraes la comprobación de dominio. Completa sólo el operador para conservar 10 como valor aceptado.",
+          "question": "Extraes la comprobación de dominio. Completa sólo el operador de comparación para aceptar piezas de cero a diez, incluidas ambas fronteras, y rechazar los demás enteros.",
           "language": "cpp",
           "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas ___ 10;\n}\n\nint main() {\n    std::cout << piezas_validas(10);\n    return 0;\n}\n",
           "answers": [
@@ -154,6 +154,122 @@
         {
           "type": "paragraph",
           "text": "piezas_validas responde sólo a la pregunta del dominio. Compara primero la salida con la versión anterior. Añade después llamadas para -1,1,11 sin cambiar las reglas. Para la ampliación separada, cambia el límite superior de piezas_validas a 12 y comprueba 12,13 y los casos anteriores con sus expectativas actualizadas cuando corresponda."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir una extracción en un programa diferente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un informe procesa lecturas enteras ya disponibles en una colección. Una lectura válida está entre -4 y 9, ambos incluidos. Las válidas negativas reciben la etiqueta Fria; el cero recibe Neutra; las positivas reciben Calida. Cualquier lectura fuera de ese intervalo recibe Fuera y no entra en la suma ni en el número de válidas. Cada dato se procesa una vez, en el orden original, incluso si su valor se repite."
+        },
+        {
+          "type": "paragraph",
+          "text": "El comportamiento observable incluye una línea Dato=valor:etiqueta por lectura y, al final, Resumen=validas:rechazadas:suma. La suma incluye únicamente lecturas válidas, con su signo original. La colección vacía no produce líneas de datos y conserva los tres contadores en cero. Mantén como máximo seis lecturas en estas pruebas: la suma válida queda entre -24 y 54, dentro del rango de int."
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa de la siguiente página ya cumple ese contrato. Tu trabajo es reorganizarlo, sin reparar ni ampliar las reglas. Identifica una decisión del dominio que pueda convertirse en una función con un nombre claro. Antes de escribirla, explica qué dato necesita, qué devuelve y qué responsabilidad conserva main. La función extraída debe recibir lo necesario, devolver una decisión o un resultado y no imprimir ni modificar la colección."
+        },
+        {
+          "type": "note",
+          "text": "Elige el nombre y la interfaz de la función; no hay una única extracción obligatoria. Mantén en main el recorrido, la actualización del resumen y la presentación. Si una función tiene una precondición, el lugar que la llama debe comprobarla antes. Usa los tipos, parámetros, retornos y condiciones ya estudiados; no necesitas sintaxis nueva."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar evidencia antes y después de extraer"
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero calcula desde el requisito cada etiqueta y el resumen de {-4,0,7,10,-5}. Ejecuta la versión inicial y compara con esa expectativa; anota la salida completa antes de editar. No conviertas automáticamente una salida previa en la respuesta correcta: aquí puedes contrastarla con reglas explícitas. Luego realiza una extracción y vuelve a comprobar el mismo caso."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambia sólo la colección para preparar pruebas que distingan reglas: {} comprueba ausencia de datos; {-5,-4,-3} separa exterior, frontera e interior inferiores; {8,9,10} hace lo mismo en el extremo superior; {-1,0,1} distingue las tres etiquetas válidas; {-5,10} comprueba sólo rechazos; {9,9,-4,0} comprueba valores repetidos y una mezcla de signos. Obtén sus expectativas a mano y ejecuta cada colección antes y después de reorganizar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara las líneas individuales, su orden y el resumen, no sólo la suma. Explica por qué tus pruebas revelarían que una frontera se excluyó, que cero recibió otra etiqueta, que un rechazo entró en la suma o que un dato repetido se omitió. Intenta la extracción y esas comprobaciones antes de avanzar a la referencia. Se admiten interfaces distintas si separan una responsabilidad reconocible y conservan todo el contrato."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<int> lecturas{-4, 0, 7, 10, -5};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            if (lectura < 0) {\n                std::cout << \"Fria\\n\";\n            } else if (lectura == 0) {\n                std::cout << \"Neutra\\n\";\n            } else {\n                std::cout << \"Calida\\n\";\n            }\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de una extracción posible"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta implementación después de elegir, construir y probar tu extracción. La referencia usa otra colección. Compara decisiones, responsabilidades y pruebas; no necesitas reproducir sus nombres ni escoger la misma función."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección: con {-4,0,7,10,-5}, el resumen sigue siendo 3:2:3 y cada etiqueta conserva su significado. Los resúmenes para {}, {-5,-4,-3}, {8,9,10}, {-1,0,1}, {-5,10} y {9,9,-4,0} son, respectivamente, 0:0:0, 2:1:-7, 2:1:17, 3:0:0, 0:2:0 y 4:0:14. Estos totales no bastan por sí solos: verifica también todas las líneas Dato=valor:etiqueta, los saltos de línea y el orden, incluidos ambos registros de 9."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Recibe una lectura válida de -4 a 9; devuelve su etiqueta, sin imprimir.\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura < 0) { return \"Fria\"; }\n    if (lectura == 0) { return \"Neutra\"; }\n    return \"Calida\";\n}\n\nint main() {\n    std::vector<int> lecturas{9, -5, -1, 0};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí se extrajo la clasificación de una lectura válida. La función recibe una copia de un int y devuelve una cadena; no imprime ni decide qué cuenta en el resumen. Su contrato requiere -4 a 9. main comprueba el intervalo antes de llamarla, conserva la actualización de los contadores y decide dónde mostrar la etiqueta. Para los datos de esta referencia, las etiquetas son Calida, Fuera, Fria y Neutra, en ese orden, y el resumen es 3:1:8."
+        },
+        {
+          "type": "paragraph",
+          "text": "Otra solución puede extraer la decisión de validez a una función bool y dejar la clasificación en main. También puede separar ambas decisiones si cada interfaz expresa una idea clara. Esas elecciones son válidas cuando mantienen las responsabilidades y todas las salidas; mover todo main a una función con otro nombre, sin separar ninguna idea, no realiza el objetivo de esta práctica. Devuelve después la colección inicial a tu propia versión y repite las comparaciones conservadas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un resumen coincidente no comprueba las etiquetas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sigue el programa siguiente y predice su salida completa. Después contrasta cada línea con el contrato del informe. Decide qué parte de la evidencia se perdería si una prueba conservara únicamente la última línea."
+        },
+        {
+          "type": "output_prediction",
+          "id": "u7_refactor_transferencia_etiquetas_y_resumen",
+          "question": "Predice la salida completa. Conserva los saltos de línea internos; no escribas comillas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura <= 0) { return \"Fria\"; }\n    return \"Calida\";\n}\n\nint main() {\n    std::vector<int> lecturas{0, 2, -2};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Dato=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Fuera\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Resumen=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n",
+          "answers": [
+            "Dato=0:Fria\nDato=2:Calida\nDato=-2:Fria\nResumen=3:0:0"
+          ],
+          "explanation": "El cero entra en lectura<=0 y recibe Fria. Eso viola la etiqueta Neutra exigida para cero, aunque los tres datos válidos y su suma producen un resumen correcto. Comparar sólo la última línea ocultaría este cambio de comportamiento."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "u7_refactor_transferencia_alcance_de_la_comparacion",
+          "question": "Tras una extracción, todas las pruebas comparan sólo Resumen=validas:rechazadas:suma. ¿Qué conclusión respeta el alcance de esa evidencia?",
+          "options": [
+            "Los resúmenes coinciden; las etiquetas quedan verificadas por usar las mismas lecturas.",
+            "Los resúmenes coinciden; falta comprobar las etiquetas y el orden de las líneas.",
+            "Los resúmenes coinciden; conservar los datos basta para aceptar la reorganización."
+          ],
+          "correctIndex": 1,
+          "explanation": "La entrada igual y el resumen igual no garantizan todos los comportamientos observables. El contrato también especifica una etiqueta para cada lectura y su posición en la salida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera ahora tu propia extracción: explica por qué su parámetro y retorno bastan para la decisión elegida, dónde se protege su dominio y qué pruebas conservadas distinguen sus casos. Refactorizar conserva el comportamiento acordado y cambia una organización con propósito; una colección de salidas coincidentes sólo respalda aquello que se comparó."
         }
       ]
     }

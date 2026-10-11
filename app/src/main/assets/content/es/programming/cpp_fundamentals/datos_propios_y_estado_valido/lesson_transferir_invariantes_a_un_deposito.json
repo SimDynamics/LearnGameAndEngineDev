@@ -241,6 +241,226 @@
           "explanation": "La transferencia exige reconstruir las razones que validan el estado y las operaciones del nuevo concepto."
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos parámetros no garantizan dos depósitos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera la diferencia entre objeto, valor y nombre. Dos depósitos distintos pueden tener capacidad cinco y existencias tres. También podemos pasar un único depósito dos veces a una función con dos referencias: los dos parámetros designarán ese mismo objeto. Una operación mediante uno de esos nombres cambia el estado que después consulta el otro; no cambia a qué objeto está vinculada la referencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Define Resultado_doble como un struct con dos bool llamados retiro e ingreso. Construye procesar(Deposito& primero, Deposito& segundo, int cantidad_retirar, int cantidad_agregar). Debe intentar primero retirar del primero y después agregar al segundo, usando las operaciones públicas del Deposito conocido. El segundo intento se realiza también si el retiro devolvió false. Devuelve por separado el resultado de cada intento y no imprime. Ambas referencias pueden designar el mismo depósito. Cada operación usa el estado existente cuando se ejecuta, respeta su propio rechazo y conserva el invariante."
+        },
+        {
+          "type": "paragraph",
+          "text": "Son dos solicitudes independientes y ordenadas, con importes que pueden diferir. No es una transferencia de existencias ni una operación de todo o nada: un ingreso rechazado no revierte un retiro aceptado. Trabajaremos con depósitos construidos válidamente y cantidades de solicitud entre -1 y 21. Conserva la clase dada; no añadas una operación ingresar ni reemplaces sus condiciones. El ingreso se solicita mediante agregar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye dos pruebas nuevas con capacidad cinco y existencias iniciales tres. En Distintos, crea dos objetos y solicita retirar dos del primero y agregar cuatro al segundo. En Mismo, crea otro objeto nuevo y pásalo como ambos argumentos, con esas mismas cantidades. Antes de cada llamada conserva una copia const del primer objeto y una vista const por referencia a él. La copia guarda un valor anterior; la vista sólo permite leer por esa vía y observa modificaciones posteriores realizadas por otra vía válida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, traza objeto afectado, existencias anteriores, resultado y existencias posteriores de cada operación. Para cada prueba imprime su encabezado, Distintos o Mismo, y luego tres líneas: Resultados=R:I, Estados=A:B y Observacion=F:V. R e I son los bools; A y B son las existencias de los dos argumentos después de la llamada; F y V son las existencias que observan copia y vista. En Mismo se consulta dos veces el único objeto para A y B. Separa las líneas con saltos, sin salto después de la última. Calcula las salidas antes de escribir el programa."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\n// Define Resultado_doble y procesar antes de main.\nint main() {\n    // Construye aqui las pruebas del contrato.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Usa objetos nuevos para cada frontera adicional. Con capacidad cinco en ambos: primero vacío y segundo con una existencia, solicita retirar uno y agregar dos; primero lleno y segundo vacío, solicita retirar cinco y agregar cinco; ambos con tres, solicita retirar cero y agregar menos uno. Prueba también un único depósito lleno con ambas cantidades cinco y un único depósito vacío con retirada uno y agregado cinco. Decide por separado qué se acepta y qué se conserva. No uses sólo una prueba cuyos dos resultados sean true."
+        },
+        {
+          "type": "note",
+          "text": "Construye la función y main antes de continuar. El editor aporta únicamente la clase conocida y una estructura mínima. El laboratorio no califica automáticamente tu programa; la referencia posterior utiliza otros datos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar los dos resultados y el objeto que cambió"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lee después de tu construcción. La referencia usa capacidad seis: el primer objeto comienza con cuatro y el segundo distinto con dos; solicita retirar tres y agregar cuatro. La prueba Mismo comienza de nuevo con cuatro. Las modificaciones ocurren en instrucciones separadas antes de presentar los resultados."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nstruct Resultado_doble {\n    bool retiro;\n    bool ingreso;\n};\n\nResultado_doble procesar(Deposito& primero, Deposito& segundo,\n                        int cantidad_retirar, int cantidad_agregar) {\n    const bool retiro = primero.retirar(cantidad_retirar);\n    const bool ingreso = segundo.agregar(cantidad_agregar);\n    return Resultado_doble{retiro, ingreso};\n}\n\nint main() {\n    Deposito a{Capacidad{6}, Existencias{4}};\n    Deposito b{Capacidad{6}, Existencias{2}};\n    const Deposito foto_a = a;\n    const Deposito& vista_a = a;\n    const Resultado_doble distintos = procesar(a, b, 3, 4);\n    std::cout << \"Distintos\\nResultados=\" << distintos.retiro << ':' << distintos.ingreso;\n    std::cout << \"\\nEstados=\" << a.existencias() << ':' << b.existencias();\n    std::cout << \"\\nObservacion=\" << foto_a.existencias() << ':' << vista_a.existencias();\n\n    Deposito c{Capacidad{6}, Existencias{4}};\n    const Deposito foto_c = c;\n    const Deposito& vista_c = c;\n    const Resultado_doble mismo = procesar(c, c, 3, 4);\n    std::cout << \"\\nMismo\\nResultados=\" << mismo.retiro << ':' << mismo.ingreso;\n    std::cout << \"\\nEstados=\" << c.existencias() << ':' << c.existencias();\n    std::cout << \"\\nObservacion=\" << foto_c.existencias() << ':' << vista_c.existencias();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia muestra Distintos, Resultados=1:1, Estados=1:6 y Observacion=4:1; después Mismo, Resultados=1:1, Estados=5:5 y Observacion=4:5, cada elemento en su línea. Aunque los dos resultados son verdaderos en ambas pruebas, los objetos afectados y los estados finales difieren. La copia mantiene cuatro; const no convierte la vista en una fotografía."
+        },
+        {
+          "type": "paragraph",
+          "text": "Contrasta tu caso original de capacidad cinco y tres existencias. Distintos debe dar Resultados=1:0, Estados=1:3 y Observacion=3:1. Mismo debe dar Resultados=1:1, Estados=5:5 y Observacion=3:5. En el primer caso, el ingreso encuentra sólo dos plazas en el segundo objeto; en el segundo, el retiro dejó cuatro plazas en el objeto compartido. No restaures el primer objeto cuando el ingreso falle."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las fronteras adicionales distinguen las cuatro parejas de resultados. Vacío/una existencia con solicitudes uno/dos da 0:1 y estados 0:3. Lleno/vacío con cinco/cinco da 1:1 y estados 0:5. Tres/tres con cero/menos uno da 0:0 y estados 3:3. Un único objeto lleno con cinco/cinco da 1:1 y vuelve a cinco; uno vacío con uno/cinco da 0:1 y llega a cinco. En cada caso, la foto conserva el valor inicial del primer objeto y la vista lee su valor final."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios para otras soluciones: referencias a los objetos del llamador; exactamente un intento de retirar y después uno de agregar; segundo intento incondicional respecto del primer resultado; dos bools que corresponden a esos intentos; sin impresión dentro de procesar ni reversión añadida; capacidad conservada y existencias válidas. Un nombre distinto de función o de miembros es admisible si tu interfaz y presentación conservan esas responsabilidades. No basta que una salida coincida: inspecciona ambos estados y conserva pruebas con rechazo inicial y rechazo posterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un rechazo inicial no cancela la segunda solicitud"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera el contrato con datos distintos. Traza cada llamada antes de responder. En estas dos pruebas el retiro solicitado supera las existencias iniciales; eso no decide el resultado del ingreso. Las fotos y vistas se crean antes de las llamadas y todos los objetos permanecen vivos hasta su presentación."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__transferir_invariantes_a_un_deposito__alias_rechazo_inicial_y_vista",
+          "language": "cpp",
+          "question": "Predice las dos líneas completas. Dentro de cada línea aparecen resultados, estados y foto:vista, separados por punto y coma. No añadas un salto final.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nstruct Resultado_doble {\n    bool retiro;\n    bool ingreso;\n};\n\nResultado_doble procesar(Deposito& primero, Deposito& segundo,\n                        int cantidad_retirar, int cantidad_agregar) {\n    const bool retiro = primero.retirar(cantidad_retirar);\n    const bool ingreso = segundo.agregar(cantidad_agregar);\n    return Resultado_doble{retiro, ingreso};\n}\n\nint main() {\n    Deposito a{Capacidad{4}, Existencias{1}};\n    Deposito b{Capacidad{4}, Existencias{1}};\n    const Deposito foto_a = a;\n    const Deposito& vista_a = a;\n    const Resultado_doble distintos = procesar(a, b, 2, 3);\n    std::cout << \"Distintos=\" << distintos.retiro << ':' << distintos.ingreso;\n    std::cout << ';' << a.existencias() << ':' << b.existencias();\n    std::cout << ';' << foto_a.existencias() << ':' << vista_a.existencias();\n\n    Deposito c{Capacidad{4}, Existencias{1}};\n    const Deposito foto_c = c;\n    const Deposito& vista_c = c;\n    const Resultado_doble mismo = procesar(c, c, 2, 3);\n    std::cout << \"\\nMismo=\" << mismo.retiro << ':' << mismo.ingreso;\n    std::cout << ';' << c.existencias() << ':' << c.existencias();\n    std::cout << ';' << foto_c.existencias() << ':' << vista_c.existencias();\n    return 0;\n}\n",
+          "answers": [
+            "Distintos=0:1;1:4;1:1\nMismo=0:1;4:4;1:4"
+          ],
+          "explanation": "Ambos retiros de dos se rechazan con una existencia. Agregar tres se intenta igualmente: llena b en Distintos y llena c en Mismo. a permanece en uno; c cambia a cuatro. Las fotos conservan uno y las vistas leen el objeto al que siguen vinculadas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__transferir_invariantes_a_un_deposito__alias_cortocircuito_omite_solicitud",
+          "question": "Una versión sustituye los dos intentos por bool completo = primero.retirar(2) && segundo.agregar(3);. El primer depósito tiene una existencia y el segundo tiene espacio para tres. ¿Por qué incumple el contrato?",
+          "options": [
+            "Repite el retiro después del ingreso y cuenta dos veces la primera solicitud.",
+            "Omite el ingreso cuando el retiro falla y sustituye dos resultados por uno.",
+            "Convierte el rechazo del retiro en un ingreso aceptado sin consultar el segundo depósito."
+          ],
+          "correctIndex": 1,
+          "explanation": "&& omite su segundo operando cuando el primero es false. Aquí las operaciones se deben intentar por separado y sus bools representan solicitudes distintas. No hace falta que ambos tengan el mismo resultado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un true y un false describen intentos, no un saldo ni una promesa de reversión. Para investigar una implementación, observa también qué objeto recibió cada operación y qué valor existía en ese momento. No determines si hay un único objeto mirando sólo valores iniciales iguales."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir la identidad a una secuencia de solicitudes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un lote sin reiniciar los depósitos entre sus pasos. Define Solicitud con retirada int, agregado int y mismo bool. Cada solicitud usa a como primer argumento de procesar; cuando mismo es true usa también a como segundo argumento, y cuando es false usa b. Recupera tu función ya comprobada: siguen siendo retiro y agregado independientes, en ese orden, y ambos se intentan. No imprimas dentro de ella."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comienza con dos objetos distintos a y b, ambos de capacidad cinco y existencias tres. Conserva al comienzo una foto const de a y una vista const por referencia a a. Prepara, en este orden, solicitudes {2,4,false}, {2,1,true}, {2,2,false}, {1,1,true} y {0,1,false}. La decisión de compartir el argumento pertenece a cada solicitud. El rechazo de un paso no borra estados ni elimina solicitudes posteriores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por cada solicitud imprime Paso=R:I;Estados=A:B en una línea. Estados siempre presenta los objetos a y b, aunque ese paso haya usado a dos veces. Al terminar muestra Totales=NR:NI, donde cuentas por separado retiros e ingresos aceptados, y Observacion=F:V en la última línea. No añadas un salto final. Antes de ejecutar, traza los valores usados por cada intento, las dos existencias y ambos contadores. No cuentes los pasos como si todos aceptaran las dos operaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe desde este editor mínimo el registro de solicitud, el lote, la selección del segundo argumento y el informe. Puedes recuperar tu procesar, pero no recibes el cuerpo del recorrido ni main. Prueba después vector vacío, una única solicitud {1,1,true}, esa misma solicitud repetida dos veces y la frontera a lleno/b vacío con {5,5,false}. Calcula primero qué información distingue las operaciones aunque un paso deje el estado como estaba."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\n// Recupera Resultado_doble y procesar; define Solicitud antes de main.\nint main() {\n    // Construye aqui el lote, sus estados y sus pruebas.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Construye y comprueba el lote antes de consultar la referencia. Todos sus datos están preparados y son pequeños. El uso repetido de a no debe convertirse en una copia, ni una solicitud fallida en una salida anticipada del recorrido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar el lote con estados iniciales diferentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia usa capacidad seis, a con dos existencias y b con cuatro; cambia también la lista de solicitudes. Conserva la misma política y formatos. Una asignación de Resultado_doble copia dos bools del resultado; no cambia a qué depósitos se vincularon los parámetros durante la llamada."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nstruct Resultado_doble {\n    bool retiro;\n    bool ingreso;\n};\n\nResultado_doble procesar(Deposito& primero, Deposito& segundo,\n                        int cantidad_retirar, int cantidad_agregar) {\n    const bool retiro = primero.retirar(cantidad_retirar);\n    const bool ingreso = segundo.agregar(cantidad_agregar);\n    return Resultado_doble{retiro, ingreso};\n}\n\nstruct Solicitud {\n    int retirada;\n    int agregado;\n    bool mismo;\n};\n\nint main() {\n    Deposito a{Capacidad{6}, Existencias{2}};\n    Deposito b{Capacidad{6}, Existencias{4}};\n    const Deposito foto = a;\n    const Deposito& vista = a;\n    const std::vector<Solicitud> solicitudes{\n        {3, 2, false}, {2, 5, true}, {1, 3, false}, {5, 1, true}};\n    int retiros{0};\n    int ingresos{0};\n    for (const auto& solicitud : solicitudes) {\n        Resultado_doble resultado{false, false};\n        if (solicitud.mismo) {\n            resultado = procesar(a, a, solicitud.retirada, solicitud.agregado);\n        } else {\n            resultado = procesar(a, b, solicitud.retirada, solicitud.agregado);\n        }\n        if (resultado.retiro) { ++retiros; }\n        if (resultado.ingreso) { ++ingresos; }\n        std::cout << \"Paso=\" << resultado.retiro << ':' << resultado.ingreso;\n        std::cout << \";Estados=\" << a.existencias() << ':' << b.existencias() << '\\n';\n    }\n    std::cout << \"Totales=\" << retiros << ':' << ingresos;\n    std::cout << \"\\nObservacion=\" << foto.existencias() << ':' << vista.existencias();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia produce las cuatro líneas Paso=0:1;Estados=2:6, Paso=1:1;Estados=5:6, Paso=1:0;Estados=4:6 y Paso=0:1;Estados=5:6. Después muestra Totales=2:3 y Observacion=2:5. Cuando ambos argumentos son a, el ingreso ve el estado que dejó el retiro; b conserva seis. El contador de retiros y el de ingresos describen operaciones aceptadas, no existencias ni número de solicitudes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para tu lote original de capacidad cinco, los pasos deben ser 1:0 con estados 1:3; 0:1 con 2:3; 1:1 con 0:5; 0:1 con 1:5; y 0:0 con 1:5. El cierre es Totales=2:3 y Observacion=3:1. Un reinicio por paso, una copia usada como segundo argumento o una salida tras el primer false rompe esta secuencia aunque alguna fila coincida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con vector vacío y el estado original se imprime sólo Totales=0:0 y Observacion=3:3. Una solicitud {1,1,true} acepta ambas operaciones y deja a en tres y b en tres; dos iguales conservan ese estado y dan Totales=2:2. En la frontera a lleno/b vacío, {5,5,false} acepta ambos y deja 0:5. Esos casos deben conservar foto y vista según su relación real, no según cuántas operaciones aceptaron."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de transferencia: registros asociados y orden conservado; a y b persistentes entre pasos; elección del argumento conforme a mismo; ambas operaciones intentadas con sus dos resultados separados; conteo independiente de cada aceptación; estados presentados después de cada paso; copia anterior estable y vista actual; vacío sin pasos ficticios. Se admiten otro bucle o funciones de presentación si no cambian esas responsabilidades ni imprimen valores calculados a mano como constantes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar otra vía de acceso frente a una copia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de responder, separa los objetos que existen de los nombres que permiten acceder a ellos. Todas las modificaciones de este programa están en sentencias separadas. No hay referencias que sobrevivan a sus objetos ni una inspección durante el crecimiento de una colección."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__transferir_invariantes_a_un_deposito__alias_copia_vista_y_otra_via",
+          "language": "cpp",
+          "question": "Predice las cuatro líneas completas. Una copia y una referencia se crean antes de los cambios; sigue sus objetos hasta la última salida. No añadas un salto final.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nstruct Resultado_doble {\n    bool retiro;\n    bool ingreso;\n};\n\nResultado_doble procesar(Deposito& primero, Deposito& segundo,\n                        int cantidad_retirar, int cantidad_agregar) {\n    const bool retiro = primero.retirar(cantidad_retirar);\n    const bool ingreso = segundo.agregar(cantidad_agregar);\n    return Resultado_doble{retiro, ingreso};\n}\n\nint main() {\n    Deposito a{Capacidad{7}, Existencias{4}};\n    Deposito b = a;\n    const Deposito foto = a;\n    const Deposito& vista = a;\n    Deposito& otra_via = a;\n    const Resultado_doble resultado = procesar(otra_via, b, 2, 1);\n    const bool agregado = otra_via.agregar(3);\n    const bool retirado = b.retirar(4);\n    std::cout << \"Resultados=\" << resultado.retiro << ':' << resultado.ingreso;\n    std::cout << \"\\nOtros=\" << agregado << ':' << retirado;\n    std::cout << \"\\nEstados=\" << a.existencias() << ':' << b.existencias();\n    std::cout << \"\\nObservacion=\" << foto.existencias() << ':' << vista.existencias();\n    return 0;\n}\n",
+          "answers": [
+            "Resultados=1:1\nOtros=1:1\nEstados=5:1\nObservacion=4:5"
+          ],
+          "explanation": "b y foto son copias independientes de a al principio. otra_via y vista siguen designando a. procesar retira dos de a y agrega uno a b; después otra_via agrega tres a a y b retira cuatro. a termina en cinco, b en uno, foto conserva cuatro y vista lee cinco."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__transferir_invariantes_a_un_deposito__alias_valores_iguales_no_identidad",
+          "question": "Dos depósitos muestran las mismas existencias después de un paso. ¿Qué conclusión es válida sin conocer cómo se construyeron y qué referencias se pasaron?",
+          "options": [
+            "Las existencias coinciden; ese dato solo no decide si los nombres designan uno o dos objetos.",
+            "Las existencias coinciden; por tanto, las dos referencias quedaron vinculadas al mismo objeto.",
+            "Las existencias coinciden; por tanto, modificar uno actualizará siempre el otro."
+          ],
+          "correctIndex": 0,
+          "explanation": "Igualdad de valores e identidad del objeto son preguntas diferentes. Construcción, copia y vinculación de referencias determinan la relación; no una coincidencia de números."
+        },
+        {
+          "type": "paragraph",
+          "text": "En una recuperación posterior, elige cantidades que provoquen resultados distintos en el primer y segundo intento y explica la primera diferencia entre usar a,b y usar a,a. Reconstruye después un lote desde su contrato antes de mirar tu versión anterior. Conserva una prueba cuyo retiro se rechace pero cuyo ingreso pueda aceptarse, y otra cuyo retiro se acepte pero cuyo ingreso se rechace: cada una comprueba una promesa diferente."
+        },
+        {
+          "type": "note",
+          "text": "Esta recuperación retoma valor, copia y referencia de Stroustrup (2024), Programming: Principles and Practice Using C++ (3.ª ed.), §7.4.5–7.4.6, y el modelo de tipos concretos del capítulo 8. La clase, las políticas, las solicitudes y las pruebas de esta lección son propias; el procesador no ofrece una transferencia conservativa ni una garantía de todo o nada."
+        }
+      ]
     }
   ]
 }

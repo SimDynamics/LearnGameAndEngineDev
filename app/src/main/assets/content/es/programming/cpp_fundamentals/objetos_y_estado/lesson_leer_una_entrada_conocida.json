@@ -213,7 +213,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Laboratorio: leer, procesar y presentar"
+          "text": "Laboratorio guiado: leer, procesar y presentar"
         },
         {
           "type": "paragraph",
@@ -226,7 +226,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Repite una ejecución sin cambiar los datos: debe volver a producir la misma salida, porque la entrada se entrega desde el comienzo. El texto de Entrada preparada se envía a cin; no forma parte del código ni aparece automáticamente en la salida. Distingue un diagnóstico de compilación de la salida del programa y de un error de ejecución. Este programa presupone un nombre y un entero válidos: probar Rita 4 y Leo 2 no demuestra que se compruebe una entrada vacía o mal formada."
+          "text": "Repite una ejecución sin cambiar los datos: debe volver a producir la misma salida, porque la entrada se entrega desde el comienzo. El texto de Entrada preparada se envía a cin; no forma parte del código ni aparece automáticamente en la salida. Distingue un diagnóstico de compilación de la salida del programa y de un error de ejecución. Este programa presupone un nombre de una palabra y una cantidad de cajas entre cero y veinte; sumar tres permanece en un int pequeño. Esa es una precondición de la actividad, no una comprobación dentro del programa: probar Rita 4 y Leo 2 no demuestra que se compruebe una entrada vacía o mal formada."
         }
       ]
     },
@@ -243,7 +243,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con entrada Rita 4, la lectura fija nombre y cajas; después se procesa la cantidad y se presenta el resultado Rita: 7. La referencia final conserva una simulación con valores definidos en el código: en ella las definiciones sustituyen únicamente la etapa de lectura. La siguiente pregunta contrasta esa versión con el laboratorio de cin. El programa mostrado presupone datos válidos; una versión que acepte otras entradas necesita comprobar el flujo, porque el cero inicial de cajas no acredita una lectura correcta."
+          "text": "Con entrada Rita 4, la lectura fija nombre y cajas; después se procesa la cantidad y se presenta el resultado Rita: 7. La referencia final conserva una simulación con valores definidos en el código: en ella las definiciones sustituyen únicamente la etapa de lectura. La siguiente pregunta contrasta esa versión con el laboratorio de cin. El programa mostrado presupone un nombre de una palabra y cajas entre cero y veinte; una versión que acepte otras entradas necesita comprobar el flujo, porque el cero inicial de cajas no acredita una lectura correcta."
         },
         {
           "type": "multiple_choice",
@@ -276,7 +276,7 @@
         },
         {
           "type": "note",
-          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+          "text": "La comparación siguiente conserva la simulación con valores fijados. Úsala para distinguir lectura, procesamiento y presentación; la actividad posterior exige construir un programa distinto desde sus requisitos."
         },
         {
           "type": "paragraph",
@@ -290,6 +290,103 @@
         {
           "type": "paragraph",
           "text": "Las definiciones sustituyen aquí sólo la etapa de recibir los datos. Para cambiar el caso en esta simulación debes editar el código; en el laboratorio de lectura mantienes el código y editas Entrada preparada. Compara ambos caminos para Rita 4 y Leo 2 y explica dónde se obtiene cada valor, qué operación lo transforma y qué parte de la salida decide cout."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción propia desde tres datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un programa que reciba, en este orden, una etiqueta de una palabra, una cantidad de paquetes y una cantidad de piezas sueltas. Cada paquete contiene cinco piezas. La cantidad de paquetes pertenece a 0..20 y la de piezas sueltas a 0..4. Esta actividad presupone exactamente esos tres datos válidos; no es todavía un verificador de entrada. Todas las cuentas caben en int dentro de este dominio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lee los tres datos desde cin; el total debe calcularse a partir de ellos. Presenta ETIQUETA: TOTAL, con dos puntos y un espacio y sin un prompt adicional. Con Entrada preparada Iris 4 2 corresponde Iris: 22. No fijes Iris, cuatro o dos como valores del programa. El editor entrega sólo las cabeceras y main: decide las variables, su tipo, el orden de lectura, el cálculo y la salida."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construye la lectura, el cálculo y la presentación desde la consigna.\n    return 0;\n}\n",
+          "initialStandardInput": "Iris 4 2"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, anota qué token irá a cada variable y qué salida esperas. Mantén el código al cambiar la entrada: Leo 0 4 debe dar Leo: 4; Vera 3 1, Vera: 16; Sol 20 4, Sol: 104. Distribuye también los tres tokens entre líneas y repite sin cambiar la entrada. Deben conservarse lectura, cálculo y formato."
+        },
+        {
+          "type": "note",
+          "text": "La referencia aparece después del intento. Cumplir estos casos válidos no demuestra detectar datos faltantes, palabras donde se esperan enteros o un sufijo extra. La comprobación del flujo y la aceptación de un formato completo se desarrollan más adelante."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: leer sin sustituir datos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: tres extracciones hacia tipos adecuados y en el orden indicado; ninguna cantidad del caso ni etiqueta fijada en el código; total calculado como cinco piezas por paquete más las sueltas; texto leído conservado; salida con dos puntos y un espacio. La referencia produce Iris: 22 con la entrada inicial. Otra organización que cumpla el mismo contrato es válida."
+        },
+        {
+          "type": "paragraph",
+          "text": "El cinco expresa una regla del problema, no un dato recibido de la muestra. Reemplazar los datos por constantes pierde la lectura aunque imite la primera salida. Para cambiar el caso se edita Entrada preparada y se conserva el programa. La inicialización a cero facilita describir el estado inicial, pero no acredita que una extracción haya sido válida."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__regla_y_datos_de_entrada",
+          "question": "Al cambiar la entrada a Vera 3 1, ¿qué debe mantenerse en un programa que cumple la consigna?",
+          "options": [
+            "La etiqueta Iris y el resultado 22, porque estaban en el primer caso.",
+            "El valor cuatro en la variable paquetes, independientemente de cin.",
+            "La regla de cinco piezas por paquete y el formato, usando ahora los tres datos nuevos."
+          ],
+          "correctIndex": 2,
+          "explanation": "La lectura entrega otros datos; el programa conserva la regla y el formato. La salida nueva es Vera: 16."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar lectura, copia y actualización"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__copia_despues_de_lectura",
+          "language": "cpp",
+          "question": "La entrada contiene Kiro y 3 en la primera línea, y 1 en la segunda. Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    int originales{paquetes};\n    paquetes += 1;\n    std::cout << nombre << ' ' << total << ' ' << originales << ' ' << paquetes;\n    return 0;\n}\n",
+          "answers": [
+            "Kiro 16 3 4"
+          ],
+          "explanation": "El total se calculó con tres paquetes y una pieza suelta. originales conserva tres; después paquetes cambia a cuatro. Ni la copia ni el total calculado se actualizan automáticamente."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__repetir_desde_la_entrada",
+          "question": "Ejecutas dos veces la referencia con los mismos tres datos válidos, sin editar código ni entrada. ¿Qué explica que la salida coincida?",
+          "options": [
+            "Cada ejecución recibe los datos desde el comienzo y vuelve a calcular el total.",
+            "La segunda ejecución evita cin y reutiliza las variables locales de la anterior.",
+            "cout lee la entrada y decide qué valor debe imprimirse."
+          ],
+          "correctIndex": 0,
+          "explanation": "Las variables locales se construyen de nuevo; la entrada preparada se entrega a cada ejecución desde el principio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperación posterior: vuelve al editor mínimo y construye el programa con otra etiqueta antes de mirar la referencia. Transferencia: cambia explícitamente la regla a cuatro piezas por paquete y el dominio de sueltas a 0..3. Diseña un caso que distinga ambas reglas, otro con cero paquetes y otro en el máximo; predice la salida desde sus datos antes de ejecutar."
         }
       ]
     }

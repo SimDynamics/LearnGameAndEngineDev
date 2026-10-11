@@ -54,6 +54,8 @@ class CppCurricularLabsDeviceTest {
     private var originalPreferenceFiles = emptySet<String>()
 
     @Before fun preserveUserState() {
+        assertEquals("Usar -Plgp.curricularQa=true para aislar los datos del usuario",
+            "com.learngraphicsprogramming.app.curricularqa", context.packageName)
         originalPreferenceFiles = preferenceFiles()
         (originalPreferenceFiles + KNOWN_PREFERENCES).forEach { name ->
             snapshots[name] = context.getSharedPreferences(name, Context.MODE_PRIVATE).all.mapValues { (_, value) ->
@@ -70,6 +72,8 @@ class CppCurricularLabsDeviceTest {
     }
 
     @After fun restoreUserState() {
+        // JUnit también ejecuta After cuando Before rechaza un paquete no aislado.
+        if (context.packageName != "com.learngraphicsprogramming.app.curricularqa") return
         (preferenceFiles() + snapshots.keys).forEach { name ->
             if (name !in originalPreferenceFiles) {
                 assertTrue("Remove only preferences created by this test: $name", context.deleteSharedPreferences(name))
@@ -92,7 +96,7 @@ class CppCurricularLabsDeviceTest {
     }
 
     @Test fun authoredReadingLabConsumesFreshPreparedInputAndRetainsTheDraft() {
-        withAsset(READING, { it.has("initialStandardInput") }) { scenario, location ->
+        withAsset(READING, { it.optString("initialStandardInput") == "Rita 4" }) { scenario, location ->
             runWithInput(scenario, "Rita 4", "Rita: 7")
             runWithInput(scenario, "Leo\n2\n", "Leo: 5")
             runWithInput(scenario, "  Rita\t4\n", "Rita: 7")
@@ -180,7 +184,7 @@ class CppCurricularLabsDeviceTest {
     @Test fun optionalClang21UsesTheSameRendererForPreparedInputAndProjectLinking() {
         assumeTrue("This check needs the executable optional Clang 21 split",
             CppCompiler.isOptionalClang21Available(context))
-        withAsset(READING, { it.has("initialStandardInput") }) { scenario, _ ->
+        withAsset(READING, { it.optString("initialStandardInput") == "Rita 4" }) { scenario, _ ->
             selectOptionalCompiler(scenario)
             runWithInput(scenario, "Rita 4", "Rita: 7")
             runWithInput(scenario, "Leo 2", "Leo: 5")

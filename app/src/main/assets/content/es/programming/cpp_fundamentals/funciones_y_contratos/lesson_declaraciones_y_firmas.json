@@ -240,6 +240,178 @@
           "text": "El proyecto tiene una sola definición de main. Los archivos del laboratorio son propios de este proyecto: la cabecera se materializa antes de compilar, ambos .cpp se compilan y sus objetos se enlazan en un programa. Cambiar una cabecera o una implementación debe afectar la ejecución siguiente. Conservar el mismo nombre de archivo no permite reutilizar una versión antigua de su contenido."
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir dos repartos con un mismo nombre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un taller reparte material por igual entre cuatro personas. Las piezas son indivisibles: cada persona recibe la misma cantidad entera y las piezas sobrantes quedan fuera de ese reparto. Una longitud de cinta sí puede fraccionarse: cada persona recibe una cuarta parte de la medida. Son dos preguntas relacionadas que admiten el mismo nombre de función, por_persona, y tipos distintos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye por_persona para un parámetro int y resultado int, y otra por_persona para un parámetro double y resultado double. La primera recibe una cantidad de piezas entre 0 y 20. La segunda recibe metros entre 0 y 20; en estas pruebas usa sólo múltiplos de 0.5. Ambas devuelven la parte de una persona, no imprimen y no cambian los argumentos del llamador. Trabajaremos únicamente con argumentos que tienen exactamente el tipo del parámetro elegido, sin conversiones ambiguas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe las dos declaraciones antes de main y sus definiciones después. En main declara 7 piezas como int y 7.0 metros como double; llama a las dos funciones con esos objetos. Presenta dos líneas: Piezas: 1 y Metros: 1.75. Conserva un espacio después de cada etiqueta y termina cada línea con salto. Los resultados deben proceder de las llamadas; no se sustituyen por esos números."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye las declaraciones, las llamadas y las definiciones.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, prepara los resultados para 0 piezas y 0.0 metros; 3 y 3.0; 4 y 4.0; 20 y 20.0. Comprueba también 0.5 metros y una sola pieza. Para cada llamada anota tipo del argumento, función prevista y parte esperada. Explica por qué un reparto puede dejar piezas sobrantes y el otro conserva una fracción. Mantén los datos dentro del dominio: estas funciones no son validadores de entradas arbitrarias."
+        },
+        {
+          "type": "note",
+          "text": "El editor no proporciona declaraciones ni cuerpos. Consulta la referencia después de construir y probar. El número cuatro expresa la regla del reparto; siete pertenece únicamente al caso inicial. No hace falta cin, una colección ni una API nueva."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: las interfaces y los dos cálculos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta referencia usa otros datos: 9 piezas y 9.5 metros. Declara ambas interfaces antes de las llamadas y conserva la misma firma al definir cada cuerpo después. El reparto indivisible entrega piezas completas; el fraccionable conserva la parte de la medida."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    const int piezas = 9;\n    const double metros = 9.5;\n    std::cout << \"Piezas: \" << por_persona(piezas) << '\\n';\n    std::cout << \"Metros: \" << por_persona(metros) << '\\n';\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 4;\n}\n\ndouble por_persona(double metros) {\n    return metros / 4.0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia presenta Piezas: 2 y Metros: 2.375 en dos líneas. Criterios: mismo nombre, parámetros distinguibles, declaraciones y definiciones concordantes, cálculo correspondiente a cada tipo y presentación en main. No basta escribir dos nombres distintos o cambiar sólo el tipo de retorno de una única lista de parámetros. Otras implementaciones son válidas si cumplen esas interfaces y comportamientos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para los casos del intento: 0 y 0.0 producen 0 y 0; 3 y 3.0 producen 0 y 0.75; 4 y 4.0 producen 1 y 1; 20 y 20.0 producen 5 y 5. Una pieza entrega cero piezas completas por persona; 0.5 metros entrega 0.125 metros. Los casos con resultado coincidente no bastan para distinguir las funciones: incluye también los que conservan una fracción."
+        },
+        {
+          "type": "paragraph",
+          "text": "La división entera usa cantidades no negativas pequeñas y un divisor distinto de cero. En las medidas elegidas, dividir por cuatro conserva fracciones representables exactamente en double; estos casos no afirman que toda medida decimal sea exacta. Los argumentos del llamador conservan su valor. Cambiar los datos de prueba no cambia la regla de cuatro personas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el argumento antes de mirar el destino"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas__argumento_y_destino_del_reparto",
+          "language": "cpp",
+          "question": "Predice la salida exacta. Ambos objetos que reciben resultados son double; identifica también el tipo de cada argumento de la llamada.",
+          "code": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    const int piezas = 11;\n    const double metros = 11.0;\n    double desde_piezas = por_persona(piezas);\n    double desde_metros = por_persona(metros);\n    std::cout << desde_piezas << ':' << desde_metros;\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 4;\n}\n\ndouble por_persona(double metros) {\n    return metros / 4.0;\n}\n",
+          "answers": [
+            "2:2.75"
+          ],
+          "explanation": "piezas tiene tipo int y elige la función int: 11/4 produce 2. Después ese resultado inicializa desde_piezas como double. metros es double y elige el cálculo fraccionable, que entrega 2.75. El tipo del objeto receptor no recupera la fracción que el cálculo entero no produjo."
+        },
+        {
+          "type": "paragraph",
+          "text": "En estas llamadas, el argumento coincide exactamente con uno de los tipos de parámetro. Primero se elige la función para la llamada y se ejecuta su cálculo; después el resultado inicializa el objeto receptor. Declarar ese objeto como double no transforma por sí solo una llamada con argumento int en la otra sobrecarga. Tampoco el valor numérico decide el tipo: 4 y 4.0 representan cuatro mediante tipos distintos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas__resultados_iguales_y_sobrecarga",
+          "question": "por_persona(4) y por_persona(4.0) producen ambos uno. ¿Qué permite concluir esa coincidencia, conservando las dos funciones?",
+          "options": [
+            "Que se eligió el mismo cuerpo, porque los valores iguales tienen igual tipo.",
+            "Que las funciones coinciden en ese resultado; los tipos de los argumentos siguen eligiendo cuerpos distintos.",
+            "Que cambiar una regla de reparto no puede afectar a ningún otro caso."
+          ],
+          "correctIndex": 1,
+          "explanation": "El resultado uno coincide en este caso. El argumento int y el argumento double siguen seleccionando las dos funciones distintas. Un caso que conserve fracción aporta otra comprobación de sus contratos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vuelve a tu programa con siete piezas: conserva int el argumento y cambia sólo a double el objeto que recibe su resultado. Predice antes de ejecutar qué se conserva. Después crea otra llamada con una medida double de 7.0. Anota por separado argumento, parámetro, resultado de la función y tipo del receptor; no cambies ambos pasos a la vez."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir el reparto a ocho personas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye ahora un reparto para ocho personas. Conserva por_persona, las dos interfaces y los dominios: piezas int entre 0 y 20; metros double entre 0 y 20, usando múltiplos de 0.5. Las piezas siguen siendo indivisibles y la medida sigue siendo fraccionable. Decide qué declaraciones se conservan y qué reglas de los cuerpos necesitan cambiar. La presentación sigue perteneciendo a main."
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor vuelve a contener sólo la estructura mínima. Reconstruye las declaraciones, las definiciones y las llamadas, o recupera tu construcción anterior y adáptala conscientemente. Usa primero 11 piezas como int y 11.0 metros como double. Guarda ambos resultados en objetos double y presenta Piezas: 1 y Metros: 1.375 en dos líneas, cada una terminada con salto. Conserva el tipo de cada argumento; los objetos receptores no eligen la regla."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye las interfaces, los dos repartos y sus pruebas.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Diseña y predice los pares 0 y 0.0; 7 y 7.0; 8 y 8.0; 20 y 20.0. Añade una pieza y 0.5 metros. Para distinguir esta versión de la anterior, conserva al menos un caso cuya parte cambie al pasar de cuatro a ocho personas. Comprueba también que los argumentos mantienen su valor después de llamar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: ambas funciones aplican la nueva regla, las declaraciones concuerdan con sus definiciones, las llamadas reciben los tipos exactos previstos y los resultados se calculan. Cambiar sólo una etiqueta o el tipo del receptor no cambia el número de participantes. Cada caso permanece dentro del dominio; no se necesita añadir una política nueva de errores."
+        },
+        {
+          "type": "note",
+          "text": "Intenta y comprueba antes de leer la referencia siguiente. Estos dos laboratorios son independientes: la versión para ocho no altera automáticamente el programa que escribiste para cuatro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de la transferencia después de construir"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia usa otros datos: 13 piezas y 13.5 metros. Las dos declaraciones conservan sus tipos; los cuerpos aplican el reparto nuevo. main recibe los dos resultados en objetos double sin convertir antes el argumento int."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    const int piezas = 13;\n    const double metros = 13.5;\n    double parte_piezas = por_persona(piezas);\n    double parte_metros = por_persona(metros);\n    std::cout << \"Piezas: \" << parte_piezas << '\\n';\n    std::cout << \"Metros: \" << parte_metros << '\\n';\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 8;\n}\n\ndouble por_persona(double metros) {\n    return metros / 8.0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Presenta Piezas: 1 y Metros: 1.6875. Para las pruebas de transferencia: 0 y 0.0 producen 0 y 0; 7 y 7.0 producen 0 y 0.875; 8 y 8.0 producen 1 y 1; 20 y 20.0 producen 2 y 2.5. Una pieza produce cero piezas completas; 0.5 metros produce 0.0625 metros. Compara la función elegida y el cálculo, además de la salida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: regla de ocho en ambos cuerpos, mismo nombre con parámetros distintos, interfaz visible antes de llamar y argumentos conservados. Con estos datos pequeños, la parte entera no supera 2 y la medida no supera 2.5. Los divisores nunca son cero. Una organización diferente puede ser correcta si respeta las declaraciones, los tipos y todos los resultados."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas__tipo_del_objeto_argumento_tras_inicializar",
+          "language": "cpp",
+          "question": "Este programa conserva la regla de ocho personas. Predice la salida: los dos objetos argumento se inicializan con el literal 10, pero tienen declaraciones distintas.",
+          "code": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    int piezas = 10;\n    double metros = 10;\n    double primera = por_persona(piezas);\n    double segunda = por_persona(metros);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 8;\n}\n\ndouble por_persona(double metros) {\n    return metros / 8.0;\n}\n",
+          "answers": [
+            "1:1.25"
+          ],
+          "explanation": "piezas se declara int y llama a por_persona(int), que entrega 1. metros se declara double; su inicialización convierte el diez a ese tipo y la llamada posterior elige por_persona(double), que entrega 1.25. Ambos receptores son double, pero no determinan esa elección."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperación posterior: sin consultar los cuerpos, explica qué parte comunica cómo se llama, cuál realiza el reparto y por qué la elección sigue el tipo del argumento. Reconstruye una de las versiones desde el editor mínimo y elige datos distintos que separen resultado coincidente de reparto con fracción. Comprueba primero lo esperado desde el problema y después compáralo con tu programa."
+        }
+      ]
     }
   ]
 }

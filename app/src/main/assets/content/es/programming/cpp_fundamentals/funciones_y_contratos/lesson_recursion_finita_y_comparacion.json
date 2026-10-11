@@ -192,6 +192,171 @@
           "text": "La referencia prueba el caso base. Con un tope positivo validado, cada llamada recursiva usa un entero no negativo menor: tope-1, hasta alcanzar cero. El bucle visita de 1 a tope, y no tiene cuerpo para cero. La validación limita ambas versiones a 0..8 y los resultados a 0..36. Verificar que termina y verificar que devuelve la suma correcta son obligaciones distintas."
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contar parejas sin recibir el algoritmo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una mesa dispone de fichas y forma parejas completas: cada pareja necesita dos fichas; una ficha sobrante no cuenta como pareja. El dato permitido es un int entre 0 y 12. Construye int parejas_recursivas(int fichas), que devuelve cuántas parejas completas se pueden formar. Su resultado debe depender del argumento y no de una respuesta escrita para un solo caso."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función calcula sin imprimir y recibe fichas por valor, sin cambiar el objeto del llamador. Elige qué cantidades ya puedes resolver sin otra llamada, cómo reducir un caso pendiente a uno menor y cómo completar su resultado al volver. En esta función utiliza recursión; no sustituyas el trabajo por una división ni por un bucle. La comparación iterativa vendrá después del intento."
+        },
+        {
+          "type": "paragraph",
+          "text": "En main declara fichas con el valor inicial 7. Valida el dominio antes de llamar: un dato inválido muestra solamente Fuera del dominio y no llega a parejas_recursivas. Un dato válido muestra Parejas:R;Fichas:F, sin espacios ni salto final, donde R es el resultado calculado y F es el dato original conservado. Coloca la definición antes de main o declara correctamente su interfaz antes de la llamada."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye la funcion recursiva, la validacion y la salida.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe lo esperado antes de ejecutar para 0 y 1, para el par 4, para el impar 7 y para el extremo 12. Comprueba después -1 y 13 como rechazos sin llamada. En cada caso válido comprueba también F: recibir por valor no debe consumir las fichas del objeto de main. No basta con que el programa termine: tiene que contar las parejas prometidas."
+        },
+        {
+          "type": "note",
+          "text": "Antes de ejecutar tu versión, revisa el argumento de cada posible llamada recursiva: debe seguir dentro del dominio, ser menor en los casos que continúan y alcanzar un caso que regrese sin llamarse otra vez. No ejecutes variantes que repitan indefinidamente la llamada o salgan del dominio. Consulta la referencia después de construir y explicar tu solución."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior del conteo de parejas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint main() {\n    const int fichas = 9;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    std::cout << \"Parejas:\" << parejas << \";Fichas:\" << fichas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia usa otro dato y produce Parejas:4;Fichas:9. El intento con 7 produce Parejas:3;Fichas:7. Los casos 0 y 1 producen respectivamente Parejas:0;Fichas:0 y Parejas:0;Fichas:1; 4 produce Parejas:2;Fichas:4; 12 produce Parejas:6;Fichas:12. Los dos datos inválidos producen sólo Fuera del dominio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con cero o una ficha no existe una pareja completa: ambos casos devuelven cero. Con dos o más, la referencia separa una pareja y cuenta las del resto. Restar dos desde un dato par alcanza cero; desde uno impar alcanza uno. Comprobar sólo la base cero no cubre ese segundo recorrido. El paso debe alcanzar una base adecuada, no simplemente producir un número más pequeño."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: resultado correcto en todo 0..12; bases que cubran los restos que puede alcanzar tu paso; progreso dentro del dominio y término finito; resultado combinado según el número de parejas; parámetro por valor, sin salida en la función; validación anterior a la llamada y formato exacto en main. La referencia devuelve como máximo seis. Puedes expresar las bases con una condición o con varios caminos; otra implementación recursiva equivalente es válida si justificas esas mismas obligaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida Fuera del dominio, por sí sola, no demuestra que se haya evitado una llamada anterior. Revisa el camino de main: el retorno del rechazo debe impedir alcanzar el cálculo. Para los datos válidos, comprueba el dato original y el resultado por separado. Aquí el parámetro local permite reducir el problema sin modificar fichas en main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar con una forma iterativa y con el problema"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de tu construcción, esta comparación guiada cuenta las mismas parejas con un bucle. pendientes es un local de la función iterativa: puede reducirse sin cambiar el argumento original de main. El contador comienza sin parejas formadas y aumenta al retirar las fichas de una pareja completa. Las dos funciones tienen la misma precondición, 0..12."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre de ambas funciones: fichas esta entre 0 y 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint parejas_iterativas(int fichas) {\n    int pendientes = fichas;\n    int parejas = 0;\n    while (pendientes >= 2) {\n        pendientes -= 2;\n        ++parejas;\n    }\n    return parejas;\n}\n\nint main() {\n    const int fichas = 8;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int recursivas = parejas_recursivas(fichas);\n    const int iterativas = parejas_iterativas(fichas);\n    std::cout << recursivas << \":\" << iterativas << \":\" << fichas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación produce 4:4:8. Prueba ambas con los casos previstos antes y con los demás valores de 0..12. Relaciona cada respuesta con las fichas necesarias para formar esas parejas y con el resto que no alcanza para otra. Que dos funciones coincidan no basta si ambas calculan mal el problema. En la versión iterativa, pendientes también debe terminar en cero o uno; cuando eso ocurre, el bucle ya no entra."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion__descenso_finito_y_conteo_incorrecto",
+          "language": "cpp",
+          "question": "Predice la salida de esta variante finita. El argumento está en 0..12; después decide si el resultado cuenta parejas completas.",
+          "code": "#include <iostream>\n\nint variante(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + variante(fichas - 1);\n}\n\nint main() {\n    std::cout << variante(5);\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Las llamadas con 5, 4, 3 y 2 añaden una unidad, y la llamada con 1 devuelve cero: resulta cuatro. Cinco fichas permiten sólo dos parejas. La variante termina y conserva argumentos válidos, pero retirar una ficha por cada pareja contada no cumple el problema."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los casos cero y uno no detectan por sí solos ese error: la variante también devuelve cero para ambos. Una prueba de un caso no base comprueba cómo se reduce y se combina el trabajo. Mantén separadas las obligaciones de alcanzar una base, contar correctamente y conservar el dato del llamador."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir el diseño a grupos de tres"
+        },
+        {
+          "type": "paragraph",
+          "text": "Otra mesa forma grupos completos de tres fichas. Una o dos fichas sobrantes no forman otro grupo. Conserva el dominio 0..12 y construye int grupos_recursivos(int fichas): devuelve cuántos grupos completos de tres pueden formarse, sin imprimir ni cambiar el objeto del llamador. Elige de nuevo los casos directos, la llamada que reduce el problema y la combinación del resultado. La función debe utilizar recursión, sin sustituirla por división o por un bucle."
+        },
+        {
+          "type": "paragraph",
+          "text": "main empieza con 8 fichas, valida antes de llamar y muestra Grupos:G;Fichas:F, sin espacios ni salto final. Los inválidos muestran únicamente Fuera del dominio, sin llamada. Construye desde el editor mínimo; puedes recuperar tu organización anterior, pero explica qué decisiones deben cambiar al formar grupos de otro tamaño."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye el nuevo conteo recursivo y comprueba su contrato.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Anota lo esperado para 0, 1, 2, 3, 8, 11 y 12 antes de ejecutar. Rechaza -1 y 13 antes del cálculo. Sigue en papel una cantidad que permita formar grupos y deje fichas sobrantes: cada argumento debe permanecer válido y alcanzar un caso que ya no necesite otra llamada. Comprueba también que main conserva las fichas originales."
+        },
+        {
+          "type": "note",
+          "text": "Esta transferencia comprueba si sabes adaptar las bases y el progreso al significado del problema. Consulta la referencia después del intento; cambiar mecánicamente una cifra sin revisar los casos alcanzables puede dejar una función incorrecta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior y recuperación de los dos conteos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: fichas esta entre 0 y 12.\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    const int fichas = 10;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << \"Grupos:\" << grupos << \";Fichas:\" << fichas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia usa otro dato y produce Grupos:3;Fichas:10. El intento con 8 produce Grupos:2;Fichas:8. Los casos 0, 1 y 2 producen cero grupos conservando cada dato en F; 3 produce Grupos:1;Fichas:3; 11 produce Grupos:3;Fichas:11; 12 produce Grupos:4;Fichas:12. -1 y 13 producen sólo Fuera del dominio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las bases cubren ahora cero, una y dos fichas. Restar tres desde un caso que puede formar un grupo mantiene un argumento no negativo y acaba en uno de esos restos. Cada regreso añade el grupo separado antes de la llamada. La respuesta máxima es cuatro; no se necesita alcanzar exactamente cero desde todos los datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: contar grupos completos en todo 0..12; cubrir todos los restos alcanzables; justificar un descenso válido y finito; combinar el resultado de acuerdo con tres fichas por grupo; conservar el argumento original; función sin salida y validación anterior a la llamada; formato solicitado. Una implementación recursiva equivalente, con bases expresadas de otra manera, también puede cumplir el contrato."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion__mismo_argumento_dos_agrupaciones",
+          "language": "cpp",
+          "question": "Predice la salida completa. Cada cálculo recibe por valor el mismo objeto de main.",
+          "code": "#include <iostream>\n\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    const int fichas = 5;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Fuera del dominio\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << parejas << \":\" << grupos << \":\" << fichas;\n    return 0;\n}\n",
+          "answers": [
+            "2:1:5"
+          ],
+          "explanation": "Cinco fichas permiten dos parejas o un grupo de tres. Las llamadas resuelven dos preguntas sobre el mismo dato, sin consumirlo en main: cada parámetro recibe su valor y el objeto original sigue conteniendo cinco."
+        },
+        {
+          "type": "paragraph",
+          "text": "En otra sesión, recupera ambos conteos con 1, 2, 3 y 6 fichas y escribe sus bases y pasos antes de mirar el código. Explica por qué una segunda llamada no recibe las fichas sobrantes de la primera. Para comprobar cada función, compara con lo esperado del problema y con una forma iterativa correcta; no aceptes solamente que dos programas den la misma respuesta."
+        }
+      ]
     }
   ]
 }

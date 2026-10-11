@@ -189,6 +189,352 @@
           "text": "El parámetro enlaza con el vector original y cada int& valor enlaza con su elemento actual. Se asigna cero sólo a los valores negativos; no se elimina ni reordena ningún elemento. La variante con int valor modifica una copia local, de modo que {-2,4,-1,6} sigue mostrando esos cuatro valores iniciales. Usa hasta ocho elementos entre -12 y 12 y compara estado, orden y tamaño."
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos nombres no garantizan dos objetos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta aquí has modificado un objeto o los elementos de una colección. Una función también puede recibir dos referencias modificables. Los nombres de sus parámetros son distintos, pero eso no garantiza que cada uno designe un objeto distinto: el llamador puede aportar el mismo int en las dos posiciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "También se puede declarar una referencia local: en int& vista = zona;, vista queda vinculada al objeto zona al inicializarse. No es otro int que contenga una copia. Usar vista permite leer o cambiar ese mismo objeto. La vinculación se establece en la inicialización y una asignación posterior no la cambia."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int zona = 4;\n    int otra = -2;\n    int& vista = zona;\n    vista = otra;\n    otra = 6;\n    std::cout << zona << ' ' << vista << ' ' << otra;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es -2 -2 6. vista = otra; copia el valor de otra al objeto zona; no hace que vista pase a referirse a otra. Cuando otra cambia a 6, zona conserva -2 y vista sigue nombrando zona. Distingue el objeto al que se refiere un nombre del valor que ese objeto contiene en cada momento."
+        },
+        {
+          "type": "note",
+          "text": "Una referencia debe inicializarse con el objeto al que se vincula. Aquí todos los objetos referidos siguen existiendo mientras se utilizan las referencias. No necesitamos direcciones, punteros ni otro mecanismo de almacenamiento para razonar sobre estos nombres."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un intercambio sin recibir el algoritmo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye void intercambiar con dos parámetros int&. Ambos argumentos deben ser objetos int modificables; sus valores iniciales estarán entre -12 y 12, incluidos los extremos. La función no imprime ni devuelve un valor. Su tarea es que el primer objeto termine con el valor anterior del segundo y el segundo termine con el valor anterior del primero."
+        },
+        {
+          "type": "paragraph",
+          "text": "El contrato permite que los dos argumentos designen el mismo objeto. En ese caso el intercambio debe conservar su valor. Dos llamadas seguidas con los mismos dos objetos deben restaurar sus valores originales. Ningún camino debe depender de que las cantidades sean positivas ni de que sus valores sean distintos."
+        },
+        {
+          "type": "paragraph",
+          "text": "En main declara 8 y -3 en dos objetos int. Muestra Antes: 8 -3, llama a tu función y muestra Despues: -3 8 en la línea siguiente; conserva un espacio después de cada etiqueta y entre los valores. La presentación pertenece a main. Decide qué valor anterior necesitas conservar antes de sobrescribir un objeto: perderlo haría imposible cumplir la segunda parte del contrato."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye intercambiar fuera de main y conecta tus pruebas.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, escribe los estados esperados para (7, 2), (4, 4), (-5, -1), (0, 6) y (-12, 12). Añade una llamada con el mismo objeto dos veces y dos llamadas consecutivas con dos objetos distintos. Anota el estado después de cada llamada; los dos argumentos se escriben como nombres de objetos, sin incrementos ni otras operaciones dentro de la llamada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: el valor previo de cada objeto llega al otro, los valores permanecen en el dominio, el caso del mismo objeto se conserva, dos llamadas restauran el estado y la función no imprime. Una solución equivalente es válida si cumple estas propiedades. No basta pasar el caso de valores iguales: ese caso puede ocultar una implementación incorrecta."
+        },
+        {
+          "type": "note",
+          "text": "El editor no suministra firma ni cuerpo del intercambio. Construye y prueba antes de leer la referencia. Conserva el intento y explica qué información dejaría de estar disponible después de la primera modificación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: conservar el valor anterior"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara después del intento. Esta referencia usa otros datos, 2 y -9. Un objeto local de tipo int conserva el valor previo del primer objeto antes de que éste cambie. Esa copia local no es una referencia: las modificaciones posteriores del objeto original no cambian el valor guardado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int izquierda = 2;\n    int derecha = -9;\n    std::cout << \"Antes: \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << \"Despues: \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << \"Dos llamadas: \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, izquierda);\n    std::cout << \"Mismo: \" << izquierda;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se muestran Antes: 2 -9, Despues: -9 2, Dos llamadas: 2 -9 y Mismo: 2, en ese orden y en líneas separadas. anterior guarda el dato que todavía necesitará la última asignación. Sin conservarlo, leer de nuevo primero después de modificarlo obtendría su valor actual, no el que tenía al entrar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando ambos parámetros se refieren al mismo objeto, anterior copia su único valor; la primera asignación copia ese valor al propio objeto y la última lo conserva. No se necesita excluir ese caso. Con dos objetos de igual valor también se conservan ambos, pero siguen siendo dos objetos distintos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para revisar los casos del intento, (7, 2) termina en (2, 7); (4, 4) en (4, 4); (-5, -1) en (-1, -5); (0, 6) en (6, 0); y (-12, 12) en (12, -12). Comprueba además el mismo objeto y la restauración tras dos llamadas. No sustituyas tu implementación si cumple los contratos y las mismas pruebas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un intento definido que pierde información"
+        },
+        {
+          "type": "paragraph",
+          "text": "La siguiente función usa dos asignaciones y sus instrucciones tienen un orden definido. Que compile y termine no significa que cumpla el intercambio. Sigue el valor disponible para cada lectura y contrasta después el estado con el contrato; no confundas este error de algoritmo con una ejecución sin comportamiento definido."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__perdida_del_valor_anterior",
+          "question": "Predice las dos líneas. La primera llamada usa dos objetos distintos; la segunda aporta el mismo objeto dos veces.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intento_directo(int& primero, int& segundo) {\n    primero = segundo;\n    segundo = primero;\n}\n\nint main() {\n    int uno = -4;\n    int dos = 7;\n    intento_directo(uno, dos);\n    std::cout << uno << ' ' << dos << '\\n';\n    int unico = -2;\n    intento_directo(unico, unico);\n    std::cout << unico << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "7 7\n-2"
+          ],
+          "explanation": "La primera asignación copia 7 en uno. La segunda lee ese uno ya modificado y copia 7 en dos; el -4 inicial no quedó conservado. Con unico como ambos argumentos, las dos asignaciones copian su propio valor y el objeto permanece en -2. Un caso que no revela el defecto no hace correcta la función."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__caso_que_detecta_intercambio_ingenuo",
+          "question": "¿Qué prueba distingue el intento directo anterior de un intercambio correcto?",
+          "options": [
+            "Dos objetos con valores iniciales 3 y -1.",
+            "Dos objetos con valores iniciales 5 y 5.",
+            "Un único objeto pasado en los dos argumentos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Dos valores distintos permiten observar que falta uno de los valores anteriores. Con dos valores iguales o un solo objeto, este intento directo conserva lo que se esperaba en ese caso, por lo que esas pruebas no detectan el defecto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vuelve a tu función y explica qué lectura necesita un valor anterior y qué lectura puede utilizar un valor actual. En la referencia, anterior es un objeto local que mantiene una copia durante esta llamada. No es una variable global ni un dato persistente entre llamadas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El mismo cuerpo con permisos diferentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este contraste, intercambiar_copias recibe dos int por valor y modifica sólo sus parámetros locales. intercambiar recibe dos int& y puede cambiar los objetos del llamador. Las llamadas son instrucciones separadas; las funciones no imprimen y main observa el estado después de cada una."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__intercambio_por_valor_y_por_referencia",
+          "question": "Predice las tres líneas. Distingue qué objetos modifica cada llamada y qué aporta invertir los nombres de los argumentos en la última.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar_copias(int primero, int segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int izquierda = 3;\n    int derecha = -8;\n    intercambiar_copias(izquierda, derecha);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    intercambiar(derecha, izquierda);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "3 -8\n-8 3\n3 -8"
+          ],
+          "explanation": "La versión por valor intercambia sus copias y main conserva 3 y -8. La versión por referencia modifica los objetos de main y los deja en -8 y 3. La última llamada intercambia esos mismos dos objetos, escritos en orden inverso, y restaura 3 y -8."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__permisos_para_dos_objetos",
+          "question": "La función debe intercambiar valores de dos objetos distintos y modificables de main, sin asignar un resultado devuelto. ¿Qué lista de parámetros permite cumplir ese contrato para valores diferentes?",
+          "options": [
+            "int primero, int segundo",
+            "int& primero, int segundo",
+            "int& primero, int& segundo"
+          ],
+          "correctIndex": 2,
+          "explanation": "Los dos objetos necesitan permiso de modificación. Por valor se reciben copias; con una sola referencia únicamente uno de los objetos originales puede cambiar por esa vía. Dos referencias permiten cumplir ambas partes del contrato."
+        },
+        {
+          "type": "note",
+          "text": "El argumento int modificable permite vincular cada referencia. Los literales y los objetos const no aportan esos permisos. El valor numérico de un dato no decide si se pasó por valor o por referencia: lo comunica la lista de parámetros."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valores iguales e identidad compartida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos declaraciones int uno = 4; e int dos = 4; crean dos objetos distintos, aunque sus valores coincidan. En cambio, una llamada que aporta unico en las dos posiciones permite que dos parámetros nombren un solo objeto. A esa situación de varias referencias al mismo objeto la llamamos alias. No hace falta observar direcciones para distinguirla en estos ejemplos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__dos_objetos_iguales_frente_a_alias",
+          "question": "Ambos ensayos empiezan con el valor 4. Predice las dos líneas siguiendo las dos asignaciones separadas de cada llamada.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid escribir_dos(int& primero, int& segundo) {\n    primero = 7;\n    segundo = -2;\n}\n\nint main() {\n    int uno = 4;\n    int dos = 4;\n    escribir_dos(uno, dos);\n    std::cout << uno << ' ' << dos << '\\n';\n    int unico = 4;\n    escribir_dos(unico, unico);\n    std::cout << unico << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "7 -2\n-2"
+          ],
+          "explanation": "Con dos objetos distintos, la primera asignación deja uno en 7 y la segunda deja dos en -2. En la llamada con unico, ambos parámetros refieren al mismo objeto: primero se escribe 7 y después -2 en ese único objeto. Igualdad de valores iniciales no implica identidad de objetos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__igualdad_no_implica_identidad",
+          "question": "main declara int x = 5; e int y = 5;. ¿Qué afirma correctamente x == y para esos objetos?",
+          "options": [
+            "Que toda asignación a x cambiará también el objeto y.",
+            "Que sus valores coinciden; siguen siendo dos objetos distintos.",
+            "Que pasar x e y a dos referencias es igual a pasar x dos veces."
+          ],
+          "correctIndex": 1,
+          "explanation": "La comparación int comprueba valores. Cada declaración creó su propio objeto; compartir un valor no vincula sus modificaciones. Dos referencias a x, en cambio, sí permitirían observar el cambio del mismo objeto por ambos nombres."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera ahora la referencia local del puente. En la pregunta siguiente, vista se inicializa con primero; las asignaciones posteriores pueden cambiar valores, pero no trasladan la vinculación de vista a otro objeto."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__asignacion_no_reenlaza_la_referencia",
+          "question": "Predice la línea final. Sigue el objeto que vista designa desde su inicialización, incluso cuando sus valores cambian.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primero = 6;\n    int segundo = -4;\n    int& vista = primero;\n    vista = segundo;\n    segundo = 10;\n    intercambiar(vista, segundo);\n    std::cout << primero << ' ' << vista << ' ' << segundo << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "10 10 -4"
+          ],
+          "explanation": "vista = segundo copia -4 al objeto primero. Luego segundo cambia a 10, sin cambiar la vinculación de vista. intercambiar(vista, segundo) intercambia los objetos primero y segundo: primero queda en 10 y segundo en -4. vista sigue nombrando primero y por eso también muestra 10."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir con varios nombres para los mismos objetos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconstruye intercambiar desde el editor mínimo y prepara un main que permita comprobar identidad, no sólo dos valores. Declara reserva con 10 y usado con -4. Inicializa vista_reserva como int& al objeto reserva y vista_usado como int& al objeto usado. Inicializa una tercera referencia, vista_doble, también con reserva; no declares copias int para esas tres vistas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero llama a intercambiar con vista_reserva y vista_usado y muestra Distintos: -4 10. Después llama con vista_reserva y vista_doble y muestra Compartido: -4 10. Por último llama de nuevo con vista_reserva y vista_usado y muestra Restaurado: 10 -4. Cada informe muestra los objetos reserva y usado, en ese orden y en su propia línea. Las funciones no imprimen; main presenta después de cada llamada."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Reconstruye intercambiar, los objetos, las referencias y las llamadas.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: las vistas deben nombrar los objetos iniciales, sin copiarlos; la llamada compartida conserva su único objeto y no modifica usado; las otras dos llamadas restauran los valores anteriores; ninguna asignación cambia la vinculación de una referencia. Mantén los valores iniciales entre -12 y 12. Elige después otros datos, incluidos cero o dos valores iguales, y calcula lo esperado antes de ejecutar."
+        },
+        {
+          "type": "note",
+          "text": "Intenta y comprueba antes de consultar la referencia siguiente. Dibuja, si te ayuda, los dos objetos y escribe a su lado todos los nombres que los designan. Cuenta los objetos, no sólo los nombres ni los valores que coinciden."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de la construcción con alias"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia usa -8 y 1, distintos datos del intento. vista_reserva y vista_doble se vinculan con reserva; vista_usado se vincula con usado. Sus nombres no añaden otros tres int al estado que se intercambia."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int reserva = -8;\n    int usado = 1;\n    int& vista_reserva = reserva;\n    int& vista_usado = usado;\n    int& vista_doble = reserva;\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Distintos: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_doble);\n    std::cout << \"Compartido: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Restaurado: \" << reserva << ' ' << usado << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las líneas son Distintos: 1 -8, Compartido: 1 -8 y Restaurado: -8 1. La segunda llamada tiene dos parámetros, pero sólo modifica el objeto reserva, que conserva su valor en este intercambio. La tercera vuelve a intercambiar los dos objetos y restaura sus valores originales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara identidad, estado tras cada llamada y conservación de los dos valores, además del texto mostrado. Una implementación equivalente es válida si respeta los permisos, no imprime desde intercambiar y cumple tanto los casos de dos objetos como el de uno compartido. No es obligatorio usar el mismo nombre anterior para el objeto local que conserva el dato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el contrato y la identidad"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__asignacion_mediante_parametro_no_reenlaza",
+          "question": "Un parámetro int& primero se vincula con izquierda y otro int& segundo con derecha. Dentro se ejecuta primero = segundo;. ¿Qué sucede con la vinculación de primero?",
+          "options": [
+            "Sigue refiriéndose a izquierda, que recibe el valor actual de derecha.",
+            "Pasa a referirse a derecha y deja de permitir modificar izquierda.",
+            "Se vincula con ambos objetos y sus cambios futuros quedan compartidos."
+          ],
+          "correctIndex": 0,
+          "explanation": "La asignación cambia el valor del objeto referido; no vuelve a inicializar la referencia ni la vincula con otro objeto. Si izquierda y derecha son el mismo objeto, esa asignación copia su propio valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "En otra sesión, reconstruye el intercambio sin mirar el cuerpo y elige tus casos antes de ejecutarlo. Incluye dos valores distintos, dos objetos con valores iguales, un mismo objeto escrito dos veces y dos llamadas que restauran el estado. Explica qué caso detecta la pérdida del valor anterior y por qué los otros casos siguen siendo necesarios para el contrato completo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después recupera el contraste de lectura y modificación: un resultado int por valor no se asigna solo al llamador; una referencia const permite inspección; una referencia modificable permite cambiar el objeto al que está vinculada. Para un cálculo pequeño suele bastar devolver un valor. Este intercambio requiere conservar cambios en dos objetos, por lo que su propósito justifica los dos permisos de modificación."
+        },
+        {
+          "type": "note",
+          "text": "Apoyo de lectura: Bjarne Stroustrup, Programming: Principles and Practice Using C++, 3.ª edición (2024), §7.4.5–§7.4.6. La implementación del intercambio con una copia local adapta el ejemplo de paso por referencia del libro a int y al dominio de estas actividades. Los casos de identidad, alias y recuperación permiten contrastar ese contrato sin usar std::swap ni introducir punteros."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar lectura const frente a copia del valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "const int copia = primera; crea un objeto independiente con el valor que primera tiene al inicializarlo. const int& vista = primera; inicializa una referencia de lectura al objeto primera. En la segunda declaración, const impide asignar mediante vista; no vuelve constante al objeto primera ni crea una instantánea de su valor. Si otra vía permitida modifica primera, vista lee su estado posterior. Ambos objetos y la referencia permanecen en el mismo ámbito en estos ejemplos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__copia_const_y_referencia_const_tras_intercambiar",
+          "question": "Predice los cuatro valores. copia y vista se inicializan antes del intercambio: distingue objeto independiente de referencia de lectura.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primera = 9;\n    int segunda = 0;\n    const int copia = primera;\n    const int& vista = primera;\n    intercambiar(primera, segunda);\n    std::cout << copia << ' ' << vista << ' '\n              << primera << ' ' << segunda << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "9 0 0 9"
+          ],
+          "explanation": "copia conserva el 9 recibido al inicializarse. vista sigue refiriéndose a primera, que el intercambio deja en 0. segunda recibe el 9 anterior de primera. No se asigna mediante vista: la modificación ocurre por el parámetro int& vinculado a primera."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__permiso_const_no_congela_otras_vias",
+          "question": "vista se declara const int& y nombra un objeto int modificable de main. ¿Qué impide ese const?",
+          "options": [
+            "Modificar el objeto mediante cualquier otro nombre del programa.",
+            "Que una lectura posterior de vista observe un cambio del objeto.",
+            "Asignar al objeto a través del nombre vista."
+          ],
+          "correctIndex": 2,
+          "explanation": "const restringe la modificación a través de esa referencia. El objeto sigue siendo modificable por main o por una referencia con permiso. Una copia independiente conserva el valor inicial; una referencia de lectura sigue observando el objeto al que se vinculó."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al recuperar el intercambio, anota por separado qué nombres son copias, qué nombres designan el mismo objeto y cuáles permiten modificarlo. El permiso de lectura y la conservación de un valor anterior son decisiones distintas: en el cuerpo de intercambiar se necesita una copia local para conservar ese valor, no una referencia const que siga viendo el objeto después de cambiar."
+        }
+      ]
     }
   ]
 }

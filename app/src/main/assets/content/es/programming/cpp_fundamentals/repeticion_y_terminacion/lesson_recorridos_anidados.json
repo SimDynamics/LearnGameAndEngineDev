@@ -222,6 +222,174 @@
           "text": "Con tres filas y dos columnas se obtienen las líneas (0,0)(0,1), (1,0)(1,1), (2,0)(2,1) y luego Fin. Con dos filas y cero columnas, cada cuerpo exterior aporta su salto: hay dos líneas vacías antes de Fin. Con cero filas no se ejecuta ningún final de fila y sólo aparece Fin. Las líneas vacías tienen una causa en el código; no son parejas inexistentes."
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una revisión por equipo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un taller prepara equipos y herramientas numerados desde 1. Los datos preparados ya son válidos: equipos es una cantidad entera de 0 a 3 y herramientas una cantidad entera de 0 a 4. No hay lectura ni validación de datos externos en esta tarea. Atiende los equipos en orden; para cada equipo considera todas las herramientas en orden. Se revisa una herramienta sólo cuando su número no supera el número del equipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por cada revisión imprime Revision=e:h en su propia línea, sustituyendo e por el número del equipo y h por el de la herramienta. Al terminar cada equipo imprime Equipo=e;Revisadas=c en otra línea, aunque no tenga herramientas; c cuenta sólo las revisiones de ese equipo. Después de todos los equipos imprime Total=t una sola vez, sin salto final; t cuenta todas las revisiones. Si no hay equipos, sólo aparece el total. No imprimas una línea de revisión por una herramienta que no cumple la regla."
+        },
+        {
+          "type": "paragraph",
+          "text": "Empieza con 3 equipos y 2 herramientas. Antes de ejecutar, prepara una traza con equipo, herramienta considerada, decisión, revisiones de ese equipo y total. Decide dónde crear o reiniciar cada estado: uno debe describir el equipo actual y otro conservar lo reunido por todos. Escribe el programa desde este editor mínimo. Comprueba también (equipos,herramientas) iguales a (0,2), (2,0), (1,1) y (3,4); calcula primero sus salidas completas. Justifica por qué ambos recorridos terminan incluso cuando una herramienta no se revisa."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui el programa a partir del contrato.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Construye y prueba antes de continuar. La referencia posterior utiliza otros datos para comparar requisitos y ubicación del estado. El laboratorio no califica automáticamente tu programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar la revisión construida con otra ejecución"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lee esta referencia después de tu intento. Usa 2 equipos y 3 herramientas, y conserva la misma regla. No necesita coincidir con la organización de tu programa: compara la secuencia de revisiones, el cierre de cada equipo y el total."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int equipos{2};\n    int herramientas{3};\n    int total{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        int revisadas{0};\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if (herramienta <= equipo) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Revision=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Equipo=\" << equipo << \";Revisadas=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El contador revisadas comienza en cero para cada equipo; total comienza una sola vez antes de atenderlos. La herramienta avanza tanto si se revisa como si se descarta, y vuelve a comenzar en 1 para el siguiente equipo. El cierre pertenece al equipo, por eso queda después de considerar sus herramientas; el total pertenece al procedimiento completo, por eso aparece después de todos los equipos. Puedes usar while en lugar de for si conservas esos avances y reinicios."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con estos datos, el equipo 1 revisa únicamente la herramienta 1 y cierra con una revisión; el equipo 2 revisa las herramientas 1 y 2 y cierra con dos. El total es 3. Para (0,2) debe aparecer sólo Total=0; para (2,0), los dos cierres con Revisadas=0 preceden a Total=0. En (1,1) hay una revisión, un cierre y Total=1. En (3,4), los cierres cuentan 1,2,3 y el total es 6. Contrasta cada línea: un total correcto no demuestra por sí solo qué herramientas se revisaron ni que el contador local se reinició."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada contador de recorrido empieza en 1, aumenta en 1 y abandona su condición tras superar un límite fijo. El interior tiene como máximo cuatro visitas por equipo y el exterior como máximo tres equipos. Incluso si la selección es falsa, el avance ocurre. Se consideran como máximo doce parejas; ningún contador de revisiones ni suma de números se acerca a un límite de representación de int. La ausencia de equipos impide alcanzar el interior; la ausencia de herramientas conserva los cierres de los equipos existentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar qué describe cada contador"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa pretende cumplir la primera política, con 2 equipos y 2 herramientas. Antes de ejecutar, traza sus cambios y predice lo que realmente imprime; no sustituyas su salida por la que desearías. Después comprueba cada cierre contra las revisiones de ese equipo. Si encuentras un incumplimiento, formula una hipótesis sobre la duración del estado y una sola modificación que lo repare; anótalas en comentarios de tu editor anterior y prueba la modificación con varios equipos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "u4_anidados_revisadas_conserva_otro_equipo",
+          "question": "Predice la salida completa de este programa. Conserva los saltos internos y no añadas un salto después de Total.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int equipos{2};\n    int herramientas{2};\n    int total{0};\n    int revisadas{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if (herramienta <= equipo) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Revision=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Equipo=\" << equipo << \";Revisadas=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Revision=1:1\nEquipo=1;Revisadas=1\nRevision=2:1\nRevision=2:2\nEquipo=2;Revisadas=3\nTotal=3"
+          ],
+          "explanation": "revisadas se crea una sola vez antes del recorrido exterior y conserva la revisión del primer equipo. El segundo cierre muestra 3, aunque ese equipo realizó sólo dos revisiones. total=3 sí describe a ambos equipos. Reinicia sólo el contador local al comenzar cada equipo; no borres el total global ni alteres una selección que ya cumple la política."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "u4_anidados_visitar_no_es_revisar",
+          "question": "En tu programa correcto de la primera política, usa 2 equipos y 4 herramientas. Cuenta una visita por cada pareja equipo-herramienta considerada, aunque no produzca Revision. ¿Qué relación debe cumplir la traza?",
+          "options": [
+            "Hay 3 visitas y 3 revisiones.",
+            "Hay 8 visitas y 3 revisiones.",
+            "Hay 8 visitas y 8 revisiones."
+          ],
+          "correctIndex": 1,
+          "explanation": "Se consideran las cuatro herramientas para cada uno de dos equipos: ocho visitas. Sólo se revisan la herramienta 1 del equipo 1 y las herramientas 1 y 2 del equipo 2: tres revisiones. Contar visitas y contar casos aceptados requiere ubicar las actualizaciones en lugares diferentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "El caso de un solo equipo no permite detectar un contador local que nunca se reinicia entre equipos. Conserva al menos una prueba con varios equipos, y otra con herramientas pero con alguna selección falsa. Repite también el caso sin herramientas: sus cierres siguen existiendo, pero ambos contadores de revisiones deben conservar cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir el recorrido a otra política"
+        },
+        {
+          "type": "paragraph",
+          "text": "El taller cambia la política: ahora se revisa una herramienta cuando la suma de su número y el del equipo es par. Esta regla sustituye a la anterior; no se pide cumplir ambas. Conserva equipos entre 0 y 3, herramientas entre 0 y 4, numeración desde 1 y todos los formatos de salida. Los datos preparados siguen siendo válidos. Sólo cambia qué parejas se aceptan, no qué herramientas se consideran ni cuándo se cierra cada equipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye esta versión desde otro editor mínimo, sin copiar el programa anterior. Empieza con 2 equipos y 4 herramientas. Decide cómo expresar la nueva selección con las operaciones ya estudiadas. Prepara primero una traza que separe parejas consideradas y revisiones; elige al menos una pareja cuya aceptación cambie respecto de la primera política. Justifica la colocación de los dos contadores y el avance cuando se descarta una herramienta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba (0,3), (2,0), (1,1), (1,4), (2,4) y el máximo (3,4). Escribe antes de ejecutar las líneas de revisión, cada cierre y el total. Si dos ejecuciones tienen el mismo total, compara también las parejas y los resúmenes por equipo: no bastará conservar un número final que coincida por casualidad."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui el programa a partir del contrato.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Realiza tu construcción y las pruebas antes de consultar la segunda referencia. No hace falta introducir funciones, colecciones ni nuevas formas de entrada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la transferencia y volver a construir"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia usa 3 equipos y 3 herramientas, distintos de los datos iniciales del segundo intento. La suma de los números está entre 2 y 7 en cualquier pareja del dominio; su resto al dividir por 2 permite decidir si es par con operaciones enteras seguras."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int equipos{3};\n    int herramientas{3};\n    int total{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        int revisadas{0};\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if ((equipo + herramienta) % 2 == 0) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Revision=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Equipo=\" << equipo << \";Revisadas=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios para cualquier implementación equivalente: cada pareja se considera en el orden requerido; una línea Revision aparece exactamente para una pareja de suma par; revisadas comienza en cero por equipo; total conserva todas las aceptaciones; cada equipo tiene un cierre incluso sin herramientas; sólo el total final carece de salto posterior. Los avances de los recorridos no dependen de aceptar la pareja. Una implementación con while también debe restablecer el comienzo de las herramientas por cada equipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta referencia se revisan las herramientas 1 y 3 del equipo 1, la 2 del equipo 2 y las 1 y 3 del equipo 3: cierres 2,1,2 y Total=5. Con (0,3) sólo aparece Total=0; con (2,0) aparecen los dos cierres a cero y luego Total=0. En (3,4), ambas políticas producen total 6, pero sus cierres son distintos: 1,2,3 para la primera y 2,2,2 para la nueva. Comprobar cada pareja y cada cierre evita aceptar ese total compartido como prueba suficiente."
+        },
+        {
+          "type": "output_prediction",
+          "id": "u4_anidados_paridad_equipo_sin_revision",
+          "question": "Esta variante usa la política de suma par con 2 equipos y 1 herramienta. Predice toda la salida, incluidos los cierres de equipos que no revisen nada; no añadas un salto final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int equipos{2};\n    int herramientas{1};\n    int total{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        int revisadas{0};\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if ((equipo + herramienta) % 2 == 0) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Revision=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Equipo=\" << equipo << \";Revisadas=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Revision=1:1\nEquipo=1;Revisadas=1\nEquipo=2;Revisadas=0\nTotal=1"
+          ],
+          "explanation": "La pareja (1,1) tiene suma par y se revisa; (2,1) tiene suma impar y se descarta. Ambos equipos se visitan y se cierran. Ausencia de revisiones no equivale a ausencia de equipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de comparar, vuelve más adelante al editor mínimo y reconstruye una de las políticas con otro caso válido elegido por ti. Antes de ejecutar, explica qué estado cambia por pareja, cuál se reinicia por equipo y cuál sólo se inicializa una vez. Si tu resultado difiere, usa la primera línea distinta para decidir si fallaron el recorrido, la selección, el contador local o el total; no cambies todas esas partes a la vez."
+        },
+        {
+          "type": "paragraph",
+          "text": "Referencia: Stroustrup, B. (2024). Programming: Principles and practice using C++ (3.ª ed.). Addison-Wesley. Base conceptual: §3.4.1, selección, y §3.4.2, iteración, incluidos while (§3.4.2.1), bloques (§3.4.2.2) y for (§3.4.2.3). Las consignas, los dominios, los programas y los casos de prueba de esta ampliación son originales; combinan esos recursos para construir y comprobar recorridos anidados."
+        }
+      ]
     }
   ]
 }

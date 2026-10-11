@@ -117,7 +117,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Construye tres funciones. Un lector recibe std::istream& y dos int&; devuelve bool, no imprime y sólo actualiza ambos destinos si obtiene los dos enteros. Un cálculo recibe aceptados y rechazados por valor y devuelve aceptados menos rechazados. Un escritor recibe std::ostream& y el balance, e inserta Balance= seguido del valor, sin usar cout por dentro."
+          "text": "Construye tres funciones. Un lector recibe std::istream& y dos int&; devuelve bool, no imprime y sólo actualiza ambos destinos si obtiene los dos enteros. El llamador proporciona dos objetos de destino distintos, aunque sus valores puedan ser iguales. Esa precondición permite conservar cada campo en su destino; pasar dos referencias al mismo objeto queda fuera del contrato y no se pide detectar ese caso dentro del lector. Un cálculo recibe aceptados y rechazados por valor y devuelve aceptados menos rechazados. Un escritor recibe std::ostream& y el balance, e inserta Balance= seguido del valor, sin usar cout por dentro."
         },
         {
           "type": "paragraph",
@@ -150,7 +150,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios: el lector trabaja sobre el origen recibido y asigna los dos destinos sólo después de la extracción conjunta; el cálculo devuelve la diferencia sin realizar entrada ni salida; el escritor usa únicamente el destino prestado. Los casos 7 2, 0 0 y 2 7 producen Balance=5, Balance=0 y Balance=-5. Con 7 x, la salida es Entrada invalida|9:4 y el código es 1."
+          "text": "Criterios: el llamador proporciona dos objetos de destino distintos; el lector trabaja sobre el origen recibido y asigna cada campo a su destino sólo después de la extracción conjunta; el cálculo devuelve la diferencia sin realizar entrada ni salida; el escritor usa únicamente el destino prestado. Los casos 7 2, 0 0 y 2 7 producen Balance=5, Balance=0 y Balance=-5. Con 7 x, la salida es Entrada invalida|9:4 y el código es 1."
         },
         {
           "type": "paragraph",

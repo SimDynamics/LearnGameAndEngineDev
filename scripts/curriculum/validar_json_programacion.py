@@ -28,6 +28,22 @@ EXERCISES = set(FIELDS) - {"heading", "paragraph", "note", "code", "cpp_compiler
 COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles"}
 SOURCE_SUFFIXES = {"cpp", "cc", "cxx", "c++"}
 STDIN_LESSON = "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json"
+# Precisiones revisadas de consigna; todos los demás campos del ejercicio,
+# incluidos código, respuestas, identificador y explicación, siguen intactos.
+QUESTION_CLARIFICATIONS = {
+    ("colecciones_y_recorridos/lesson_extremos_sin_inventar_datos.json", 3, 4):
+        "Completa sólo el dígito del índice para iniciar mayor con el primer elemento de esta colección no vacía.",
+    ("colecciones_y_recorridos/lesson_mediana_y_posiciones_centrales.json", 2, 5):
+        "Completa sólo el dígito del divisor que localiza el índice central para cualquier tamaño impar positivo, no sólo para los tres datos de esta muestra.",
+    ("colecciones_y_recorridos/lesson_ordenar_y_conservar_el_original.json", 2, 4):
+        "Completa sólo el nombre de la operación de ordenación utilizada en el ejemplo anterior.",
+    ("colecciones_y_recorridos/lesson_recorrer_indices_con_seguridad.json", 2, 3):
+        "Completa sólo el operador de comparación para exigir que i sea estrictamente menor que datos.size().",
+    ("errores_y_construccion_gradual/lesson_limpiar_sin_cambiar_el_comportamiento.json", 2, 5):
+        "Extraes la comprobación de dominio. Completa sólo el operador de comparación para aceptar piezas de cero a diez, incluidas ambas fronteras, y rechazar los demás enteros.",
+    ("datos_propios_y_estado_valido/lesson_operaciones_auxiliares_y_significado_de_igualdad.json", 3, 5):
+        "Completa sólo el símbolo de negación que hace != coherente con ==.",
+}
 ERRORS = []
 
 
@@ -120,6 +136,35 @@ def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
     return base == old
 
 
+def preserves_previous_exercise(relative, pn, bn, old, current):
+    if current == old:
+        return True
+    lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
+    question = QUESTION_CLARIFICATIONS.get((lesson_path, pn + 1, bn + 1))
+    if (
+        question is not None
+        and old["type"] == "fill_code"
+        and current == dict(old, question=question)
+    ):
+        return True
+    if (
+        lesson_path == "datos_propios_y_estado_valido/lesson_operaciones_auxiliares_y_significado_de_igualdad.json"
+        and (pn, bn) == (1, 1)
+        and old["type"] == "output_prediction"
+    ):
+        # Sólo p2 b2 retira estas definiciones aún no explicadas y no usadas.
+        # El resto de la fuente y todos los demás campos deben coincidir con HEAD.
+        unused_operators = (
+            "bool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\n"
+            "bool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n"
+        )
+        return (
+            old["code"].count(unused_operators) == 1
+            and current == dict(old, code=old["code"].replace(unused_operators, "", 1))
+        )
+    return False
+
+
 def main():
     lessons = {}
     blocks = 0
@@ -206,7 +251,7 @@ def main():
                     if kind == "cpp_compiler":
                         require(preserves_previous_compiler(relative, pn, bn, block, current, old), relative, f"código legacy previo modificado p{pn+1} b{bn+1}")
                     elif kind != "multiple_choice":
-                        require(current == block, relative, f"código/respuesta previa modificada p{pn+1} b{bn+1}")
+                        require(preserves_previous_exercise(relative, pn, bn, block, current), relative, f"código/respuesta previa modificada p{pn+1} b{bn+1}")
 
     if ERRORS:
         print("\n".join(ERRORS))

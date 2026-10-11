@@ -176,6 +176,110 @@
           "text": "La única reparación aquí es sustituir total = aporte por total += aporte. Para comprobar un único aporte, usa aporte{3} y aporte <= 3. Para comprobar ninguno, usa aporte{2} y aporte <= 1; el cuerpo no se ejecuta y el total conserva el cero. Restaurar el recorrido 2 a 4 debe volver a producir 9."
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Diagnosticar una diferencia sin recibir la reparación"
+        },
+        {
+          "type": "paragraph",
+          "text": "El encargo es contar cuántos elementos de una colección pertenecen a un intervalo cerrado de valores: se incluyen tanto inferior como superior. Cada aparición cuenta por separado, aunque haya repetidos. La colección admite hasta ocho enteros entre 0 y 10; los límites también están entre 0 y 10 y cumplen inferior <= superior. La colección vacía cuenta cero. contar_en_intervalo recibe lectura de los datos y devuelve el contador, sin cambiar la colección ni imprimir. Conserva esas precondiciones al cambiar las pruebas."
+        },
+        {
+          "type": "paragraph",
+          "text": "La fuente inicial contiene un fallo lógico: trabaja con datos del dominio y termina, pero no cumple todo el encargo. La colección inicial es {2,4,6,8,9,4}, con intervalo 3..8. Antes de ejecutar, cuenta manualmente lo que exige el requisito. main debe mostrar Dentro:C;Datos:N, sin espacios ni salto final: C es el resultado del conteo y N el tamaño original. No cambies el requisito para justificar una salida distinta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara la salida observada con tu expectativa. Busca después una colección tan pequeña como puedas que todavía reproduzca la diferencia, con los mismos límites. Formula una hipótesis sobre la causa antes de editar. Traza cada elemento: su valor, el resultado de la condición y el contador antes y después. Propón un cambio respaldado por esa evidencia, modifica una causa y vuelve a comprobar tanto el caso reducido como la colección inicial. Conserva también algún caso que ya funcionaba antes."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// EXPECTATIVA antes de ejecutar:\n// CONTRAEJEMPLO reducido y resultado esperado:\n// HIPOTESIS antes de editar:\n// TRAZA: valor | condicion | contador antes | contador despues\n//\n//\n//\n// CAMBIO propuesto y evidencia que lo respalda:\n// REGRESION: caso | esperado | observado antes | observado despues\n//\n//\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor < superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{2, 4, 6, 8, 9, 4};\n    const int inferior = 3;\n    const int superior = 8;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Los comentarios del editor son espacio para tu investigación: escribe después de //, conserva la hipótesis inicial y anota si la traza la confirmó o la refutó. Guarda allí tus casos y la justificación del cambio. Consulta la referencia sólo después de investigar y probar una reparación; no basta con sustituir el programa por otro que coincida con una salida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de una reparación respaldada"
+        },
+        {
+          "type": "note",
+          "text": "Compara después de anotar tu hipótesis, trazar un caso que falla y comprobar tu cambio. Esta versión utiliza otros datos; conserva también el caso inicial para evaluar tu propia reparación."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\n// Pre: hasta 8 datos de 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{3, 5, 8, 8, 10};\n    const int inferior = 3;\n    const int superior = 8;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La muestra de referencia produce Dentro:4;Datos:5: cuenta 3,5 y las dos apariciones de 8. Para la colección inicial, el requisito exige Dentro:4;Datos:6, pero la fuente defectuosa produce Dentro:3;Datos:6. Cambiar la colección de la referencia no sustituye volver a comprobar ese primer caso."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un contraejemplo mínimo es {8}, con los mismos límites 3..8: el requisito cuenta uno, pero el programa inicial cuenta cero. Vacío no reproduce la diferencia: ambas versiones cuentan cero. En la traza inicial de {2,4,6,8,9,4}, las filas valor;condición;contador antes→después son 2;false;0→0, 4;true;0→1, 6;true;1→2, 8;false;2→2, 9;false;2→2 y 4;true;2→3. La fila del 8 permite contrastar la condición escrita con la pertenencia que pide el requisito."
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación valor < superior excluye la igualdad con el límite superior, aunque el intervalo la admite. La reparación mínima de esta versión cambia esa comparación por valor <= superior. El contador, el recorrido y la presentación ya cumplían sus responsabilidades. La hipótesis queda respaldada cuando el caso reducido pasa y los casos previamente correctos conservan sus respuestas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: incluir ambos extremos del intervalo y excluir los valores exteriores; contar cada aparición una vez; vacío devuelve cero; resultado entre cero y el tamaño de la colección; datos conservados y cálculo separado de la salida; llamadas dentro de las precondiciones. La investigación debe conservar expectativa, contraejemplo, hipótesis, traza y resultados antes/después. Una expresión equivalente también puede reparar la causa: explica qué discrepancia resuelve, en lugar de cambiar varias reglas sin distinguir sus efectos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Regresión y recuperación: qué significa cada límite"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con intervalo 3..8, estas expectativas permiten comprobar la reparación: {} cuenta 0; {3} y {8} cuentan 1; {3,8} y {8,8} cuentan 2; {2,9} cuenta 0; {4,6} cuenta 2. {3} y {4,6} ya funcionaban antes; {8} detecta la regla omitida. Mantén todas las expectativas al revisar una nueva versión. El caso vacío también detectaría un intento de ocultar el fallo añadiendo siempre una unidad al resultado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa__intervalo_de_un_solo_valor",
+          "language": "cpp",
+          "question": "Predice la salida con los dos límites iguales. La precondición permite esa igualdad.",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{4, 5, 5, 6};\n    const int inferior = 5;\n    const int superior = 5;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dentro:\" << dentro << \";Datos:\" << datos.size();\n    return 0;\n}\n",
+          "answers": [
+            "Dentro:2;Datos:4"
+          ],
+          "explanation": "El intervalo cerrado 5..5 admite exactamente el valor cinco. Sus dos apariciones cuentan; cuatro y seis quedan fuera. La colección conserva sus cuatro elementos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa__limite_de_valor_y_extremo_de_indices",
+          "question": "Un vector tiene cuatro elementos, con índices 0,1,2,3. Quieres visitar todos por índice y seleccionar valores del intervalo cerrado 4..7. i empieza en cero y aumenta de uno en uno. ¿Qué pareja de condiciones cumple ambos contratos?",
+          "options": [
+            "Seleccionar con valor >= 4 && valor < 7; recorrer mientras i < 4.",
+            "Seleccionar con valor >= 4 && valor <= 7; recorrer mientras i < 4.",
+            "Seleccionar con valor >= 4 && valor <= 7; recorrer mientras i <= 4."
+          ],
+          "correctIndex": 1,
+          "explanation": "Siete es un valor permitido del intervalo cerrado. Cuatro es el primer índice excluido del vector, no un elemento adicional: los índices válidos terminan en tres. Las dos condiciones expresan límites con significados distintos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La reparación no establece que <= sea siempre preferible a <. Para pertenencia a este intervalo, el último valor se incluye; para recorrer por índice, el tamaño es un extremo exclusivo. Recupera el requisito de cada comparación antes de editar. La actividad anterior exige elegir condiciones; no ejecuta un acceso con un índice fuera de rango."
+        },
+        {
+          "type": "paragraph",
+          "text": "En otra sesión cambia los límites a 4..7 y construye tu propio contraejemplo de una versión que excluya indebidamente un extremo. Escribe la expectativa y la hipótesis antes de mirar el código. Prueba después un caso interior, uno exterior, repetidos y vacío con la versión reparada. Explica qué evidencia identifica la causa y qué casos muestran que la reparación conservó el comportamiento anterior."
+        }
+      ]
     }
   ]
 }

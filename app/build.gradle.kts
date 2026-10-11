@@ -176,6 +176,8 @@ fun lgpBooleanProperty(name: String, defaultValue: Boolean): Boolean {
 }
 
 val lgpEnableClang23 = lgpBooleanProperty("lgp.clang23", true)
+// Copia aislada para comprobar contenido curricular sin tocar los datos del usuario.
+val lgpCurricularQa = lgpBooleanProperty("lgp.curricularQa", false)
 val lgpEnableWasmtime = lgpBooleanProperty("lgp.wasmtime", lgpEnableClang23)
 val lgpEnableCppExceptions = lgpBooleanProperty(
     "lgp.cppExceptions", lgpEnableClang23 && lgpEnableWasmtime
@@ -233,6 +235,9 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            if (lgpCurricularQa) applicationIdSuffix = ".curricularqa"
+        }
         release {
             optimization {
                 enable = false
