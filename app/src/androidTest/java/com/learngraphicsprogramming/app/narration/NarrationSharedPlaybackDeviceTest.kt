@@ -1,9 +1,12 @@
 package com.learngraphicsprogramming.app.narration
 
+import android.app.Application
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.Intent
 import android.app.KeyguardManager
 import android.app.Activity
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.os.Looper
 import android.os.SystemClock
@@ -14,6 +17,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.learngraphicsprogramming.app.CoursesActivity
 import com.learngraphicsprogramming.app.AppearanceSettingsRepository
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
@@ -33,79 +37,136 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class NarrationSharedPlaybackDeviceTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
-    private val context = instrumentation.targetContext
-    private var originalPreferences: Map<String, *> = emptyMap<String, Any>()
-    private var originalNavigation: Map<String, *> = emptyMap<String, Any>()
+    private val deviceContext = instrumentation.targetContext
+    private lateinit var context: IsolatedApplication
+    private val preferences = linkedMapOf<String, Map<String, *>>()
+    private var originalPreferenceFiles = emptySet<String>()
+    private lateinit var sandbox: File
+    private lateinit var modelRoot: File
+    private var originalModels = emptyMap<String, Pair<Long, Long>>()
+    private var originalVolume: Int? = null
+    private var originalMuted = false
     private var scenario: ActivityScenario<CoursesActivity>? = null
     private var foreground: Activity? = null
     private var controller: LessonNarrationController? = null
     private val errors = CopyOnWriteArrayList<String>()
     private val states = CopyOnWriteArrayList<Boolean>()
-    private val text = "Las fracciones equivalentes representan la misma cantidad. " +
-        "Tres cuartos es igual a seis octavos. " +
-        "Las fracciones equivalentes representan la misma cantidad. " +
-        "Tres cuartos es igual a seis octavos. Tres cuartos es igual a seis octavos."
+    private val text = "Las fracciones equivalentes representan la misma cantidad, " +
+        "tres cuartos es igual a seis octavos, " +
+        "las fracciones equivalentes representan la misma cantidad, " +
+        "tres cuartos es igual a seis octavos y tres cuartos es igual a seis octavos."
 
     @Before fun preserveNarrationPreferences() {
-        originalPreferences = context.getSharedPreferences("lesson_narration_settings", Context.MODE_PRIVATE).all.toMap()
-        originalNavigation = context.getSharedPreferences("navigation_state", Context.MODE_PRIVATE).all.toMap()
-        android.os.ParcelFileDescriptor.AutoCloseInputStream(
-            instrumentation.uiAutomation.executeShellCommand("input keyevent KEYCODE_WAKEUP")
-        ).use { it.readBytes() }
-        val keyguard = context.getSystemService(KeyguardManager::class.java)
-        if (!keyguard.isKeyguardSecure) {
-            android.os.ParcelFileDescriptor.AutoCloseInputStream(
-                instrumentation.uiAutomation.executeShellCommand("wm dismiss-keyguard")
-            ).use { it.readBytes() }
+        originalPreferenceFiles = preferenceFiles()
+        (originalPreferenceFiles + KNOWN_PREFERENCES).forEach { name ->
+            preferences[name] = deviceContext.getSharedPreferences(name, Context.MODE_PRIVATE).all.mapValues { (_, value) ->
+                if (value is Set<*>) value.toSet() else value
+            }
         }
+        deviceShell("input keyevent KEYCODE_WAKEUP")
+        val keyguard = deviceContext.getSystemService(KeyguardManager::class.java)
+        if (!keyguard.isKeyguardSecure) deviceShell("wm dismiss-keyguard")
+        deviceShell("cmd statusbar collapse")
         assertFalse("Unlock the phone before testing real playback", keyguard.isDeviceLocked)
+        // The actual application's service must not generate user audio for a test.
+        assertTrue(deviceContext.getSharedPreferences("lesson_narration_settings", Context.MODE_PRIVATE).edit()
+            .putBoolean("enabled", false).putString("engine", NarrationEngine.ANDROID.name).commit())
+        sandbox = File(deviceContext.cacheDir, "shared-playback-acceptance-${UUID.randomUUID()}").canonicalFile
+        assertEquals(deviceContext.cacheDir.canonicalFile, sandbox.parentFile)
+        assertTrue(sandbox.mkdirs())
+        context = IsolatedApplication(deviceContext.applicationContext as Application, sandbox)
         NarrationSettingsRepository.saveEnabled(context, true)
+        NarrationSettingsRepository.saveEngine(context, NarrationEngine.KOKORO)
         NarrationSettingsRepository.saveLanguage(context, NarrationLanguage.SPANISH)
         NarrationSettingsRepository.saveKokoroVoice(context, "ef_dora")
         NarrationSettingsRepository.saveAndroidVoice(context, null)
         NarrationSettingsRepository.saveRate(context, 1f)
+        NarrationStorageBudget.saveLimit(context, 64L * NarrationStorageBudget.MIB)
+        val store = KokoroModelStore(context)
+        modelRoot = try { store.directory().canonicalFile } finally { store.close() }
+        assertTrue("Use installed resources without importing or downloading fixtures", modelRoot.isDirectory)
+        originalModels = modelMetadata()
         assertTrue("One long segment exercises seeking without regenerated audio", text.length in 180..250)
-        scenario = ActivityScenario.launch<CoursesActivity>(Intent(context, CoursesActivity::class.java)
+        scenario = ActivityScenario.launch<CoursesActivity>(Intent(deviceContext, CoursesActivity::class.java)
             .putExtra("routeId", AppearanceSettingsRepository.ROUTE_PROGRAMMING)).also { host ->
             host.onActivity { activity ->
                 foreground = activity
                 activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
         }
+        deviceShell("cmd statusbar collapse")
         await("A foreground app window must retain audio focus during native synthesis", 15_000) {
             foreground?.hasWindowFocus() == true
         }
+        val audio = deviceContext.getSystemService(AudioManager::class.java)
+        originalVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
+        originalMuted = audio.isStreamMute(AudioManager.STREAM_MUSIC)
+        audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
+        audio.setStreamVolume(AudioManager.STREAM_MUSIC,
+            maxOf(1, audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC) / 3), 0)
     }
 
     @After fun closeAndRestoreNarrationPreferences() {
         try {
             controller?.let { current ->
                 onMain { current.close() }
-                await("The synthesis worker must close", 10_000, checkErrors = false) {
+                await("The synthesis worker must close", 15_000, checkErrors = false) {
                     !field<Thread>(current, "workerThread").isAlive
                 }
             }
         } finally {
-            try { scenario?.close(); foreground = null } finally {
-                restore("lesson_narration_settings", originalPreferences)
-                restore("navigation_state", originalNavigation)
+            try {
+                scenario?.close()
+                foreground = null
+                instrumentation.waitForIdleSync()
+                // Restore the singleton's directory to the actual application's queue.
+                KokoroPagePreparationQueue.snapshot(deviceContext)
+                if (::modelRoot.isInitialized) assertEquals("Installed resources must retain size and timestamps",
+                    originalModels, modelMetadata())
+            } finally {
+                try {
+                    if (::sandbox.isInitialized) {
+                        controller?.let {
+                            assertFalse("Never remove recordings while synthesis is still alive",
+                                field<Thread>(it, "workerThread").isAlive)
+                        }
+                        assertEquals(deviceContext.cacheDir.canonicalFile, sandbox.canonicalFile.parentFile)
+                        assertTrue("Remove only the sandbox owned by this test", sandbox.deleteRecursively())
+                    }
+                } finally {
+                    try { restorePreferences() } finally {
+                        originalVolume?.let { volume ->
+                            val audio = deviceContext.getSystemService(AudioManager::class.java)
+                            audio.setStreamVolume(AudioManager.STREAM_MUSIC, volume, 0)
+                            audio.adjustStreamVolume(AudioManager.STREAM_MUSIC,
+                                if (originalMuted) AudioManager.ADJUST_MUTE else AudioManager.ADJUST_UNMUTE, 0)
+                        }
+                    }
+                }
             }
         }
     }
 
-    private fun restore(name: String, original: Map<String, *>) {
-            val editor = context.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear()
-            original.forEach { (key, value) ->
-                when (value) {
-                    is String -> editor.putString(key, value)
-                    is Int -> editor.putInt(key, value)
-                    is Long -> editor.putLong(key, value)
-                    is Float -> editor.putFloat(key, value)
-                    is Boolean -> editor.putBoolean(key, value)
-                    is Set<*> -> editor.putStringSet(key, value.filterIsInstance<String>().toSet())
+    private fun restorePreferences() {
+        (preferenceFiles() + preferences.keys + if (::context.isInitialized) context.preferenceNames else emptySet()).forEach { name ->
+            if (name !in originalPreferenceFiles) {
+                assertTrue("Remove only test-created preferences: $name", deviceContext.deleteSharedPreferences(name))
+            } else {
+                val editor = deviceContext.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear()
+                preferences.getValue(name).forEach { (key, value) ->
+                    when (value) {
+                        is String -> editor.putString(key, value)
+                        is Int -> editor.putInt(key, value)
+                        is Long -> editor.putLong(key, value)
+                        is Float -> editor.putFloat(key, value)
+                        is Boolean -> editor.putBoolean(key, value)
+                        is Set<*> -> editor.putStringSet(key, value.filterIsInstance<String>().toSet())
+                        else -> error("Unsupported preference: $name/$key")
+                    }
                 }
+                assertTrue("Restore user preference values: $name", editor.commit())
             }
-            assertTrue("Restore $name after real playback tests", editor.commit())
+        }
     }
 
     @Test fun androidTtsUsesSharedPauseSeekRateResumeAndCleanup() = exercise(NarrationEngine.ANDROID)
@@ -124,24 +185,33 @@ class NarrationSharedPlaybackDeviceTest {
                 it.toggle(listOf(unfamiliarWords), NarrationLanguage.AMERICAN_ENGLISH)
             }
         }
+        val directory = onMain { field<File>(current, "directory") }
+        val activeBeforeStop = AtomicReference<Triple<Any, Any, Any>>()
         await("Real Misaki BART must enter an active native run before cancellation", 120_000) {
             val english = field<Any?>(current, "english") ?: return@await false
-            val bart = field<Lazy<Any?>>(english, "americanBart")
-            bart.isInitialized() && bart.value?.let { field<Any?>(it, "activeRun") != null } == true
-        }
-        val directory = onMain { field<File>(current, "directory") }
-        onMain {
-            assertNull("The active frontend must precede Kokoro audio inference", field<Any?>(current, "kokoro"))
+            val lazyBart = field<Lazy<Any?>>(english, "americanBart")
+            if (!lazyBart.isInitialized()) return@await false
+            val bart = lazyBart.value ?: return@await false
+            val run = field<Any?>(bart, "activeRun") ?: return@await false
+            activeBeforeStop.set(Triple(english, bart, run))
+            // Observe the active run and stop in the same main-thread turn.
+            assertFalse("The active frontend must precede this controller's Kokoro audio inference", ownsNeuralRequest(current))
             current.stop()
             assertFalse(current.isPlaying)
             assertFalse(current.hasNarration)
+            true
         }
+        val observed = requireNotNull(activeBeforeStop.get())
+        val frontend = observed.first
+        val bart = observed.second
         val generation = onMain { field<Long>(current, "generation") }
-        await("Cancelled POS/BART must promptly release their sessions and temporary page", 5_000) {
-            field<Any?>(current, "english") == null && !directory.exists()
+        await("Cancellation must end the observed BART run and remove the temporary page", 5_000) {
+            field<Any?>(bart, "activeRun") == null && !directory.exists()
         }
         SystemClock.sleep(350)
         onMain {
+            assertSame("Stopping retains the English frontend for the same lesson", frontend, field<Any?>(current, "english"))
+            assertNull("The cancelled native BART run cannot restart", field<Any?>(bart, "activeRun"))
             assertEquals(generation, field<Long>(current, "generation"))
             assertFalse("A stale phonemizer callback cannot resume narration", current.isPlaying)
             assertFalse(current.hasNarration)
@@ -149,6 +219,22 @@ class NarrationSharedPlaybackDeviceTest {
             assertNull(field<Any?>(current, "player"))
             assertTrue("Intentional cancellation must not report an unavailable engine", errors.isEmpty())
             assertEquals(false, states.last())
+            current.close()
+        }
+        await("Closing must release the retained English frontend and synthesis worker", 15_000) {
+            field<Any?>(current, "english") == null && !field<Thread>(current, "workerThread").isAlive
+        }
+        onMain {
+            assertTrue("Closing must release the warmed English sessions", field<Boolean>(frontend, "closed"))
+            assertTrue("Closing must release the warmed BART sessions", field<Boolean>(bart, "closed"))
+            assertNull(field<Any?>(bart, "activeRun"))
+            assertNull(field<Any?>(current, "tts"))
+            assertNull(field<Any?>(current, "player"))
+            assertFalse("Closing must release this controller's shared neural request", ownsNeuralRequest(current))
+            current.toggle(listOf(unfamiliarWords), NarrationLanguage.AMERICAN_ENGLISH)
+            assertFalse("A closed controller cannot revive the cancelled page", current.hasNarration)
+            assertFalse(current.isPlaying)
+            assertTrue("Cancellation and close must not report an unavailable engine", errors.isEmpty())
         }
     }
 
@@ -171,17 +257,18 @@ class NarrationSharedPlaybackDeviceTest {
         val fileLength = audio.length()
         val fileTimestamp = audio.lastModified()
         val generation = onMain { field<Long>(current, "generation") }
+        val loadedSpanishFrontend = onMain { field<Any?>(current, "spanishLexicon") != null }
         assertTrue("Synthesis must produce actual audio", fileLength > 4_096L)
         assertTrue("The real sample must provide room for a five-second jump", onMain { player(current).duration } > 8_000)
         if (engine == NarrationEngine.KOKORO) {
             // A persistent cache hit intentionally bypasses ONNX entirely.
             if (audio.parentFile?.name != "kokoro-narration-cache") {
-                assertNotNull("Uncached Kokoro audio must use its real ONNX engine", field<Any?>(current, "kokoro"))
+                assertNotNull("Uncached Kokoro audio must use its real shared ONNX engine", sharedNeuralEngine())
             }
             assertNull("Kokoro success must not initialize Android as a hidden fallback", field<Any?>(current, "tts"))
         } else {
             assertNotNull("Android must synthesize through the actual system TTS engine", field<Any?>(current, "tts"))
-            assertNull("Android selection must not create a Kokoro session", field<Any?>(current, "kokoro"))
+            assertFalse("Android selection must not own a Kokoro request", ownsNeuralRequest(current))
         }
         assertTrue("No unavailable-engine warning or fallback is permitted", errors.isEmpty())
 
@@ -254,7 +341,7 @@ class NarrationSharedPlaybackDeviceTest {
         if (engine == NarrationEngine.KOKORO) {
             assertTrue("Generated Kokoro narration persists across pages", audio.isFile)
             // Reusing persisted audio may avoid loading either ONNX or G2P.
-            if (field<Any?>(current, "kokoro") != null) {
+            if (loadedSpanishFrontend) {
                 assertNotNull("The Spanish lexicon is reusable while ONNX stays open",
                     field<Any?>(current, "spanishLexicon"))
             }
@@ -263,7 +350,7 @@ class NarrationSharedPlaybackDeviceTest {
         await("Closing must release the engine and worker", 10_000) { !field<Thread>(current, "workerThread").isAlive }
         onMain {
             assertNull(field<Any?>(current, "tts"))
-            assertNull(field<Any?>(current, "kokoro"))
+            assertFalse("Closing must release this controller's shared neural request", ownsNeuralRequest(current))
             assertNull(field<Any?>(current, "english"))
             assertNull(field<Any?>(current, "french"))
             assertNull(field<Any?>(current, "spanishLexicon"))
@@ -329,6 +416,13 @@ class NarrationSharedPlaybackDeviceTest {
 
     private fun ready(current: LessonNarrationController): Boolean = field(current, "playerReady")
     private fun player(current: LessonNarrationController): MediaPlayer = field(current, "player")
+    private fun sharedNeuralEngine(): Any? = synchronized(field<Any>(KokoroEngineCoordinator, "state")) {
+        field(KokoroEngineCoordinator, "engine")
+    }
+    private fun ownsNeuralRequest(current: LessonNarrationController): Boolean =
+        synchronized(field<Any>(KokoroEngineCoordinator, "state")) {
+            field<Any?>(KokoroEngineCoordinator, "active")?.let { field<Any>(it, "owner") === current } == true
+        }
     @Suppress("UNCHECKED_CAST") private fun <T> field(instance: Any, name: String): T =
         instance.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(instance) as T
     private fun <T> onMain(block: () -> T): T {
@@ -366,6 +460,38 @@ class NarrationSharedPlaybackDeviceTest {
                 "index=${field<Int>(current, "index")}, offset=${field<Long>(current, "offset")}, " +
                 "pending=${field<Set<Int>>(current, "pending")}, files=[$files], " +
                 "worker=${worker.state} ${worker.stackTrace.take(6).joinToString(" <- ")}, " +
-                "kokoro=${field<Any?>(current, "kokoro") != null}, tts=${field<Any?>(current, "tts") != null}"
+                "sharedKokoro=${sharedNeuralEngine() != null}, ownsKokoro=${ownsNeuralRequest(current)}, " +
+                "tts=${field<Any?>(current, "tts") != null}"
         }.getOrElse { "diagnostics unavailable: $it" }
+
+    private fun modelMetadata() = modelRoot.listFiles().orEmpty().associate { it.name to (it.length() to it.lastModified()) }
+    private fun preferenceFiles() = File(deviceContext.applicationInfo.dataDir, "shared_prefs").listFiles().orEmpty()
+        .filter { it.name.endsWith(".xml") }.map { it.name.removeSuffix(".xml") }.toSet()
+
+    private fun deviceShell(command: String) {
+        android.os.ParcelFileDescriptor.AutoCloseInputStream(
+            instrumentation.uiAutomation.executeShellCommand(command)
+        ).use { it.readBytes() }
+    }
+
+    private class IsolatedApplication(private val actual: Application, root: File) : Application() {
+        private val files = File(root, "files").apply { check(mkdirs()) }
+        private val cache = File(root, "cache").apply { check(mkdirs()) }
+        private val prefix = "shared_playback_test_${UUID.randomUUID()}_"
+        val preferenceNames = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+        init { attachBaseContext(actual) }
+        override fun getApplicationContext(): Context = this
+        override fun getFilesDir(): File = files
+        override fun getCacheDir(): File = cache
+        override fun getSharedPreferences(name: String, mode: Int): SharedPreferences {
+            val scoped = prefix + name
+            preferenceNames.add(scoped)
+            return actual.getSharedPreferences(scoped, mode)
+        }
+    }
+
+    companion object {
+        private val KNOWN_PREFERENCES = setOf("learning_progress", "navigation_state", "lesson_narration_settings",
+            "app_settings", "ui_language_settings", "kokoro_model_downloads")
+    }
 }
