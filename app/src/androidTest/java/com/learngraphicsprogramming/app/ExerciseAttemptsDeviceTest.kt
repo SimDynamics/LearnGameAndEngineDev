@@ -50,7 +50,7 @@ class ExerciseAttemptsDeviceTest {
     private val snapshots = linkedMapOf<String, Map<String, *>>()
 
     @Before fun preserveUserState() {
-        listOf(ATTEMPTS_PREFS, "learning_progress", "navigation_state", "scientific_calculator").forEach { name ->
+        listOf(ATTEMPTS_PREFS, "learning_progress", "navigation_state", "scientific_calculator", "cpp_lesson_drafts").forEach { name ->
             snapshots[name] = context.getSharedPreferences(name, Context.MODE_PRIVATE).all.toMap()
         }
         val keyguard = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager

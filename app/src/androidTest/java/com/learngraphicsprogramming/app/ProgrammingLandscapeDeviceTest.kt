@@ -51,7 +51,7 @@ class ProgrammingLandscapeDeviceTest {
         trackedInput = null
         trackedNormalToolbarHeight = null
         trackedFocusLosses = emptyList()
-        listOf("learning_progress", "navigation_state", "lesson_text_size_settings", "app_settings").forEach {
+        listOf("learning_progress", "navigation_state", "lesson_text_size_settings", "app_settings", "cpp_lesson_drafts").forEach {
             snapshots[it] = context.getSharedPreferences(it, Context.MODE_PRIVATE).all.toMap()
         }
         ProgressRepository.resetLesson(context, route, lesson)
