@@ -44,6 +44,13 @@ QUESTION_CLARIFICATIONS = {
     ("datos_propios_y_estado_valido/lesson_operaciones_auxiliares_y_significado_de_igualdad.json", 3, 5):
         "Completa sólo el símbolo de negación que hace != coherente con ==.",
 }
+# Precisiones textuales revisadas. Se conserva el resto del ejercicio entero.
+EXPLANATION_CLARIFICATIONS = {
+    ("programas_y_ejecucion/lesson_primer_programa_y_salida.json", 4, 3):
+        ("order_code", "Primero #include <iostream> permite usar el recurso de salida; después se abre main, se escribe la instrucción que muestra el mensaje y se termina el cuerpo."),
+    ("repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json", 3, 3):
+        ("output_prediction", "La condición inicial es falsa y el acumulador conserva su valor inicial cero."),
+}
 ERRORS = []
 
 
@@ -140,6 +147,13 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
     if current == old:
         return True
     lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
+    explanation = EXPLANATION_CLARIFICATIONS.get((lesson_path, pn + 1, bn + 1))
+    if (
+        explanation is not None
+        and old["type"] == explanation[0]
+        and current == dict(old, explanation=explanation[1])
+    ):
+        return True
     question = QUESTION_CLARIFICATIONS.get((lesson_path, pn + 1, bn + 1))
     if (
         question is not None

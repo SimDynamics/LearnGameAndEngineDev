@@ -1,0 +1,336 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura",
+  "title": "Redondeo deliberado y conversión segura",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir un entero cercano cambia el valor deliberadamente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Truncar, exigir una conversión exacta y redondear responden a encargos distintos. El cast double a int descarta la fracción hacia cero cuando el valor truncado cabe. La conversión comprobada de la lección anterior rechaza una fracción para conservar el valor numérico. Ahora permitiremos cambiarlo: elegiremos el entero numéricamente más cercano. Mostrar menos cifras en un texto es otra operación; no asigna ese entero a una variable."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para entender cercano, compara la distancia a los enteros que rodean la cantidad. Seis y cuarto está a un cuarto de seis y a tres cuartos de siete: elegimos seis. Menos seis y tres cuartos está a un cuarto de menos siete y a tres cuartos de menos seis: elegimos menos siete. Cerca no significa siempre menor, mayor ni más próximo a cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "A mitad hay dos enteros a la misma distancia. Nuestro contrato resuelve ese empate alejándose de cero: tres y medio se convierte en cuatro, y menos tres y medio en menos cuatro. Es una regla elegida y explícita; un requisito distinto podría elegir otra. Un valor que ya es entero conserva su valor numérico."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__regla_de_empate_negativo",
+          "question": "Una marca debe representar el entero más cercano a -7.5, con empates alejándose de cero. ¿Qué marca cumple esa regla?",
+          "options": [
+            "-7, porque descartar la fracción siempre decide el empate.",
+            "-8, porque los dos candidatos están igual de cerca y se elige el más alejado de cero.",
+            "-7, porque el entero mayor es siempre el más cercano."
+          ],
+          "correctIndex": 1,
+          "explanation": "Menos siete y menos ocho están a media unidad. El contrato de empate selecciona menos ocho, cuya distancia a cero es mayor."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__decidir_que_operacion_necesita_el_encargo",
+          "question": "Una cantidad de piezas sólo es válida si no tiene fracción; una posición preparada puede asignarse a una marca entera cercana. ¿Qué decisión respeta ambos encargos?",
+          "options": [
+            "Redondear ambas, porque todo candidato entero elimina el problema.",
+            "Truncar piezas y posición, porque el cast devuelve un int.",
+            "Comprobar conversión exacta para piezas y redondear deliberadamente la posición."
+          ],
+          "correctIndex": 2,
+          "explanation": "Un resultado entero no acredita el requisito de piezas: 4.25 debe rechazarse allí. Para una marca cercana, cambiar 4.25 a cuatro es precisamente la decisión admitida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "std::round devuelve un valor integral de tipo double"
+        },
+        {
+          "type": "paragraph",
+          "text": "La cabecera <cmath> declara std::round. Cuando recibe un double, devuelve un double con valor integral: el entero más cercano, con empates alejándose de cero. Integral describe el valor, no cambia el tipo del resultado a int. Podemos conservarlo en un candidato double y convertir después, cuando su seguridad esté justificada."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double origen{6.25};\n    const double redondeado = std::round(origen);\n    std::cout << \"Origen: \" << origen\n              << \"\\nRedondeado: \" << redondeado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comparación guiada: este programa muestra 6.25 y 6 en líneas distintas. origen sigue siendo seis y cuarto. redondeado tiene valor seis y tipo double; ver 6 en cout no demuestra que sea int. No hemos construido todavía una función que valide cualquier argumento o publique un destino."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__truncar_frente_a_redondear_un_negativo",
+          "question": "Predice ambas líneas para este dato nuevo. Los valores conocidos son finitos y pequeños; ambos casts a int son seguros.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double origen{-2.75};\n    const int truncado = static_cast<int>(origen);\n    const double candidato = std::round(origen);\n    const int cercano = static_cast<int>(candidato);\n    std::cout << \"Truncado: \" << truncado\n              << \"\\nCercano: \" << cercano;\n    return 0;\n}\n",
+          "answers": [
+            "Truncado: -2\nCercano: -3"
+          ],
+          "explanation": "El cast descarta la fracción hacia cero y produce menos dos. Menos tres está más cerca de menos dos y tres cuartos; round devuelve ese valor integral antes del segundo cast."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__limite_sobre_el_origen",
+          "question": "El contrato admite origen en -100..100. 100.25 redondearía a 100. ¿Qué decisión corresponde?",
+          "options": [
+            "Rechazar el origen, aunque su marca potencial fuera cien.",
+            "Aceptarlo porque el entero resultante cumple el intervalo.",
+            "Asignar cien y devolver false para señalar la diferencia."
+          ],
+          "correctIndex": 0,
+          "explanation": "El intervalo restringe el argumento original. Un rechazo debe conservar el destino; no basta comprobar la marca después de publicarla."
+        },
+        {
+          "type": "note",
+          "text": "Recupera std::isfinite y la validación antes del cast. Para un origen finito en -100..100, std::round queda también entre esos enteros: todos caben en int. Esta justificación usa un dominio pequeño del problema; no promete convertir cualquier double finito ni todo el rango de int. Los ceros representan la misma marca numérica cero, sin conservar su signo o escritura."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una función que publica sólo una marca aceptada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye bool redondear_entero(double origen, int& destino). Acepta sólo un origen finito en -100..100, incluidos ambos extremos. En ese dominio devuelve true y asigna el entero más cercano, con los empates alejándose de cero. Fuera del dominio devuelve false sin modificar destino. No imprime. origen llega por valor; destino permite actualizar el objeto del llamador."
+        },
+        {
+          "type": "paragraph",
+          "text": "Planifica la validación antes de calcular el candidato y de convertirlo a int. Después de aceptar el origen, std::round produce un double integral pequeño representable en int. La fracción es admisible ahora: no añadas la igualdad de ida y vuelta del contrato exacto. La operación no se anuncia como una conversión sin pérdida, porque cambiar la cantidad puede ser justamente su propósito."
+        },
+        {
+          "type": "paragraph",
+          "text": "Empieza en main con destino=37 y origen=1.75. Después, conservando el destino entre llamadas, prueba -1.25, 2.5, -2.5, -100.0, -100.25 y 0.0 en ese orden. Presenta cada bool y destino como B:D en su propia línea. Prepara primero la traza origen, decisión y destino posterior; distingue conservar un destino de asignar la marca cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba también 0.5, -0.5, 99.5, -99.5, 100.0 y 100.25. Observa ambos lados de cero y las dos fronteras. Repite los rechazos comenzando con otro destino, por ejemplo -8, para comprobar que conserva ese valor previo. El argumento original no cambia: contrástalo con una copia previa. No llames a un cast fuera del dominio para investigar su salida."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define redondear_entero antes de main o declara su firma y define despues.\nint main() {\n    // Construye las llamadas y sus trazas a partir del contrato.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "El editor no entrega guardas, firma ni cuerpo. Construye y contrasta antes de abrir la referencia. Se aceptan implementaciones equivalentes que validen el argumento original, mantengan seguro todo cast y cumplan la regla de cercanía y empate, además de conservar el destino de cada rechazo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: dominio, candidato y asignación"
+        },
+        {
+          "type": "note",
+          "text": "Esta implementación utiliza datos distintos del intento. Compárala con tu contrato y vuelve después a tus propias pruebas; no sustituyas la traza que preparaste por estas salidas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    int destino{28};\n    double origen{2.25};\n    bool aceptado = redondear_entero(origen, destino);\n    std::cout << \"Cercano positivo: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = -2.75;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Cercano negativo: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = 4.5;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Mitad positiva: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = -4.5;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Mitad negativa: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = 100.0;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Frontera: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = 100.25;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Fuera: \" << aceptado << \";Destino: \" << destino << '\\n';\n    origen = 0.0;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Cero: \" << aceptado << \";Destino: \" << destino << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia muestra destinos 2, -3, 5, -5, 100, 100 y 0. Sólo Fuera devuelve 0; los otros bools valen 1. El intento inicial de 1.75, -1.25, 2.5, -2.5, -100.0, -100.25 y 0.0 debe producir 1:2, 1:-1, 1:3, 1:-3, 1:-100, 0:-100 y 1:0, cada uno en su línea."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: finitud e intervalo del origen antes de cualquier cast; fracciones válidas aceptadas; regla correcta para negativos y mitades; cada false conserva el destino recibido; cero aceptado lo reemplaza por cero. 99.5 y -99.5 producen 100 y -100; los propios extremos también se aceptan. El redondeo no modifica el double del llamador ni promete conservar el tipo, la representación o la escritura del origen."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__interpretar_el_bool_sin_perder_cero",
+          "question": "Tras una llamada, destino vale cero. ¿Qué distingue una marca cero aceptada de un rechazo que conservó un cero anterior?",
+          "options": [
+            "El valor cero basta para afirmar que hubo rechazo.",
+            "El bool devuelto, junto al contrato que protege el destino.",
+            "Una impresión de más cifras del argumento original."
+          ],
+          "correctIndex": 1,
+          "explanation": "El resultado de estado y el valor cumplen papeles distintos. Una llamada con 0.25 acepta y publica cero; un argumento fuera del intervalo puede rechazar dejando un cero previo."
+        },
+        {
+          "type": "note",
+          "text": "Otros nombres de candidatos o retornos tempranos son válidos. El contrato deliberado exige el entero más cercano; no hay una tolerancia para aceptar otra marca. Las pruebas juzgan el valor double que recibió la función, no reconstruyen una escritura decimal o una operación anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar contratos distintos antes de consumir el resultado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una solicitud de piezas exige una cantidad integral exacta; una posición preparada se asigna a una marca cercana. Usa convertir_entero para la primera decisión y redondear_entero para la segunda. Si una operación rechaza, el programa no debe tratar su destino conservado como un resultado nuevo. La elección de contrato corresponde al encargo y precede a la interpretación del bool."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__dos_contratos_mismos_argumentos",
+          "question": "Predice las tres líneas. A la izquierda se publica sólo una cantidad exacta; a la derecha se admite la marca cercana.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const int candidato = static_cast<int>(origen);\n    if (static_cast<double>(candidato) != origen) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    int piezas{9};\n    int marca{9};\n    bool exacto = convertir_entero(4.75, piezas);\n    bool cercano = redondear_entero(4.75, marca);\n    std::cout << \"Fraccion: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca << '\\n';\n    exacto = convertir_entero(0.0, piezas);\n    cercano = redondear_entero(0.0, marca);\n    std::cout << \"Cero: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca << '\\n';\n    exacto = convertir_entero(-100.25, piezas);\n    cercano = redondear_entero(-100.25, marca);\n    std::cout << \"Fuera: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca;\n    return 0;\n}\n",
+          "answers": [
+            "Fraccion: 0:9|1:5\nCero: 1:0|1:0\nFuera: 0:0|0:0"
+          ],
+          "explanation": "La fracción se rechaza para piezas y se redondea a cinco para la marca. Ambos admiten cero. Ambos rechazan menos cien y cuarto antes del cast y conservan sus ceros anteriores."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__la_receta_positiva_no_resuelve_negativos",
+          "question": "Predice este contraste definido. El cast de la receta usa un valor conocido pequeño; no hay riesgo de rango en este ejemplo.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const double origen{-1.75};\n    const int receta = static_cast<int>(origen + 0.5);\n    int marca{6};\n    const bool aceptado = redondear_entero(origen, marca);\n    std::cout << \"Receta: \" << receta << \"\\nContrato: \" << aceptado << ':' << marca;\n    return 0;\n}\n",
+          "answers": [
+            "Receta: -1\nContrato: 1:-2"
+          ],
+          "explanation": "Sumar media unidad y truncar produce menos uno aquí. Menos dos está más cerca de menos uno y tres cuartos. Esa receta no implementa nuestro contrato para negativos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__fraccion_legitima_o_dato_invalido",
+          "question": "Una orden exige exactamente 2.5 piezas y el sistema sólo acepta piezas enteras sin cambiar la cantidad. ¿Qué decisión conserva ese requisito?",
+          "options": [
+            "Redondear a tres y aceptar porque el resultado tiene tipo int.",
+            "Truncar a dos y aceptar porque se eliminó la fracción.",
+            "Rechazar la cantidad mediante la conversión exacta."
+          ],
+          "correctIndex": 2,
+          "explanation": "El requisito prohíbe cambiar la cantidad de piezas. El redondeo es correcto para otro contrato, no una reparación automática de un dato incompatible."
+        },
+        {
+          "type": "note",
+          "text": "Mantén separados el juicio sobre el dominio y la política sobre la fracción. Ninguno de estos contratos se sustituye cambiando la precisión de cout: esa presentación produce caracteres, no una marca int nueva."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir el redondeo a marcas únicas sin perder observaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "La entrada preparada es un vector de hasta ocho double finitos, cada uno en -102..102. Conserva todos sus elementos y su orden. Reutiliza el contrato redondear_entero: algunos datos de esta entrada quedarán fuera de -100..100 y deben rechazarse. Procesa las observaciones en el orden original, sin ordenar ni truncar la colección."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un vector de marcas int únicas en orden de primera aparición tras redondear. Un aceptado cuya marca aún no existe añade esa marca. Un aceptado cuya marca ya existe cuenta una colisión y no la añade otra vez. Cada aparición repetida cuenta por separado; también pueden colisionar dos double distintos. Un rechazo aumenta rechazados y no produce marca, no participa en la búsqueda ni cuenta una colisión. Cero es una marca válida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Empieza con {0.25,0.4,-0.25,2.5,2.75,-2.5,100.25,2.5}. Prepara una traza por observación: bool, marca sólo cuando hay aceptación, si ya apareció y nuevos contadores. Muestra Marcas: seguida de cada marca precedida por un espacio; después Colisiones: C, Rechazados: R y Datos conservados: B, cada parte en su línea. B compara el vector completo con una copia previa. Si no hay marcas, la primera línea contiene sólo Marcas:. No uses un cero o el valor previo del destino como señal de rechazo. La biblioteca permite comparar vectores con ==: son iguales si tienen el mismo tamaño y los elementos de cada posición son iguales; por eso importan el orden y los repetidos. Para estos double finitos comprobamos igualdad numérica exacta con su copia, sin tolerancia ni promesa sobre representación. También puedes contrastar tamaño y posiciones mediante un recorrido conocido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye además tus expectativas para {}, {0.0}, {101.0,-101.0}, {0.25,-0.25}, {3.0,3.0,3.0} y {-100.0,100.0,99.5,-99.5}. Distingue repetir una observación de colisionar observaciones distintas. Una búsqueda lineal en las marcas ya reunidas basta para este dominio pequeño. Puedes organizar la clasificación en main o en funciones con interfaces ya enseñadas; el editor no entrega su algoritmo."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define o recupera tu propia redondear_entero antes de main.\nint main() {\n    // Construye las observaciones, la clasificacion y las pruebas del contrato.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Construye desde este editor antes de consultar la referencia. No basta imprimir un resumen constante: contrasta el vector original completo, el orden de primeras apariciones y cada contador. La clasificación puede aceptar datos fraccionarios; la conversión exacta de piezas no sería una sustitución equivalente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: observar, aceptar y buscar una marca"
+        },
+        {
+          "type": "note",
+          "text": "El programa utiliza otros datos: incluye un entero que colisiona con una marca anterior y un cero aceptado. Compara su organización con la tuya después del intento; conserva también tus casos originales."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{1.25, 1.75, 2.0, -1.75, 101.0, 0.0, -0.4, 1.25};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Marcas:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia muestra Marcas: 1 2 -2 0, Colisiones: 3, Rechazados: 1 y Datos conservados: 1, cada uno en su línea. 1.75 y 2.0 comparten la marca dos; 0.0 y -0.4 comparten cero; repetir 1.25 produce otra colisión. El 101 no aporta una marca aunque la variable local tenga un valor inicial."
+        },
+        {
+          "type": "paragraph",
+          "text": "El intento inicial produce Marcas: 0 3 -3, Colisiones: 4, Rechazados: 1 y Datos conservados: 1. Criterios: una marca por valor entero distinto aceptado, orden de primera aparición y una colisión por cada aceptado repetido. No ordenes las marcas ni deduzcas las colisiones comparando sólo double originales. Cada rechazo conserva el destino de la función, pero ese destino no se consume como una marca nueva."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para cada colección debe cumplirse cantidad de observaciones = cantidad de marcas únicas + colisiones + rechazados. Es una comprobación adicional de que cada observación terminó en un solo caso, no una sustitución de contrastar qué marcas quedaron y en qué orden. El tamaño y el orden de los datos originales deben conservarse; los contadores nunca superan ocho."
+        },
+        {
+          "type": "note",
+          "text": "Son válidas otras búsquedas o descomposiciones que cumplan esos criterios con los prerrequisitos ya enseñados. Recibir true y una marca cero es una aceptación completa; recibir false no autoriza a inspeccionar el destino conservado para clasificar la observación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar mitades, orden y rechazos con datos nuevos"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__mitades_y_orden_de_primera_aparicion",
+          "question": "Predice las cuatro líneas para esta colección nueva. Atiende a las mitades de ambos signos y conserva el orden de aparición, no el orden numérico.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{1.5, 2.4, 2.5, -1.5, -2.4, -2.5, 100.1, 0.0};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Marcas:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Marcas: 2 3 -2 -3 0\nColisiones: 2\nRechazados: 1\nDatos conservados: 1"
+          ],
+          "explanation": "Las mitades producen dos, tres, menos dos y menos tres según su signo. 2.4 repite dos y -2.4 repite menos dos. 100.1 se rechaza por el origen; cero se añade al final como primera aparición aceptada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba los casos preparados antes de la referencia. La colección vacía no tiene marcas, colisiones ni rechazos. {0.0} tiene la marca cero y ambos contadores en cero. {101.0,-101.0} no tiene marcas y cuenta dos rechazos. {0.25,-0.25} produce una marca cero y una colisión. Tres apariciones de 3.0 producen una marca tres y dos colisiones. {-100.0,100.0,99.5,-99.5} conserva marcas -100 y 100 en ese orden, con dos colisiones y ningún rechazo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__que_regla_cambia_el_informe",
+          "question": "Un informe distinto exige aceptar sólo observaciones que ya sean enteras exactas; conserva el dominio -100..100 y las marcas únicas. ¿Qué cambio respeta esa nueva decisión?",
+          "options": [
+            "Reemplazar el redondeo por la conversión exacta y conservar la clasificación de los aceptados.",
+            "Conservar round, porque el vector de salida ya contiene únicamente int.",
+            "Ordenar los double antes de redondear para evitar la parte fraccionaria."
+          ],
+          "correctIndex": 0,
+          "explanation": "La política de aceptación cambia: una fracción deja de producir marca. Buscar marcas ya aceptadas y contar sus repeticiones mantiene su significado. Ordenar no vuelve integral un valor y cambiaría el orden requerido."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__cero_aceptado_no_es_rechazo",
+          "question": "Predice este recorrido nuevo. Los datos preparados son finitos y pertenecen al dominio de entrada de la colección.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{-0.25, 0.25, -0.5, -100.25, 100.25};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Marcas:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nColisiones: \" << colisiones\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nDatos conservados: \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Marcas: 0 -1\nColisiones: 1\nRechazados: 2\nDatos conservados: 1"
+          ],
+          "explanation": "Las dos primeras fracciones comparten la marca cero: la segunda cuenta una colisión. Menos media unidad produce menos uno. Los dos argumentos justo fuera del intervalo se rechazan, sin consumir sus destinos locales ni crear colisiones."
+        },
+        {
+          "type": "note",
+          "text": "Apoyo: Stroustrup, B. (2024), Programming: Principles and practice using C++ (3.ª ed.), §7.4.7, p. 200, distingue la conversión comprobada del redondeo deliberado. round_to pertenece al soporte PPP; aquí usamos std::round con el dominio -100..100 y conservación del destino ante rechazo. N3096 §7.12.9.6 define el entero cercano y el empate alejado de cero; N4950 [c.math]/[cmath.syn] y el borrador HTML [cmath.syn] identifican la interfaz C++ de <cmath>. Fuentes primarias de consulta: https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3096.pdf y https://eel.is/c++draft/c.math. Explicaciones, contratos y actividades originales de esta ruta."
+        }
+      ]
+    }
+  ]
+}

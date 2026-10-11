@@ -1,0 +1,325 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado",
+  "title": "Raíz cuadrada: dominio y resultado aproximado",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elevar al cuadrado y obtener una raíz son cálculos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "El cuadrado de un número se obtiene multiplicándolo por sí mismo: 3 por 3 da 9 y 6 por 6 da 36. En C++ escribimos numero * numero. Multiplicar por dos, 2 * numero, es otro cálculo. Si el número expresa el lado de un cuadrado, su cuadrado expresa el área."
+        },
+        {
+          "type": "paragraph",
+          "text": "La raíz cuadrada no negativa de un área es el lado no negativo cuyo cuadrado da esa área: la raíz de 36 es 6 y la de 0 es 0. Tanto 6 como -6 tienen cuadrado 36, pero la raíz cuadrada que usamos es la no negativa. Un área negativa no tiene una raíz real que pueda servir como ese lado."
+        },
+        {
+          "type": "paragraph",
+          "text": "La biblioteca ofrece std::sqrt. Incluye <cmath> para usarla; los paréntesis contienen el argumento y la llamada produce un resultado. Trabajaremos con argumentos double y resultados double. No definimos su algoritmo ni declaramos manualmente una función de biblioteca: la cabecera proporciona su interfaz. Esta comparación guiada calcula el cuadrado y la raíz de un mismo dato válido."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double numero{4.0};\n    const double cuadrado = numero * numero;\n    const double raiz = std::sqrt(numero);\n    std::cout << \"Cuadrado: \" << cuadrado << \"\\nRaiz: \" << raiz;\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__cuadrado_frente_a_raiz",
+          "question": "Predice las dos líneas con este nuevo dato. Distingue la multiplicación de la llamada de biblioteca.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double numero{9.0};\n    std::cout << \"Cuadrado: \" << numero * numero\n              << \"\\nRaiz: \" << std::sqrt(numero);\n    return 0;\n}\n",
+          "answers": [
+            "Cuadrado: 81\nRaiz: 3"
+          ],
+          "explanation": "9 por 9 da 81. La raíz cuadrada no negativa de nueve es tres. La llamada no divide nueve entre dos ni calcula su cuadrado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__raiz_no_negativa",
+          "question": "Los números 6 y -6 tienen cuadrado 36. ¿Qué significa la raíz cuadrada no negativa de 36?",
+          "options": [
+            "Las dos soluciones, porque comparten el mismo cuadrado.",
+            "El valor 6, porque la raíz elegida debe ser no negativa.",
+            "El valor -6, porque se deshace la multiplicación."
+          ],
+          "correctIndex": 1,
+          "explanation": "La raíz cuadrada no negativa es un solo valor. Las dos soluciones de x*x=36 no se confunden con esa elección."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El dominio del problema se comprueba antes de calcular"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nuestro problema admite áreas finitas entre 0 y 100, incluidos ambos extremos. El límite cien pertenece a este contrato: la biblioteca también puede calcular raíces de otros argumentos positivos, pero esta aplicación los rechaza. El cero es un área válida y produce un lado cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un valor finito representa una cantidad numérica finita. Infinito y el resultado especial llamado no es un número (NaN) no son cantidades finitas; no necesitas fabricarlos ni estudiar su representación para comprobar esta condición. std::isfinite(area), de <cmath>, devuelve bool: true para un valor finito y false para uno no finito. Un número negativo puede ser finito; finitud no significa que cumpla el intervalo del problema."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double numero{-4.0};\n    const bool finito = std::isfinite(numero);\n    const bool en_intervalo = numero >= 0.0 && numero <= 100.0;\n    std::cout << \"Finito: \" << finito\n              << \"\\nEn intervalo: \" << en_intervalo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta comparación guiada usa -4.0: es finito, pero queda fuera de 0..100. La validación del área necesita las dos condiciones. Ante un área rechazada, nuestra función no llamará a std::sqrt. No dependemos de que la biblioteca lance una excepción al recibir un negativo ni ejecutamos esa llamada para probar el rechazo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__limite_del_problema",
+          "question": "121.0 es finito y su raíz real existe. ¿Qué exige el contrato de áreas 0..100?",
+          "options": [
+            "Rechazarlo porque supera el límite del problema.",
+            "Aceptarlo porque toda raíz real cumple el contrato.",
+            "Rechazarlo porque es necesariamente un valor no finito."
+          ],
+          "correctIndex": 0,
+          "explanation": "La finitud y el dominio matemático no sustituyen el límite de esta aplicación. El rechazo se decide antes de calcular."
+        },
+        {
+          "type": "fill_code",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__nombre_isfinite",
+          "question": "Práctica guiada: escribe sólo el nombre de la función de <cmath> que pregunta si area es finita.",
+          "language": "cpp",
+          "code": "const bool finita = std::___(area);",
+          "answers": [
+            "isfinite"
+          ],
+          "explanation": "std::isfinite recibe el valor y devuelve bool. No calcula su raíz ni comprueba por sí sola 0..100."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un resultado aproximado necesita una comprobación apropiada"
+        },
+        {
+          "type": "paragraph",
+          "text": "La raíz de 2 no es un número entero: 1*1 es 1 y 2*2 es 4. Su valor real está entre uno y dos y su escritura decimal no termina. double sólo conserva una precisión finita; std::sqrt entrega una aproximación y cout suele mostrar sólo parte de sus cifras. No exijas que una raíz inexacta tenga una cadena fija de decimales ni que lado*lado == area sea siempre true."
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos comprobar propiedades. Para área dos, el lado debe quedar entre 1.4 y 1.5: sus cuadrados en matemática son 1.96 y 2.25. Además, medimos diferencia = lado*lado - area. En este ensayo acotado admitimos una diferencia estrictamente entre -0.000001 y 0.000001. Esa cantidad es una tolerancia elegida para estas pruebas, no una promesa universal de precisión. Aquí el área está en 0..100 y el lado correcto en 0..10; el producto permanece pequeño."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double area{2.0};\n    const double lado = std::sqrt(area);\n    const double diferencia = lado * lado - area;\n    std::cout << \"No negativo: \" << (lado >= 0.0)\n              << \"\\nEn banda: \" << (lado > 1.4 && lado < 1.5)\n              << \"\\nCuadrado cercano: \"\n              << (diferencia > -0.000001 && diferencia < 0.000001);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una banda amplia por sí sola no demuestra el cálculo: 1.45 está entre 1.4 y 1.5, pero su cuadrado es 2.1025 y no satisface la tolerancia del ensayo para área dos. Las comprobaciones se complementan. La función que construirás debe usar std::sqrt; no basta devolver cualquier número que pase una propiedad aislada."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__propiedades_de_raiz_inexacta",
+          "question": "Predice las tres comprobaciones para área tres, sin escribir los decimales de su raíz.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double area{3.0};\n    const double lado = std::sqrt(area);\n    const double diferencia = lado * lado - area;\n    std::cout << \"No negativo: \" << (lado >= 0.0)\n              << \"\\nEn banda: \" << (lado > 1.7 && lado < 1.8)\n              << \"\\nCuadrado cercano: \"\n              << (diferencia > -0.000001 && diferencia < 0.000001);\n    return 0;\n}\n",
+          "answers": [
+            "No negativo: 1\nEn banda: 1\nCuadrado cercano: 1"
+          ],
+          "explanation": "La raíz no negativa de tres está entre 1.7 y 1.8 y su cuadrado aproximado satisface la tolerancia elegida. Se observan bools; no se exige una escritura decimal completa ni una igualdad exacta del cuadrado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__una_banda_no_demuestra_la_raiz",
+          "question": "Para área dos, un programa devuelve 1.45. Pasa la banda 1.4..1.5, pero su cuadrado es 2.1025. ¿Qué conclusión corresponde?",
+          "options": [
+            "La banda basta porque el resultado es un double positivo.",
+            "Sólo hay un problema con las cifras que muestra cout.",
+            "La banda no basta: el cuadrado incumple la tolerancia elegida."
+          ],
+          "correctIndex": 2,
+          "explanation": "La diferencia 0.1025 supera ampliamente 0.000001. Una propiedad amplia puede aceptar un resultado incorrecto; el contrato y otra comprobación discriminante siguen siendo necesarios."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una función que acepta o conserva el destino"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye bool calcular_lado(double area, double& destino). Acepta sólo áreas finitas en 0..100. Si acepta, calcula con std::sqrt, guarda el lado en destino y devuelve true. Si rechaza, devuelve false sin llamar a std::sqrt y sin asignar nada a destino. La función no imprime. El bool comunica aceptación; el valor calculado se entrega por la referencia modificable."
+        },
+        {
+          "type": "paragraph",
+          "text": "area recibe una copia del argumento. destino se vincula con un objeto double modificable del llamador. Si los argumentos son objetos distintos, el objeto que aporta el área permanece intacto. También se permite usar el mismo objeto en ambas posiciones: la copia del área existe antes de ejecutar el cuerpo y el objeto original puede cambiar a través de destino. Un rechazo debe conservarlo en cualquier caso."
+        },
+        {
+          "type": "paragraph",
+          "text": "En main empieza con area=25.0 y destino=-3.0. Guarda el bool y presenta Valida: B;Destino: D;Area: A. Después asigna -4.0 al objeto area y llama conservando el destino anterior: presenta Negativa: B;Destino: D;Area: A. Por último usa area=101.0 y presenta Exceso: B;Destino: D;Area: A. Usa las etiquetas y un salto entre las tres líneas; los números deben proceder de las llamadas y los objetos observados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, anota bool, destino y argumento posterior en cada llamada. Prueba además 0.0, 100.0, 16.0, 0.25, 2.0, -1.0 y 100.5, manteniendo un destino previo observable para los rechazos. Para dos usa las propiedades y la tolerancia anteriores, no una cadena de decimales. Comprueba que todo rechazo conserva el destino y que la aceptación de cero sí reemplaza un destino previo distinto de cero."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define calcular_lado antes de main, o declara su firma y define despues.\nint main() {\n    // Construye las llamadas, conserva sus resultados y observa los objetos.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "El editor no entrega firma, condiciones ni cuerpo. Construye y prueba antes de consultar la referencia siguiente. Se aceptan implementaciones equivalentes que validen todas las condiciones antes del cálculo, respeten los permisos y conserven el destino al rechazar; imprimir respuestas constantes no acredita esos contratos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia después de construir y probar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta referencia comienza con área 36 y destino -3, diferentes datos del intento. Después usa -2, 100.5 y cero, en llamadas separadas que conservan el destino obtenido por la anterior. Los dos objetos area y destino son distintos en este main."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    double area{36.0};\n    double destino{-3.0};\n    const bool valida = calcular_lado(area, destino);\n    std::cout << \"Valida: \" << valida << \";Destino: \" << destino\n              << \";Area: \" << area << \"\\n\";\n    area = -2.0;\n    const bool negativa = calcular_lado(area, destino);\n    std::cout << \"Negativa: \" << negativa << \";Destino: \" << destino\n              << \";Area: \" << area << \"\\n\";\n    area = 100.5;\n    const bool exceso = calcular_lado(area, destino);\n    std::cout << \"Exceso: \" << exceso << \";Destino: \" << destino\n              << \";Area: \" << area << \"\\n\";\n    area = 0.0;\n    const bool cero = calcular_lado(area, destino);\n    std::cout << \"Cero: \" << cero << \";Destino: \" << destino\n              << \";Area: \" << area << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las líneas son Valida: 1;Destino: 6;Area: 36, Negativa: 0;Destino: 6;Area: -2, Exceso: 0;Destino: 6;Area: 100.5 y Cero: 1;Destino: 0;Area: 0. La validación termina los rechazos antes de la llamada de biblioteca y antes de asignar al destino. El cero se acepta y reemplaza el seis; false y un lado cero no significan lo mismo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios para tu construcción: interfaz y tipos concordantes; comprobación de finitud y ambos límites antes del cálculo; std::sqrt sólo con área aceptada; destino intacto en todo rechazo; aceptación que guarda el resultado; ninguna impresión dentro de la función; observación posterior en main. Comprueba frontera cero, frontera cien, fracciones y los rechazos preparados. Otra organización del cuerpo es válida si mantiene esas garantías."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar argumentos, copias y permisos"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer argumento puede ser un literal, una expresión o el valor de un objeto: inicializa el parámetro double por valor. El segundo necesita un objeto double modificable porque se vincula con double&. Si un mismo objeto ocupa ambas posiciones, el cálculo lee la copia recibida como area y puede modificar el objeto del llamador por destino. Anota los estados después de cada llamada, no sólo el número de argumentos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__misma_variable_y_copia",
+          "question": "Predice las tres líneas. Cada llamada es una sentencia separada y no hay modificaciones dentro de sus argumentos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    double dato{16.0};\n    const double foto = dato;\n    const bool primera = calcular_lado(dato, dato);\n    std::cout << \"Primera: \" << primera << \";Dato: \" << dato\n              << \";Foto: \" << foto << \"\\n\";\n    const bool segunda = calcular_lado(dato, dato);\n    std::cout << \"Segunda: \" << segunda << \";Dato: \" << dato\n              << \";Foto: \" << foto << \"\\n\";\n    double rechazada{-4.0};\n    const bool rechazo = calcular_lado(rechazada, rechazada);\n    std::cout << \"Rechazo: \" << rechazo << \";Dato: \" << rechazada;\n    return 0;\n}\n",
+          "answers": [
+            "Primera: 1;Dato: 4;Foto: 16\nSegunda: 1;Dato: 2;Foto: 16\nRechazo: 0;Dato: -4"
+          ],
+          "explanation": "La primera llamada recibe copia de dieciséis y guarda cuatro en dato. La siguiente recibe ahora cuatro y guarda dos. foto conserva la copia inicial. La llamada con -4 se rechaza antes de calcular y no modifica su único objeto."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__destino_modificable",
+          "question": "¿Qué llamada proporciona los permisos que requiere calcular_lado?",
+          "options": [
+            "calcular_lado(9.0, lado), con double lado modificable.",
+            "calcular_lado(lado, 9.0), con lado como primer argumento.",
+            "calcular_lado(9.0, fijo), con const double fijo declarado."
+          ],
+          "correctIndex": 0,
+          "explanation": "El literal puede aportar el área por valor. El destino debe ser un objeto modificable; un literal o un objeto const no cumple double&."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__argumento_expresion",
+          "question": "Predice la línea al usar una expresión como área y un objeto distinto como destino.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    const double base{4.0};\n    double destino{-2.0};\n    const bool aceptada = calcular_lado(base + 5.0, destino);\n    std::cout << \"Aceptada: \" << aceptada << \";Lado: \" << destino\n              << \";Base: \" << base;\n    return 0;\n}\n",
+          "answers": [
+            "Aceptada: 1;Lado: 3;Base: 4"
+          ],
+          "explanation": "La expresión aporta nueve por valor. El resultado se guarda en destino; base sólo se leyó y conserva cuatro."
+        },
+        {
+          "type": "note",
+          "text": "La función conserva su contrato aunque cambie la forma de escribir el argumento. La copia del parámetro no impide una modificación por otra vía autorizada: en la primera predicción esa vía es destino y designa dato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir el contrato a una colección de áreas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un programa nuevo que use calcular_lado para examinar áreas, sin convertir una raíz aproximada en una cadena exigida. std::vector<double> es el vector conocido con elementos double en lugar de int; se inicializa y se recorre de la misma forma. En esta tarea la colección contiene como máximo ocho valores finitos entre -2 y 102. Algunos pueden quedar fuera del contrato 0..100 de calcular_lado: deben contarse como rechazados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Empieza con las áreas {0.0, 4.0, 6.25, 9.0, 2.0, -1.0, 101.0}, en ese orden. Calcula cuántas llamadas se aceptan y cuántas se rechazan. Entre las aceptadas, cuenta cuántos lados son menores o iguales que 2.5. Usa el bool de cada llamada para decidir si su resultado pertenece al informe; un lado cero es válido. Ni el vector ni su orden deben cambiar. La función calcular_lado conserva su interfaz y no imprime."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, anota para cada área si esperas aceptación y si su lado pertenece al grupo hasta 2.5. Escribe después cuatro líneas: Validas: N, Rechazadas: N, Lados hasta 2.5: N y Datos conservados: B. Los tres N son conteos calculados; B compara los datos finales con una copia inicial, incluido tamaño, valores y orden. Esta igualdad compara copias de valores finitos que no has transformado, no el cuadrado de una raíz inexacta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba además colección vacía; sólo cero; sólo un rechazo negativo; sólo un exceso; {100.0, 6.25, 9.0}; y {2.0, -2.0, 102.0}. Decide los conteos antes de ejecutar cada caso. El vacío debe producir tres conteos cero y conservar sus datos. En los casos mezclados, ninguna llamada rechazada puede aportar un lado al tercer conteo. La frontera 6.25 permite comprobar que el límite 2.5 está incluido; nueve aporta un lado que queda fuera de ese grupo aunque su llamada se acepte."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define calcular_lado antes de main, o declara su firma y define despues.\nint main() {\n    // Construye la coleccion, los conteos y la comprobacion de conservacion.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Construye esta transferencia antes de la referencia siguiente. Puedes organizar los conteos y la comprobación de conservación de otra forma si respetas el contrato. Una salida escrita como constantes no demuestra que el programa responda a colecciones nuevas; cambia los datos y compara tus predicciones con la ejecución."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia del informe y recuperación con datos nuevos"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia usa {16.0, 1.0, 6.25, 100.0, -0.5, 100.5}, distintos datos del intento. Conserva una copia del vector y recorre valores para no modificar elementos. Después comprueba tamaño, valores y posiciones. Como el contrato permite como máximo ocho elementos, su tamaño puede convertirse a int; el recorrido sólo accede a índices desde cero hasta cantidad-1 y también funciona si cantidad es cero."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    std::vector<double> areas{16.0, 1.0, 6.25, 100.0, -0.5, 100.5};\n    const std::vector<double> copia = areas;\n    int validas{0};\n    int rechazadas{0};\n    int hasta_dos_y_medio{0};\n    for (const double area : areas) {\n        double lado{-1.0};\n        const bool aceptada = calcular_lado(area, lado);\n        if (aceptada) {\n            ++validas;\n            if (lado <= 2.5) {\n                ++hasta_dos_y_medio;\n            }\n        } else {\n            ++rechazadas;\n        }\n    }\n    bool conservados = areas.size() == copia.size();\n    // El contrato limita el tamano a ocho: la conversion a int es segura.\n    const int cantidad = static_cast<int>(areas.size());\n    if (conservados) {\n        for (int i{0}; i < cantidad; ++i) {\n            if (areas.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n    std::cout << \"Validas: \" << validas << \"\\n\"\n              << \"Rechazadas: \" << rechazadas << \"\\n\"\n              << \"Lados hasta 2.5: \" << hasta_dos_y_medio << \"\\n\"\n              << \"Datos conservados: \" << conservados << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El informe de referencia cuenta cuatro aceptadas, dos rechazadas y dos lados hasta 2.5: los correspondientes a las áreas uno y 6.25. Los datos se conservan. Criterios para tu programa: llama a calcular_lado en cada área, usa su bool para clasificar, cuenta el cero como aceptado, aplica el límite incluido sólo a resultados aceptados y conserva toda la colección y su orden. Si consultas lado después de un rechazo, su valor conservado no se convierte por eso en un resultado válido. Vuelve a tus casos vacíos, fronteras y mezclas; una organización equivalente que cumpla estas garantías también es correcta."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__informe_con_cero_rechazo_y_frontera",
+          "question": "Predice las cuatro líneas con esta colección nueva. Distingue rechazo, lado cero y el límite incluido 2.5.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    std::vector<double> areas{0.0, 100.0, -1.0, 6.25, 9.0};\n    const std::vector<double> copia = areas;\n    int validas{0};\n    int rechazadas{0};\n    int hasta_dos_y_medio{0};\n    for (const double area : areas) {\n        double lado{-1.0};\n        const bool aceptada = calcular_lado(area, lado);\n        if (aceptada) {\n            ++validas;\n            if (lado <= 2.5) {\n                ++hasta_dos_y_medio;\n            }\n        } else {\n            ++rechazadas;\n        }\n    }\n    bool conservados = areas.size() == copia.size();\n    // El contrato limita el tamano a ocho: la conversion a int es segura.\n    const int cantidad = static_cast<int>(areas.size());\n    if (conservados) {\n        for (int i{0}; i < cantidad; ++i) {\n            if (areas.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n    std::cout << \"Validas: \" << validas << \"\\n\"\n              << \"Rechazadas: \" << rechazadas << \"\\n\"\n              << \"Lados hasta 2.5: \" << hasta_dos_y_medio << \"\\n\"\n              << \"Datos conservados: \" << conservados << \"\\n\";\n    return 0;\n}\n",
+          "answers": [
+            "Validas: 4\nRechazadas: 1\nLados hasta 2.5: 2\nDatos conservados: 1"
+          ],
+          "explanation": "Se aceptan cero, cien, 6.25 y nueve; se rechaza menos uno. Sólo los lados de cero y 6.25 quedan hasta 2.5. El recorrido lee las áreas y mantiene tamaño, valores y orden."
+        },
+        {
+          "type": "note",
+          "text": "Apoyo de lectura: Stroustrup (2024), PPP tercera edición, §2.4 para operaciones y llamadas de biblioteca, y §4.2 para el significado de errores y dominio. La raíz no negativa, la finitud y la exactitud dependiente del entorno se contrastan con N3096, §7.12.7.10, §7.12.3.3 y §5.2.4.2.2; la interfaz C++ de <cmath> se consulta en N4950 [c.math]/[cmath.syn] y en el borrador HTML [cmath.syn], recogidos en la bibliografía del curso. Son referencias de consulta, no requisitos para escribir las pruebas de este problema."
+        }
+      ]
+    }
+  ]
+}

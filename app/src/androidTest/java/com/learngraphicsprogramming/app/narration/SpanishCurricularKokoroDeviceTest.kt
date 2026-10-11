@@ -15,7 +15,9 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.learngraphicsprogramming.app.AppearanceSettingsRepository
+import com.learngraphicsprogramming.app.BuildConfig
 import com.learngraphicsprogramming.app.CoursesActivity
+import com.learngraphicsprogramming.app.LessonRepository
 import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
 import java.io.File
 import java.nio.ByteBuffer
@@ -54,6 +56,9 @@ class SpanishCurricularKokoroDeviceTest {
     private var originalMuted = false
 
     @Before fun isolateAudioAndPreserveUserState() {
+        assertEquals("Run neural acceptance only in the isolated curricular copy", QA_PACKAGE, context.packageName)
+        assertEquals(QA_PACKAGE, BuildConfig.APPLICATION_ID)
+        assertEquals(QA_PACKAGE, context.applicationContext.packageName)
         originalPreferenceFiles = preferenceFiles()
         (originalPreferenceFiles + KNOWN_PREFERENCES).forEach { name ->
             preferences[name] = context.getSharedPreferences(name, Context.MODE_PRIVATE).all.mapValues { (_, value) ->
@@ -101,6 +106,7 @@ class SpanishCurricularKokoroDeviceTest {
     }
 
     @After fun closeWorkersThenRestoreUserState() {
+        if (context.packageName != QA_PACKAGE || BuildConfig.APPLICATION_ID != QA_PACKAGE) return
         try {
             controller?.let { current ->
                 onMain { current.close() }
@@ -173,6 +179,45 @@ class SpanishCurricularKokoroDeviceTest {
             assertTrue("Stopping playback preserves its newly generated recording", file.isFile)
         }
         assertTrue("Playback callbacks must include starts and stops", true in states && false in states)
+    }
+
+    @Test fun revisedFirstProgramDefinitionsGenerateFreshNativeSpeechAndPlayOnTheHonor() {
+        verifyInstalledResources()
+        val lesson = LessonRepository.loadLessonJson(context, "programming",
+            "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida")
+        val authored = lesson.getJSONArray("pages").getJSONObject(0).getJSONArray("blocks")
+            .getJSONObject(3).getString("text")
+        assertTrue(authored.contains("Una biblioteca reúne recursos"))
+        assertFalse(authored.contains("de forma consistente"))
+        val spoken = NarrationSegments.sentences(LessonNarrationText.page(lesson, 0,
+            NarrationLanguage.SPANISH) { NarrationUiInstructions.forBlock(context, it) })
+        val texts = listOf("permite usar sus recursos de entrada y salida", "nombre completo del recurso")
+            .map { anchor -> spoken.single { anchor in it } }
+        val lexicon = SpanishFluidG2P.loadLexicon(File(modelRoot,
+            KokoroModelManifest.resources(NarrationLanguage.SPANISH).single().fileName))
+        val current = newController()
+        for (text in texts) {
+            assertTrue(SpanishFluidG2P.phonemize(text, lexicon).isNotBlank())
+            assertMissingAudio(text)
+            val hash = key(text)
+            onMain { current.toggle(listOf(text), NarrationLanguage.SPANISH) }
+            await("The revised authored definition must generate and play fresh native speech", 120_000) {
+                ready(current) && current.isPlaying && player(current).isPlaying && player(current).currentPosition >= 700
+            }
+            val recording = onMain { segmentFile(current, 0)!! }
+            assertOwnedSpeech(recording)
+            assertEquals("Each revised sentence requires exactly one fresh inference", 1, generationEvents(hash).size)
+            assertNoSubstitutedAudio(hash)
+            onMain {
+                assertNull(field<Any?>(current, "tts"))
+                val route = requireNotNull(player(current).routedDevice)
+                assertTrue(route.type in setOf(AudioDeviceInfo.TYPE_BUILTIN_SPEAKER, AudioDeviceInfo.TYPE_BUILTIN_EARPIECE))
+                assertTrue(context.getSystemService(AudioManager::class.java).getStreamVolume(AudioManager.STREAM_MUSIC) > 0)
+                current.stop()
+            }
+            assertTrue(recording.isFile)
+        }
+        assertTrue(true in states && false in states)
     }
 
     @Test fun passivePagePreparationYieldsThenCachesAndReusesRealPlayback() {
@@ -459,6 +504,7 @@ class SpanishCurricularKokoroDeviceTest {
     }
 
     companion object {
+        private const val QA_PACKAGE = "com.learngraphicsprogramming.app.curricularqa"
         private const val VOICE = "ef_dora"
         private val KNOWN_PREFERENCES = setOf("learning_progress", "navigation_state", "lesson_narration_settings",
             "app_settings", "ui_language_settings", "kokoro_model_downloads")

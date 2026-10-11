@@ -20,6 +20,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.lifecycle.Lifecycle
 import com.learngraphicsprogramming.app.narration.NarrationSettingsRepository
+import com.learngraphicsprogramming.app.narration.KokoroNarrationCache
+import com.learngraphicsprogramming.app.narration.LessonNarrationText
+import com.learngraphicsprogramming.app.narration.NarrationLanguage
+import com.learngraphicsprogramming.app.narration.NarrationSegments
+import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.After
@@ -28,7 +33,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Sixteen authored lab locations, through their real renderer and Run listener.
+ * Authored lab locations, through their real renderer and Run listener.
  * Requires the opt-in curricularqa application. Never run against the user's
  * normal package: the first setup assertions precede every preference access.
  * Source solutions come from later pages of the same published JSON assets.
@@ -81,7 +86,7 @@ class CppNewCurricularLabsDeviceTest {
         val prefixes = LABS.map { it.draftPrefix() }
         drafts.all.keys.filter { key -> prefixes.any { prefix -> key.startsWith(prefix) } }
             .forEach { key -> editor.remove(key) }
-        assertTrue("Reset only these sixteen isolated lab drafts", editor.commit())
+        assertTrue("Reset only these twenty-six isolated lab drafts", editor.commit())
     }
 
     @After fun releaseOnlyTheQaScreenGuard() {
@@ -1023,6 +1028,584 @@ class CppNewCurricularLabsDeviceTest {
         }
     }
 
+    @Test fun exactIntegerConversionLabsExecuteAndRestoreIndependentDrafts() {
+        fun requireConversionScaffold(block: JSONObject) {
+            assertEquals("cpp_compiler", block.getString("type"))
+            assertFalse("Compiler identity remains its real coordinates", block.has("id"))
+            assertFalse(block.has("projectFiles"))
+            assertFalse(block.has("initialStandardInput"))
+            val source = block.getString("initialCode")
+            val statements = source.lineSequence().map { it.substringBefore("//") }
+                .joinToString("\n")
+            assertTrue(statements.contains("#include <cmath>"))
+            assertFalse("The student constructs the conversion function",
+                Regex("\\bconvertir_entero\\s*\\(").containsMatchIn(statements))
+            assertFalse("The scaffold supplies neither a cast nor a traversal",
+                Regex("\\b(static_cast|for|while)\\b").containsMatchIn(statements))
+            val mainBody = statements.substringAfter("int main() {").lineSequence()
+                .map { it.trim() }.filter { it.isNotEmpty() }.joinToString("\n")
+            assertEquals("The main supplies no solution statements", "return 0;\n}", mainBody)
+        }
+
+        withLab(EXACT_INTEGER_CONVERSION) { scenario, lesson, firstBlock ->
+            requireConversionScaffold(firstBlock)
+            assertSingleSourceSkeleton(scenario, firstBlock)
+            val transferBlock = blockAt(lesson, EXACT_INTEGER_COLLECTION.page, EXACT_INTEGER_COLLECTION.block)
+            requireConversionScaffold(transferBlock)
+            val firstReference = referenceCode(lesson, 4, 3)
+            val transferReference = referenceCode(lesson, 7, 3)
+            assertEquals("cpp", blockAt(lesson, 4, 3).getString("language"))
+            assertEquals("cpp", blockAt(lesson, 7, 3).getString("language"))
+            val firstDraft = firstReference + "\n// Borrador independiente de conversion comprobada\n"
+            val transferDraft = transferReference + "\n// Borrador independiente de clasificacion de enteros\n"
+            assertNotEquals(firstDraft, transferDraft)
+
+            scenario.onActivity { editor(it).setText(firstReference) }
+            assertSuccessful(run(scenario),
+                "Integral: 1;Destino: -9;Origen: -9\n" +
+                    "Fraccion positiva: 0;Destino: -9;Origen: 3.75\n" +
+                    "Fraccion negativa: 0;Destino: -9;Origen: -1.5\n" +
+                    "Frontera: 1;Destino: -100;Origen: -100\n" +
+                    "Fuera: 0;Destino: -100;Origen: -100.5\n" +
+                    "Cero: 1;Destino: 0;Origen: 0\n")
+            scenario.onActivity {
+                editor(it).setText(firstDraft)
+                showPage(it, EXACT_INTEGER_COLLECTION.page - 1)
+            }
+            assertSingleSourceSkeleton(scenario, transferBlock)
+            scenario.onActivity { editor(it).setText(transferReference) }
+            assertSuccessful(run(scenario),
+                "Enteros:-100;0;4;100;\nRechazados: 2\nCeros aceptados: 1\nDatos conservados: 1\n")
+            scenario.onActivity {
+                editor(it).setText(transferDraft)
+                showPage(it, EXACT_INTEGER_CONVERSION.page - 1)
+                assertEquals(firstDraft, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+            }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(EXACT_INTEGER_CONVERSION.page - 1, field(it, "currentPage"))
+                assertEquals(firstDraft, editor(it).text.toString())
+                showPage(it, EXACT_INTEGER_COLLECTION.page - 1)
+                assertEquals(transferDraft, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+            }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(EXACT_INTEGER_COLLECTION.page - 1, field(it, "currentPage"))
+                assertEquals(transferDraft, editor(it).text.toString())
+            }
+        }
+    }
+
+    @Test fun deliberateRoundingLabsExecuteAndRestoreIndependentDrafts() {
+        fun requireRoundingScaffold(block: JSONObject) {
+            assertEquals("cpp_compiler", block.getString("type"))
+            assertFalse("Compiler identity remains its real coordinates", block.has("id"))
+            assertFalse(block.has("projectFiles"))
+            assertFalse(block.has("initialStandardInput"))
+            val statements = block.getString("initialCode").lineSequence()
+                .map { it.substringBefore("//") }.joinToString("\n")
+            assertTrue(statements.contains("#include <cmath>"))
+            assertFalse("The student constructs the rounding function",
+                Regex("\\bredondear_entero\\s*\\(").containsMatchIn(statements))
+            assertFalse("No rounding, cast, traversal or validation is supplied",
+                Regex("\\b(round|isfinite|static_cast|for|while|if)\\b").containsMatchIn(statements))
+            val mainBody = statements.substringAfter("int main() {").lineSequence()
+                .map { it.trim() }.filter { it.isNotEmpty() }.joinToString("\n")
+            assertEquals("The main supplies no solution statements", "return 0;\n}", mainBody)
+        }
+
+        withLab(DELIBERATE_ROUNDING) { scenario, lesson, firstBlock ->
+            requireRoundingScaffold(firstBlock)
+            assertSingleSourceSkeleton(scenario, firstBlock)
+            val transferBlock = blockAt(lesson, UNIQUE_ROUNDED_MARKS.page, UNIQUE_ROUNDED_MARKS.block)
+            requireRoundingScaffold(transferBlock)
+            val firstReference = referenceCode(lesson, 4, 3)
+            val transferReference = referenceCode(lesson, 7, 3)
+            assertEquals("cpp", blockAt(lesson, 4, 3).getString("language"))
+            assertEquals("cpp", blockAt(lesson, 7, 3).getString("language"))
+            val firstDraft = firstReference + "\n// Borrador independiente de redondeo deliberado\n"
+            val transferDraft = transferReference + "\n// Borrador independiente de marcas unicas y colisiones\n"
+            assertNotEquals(firstDraft, transferDraft)
+
+            scenario.onActivity { editor(it).setText(firstReference) }
+            assertSuccessful(run(scenario),
+                "Cercano positivo: 1;Destino: 2\nCercano negativo: 1;Destino: -3\n" +
+                    "Mitad positiva: 1;Destino: 5\nMitad negativa: 1;Destino: -5\n" +
+                    "Frontera: 1;Destino: 100\nFuera: 0;Destino: 100\nCero: 1;Destino: 0\n")
+            scenario.onActivity {
+                editor(it).setText(firstDraft)
+                showPage(it, UNIQUE_ROUNDED_MARKS.page - 1)
+            }
+            assertSingleSourceSkeleton(scenario, transferBlock)
+            scenario.onActivity { editor(it).setText(transferReference) }
+            assertSuccessful(run(scenario),
+                "Marcas: 1 2 -2 0\nColisiones: 3\nRechazados: 1\nDatos conservados: 1\n")
+            scenario.onActivity {
+                editor(it).setText(transferDraft)
+                showPage(it, DELIBERATE_ROUNDING.page - 1)
+                assertEquals(firstDraft, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+            }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(DELIBERATE_ROUNDING.page - 1, field(it, "currentPage"))
+                assertEquals(firstDraft, editor(it).text.toString())
+                showPage(it, UNIQUE_ROUNDED_MARKS.page - 1)
+                assertEquals(transferDraft, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+            }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(UNIQUE_ROUNDED_MARKS.page - 1, field(it, "currentPage"))
+                assertEquals(transferDraft, editor(it).text.toString())
+            }
+        }
+    }
+
+    @Test fun consecutiveReadingsLabsExecuteAndRestoreIndependentInputDrafts() {
+        fun requireSequenceScaffold(block: JSONObject) {
+            assertEquals("cpp_compiler", block.getString("type"))
+            assertFalse(block.has("id"))
+            assertFalse(block.has("projectFiles"))
+            assertTrue("Each real editor provides its own prepared input", block.has("initialStandardInput"))
+            val statements = block.getString("initialCode").lineSequence()
+                .map { it.substringBefore("//") }.joinToString("\n")
+            assertTrue(statements.contains("#include <iostream>"))
+            assertTrue(statements.contains("#include <string>"))
+            assertFalse("No reader, comparison or update is supplied",
+                Regex("\\b(cin|getline|while|for|if|anterior)\\b").containsMatchIn(statements))
+            val mainBody = statements.substringAfter("int main() {").lineSequence()
+                .map { it.trim() }.filter { it.isNotEmpty() }.joinToString("\n")
+            assertEquals("return 0;\n}", mainBody)
+        }
+
+        withLab(CONSECUTIVE_WORDS) { scenario, lesson, firstBlock ->
+            requireSequenceScaffold(firstBlock)
+            assertSingleSourceSkeleton(scenario, firstBlock)
+            assertEquals("tiza tiza muro tiza muro muro", firstBlock.getString("initialStandardInput"))
+            val transferBlock = blockAt(lesson, CONSECUTIVE_LINES.page, CONSECUTIVE_LINES.block)
+            requireSequenceScaffold(transferBlock)
+            assertEquals("patio\n\n\npatio\n patio\n patio", transferBlock.getString("initialStandardInput"))
+            val firstReference = referenceCode(lesson, 4, 3)
+            val transferReference = referenceCode(lesson, 7, 3)
+            val firstDraft = firstReference + "\n// Borrador independiente de palabras consecutivas\n"
+            val transferDraft = transferReference + "\n// Borrador independiente de lineas consecutivas\n"
+            val firstDraftInput = "a b b"
+            val transferDraftInput = "\n\n"
+            scenario.onActivity {
+                editor(it).setText(firstReference)
+                input(it).setText("  faro\tpuente puente\npuente faro  ")
+            }
+            assertSuccessful(run(scenario), "Repetida: 3\nRepetida: 4\nPalabras: 5\nRepeticiones: 2\n")
+            scenario.onActivity {
+                editor(it).setText(firstDraft)
+                input(it).setText(firstDraftInput)
+                showPage(it, CONSECUTIVE_LINES.page - 1)
+            }
+            assertSingleSourceSkeleton(scenario, transferBlock)
+            scenario.onActivity {
+                assertEquals(transferBlock.getString("initialStandardInput"), input(it).text.toString())
+                editor(it).setText(transferReference)
+                input(it).setText("\npuerta\npuerta\n\n\npuerta")
+            }
+            assertSuccessful(run(scenario), "Repetida: 3\nRepetida: 5\nLineas: 6\nRepeticiones: 2\n")
+            scenario.onActivity {
+                editor(it).setText(transferDraft)
+                input(it).setText(transferDraftInput)
+                showPage(it, CONSECUTIVE_WORDS.page - 1)
+                assertEquals(firstDraft, editor(it).text.toString())
+                assertEquals(firstDraftInput, input(it).text.toString())
+            }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(CONSECUTIVE_WORDS.page - 1, field(it, "currentPage"))
+                assertEquals(firstDraft, editor(it).text.toString())
+                assertEquals(firstDraftInput, input(it).text.toString())
+                showPage(it, CONSECUTIVE_LINES.page - 1)
+                assertEquals(transferDraft, editor(it).text.toString())
+                assertEquals(transferDraftInput, input(it).text.toString())
+            }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(CONSECUTIVE_LINES.page - 1, field(it, "currentPage"))
+                assertEquals(transferDraft, editor(it).text.toString())
+                assertEquals(transferDraftInput, input(it).text.toString())
+            }
+        }
+    }
+
+    @Test fun introductoryLabelExampleDisplaysItsPurposeAndUsesCurrentNarrationText() {
+        val lessonId = "cpp_fundamentals__programas_y_ejecucion__problemas_instrucciones_y_resultados"
+        val lesson = LessonRepository.loadLessonJson(context, ROUTE, lessonId)
+        assertEquals(lessonId, lesson.getString("id"))
+        val paragraph = blockAt(lesson, 1, 3).getString("text")
+        val exercise = blockAt(lesson, 1, 4)
+        assertEquals("objetivo_etiqueta", exercise.getString("id"))
+        assertEquals(1, exercise.getInt("correctIndex"))
+        assertTrue(paragraph.contains("esas etiquetas no permiten distinguirlas"))
+        assertTrue(paragraph.contains("definir cómo comprobar el resultado"))
+        assertFalse(paragraph.contains("operación posible"))
+
+        val spoken = LessonNarrationText.page(lesson, 0, NarrationLanguage.SPANISH)
+        val sentences = NarrationSegments.sentences(spoken)
+        assertTrue("The actual narration retains the concrete design problem",
+            sentences.any { it.contains("esas etiquetas no permiten distinguirlas") })
+        assertTrue("The purpose and validation rule remain audible text",
+            sentences.any { it.contains("dos cajas distintas no reciban la misma identificación") })
+        assertFalse("Hidden answer feedback is not spoken before answering",
+            spoken.any { it.contains(exercise.getString("explanation")) })
+        sentences.forEach { sentence ->
+            val phonemes = SpanishFluidG2P.phonemize(sentence)
+            assertTrue("Strict Spanish frontend accepts each complete sentence", phonemes.length in 1..510)
+        }
+        val oldParagraph = "Imagina una oficina que debe preparar etiquetas para sus cajas. El problema es identificar cada caja sin confundirla con otra. Escribir una etiqueta es una operación posible; decidir qué información debe contener y cómo comprobarla pertenece al diseño de la solución. La computadora no sustituye esa decisión. Ejecutará las operaciones descritas, incluso si hemos elegido información insuficiente."
+        val previous = JSONObject(lesson.toString())
+        blockAt(previous, 1, 3).put("text", oldParagraph)
+        val oldSentences = NarrationSegments.sentences(
+            LessonNarrationText.page(previous, 0, NarrationLanguage.SPANISH))
+        val oldKeys = oldSentences.map { KokoroNarrationCache.key("es", "ef_dora", it) }.toSet()
+        val changedSentences = sentences.filter { it !in oldSentences }
+        assertTrue("The revision actually introduces new narrated sentences", changedSentences.isNotEmpty())
+        changedSentences.forEach {
+            assertFalse("Old recordings cannot replace the revised sentence",
+                KokoroNarrationCache.key("es", "ef_dora", it) in oldKeys)
+        }
+
+        // Setup has already guarded curricularqa before these QA-only writes.
+        ProgressRepository.resetLesson(context, ROUTE, lessonId)
+        ProgressRepository.saveCurrentPage(context, ROUTE, lessonId, 0)
+        val intent = Intent(context, LessonActivity::class.java)
+            .putExtra("routeId", ROUTE).putExtra("courseId", "cpp_fundamentals")
+            .putExtra("unitId", "programas_y_ejecucion").putExtra("lessonId", lessonId)
+            .putExtra("lessonNumber", 1).putExtra("lessonTotal", 5)
+        ActivityScenario.launch<LessonActivity>(intent).use { scenario ->
+            scenario.onActivity { activity ->
+                assertEquals(QA_PACKAGE, activity.packageName)
+                assertEquals(lessonId, field(activity, "currentLessonId"))
+                val views = descendants(content(activity))
+                val visible = views.filterIsInstance<TextView>().map { it.text.toString() }
+                assertTrue("The real page displays the revised paragraph", paragraph in visible)
+                assertTrue(exercise.getString("question") in visible)
+                val choice = views.filterIsInstance<android.widget.RadioButton>()
+                    .single { it.text.toString() == exercise.getJSONArray("options").getString(1) }
+                choice.performClick()
+                views.filterIsInstance<android.widget.Button>()
+                    .single { it.text.toString() == activity.getString(R.string.exercise_check) }
+                    .performClick()
+                assertTrue("The associated exercise still accepts its preserved answer",
+                    ProgressRepository.getExerciseState(activity, lessonId, 0, 3)?.optBoolean("correct", false) == true)
+                val feedback = descendants(content(activity)).filterIsInstance<TextView>()
+                    .joinToString("\n") { it.text.toString() }
+                assertTrue("The revised feedback reaches the actual exercise renderer",
+                    feedback.contains(exercise.getString("explanation")))
+            }
+        }
+    }
+
+    @Test fun introductoryInstructionRepertoireHasOneDirectAnswerAndCurrentNarration() {
+        val lessonId = "cpp_fundamentals__programas_y_ejecucion__problemas_instrucciones_y_resultados"
+        val lesson = LessonRepository.loadLessonJson(context, ROUTE, lessonId)
+        val exercise = blockAt(lesson, 3, 5)
+        assertEquals("precision_mover", exercise.getString("id"))
+        assertEquals(2, exercise.getInt("correctIndex"))
+        assertEquals(listOf("Girar a la izquierda en una sola instrucción.",
+            "Avanzar dos pasos en una sola instrucción.", "Avanzar un paso."),
+            (0 until 3).map { exercise.getJSONArray("options").getString(it) })
+        val question = exercise.getString("question")
+        val explanation = exercise.getString("explanation")
+        assertTrue(question.contains("órdenes completas y fijas"))
+        assertTrue(question.contains("No se puede cambiar la cantidad de pasos dentro de una orden"))
+        assertTrue(explanation.contains("no están admitidas como órdenes directas"))
+        assertTrue(explanation.contains("Otro sistema podría aceptar"))
+        assertFalse(explanation.contains("dejan decisiones sin especificar"))
+
+        val spoken = LessonNarrationText.page(lesson, 2, NarrationLanguage.SPANISH)
+        assertTrue("The actual narration includes the exercise's restricted repertoire", question in spoken)
+        assertFalse("Hidden answer feedback is not narrated before answering", explanation in spoken)
+        val sentences = NarrationSegments.sentences(spoken)
+        sentences.forEach { sentence ->
+            assertTrue("The strict Spanish frontend accepts the visible page",
+                SpanishFluidG2P.phonemize(sentence).length in 1..510)
+        }
+        val previous = JSONObject(lesson.toString())
+        blockAt(previous, 3, 5).put("question",
+            "Un sistema sólo entiende «avanzar un paso» y «girar a la derecha». ¿Qué instrucción puede ejecutar directamente?")
+        val oldSentences = NarrationSegments.sentences(
+            LessonNarrationText.page(previous, 2, NarrationLanguage.SPANISH))
+        val oldKeys = oldSentences.map { KokoroNarrationCache.key("es", "ef_dora", it) }.toSet()
+        val changedSentences = sentences.filter { it !in oldSentences }
+        assertTrue("The revised question provides new narration text", changedSentences.isNotEmpty())
+        changedSentences.forEach { sentence ->
+            assertFalse("The old wording's cache cannot substitute the clarified question",
+                KokoroNarrationCache.key("es", "ef_dora", sentence) in oldKeys)
+        }
+
+        // Before has already rejected every package except curricularqa.
+        // Each option gets a fresh QA-only attempt; the user's app is untouched.
+        for (selectedIndex in 0 until 3) {
+            ProgressRepository.resetLesson(context, ROUTE, lessonId)
+            ProgressRepository.saveCurrentPage(context, ROUTE, lessonId, 2)
+            val intent = Intent(context, LessonActivity::class.java)
+                .putExtra("routeId", ROUTE).putExtra("courseId", "cpp_fundamentals")
+                .putExtra("unitId", "programas_y_ejecucion").putExtra("lessonId", lessonId)
+                .putExtra("lessonNumber", 1).putExtra("lessonTotal", 5)
+            ActivityScenario.launch<LessonActivity>(intent).use { scenario ->
+                scenario.onActivity { activity ->
+                    assertEquals(QA_PACKAGE, activity.packageName)
+                    assertEquals(lessonId, field(activity, "currentLessonId"))
+                    assertEquals(2, field(activity, "currentPage"))
+                    val page = content(activity)
+                    val views = descendants(page)
+                    assertTrue("The actual question displays the fixed repertoire",
+                        views.filterIsInstance<TextView>().any { it.text.toString() == question })
+                    val choice = views.filterIsInstance<android.widget.RadioButton>().single {
+                        it.text.toString() == exercise.getJSONArray("options").getString(selectedIndex)
+                    }
+                    choice.performClick()
+                    var answerCard: View = choice
+                    while (answerCard.parent !== page) answerCard = answerCard.parent as View
+                    val cardIndex = page.indexOfChild(answerCard)
+                    val check = page.getChildAt(cardIndex + 1) as android.widget.Button
+                    assertEquals(activity.getString(R.string.exercise_check), check.text.toString())
+                    assertTrue("The selected option enables its own exercise check", check.isEnabled)
+                    check.performClick()
+                    val state = requireNotNull(ProgressRepository.getExerciseState(activity, lessonId, 2, 4))
+                    assertEquals("The actual second exercise records this choice", selectedIndex, state.getInt("selectedIndex"))
+                    assertEquals("Exactly the admitted direct order is accepted", selectedIndex == 2, state.getBoolean("correct"))
+                    val feedback = page.getChildAt(cardIndex + 2) as TextView
+                    if (selectedIndex == 2) {
+                        assertTrue("Correct feedback explains the local restriction and other possible systems",
+                            feedback.text.toString().contains(explanation))
+                    } else {
+                        assertEquals(activity.getString(R.string.exercise_incorrect), feedback.text.toString())
+                    }
+                }
+            }
+        }
+    }
+
+    @Test fun uniqueCandidateSelectionAndPairingLabsExecuteAndRestoreIndependentDrafts() {
+        fun requireSelectionScaffold(block: JSONObject) {
+            assertEquals("cpp_compiler", block.getString("type"))
+            assertFalse(block.has("id"))
+            assertFalse(block.has("projectFiles"))
+            assertFalse(block.has("initialStandardInput"))
+            val statements = block.getString("initialCode").lineSequence()
+                .map { it.substringBefore("//") }.joinToString("\n")
+            listOf("iostream", "random", "vector", "stdexcept").forEach {
+                assertTrue("Only required headers precede the independent construction", statements.contains("#include <$it>"))
+            }
+            assertEquals("return 0;\n}", statements.substringAfter("int main() {")
+                .lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.joinToString("\n"))
+            assertFalse("The new pairing implementation is not supplied",
+                Regex("\\b(formar_parejas|Pareja|aplanar_parejas)\\b").containsMatchIn(statements))
+        }
+        withLab(UNIQUE_SELECTION) { scenario, lesson, firstBlock ->
+            requireSelectionScaffold(firstBlock)
+            assertFalse("The first construction does not supply a selection implementation",
+                Regex("\\b(seleccionar|struct|while|for|if)\\b").containsMatchIn(firstBlock.getString("initialCode")
+                    .lineSequence().map { it.substringBefore("//") }.joinToString("\n")))
+            assertSingleSourceSkeleton(scenario, firstBlock)
+            val transferBlock = blockAt(lesson, UNIQUE_PAIRS.page, UNIQUE_PAIRS.block)
+            requireSelectionScaffold(transferBlock)
+            val firstReference = referenceCode(lesson, 4, 3)
+            val transferReference = referenceCode(lesson, 7, 3)
+            assertEquals("The transfer supplies only the already learned selection dependency",
+                firstReference.substringBefore("bool seleccion_correcta").trim(),
+                transferBlock.getString("initialCode").substringBefore("// Define Pareja").trim())
+            val firstDraft = firstReference + "\n// Borrador independiente de seleccion sin repetidos\n"
+            val transferDraft = transferReference + "\n// Borrador independiente de parejas sin repetir candidatos\n"
+            scenario.onActivity {
+                assertEquals("", input(it).text.toString())
+                editor(it).setText(firstReference)
+            }
+            assertSuccessful(run(scenario), "Cantidad:4\nPropiedades:1\nOriginal:1\nReproduccion:1\nContinuacion:1\nVacio:0:1\nRechazo:1\n")
+            scenario.onActivity {
+                editor(it).setText(firstDraft)
+                showPage(it, UNIQUE_PAIRS.page - 1)
+            }
+            assertSingleSourceSkeleton(scenario, transferBlock)
+            scenario.onActivity {
+                assertEquals("", input(it).text.toString())
+                editor(it).setText(transferReference)
+            }
+            assertSuccessful(run(scenario), "Pares:3\nPropiedades:1\nOrden:1\nOriginal:1\nVacio:0:1\nRechazo:1\n")
+            scenario.onActivity {
+                editor(it).setText(transferDraft)
+                showPage(it, UNIQUE_SELECTION.page - 1)
+                assertEquals(firstDraft, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+            }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(UNIQUE_SELECTION.page - 1, field(it, "currentPage"))
+                assertEquals(firstDraft, editor(it).text.toString())
+                showPage(it, UNIQUE_PAIRS.page - 1)
+                assertEquals(transferDraft, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+            }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(UNIQUE_PAIRS.page - 1, field(it, "currentPage"))
+                assertEquals(transferDraft, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+            }
+        }
+    }
+
+    @Test fun globalFrequencyAndTiedLabelLabsExecuteAndRestoreIndependentDrafts() {
+        fun requireIndependentScaffold(block: JSONObject, textLabels: Boolean) {
+            assertEquals("cpp_compiler", block.getString("type"))
+            assertFalse(block.has("id"))
+            assertFalse(block.has("projectFiles"))
+            assertFalse(block.has("sourceFiles"))
+            assertFalse(block.has("initialStandardInput"))
+            val statements = block.getString("initialCode").lineSequence()
+                .map { it.substringBefore("//") }.joinToString("\n")
+            val headers = statements.substringBefore("int main() {").lineSequence()
+                .map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+            val expectedHeaders = listOf("iostream", "vector", "algorithm", "cstddef")
+                .map { "#include <$it>" }.toMutableSet()
+            if (textLabels) expectedHeaders.add("#include <string>")
+            assertEquals("El intento contiene sólo las cabeceras necesarias", expectedHeaders, headers)
+            assertEquals("return 0;\n}", statements.substringAfter("int main() {")
+                .lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.joinToString("\n"))
+        }
+        withLab(FREQUENCY_TABLE) { scenario, lesson, firstBlock ->
+            requireIndependentScaffold(firstBlock, textLabels = false)
+            assertSingleSourceSkeleton(scenario, firstBlock)
+            val transferBlock = blockAt(lesson, TIED_LABEL_FREQUENCIES.page, TIED_LABEL_FREQUENCIES.block)
+            requireIndependentScaffold(transferBlock, textLabels = true)
+            val firstReference = referenceCode(lesson, 4, 3)
+            val transferReference = referenceCode(lesson, 7, 3)
+            val firstDraft = firstReference + "\n// Borrador propio del informe de frecuencias numericas\n"
+            val transferDraft = transferReference + "\n// Borrador propio de etiquetas con todos los empates\n"
+            scenario.onActivity {
+                assertEquals("", input(it).text.toString())
+                editor(it).setText(firstReference)
+            }
+            assertSuccessful(run(scenario), "Frecuencias:\n[-2]=2\n[6]=3\n[9]=1\nN:6\nDistintos:3\nSuma:6\nOriginal:6;-2;6;9;-2;6;\n")
+            scenario.onActivity {
+                editor(it).setText(firstDraft)
+                showPage(it, TIED_LABEL_FREQUENCIES.page - 1)
+            }
+            assertSingleSourceSkeleton(scenario, transferBlock)
+            scenario.onActivity {
+                assertEquals("", input(it).text.toString())
+                editor(it).setText(transferReference)
+            }
+            assertSuccessful(run(scenario), "Frecuencias:\n[rio]=2\n[sol]=1\n[torre]=2\n[valle]=2\nMaxima:2\nMayores:[rio][torre][valle]\nN:7\nDistintas:4\nSuma:7\nOriginal:[torre][rio][rio][torre][valle][valle][sol]\n")
+            scenario.onActivity {
+                editor(it).setText(transferDraft)
+                showPage(it, FREQUENCY_TABLE.page - 1)
+                assertEquals(firstDraft, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+            }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(FREQUENCY_TABLE.page - 1, field(it, "currentPage"))
+                assertEquals(firstDraft, editor(it).text.toString())
+                showPage(it, TIED_LABEL_FREQUENCIES.page - 1)
+                assertEquals(transferDraft, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+            }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(TIED_LABEL_FREQUENCIES.page - 1, field(it, "currentPage"))
+                assertEquals(transferDraft, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+            }
+        }
+    }
+
+    @Test fun firstProgramIntroductionKeepsItsAnswerAndExplainsTheVisibleAction() {
+        val lessonId = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
+        val lesson = LessonRepository.loadLessonJson(context, ROUTE, lessonId)
+        val exercise = blockAt(lesson, 1, 5)
+        assertEquals("accion_visible", exercise.getString("id"))
+        assertEquals(1, exercise.getInt("correctIndex"))
+        assertEquals(listOf("#include <iostream>", "std::cout << \"Inicio confirmado\";", "return 0;"),
+            (0 until 3).map { exercise.getJSONArray("options").getString(it) })
+        val opening = blockAt(lesson, 1, 2).getString("text")
+        val explanation = blockAt(lesson, 1, 4).getString("text")
+        assertFalse(opening.contains("de forma consistente"))
+        assertTrue(explanation.contains("Una biblioteca reúne recursos"))
+        assertTrue(explanation.contains("std::cout es el nombre completo"))
+        assertTrue(explanation.contains("Ese cero no se muestra"))
+        for (selectedIndex in 0 until 3) {
+            // Before has rejected every package except the isolated application.
+            ProgressRepository.resetLesson(context, ROUTE, lessonId)
+            ProgressRepository.saveCurrentPage(context, ROUTE, lessonId, 0)
+            val intent = Intent(context, LessonActivity::class.java)
+                .putExtra("routeId", ROUTE).putExtra("courseId", "cpp_fundamentals")
+                .putExtra("unitId", "programas_y_ejecucion").putExtra("lessonId", lessonId)
+                .putExtra("lessonNumber", 2).putExtra("lessonTotal", 5)
+            ActivityScenario.launch<LessonActivity>(intent).use { scenario ->
+                scenario.onActivity { activity ->
+                    assertEquals(QA_PACKAGE, activity.packageName)
+                    val page = content(activity)
+                    val views = descendants(page)
+                    val visible = views.filterIsInstance<TextView>().map { it.text.toString() }
+                    assertTrue(opening in visible)
+                    assertTrue(explanation in visible)
+                    val choice = views.filterIsInstance<android.widget.RadioButton>().single {
+                        it.text.toString() == exercise.getJSONArray("options").getString(selectedIndex)
+                    }
+                    choice.performClick()
+                    var answerCard: View = choice
+                    while (answerCard.parent !== page) answerCard = answerCard.parent as View
+                    val cardIndex = page.indexOfChild(answerCard)
+                    val check = page.getChildAt(cardIndex + 1) as android.widget.Button
+                    assertEquals(activity.getString(R.string.exercise_check), check.text.toString())
+                    assertTrue(check.isEnabled)
+                    check.performClick()
+                    val state = requireNotNull(ProgressRepository.getExerciseState(activity, lessonId, 0, 4))
+                    assertEquals(selectedIndex, state.getInt("selectedIndex"))
+                    assertEquals(selectedIndex == 1, state.getBoolean("correct"))
+                    val feedback = page.getChildAt(cardIndex + 2) as TextView
+                    if (selectedIndex == 1) {
+                        assertTrue(feedback.text.toString().contains(exercise.getString("explanation")))
+                    } else {
+                        assertEquals(activity.getString(R.string.exercise_incorrect), feedback.text.toString())
+                    }
+                }
+            }
+        }
+    }
+
+    @Test fun firstProgramLabShowsOnlyTheMessageAndRetainsItsCurrentDraft() {
+        val location = LabLocation("cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida", 5, 3)
+        // Clear only this additional QA draft; the shared twenty-six-location setup is preserved.
+        val drafts = context.getSharedPreferences(DRAFTS, Context.MODE_PRIVATE)
+        val reset = drafts.edit()
+        drafts.all.keys.filter { it.startsWith(location.draftPrefix()) }.forEach { reset.remove(it) }
+        assertTrue(reset.commit())
+        withLab(location) { scenario, lesson, block ->
+            assertSingleSourceSkeleton(scenario, block)
+            assertSuccessful(run(scenario), "Zona inicial")
+            val changed = block.getString("initialCode").replace("Zona inicial", "Zona segura")
+            scenario.onActivity { editor(it).setText(changed) }
+            assertSuccessful(run(scenario), "Zona segura")
+            val reference = referenceCode(lesson, 6, 3)
+            scenario.onActivity { editor(it).setText(reference) }
+            assertSuccessful(run(scenario), "Caja recibida")
+            scenario.onActivity { showPage(it, 5) }
+            scenario.onActivity { showPage(it, 4) }
+            scenario.onActivity { assertEquals(reference, editor(it).text.toString()) }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(reference, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+                assertTrue("The current draft instruction uses the real note presentation",
+                    descendants(content(it)).filterIsInstance<TextView>().any { view ->
+                    view.text.toString() == it.getString(R.string.lesson_note, blockAt(lesson, 5, 4).getString("text"))
+                })
+            }
+        }
+    }
+
     private fun nestedReviewOutput(teams: Int, tools: Int, rows: List<List<Int>>) = buildString {
         var total = 0
         rows.take(teams).forEachIndexed { index, accepted ->
@@ -1362,8 +1945,20 @@ class CppNewCurricularLabsDeviceTest {
         private val NESTED_PARITY = LabLocation(NESTED_REVIEW.lesson, 11, 5)
         private val DEPOSIT_OPERATIONS = LabLocation("cpp_fundamentals__datos_propios_y_estado_valido__transferir_invariantes_a_un_deposito", 10, 7)
         private val DEPOSIT_BATCH = LabLocation(DEPOSIT_OPERATIONS.lesson, 13, 6)
+        private val EXACT_INTEGER_CONVERSION = LabLocation("cpp_fundamentals__funciones_y_contratos__conversion_comprobada_sin_perdida", 3, 6)
+        private val EXACT_INTEGER_COLLECTION = LabLocation(EXACT_INTEGER_CONVERSION.lesson, 6, 6)
+        private val DELIBERATE_ROUNDING = LabLocation("cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura", 3, 6)
+        private val UNIQUE_ROUNDED_MARKS = LabLocation(DELIBERATE_ROUNDING.lesson, 6, 6)
+        private val CONSECUTIVE_WORDS = LabLocation("cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior", 3, 6)
+        private val CONSECUTIVE_LINES = LabLocation(CONSECUTIVE_WORDS.lesson, 6, 6)
+        private val UNIQUE_SELECTION = LabLocation("cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos", 3, 6)
+        private val UNIQUE_PAIRS = LabLocation(UNIQUE_SELECTION.lesson, 6, 6)
+        private val FREQUENCY_TABLE = LabLocation("cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates", 3, 6)
+        private val TIED_LABEL_FREQUENCIES = LabLocation(FREQUENCY_TABLE.lesson, 6, 6)
         private val LABS = listOf(THREE_INPUTS, LINES, PROJECT, TRANSFER, OVERLOAD_FOUR, OVERLOAD_EIGHT,
             RECURSIVE_PAIRS, RECURSIVE_GROUPS, REFERENCE_SWAP, REFERENCE_ALIASES, DIAGNOSTIC_INTERVAL, REFACTOR_REPORT,
-            NESTED_REVIEW, NESTED_PARITY, DEPOSIT_OPERATIONS, DEPOSIT_BATCH)
+            NESTED_REVIEW, NESTED_PARITY, DEPOSIT_OPERATIONS, DEPOSIT_BATCH, EXACT_INTEGER_CONVERSION, EXACT_INTEGER_COLLECTION,
+            DELIBERATE_ROUNDING, UNIQUE_ROUNDED_MARKS, CONSECUTIVE_WORDS, CONSECUTIVE_LINES, UNIQUE_SELECTION, UNIQUE_PAIRS,
+            FREQUENCY_TABLE, TIED_LABEL_FREQUENCIES)
     }
 }

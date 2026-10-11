@@ -1,0 +1,343 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates",
+  "title": "Contar frecuencias y conservar los empates",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una observación, un valor distinto y su frecuencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "La frecuencia de un valor es la cantidad de observaciones iguales a él en la colección completa. Con {4, -2, 4, 4, -2}, hay cinco observaciones, dos valores distintos, frecuencia tres para 4 y frecuencia dos para -2. No contamos sólo coincidencias entre vecinos del orden de llegada: las dos apariciones de -2 pertenecen al mismo valor aunque estén separadas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los valores son datos, no posiciones. Podemos comparar enteros negativos, cero o valores muy grandes sin usarlos como índices ni sumarlos. En estos proyectos habrá como máximo veinte observaciones; los contadores cuentan observaciones y, por tanto, no superan veinte. No calcularemos una suma de los valores enteros."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__mc_1",
+          "question": "En {5, 1, 5, 1, 5}, ¿qué informa correctamente la frecuencia de 5?",
+          "options": [
+            "Una, porque ninguna racha de cincos vecinos dura más de una observación.",
+            "Tres, porque se cuentan todas sus apariciones.",
+            "Dos, porque la colección contiene dos valores distintos."
+          ],
+          "correctIndex": 1,
+          "explanation": "La frecuencia responde cuántas observaciones tienen ese valor; adyacencia y cantidad de distintos responden preguntas diferentes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__mc_2",
+          "question": "Debes informar la frecuencia de -7 en un vector. ¿Qué decisión respeta el significado de ese dato?",
+          "options": [
+            "Usar -7 como subíndice de una tabla de conteos.",
+            "Contar toda observación negativa como aparición de -7.",
+            "Compararlo por igualdad con las observaciones."
+          ],
+          "correctIndex": 2,
+          "explanation": "Un valor puede compararse aunque no sirva como subíndice. Cambiarlo alteraría la pregunta del informe."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para agrupar apariciones iguales, ordenaremos una copia. Así los iguales quedan juntos y el original conserva el orden de observación. La tabla seguirá el orden ascendente de los valores, pero la línea del original seguirá su propio orden. Es una decisión de presentación explícita, no una eliminación de repetidos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un grupo termina antes de fin"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una copia ordenada, un grupo es una zona contigua de valores iguales. Lo describiremos mediante [inicio, fin): inicio está incluido y fin queda excluido. Por ejemplo, en {-4, -4, 2, 2, 2, 9}, el grupo de doses ocupa [2, 5); su frecuencia es fin - inicio, es decir, tres. fin señala el primer elemento del siguiente grupo o el final de la colección; no pertenece al grupo actual."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_3",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> ordenados{-8, 3, 3, 3, 3, 10};\n    std::size_t inicio = 1;\n    std::size_t fin = 5;\n    std::cout << \"Valor:\" << ordenados[inicio]\n              << \"\\nFrecuencia:\" << fin - inicio\n              << \"\\nHay siguiente:\" << (fin < ordenados.size());\n    return 0;\n}\n",
+          "question": "Predice las tres líneas. fin es el límite excluido del grupo.",
+          "answers": [
+            "Valor:3\nFrecuencia:4\nHay siguiente:1"
+          ],
+          "explanation": "Las posiciones incluidas son 1, 2, 3 y 4. La posición 5 existe, pero su dato pertenece al grupo siguiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para ampliar un grupo sólo puedes leer ordenados[fin] si fin < ordenados.size(). La condición fin < ordenados.size() && ordenados[fin] == ordenados[inicio] combina esa guarda con la igualdad; su orden importa. inicio también debe pertenecer a la colección. Si fin llega a size(), el último grupo está completo sin que exista un elemento en fin. Después de contar y publicar el grupo, el siguiente inicio es ese fin; así el recorrido avanza."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__mc_4",
+          "question": "El último grupo ocupa [3, 6) en una colección de tamaño seis. ¿Qué puedes hacer al publicarlo?",
+          "options": [
+            "Leer ordenados[6] para confirmar cuál era su valor.",
+            "Publicar su frecuencia tres usando un valor de dentro del grupo y terminar el recorrido.",
+            "Reducir fin a cinco para que sea un índice existente."
+          ],
+          "correctIndex": 1,
+          "explanation": "El límite excluido puede coincidir con size(). La longitud sigue siendo 6 - 3; reducirla omitiría una observación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Usaremos std::size_t para posiciones y cantidades que se obtienen de size(); su cabecera es <cstddef>, ya usada en recorridos anteriores. En vacío no comienza ningún grupo: no se lee el primer elemento y los resúmenes de cantidad quedan en cero. Con una observación sí hay un grupo de frecuencia uno."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir la tabla numérica desde la consigna"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye el programa completo con std::vector<int> original{-3, 8, -3, 0, 8, -3, 0}. El contrato admite cualquier valor de int y hasta veinte observaciones: el valor sólo se compara y se presenta. Ordena una copia y publica una fila por cada grupo, seguida por N, Distintos, Suma y el original. Suma es la suma de las frecuencias, no la suma de los valores. No borres observaciones ni uses sus valores como subíndices."
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida comienza con Frecuencias: y después contiene las filas [-3]=3, [0]=2 y [8]=2, cada una en su línea. Siguen N:7, Distintos:3, Suma:7 y Original:-3;8;-3;0;8;-3;0;, también en líneas separadas. Termina cada línea con salto de línea. Los corchetes delimitan valores; el punto y coma separa cada observación del original."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, escribe las fronteras [inicio, fin) de cada grupo en la copia ordenada. Después construye el recorrido sin mirar la referencia posterior. En cada vuelta debe publicarse exactamente un grupo y avanzar inicio hasta el primer elemento aún no contado. Puedes organizar las variables de otra forma si justificas los mismos límites y resultados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Repite con {}, {7}, {-1, -1, -1} y {4, -1}. En vacío sólo se muestra el encabezado y los resúmenes N:0, Distintos:0, Suma:0 y Original: sin valores. Con {-1, -1, -1} hay un grupo de frecuencia tres. Con {4, -1} hay dos grupos de frecuencia uno. Predice todas las líneas; la comprobación debe incluir el último grupo, no sólo el primero."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de frecuencias de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba también {2, 2, 5, 5, 5}: el último grupo llega al final de la copia. Debe publicarse una vez, sin leer una posición de valor igual a size(). Una permutación del mismo conjunto de observaciones cambia la línea Original, pero conserva la tabla de frecuencias."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una referencia con otras observaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara tu construcción con esta posibilidad sólo después del intento. La referencia usa {6, -2, 6, 9, -2, 6}; la separación de grupos debe responder a esos datos nuevos. Su orden original se presenta al terminar, después del trabajo sobre la copia."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original{6, -2, 6, 9, -2, 6};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n    std::cout << \"N:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El bucle exterior sólo comienza si inicio es un índice válido. fin empieza después de la primera observación del grupo; el bucle interior incorpora iguales mientras el acceso está permitido. Publicar antes de cambiar inicio conserva el valor del grupo que acaba de terminar. Asignar inicio = fin evita contar dos veces sus posiciones y hace progresar el recorrido, incluido el último grupo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: una fila ascendente por cada valor distinto, frecuencia positiva que cuenta todas sus apariciones, N igual al tamaño original, Distintos igual al número de filas y Suma igual a N. El original conserva valores, repeticiones y orden; en vacío no se inventa una fila. Ningún acceso usa un límite excluido como índice. Se aceptan recorridos equivalentes que cumplan estos criterios, no sólo el texto de la referencia."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__cantidades_distintas",
+          "question": "El informe de {0, 0, 0, 8} tiene dos filas. ¿Qué par Distintos/Suma cumple el contrato?",
+          "options": [
+            "Distintos:2 y Suma:2.",
+            "Distintos:4 y Suma:2.",
+            "Distintos:2 y Suma:4."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cada fila representa un valor distinto; su frecuencia cuenta observaciones. Las dos frecuencias son tres y uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para detectar una omisión al final, compara {1, 1, 4} con {1, 1, 4, 4}. La segunda colección no añade un valor distinto, pero sí aumenta la frecuencia del grupo final y la suma en una observación. Un contador que sólo publica cuando descubre un valor diferente puede olvidar ambos finales si no tiene una decisión para el fin de la colección."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar cantidad, último grupo y coincidencias"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice antes de ejecutar. Razona qué posiciones pertenecen a cada grupo y qué información sigue en el original; después contrasta la suma de frecuencias con el tamaño."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_tabla_nueva",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original{4, -6, 4, 9, -6, -6, 9, 9};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n    std::cout << \"N:\" << original.size() << \"\\nDistintos:\" << distintos\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "question": "Escribe todas las líneas exactas del informe.",
+          "answers": [
+            "Frecuencias:\n[-6]=3\n[4]=2\n[9]=3\nN:8\nDistintos:3\nSuma:8\nOriginal:4;-6;4;9;-6;-6;9;9;"
+          ],
+          "explanation": "La copia tiene tres grupos de longitudes tres, dos y tres. El último también se publica al llegar fin a size(); el original conserva su secuencia."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__guarda_ultimo",
+          "question": "Quieres examinar si la posición fin continúa el grupo. ¿Qué orden de condiciones protege el acceso?",
+          "options": [
+            "Primero fin < ordenados.size(); sólo después comparar ordenados[fin] con el valor del grupo.",
+            "Primero comparar ordenados[fin]; después verificar si fin es un índice válido.",
+            "Comprobar sólo que el grupo anterior tenía alguna observación."
+          ],
+          "correctIndex": 0,
+          "explanation": "&& evalúa el segundo operando sólo si el primero es verdadero. Un grupo no vacío no convierte su límite excluido en un índice válido."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_vecinos",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> ordenados{-5, -5, 2, 2, 2, 8};\n    std::size_t coincidencias = 0;\n    for (std::size_t i = 1; i < ordenados.size(); ++i) {\n        if (ordenados[i] == ordenados[i - 1]) { ++coincidencias; }\n    }\n    std::cout << \"Iguales al anterior:\" << coincidencias\n              << \"\\nN:\" << ordenados.size() << \"\\n\";\n    return 0;\n}\n",
+          "question": "Predice las dos líneas. El contador sólo incrementa cuando una observación coincide con su vecina anterior.",
+          "answers": [
+            "Iguales al anterior:3\nN:6"
+          ],
+          "explanation": "El grupo de dos elementos aporta una coincidencia; el de tres aporta dos y el grupo de una sola observación no aporta ninguna. Hay seis observaciones en total."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ese contador de coincidencias no es una tabla de frecuencias: omite la primera observación de cada grupo. En un grupo de longitud m encuentra m - 1 parejas vecinas iguales. Para recuperar cada frecuencia debes incluir también la primera observación; el intervalo completo [inicio, fin) ya la incluye. Si todas las observaciones fueran diferentes, habría frecuencias uno aunque el contador de coincidencias fuera cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferencia: todas las etiquetas con frecuencia máxima"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye ahora un informe para hasta veinte etiquetas en std::vector<std::string>. La igualdad es literal: sólo se agrupan cadenas iguales. Usaremos letras minúsculas ASCII sin acentos y admitiremos la cadena vacía. Ordena una copia con la comparación lexicográfica ya estudiada; no compares textos convirtiéndolos en números ni confundas una etiqueta lexicográficamente mayor con una más frecuente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Además de la tabla, N, Distintas, Suma y Original, muestra Maxima y Mayores: todas las etiquetas cuya frecuencia alcanza la máxima, en el orden de la copia ordenada y una sola vez cada una. En vacío Maxima es cero y no hay candidatos. Si todos los valores aparecen una vez, todos alcanzan la máxima uno y deben figurar. Ésta es la convención de nuestro informe; no presentamos esa decisión de empates como la única definición estadística posible de moda."
+        },
+        {
+          "type": "paragraph",
+          "text": "Puedes volver a recorrer las frecuencias o conservar candidatos mientras completas grupos. En una pasada, una frecuencia mayor deja obsoletos sólo los candidatos anteriores; una frecuencia igual añade el nuevo grupo sin borrar los empatados. Para reemplazar esos candidatos por una colección vacía puedes escribir mayores = std::vector<std::string>{};: crea un vector vacío y lo asigna a mayores. No vacía el original ni la copia ordenada. Ninguna etiqueta inventada debe servir como candidato inicial."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primer caso: {\"patio\", \"sala\", \"patio\", \"faro\", \"sala\", \"patio\"}. Debe mostrar Frecuencias:, [faro]=1, [patio]=3, [sala]=2, Maxima:3, Mayores:[patio], N:6, Distintas:3, Suma:6 y Original:[patio][sala][patio][faro][sala][patio], cada mensaje en su línea con salto final. Construye desde el editor mínimo antes de consultar la referencia. Prueba también {\"rio\", \"torre\", \"torre\", \"rio\"}, donde ambos valores son máximos; {\"faro\", \"valle\", \"valle\"}, con el máximo en el último grupo; y {\"roble\", \"ala\"}, donde ambos aparecen una vez."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construye el informe de etiquetas y todos los maximos.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Completa tus predicciones con {}, {\"\"} y {\"\", \"a\", \"\"}. Los corchetes hacen visible una etiqueta vacía: [] significa un valor presente, mientras que Mayores: sin corchetes significa que no hay candidatos. Conserva el orden y las repeticiones del original y comprueba Suma = N. Explica cuándo retiras candidatos y cuándo conservas empates; una implementación de dos recorridos también es válida si obtiene el mismo informe sin ordenar ni alterar el original."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia con tres máximos empatados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta referencia usa otras etiquetas y un empate que alcanza el último grupo. Léela después de construir y contrastar tu informe. La selección compara cantidades de observaciones, no los caracteres de las etiquetas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"torre\", \"rio\", \"rio\", \"torre\", \"valle\", \"valle\", \"sol\"};\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada grupo se publica una vez y su frecuencia participa en la comparación. Cuando aparece una frecuencia mayor, la referencia reemplaza únicamente mayores y añade el grupo actual; cuando aparece una igualdad, añade sin borrar. Así pueden quedar varios candidatos. La copia ordenada se conserva completa durante el recorrido y la línea Original se produce después sin cambiar su secuencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: la tabla contiene todos los valores distintos con sus frecuencias; suma esas frecuencias para obtener N. Maxima es la frecuencia mayor cuando hay observaciones y cero en vacío. Mayores contiene exactamente todos los grupos que la alcanzan, una vez cada uno y en orden lexicográfico; admite todos los valores si todas las frecuencias son uno. El original conserva cantidad, datos, orden y repeticiones. Los casos de colección vacía, una sola observación, máximo final y empate distinguen esas garantías; no se exige la misma organización del código que la referencia."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__comparar_frecuencia",
+          "question": "En {\"ala\", \"ala\", \"ala\", \"zeta\", \"zeta\"}, ¿qué comparación decide los candidatos de Mayores?",
+          "options": [
+            "Comparar \"zeta\" con \"ala\" para retener sólo la etiqueta lexicográficamente mayor.",
+            "Comparar las frecuencias tres y dos para retener \"ala\".",
+            "Comparar cada frecuencia con el número de valores distintos para retener \"zeta\"."
+          ],
+          "correctIndex": 1,
+          "explanation": "La pregunta del informe es cuántas observaciones tiene cada etiqueta. El orden lexicográfico organiza la presentación, no decide qué frecuencia es mayor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Como recuperación, permuta el caso del intento sin añadir ni quitar observaciones. Antes de ejecutar predice qué líneas permanecen iguales y cuál debe cambiar. Después elimina una aparición de la etiqueta más frecuente: comprueba si el nuevo máximo crea un empate en vez de seguir conservando sólo la ganadora anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar empates, reemplazos y presencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Resuelve las predicciones sin ejecutar primero. Sigue cuándo una frecuencia mayor reemplaza candidatos y cuándo una igualdad los conserva; después comprueba la tabla completa y la secuencia original."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_maximo_final",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"muro\", \"ala\", \"muro\", \"ala\", \"rio\", \"rio\", \"rio\"};\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "question": "Escribe el informe exacto. No conserves un candidato sólo porque apareció antes.",
+          "answers": [
+            "Frecuencias:\n[ala]=2\n[muro]=2\n[rio]=3\nMaxima:3\nMayores:[rio]\nN:7\nDistintas:3\nSuma:7\nOriginal:[muro][ala][muro][ala][rio][rio][rio]"
+          ],
+          "explanation": "Los dos primeros grupos empatan con frecuencia dos. El grupo final tiene frecuencia tres y reemplaza esos candidatos; la suma sigue siendo siete."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__todos_una_vez",
+          "question": "La colección contiene {\"faro\", \"ala\", \"rio\"}, sin repeticiones. ¿Qué cumple nuestra convención del informe?",
+          "options": [
+            "Maxima:1 y Mayores:[ala][faro][rio].",
+            "Maxima:0 y Mayores: sin candidatos.",
+            "Maxima:1 y Mayores:[ala], por ser la primera etiqueta ordenada."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los tres valores alcanzan la frecuencia máxima uno. La convención exige todos los empatados; no escoge una sola etiqueta ni confunde falta de repeticiones con falta de datos."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_etiqueta_vacia",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"\", \"eco\", \"eco\", \"\", \"rio\"};\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frecuencias:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Maxima:\" << maxima << \"\\nMayores:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistintas:\" << distintas\n              << \"\\nSuma:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "question": "Predice todas las líneas. Conserva los corchetes que distinguen la etiqueta vacía de la ausencia.",
+          "answers": [
+            "Frecuencias:\n[]=2\n[eco]=2\n[rio]=1\nMaxima:2\nMayores:[][eco]\nN:5\nDistintas:3\nSuma:5\nOriginal:[][eco][eco][][rio]"
+          ],
+          "explanation": "La etiqueta vacía y eco son dos valores presentes y distintos, ambos con frecuencia dos. rio no alcanza ese máximo; el original contiene cinco observaciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vuelve al laboratorio de la tabla numérica y amplía tu propia tabla con Maxima y todos los candidatos de tipo int, una vez cada uno y en orden ascendente. Reutiliza la decisión por frecuencia aprendida con etiquetas; no selecciones por magnitud del número. Con {4, 1, 4, 2, 1, 2}, predice Maxima:2 y Mayores:[1][2][4]; con {1, 1, 5, 9}, Maxima:2 y Mayores:[1]; con {}, Maxima:0 y Mayores: sin ningún candidato. Si eliges una pasada, el reemplazo vacío corresponde ahora a std::vector<int>{}. Conserva también la tabla, Suma = N y el original. Después, en otra sesión, construye con datos propios sin mirar las referencias e intercala números y texto: explica qué decisiones son las mismas y qué significa cada comparación. Una ejecución de un caso no sustituye comprobar vacío, empate, máximo final y conservación."
+        },
+        {
+          "type": "note",
+          "text": "Apoyo: Bjarne Stroustrup (2024), Programming: Principles and Practice Using C++, tercera edición, capítulo 3, ejercicios 15–16, página 81, plantea la frecuencia máxima en secuencias numéricas y de texto. Los contratos, datos, presentaciones y construcciones de esta lección son propios y hacen explícita su política de empates. Consulta primaria de la operación de ordenación: https://eel.is/c++draft/alg.sorting#sort; es el borrador HTML vigente, no una reproducción literal de C++23. Aquí se usan sort sobre el rango completo, comparaciones y recorridos ya enseñados."
+        }
+      ]
+    }
+  ]
+}
