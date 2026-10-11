@@ -202,6 +202,258 @@
           "explanation": "Copiar un valor existente no solicita el constructor sin argumentos. La copia conserva sus miembros."
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un entero puede solicitar un objeto sin nombrarlo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta aquí hemos escrito Contador{3} para construir deliberadamente un contador. Su constructor Contador(int) también permite una conversión implícita: en algunos contextos el compilador puede usar un int para construir el Contador que se necesita, aunque el cliente no escriba Contador{...}. El valor tres no es ya un Contador; esta conversión llama al constructor y crea un objeto de ese tipo. Observa primero lo que permite la versión conocida, que todavía no lleva explicit."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    const Contador convertido = 3;\n    std::cout << convertido.valor() << ':' << leer(4);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es 3:4. La primera declaración solicita un Contador a partir del int tres. leer(4) solicita otro Contador a partir del int cuatro para que la referencia de lectura reciba un objeto adecuado. Ese segundo objeto existe durante la llamada; leer devuelve su valor int y no guarda la referencia. Ninguna de estas conversiones evita el cuerpo del constructor ni su comprobación."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__origen_de_la_conversion_implicita",
+          "question": "En la versión anterior, leer recibe const Contador& pero la llamada leer(4) compila. ¿Qué permite esa llamada?",
+          "options": [
+            "Que const convierte cualquier entero en una referencia del tipo pedido.",
+            "Que Contador(int), sin explicit, permite construir el objeto mediante esa conversión implícita.",
+            "Que leer devuelve int, por lo que los tipos de sus argumentos no se comprueban."
+          ],
+          "correctIndex": 1,
+          "explanation": "La conversión la ofrece el constructor Contador(int). const limita la modificación por la referencia y el tipo de retorno describe el resultado: ninguno de ellos convierte por sí solo un int en Contador."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pedir que la construcción se vea en la llamada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la interfaz exige que el cliente escriba cuándo crea un Contador a partir de un entero, marcamos ese constructor como explicit: explicit Contador(int inicial). Conservamos Contador() y todas las comprobaciones. La palabra no cambia el dominio ni el valor inicial; evita que ese constructor se utilice para las conversiones implícitas anteriores. Contador directo{3} sigue siendo una construcción directa válida."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_directa_predeterminado_y_copia",
+          "language": "cpp",
+          "question": "El constructor con int lleva explicit. Predice los valores de la construcción sin argumentos, la construcción directa y la copia de un Contador existente.",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    const Contador inicio;\n    const Contador directo{5};\n    const Contador copia = directo;\n    std::cout << inicio.valor() << ':' << directo.valor() << ':' << copia.valor();\n    return 0;\n}\n",
+          "answers": [
+            "0:5:5"
+          ],
+          "explanation": "inicio utiliza Contador() y empieza en cero. directo utiliza expresamente el constructor con cinco. copia recibe otro Contador, cuyo valor se copia: no necesita convertir un int y no queda prohibida por explicit Contador(int)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_conserva_la_copia_del_tipo",
+          "question": "Contador tiene explicit Contador(int) y const Contador origen{2} ya existe. ¿Qué declaración conserva la copia que ofrece este modelo?",
+          "options": [
+            "Contador copia = origen;",
+            "Contador copia = 2;",
+            "Contador copia = origen.valor();"
+          ],
+          "correctIndex": 0,
+          "explanation": "origen ya tiene tipo Contador, por lo que copiarlo no solicita una conversión desde int. Tanto 2 como origen.valor() tienen tipo int y no pueden usar implícitamente el constructor marcado explicit. El signo = en una declaración no prohíbe todas las copias: importa el tipo del valor con que se inicializa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un diagnóstico de conversión no es un rechazo numérico"
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente programa tiene un error de compilación intencional. El tres pertenece al dominio del contador, pero la declaración pide convertirlo implícitamente. El compilador rechaza esa forma de construir: no llega a ejecutar el cuerpo ni a lanzar ContadorInvalido. No intentes predecir una salida para un programa que no se construye."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    // Error intencional: esta forma exige una conversion implicita.\n    Contador copia = 3;\n    std::cout << copia.valor();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__reparar_construccion_sin_quitar_explicit",
+          "question": "¿Qué cambio conserva la decisión de exigir construcción explícita y crea un contador con valor tres?",
+          "options": [
+            "Cambiar el tres por cero, conservando Contador copia = 0;.",
+            "Quitar la comprobación del dominio en el constructor.",
+            "Escribir Contador copia{3};."
+          ],
+          "correctIndex": 2,
+          "explanation": "Las llaves después del nombre construyen directamente el Contador con tres. Un cero también sería int y no repararía la conversión prohibida; quitar la comprobación numérica no cambia cómo se selecciona el constructor. También sería válido escribir Contador copia = Contador{3};, porque allí se construye expresamente un Contador antes de inicializar copia."
+        },
+        {
+          "type": "fill_code",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__marcar_constructor_explicit",
+          "language": "cpp",
+          "question": "Completa sólo la palabra que exige construir deliberadamente desde int y conserva Contador contador{2};.",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    ___ Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador contador{2};\n    std::cout << contador.valor();\n    return 0;\n}\n",
+          "answers": [
+            "explicit"
+          ],
+          "explanation": "explicit se escribe antes del constructor. La construcción directa con llaves sigue disponible, y el constructor conserva su comprobación de cero a cinco."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El argumento también debe expresar su tipo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera int leer(const Contador&): consulta un contador y devuelve su valor. Con el constructor explicit, leer(3) ya no puede pedir al compilador que convierta el entero en un contador. El cliente puede aportar un Contador existente o construir expresamente Contador{3} como argumento. La referencia const recibe el objeto para leerlo; no le concede a cualquier int el tipo Contador."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Error intencional: el argumento es int, no Contador.\n    std::cout << leer(3);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__construir_el_argumento_explicit",
+          "question": "Quieres conservar leer(const Contador&) y explicit Contador(int). ¿Qué llamada entrega deliberadamente el contador de valor tres?",
+          "options": [
+            "leer(Contador{3})",
+            "leer(3)",
+            "leer(3.0)"
+          ],
+          "correctIndex": 0,
+          "explanation": "Contador{3} solicita directamente el constructor. Cambiar el número a double no escribe esa construcción ni elimina explicit. El objeto construido como argumento permanece disponible durante la llamada, y leer devuelve un int independiente sin conservar una referencia a él."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__argumento_construido_y_objeto_existente",
+          "language": "cpp",
+          "question": "Ambas llamadas aportan objetos Contador. Predice la salida exacta.",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    const Contador existente{1};\n    std::cout << leer(Contador{4}) << ':' << leer(existente) << ':';\n    std::cout << existente.valor();\n    return 0;\n}\n",
+          "answers": [
+            "4:1:1"
+          ],
+          "explanation": "La primera llamada lee el objeto construido con cuatro. La segunda lee existente con uno y no lo modifica. explicit no cambia los valores ni impide pasar objetos que ya tienen el tipo pedido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Exigir la forma no sustituye comprobar el valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contador{6} escribe una construcción directa y por ello no tropieza con la prohibición de conversión implícita. El cuerpo del constructor todavía debe rechazar seis al ejecutarse. Hay dos decisiones distintas: explicit regula ciertas formas de construir desde otro tipo; el if y la excepción conservan el dominio cero a cinco. Tampoco se utiliza Contador() para reparar un argumento rechazado."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_y_dominio_son_decisiones_distintas",
+          "language": "cpp",
+          "question": "Todas las solicitudes construyen directamente. Predice las cuatro líneas y distingue aceptación de excepción.",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    for (int inicial : std::vector<int>{0, 6, 5, -1}) {\n        try {\n            const Contador contador{inicial};\n            std::cout << \"Valor:\" << contador.valor() << '\\n';\n        } catch (const ContadorInvalido&) {\n            std::cout << \"Rechazado:\" << inicial << '\\n';\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Valor:0\nRechazado:6\nValor:5\nRechazado:-1"
+          ],
+          "explanation": "Cero y cinco se conservan. Seis y menos uno superan las reglas numéricas y lanzan ContadorInvalido al construir; cada catch permite tratar el dato siguiente. Esos rechazos ocurren al ejecutar un programa válido, a diferencia del diagnóstico de Contador copia = 3;."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__identificar_compilacion_frente_a_dominio",
+          "question": "Con este Contador, ¿qué comparación distingue correctamente los dos rechazos?",
+          "options": [
+            "Contador copia = 3; y Contador directo{6}; lanzan la misma excepción después de compilar.",
+            "Contador copia = 3; se rechaza al compilar; Contador directo{6}; compila y su constructor rechaza seis al ejecutar.",
+            "explicit rechaza seis al compilar y el if repara automáticamente la conversión desde tres."
+          ],
+          "correctIndex": 1,
+          "explanation": "El tipo y la forma de inicialización se comprueban antes de ejecutar. La condición numérica se evalúa dentro de una construcción permitida. Ningún catch puede convertir un programa que no compila en un programa ejecutable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una interfaz que exija esa decisión"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconstruye Contador con representación privada, construcción sin argumentos en cero, explicit Contador(int), consulta valor() const y rechazo ContadorInvalido fuera de cero a cinco. Construye leer(const Contador&), que devuelve valor() sin imprimir ni guardar referencias. Empieza desde el editor mínimo: escribe tú las declaraciones, el constructor y las llamadas."
+        },
+        {
+          "type": "paragraph",
+          "text": "En main declara un contador sin argumentos, otro construido directamente con cuatro y una copia del segundo mediante Contador copia = directo;. Presenta cuatro líneas: Predeterminado:0, Directo:4, Argumento:2 y Copia:4. Argumento procede de leer(Contador{2}); las otras líneas consultan los objetos correspondientes. En dos pruebas posteriores, construye directamente con -1 y con 6 dentro de try/catch separados y muestra Rechazado:-1 y Rechazado:6. No imprimas las respuestas como constantes en lugar de consultar o comprobar los objetos."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye Contador, leer y las pruebas de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de comprobar el programa válido, añade sólo Contador no_permitido = 3; y solicita una construcción: debe fallar al compilar por la conversión implícita. Retira esa línea y comprueba de forma separada leer(3);, que también debe rechazarse al compilar. Repara esta llamada con leer(Contador{3}) y vuelve a ejecutar. Conserva explicit y las comprobaciones; no cambies la firma de leer para aceptar int. Distingue cada diagnóstico de la salida y de ContadorInvalido. El compilador puede redactar los diagnósticos de formas distintas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Varía cuatro por cero o cinco, y dos por otro dato válido. Predice las líneas antes de ejecutar y confirma que la copia conserva el valor elegido. Criterios: la construcción directa sigue disponible; el valor por defecto sigue siendo cero; ambos usos implícitos se rechazan por separado; las copias entre Contador siguen permitidas; los argumentos numéricos inválidos se rechazan sin fabricar un contador alternativo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior y recuperación de las decisiones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta referencia usa cinco para el objeto directo y uno para el argumento construido. Compárala con tu programa por sus reglas y por las pruebas de compilación, además de la salida de un caso. Las líneas intencionalmente incorrectas están comentadas: descomenta sólo una cada vez para comprobar su diagnóstico y vuelve a retirarla antes de ejecutar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    const Contador inicio;\n    const Contador directo{5};\n    const Contador copia = directo;\n    std::cout << \"Predeterminado:\" << leer(inicio) << '\\n';\n    std::cout << \"Directo:\" << leer(directo) << '\\n';\n    std::cout << \"Argumento:\" << leer(Contador{1}) << '\\n';\n    std::cout << \"Copia:\" << leer(copia) << '\\n';\n    try {\n        const Contador fuera{-1};\n        std::cout << fuera.valor() << '\\n';\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rechazado:-1\\n\";\n    }\n    try {\n        const Contador fuera{6};\n        std::cout << fuera.valor() << '\\n';\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rechazado:6\\n\";\n    }\n    // Error intencional para probar por separado:\n    // Contador no_permitido = 3;\n    // leer(3);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia muestra Predeterminado:0, Directo:5, Argumento:1, Copia:5, Rechazado:-1 y Rechazado:6, una línea cada una. La copia de directo conserva cinco porque recibe un Contador existente. La construcción explícita de los dos datos inválidos llega al constructor y lanza; las dos líneas comentadas, en cambio, impiden construir el programa al solicitar conversiones implícitas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_no_equivale_a_const_ni_a_validacion",
+          "question": "Un compañero propone quitar explicit porque ya hay un if y valor() const. ¿Qué razón conserva cada decisión de la interfaz?",
+          "options": [
+            "explicit exige determinadas formas de construir; el if valida el número; valor() const permite consultar sin modificar el objeto.",
+            "Las tres decisiones son equivalentes: cualquiera de ellas impide convertir int y rechaza datos fuera del dominio.",
+            "El if decide los tipos que se aceptan al compilar y explicit decide los valores que admite el objeto al ejecutar."
+          ],
+          "correctIndex": 0,
+          "explanation": "Forma de construcción, dominio numérico y permiso de consulta son decisiones distintas. Conservar una no sustituye a las otras. El constructor explicit tampoco prohíbe la copia de un Contador existente ni modifica el valor por defecto."
+        },
+        {
+          "type": "paragraph",
+          "text": "En otra sesión, antes de consultar los ejemplos, clasifica Contador a;, Contador b{2};, Contador c = 2;, Contador d = b;, leer(2); y leer(Contador{2});. Explica cuáles piden una conversión implícita y repara sólo esas formas. Al construir después un lector desde texto, recupera esta decisión: exigir que el cliente nombre expresamente el lector permite distinguir el texto de entrada del objeto que lo procesa."
+        },
+        {
+          "type": "note",
+          "text": "Apoyo de estudio: Stroustrup, B. (2024), Programming: Principles and practice using C++ (3.ª ed.), §8.4.2 y §8.7.3 para construcción y valor por defecto; §17.5.1, pp. 497–498, para conversiones por constructor y explicit. Esta conexión recupera únicamente la decisión de construcción, sin introducir la gestión de memoria de ese capítulo. Precisión contrastada con el borrador de C++ [class.conv.ctor]: https://eel.is/c++draft/class.conv.ctor. Explicaciones, modelo y actividades originales de esta ruta."
+        }
+      ]
     }
   ]
 }

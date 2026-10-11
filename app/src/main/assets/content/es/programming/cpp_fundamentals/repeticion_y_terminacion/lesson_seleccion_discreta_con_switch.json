@@ -207,6 +207,161 @@
           "text": "Prueba g, m y x cambiando sólo comando. La primera línea permite identificar el caso probado. Quitar break tras Guardado haría ejecutar también Mostrado y dejaría de cumplir la exclusividad. default cubre aquí cualquier carácter que no coincida; no es una acción adicional que se ejecuta siempre."
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuando continuar al siguiente caso es la intención"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el selector anterior las acciones eran exclusivas: quitar un break incumplía la regla. Considera ahora una regla diferente. La orden 1 debe preparar y después revisar; la orden 2 debe revisar directamente. Podemos colocar la revisión en el segundo caso y permitir que el primero llegue a ella después de preparar. Esa caída es deliberada porque corresponde a dos etapas previstas por el problema. No convierte la orden 1 en la orden 2."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe [[fallthrough]]; para señalar que esa continuación es intencional. Es un atributo: una anotación del programa que expresa nuestra intención al compilador. Aquí acompaña una instrucción vacía, por eso lleva punto y coma. No hace una operación ni salta a otra etiqueta; la ejecución continúa porque no hay un break que la termine. En este uso sencillo se coloca después de la última acción del primer caso y antes del siguiente case o default del mismo switch."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int orden{1};\n    switch (orden) {\n    case 1:\n        std::cout << \"Preparar;\";\n        [[fallthrough]];\n    case 2:\n        std::cout << \"Revisar;\";\n        break;\n    default:\n        std::cout << \"Desconocida;\";\n        break;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con orden igual a 1 se muestra Preparar;Revisar;Fin. La selección inicial entra por case 1. Después se alcanza la revisión aunque la etiqueta case 2 no coincida con el valor 1. El break de esa segunda etapa sí termina el switch. Con orden igual a 2 se entra directamente en la revisión y no se prepara. Esto difiere de agrupar dos etiquetas vacías: aquí la primera entrada realiza una acción adicional antes de compartir la segunda."
+        },
+        {
+          "type": "output_prediction",
+          "id": "fallthrough_no_cambia_categoria",
+          "question": "Predice toda la salida. Observa también el valor de orden después del switch: la caída no lo modifica.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int orden{1};\n    switch (orden) {\n    case 1:\n        std::cout << \"P\";\n        [[fallthrough]];\n    case 2:\n        std::cout << \"R\";\n        break;\n    default:\n        std::cout << \"?\";\n        break;\n    }\n    std::cout << \":\" << orden;\n    return 0;\n}\n",
+          "answers": [
+            "PR:1"
+          ],
+          "explanation": "Se prepara desde case 1 y se alcanza la revisión del case 2. Ninguna instrucción asigna otro valor a orden; sigue valiendo 1. La etiqueta marca un punto de entrada, no una nueva comparación que impida continuar."
+        },
+        {
+          "type": "note",
+          "text": "Elige según el requisito: break para terminar la alternativa; [[fallthrough]]; para documentar una caída prevista. Añadir el atributo a una caída accidental no corrige el comportamiento. El compilador puede avisar de caídas que no tengan esta anotación; que no aparezca un aviso no demuestra que la regla del problema sea correcta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Expresar la intención en el lugar adecuado"
+        },
+        {
+          "type": "fill_code",
+          "id": "declarar_caida_intencional",
+          "question": "La orden 1 debe preparar y revisar; la orden 2, sólo revisar. Completa únicamente el atributo que declara intencional la caída. El punto y coma ya está escrito.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int orden{1};\n    switch (orden) {\n    case 1:\n        std::cout << \"Preparar;\";\n        ___;\n    case 2:\n        std::cout << \"Revisar;\";\n        break;\n    default:\n        std::cout << \"Desconocida;\";\n        break;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "[[fallthrough]]"
+          ],
+          "explanation": "[[fallthrough]]; declara la continuación prevista entre las dos etapas. break impediría revisar después de preparar. La anotación se escribe con dos corchetes de apertura y dos de cierre."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "ubicacion_fallthrough",
+          "question": "En estos casos de ejecución directa, ¿dónde corresponde escribir [[fallthrough]]; para pasar de preparar a revisar?",
+          "options": [
+            "Después de preparar y justo antes del case de revisión del mismo switch.",
+            "Después de cerrar el switch, antes de mostrar Fin.",
+            "Al final del último caso, aunque después sólo se cierre el switch.",
+            "Delante de la instrucción que imprime Preparar, sin el punto y coma del atributo."
+          ],
+          "correctIndex": 0,
+          "explanation": "El atributo acompaña una instrucción vacía y la siguiente instrucción ejecutada debe tener una etiqueta case o default del mismo switch. No se aplica a la salida Preparar ni se usa fuera del switch. Si no hay un caso posterior al que continuar, esa anotación no es válida."
+        },
+        {
+          "type": "output_prediction",
+          "id": "fallthrough_en_recorrido",
+          "question": "Recupera el alcance de break. Predice la salida y distingue entrar directamente en case 2 de llegar a él desde case 1.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int orden{1}; orden <= 2; ++orden) {\n        switch (orden) {\n        case 1:\n            std::cout << \"P\";\n            [[fallthrough]];\n        case 2:\n            std::cout << \"R\";\n            break;\n        default:\n            std::cout << \"?\";\n            break;\n        }\n        std::cout << orden << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "PR1;R2;Fin"
+          ],
+          "explanation": "La primera vuelta realiza P y R; la segunda entra directamente en R. Cada break termina sólo el switch, por lo que se muestra el número de orden y el for sigue avanzando. La caída no repite el recorrido ni ejecuta las instrucciones anteriores a su punto de entrada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una etapa compartida con un resumen"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una estación repite una misma orden tantas veces como indique repeticiones, entre 0 y 4. La orden 1 realiza una preparación y una revisión por vuelta. La orden 2 realiza sólo una revisión. Cualquier otro valor entero de orden cuenta como desconocido, sin preparar ni revisar. Los datos ya están definidos en el código; no necesitas leer una entrada. Antes de programar, calcula cuántas preparaciones, revisiones y órdenes desconocidas habrá para (orden,repeticiones) iguales a (1,3), (2,3), (9,3) y (1,0)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye el recorrido y los tres contadores desde este editor mínimo. Usa un switch en cada vuelta: en case 1 realiza la preparación y declara la caída con [[fallthrough]]; la revisión debe aparecer una sola vez, en case 2. Termina esa etapa y la alternativa desconocida con break. Muestra sólo un resumen después del recorrido, con el formato exacto Preparaciones=3;Revisiones=3;Desconocidas=0 para el caso inicial. Decide dónde declarar cada objeto para conservar el resumen de todas las vueltas."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int orden{1};\n    int repeticiones{3};\n    // Construye el recorrido, la seleccion y el resumen.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba por separado las tres reglas y el caso sin vueltas. Con orden 2 y tres repeticiones, el resumen debe tener cero preparaciones, tres revisiones y cero desconocidas. Con orden 9 y tres repeticiones, cero, cero y tres. Con cero repeticiones, los tres contadores deben quedar en cero para cualquier orden. Prueba también una y cuatro repeticiones y órdenes -1 y 0. Conserva tu intento antes de consultar la referencia. El laboratorio no califica automáticamente el programa: contrasta su salida con los requisitos y justifica la primera diferencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la etapa compartida y recuperar su intención"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consulta esta implementación después de construir y comprobar tu intento. Los contadores se inicializan una sola vez antes del recorrido. La primera etapa añade una preparación y continúa hacia la única instrucción de revisión. La orden 2 entra directamente en esa revisión; default conserva un motivo distinto en el tercer contador."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int orden{1};\n    int repeticiones{3};\n    int preparaciones{0};\n    int revisiones{0};\n    int desconocidas{0};\n    for (int vuelta{0}; vuelta < repeticiones; ++vuelta) {\n        switch (orden) {\n        case 1:\n            ++preparaciones;\n            [[fallthrough]];\n        case 2:\n            ++revisiones;\n            break;\n        default:\n            ++desconocidas;\n            break;\n        }\n    }\n    std::cout << \"Preparaciones=\" << preparaciones\n              << \";Revisiones=\" << revisiones\n              << \";Desconocidas=\" << desconocidas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para (1,3), (2,3), (9,3) y (1,0), los tres totales son respectivamente (3,3,0), (0,3,0), (0,0,3) y (0,0,0). Con una repetición la orden 1 aporta (1,1,0); con cuatro aporta (4,4,0). Cualquier otra orden, incluidos -1 y 0, sólo aumenta desconocidas. Un break al terminar la preparación perdería las revisiones de orden 1. Reiniciar los contadores dentro del recorrido perdería las vueltas anteriores. El dominio de repeticiones es parte del requisito; esta referencia no valida datos externos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "retirar_atributo_no_repara_regla",
+          "question": "Retiras sólo la línea [[fallthrough]]; de la referencia. Dejas las demás instrucciones intactas. ¿Qué cambia en la ejecución con orden 1?",
+          "options": [
+            "Se sigue preparando y revisando; se pierde la anotación explícita de esa intención.",
+            "La revisión ya no ocurre, porque el atributo era la instrucción que saltaba al case 2.",
+            "orden cambia a 2 y desde entonces sólo se revisa."
+          ],
+          "correctIndex": 0,
+          "explanation": "La caída depende de continuar sin break. El atributo documenta esa intención y puede influir en avisos del compilador, pero no cambia la ejecución ni el valor de orden. Para obtener una alternativa exclusiva habría que cambiar el flujo con break y revisar si esa nueva regla es la deseada."
+        },
+        {
+          "type": "output_prediction",
+          "id": "transferir_caida_a_ordenes_distintas",
+          "question": "Ahora las órdenes cambian entre vueltas: 1, 2 y 3. Predice el resumen sin ejecutar primero; explica qué orden aporta a cada contador.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int preparaciones{0};\n    int revisiones{0};\n    int desconocidas{0};\n    for (int orden{1}; orden <= 3; ++orden) {\n        switch (orden) {\n        case 1:\n            ++preparaciones;\n            [[fallthrough]];\n        case 2:\n            ++revisiones;\n            break;\n        default:\n            ++desconocidas;\n            break;\n        }\n    }\n    std::cout << preparaciones << \":\" << revisiones << \":\" << desconocidas;\n    return 0;\n}\n",
+          "answers": [
+            "1:2:1"
+          ],
+          "explanation": "La orden 1 prepara y revisa; la orden 2 sólo revisa; la orden 3 sólo aumenta desconocidas. Cada break termina el switch y permite la siguiente vuelta. La etapa compartida no exige que todas las vueltas hayan comenzado en la misma etiqueta."
+        },
+        {
+          "type": "note",
+          "text": "Referencia: Stroustrup, B. (2024). Programming: Principles and Practice Using C++ (3.ª ed.). Addison-Wesley, §3.4.1.3, Switch technicalities. El libro distingue la caída accidental de la intención explícita con [[fallthrough]];. Semántica contrastada con el borrador público de C++, sección [dcl.attr.fallthrough]: https://eel.is/c++draft/dcl.attr.fallthrough. Las consignas, los programas y los casos de esta ampliación son originales."
+        }
+      ]
     }
   ]
 }

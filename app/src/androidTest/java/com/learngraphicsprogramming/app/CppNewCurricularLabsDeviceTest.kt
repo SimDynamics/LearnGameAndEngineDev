@@ -86,7 +86,7 @@ class CppNewCurricularLabsDeviceTest {
         val prefixes = LABS.map { it.draftPrefix() }
         drafts.all.keys.filter { key -> prefixes.any { prefix -> key.startsWith(prefix) } }
             .forEach { key -> editor.remove(key) }
-        assertTrue("Reset only these twenty-six isolated lab drafts", editor.commit())
+        assertTrue("Reset only the listed isolated lab drafts", editor.commit())
     }
 
     @After fun releaseOnlyTheQaScreenGuard() {
@@ -1606,6 +1606,141 @@ class CppNewCurricularLabsDeviceTest {
         }
     }
 
+    @Test fun intentionalFallthroughSharesOnlyTheRequiredStageAndKeepsItsDraft() {
+        withLab(INTENTIONAL_FALLTHROUGH) { scenario, lesson, block ->
+            assertSingleSourceSkeleton(scenario, block)
+            assertSuccessful(run(scenario), "")
+            val examples = listOf(
+                Triple(7, 4, "Preparar;Revisar;Fin"),
+                Triple(7, 6, "PR:1"),
+                Triple(8, 4, "PR1;R2;Fin"),
+                Triple(10, 6, "1:2:1")
+            )
+            for ((page, position, expected) in examples) {
+                val example = blockAt(lesson, page, position)
+                assertTrue(example.getString("type") in setOf("code", "output_prediction"))
+                if (example.getString("type") == "output_prediction") {
+                    assertEquals(expected, example.getJSONArray("answers").getString(0))
+                }
+                scenario.onActivity { editor(it).setText(example.getString("code")) }
+                assertSuccessful(run(scenario), expected)
+            }
+            val fill = blockAt(lesson, 8, 2)
+            assertEquals("fill_code", fill.getString("type"))
+            assertEquals("[[fallthrough]]", fill.getJSONArray("answers").getString(0))
+            val filledSource = fill.getString("code").replace("___", "[[fallthrough]]")
+            scenario.onActivity { editor(it).setText(filledSource) }
+            assertSuccessful(run(scenario), "Preparar;Revisar;")
+
+            val reference = referenceCode(lesson, 10, 3)
+            assertEquals(1, reference.split("int orden{1};").size - 1)
+            assertEquals(1, reference.split("int repeticiones{3};").size - 1)
+            // These rows express the contract independently of switch flow.
+            val cases = listOf(
+                Triple(1, 3, "Preparaciones=3;Revisiones=3;Desconocidas=0"),
+                Triple(2, 3, "Preparaciones=0;Revisiones=3;Desconocidas=0"),
+                Triple(9, 3, "Preparaciones=0;Revisiones=0;Desconocidas=3"),
+                Triple(1, 0, "Preparaciones=0;Revisiones=0;Desconocidas=0"),
+                Triple(2, 0, "Preparaciones=0;Revisiones=0;Desconocidas=0"),
+                Triple(9, 0, "Preparaciones=0;Revisiones=0;Desconocidas=0"),
+                Triple(1, 1, "Preparaciones=1;Revisiones=1;Desconocidas=0"),
+                Triple(1, 4, "Preparaciones=4;Revisiones=4;Desconocidas=0"),
+                Triple(-1, 1, "Preparaciones=0;Revisiones=0;Desconocidas=1"),
+                Triple(0, 4, "Preparaciones=0;Revisiones=0;Desconocidas=4")
+            )
+            for ((order, repetitions, expected) in cases) {
+                val source = reference.replace("int orden{1};", "int orden{$order};")
+                    .replace("int repeticiones{3};", "int repeticiones{$repetitions};")
+                scenario.onActivity { editor(it).setText(source) }
+                assertSuccessful(run(scenario), expected)
+            }
+            val implicitFall = reference.replace("            [[fallthrough]];\n", "")
+            scenario.onActivity { editor(it).setText(implicitFall) }
+            assertSuccessful(run(scenario), "Preparaciones=3;Revisiones=3;Desconocidas=0")
+            val exclusive = reference.replace("[[fallthrough]];", "break;")
+            scenario.onActivity { editor(it).setText(exclusive) }
+            assertSuccessful(run(scenario), "Preparaciones=3;Revisiones=0;Desconocidas=0")
+            val draft = reference + "\n// Deliberate shared-stage draft\n"
+            scenario.onActivity {
+                editor(it).setText(draft)
+                showPage(it, 9)
+                showPage(it, INTENTIONAL_FALLTHROUGH.page - 1)
+                assertEquals(draft, editor(it).text.toString())
+            }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity { assertEquals(draft, editor(it).text.toString()) }
+            assertSuccessful(run(scenario), "Preparaciones=3;Revisiones=3;Desconocidas=0")
+        }
+    }
+
+    @Test fun explicitConstructionSeparatesCompileTimeConversionFromRuntimeDomainAndKeepsItsDraft() {
+        withLab(EXPLICIT_CONSTRUCTION) { scenario, lesson, block ->
+            assertSingleSourceSkeleton(scenario, block)
+            assertSuccessful(run(scenario), "")
+            val examples = listOf(
+                Triple(8, 3, "3:4"),
+                Triple(9, 3, "0:5:5"),
+                Triple(11, 5, "4:1:1"),
+                Triple(12, 3, "Valor:0\nRechazado:6\nValor:5\nRechazado:-1\n")
+            )
+            for ((page, position, expected) in examples) {
+                val example = blockAt(lesson, page, position)
+                assertTrue(example.getString("type") in setOf("code", "output_prediction"))
+                if (example.getString("type") == "output_prediction") {
+                    assertEquals(expected.trim(), example.getJSONArray("answers").getString(0).trim())
+                }
+                scenario.onActivity { editor(it).setText(example.getString("code")) }
+                assertSuccessful(run(scenario), expected)
+            }
+            for ((page, expected) in listOf(10 to "3", 11 to "3")) {
+                val source = referenceCode(lesson, page, 3)
+                scenario.onActivity { editor(it).setText(source) }
+                // Clang's call diagnostic names leer; its conversion
+                // diagnostic names the destination class Contador.
+                assertCompilationFailure(run(scenario), "main.cpp", if (page == 10) "Contador" else "leer")
+                // Removing only explicit proves the cause is the conversion
+                // policy, rather than the value or the const reference.
+                assertEquals(1, source.split("explicit Contador(int inicial)").size - 1)
+                scenario.onActivity {
+                    editor(it).setText(source.replace("explicit Contador(int inicial)", "Contador(int inicial)"))
+                }
+                assertSuccessful(run(scenario), expected)
+            }
+            val fill = blockAt(lesson, 10, 5)
+            assertEquals("fill_code", fill.getString("type"))
+            assertEquals("explicit", fill.getJSONArray("answers").getString(0))
+            scenario.onActivity { editor(it).setText(fill.getString("code").replace("___", "explicit")) }
+            assertSuccessful(run(scenario), "2")
+
+            val reference = referenceCode(lesson, 14, 3)
+            val referenceOutput = "Predeterminado:0\nDirecto:5\nArgumento:1\nCopia:5\nRechazado:-1\nRechazado:6\n"
+            scenario.onActivity { editor(it).setText(reference) }
+            assertSuccessful(run(scenario), referenceOutput)
+            assertEquals(1, reference.split("const Contador directo{5};").size - 1)
+            assertEquals(1, reference.split("leer(Contador{1})").size - 1)
+            val attempt = reference.replace("const Contador directo{5};", "const Contador directo{4};")
+                .replace("leer(Contador{1})", "leer(Contador{2})")
+            val attemptOutput = "Predeterminado:0\nDirecto:4\nArgumento:2\nCopia:4\nRechazado:-1\nRechazado:6\n"
+            scenario.onActivity { editor(it).setText(attempt) }
+            assertSuccessful(run(scenario), attemptOutput)
+            for (line in listOf("Contador no_permitido = 3;", "leer(3);")) {
+                assertEquals(1, reference.split("    // $line").size - 1)
+                scenario.onActivity { editor(it).setText(reference.replace("    // $line", "    $line")) }
+                assertCompilationFailure(run(scenario), "main.cpp", if (line.startsWith("leer(")) "leer" else "Contador")
+            }
+            val draft = attempt + "\n// Explicit construction and domain-check draft\n"
+            scenario.onActivity {
+                editor(it).setText(draft)
+                showPage(it, 13)
+                showPage(it, EXPLICIT_CONSTRUCTION.page - 1)
+                assertEquals(draft, editor(it).text.toString())
+            }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity { assertEquals(draft, editor(it).text.toString()) }
+            assertSuccessful(run(scenario), attemptOutput)
+        }
+    }
+
     private fun nestedReviewOutput(teams: Int, tools: Int, rows: List<List<Int>>) = buildString {
         var total = 0
         rows.take(teams).forEachIndexed { index, accepted ->
@@ -1955,10 +2090,12 @@ class CppNewCurricularLabsDeviceTest {
         private val UNIQUE_PAIRS = LabLocation(UNIQUE_SELECTION.lesson, 6, 6)
         private val FREQUENCY_TABLE = LabLocation("cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates", 3, 6)
         private val TIED_LABEL_FREQUENCIES = LabLocation(FREQUENCY_TABLE.lesson, 6, 6)
+        private val INTENTIONAL_FALLTHROUGH = LabLocation("cpp_fundamentals__repeticion_y_terminacion__seleccion_discreta_con_switch", 9, 4)
+        private val EXPLICIT_CONSTRUCTION = LabLocation("cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado", 13, 4)
         private val LABS = listOf(THREE_INPUTS, LINES, PROJECT, TRANSFER, OVERLOAD_FOUR, OVERLOAD_EIGHT,
             RECURSIVE_PAIRS, RECURSIVE_GROUPS, REFERENCE_SWAP, REFERENCE_ALIASES, DIAGNOSTIC_INTERVAL, REFACTOR_REPORT,
             NESTED_REVIEW, NESTED_PARITY, DEPOSIT_OPERATIONS, DEPOSIT_BATCH, EXACT_INTEGER_CONVERSION, EXACT_INTEGER_COLLECTION,
             DELIBERATE_ROUNDING, UNIQUE_ROUNDED_MARKS, CONSECUTIVE_WORDS, CONSECUTIVE_LINES, UNIQUE_SELECTION, UNIQUE_PAIRS,
-            FREQUENCY_TABLE, TIED_LABEL_FREQUENCIES)
+            FREQUENCY_TABLE, TIED_LABEL_FREQUENCIES, INTENTIONAL_FALLTHROUGH, EXPLICIT_CONSTRUCTION)
     }
 }
