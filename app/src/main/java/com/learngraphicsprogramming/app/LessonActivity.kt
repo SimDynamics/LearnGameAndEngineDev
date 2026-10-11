@@ -7532,7 +7532,7 @@ class LessonActivity : AppCompatActivity() {
             val projectSnapshot = runCatching { projectEditor?.project() }
             if (projectSnapshot.isFailure) {
                 statusText.text = getString(R.string.cpp_project_invalid)
-                statusText.contentDescription = "CONFIGURATION"
+                statusText.setTag(R.id.cpp_lab_build_phase, "CONFIGURATION")
                 outputText.text = getString(R.string.cpp_project_invalid)
                 return@setOnClickListener
             }
@@ -7541,7 +7541,7 @@ class LessonActivity : AppCompatActivity() {
 
             statusText.text =
                 getString(R.string.exercise_compiling)
-            statusText.contentDescription = "BUILDING"
+            statusText.setTag(R.id.cpp_lab_build_phase, "BUILDING")
 
             outputText.text =
                 ""
@@ -7569,7 +7569,7 @@ class LessonActivity : AppCompatActivity() {
 
                         val execution =
                             engineResult.execution
-                        statusText.contentDescription = compilation.phase.name
+                        statusText.setTag(R.id.cpp_lab_build_phase, compilation.phase.name)
 
                         statusText.text =
                             if (

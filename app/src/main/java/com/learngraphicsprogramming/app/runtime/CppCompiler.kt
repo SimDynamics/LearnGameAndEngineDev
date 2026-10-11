@@ -196,6 +196,7 @@ internal class CppCompiler(private val context: Context) {
                     // Object paths in linker diagnostics should identify the student's sources.
                     val namedObjects = objects.fold(text) { output, (path, objectFile) ->
                         output.replace(objectFile.absolutePath, "$path.o")
+                            .replace(objectFile.canonicalPath, "$path.o")
                     }
                     return cleanCompilerOutput(namedObjects, workspace, projectDirectory, runtimeDirectory)
                 }
@@ -241,76 +242,45 @@ internal class CppCompiler(private val context: Context) {
         var cleaned =
             text
 
+        // Android exposes the same app directory through /data/user/0 and
+        // /data/data. Materialized files and Clang may use either spelling.
+        fun prefixes(directory: File): List<String> =
+            listOf(directory.absolutePath, directory.canonicalPath)
+                .distinct().map { it + File.separator }
+
+        fun cleanHeaderDirectory(directory: File) {
+            prefixes(directory).forEach { prefix ->
+                val headerRegex = Regex(Regex.escape(prefix) + """([^:\r\n]+)""")
+                cleaned = cleaned.replace(headerRegex) { match ->
+                    "<${match.groupValues[1]}>"
+                }
+            }
+        }
+
         /*
          * Archivo escrito por el usuario.
          */
-        cleaned =
-            cleaned.replace(
-                projectDirectory.absolutePath + File.separator,
-                ""
-            )
+        prefixes(projectDirectory).forEach { prefix ->
+            cleaned = cleaned.replace(prefix, "")
+        }
 
         /*
          * Archivos temporales de compilación.
          */
-        cleaned =
-            cleaned.replace(
-                workspace.absolutePath +
-                        File.separator,
-                ""
-            )
+        prefixes(workspace).forEach { prefix ->
+            cleaned = cleaned.replace(prefix, "")
+        }
 
         /*
          * Cabeceras de la biblioteca estándar C++.
          */
-        val cppIncludeDirectory =
-            File(
-                runtimeDirectory,
-                "sysroot/include/wasm32-wasip1/c++/v1"
-            )
-
-        val cppHeaderRegex =
-            Regex(
-                Regex.escape(
-                    cppIncludeDirectory.absolutePath +
-                            File.separator
-                ) +
-                        """([^:\r\n]+)"""
-            )
-
-        cleaned =
-            cleaned.replace(
-                cppHeaderRegex
-            ) { match ->
-
-                "<${match.groupValues[1]}>"
-            }
+        cleanHeaderDirectory(File(runtimeDirectory, "sysroot/include/wasm32-wasip1/c++/v1"))
+        cleanHeaderDirectory(File(runtimeDirectory, "sysroot/include/wasm32-wasip1/eh/c++/v1"))
 
         /*
          * Cabeceras generales del sysroot WASI.
          */
-        val sysrootIncludeDirectory =
-            File(
-                runtimeDirectory,
-                "sysroot/include"
-            )
-
-        val sysrootHeaderRegex =
-            Regex(
-                Regex.escape(
-                    sysrootIncludeDirectory.absolutePath +
-                            File.separator
-                ) +
-                        """([^:\r\n]+)"""
-            )
-
-        cleaned =
-            cleaned.replace(
-                sysrootHeaderRegex
-            ) { match ->
-
-                "<${match.groupValues[1]}>"
-            }
+        cleanHeaderDirectory(File(runtimeDirectory, "sysroot/include"))
 
         /*
          * Clang puede generar decenas de notas
