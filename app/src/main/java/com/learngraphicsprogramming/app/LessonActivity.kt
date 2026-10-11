@@ -36,6 +36,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import android.text.Editable
 import android.text.TextWatcher
 import com.learngraphicsprogramming.app.runtime.CppExecutionEngine
+import com.learngraphicsprogramming.app.runtime.CppCompiler
+import com.learngraphicsprogramming.app.runtime.CppCompilerVariant
+import com.learngraphicsprogramming.app.runtime.CppBuildPhase
 import android.view.ViewTreeObserver
 import android.view.inputmethod.InputMethodManager
 import androidx.core.view.ViewCompat
@@ -6109,6 +6112,7 @@ class LessonActivity : AppCompatActivity() {
         val initialStandardInput = block.optString("initialStandardInput", "")
         val draftKey = "$currentRouteId/$currentLessonId/$currentPage/$blockIndex"
         val labDrafts = getSharedPreferences("cpp_lesson_drafts", Context.MODE_PRIVATE)
+        var projectControls: View? = null
         val inputLabel = TextView(this).apply {
             text = getString(R.string.cpp_prepared_input)
             setPadding(0, dp(16), 0, dp(4))
@@ -6603,7 +6607,6 @@ class LessonActivity : AppCompatActivity() {
         sourceCode.setText(
             labDrafts.getString("$draftKey/source", initialCode)
         )
-        sourceCode.tag = "cpp_source"
 
         sourceCode.text?.let { editable ->
 
@@ -6773,6 +6776,7 @@ class LessonActivity : AppCompatActivity() {
                 } else {
                     View.VISIBLE
                 }
+            projectControls?.visibility = if (compactMode) View.GONE else View.VISIBLE
 
             val landscapeIme = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
                 (keyboardVisible || programmingImeAnimations.isNotEmpty()) && sourceCode.hasFocus()
@@ -6813,9 +6817,47 @@ class LessonActivity : AppCompatActivity() {
                 if (text == null) return
                 CppSyntaxHighlighter.applyTo(text)
                 compactCompilerSpaces(text)
-                labDrafts.edit().putString("$draftKey/source", text.toString()).apply()
+                if (!block.has("projectFiles")) {
+                    labDrafts.edit().putString("$draftKey/source", text.toString()).apply()
+                }
             }
         })
+
+        resetButton.tag = "cpp_reset"
+        val projectEditor = if (block.has("projectFiles")) {
+            CppLessonProjectEditor(this, block, draftKey, sourceCode) {
+                viewportController.refresh()
+                updateLineNumbers()
+            }.also {
+                projectControls = it.controls
+                codeCard.addView(it.controls, 1)
+                updateCompilerCompactLandscapeUi()
+            }
+        } else null
+        val compilerVariants = mutableListOf(CppCompilerVariant.DEFAULT)
+        val compilerLabels = mutableListOf(getString(
+            if (BuildConfig.LGP_CLANG23_ENABLED) R.string.clang_compiler_23 else R.string.clang_compiler_21_default
+        ))
+        val savedVariant = labDrafts.getString("$draftKey/compiler", CppCompilerVariant.DEFAULT.name)
+        if (BuildConfig.LGP_CLANG23_ENABLED &&
+            (BuildConfig.LGP_PLAY_CLANG21_FEATURE_ENABLED || savedVariant == CppCompilerVariant.OPTIONAL_CLANG_21.name)) {
+            compilerVariants.add(CppCompilerVariant.OPTIONAL_CLANG_21)
+            compilerLabels.add(getString(R.string.clang_compiler_21))
+        }
+        val compilerSelector = android.widget.Spinner(this).apply {
+            tag = "cpp_compiler_variant"
+            contentDescription = getString(R.string.clang_compiler_selector_title)
+            adapter = android.widget.ArrayAdapter(this@LessonActivity,
+                android.R.layout.simple_spinner_dropdown_item, compilerLabels)
+            setSelection(compilerVariants.indexOfFirst { it.name == savedVariant }.coerceAtLeast(0))
+            onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
+                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    labDrafts.edit().putString("$draftKey/compiler", compilerVariants[position].name).apply()
+                }
+            }
+        }
+        lessonContent.addView(compilerSelector)
 
         /*
          * BOTÓN COMPILAR.
@@ -7375,9 +7417,7 @@ class LessonActivity : AppCompatActivity() {
             programOutput.text = ""
             programError.text = ""
 
-            sourceCode.setText(
-                initialCode
-            )
+            if (projectEditor != null) projectEditor.reset() else sourceCode.setText(initialCode)
 
             val cursorPosition =
                 initialCode.indexOf(
@@ -7385,7 +7425,7 @@ class LessonActivity : AppCompatActivity() {
                 )
 
             if (
-                cursorPosition >= 0
+                cursorPosition >= 0 && projectEditor == null
             ) {
 
                 sourceCode.setSelection(
@@ -7476,17 +7516,32 @@ class LessonActivity : AppCompatActivity() {
          */
         runButton.setOnClickListener {
 
-            val source =
-                sourceCode.text.toString()
-            val preparedInput = standardInput.text.toString()
+            outputText.text = ""
             programOutput.text = ""
             programError.text = ""
 
+            val source =
+                sourceCode.text.toString()
+            val preparedInput = standardInput.text.toString()
+            val compilerVariant = compilerVariants[compilerSelector.selectedItemPosition]
+            if (compilerVariant == CppCompilerVariant.OPTIONAL_CLANG_21 &&
+                !CppCompiler.isOptionalClang21Available(this)) {
+                statusText.text = getString(R.string.clang21_selected_unavailable)
+                return@setOnClickListener
+            }
+            val projectSnapshot = runCatching { projectEditor?.project() }
+            if (projectSnapshot.isFailure) {
+                statusText.text = getString(R.string.cpp_project_invalid)
+                statusText.contentDescription = "CONFIGURATION"
+                outputText.text = getString(R.string.cpp_project_invalid)
+                return@setOnClickListener
+            }
             runButton.isEnabled =
                 false
 
             statusText.text =
                 getString(R.string.exercise_compiling)
+            statusText.contentDescription = "BUILDING"
 
             outputText.text =
                 ""
@@ -7496,12 +7551,10 @@ class LessonActivity : AppCompatActivity() {
                 val result =
                     runCatching {
 
-                        CppExecutionEngine(
-                            this
-                        ).compileAndRun(
-                            source,
-                            standardInput = preparedInput
-                        )
+                        val engine = CppExecutionEngine(this)
+                        val project = projectSnapshot.getOrThrow()
+                        if (project == null) engine.compileAndRun(source, preparedInput, compilerVariant)
+                        else engine.compileAndRun(project, preparedInput, compilerVariant)
                     }
 
                 runOnUiThread {
@@ -7516,17 +7569,20 @@ class LessonActivity : AppCompatActivity() {
 
                         val execution =
                             engineResult.execution
+                        statusText.contentDescription = compilation.phase.name
 
                         statusText.text =
                             if (
                                 execution == null
                             ) {
 
-                                getString(R.string.cpp_compilation_failed, compilation.exitCode)
+                                getString(if (compilation.phase == CppBuildPhase.LINK)
+                                    R.string.cpp_link_failed else R.string.cpp_compilation_failed, compilation.exitCode)
 
                             } else {
 
-                                getString(R.string.cpp_runtime_finished, execution.exitCode)
+                                getString(if (execution.exitCode == 0) R.string.cpp_runtime_finished
+                                    else R.string.cpp_execution_failed, execution.exitCode)
                             }
 
                         outputText.text =
