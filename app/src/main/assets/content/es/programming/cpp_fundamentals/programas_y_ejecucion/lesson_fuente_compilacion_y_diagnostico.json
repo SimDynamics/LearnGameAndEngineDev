@@ -22,8 +22,8 @@
           "question": "Has escrito un archivo en un editor y aún no has construido el programa. ¿Qué tienes en este punto?",
           "options": [
             "El código fuente que debe analizarse y construirse.",
-            "Una prueba de que todos los resultados son correctos.",
-            "La salida final del programa."
+            "La salida final del programa.",
+            "Una prueba de que todos los resultados son correctos."
           ],
           "correctIndex": 0,
           "explanation": "El archivo contiene la descripción en C++; todavía falta construir y ejecutar para observar su comportamiento."
@@ -33,11 +33,11 @@
           "id": "funcion_enlazador",
           "question": "¿Qué tarea corresponde al enlazador en el modelo estudiado?",
           "options": [
-            "Elegir automáticamente qué problema querías resolver.",
             "Combinar las partes necesarias para formar el ejecutable.",
-            "Reescribir los comentarios para que sean verdaderos."
+            "Traducir cada archivo fuente a una parte del programa.",
+            "Ejecutar el programa y recoger su salida de texto."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "Combina partes del programa; no define la intención ni valida todos los requisitos."
         }
       ]
@@ -62,8 +62,8 @@
           "question": "La salida anterior a return no tiene su ;. El diagnóstico señala return. ¿Qué conviene revisar primero?",
           "options": [
             "La terminación de la instrucción anterior y el contexto cercano.",
-            "Cambiar cualquier palabra al azar hasta que desaparezca el mensaje.",
-            "Añadir una nueva línea de salida sin revisar la anterior."
+            "Cambiar el mensaje del literal porque precede al diagnóstico.",
+            "Eliminar return porque el diagnóstico señala esa línea."
           ],
           "correctIndex": 0,
           "explanation": "El lugar donde se detecta el problema no siempre es donde comenzó."
@@ -100,11 +100,11 @@
           "id": "mensaje_equivocado",
           "question": "El requisito es mostrar Pedido recibido. El programa compila y muestra Pedido cancelado. ¿Qué queda por corregir?",
           "options": [
-            "Un error respecto del requisito, aunque el literal sea C++ válido.",
-            "Nada: compilar demuestra que la solución cumple cualquier requisito.",
-            "La biblioteca debe elegir otro mensaje sin cambiar el código."
+            "Cambiar sólo el comentario que describe el mensaje esperado.",
+            "Cambiar el literal ejecutado para cumplir el mensaje requerido.",
+            "Aceptar el resultado porque la compilación tuvo éxito."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "La sintaxis válida no garantiza que el texto corresponda a la tarea."
         },
         {
@@ -113,10 +113,10 @@
           "question": "Usamos std::cout, pero por error escribimos std::Cout. ¿Cuál es la corrección justificada?",
           "options": [
             "Mantener el cambio: la computadora interpreta ambos nombres igual.",
-            "Recuperar la escritura exacta std::cout.",
-            "Cambiar las palabras del mensaje."
+            "Cambiar las palabras del mensaje.",
+            "Recuperar la escritura exacta std::cout."
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "C++ distingue nombres por sus caracteres, incluidas mayúsculas y minúsculas."
         }
       ]
@@ -144,11 +144,11 @@
           "id": "prueba_controlada",
           "question": "Si cambias a la vez el nombre main, las comillas y el texto, ¿por qué cuesta más interpretar el primer fallo?",
           "options": [
-            "Porque aparecen varias posibles causas de la diferencia.",
-            "Porque C++ prohíbe editar varios caracteres.",
-            "Porque los comentarios se vuelven instrucciones."
+            "Porque el nuevo texto del mensaje explica cualquier diagnóstico.",
+            "Porque hay que distinguir los efectos de varias modificaciones.",
+            "Porque basta atribuir el fallo al último cambio que recuerdas."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Separar cambios ayuda a relacionar una causa con un efecto; no es una prohibición del lenguaje."
         }
       ]
@@ -188,6 +188,27 @@
         {
           "type": "note",
           "text": "Solución después de la práctica: main conserva el punto de entrada; << inserta el literal y ; termina la instrucción. Los distractores cambian el nombre o el operador. Compilar y comparar con el requisito siguen siendo comprobaciones distintas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de ambos experimentos, esta es una referencia de la versión reparada. Criterios: la herramienta acepta el fuente y la ejecución muestra Revision completa; main, las comillas y el terminador de la salida conservan su función."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Revision completa\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al quitar el punto y coma, lo esperado era un rechazo al construir, no una salida distinta. El diagnóstico concreto puede variar según la herramienta y señalar el token siguiente. Al restaurarlo se recupera la sintaxis. Cambiar sólo Revision inicial por Revision completa conserva una instrucción válida y modifica el mensaje ejecutado. Estos resultados responden a dos preguntas distintas."
         }
       ]
     }

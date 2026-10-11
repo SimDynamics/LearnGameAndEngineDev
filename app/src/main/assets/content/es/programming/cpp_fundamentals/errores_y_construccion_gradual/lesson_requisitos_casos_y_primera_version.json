@@ -21,11 +21,11 @@
           "id": "requisito_observable",
           "question": "¿Qué frase define un comportamiento comprobable para un pedido de 4 piezas?",
           "options": [
-            "El programa debe parecer moderno.",
-            "El cálculo devuelve 11 minutos y no cambia el pedido.",
-            "El programa debe usar tantas funciones como sea posible."
+            "Usa un comentario y un int para guardar el tiempo estimado.",
+            "Organiza la estimación en varias funciones de nombres breves.",
+            "Para 4 piezas devuelve 11 minutos y no cambia el pedido."
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "El resultado 3+2*4 y la ausencia de modificación forman una promesa concreta."
         },
         {
@@ -33,9 +33,9 @@
           "id": "pregunta_pendiente",
           "question": "El requisito dice «aceptar pedidos pequeños», sin definir pequeño. ¿Qué debes precisar antes de comprobar la aceptación?",
           "options": [
-            "Una frontera numérica y qué ocurre exactamente en esa frontera.",
-            "Sólo la longitud del nombre de la función.",
-            "El orden alfabético de las cabeceras."
+            "El límite de pequeño y si ese valor se acepta o se rechaza.",
+            "Un nombre de función más corto, conservando la misma ambigüedad.",
+            "Un ejemplo aceptado, sin definir qué pasa fuera de ese ejemplo."
           ],
           "correctIndex": 0,
           "explanation": "Una categoría vaga no permite escoger pruebas ni evaluar un resultado."
@@ -57,11 +57,11 @@
           "id": "caso_vacio_estimacion",
           "question": "Según el requisito, ¿cuántos minutos requiere un pedido vacío?",
           "options": [
-            "3, porque siempre se suma la preparación.",
             "0, porque el requisito excluye preparación en el caso vacío.",
-            "2, porque el cero cuenta como una pieza."
+            "2, porque el cero cuenta como una pieza.",
+            "3, porque siempre se suma la preparación."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "El caso vacío tiene una regla explícita y debe probarse por separado."
         },
         {
@@ -69,11 +69,11 @@
           "id": "caso_frontera_estimacion",
           "question": "El pedido tiene 10 piezas, la frontera aceptada. ¿Cuál es el resultado?",
           "options": [
+            "23 minutos.",
             "20 minutos.",
-            "13 minutos.",
-            "23 minutos."
+            "13 minutos."
           ],
-          "correctIndex": 2,
+          "correctIndex": 0,
           "explanation": "Hay preparación de 3 minutos y 20 minutos por las piezas."
         },
         {
@@ -136,11 +136,11 @@
           "id": "cambio_de_dominio",
           "question": "Si el único cambio es aceptar hasta 12 piezas, ¿qué par de pruebas nuevas distingue frontera y primer rechazo?",
           "options": [
+            "4 aceptado, repetido dos veces.",
             "12 aceptado y 13 rechazado.",
-            "0 y 1 aceptados.",
-            "4 aceptado, repetido dos veces."
+            "0 y 1 aceptados."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Los casos previos siguen siendo útiles, pero no comprueban la frontera ampliada."
         },
         {
@@ -150,6 +150,31 @@
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n    int piezas{7};\n    std::cout << \"Pedido de \" << piezas << \" piezas\\n\";\n    std::cout << \"Estimacion pendiente\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia del laboratorio"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y probar tu intento. Es una implementación posible; otras soluciones son válidas si cumplen el mismo contrato y los criterios indicados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Una solución correcta devuelve 0 para el pedido vacío y 3+2*piezas para los pedidos no vacíos del dominio 0 a 10. Para 0,2,7,10, los resultados son 0,7,17,23 minutos. Al cambiar únicamente la preparación de 3 a 4, deben ser 0,8,18,24: el cero se conserva. Se admiten otras organizaciones y etiquetas si muestran esos cuatro casos y mantienen cálculo separado de presentación."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    // Precondicion del prototipo: piezas entre 0 y 10.\n    if (piezas == 0) { return 0; }\n    int preparacion{3};\n    return preparacion + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"0=\" << estimar(0) << \"\\n\";\n    std::cout << \"2=\" << estimar(2) << \"\\n\";\n    std::cout << \"7=\" << estimar(7) << \"\\n\";\n    std::cout << \"10=\" << estimar(10) << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El caso vacío se decide antes de añadir preparación. Para comprobar la segunda versión cambia sólo preparacion a 4, conserva las cuatro llamadas y compara con las expectativas nuevas. Esta solución sigue siendo un prototipo para datos válidos; no atribuye validación a una función que aún no la implementa."
         }
       ]
     }

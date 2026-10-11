@@ -1,0 +1,201 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__numeros_de_varios_digitos_y_limites",
+  "title": "Números de varios dígitos y límites",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reunir una secuencia sin unir lo que estaba separado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ampliamos el token numérico: ahora reúne una secuencia consecutiva de dígitos y entrega su valor entre 0 y 99. Los espacios terminan esa secuencia; \"1 2\" sigue siendo dos números, no 12. Un signo también termina el número y debe quedar disponible para la próxima lectura."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para incorporar un dígito al valor acumulado, desplaza sus cifras multiplicando por 10 y suma el valor del nuevo dígito. Desde 2, añadir '7' produce 2 * 10 + 7, que es 27. Las conversiones de char se hacen sólo después de reconocer que pertenece a '0'..'9'."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int valor = 2;\n    const char siguiente = '7';\n    if (siguiente >= '0' && siguiente <= '9') {\n        valor = valor * 10 + (siguiente - '0');\n    }\n    std::cout << valor;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La regla de dominio se comprueba en cada incorporación: si supera 99, se rechaza antes de continuar. Antes del cálculo, el acumulado aceptado es como máximo 99; el candidato es como máximo 999 y cabe en cualquier int conforme a C++. No necesitamos suponer un ancho de int ni provocar desbordamiento para descubrir el error."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar el carácter que termina el número"
+        },
+        {
+          "type": "paragraph",
+          "text": "El reconocimiento usa get para mirar después de los dígitos. Si obtiene un carácter que ya no es un dígito, putback(actual) devuelve ese mismo carácter al flujo para la siguiente operación. Sólo se utiliza después de un get válido y con el carácter que acabamos de obtener. Si la devolución falla, se comunica un error; no se supone que el signo se conservó."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta devolución de un carácter pertenece al flujo de biblioteca. La función devolver del lector con búfer conserva un Token completo: puede representar varios caracteres. Ambas conservan una frontera, pero actúan en niveles diferentes."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"27+4;\"};\n    try {\n        const Token numero = leer_token(entrada);\n        const Token signo = leer_token(entrada);\n        std::cout << numero.clase << \":\" << numero.valor << \"\\n\";\n        std::cout << signo.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer token vale 27 y el siguiente sigue siendo +. Devolver el signo no devuelve también los dígitos ya reunidos. Los ceros iniciales están permitidos: \"007\" representa 7. El dominio limita el valor, no exige exactamente dos caracteres en toda representación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El final también puede terminar un número válido"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice lo que entrega el lector cuando el texto acaba justo después del número.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"99\"};\n    try {\n        const Token numero = leer_token(entrada);\n        std::cout << numero.clase << \":\" << numero.valor << \"\\n\";\n        const Token fin = leer_token(entrada);\n        std::cout << fin.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "n:99\nf"
+          ],
+          "explanation": "Se reunieron los dígitos válidamente. El intento de get posterior llega al final, que termina el número; no hay un carácter que devolver. La próxima llamada entrega el token de final."
+        },
+        {
+          "type": "paragraph",
+          "text": "La función decide que el final es una frontera válida después de reunir dígitos. Por eso puede entregar el número aunque ese último intento de get haya activado eof y fail en el flujo interno. Un cliente de leer_token observa el contrato de tokens; no sustituye ese contrato por una comprobación directa de good() del flujo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué sucede al incorporar el tercer dígito de \"100\" con este dominio?",
+          "options": [
+            "Se obtiene el candidato 100 y se rechaza como número fuera de dominio.",
+            "Se produce necesariamente un desbordamiento de int.",
+            "Se entregan 10 y 0 como dos tokens para aceptar cualquier texto."
+          ],
+          "correctIndex": 0,
+          "explanation": "El cálculo del candidato es representable y permite rechazar el valor mayor que 99. La secuencia de dígitos forma una unidad; no se divide para eludir el contrato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mantener los signos fuera de la representación numérica"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice el inspector para estas unidades, sin calcular la expresión.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\" -12+07;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Signo: -\nNumero: 12\nSigno: +\nNumero: 7\nSigno: ;\nFin"
+          ],
+          "explanation": "El signo menos se entrega por separado. 12 y 07 son secuencias de dígitos; la segunda representa 7. Interpretar el signo como negación será una regla de la gramática."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este lenguaje aún no admite puntos decimales, exponentes ni nombres. \"2.5\" empieza por un token numérico 2 y después encuentra un carácter no admitido. La extracción de texto y la categoría int no amplían automáticamente la gramática que hemos definido."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El lector devuelve 12, luego un espacio, que omite, y después 3 en \"12 3\". ¿Qué debe conservar la ampliación?",
+          "options": [
+            "La obligación de unir todas las cifras del texto aunque haya separadores.",
+            "Dos tokens numéricos separados; la gramática decidirá si pueden estar juntos.",
+            "El rechazo de 12 porque el primer lector sólo admitía dígitos aislados."
+          ],
+          "correctIndex": 1,
+          "explanation": "La ampliación cambia el tamaño posible de un número, pero conserva la frontera de espacios entre unidades."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ampliar una implementación conservando su interfaz"
+        },
+        {
+          "type": "paragraph",
+          "text": "El editor contiene el lector inicial de dígitos y una traza de cliente para \"34+5;\". Amplía el reconocimiento a valores 0..99 y revisa también la validación de los tokens que se pueden reservar. Conserva leer, devolver y tiene_pendiente, y la capacidad de una reserva. La traza debe mostrar Numero: 34, Repetido: 34, Signo: + y Siguiente: 5 en cuatro líneas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba \"99+0;\" para el máximo, \"007+2;\" para los ceros iniciales y \"100+1;\" para el rechazo con Error: Numero fuera de dominio. Prueba un texto que termina en \"99\": debe poder obtener el número y después final. En una prueba separada inspecciona \"1 2\" y comprueba que no se convirtió en 12. Cada texto tiene hasta 64 caracteres ASCII."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"34+5;\"};\n    try {\n        const Token primero = lector.leer();\n        std::cout << \"Numero: \" << primero.valor << \"\\n\";\n        lector.devolver(primero);\n        const Token repetido = lector.leer();\n        std::cout << \"Repetido: \" << repetido.valor << \"\\n\";\n        const Token signo = lector.leer();\n        std::cout << \"Signo: \" << signo.clase << \"\\n\";\n        const Token siguiente = lector.leer();\n        std::cout << \"Siguiente: \" << siguiente.valor;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La actividad es una ampliación guiada de un módulo existente. Identifica qué contrato cambió y qué funciones deben coincidir con él. Si reconoce 34 pero lo rechaza al devolverlo, revisa el dominio de la reserva. Si desaparece +, revisa qué ocurrió con el primer carácter que dejó de ser dígito. Estos criterios se comprueban observando la traza; el editor no los evalúa automáticamente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar después de ampliar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta referencia usa \"42+6;\". El reconocimiento y la validación de la reserva comparten el límite 99; las operaciones de búfer siguen intactas. Compara la traza con tu versión y conserva tu solución si cumple los mismos contratos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Buffer ocupado\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalido\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"42+6;\"};\n    try {\n        const Token primero = lector.leer();\n        std::cout << \"Numero: \" << primero.valor << \"\\n\";\n        lector.devolver(primero);\n        const Token repetido = lector.leer();\n        std::cout << \"Repetido: \" << repetido.valor << \"\\n\";\n        const Token signo = lector.leer();\n        std::cout << \"Signo: \" << signo.clase << \"\\n\";\n        const Token siguiente = lector.leer();\n        std::cout << \"Siguiente: \" << siguiente.valor;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para la traza inicial ampliada, los cuatro resultados son 34, 34, + y 5 con sus etiquetas. La reserva devuelve un único token de valor 34 aunque la lectura original consumió dos dígitos. Para el caso de final inmediato, el número y el final pertenecen a llamadas distintas; no hace falta inventar un separador final."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el rechazo y la frontera"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice el inspector con un número que excede el dominio después de una operación anterior.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Numero fuera de dominio\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Fallo del flujo\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Fallo del flujo\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"8;100;2;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Numero: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signo: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Numero: 8\nSigno: ;\nError: Numero fuera de dominio"
+          ],
+          "explanation": "8 y ; se reconocen. La secuencia 100 excede 99 durante su acumulación y se rechaza. El inspector todavía termina al capturar ese error y no recupera 2;."
+        },
+        {
+          "type": "paragraph",
+          "text": "El diagnóstico numérico no se produjo por ejecutar aritmética fuera del tipo. Se comprobó un candidato seguro y se rechazó un valor fuera del lenguaje. Más adelante se conservará el diagnóstico, se consumirá hasta una frontera de operación y se podrá analizar el 2 posterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "De unidades a reglas de combinación"
+        },
+        {
+          "type": "paragraph",
+          "text": "El lector ya puede reunir unidades y conservar la siguiente. Ahora necesitamos reglas que distingan una suma de una secuencia inválida y expliquen la prioridad de multiplicar. Construiremos primero una expresión pequeña, después niveles de prioridad y por último signos unarios y paréntesis. Cada ampliación conservará casos que ya funcionaban y añadirá pruebas que la anterior no podía resolver."
+        }
+      ]
+    }
+  ]
+}

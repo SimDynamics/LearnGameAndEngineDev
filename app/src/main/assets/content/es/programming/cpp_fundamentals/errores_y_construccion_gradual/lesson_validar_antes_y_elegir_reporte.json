@@ -56,11 +56,11 @@
           "id": "completar_mas_de_lo_disponible",
           "question": "Hay 5 piezas pendientes y se propone completar 7. La operación debe conservar un número de pendientes no negativo. ¿Qué comprobación corresponde antes de modificar?",
           "options": [
-            "Comprobar que completadas esté entre 0 y pendientes.",
+            "Cambiar pendientes a unsigned para que nunca parezca negativo.",
             "Restar 7 y aceptar el resultado porque 5 era válido.",
-            "Cambiar pendientes a unsigned para que nunca parezca negativo."
+            "Comprobar que completadas esté entre 0 y pendientes."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "La relación entre los dos datos protege el significado del estado. Cambiar la representación no convierte una operación imposible en válida."
         },
         {
@@ -113,11 +113,11 @@
           "id": "cero_como_error_ambiguo",
           "question": "Una función devuelve 0 tanto para pedido vacío válido como para dato inválido. ¿Qué pierde un llamador que recibe únicamente ese int?",
           "options": [
-            "La posibilidad de distinguir éxito vacío de fracaso mediante ese resultado.",
-            "La capacidad de imprimir cualquier int.",
-            "La posibilidad de que una función devuelva 0."
+            "Distinguir un resultado cero de un resultado positivo.",
+            "Distinguir un pedido vacío válido de un dato inválido.",
+            "Distinguir un pedido válido de otro por sus minutos positivos."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "El mismo valor representa dos situaciones que el llamador necesita distinguir."
         },
         {
@@ -125,11 +125,11 @@
           "id": "olvidar_comprobar_senal",
           "question": "La función usa -1 para error, pero el llamador suma todos sus resultados como si fueran minutos. ¿Qué defecto existe?",
           "options": [
-            "El llamador incorpora un error al cálculo porque omitió comprobar el contrato del resultado.",
-            "Devolver un int obliga al lenguaje a comprobar -1 automáticamente.",
-            "El resultado especial convierte la suma en una excepción por sí mismo."
+            "El tipo int impide que -1 llegue al acumulador de minutos.",
+            "El contrato obliga automáticamente a omitir todo resultado -1.",
+            "Suma una señal de error como si fuera tiempo válido."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "Un código de error puede ignorarse. Necesita una política explícita en cada punto que lo usa."
         }
       ]
@@ -142,7 +142,7 @@
         },
         {
           "type": "paragraph",
-          "text": "La función de cálculo conoce su dominio y puede detectar un dato inválido. El llamador conoce el contexto y decide si muestra un mensaje, rechaza un pedido o intenta procesar el siguiente. Poner toda presentación dentro del cálculo reduce su reutilización y puede producir mensajes duplicados. La unidad de excepciones desarrolla otra forma de separar detección y tratamiento. Su práctica ejecutable permanece pendiente del soporte necesario en el motor."
+          "text": "La función de cálculo conoce su dominio y puede detectar un dato inválido. El llamador conoce el contexto y decide si muestra un mensaje, rechaza un pedido o intenta procesar el siguiente. Poner toda presentación dentro del cálculo reduce su reutilización y puede producir mensajes duplicados. La unidad de excepciones desarrolla otra forma de separar detección y tratamiento. Sus laboratorios usan el compilador predeterminado Clang 23 con Wasmtime y soporte de excepciones; esa práctica no corresponde al compilador alternativo Clang 21."
         },
         {
           "type": "fill_code",
@@ -162,6 +162,31 @@
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Piezas=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia del laboratorio"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y probar tu intento. Es una implementación posible; otras soluciones son válidas si cumplen el mismo contrato y los criterios indicados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. La función devuelve -1 para datos fuera de 0 a 10, 0 para cero y 3+2*piezas para los demás. En {0,2,11,-1,5}, los resultados válidos son 0,7,13; 11 y -1 muestran Invalido y no entran en el total. El total es 20 minutos. Una colección vacía no visita pedidos y conserva total 0. Son válidas otras etiquetas de salida si permiten comprobar esas decisiones."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    int total{0};\n    for (int piezas : pedidos) {\n        int minutos{estimar(piezas)};\n        std::cout << \"Piezas=\" << piezas << \":\";\n        if (minutos == -1) {\n            std::cout << \"Invalido\\n\";\n        } else {\n            total += minutos;\n            std::cout << minutos << \"\\n\";\n        }\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "estimar detecta el dato inválido y main decide cómo presentarlo. La suma está únicamente en el camino válido: ninguna señal -1 se interpreta como tiempo. Sustituye los datos por {} para comprobar el caso vacío; el resumen debe mostrar Total=0."
         }
       ]
     }

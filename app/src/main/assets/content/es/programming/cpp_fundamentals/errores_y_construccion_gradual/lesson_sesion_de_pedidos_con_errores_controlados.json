@@ -22,8 +22,8 @@
           "question": "En esta sesión, una cantidad 0 válida debe aportar ¿qué cambios?",
           "options": [
             "Un pedido válido más y cero minutos.",
-            "Un pedido rechazado más.",
-            "Ningún pedido válido, porque toda cantidad cero significa error."
+            "Ningún pedido válido, porque toda cantidad cero significa error.",
+            "Un pedido rechazado más."
           ],
           "correctIndex": 0,
           "explanation": "El requisito distingue un pedido vacío válido de un dato fuera del dominio."
@@ -34,8 +34,8 @@
           "question": "La sesión contiene 2,11,3. El dato 11 se rechaza. ¿Qué exige la continuación?",
           "options": [
             "Conservar lo obtenido de 2 y seguir procesando 3 desde un estado válido.",
-            "Reiniciar siempre todo el resumen al rechazar 11.",
-            "Terminar la sesión sin visitar 3."
+            "Terminar la sesión sin visitar 3.",
+            "Reiniciar siempre todo el resumen al rechazar 11."
           ],
           "correctIndex": 0,
           "explanation": "La política rechaza el dato fallido, no los válidos anteriores ni los siguientes."
@@ -91,11 +91,11 @@
           "id": "error_sumado_como_minutos",
           "question": "Una versión añade resultado a minutos antes de comprobar resultado==-1. ¿Qué viola?",
           "options": [
-            "El total ya incorporó la señal de error como si fuera tiempo.",
+            "La obligación de recorrer la colección mediante un índice.",
             "La posibilidad de que un resultado válido sea cero.",
-            "La obligación de recorrer la colección mediante un índice."
+            "El total ya incorporó la señal de error como si fuera tiempo."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "La decisión debe preceder a la actualización que usa el resultado como dato válido."
         }
       ]
@@ -115,9 +115,9 @@
           "id": "caso_que_debe_cambiar",
           "question": "Al ampliar únicamente de 10 a 12 piezas, ¿qué expectativa antigua necesariamente cambia?",
           "options": [
-            "El rechazo de 12 pasa a una estimación válida de 27 minutos.",
-            "El pedido vacío pasa a necesitar preparación.",
-            "Todo pedido de 1 pieza pasa a rechazarse."
+            "12 deja de rechazarse y pasa a una estimación de 27 minutos.",
+            "Todo pedido de 10 piezas deja de aceptar la estimación anterior.",
+            "El pedido vacío pasa a recibir los 3 minutos de preparación."
           ],
           "correctIndex": 0,
           "explanation": "Sólo cambia el dominio superior; las reglas de tiempo dentro del dominio se conservan."
@@ -135,11 +135,36 @@
         },
         {
           "type": "paragraph",
-          "text": "Para cerrar esta etapa, explica por qué cada dato inválido se excluye antes de actualizar, por qué un fallo no destruye el resumen anterior y qué pruebas protegen la ampliación. La programación con excepciones añade otra política de detección y tratamiento; su práctica ejecutable necesita soporte que el ejecutor actual todavía no ofrece."
+          "text": "Para cerrar esta etapa, explica por qué cada dato inválido se excluye antes de actualizar, por qué un fallo no destruye el resumen anterior y qué pruebas protegen la ampliación. La programación con excepciones añade otra política de detección y tratamiento; su práctica ejecutable está disponible con el compilador predeterminado Clang 23 y Wasmtime con soporte de excepciones, no con el alternativo Clang 21."
         },
         {
           "type": "note",
           "text": "Base conceptual: Programming: Principles and Practice Using C++, tercera edición, capítulo 4 y etapas de desarrollo y pruebas de los capítulos 5 y 6. Ejemplos propios, sin biblioteca de apoyo PPP. La comprobación del dominio ocurre antes de operaciones dependientes; no se usa desbordamiento como prueba de error."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia del laboratorio"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y probar tu intento. Es una implementación posible; otras soluciones son válidas si cumplen el mismo contrato y los criterios indicados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Para {2,11,0,3,-1}, se aceptan tres pedidos y se rechazan dos; el total es 7+0+9=16 minutos. Cada diagnóstico identifica el dato rechazado y ningún rechazo altera el resumen válido anterior. {} produce 0:0:0; {11,-1} produce 0:2:0; {10} produce 1:0:23. Una versión ampliada a 12 acepta {1,12,4,0} con resumen 4:0:43 y sigue rechazando 13. Los tres campos de estos resúmenes son válidos:rechazados:minutos; se admiten etiquetas equivalentes."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> piezas{2, 11, 0, 3, -1};\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        std::cout << \"Dato=\" << cantidad << \":\";\n        if (resultado == -1) {\n            ++rechazados;\n            std::cout << \"Invalido\\n\";\n        } else {\n            ++validos;\n            minutos += resultado;\n            std::cout << resultado << \"\\n\";\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Se decide qué significa resultado antes de incorporarlo. El pedido vacío añade un pedido válido y cero minutos; los inválidos añaden sólo un rechazo. Cambiar la colección a los casos indicados comprueba vacío, rechazo y frontera. Para la ampliación modifica sólo la frontera superior a 12 y conserva las pruebas de continuación después de un dato inválido."
         }
       ]
     }

@@ -32,11 +32,11 @@
           "id": "evidencia_aviso",
           "question": "¿Qué debe compararse para comprobar ese aviso?",
           "options": [
-            "Sólo el número de líneas del código fuente.",
             "La salida observada con las dos líneas requeridas y su orden.",
-            "Sólo la presencia de un comentario con el objetivo."
+            "Sólo la presencia de un comentario con el objetivo.",
+            "Sólo el número de líneas del código fuente."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "El criterio pertenece al resultado visible: contenido, separación y orden."
         }
       ]
@@ -67,11 +67,11 @@
           "id": "dos_soluciones",
           "question": "Dos programas organizan sus inserciones de forma distinta, pero producen exactamente el aviso requerido. ¿Qué criterio permite aceptar ambos para esta tarea?",
           "options": [
-            "Su salida cumple el requisito, aunque el código no sea idéntico.",
-            "Todo programa de distinto texto debe dar una salida distinta.",
-            "Se deben eliminar todos los espacios del mensaje."
+            "Aceptar sólo el que reproduce el código de la solución modelo.",
+            "Aceptar ambos porque cumplen la misma salida requerida.",
+            "Aceptar ambos aunque falten los espacios que pide el requisito."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Una tarea puede admitir varias expresiones correctas. Comparar el comportamiento permite reconocerlo."
         },
         {
@@ -145,8 +145,8 @@
           "question": "Cambias el mensaje Turno B por Turno C y conservas las otras inserciones. ¿Qué debe cambiar en la tarjeta?",
           "options": [
             "Sólo el turno mostrado.",
-            "main debe cambiar de nombre.",
-            "La declaración de iostream debe desaparecer."
+            "El turno y el texto de las otras dos líneas.",
+            "El turno y la separación entre las tres líneas."
           ],
           "correctIndex": 0,
           "explanation": "El cambio de un dato del mensaje no exige alterar la estructura del programa."
@@ -164,9 +164,9 @@
           "id": "recuperar_compilacion",
           "question": "La herramienta rechaza el programa antes de ejecutarlo. ¿Qué primera acción corresponde?",
           "options": [
-            "Comparar únicamente mensajes de salida que no se han producido.",
+            "Suponer que compilar y ejecutar son exactamente lo mismo.",
             "Leer el diagnóstico y revisar la sintaxis y los nombres del contexto indicado.",
-            "Suponer que compilar y ejecutar son exactamente lo mismo."
+            "Comparar únicamente mensajes de salida que no se han producido."
           ],
           "correctIndex": 1,
           "explanation": "Primero necesitamos una versión válida que pueda construirse; después compararemos su comportamiento."
@@ -176,11 +176,11 @@
           "id": "recuperar_logica",
           "question": "La versión compila y ejecuta, pero las dos palabras aparecen juntas cuando se necesitaba un espacio. ¿Qué debes revisar?",
           "options": [
-            "Qué instrucción aporta el separador requerido.",
-            "La cantidad de comentarios, sin mirar la salida.",
-            "Sólo el nombre del archivo."
+            "La separación entre instrucciones en el archivo fuente.",
+            "La ubicación de cada instrucción en una línea distinta del fuente.",
+            "Los caracteres que se insertan como separador en la salida."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "El separador debe formar parte de los caracteres insertados; el espacio del código fuera del literal no lo produce."
         },
         {
@@ -190,6 +190,27 @@
         {
           "type": "note",
           "text": "Fuente principal de esta unidad: Stroustrup, B. (2024). Programming: Principles and practice using C++ (3.ª ed.). Addison-Wesley. Capítulos 0–1. Explicaciones, ejemplos y ejercicios de este curso redactados para esta ruta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consulta después de crear y probar tu tarjeta. Criterios: tres líneas con Taller, Turno B y Material preparado; tras cambiar el turno, sólo la segunda línea pasa a Turno C. No deben perderse los saltos ni alterarse las otras dos líneas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Taller\\n\";\n    std::cout << \"Turno B\\n\";\n    std::cout << \"Material preparado\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para la segunda prueba cambia únicamente B por C dentro del segundo literal. También puedes reunir la tarjeta en un solo literal con dos escapes de salto. El requisito se comprueba por los caracteres de salida; copiar exactamente la organización de esta referencia no es necesario. Si tu versión falla, identifica primero qué línea o separador difiere, y cambia sólo lo que explique esa diferencia."
         }
       ]
     }

@@ -87,12 +87,12 @@
           "type": "multiple_choice",
           "question": "¿Qué parámetro expresa lectura del vector original y además impide modificarlo a través de ese parámetro?",
           "options": [
-            "std::vector<int> datos",
             "std::vector<int>& datos",
+            "std::vector<int> datos",
             "const std::vector<int>& datos"
           ],
           "correctIndex": 2,
-          "explanation": "La primera opción copia; la segunda permite modificar. const con & expresa lectura del original."
+          "explanation": "En este uso, std::vector<int> recibe una copia; std::vector<int>& permite modificar el original. const std::vector<int>& expresa lectura del original sin copiar toda la colección."
         }
       ]
     },
@@ -161,6 +161,31 @@
         {
           "type": "note",
           "text": "Usamos retorno por valor para los resultados y referencias const para las entradas que sólo se leen. La referencia es un vínculo con un objeto, no una cadena o un vector nuevo con los mismos elementos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: Leer la colección en su frontera permitida"
+        },
+        {
+          "type": "note",
+          "text": "Compara después de realizar el laboratorio y anotar sus resultados previstos. La referencia presenta una organización posible; los criterios permiten reconocer otras implementaciones que cumplan los mismos contratos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Con {5,0,3}, Total: 8 y Elementos: 3; con {}, Total: 0 y Elementos: 0; con {2,4,6,8}, Total: 20 y Elementos: 4. La frontera de esta referencia, ocho valores 20, produce Total: 160 y Elementos: 8. sumar debe inspeccionar sin modificar elementos ni tamaño y comunicar lectura mediante referencia const; el dominio sigue siendo hasta ocho valores entre 0 y 20."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {20, 20, 20, 20, 20, 20, 20, 20};\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elementos: \" << datos.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El total comienza en cero, también cuando no hay cuerpo de recorrido. const en el parámetro comunica permiso de lectura; no demuestra por sí solo que los datos cumplan el dominio. Comprueba el vector después de llamar, además de su suma y tamaño. Otras formas de sumar son válidas si conservan la colección y el contrato."
         }
       ]
     }

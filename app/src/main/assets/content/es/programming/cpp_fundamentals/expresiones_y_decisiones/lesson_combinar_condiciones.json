@@ -35,11 +35,11 @@
           "type": "multiple_choice",
           "question": "Una conjunción A && B recibe A igual a true y B igual a false. ¿Cuál es su resultado?",
           "options": [
-            "true",
             "false",
+            "true",
             "No se puede obtener un bool."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "La conjunción exige las dos respuestas verdaderas."
         }
       ]
@@ -113,11 +113,11 @@
           "type": "multiple_choice",
           "question": "Fuera del intervalo de 4 a 10, incluidos sus extremos, significa estar por debajo de 4 o por encima de 10. ¿Qué condición lo expresa?",
           "options": [
-            "(valor < 4) || (valor > 10)",
             "(valor < 4) && (valor > 10)",
-            "(valor >= 4) && (valor <= 10)"
+            "(valor >= 4) && (valor <= 10)",
+            "(valor < 4) || (valor > 10)"
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "Una cantidad no puede estar a ambos lados a la vez. || acepta cualquiera de las dos formas de quedar fuera."
         }
       ]
@@ -140,9 +140,9 @@
           "type": "multiple_choice",
           "question": "Con pase e invitación ambos true, pero sala_abierta igual a false, ¿qué exige la regla?",
           "options": [
-            "Permitir, porque ya hay dos credenciales.",
+            "Ejecutar las dos ramas.",
             "Denegar, porque la apertura es un requisito común.",
-            "Ejecutar las dos ramas."
+            "Permitir, porque ya hay dos credenciales."
           ],
           "correctIndex": 1,
           "explanation": "Las credenciales satisfacen la alternativa, pero la conjunción requiere además que la sala esté abierta."
@@ -173,9 +173,9 @@
           "type": "multiple_choice",
           "question": "Para observar todas las combinaciones de dos datos bool independientes, ¿qué plan es completo?",
           "options": [
-            "Probar sólo true/true y false/false.",
+            "Probar cuatro veces true/true.",
             "Probar false/false, false/true, true/false y true/true.",
-            "Probar cuatro veces true/true."
+            "Probar sólo true/true y false/false."
           ],
           "correctIndex": 1,
           "explanation": "Cada dato puede ser true o false. Hay cuatro combinaciones distintas; repetir una no cubre otra."
@@ -187,6 +187,31 @@
         {
           "type": "note",
           "text": "Nombra condiciones cuando eso ayude a explicar su significado. && exige ambas, || admite al menos una y ! invierte una respuesta. Los próximos ejemplos usarán además una propiedad de evaluación de && y || para proteger operaciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparación posterior del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "El caso original permite entrar. Cerrar la sala lo deniega; con sala abierta y sin pase ni invitación también se deniega; con ambos y sala abierta se permite. La referencia conserva una apertura necesaria para cualquiera de las credenciales."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool tiene_pase = false;\n    const bool tiene_invitacion = true;\n    const bool sala_abierta = true;\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n    if (permitido) {\n        std::cout << \"Entrada permitida\";\n    } else {\n        std::cout << \"Entrada denegada\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba las ocho combinaciones de estos tres bool: con sala cerrada, las cuatro deben denegarse; con sala abierta, sólo la combinación sin ambas credenciales se deniega. La prueba pase true, invitación false y sala cerrada debe denegarse: detecta la agrupación que permitía que el pase eludiera la apertura. Una implementación equivalente puede ser correcta si cumple todas estas decisiones."
+        },
+        {
+          "type": "note",
+          "text": "Llega a esta comparación después de predecir y ejecutar tus pruebas. El editor no califica estas salidas automáticamente: contrástalas con los criterios y explica la primera diferencia. Conserva tu versión si cumple el mismo comportamiento."
         }
       ]
     }

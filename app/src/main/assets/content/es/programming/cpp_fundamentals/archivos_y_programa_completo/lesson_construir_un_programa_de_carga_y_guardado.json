@@ -1,0 +1,163 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__construir_un_programa_de_carga_y_guardado",
+  "title": "Construir un programa de carga y guardado",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un programa completo empieza por requisitos verificables"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una estación recibe recuentos por grupos y necesita cargarlos, producir un informe y guardar los datos para recuperarlos. Construye el programa completo desde estos requisitos. Puedes consultar las lecciones previas, pero el editor inicial no proporciona los modelos ni los cuerpos de los lectores, del compositor o de la comparación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Usa el formato Conjunto ya definido: grupos rojo, verde y azul, cada uno presente como máximo una vez; registros con ID 0..9 únicos dentro de su grupo; cantidades 0..10. Conserva el orden de ambos vectores, los grupos vacíos y los registros cero. La muestra completa debe tener un cierre exterior y sólo blancos hasta EOF."
+        },
+        {
+          "type": "paragraph",
+          "text": "En una ejecución crea inspecciones_entrada.txt con { conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }. Comprueba apertura, escritura y cierre antes de abrirlo para lectura. Inicializa el estado previo con verde y 9[6;2]. Si la muestra es inválida, conserva ese estado y termina sin abrir inspecciones_salida.txt. Una avería de lectura se informa como problema técnico, sin considerarla una muestra válida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la muestra es válida, reemplaza el estado completo, compón su texto antes de abrir inspecciones_salida.txt, escribe y comprueba el cierre de salida. Reabre ese archivo en la misma ejecución, léelo y compara todos sus datos con el estado cargado. El informe de cantidades se calcula a partir de los registros; no se usa como sustituto de esa comparación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Diseñar responsabilidades y casos antes de programar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Elige tus funciones y sus contratos. Separa interpretación de caracteres, validez de los datos, aceptación del conjunto, composición textual, operaciones de archivo e informe. Las funciones de lectura y composición protegen sus objetos destino ante false; ninguna promete restaurar caracteres consumidos ni un archivo que falló al escribirse."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cuando_abrir_salida",
+          "question": "La lectura del primer grupo es válida, pero falta el cierre del conjunto. ¿Cuándo corresponde abrir el archivo de salida?",
+          "options": [
+            "Después del primer grupo, porque ya hay datos guardables.",
+            "Después de que falle el lector, para escribir sólo los datos provisionales.",
+            "No corresponde abrirlo: no se aceptó una muestra completa."
+          ],
+          "correctIndex": 2,
+          "explanation": "El programa sólo genera salida de datos después de aceptar la muestra y componer el texto completo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prepara casos que distingan políticas: muestra base; conjunto vacío; grupo rojo vacío; mismo ID local en rojo y azul; grupo repetido vacío; registro repetido; cantidad 11; segundo grupo truncado; texto posterior al cierre. Decide qué estado final y qué informe esperas en cada caso antes de escribir el programa."
+        },
+        {
+          "type": "paragraph",
+          "text": "El límite de los totales es 3 grupos × 10 registros × 10 unidades = 300 por cantidad. Justifica esa cota antes de sumar en int. Si cambias el dominio de los datos, revisa también la cota; una validación del formato no demuestra por sí sola que todo cálculo posterior sea seguro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción independiente desde el editor vacío"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe los tipos, las funciones y main. La muestra base aceptada debe producir cinco líneas: Entrada aceptada; Grupos: 2; Aceptados: 3; Rechazados: 1; Verificacion: 1. Usa las etiquetas exactas y un salto entre líneas. Ante datos rechazados muestra dos líneas: Entrada rechazada y Estado conservado: 1. Un error técnico debe tener un mensaje que indique su etapa."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba cada resultado antes de usarlo. Un flujo de entrada que llega normalmente a EOF no se trata como si hubiese una avería bad(). No borres las banderas durante el análisis para aceptar un dato incompleto. Los ifstream locales pueden cerrar al salir de su bloque; comprueba explícitamente escritura y close() de cada ofstream, porque terminar de insertar caracteres no acredita su cierre correcto."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <fstream>\n#include <sstream>\n#include <string>\n#include <vector>\n\n// Construye aqui el modelo, los contratos y el programa desde los requisitos.\nint main() {\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "La referencia está en la página siguiente. El laboratorio crea muestras propias con rutas relativas dentro de su ejecución; no importa archivos del usuario. Escribe y relee en la misma ejecución: esta práctica no depende de que esos archivos permanezcan disponibles después ni ofrece exportación de documentos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: una solución posible completa"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nstruct Conjunto {\n    std::vector<Grupo> grupos;\n};\n\nbool contiene_grupo(const Conjunto& conjunto, int id) {\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (grupo.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_conjunto(std::istream& entrada, Conjunto& destino) {\n    char abre{0};\n    std::string etiqueta;\n    if (!(entrada >> abre >> etiqueta)\n        || abre != '{' || etiqueta != \"conjunto\") {\n        return false;\n    }\n    Conjunto candidato{};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Grupo grupo{0, {}};\n        if (!leer_grupo(entrada, grupo)\n            || contiene_grupo(candidato, grupo.id)) {\n            return false;\n        }\n        candidato.grupos.push_back(grupo);\n    }\n}\n\nbool leer_muestra_completa(std::istream& entrada, Conjunto& destino) {\n    Conjunto candidato{};\n    if (!leer_conjunto(entrada, candidato)) { return false; }\n    entrada >> std::ws;\n    if (entrada.bad() || !entrada.eof()) { return false; }\n    destino = candidato;\n    return true;\n}\n\nbool grupo_valido(const Grupo& grupo) {\n    if (grupo.id < 0 || grupo.id >= 3 || grupo.registros.size() > 10) {\n        return false;\n    }\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id < 0 || registro.id > 9\n            || !recuento_valido(registro.recuento)) {\n            return false;\n        }\n        int coincidencias{0};\n        for (const Registro& otro : grupo.registros) {\n            if (otro.id == registro.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool conjunto_valido(const Conjunto& conjunto) {\n    if (conjunto.grupos.size() > 3) { return false; }\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (!grupo_valido(grupo)) { return false; }\n        int coincidencias{0};\n        for (const Grupo& otro : conjunto.grupos) {\n            if (otro.id == grupo.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool componer_conjunto(const Conjunto& conjunto, std::string& destino) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    std::ostringstream salida;\n    salida << \"{ conjunto\";\n    for (const Grupo& grupo : conjunto.grupos) {\n        std::string nombre;\n        if (!nombre_grupo(grupo.id, nombre)) { return false; }\n        salida << \" { grupo \" << nombre;\n        for (const Registro& registro : grupo.registros) {\n            salida << ' ' << registro.id << registro.recuento;\n        }\n        salida << \" }\";\n    }\n    salida << \" }\";\n    if (!salida) { return false; }\n    destino = salida.str();\n    return true;\n}\n\nbool mismos_datos(const Conjunto& primero, const Conjunto& segundo) {\n    if (!conjunto_valido(primero) || !conjunto_valido(segundo)\n        || primero.grupos.size() != segundo.grupos.size()) {\n        return false;\n    }\n    const int cantidad_grupos = static_cast<int>(primero.grupos.size());\n    for (int i = 0; i < cantidad_grupos; ++i) {\n        const Grupo& a = primero.grupos.at(i);\n        const Grupo& b = segundo.grupos.at(i);\n        if (a.id != b.id || a.registros.size() != b.registros.size()) {\n            return false;\n        }\n        const int cantidad_registros = static_cast<int>(a.registros.size());\n        for (int j = 0; j < cantidad_registros; ++j) {\n            const Registro& x = a.registros.at(j);\n            const Registro& y = b.registros.at(j);\n            if (x.id != y.id || x.recuento.aceptados != y.recuento.aceptados\n                || x.recuento.rechazados != y.recuento.rechazados) {\n                return false;\n            }\n        }\n    }\n    return true;\n}\n\nint main() {\n    const std::string texto_entrada{\n        \"{ conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }\"};\n    std::ofstream muestra{\"inspecciones_entrada.txt\"};\n    if (!muestra) { std::cout << \"Error al abrir muestra\"; return 1; }\n    muestra << texto_entrada;\n    muestra.close();\n    if (!muestra) { std::cout << \"Error al escribir o cerrar muestra\"; return 1; }\n\n    const Conjunto previo{{Grupo{1, {{9, {6, 2}}}}}};\n    Conjunto actual = previo;\n    bool aceptado = false;\n    {\n        std::ifstream entrada{\"inspecciones_entrada.txt\"};\n        if (!entrada) { std::cout << \"Error al abrir entrada\"; return 1; }\n        aceptado = leer_muestra_completa(entrada, actual);\n        if (entrada.bad()) { std::cout << \"Averia de lectura\"; return 1; }\n    }\n    if (!aceptado) {\n        std::cout << \"Entrada rechazada\\nEstado conservado: \"\n                  << mismos_datos(previo, actual);\n        return 0;\n    }\n\n    std::string texto_salida;\n    if (!componer_conjunto(actual, texto_salida)) {\n        std::cout << \"Error al componer datos\";\n        return 1;\n    }\n    std::ofstream guardado{\"inspecciones_salida.txt\"};\n    if (!guardado) { std::cout << \"Error al abrir salida\"; return 1; }\n    guardado << texto_salida;\n    guardado.close();\n    if (!guardado) { std::cout << \"Error al escribir o cerrar salida\"; return 1; }\n\n    Conjunto recuperado{};\n    {\n        std::ifstream comprobacion{\"inspecciones_salida.txt\"};\n        if (!comprobacion) { std::cout << \"Error al reabrir salida\"; return 1; }\n        if (!leer_muestra_completa(comprobacion, recuperado)\n            || comprobacion.bad()) {\n            std::cout << \"Error al releer salida\";\n            return 1;\n        }\n    }\n    int aceptados{0};\n    int rechazados{0};\n    for (const Grupo& grupo : actual.grupos) {\n        for (const Registro& registro : grupo.registros) {\n            aceptados += registro.recuento.aceptados;\n            rechazados += registro.recuento.rechazados;\n        }\n    }\n    bool verificado = mismos_datos(actual, recuperado);\n    std::cout << \"Entrada aceptada\\nGrupos: \" << actual.grupos.size()\n              << \"\\nAceptados: \" << aceptados\n              << \"\\nRechazados: \" << rechazados\n              << \"\\nVerificacion: \" << verificado;\n    if (!verificado) { return 1; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia produce las cinco líneas acordadas y el archivo de datos { conjunto { grupo rojo 7[0;0] 2[3;1] } { grupo azul } }. El grupo azul vacío permanece; el registro cero no se descarta. Se compone el texto antes de abrir el archivo de salida y se comprueba su escritura y cierre antes de releerlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "El bool del lector decide la aceptación; bad() separa una avería de lectura. Los ifstream se limitan a sus bloques. No limpiamos una extracción inválida para continuar como si hubiese terminado correctamente, ni utilizamos las cantidades del estado previo cuando la lectura válida lo ha reemplazado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Probar rechazo, vacío y conservación real"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecuta de nuevo cambiando sólo el string de muestra por { conjunto }. Espera Entrada aceptada, Grupos: 0, Aceptados: 0, Rechazados: 0 y Verificacion: 1. Prueba después { conjunto { grupo rojo } }: ese grupo cuenta como presente, aunque ambos totales sigan en cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Quita el cierre exterior, añade un grupo repetido vacío y cambia una cantidad a 11, en pruebas separadas. Cada caso debe producir Entrada rechazada y Estado conservado: 1. Comprueba ID de grupo, ID del registro y las dos cantidades previas, no sólo el tamaño. La salida de datos no debe abrirse en esa ruta de rechazo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Como experimento de conservación, crea al principio de tu propia prueba un archivo de salida con el texto MARCA, antes de presentar una muestra inválida. Tras el rechazo, reabre ese archivo y comprueba que MARCA sigue allí. Esta prueba distingue no abrir la salida de abrirla con truncamiento. La marca es un archivo de prueba creado por tu programa dentro de su ejecución."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "garantia_que_se_comprobo",
+          "question": "El caso inválido conservó MARCA porque la salida nunca se abrió. ¿Qué conclusión permite?",
+          "options": [
+            "Que la ruta de rechazo evita modificar ese archivo; no demuestra restauración ante una escritura fallida.",
+            "Que cualquier corte de energía durante una escritura válida conserva siempre MARCA.",
+            "Que close() puede omitirse si existe una marca previa."
+          ],
+          "correctIndex": 0,
+          "explanation": "La prueba comprueba una ruta de control concreta. Una escritura posterior puede truncar o fallar parcialmente y requiere otra garantía."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar y transferir sin cambiar silenciosamente el contrato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de revisión de tu programa: responsabilidades comprensibles; ningún uso de datos antes de aceptar su extracción; validación de todas las identidades; estado previo intacto ante rechazo; candidatos limpios; formato releíble; orden y presencia conservados; salida no abierta para datos inválidos; apertura, escritura y cierre comprobados; comparación completa de la ida y vuelta. Los mensajes deben distinguir rechazo de datos y problemas de archivo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperación: vuelve a construir una función pequeña sin consultar su referencia: conversión de nombre, detección de duplicado, comparación de registros o suma del informe. Úsala después en tu programa y repite un caso que la podría hacer fallar. Busca que la modificación no cambie las garantías de las otras etapas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transferencia: sustituye el informe de totales por uno que indique el grupo con mayor cantidad aceptada. Antes de programar, define qué ocurre con conjunto vacío, empate y grupos presentes pero vacíos. Mantén sin cambios el formato de datos y la comparación de ida y vuelta; un informe nuevo no autoriza a eliminar datos del archivo."
+        },
+        {
+          "type": "note",
+          "text": "Fuente principal: Stroustrup, B. (2024). Programming: Principles and practice using C++ (3.ª ed.). Addison-Wesley. Apartados 9.5–9.9, pp. 264–275 y práctica acumulativa de los capítulos 0–9. Problema, requisitos, programa y pruebas originales de esta ruta; no representa una arquitectura definitiva de motor."
+        }
+      ]
+    }
+  ]
+}

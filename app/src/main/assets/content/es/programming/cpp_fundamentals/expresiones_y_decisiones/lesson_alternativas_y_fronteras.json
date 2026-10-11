@@ -25,11 +25,11 @@
           "type": "multiple_choice",
           "question": "En un if con else, la condición es false. ¿Qué recorrido corresponde a esa decisión?",
           "options": [
-            "Ejecutar ambas ramas y después continuar.",
             "Ejecutar la rama else y después continuar.",
+            "Ejecutar ambas ramas y después continuar.",
             "Omitir todo lo que queda del programa."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "else ofrece el camino para false. No termina el programa ni ejecuta la rama de true."
         }
       ]
@@ -91,10 +91,10 @@
           "question": "Una prueba debe revisar justo debajo de 10, en 10 y justo encima de 10. ¿Qué datos enteros corresponden a esas tres posiciones?",
           "options": [
             "0, 5 y 20",
-            "9, 10 y 11",
-            "10, 10 y 10"
+            "10, 10 y 10",
+            "9, 10 y 11"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "9 y 11 son vecinos enteros de la frontera 10; el caso 10 comprueba si se incluye la igualdad."
         },
         {
@@ -122,10 +122,10 @@
           "question": "Con los datos originales, ¿qué salida cumple la regla?",
           "options": [
             "Normal\nMarca: 0",
-            "Alerta\nMarca: 1",
-            "Alerta\nNormal\nMarca: 1"
+            "Alerta\nNormal\nMarca: 1",
+            "Alerta\nMarca: 1"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "La igualdad satisface >=. Se cambia marca, se muestra Alerta y después se muestra la marca actual."
         },
         {
@@ -161,9 +161,9 @@
           "type": "multiple_choice",
           "question": "Un programa compila y muestra Permitido para cantidad igual a 3. La regla exige permitir hasta 4. ¿Qué nueva prueba distingue <= 4 de < 4?",
           "options": [
-            "Probar otra vez 3.",
-            "Probar 4 y exigir Permitido.",
-            "Cambiar el texto de un comentario."
+            "Cantidad 5, que debe producir el rechazo.",
+            "Cantidad 4, que debe producir Permitido.",
+            "Cantidad 3, que debe producir Permitido."
           ],
           "correctIndex": 1,
           "explanation": "Ambas condiciones aceptan 3; sólo el caso de igualdad distingue las dos versiones."
@@ -198,16 +198,41 @@
           "type": "multiple_choice",
           "question": "¿Dónde debe situarse fichas / grupos para que esa comprobación lo proteja?",
           "options": [
-            "Antes del if, aunque grupos todavía no se haya validado.",
             "Dentro de la rama que sólo se ejecuta con grupos > 0.",
-            "En ambas ramas para obtener siempre un número."
+            "En ambas ramas para obtener siempre un número.",
+            "Antes del if, aunque grupos todavía no se haya validado."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "La condición protege una operación sólo si se comprueba antes de ejecutarla y controla el camino que llega a ella."
         },
         {
           "type": "note",
           "text": "Un aviso explícito hace observable un dato rechazado. No atribuyas a una operación inválida una salida numérica supuesta: diseña el recorrido para evitarla."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparación posterior del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con nivel 4 y límite 4, la referencia muestra Alerta y Marca: 1 en dos líneas. Nivel 3 produce Normal y Marca: 0; nivel 5 produce Alerta y Marca: 1. Cambiar >= por > produce Normal y Marca: 0 sólo en la igualdad que debía activar la alerta: ésa es la prueba que distingue ambas reglas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int nivel = 4;\n    const int limite = 4;\n    int marca = 0;\n    if (nivel >= limite) {\n        marca = 1;\n        std::cout << \"Alerta\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n    std::cout << \"Marca: \" << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba el mensaje y la marca juntos: 1 debe aparecer exactamente en los casos que muestran Alerta. La marca empieza en 0 y sólo se asigna en esa rama. Restaurar >= debe recuperar el resultado de la frontera sin cambiar los de 3 y 5."
+        },
+        {
+          "type": "note",
+          "text": "Llega a esta comparación después de predecir y ejecutar tus pruebas. El editor no califica estas salidas automáticamente: contrástalas con los criterios y explica la primera diferencia. Conserva tu versión si cumple el mismo comportamiento."
         }
       ]
     }

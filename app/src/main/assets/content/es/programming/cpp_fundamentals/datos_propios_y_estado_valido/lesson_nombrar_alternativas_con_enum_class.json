@@ -1,0 +1,264 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__nombrar_alternativas_con_enum_class",
+  "title": "Nombrar alternativas con enum class",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Alternativas con significado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un pedido puede estar preparado, enviado o cancelado según las reglas del ejemplo. Usar números sueltos obliga a recordar qué significa cada uno; usar cadenas permite errores de escritura que siguen siendo cadenas válidas. enum class Estado { preparado, enviado, cancelado }; introduce un tipo propio con nombres para esas alternativas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribimos Estado::enviado porque enviado pertenece al ámbito del tipo Estado. Los dos puntos dobles califican un nombre del tipo; no acceden a un miembro de un objeto mediante punto. enum class no es una clase con constructores y métodos: es una enumeración con ámbito."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = Estado::preparado;\n    if (estado == Estado::preparado) {\n        std::cout << \"Preparado\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El tipo impide mezclas implícitas"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué definición usa una alternativa del tipo Estado?",
+          "options": [
+            "Estado estado = \"enviado\";",
+            "Estado estado = 1;",
+            "Estado estado = Estado::enviado;"
+          ],
+          "correctIndex": 2,
+          "explanation": "La enumeración es un tipo distinto del texto y de int; no convierte esas entradas implícitamente."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre del tipo que califica enviado.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = ___::enviado;\n    std::cout << (estado == Estado::enviado);\n    return 0;\n}\n",
+          "answers": [
+            "Estado"
+          ],
+          "explanation": "El enumerador se califica por su tipo."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado a = Estado::preparado;\n    Estado b = Estado::cancelado;\n    a = Estado::enviado;\n    std::cout << (a == Estado::enviado) << \" \" << (b == Estado::enviado);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "La asignación cambia una variable Estado; las comparaciones producen bool."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Representación numérica no es la regla de negocio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si no escribimos valores explícitos, el primer enumerador tiene representación cero y los siguientes aumentan de uno en uno. Podemos observar la representación mediante static_cast<int>(estado). Esa conversión no significa que el número sea una cantidad para sumar ni que la progresión numérica defina las transiciones permitidas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = Estado::cancelado;\n    std::cout << static_cast<int>(estado);\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Los tres enumeradores sin valores explícitos corresponden a cero, uno y dos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Si decides escribir preparado = 4 en la definición y no asignas valores a los siguientes, enviado tendrá representación…",
+          "options": [
+            "0",
+            "5",
+            "4"
+          ],
+          "correctIndex": 1,
+          "explanation": "El enumerador siguiente aumenta en uno la representación anterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "No imprimimos directamente un Estado con cout en estos ejemplos: aún no hemos definido una operación de salida para este tipo. Usamos comparaciones, conversión explícita o una función que devuelva el nombre visible."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una conversión explícita puede producir otro valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "La enumeración con ámbito que usamos tiene int como tipo de representación. static_cast<Estado>(9) puede producir un valor de ese tipo sin corresponder a preparado, enviado ni cancelado. Por tanto, enum class reduce mezclas accidentales, pero no valida un número convertido contra la lista de alternativas del programa."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = static_cast<Estado>(9);\n    bool reconocido = estado == Estado::preparado || estado == Estado::enviado || estado == Estado::cancelado;\n    std::cout << reconocido;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "El valor convertido no coincide con ninguna de las alternativas nombradas."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Recibes un entero para representar un estado. ¿Qué falta decidir antes de tratarlo como una alternativa válida?",
+          "options": [
+            "Únicamente comprobar que el número cabe en int.",
+            "Nada: static_cast comprueba automáticamente la lista.",
+            "Qué representaciones admite la aplicación y cómo rechazar las demás."
+          ],
+          "correctIndex": 2,
+          "explanation": "La conversión y la comprobación de dominio son operaciones distintas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "De un estado a un texto de presentación"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstd::string nombre(Estado estado) {\n    if (estado == Estado::preparado) { return \"Preparado\"; }\n    if (estado == Estado::enviado) { return \"Enviado\"; }\n    if (estado == Estado::cancelado) { return \"Cancelado\"; }\n    return \"No reconocido\";\n}\n\nint main() {\n    std::cout << nombre(Estado::enviado);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función completa todos los caminos, incluida una representación no reconocida. Devolver ese texto no crea un pedido válido: sólo presenta el valor que recibió. La construcción del objeto y las transiciones del pedido deberán proteger sus propias reglas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstd::string nombre(Estado estado) {\n    if (estado == Estado::preparado) { return \"Preparado\"; }\n    if (estado == Estado::enviado) { return \"Enviado\"; }\n    if (estado == Estado::cancelado) { return \"Cancelado\"; }\n    return \"No reconocido\";\n}\n\nint main() {\n    Estado estado = Estado::cancelado;\n    std::cout << nombre(estado);\n    return 0;\n}\n",
+          "answers": [
+            "Cancelado"
+          ],
+          "explanation": "La función traduce la alternativa nombrada a texto de salida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer enumeraciones anteriores"
+        },
+        {
+          "type": "paragraph",
+          "text": "En código anterior también encontrarás enum sin class. Sus enumeradores quedan disponibles en el ámbito que contiene la enumeración y sus valores pueden convertirse implícitamente a enteros. Esa diferencia puede facilitar una escritura breve, pero también permite mezclas que una enumeración con ámbito rechaza. Para estos tipos propios elegimos enum class y hacemos explícitas las conversiones necesarias."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué diferencia corresponde a una enumeración con ámbito frente a una enum simple?",
+          "options": [
+            "Sus enumeradores quedan disponibles sin calificar en el ámbito exterior.",
+            "Sus enumeradores se califican con el tipo y no ofrece la conversión implícita a int.",
+            "Sus valores se convierten implícitamente a bool."
+          ],
+          "correctIndex": 1,
+          "explanation": "La decisión afecta al ámbito y a las conversiones, no a la existencia de representación."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dos tipos enum class llamados Estado y Prioridad contienen un enumerador normal. ¿Qué permite distinguirlos?",
+          "options": [
+            "Ambos nombres se convierten automáticamente en el mismo int.",
+            "Estado::normal y Prioridad::normal pertenecen a tipos y ámbitos diferentes.",
+            "No pueden existir ambos tipos en el mismo programa."
+          ],
+          "correctIndex": 1,
+          "explanation": "El tipo y su calificación comunican cuál conjunto de alternativas usamos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción con alternativas propias"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define enum class Prioridad con normal, urgente y aplazada. Construye un objeto de prioridad urgente y una función nombre_prioridad que devuelva el texto Normal, Urgente o Aplazada según la alternativa, y No reconocida para otro valor convertido. Muestra Urgente. Comprueba las tres alternativas y una conversión explícita desde nueve."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "No asignamos prioridades mediante números sueltos ni cadenas. Como variante, define un Registro que contenga codigo y Prioridad, y presenta la prioridad de cada registro de un vector usando tu función."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y recuperación de asociaciones"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad { normal, urgente, aplazada };\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n    if (prioridad == Prioridad::normal) { return \"Normal\"; }\n    if (prioridad == Prioridad::urgente) { return \"Urgente\"; }\n    if (prioridad == Prioridad::aplazada) { return \"Aplazada\"; }\n    return \"No reconocida\";\n}\n\nint main() {\n    Prioridad prioridad = Prioridad::urgente;\n    std::cout << nombre_prioridad(prioridad);\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct Registro {\n    std::string codigo;\n    Estado estado;\n};\n\nint main() {\n    Registro original{\"A3\", Estado::preparado};\n    Registro copia = original;\n    original.estado = Estado::enviado;\n    std::cout << (copia.estado == Estado::preparado) << \" \" << (original.estado == Estado::preparado);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "La copia conserva el Estado original aunque cambie otro objeto."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué parte todavía falta para modelar un pedido que no admita transiciones arbitrarias?",
+          "options": [
+            "Almacenar un int público y documentar la correspondencia de números.",
+            "Traducir cada estado a texto cuando se consulte.",
+            "Una interfaz que compruebe y controle las operaciones sobre su estado."
+          ],
+          "correctIndex": 2,
+          "explanation": "Nombrar alternativas es útil, pero no define por sí solo cuándo una transición está permitida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: las tres alternativas pertenecen a Prioridad y se califican con su tipo; nombre_prioridad devuelve el texto correspondiente sin modificar el argumento; el valor convertido desde nueve obtiene No reconocida; la variante conserva juntos el código y la prioridad de cada registro. No se exige una única implementación de la selección."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad { normal, urgente, aplazada };\nstruct Registro { std::string codigo; Prioridad prioridad; };\nstd::string nombre_prioridad(Prioridad prioridad) {\n    if (prioridad == Prioridad::normal) { return \"Normal\"; }\n    if (prioridad == Prioridad::urgente) { return \"Urgente\"; }\n    if (prioridad == Prioridad::aplazada) { return \"Aplazada\"; }\n    return \"No reconocida\";\n}\n\nint main() {\n    std::vector<Registro> registros{{\"R\", Prioridad::urgente}, {\"S\", Prioridad::normal}};\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << nombre_prioridad(registro.prioridad) << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta variante produce R:Urgente;S:Normal;. Mantiene juntos el código y la prioridad y no necesita convertir la enumeración en un entero para presentarla."
+        }
+      ]
+    }
+  ]
+}

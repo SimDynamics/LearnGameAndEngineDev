@@ -1,0 +1,375 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__tipo_de_retorno_explicito_y_deducido",
+  "title": "Tipo de retorno explícito y deducido",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Escribir el mismo tipo en otra posición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya has leído int calcular(int dato): el tipo de retorno aparece delante del nombre. C++ también permite auto calcular(int dato) -> int. La flecha -> se escribe después de la lista de parámetros, y el tipo de retorno aparece a continuación. Esa notación de retorno al final, también llamada retorno de sufijo, conserva un tipo explícito. Aquí auto no pide adivinar el tipo desde el cuerpo: -> int ya lo establece."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nauto preparar(int dato) -> int {\n    return dato + 3;\n}\n\nint main() {\n    const int dato = 5;\n    std::cout << preparar(dato);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa produce ocho igual que una definición int preparar(int dato) con ese mismo cuerpo. Cambiar la posición del tipo no cambia los parámetros, el contrato, los caminos ni cuándo se ejecuta la llamada. main conserva su encabezado int main() en los ejemplos de esta ruta."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué parte establece el tipo del resultado en auto comprobar(int dato) -> bool?",
+          "options": [
+            "El tipo del objeto que main decida inicializar.",
+            "El bool escrito después de la flecha.",
+            "El tipo int de su único parámetro."
+          ],
+          "correctIndex": 1,
+          "explanation": "La flecha seguida de bool expresa el resultado de la función. auto es parte de esa forma de escribir una interfaz explícita."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una interfaz explícita puede declararse antes del cuerpo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una declaración sin cuerpo también puede usar esta notación: auto media_de_dos(int primero, int segundo) -> double;. El punto y coma termina la declaración. La llamada conoce double aunque la definición esté después de main. La definición puede escribir double al principio o -> double al final: ambas notaciones describen el mismo tipo explícito y deben concordar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nauto media_de_dos(int primero, int segundo) -> double;\n\nint main() {\n    std::cout << media_de_dos(4, 7);\n    return 0;\n}\n\ndouble media_de_dos(int primero, int segundo) {\n    return (primero + segundo) / 2.0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación guiada produce 5.5. Los argumentos de esta función están entre -10 y 10, de modo que su suma está entre -20 y 20. La división por 2.0 conserva la parte fraccionaria y el resultado cumple el tipo double de la interfaz."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n\nauto media_de_dos(int primero, int segundo) -> double;\n\nint main() {\n    std::cout << media_de_dos(6, 9);\n    return 0;\n}\n\ndouble media_de_dos(int primero, int segundo) {\n    return (primero + segundo) / 2.0;\n}\n",
+          "answers": [
+            "7.5"
+          ],
+          "explanation": "La interfaz explícita sigue devolviendo double. Los dos argumentos suman quince y la división real produce siete y medio."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el tipo de retorno de la declaración. El contrato y la definición entregan un bool.",
+          "code": "#include <iostream>\n\nauto positivo(int dato) -> ___;\n\nbool positivo(int dato) {\n    return dato > 0;\n}\n\nint main() {\n    std::cout << positivo(3);\n    return 0;\n}\n",
+          "answers": [
+            "bool"
+          ],
+          "explanation": "El tipo de la declaración concuerda con bool en la definición. La flecha no cambia la obligación de concordar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El tipo al final también puede ser una colección"
+        },
+        {
+          "type": "paragraph",
+          "text": "La parte posterior a -> puede ser cualquier tipo de resultado que ya conocemos, como std::vector<int>. Los ángulos pertenecen al nombre del tipo vector de int; no son comparaciones dentro de una expresión. Esta función recibe una cantidad entre cero y cuatro y devuelve la secuencia de enteros desde cero hasta cantidad-1, como un vector por valor."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <vector>\n\nauto secuencia(int cantidad) -> std::vector<int> {\n    std::vector<int> resultado;\n    for (int valor = 0; valor < cantidad; ++valor) {\n        resultado.push_back(valor);\n    }\n    return resultado;\n}\n\nint main() {\n    std::vector<int> resultado = secuencia(3);\n    std::cout << resultado.size() << \":\";\n    for (int valor : resultado) {\n        std::cout << \"[\" << valor << \"]\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "3:[0][1][2]"
+          ],
+          "explanation": "La interfaz declara una colección como resultado. La función construye tres elementos y main recorre la colección obtenida."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <vector>\n\nauto secuencia(int cantidad) -> std::vector<int> {\n    std::vector<int> resultado;\n    for (int valor = 0; valor < cantidad; ++valor) {\n        resultado.push_back(valor);\n    }\n    return resultado;\n}\n\nint main() {\n    const std::vector<int> resultado = secuencia(0);\n    std::cout << resultado.empty() << \":\" << resultado.size();\n    return 0;\n}\n",
+          "answers": [
+            "1:0"
+          ],
+          "explanation": "Cero produce una colección vacía válida. El tipo de retorno sigue siendo vector de int."
+        },
+        {
+          "type": "paragraph",
+          "text": "El llamador obtiene el valor de colección que se devuelve; no necesita conservar un acceso a la variable local resultado de la función. No contamos copias ni exigimos una forma de implementar ese retorno. Aquí todos los resultados se entregan por valor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Sin flecha, auto puede deducir desde los retornos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hay otra forma distinta: auto calcular(int dato) { ... } sin -> T. En esa definición, el compilador deduce el tipo desde las expresiones de return. La regla se aplica al compilar el cuerpo, no según qué resultado quiera main ni según el valor que tome un argumento en una ejecución. En cuarta_entera, cantidad/4 tiene tipo int; en cuarta_real, cantidad/4.0 tiene tipo double."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n\nauto cuarta_entera(int cantidad) {\n    return cantidad / 4;\n}\n\nauto cuarta_real(int cantidad) {\n    return cantidad / 4.0;\n}\n\nint main() {\n    const int dato = 10;\n    std::cout << cuarta_entera(dato) << \":\" << cuarta_real(dato);\n    return 0;\n}\n",
+          "answers": [
+            "2:2.5"
+          ],
+          "explanation": "Las expresiones de los cuerpos deducen resultados int y double respectivamente. El destino de la salida no decide esos tipos."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n\nauto cuarta_entera(int cantidad) {\n    return cantidad / 4;\n}\n\nauto cuarta_real(int cantidad) {\n    return cantidad / 4.0;\n}\n\nint main() {\n    double guardado = cuarta_entera(14);\n    std::cout << guardado;\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "La función deduce int y realiza división entera antes de devolver. El destino double recibe tres; no recupera la fracción que ese cálculo omitió."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Cambias sólo return cantidad/4 por return cantidad/4.0 en una función con auto sin flecha. ¿Qué puede cambiar además del cálculo?",
+          "options": [
+            "Su tipo de retorno deducido pasa de int a double.",
+            "El compilador conserva siempre int porque el parámetro es int.",
+            "La función devuelve un tipo distinto en cada llamada según el valor recibido."
+          ],
+          "correctIndex": 0,
+          "explanation": "La deducción depende de la expresión retornada. auto no expresa una promesa de cálculo constante ni un tipo fijado por el argumento."
+        },
+        {
+          "type": "paragraph",
+          "text": "Deducir el tipo durante la compilación no decide por sí solo cuándo se calcula el valor de una llamada. Una función puede recibir datos conocidos durante la ejecución y mantener ese mismo tipo de retorno deducido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Todas las ramas deben permitir un solo tipo deducido"
+        },
+        {
+          "type": "paragraph",
+          "text": "En estas funciones con if normal, cada return que entrega un valor debe deducir el mismo tipo si el retorno se escribió como auto sin flecha. No se elige un tipo diferente para cada dato. El siguiente contraejemplo devuelve int en una rama y double en otra y debe rechazarse durante la compilación, incluso si main pasa true."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nauto elegir(bool alto) {\n    if (alto) {\n        return 2;\n    }\n    return 4.5;\n}\n\nint main() {\n    std::cout << elegir(true);\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Este contraejemplo es un fallo de compilación intencional. No tiene una salida que deba predecirse ni se presenta como un laboratorio ejecutable correcto."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué reparación conserva las cantidades dos y cuatro y medio, con una interfaz que prometa double explícitamente?",
+          "options": [
+            "Dejar auto sin flecha y cambiar sólo el argumento de main.",
+            "Conservar la función y guardar el resultado en un int de main.",
+            "Añadir -> double a la interfaz y mantener ambos caminos adecuados a ese tipo."
+          ],
+          "correctIndex": 2,
+          "explanation": "El tipo explícito double permite que dos se convierta a ese tipo y que cuatro y medio se conserve. Elegir otro destino no corrige una definición cuya deducción es inconsistente."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n\nauto elegir(bool alto) -> double {\n    if (alto) {\n        return 2;\n    }\n    return 4.5;\n}\n\nint main() {\n    std::cout << elegir(false) << \":\" << elegir(true);\n    return 0;\n}\n",
+          "answers": [
+            "4.5:2"
+          ],
+          "explanation": "La función tiene un tipo explícito double en ambos caminos. El int dos de una expresión retornada se convierte a ese tipo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una alternativa con retorno deducido sería hacer que ambas expresiones fueran double, por ejemplo 2.0 y 4.5. Debe elegirse según el contrato. Corregir los tipos no sustituye comprobar que se devuelve la cantidad correcta en cada caso."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Para deducir, el cuerpo debe estar disponible antes de usarlo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una declaración auto doble(int dato); no comunica todavía el tipo de retorno. La definición puede aparecer después como texto, pero no puedes llamar antes de que se haya deducido su resultado. El siguiente contraejemplo tiene una declaración antes de main y una definición después, pero su llamada llega demasiado pronto para esa deducción."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nauto doble(int dato);\n\nint main() {\n    std::cout << doble(4);\n    return 0;\n}\n\nauto doble(int dato) {\n    return dato * 2;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Fallo de compilación intencional: el resultado de doble aún no se ha deducido al analizar la llamada. No ejecutes una versión incompleta ni interpretes el fallo como una salida."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quieres conservar la definición después de main y comunicar antes un resultado int. ¿Qué pareja de encabezados corresponde?",
+          "options": [
+            "Declarar auto doble(int) -> int y definir esa función con el mismo resultado explícito.",
+            "Declarar auto doble(int) sin flecha y esperar que main indique el tipo.",
+            "Declarar int doble(int) y definir auto doble(int) sin flecha para que la declaración elija la deducción."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un resultado explícito puede comunicarse antes del cuerpo. Una declaración con tipo explícito no transforma una definición de retorno deducido en esa misma interfaz."
+        },
+        {
+          "type": "paragraph",
+          "text": "La otra reparación es mover la definición completa con auto sin flecha antes de su primera llamada. Mantén una sola definición. No confundas conocer el nombre y los parámetros con conocer también un retorno todavía pendiente de deducción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir y contrastar dos formas de retorno"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde el editor mínimo construye media(int primero,int segundo) con retorno explícito al final double y mayor(int primero,int segundo) con retorno auto deducido, sin flecha. Los argumentos están entre -10 y 10. media devuelve la media aritmética con su fracción; mayor devuelve el argumento más grande, también en la igualdad. Define ambas antes de main y conserva los datos del llamador. main muestra Media:M;Mayor:G."
+        },
+        {
+          "type": "paragraph",
+          "text": "Usa cuatro y nueve como caso inicial. Predice después los pares (-4,3), (-10,-10) y(10,10). La suma usada para media está entre -20 y 20. Las funciones calculan sin imprimir; la presentación se hace en main. No sustituyas las llamadas por constantes que coincidan sólo con el caso inicial."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Como contraste finito, cambia sólo la división real de media por división entera. Comprueba si su tipo explícito double evita por sí solo perder la fracción. Restaura el cálculo que cumple el contrato antes de pasar a la referencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia y criterios del contraste"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nauto media(int primero, int segundo) -> double {\n    return (primero + segundo) / 2.0;\n}\n\nauto mayor(int primero, int segundo) {\n    if (primero > segundo) {\n        return primero;\n    }\n    return segundo;\n}\n\nint main() {\n    const int primero = 4;\n    const int segundo = 9;\n    std::cout << \"Media:\" << media(primero, segundo) << \";Mayor:\" << mayor(primero, segundo);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El caso inicial produce Media:6.5;Mayor:9. Los otros pares producen Media:-0.5;Mayor:3, Media:-10;Mayor:-10 y Media:10;Mayor:10. Criterios: media comunica double después de -> y calcula la fracción antes del retorno; mayor deduce int desde ambos argumentos int que puede retornar; igualdad correcta; funciones sin salida ni cambios en el llamador; casos dentro del dominio. Otra implementación que cumpla esos contratos es válida."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n\nauto media_con_division_entera(int primero, int segundo) -> double {\n    return (primero + segundo) / 2;\n}\n\nint main() {\n    std::cout << media_con_division_entera(3, 8);\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "explanation": "La suma once se divide entre dos con aritmética int. El resultado cinco se convierte después a double; la interfaz no recupera la mitad omitida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribir un tipo explícito fija la interfaz, pero no obliga al cuerpo a calcular bien. Escribir auto sin flecha tampoco valida el significado del cálculo. Mantén separados tipo prometido, expresión retornada y casos que deben cumplir el problema."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una interfaz que devuelve datos seleccionados"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye tres funciones con tipos explícitos al final. datos_validos recibe vector<int> por referencia const y limite int; devuelve bool. Acepta hasta ocho valores, cada uno entre cero y veinte, y un límite entre cero y veinte. seleccionar recibe esos datos válidos y devuelve vector<int> con los valores estrictamente mayores que limite, conservando orden y repetidos, sin cambiar la entrada. total recibe una colección de ese dominio y devuelve int con su suma; vacío suma cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe sus declaraciones sin cuerpos antes de main con la notación auto(...) -> T, y sus definiciones después, con los mismos tipos explícitos. main valida todo antes de seleccionar o sumar. Si es inválido muestra sólo Datos invalidos. Si es válido muestra Cantidad:N;Total:T, luego Seleccion: seguido de cada valor seleccionado entre corchetes y por último Original:N con el tamaño inicial, en tres líneas. Usa {2,7,4,7}, límite cuatro. Las dos cantidades N corresponden a colecciones distintas."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice el caso inicial y prueba vacío, ninguno seleccionado, todos seleccionados, igualdad con el límite y repetidos. Un valor -1 o21, nueve elementos o un límite -1 o21 se rechazan antes del cálculo. No amplíes silenciosamente el dominio para hacer pasar una prueba. La suma máxima permitida es ciento sesenta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior de la interfaz de selección"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nauto datos_validos(const std::vector<int>& datos, int limite) -> bool;\nauto seleccionar(const std::vector<int>& datos, int limite) -> std::vector<int>;\nauto total(const std::vector<int>& datos) -> int;\n\nint main() {\n    const std::vector<int> datos{1, 6, 3, 6};\n    const int limite = 3;\n    if (!datos_validos(datos, limite)) {\n        std::cout << \"Datos invalidos\";\n        return 0;\n    }\n    const std::vector<int> elegidos = seleccionar(datos, limite);\n    std::cout << \"Cantidad:\" << elegidos.size() << \";Total:\" << total(elegidos) << \"\\n\";\n    std::cout << \"Seleccion:\";\n    for (int valor : elegidos) {\n        std::cout << \"[\" << valor << \"]\";\n    }\n    std::cout << \"\\nOriginal:\" << datos.size();\n    return 0;\n}\n\nauto datos_validos(const std::vector<int>& datos, int limite) -> bool {\n    if (datos.size() > 8 || limite < 0 || limite > 20) {\n        return false;\n    }\n    for (int valor : datos) {\n        if (valor < 0 || valor > 20) {\n            return false;\n        }\n    }\n    return true;\n}\n\nauto seleccionar(const std::vector<int>& datos, int limite) -> std::vector<int> {\n    std::vector<int> resultado;\n    for (int valor : datos) {\n        if (valor > limite) {\n            resultado.push_back(valor);\n        }\n    }\n    return resultado;\n}\n\nauto total(const std::vector<int>& datos) -> int {\n    int resultado = 0;\n    for (int valor : datos) {\n        resultado += valor;\n    }\n    return resultado;\n}\n\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta referencia usa otros datos: Cantidad:2;Total:12, Seleccion:[6][6] y Original:4. Para el caso inicial, la primera línea es Cantidad:2;Total:14 y la selección es [7][7]. Criterios: tipos bool, vector<int> e int explícitos en las interfaces; declaraciones y definiciones correspondientes; validar antes del cálculo; selección estricta sin perder orden ni repetidos; entrada intacta; suma basada en la selección; vacío permitido. La referencia conserva las declaraciones antes de main y las definiciones después, como pidió el intento."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con vacío: Cantidad:0;Total:0, Seleccion: sin corchetes y Original:0. Con {4,4} y límite cuatro no se selecciona ninguno; con {5,7} y límite cero, ambos. Las pruebas inválidas deben producir sólo Datos invalidos. Revisa valores y orden de la entrada después, además de su tamaño."
+        },
+        {
+          "type": "note",
+          "text": "La entrada se consulta por referencia const; la selección se devuelve como un valor vector<int>. Lee cada parte de la interfaz según su función: permiso de acceso a la entrada y tipo del resultado son decisiones diferentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar la decisión que expresa cada encabezado"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una función pública debe prometer vector<int> antes de mostrar su cuerpo. ¿Qué forma comunica directamente esa decisión?",
+          "options": [
+            "std::vector<int> resultado en main, dejando el retorno de seleccionar pendiente de deducir.",
+            "auto seleccionar(const std::vector<int>& datos, int limite) -> std::vector<int>.",
+            "auto seleccionar(const std::vector<int>& datos, int limite), declarado sin cuerpo ni flecha."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un tipo explícito al final comunica el resultado antes del cuerpo. La deducción necesita la definición y el destino no establece la interfaz."
+        },
+        {
+          "type": "paragraph",
+          "text": "En otra sesión escribe primero una interfaz tradicional y luego la misma con retorno al final, sin cambiar el contrato. Después elige una función pequeña con auto deducido y explica qué expresiones determinan su tipo. Cambia una expresión deliberadamente y revisa si también cambia la interfaz; no confundas pasar las pruebas de un dato con conservar el contrato."
+        },
+        {
+          "type": "note",
+          "text": "Fuente principal: Bjarne Stroustrup, Programming: Principles and Practice Using C++, 3.ª edición, Addison-Wesley, 2024, §7.4.10, pp. 205–206. Precisión de deducción y redeclaración: borrador de C++ [dcl.spec.auto], https://eel.is/c++draft/dcl.spec.auto. Ejemplos, dominios, fallos intencionales y actividades originales de esta ruta."
+        }
+      ]
+    }
+  ]
+}

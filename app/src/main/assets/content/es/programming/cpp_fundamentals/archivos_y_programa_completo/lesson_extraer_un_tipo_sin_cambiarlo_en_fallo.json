@@ -1,0 +1,240 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__extraer_un_tipo_sin_cambiarlo_en_fallo",
+  "title": "Extraer un tipo sin cambiarlo en fallo",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer un valor propio exige comprobar el acuerdo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un operator>> recibe std::istream& y una referencia modificable al objeto destino. Puede consumir texto, comprobarlo y decidir si obtuvo un valor válido. Devuelve el mismo flujo para que el llamador consulte su estado o encadene otra extracción. Si el formato o el dominio falla, nuestro contrato conservará el valor anterior del destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estudiaremos primero Cantidad: un campo unidades entre 0 y 5, escrito como (unidades). Después construirás el lector de Recuento con sus dos campos. En ambas pruebas usamos extracción formateada decimal y el salto de espacios habitual: ( 3 ) representa el mismo valor que (3). No estamos comprobando una ortografía única de los enteros."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "destino_y_origen_son_distintos",
+          "question": "Tras una lectura fallida que conservó el objeto, ¿qué podemos afirmar sobre el origen?",
+          "options": [
+            "Todos los caracteres vuelven automáticamente a la posición inicial.",
+            "El origen queda reparado porque el destino no cambió.",
+            "Puede haber consumido caracteres y conservar un estado de fallo."
+          ],
+          "correctIndex": 2,
+          "explanation": "Conservar el objeto no equivale a deshacer la entrada. La posición y el estado del origen tienen su propio comportamiento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Extraer candidatos, validar y sólo entonces asignar"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera comprobación pide un carácter de apertura, un entero y un carácter de cierre. Si alguna extracción falla, retorna sin tocar el destino. Si se obtuvieron, comprueba los delimitadores y el dominio. Un formato reconocible puede contener una cantidad inválida; hace falta esa segunda comprobación."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(3)\"};\n    Cantidad cantidad{4};\n    if (entrada >> cantidad) { std::cout << cantidad.unidades; }\n    else { std::cout << \"Fallo\"; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "setstate(std::ios::failbit) añade el indicador de fallo al estado que ya tenía el flujo. clear(std::ios::failbit) sustituiría el estado: podría borrar eofbit o badbit previos. Nuestro operador no borra indicadores para aparentar una lectura válida. Las pruebas mantienen la máscara de excepciones predeterminada; con una máscara que lo solicite, las operaciones de estado también pueden lanzar una excepción."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "referencia_modificable_del_destino",
+          "question": "¿Por qué Cantidad& destino carece de const en el lector?",
+          "options": [
+            "Una lectura aceptada debe poder asignar el nuevo valor al objeto del llamador.",
+            "Leer obliga a copiar el flujo antes de operar sobre sus caracteres.",
+            "El lector debe alterar los campos antes de comprobar el dominio."
+          ],
+          "correctIndex": 0,
+          "explanation": "La referencia permite aplicar la asignación al objeto original, pero nuestro contrato la retrasa hasta la validación completa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos clases de fallo y estados que se acumulan"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cierre_incorrecto_conserva_destino",
+          "question": "Predice la salida. Se obtuvo el entero, pero el carácter de cierre no cumple el acuerdo.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(2]\"};\n    Cantidad cantidad{4};\n    entrada >> cantidad;\n    std::cout << entrada.fail() << \"|\" << cantidad.unidades;\n    return 0;\n}\n",
+          "answers": [
+            "1|4"
+          ],
+          "explanation": "El operador añade failbit al detectar ]. Como no llega a asignar el candidato, cantidad sigue teniendo 4."
+        },
+        {
+          "type": "output_prediction",
+          "id": "setstate_conserva_eof",
+          "question": "Predice la salida. La extracción decimal puede encontrar el final al terminar el entero.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"4\"};\n    int numero{0};\n    if (entrada >> numero) { std::cout << \"Leido:\" << numero << \"|\"; }\n    entrada.setstate(std::ios::failbit);\n    std::cout << \"EOF=\" << entrada.eof() << \";Fallo=\" << entrada.fail();\n    return 0;\n}\n",
+          "answers": [
+            "Leido:4|EOF=1;Fallo=1"
+          ],
+          "explanation": "La extracción obtuvo 4 y señaló eofbit sin fallar. setstate añade failbit y conserva eofbit; después están activos ambos indicadores."
+        },
+        {
+          "type": "paragraph",
+          "text": "El estado del flujo aporta información, pero no sustituye la comprobación del registro. bool sobre un flujo comprueba que no haya failbit ni badbit. eofbit por sí solo no significa fallo de la extracción que ya terminó, y tampoco demuestra que un registro más complejo esté completo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Llegar al final no acredita un registro completo"
+        },
+        {
+          "type": "output_prediction",
+          "id": "registro_truncado_al_final",
+          "question": "Predice la salida. Falta el carácter de cierre requerido por Cantidad.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(2\"};\n    Cantidad cantidad{4};\n    entrada >> cantidad;\n    std::cout << entrada.eof() << \":\" << entrada.fail() << \"|\" << cantidad.unidades;\n    return 0;\n}\n",
+          "answers": [
+            "1:1|4"
+          ],
+          "explanation": "El entero se obtiene, pero no puede extraerse el cierre. El origen termina con eofbit y failbit; el destino conserva 4."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "eof_no_certifica_registro",
+          "question": "Una extracción falló y eof() es true. ¿Qué conclusión es válida sin conocer en qué etapa estaba la lectura?",
+          "options": [
+            "El último registro leído es necesariamente correcto.",
+            "Puede faltar parte de un registro; EOF por sí solo no prueba un final limpio.",
+            "El dominio del objeto se ha comprobado automáticamente."
+          ],
+          "correctIndex": 1,
+          "explanation": "El final puede encontrarse antes de comenzar otro registro o dentro de uno incompleto. Hay que conservar el contexto de la lectura."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para una secuencia completa, el programa deberá distinguir no haber comenzado otro registro de haberlo iniciado y encontrarlo truncado. Nuestro operador describe la lectura de un valor; no decide por sí mismo que todo un archivo terminó correctamente. La comprobación completa de líneas y secuencias será un paso posterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar el objeto no devuelve los caracteres"
+        },
+        {
+          "type": "output_prediction",
+          "id": "caracteres_consumidos_no_reaparecen",
+          "question": "Predice la salida. clear se usa aquí sólo para observar el texto restante de una cadena controlada, después del fallo.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstruct Cantidad { int unidades; };\n\nstd::istream& operator>>(std::istream& origen, Cantidad& destino) {\n    char abre{0};\n    char cierra{0};\n    int unidades{0};\n    if (!(origen >> abre >> unidades >> cierra)) { return origen; }\n    if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = Cantidad{unidades};\n    return origen;\n}\n\nint main() {\n    std::istringstream entrada{\"(3]RESTO\"};\n    Cantidad cantidad{4};\n    entrada >> cantidad;\n    if (entrada.fail()) {\n        entrada.clear();\n        std::string resto;\n        std::getline(entrada, resto);\n        std::cout << cantidad.unidades << \"|\" << resto;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "4|RESTO"
+          ],
+          "explanation": "Se consumieron (, 3 y ] antes de detectar el cierre incorrecto. El objeto permanece en 4. Borrar el estado permite leer RESTO, sin devolver los caracteres ya consumidos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta observación no convierte clear en una recuperación universal: no repara el origen, no retrocede ni borra texto. Una estrategia real debe decidir qué descartar o conservar y cómo diagnosticar el caso. No prometemos devolver un prefijo arbitrario de caracteres."
+        },
+        {
+          "type": "order_code",
+          "id": "orden_para_conservar_el_destino",
+          "question": "Reconstruye el cuerpo del operador de Cantidad con esta estrategia: declarar candidatos, comprobar extracción, comprobar formato y dominio, asignar y retornar. El encabezado es std::istream& operator>>(std::istream& origen, Cantidad& destino).",
+          "fragments": [
+            "destino = Cantidad{unidades};",
+            "return origen;",
+            "char abre{0};\nchar cierra{0};\nint unidades{0};",
+            "if (!(origen >> abre >> unidades >> cierra)) { return origen; }",
+            "if (abre != '(' || cierra != ')' || unidades < 0 || unidades > 5) {\n    origen.setstate(std::ios::failbit);\n    return origen;\n}"
+          ],
+          "correctOrder": [
+            2,
+            3,
+            4,
+            0,
+            1
+          ],
+          "explanation": "Las dos comprobaciones preceden a la única asignación al destino. Sus ramas de fallo retornan el mismo origen."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir el lector de dos campos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera Recuento, con aceptados y rechazados entre 0 y 10. Define recuento_valido(const Recuento&) y operator>> para el formato [aceptados;rechazados]. Usa candidatos locales para ambos enteros y los tres delimitadores. Si falla una extracción, un separador o el dominio, conserva todo el objeto destino. Si las extracciones terminaron pero el acuerdo es inválido, añade failbit sin borrar el estado previo. Retorna el mismo origen."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye una prueba que cree un istringstream nuevo y un destino Recuento{6, 2} en cada caso. Muestra OK seguido de la representación del destino si la lectura se acepta; si falla, muestra Fallo seguido del destino anterior. El escritor conocido se proporciona para centrar el trabajo en la entrada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prepara casos válidos [2;1], [0;0] y [10;10]. Después prueba vecinos fuera de cada dominio: [-1;2], [11;0], [0;-1] y [0;11]. Añade [2:1] y [2;1 sin cierre. Todos los rechazos deben mostrar Fallo [6;2], sin actualizar un solo campo. Cada prueba está en su propia línea de salida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba también [ 1 ; 3 ] y [2;1]resto. El primero admite los espacios habituales; el segundo obtiene un registro y deja resto pendiente. Este operador no exige el fin de toda la cadena después del cierre. No confundas aceptar el registro inicial con validar un archivo completo."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint main() {\n    // Define recuento_valido y operator>> antes de main; prueba aqui.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Las muestras son cadenas conocidas. No se necesita entrada interactiva. Consulta la referencia después de construir y contrastar tu versión."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior y criterios de corrección"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']' || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nvoid probar(const std::string& datos) {\n    std::istringstream entrada{datos};\n    Recuento destino{6, 2};\n    if (entrada >> destino) { std::cout << \"OK \" << destino << \"\\n\"; }\n    else { std::cout << \"Fallo \" << destino << \"\\n\"; }\n}\n\nint main() {\n    const std::vector<std::string> casos{\n        \"[2;1]\", \"[0;0]\", \"[10;10]\", \"[-1;2]\", \"[11;0]\",\n        \"[0;-1]\", \"[0;11]\", \"[2:1]\", \"[2;1\", \"[ 1 ; 3 ]\", \"[2;1]resto\"\n    };\n    for (const std::string& datos : casos) { probar(datos); }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: ninguno de los destinos del objeto se modifica durante las extracciones; formato y dominio se comprueban antes de la única asignación; los fallos conservan Recuento{6, 2}; el retorno identifica el mismo origen y los indicadores de estado permanecen disponibles. Son válidos otros nombres o una descomposición en funciones que conserve esas condiciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las salidas, en orden, son OK [2;1], OK [0;0], OK [10;10], seis líneas Fallo [6;2], OK [1;3] y OK [2;1]. La última acepta sólo el registro inicial: resto permanece pendiente. El programa de demostración termina con código 0 porque ejecutó sus pruebas; ese código no significa que todas las muestras fueran válidas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade una cadena vacía y un cierre incorrecto [3;4}: ambas lecturas fallan sin modificar el destino. Después de un fallo, una nueva extracción sobre ese mismo origen no es una estrategia de recuperación mientras conserve failbit. Crear un origen independiente para cada prueba evita mezclar sus estados."
+        },
+        {
+          "type": "note",
+          "text": "Fuente principal: Stroustrup, B. (2024). Programming: Principles and practice using C++ (3.ª ed.). Addison-Wesley. 9.7–9.8, pp. 266–269. Modelo y actividades originales. Contraste de estados con el borrador del estándar C++, [iostate.flags]: https://eel.is/c++draft/iostate.flags; setstate conserva los indicadores existentes."
+        }
+      ]
+    }
+  ]
+}

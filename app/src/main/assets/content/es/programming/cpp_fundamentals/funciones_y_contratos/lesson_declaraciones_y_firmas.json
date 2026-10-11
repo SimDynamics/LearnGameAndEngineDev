@@ -25,9 +25,9 @@
           "type": "multiple_choice",
           "question": "¿Qué parte distingue una definición de función de una declaración sin definición?",
           "options": [
-            "La definición contiene el cuerpo con las instrucciones.",
-            "La definición siempre aparece dentro de main.",
-            "La declaración sin cuerpo ejecuta primero el cálculo."
+            "La definición contiene el cuerpo con sus instrucciones.",
+            "La definición es la expresión que llama a la función con datos.",
+            "La definición enumera sólo los tipos y acaba en punto y coma."
           ],
           "correctIndex": 0,
           "explanation": "El cuerpo aporta la implementación. La declaración sin cuerpo describe cómo se puede usar la función."
@@ -95,11 +95,11 @@
           "type": "multiple_choice",
           "question": "Una función recibe int. ¿Qué recupera la fracción si el argumento ya fue convertido desde 3.5 a 3?",
           "options": [
+            "Cambiar el nombre del parámetro.",
             "Declarar double el objeto que recibe el resultado al final.",
-            "Nada en el destino recupera esa fracción: debe elegirse el tipo adecuado antes del cálculo.",
-            "Cambiar el nombre del parámetro."
+            "Nada en el destino recupera esa fracción: debe elegirse el tipo adecuado antes del cálculo."
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "La pérdida ocurrió antes del cuerpo. Un destino double sólo recibe el resultado ya calculado."
         }
       ]
@@ -153,16 +153,41 @@
           "type": "multiple_choice",
           "question": "¿Qué debe conservarse al sustituir la declaración por una definición anterior a main?",
           "options": [
-            "El nombre y los tipos que usa la llamada, además de un cuerpo que realice el cálculo.",
-            "Sólo el comentario sobre la función.",
-            "Una definición de dias_completos dentro del cuerpo de main."
+            "Nombre y tipos, pero basta dejar el cuerpo sin ningún cálculo.",
+            "Nombre, tipos de la llamada y cuerpo que realiza el cálculo.",
+            "Sólo el cuerpo, aunque se cambien los tipos de la llamada."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "La definición anterior ya declara la interfaz y aporta el cuerpo. Las funciones libres de esta unidad se definen fuera de main."
         },
         {
           "type": "note",
           "text": "Puedes organizar el texto mediante declaraciones previas o definiciones anteriores a las llamadas. Una interfaz clara permite leer lo necesario para usar una función sin estudiar todos los detalles de su cuerpo cada vez."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: Definir antes de llamar"
+        },
+        {
+          "type": "note",
+          "text": "Compara después de realizar el laboratorio y anotar sus resultados previstos. La referencia presenta una organización posible; los criterios permiten reconocer otras implementaciones que cumplan los mismos contratos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. dias_completos recibe un int de horas entre 0 y 120 y devuelve el cociente entero al dividir entre 8. Para 53 devuelve 6; para 0,8,16 devuelve 0,1,2. La reorganización debe conservar nombre, tipos, regla y llamada: una definición anterior a main permite eliminar la declaración aislada. La organización original, con declaración previa y definición posterior, también es válida."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint dias_completos(int horas) {\n    return horas / 8;\n}\n\nint main() {\n    const int horas = 53;\n    std::cout << dias_completos(horas);\n    return 0;\n}\n\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí la definición completa aparece antes de la llamada. Su encabezado conserva la misma interfaz que la declaración anterior. No dejes dos definiciones de la función al moverla. Cambia sólo horas para comprobar los casos indicados y compara con la versión original; reorganizar texto no cambia el resultado prometido."
         }
       ]
     }

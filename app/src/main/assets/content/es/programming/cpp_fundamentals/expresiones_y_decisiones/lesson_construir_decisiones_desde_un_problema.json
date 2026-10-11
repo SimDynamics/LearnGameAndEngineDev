@@ -44,11 +44,11 @@
           "type": "multiple_choice",
           "question": "Una nueva prueba usa 10 fichas, capacidad 3 y acepta_sobrantes false. ¿Qué salida exige el enunciado?",
           "options": [
+            "Datos invalidos",
             "Grupos: 3",
-            "Reparto pendiente",
-            "Datos invalidos"
+            "Reparto pendiente"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "Los datos son válidos, queda una ficha y el modo elegido no acepta sobrantes."
         },
         {
@@ -118,27 +118,48 @@
           "type": "multiple_choice",
           "question": "¿Qué caso distingue directamente el dominio original del nuevo, sin añadir otra causa de rechazo?",
           "options": [
+            "31 fichas con capacidad 4.",
             "Cero fichas con capacidad 4.",
-            "Cero fichas con capacidad 0.",
-            "31 fichas con capacidad 4."
+            "Cero fichas con capacidad 0."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Con capacidad válida, cero era Sin trabajo y ahora debe ser Datos invalidos. Los otros casos ya se rechazaban."
         },
         {
           "type": "multiple_choice",
           "question": "Una prueba con cero fichas y capacidad cero muestra Sin trabajo. ¿Qué requisito original incumple?",
           "options": [
-            "El rechazo de datos inválidos debe tener prioridad.",
             "Todo bool debe mostrarse como texto.",
+            "El rechazo de datos inválidos debe tener prioridad.",
             "Siempre debe haber al menos un grupo completo."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "La capacidad cero es inválida y sólo debe producir Datos invalidos. La cantidad cero no debe ocultar ese rechazo."
         },
         {
           "type": "note",
           "text": "La construcción libre no se reduce a cambiar los datos de una solución entregada: elige expresiones, organiza alternativas y compara resultados. Conserva una explicación de cada caso y de la primera causa encontrada cuando una prueba falla."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar la extensión del dominio después del intento"
+        },
+        {
+          "type": "paragraph",
+          "text": "La construcción original ya tenía su comparación posterior. Para la extensión final, el intervalo de fichas empieza en 1: cero fichas con capacidad 4 debe producir Datos invalidos. El caso 1, capacidad 4 y aceptación de sobrantes produce Grupos: 0 y Sobrantes: 1 en dos líneas; 30 con capacidad 6 conserva Grupos: 5. Los datos inválidos mantienen la prioridad y no llegan a / ni a %."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int capacidad = 5;\n    const bool acepta_sobrantes = true;\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Datos invalidos\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Grupos: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Grupos: \" << grupos << \"\\n\";\n            std::cout << \"Sobrantes: \" << sobrantes;\n        } else {\n            std::cout << \"Reparto pendiente\";\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta referencia cambia la comprobación inferior y elimina la rama Sin trabajo, que ya no es alcanzable con los datos aceptados. Conserva los otros cálculos y decisiones. Prueba 0, 1 y 30 con capacidades válidas, y capacidad 0 con cantidades válidas e inválidas. Una estructura distinta también puede cumplir estos criterios; no se exige copiar esta organización."
         }
       ]
     }

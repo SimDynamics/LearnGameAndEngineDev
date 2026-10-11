@@ -37,11 +37,11 @@
           "id": "refactor_o_regla_nueva",
           "question": "Al extraer piezas_validas cambias piezas<=10 por piezas<10. ¿Qué alteraste?",
           "options": [
-            "También el comportamiento: ahora se rechaza una frontera que antes se aceptaba.",
             "Sólo el formato del código, sin afectar ninguna entrada.",
+            "También el comportamiento: ahora se rechaza una frontera que antes se aceptaba.",
             "La forma de imprimir, pero no la validez del dato."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Una edición de comparación cambia el dominio, aunque se haga durante una extracción."
         }
       ]
@@ -61,11 +61,11 @@
           "id": "comentario_util",
           "question": "La función devuelve minutos y acepta de 0 a 10 piezas. ¿Qué comentario ayuda al llamador?",
           "options": [
-            "Devuelve minutos; -1 indica cantidad fuera de 0 a 10.",
-            "Aquí hay una llave de apertura.",
-            "Esta línea escribe la palabra return."
+            "Devuelve minutos; acepta cualquier int sin comprobar el dominio.",
+            "Devuelve minutos; interpreta también -1 como duración válida.",
+            "Devuelve minutos; -1 indica cantidad fuera de 0 a 10."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "El comentario explica unidades, dominio y señal de error."
         },
         {
@@ -73,11 +73,11 @@
           "id": "comentario_desactualizado",
           "question": "El comentario dice «acepta hasta 10», pero se cambió la validación a <=12. ¿Qué debes resolver?",
           "options": [
-            "Acordar el requisito y hacer coherentes código, comentario y pruebas.",
             "Suponer que el compilador valida la verdad del comentario.",
-            "Ocultar el comentario sin comprobar si la ampliación era intencional."
+            "Ocultar el comentario sin comprobar si la ampliación era intencional.",
+            "Acordar el requisito y hacer coherentes código, comentario y pruebas."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "El comentario no se evalúa como regla del programa; puede contradecir el comportamiento."
         },
         {
@@ -115,11 +115,11 @@
           "id": "estrategia_de_extraccion",
           "question": "¿Qué secuencia conserva evidencia al extraer una función?",
           "options": [
-            "Anotar comportamiento y pruebas actuales, extraer una responsabilidad y volver a ejecutar esas pruebas.",
+            "Eliminar las pruebas porque el código tiene más funciones.",
             "Cambiar dominio y salida a la vez, y probar sólo la entrada que ya conoces.",
-            "Eliminar las pruebas porque el código tiene más funciones."
+            "Anotar comportamiento y pruebas actuales, extraer una responsabilidad y volver a ejecutar esas pruebas."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "Cambios pequeños y comparaciones preservadas permiten detectar una alteración accidental."
         },
         {
@@ -129,6 +129,31 @@
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\" << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia del laboratorio"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y probar tu intento. Es una implementación posible; otras soluciones son válidas si cumplen el mismo contrato y los criterios indicados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Tras extraer piezas_validas, las cuatro salidas originales siguen siendo 0:7:23:-1 para 0,2,10,11. Las pruebas añadidas -1,1,11 producen -1,5,-1. La estimación conserva unidades, tiempos y señal -1. En una segunda etapa, al ampliar hasta 12, las pruebas 12 y 13 deben producir 27 y -1; ahora 11 produce 25. Esta última diferencia es un cambio de requisito explícito, no parte de la extracción."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "piezas_validas responde sólo a la pregunta del dominio. Compara primero la salida con la versión anterior. Añade después llamadas para -1,1,11 sin cambiar las reglas. Para la ampliación separada, cambia el límite superior de piezas_validas a 12 y comprueba 12,13 y los casos anteriores con sus expectativas actualizadas cuando corresponda."
         }
       ]
     }

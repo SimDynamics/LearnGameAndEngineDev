@@ -1,0 +1,230 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__construir_e_inicializar_miembros",
+  "title": "Construir e inicializar los miembros",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar el objeto en el momento de crearlo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un punto necesita coordenadas iniciales. En lugar de crear el objeto y recordar después una función de preparación, definimos un constructor. Tiene el mismo nombre que el tipo y no declara un tipo de retorno. Punto(int x, int y) recibe los datos que usamos para establecer sus miembros antes del cuerpo del constructor."
+        },
+        {
+          "type": "paragraph",
+          "text": "La notación : x_{x}, y_{y} es una lista de inicializadores de miembros. Lo que precede a cada llave nombra el miembro; lo que aparece dentro es el valor recibido. En estos puntos aceptamos coordenadas int sin otra restricción de dominio: aquí el objetivo es aprender la construcción, antes de añadir reglas de validez."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{3, -2};\n    std::cout << punto.x() << \",\" << punto.y();\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un constructor no es una función de retorno"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Cuál declaración describe un constructor de Punto con dos coordenadas int?",
+          "options": [
+            "void Punto(int x, int y);",
+            "Punto(int x, int y);",
+            "int Punto(int x, int y);"
+          ],
+          "correctIndex": 1,
+          "explanation": "El constructor tiene el nombre del tipo y no un tipo de retorno."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En Punto punto{4, 1};, ¿qué realiza la preparación inicial?",
+          "options": [
+            "La primera consulta x(), que entrega los argumentos a los miembros.",
+            "La declaración de los miembros, sin utilizar los argumentos.",
+            "El constructor que recibe ambos argumentos."
+          ],
+          "correctIndex": 2,
+          "explanation": "Los datos se entregan al construir el objeto, antes de usarlo."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto a{6, 2};\n    Punto b{-1, 5};\n    std::cout << a.y() << \" \" << b.x();\n    return 0;\n}\n",
+          "answers": [
+            "2 -1"
+          ],
+          "explanation": "Cada objeto se construye con sus propias coordenadas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Inicializar es distinto de asignar después"
+        },
+        {
+          "type": "paragraph",
+          "text": "La lista de miembros establece sus valores al construirse. Escribir sólo asignaciones dentro del cuerpo sería una preparación posterior de miembros que ya comenzaron a existir. La diferencia importa especialmente con tipos que exigen datos de construcción o con miembros que se leerían antes de recibir su valor. Usamos la lista para expresar directamente la inicialización."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre del miembro que se inicializa con x en este constructor.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : ___{x}, y_{y} {}\n    int x() { return x_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 7};\n    std::cout << punto.x();\n    return 0;\n}\n",
+          "answers": [
+            "x_"
+          ],
+          "explanation": "x_ es el miembro y x es el argumento que entrega su valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los miembros se inicializan en el orden de sus declaraciones en la clase, no según el orden que eligieras al escribir la lista. Mantendremos ambas secuencias alineadas. No leeremos un miembro todavía sin preparar para calcular otro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción que exige argumentos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto; // Error intencional: esta versión exige dos coordenadas.\n    std::cout << punto.x();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué reparación conserva una petición de punto en las coordenadas cero y cuatro?",
+          "options": [
+            "Punto punto{};",
+            "Punto punto{4, 0};",
+            "Punto punto{0, 4};"
+          ],
+          "correctIndex": 2,
+          "explanation": "Se deben entregar los argumentos requeridos por el constructor."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta versión no hemos definido un constructor que se pueda llamar sin argumentos. Esa elección permite detectar una preparación olvidada al compilar. Si más adelante elegimos un punto por defecto, tendrá que tener un significado claro y una inicialización escrita."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Declarar y definir una función miembro"
+        },
+        {
+          "type": "paragraph",
+          "text": "También podemos declarar un miembro dentro de la clase y definirlo fuera. Punto::x identifica qué clase contiene esa función; una definición int x() sin esa calificación sería otra función libre, sin acceso automático a x_. La calificación se parece a la de Estado::enviado, pero aquí identifica un miembro del tipo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y);\n    int x();\nprivate:\n    int x_;\n    int y_;\n};\n\nPunto::Punto(int x, int y) : x_{x}, y_{y} {}\n\nint Punto::x() {\n    return x_;\n}\n\nint main() {\n    Punto punto{8, 1};\n    std::cout << punto.x();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué identifica Punto::Punto en la definición exterior?",
+          "options": [
+            "El constructor de la clase Punto.",
+            "La consulta pública x() de la clase Punto.",
+            "Una función libre que devuelve dos enteros."
+          ],
+          "correctIndex": 0,
+          "explanation": "La primera parte califica la clase; la segunda conserva el nombre del constructor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir una organización legible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Definir una consulta corta dentro de la clase puede facilitar su lectura. Una función más larga puede dejarse fuera para que la interfaz se vea con claridad. En los programas pequeños de estas lecciones ambas organizaciones pueden compilar en un archivo. No prometemos que escribir una definición dentro de la clase garantice una optimización: la sustitución de llamadas depende del compilador."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto original{1, 9};\n    Punto copia = original;\n    original = Punto{4, 5};\n    std::cout << copia.x() << \",\" << copia.y() << \" \" << original.x() << \",\" << original.y();\n    return 0;\n}\n",
+          "answers": [
+            "1,9 4,5"
+          ],
+          "explanation": "La copia conserva los miembros anteriores; la asignación recibe otro Punto ya construido."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué diferencia hay entre construir original y asignarle después otro Punto?",
+          "options": [
+            "Construir crea el objeto; asignar reemplaza su valor.",
+            "Construir reemplaza un objeto; asignar declara uno nuevo.",
+            "Asignar sólo cambia los miembros públicos y conserva los privados."
+          ],
+          "correctIndex": 0,
+          "explanation": "Recupera inicialización frente a asignación, ahora con un tipo propio."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción de una pareja distinta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define una clase Dimension con dos miembros privados filas_ y columnas_. Su constructor recibe dos int e inicializa ambos mediante lista de miembros; las consultas filas() y columnas() permiten leerlos. Para este primer modelo sólo trabajamos con cantidades de cero a diez definidas en el código; todavía no se pide rechazar argumentos. Construye {2, 4} y muestra 2x4; después prueba {0, 3} y {1, 1}."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define al menos una consulta fuera de la clase para practicar su calificación. Construye dos objetos y demuestra que cada consulta lee el objeto de su propia llamada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y criterios de construcción"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas();\n    int columnas() { return columnas_; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint Dimension::filas() {\n    return filas_;\n}\n\nint main() {\n    Dimension dimension{2, 4};\n    std::cout << dimension.filas() << \"x\" << dimension.columnas();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: el constructor tiene el nombre del tipo y prepara ambos miembros; el código usuario entrega sus argumentos antes de consultar; la definición exterior usa Dimension::; los distintos objetos conservan sus propias parejas. Este modelo de construcción no se presenta como una validación de dimensiones arbitrarias."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una lista de miembros está escrita en orden distinto de sus declaraciones. ¿Qué determina la inicialización real?",
+          "options": [
+            "El orden de los argumentos que entrega main.",
+            "El orden escrito después de : en la lista de inicializadores.",
+            "El orden de declaración de los miembros."
+          ],
+          "correctIndex": 2,
+          "explanation": "Alinear la escritura con ese orden evita una expectativa equivocada."
+        }
+      ]
+    }
+  ]
+}

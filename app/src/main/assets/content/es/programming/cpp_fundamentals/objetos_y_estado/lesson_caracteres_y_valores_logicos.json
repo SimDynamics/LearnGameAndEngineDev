@@ -57,22 +57,22 @@
           "type": "multiple_choice",
           "question": "Una fila se identifica con una sola letra R en estos ejemplos. ¿Qué definición expresa esa representación?",
           "options": [
-            "char fila = 'R';",
+            "bool fila = false;",
             "int fila = 0;",
-            "bool fila = false;"
+            "char fila = 'R';"
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "char conserva el símbolo elegido. Un entero o un valor lógico cumpliría un papel distinto."
         },
         {
           "type": "multiple_choice",
           "question": "¿Qué diferencia hay entre '5' y 5?",
           "options": [
-            "El primero es un literal de carácter y el segundo uno entero.",
             "No pueden distinguirse porque ambos pueden imprimir 5.",
-            "El segundo es siempre texto."
+            "El segundo es siempre texto.",
+            "El primero es un literal de carácter y el segundo uno entero."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "La sintaxis determina el tipo del literal; la apariencia final no basta para distinguirlo."
         }
       ]
@@ -132,11 +132,11 @@
           "type": "multiple_choice",
           "question": "Quieres conservar una etiqueta que puede contener varias palabras. ¿Qué tipo responde a esa necesidad?",
           "options": [
-            "char",
             "std::string",
+            "char",
             "int"
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "std::string representa una secuencia de caracteres. Los ejemplos de char conservan una unidad."
         }
       ]
@@ -164,11 +164,11 @@
           "type": "multiple_choice",
           "question": "Una marca indica si una revisión está pendiente o no. ¿Qué tipo permite representar directamente esas dos posibilidades?",
           "options": [
-            "bool",
             "std::string con un código de muchas cifras",
-            "Un nombre sin variable"
+            "Un nombre sin variable",
+            "bool"
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "bool tiene true y false. La cantidad de revisiones, si se quisiera contarla, sería un dato distinto."
         }
       ]
@@ -203,11 +203,11 @@
           "type": "multiple_choice",
           "question": "¿Qué distingue true de \"true\" en el código?",
           "options": [
-            "true es un valor lógico; \"true\" es un literal de texto.",
-            "Ambos son nombres de variables definidos automáticamente.",
-            "Las comillas cambian sólo el color del editor."
+            "Ambos son valores bool porque contienen las mismas letras.",
+            "Ambos son cadenas que guardan la palabra true.",
+            "true es un valor lógico; \"true\" es un literal de texto."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "Las comillas cambian qué clase de literal se ha escrito, no sólo su apariencia."
         },
         {
@@ -261,11 +261,11 @@
           "type": "multiple_choice",
           "question": "Tenemos cuatro puertas y queremos guardar tanto su cantidad como si la entrada está habilitada. ¿Qué pareja expresa esos dos datos?",
           "options": [
+            "bool cantidad = true; e int habilitada = 4;",
             "int cantidad = 4; y bool habilitada = true;",
-            "bool cantidad = true; y char habilitada = '4';",
-            "Dos comentarios sin objetos."
+            "bool cantidad = true; y char habilitada = '4';"
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Cantidad e indicador tienen significados distintos y necesitan representaciones adecuadas."
         },
         {
@@ -277,6 +277,31 @@
             "Modulo M 0"
           ],
           "explanation": "Se combinan una secuencia de texto, un carácter y un valor lógico sin confundir sus tipos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia: Un carácter y un indicador"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. pasillo representa un solo carácter C y abierta representa el valor lógico true. La primera salida tiene dos líneas: Pasillo: C y Abierta: 1. Al cambiar sus valores a D y false, se obtiene Pasillo: D y Abierta: 0. Usa char y bool o una representación equivalente que conserve esos significados; en este experimento la presentación lógica predeterminada es 1/0, sin boolalpha."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    char pasillo{'C'};\n    bool abierta{true};\n    std::cout << \"Pasillo: \" << pasillo << '\\n';\n    std::cout << \"Abierta: \" << abierta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las comillas simples construyen el literal de carácter; true construye el valor lógico. Modifica sólo los valores iniciales a 'D' y false para comprobar la segunda versión. No hace falta una decisión: cout presenta los valores guardados según sus tipos."
         }
       ]
     }

@@ -1,0 +1,160 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__hacer_explicito_el_orden_de_las_operaciones",
+  "title": "Hacer explícito el orden de las operaciones",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prioridad y orden de evaluación responden a preguntas distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "La prioridad de los operadores determina cómo se agrupa una expresión. No impone en todos los casos cuál operando se evalúa primero. Cuando las funciones sólo calculan con sus argumentos, muchas veces el orden no cambia el resultado; cuando modifican un mismo estado, puede cambiarlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta práctica registrar recibe marca por referencia, añade un dígito a su traza decimal y devuelve ese dígito. Comenzamos con marca=0 y hacemos exactamente dos llamadas con dígitos 1..9: la traza llega como máximo a 99 y cabe en int. El valor devuelto y el estado modificado cumplen funciones diferentes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prioridad_no_es_secuencia",
+          "question": "Conoces la prioridad de + y * en una expresión que llama a varias funciones. ¿Qué has determinado directamente?",
+          "options": [
+            "Qué llamadas deben ejecutarse de izquierda a derecha.",
+            "Cómo se agrupan las operaciones para obtener el valor.",
+            "Qué variables dejan de cambiar dentro de las funciones."
+          ],
+          "correctIndex": 1,
+          "explanation": "La agrupación no proporciona por sí sola una secuencia de todos los efectos. Hay que conocer las reglas de evaluación aplicables."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una suma puede conservar su valor y cambiar la traza"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Precondicion de esta practica: marca empieza en 0;\n// se hacen exactamente dos llamadas con digitos entre 1 y 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint main() {\n    int marca{0};\n    int suma = registrar(marca, 1) + registrar(marca, 2);\n    std::cout << suma << ':' << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En C++23 este ejemplo puede producir 3:12 o 3:21. Cada llamada termina su cuerpo; el + no obliga a elegir primero la llamada escrita a la izquierda. La suma de los dígitos es 3 en ambos casos, pero la traza conserva el orden elegido. No existe una única salida portátil que debamos exigir en una predicción."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "llamadas_en_suma",
+          "question": "En la expresión de suma cambia los argumentos 1 y 2 por 3 y 8. ¿Qué afirmación describe las salidas permitidas sin separar las llamadas?",
+          "options": [
+            "Marca es 38; suma es 11; siempre se ejecuta primero la izquierda.",
+            "Marca es 83; suma es 11; siempre se ejecuta primero la derecha.",
+            "Marca es 38 o 83; suma es 11; ésta no depende del orden."
+          ],
+          "correctIndex": 2,
+          "explanation": "Las llamadas pueden ejecutarse en cualquiera de los dos órdenes. Aquí cada cuerpo completo modifica marca; no estamos usando incrementos sin secuencia dentro del mismo cálculo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ejecutar una vez sólo muestra lo que ocurrió en esa ejecución. Repetir sin cambios y obtener siempre el mismo resultado tampoco convierte esa elección en una garantía del lenguaje. Esta actividad usa selección y razonamiento, no una respuesta de salida única."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Expresar la dependencia en instrucciones sucesivas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Precondicion de esta practica: marca empieza en 0;\n// se hacen exactamente dos llamadas con digitos entre 1 y 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint main() {\n    int marca{0};\n    int primero = registrar(marca, 1);\n    int segundo = registrar(marca, 2);\n    int suma = primero + segundo;\n    std::cout << suma << ':' << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora la salida es 3:12. La primera instrucción completa su llamada antes de comenzar la siguiente; la suma utiliza dos valores ya obtenidos y no vuelve a cambiar marca. Los nombres primero y segundo ayudan a expresar qué decisión de orden tomó el programa."
+        },
+        {
+          "type": "output_prediction",
+          "id": "orden_invertido_explicito",
+          "question": "Predice la salida al ejecutar primero la llamada con 2. El nombre de una variable no decide cuándo se ejecuta su inicialización.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Precondicion de esta practica: marca empieza en 0;\n// se hacen exactamente dos llamadas con digitos entre 1 y 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint main() {\n    int marca{0};\n    int segundo = registrar(marca, 2);\n    int primero = registrar(marca, 1);\n    std::cout << primero + segundo << ':' << marca;\n    return 0;\n}\n",
+          "answers": [
+            "3:21"
+          ],
+          "explanation": "La llamada de la primera instrucción produce marca=2. La siguiente añade 1 y produce 21. Los valores devueltos siguen sumando 3."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "nombre_no_reordena",
+          "question": "Renombras primero como anterior, sin mover ninguna instrucción. ¿Qué cambia en la ejecución?",
+          "options": [
+            "La llamada se adelanta para coincidir con el nombre nuevo.",
+            "Nada en esta secuencia; cambia cómo la describimos.",
+            "La suma empieza a reconstruir la traza desde cero."
+          ],
+          "correctIndex": 1,
+          "explanation": "Los nombres deben ayudar a comprender, pero no alteran el orden semántico de las instrucciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una secuencia antes de llamar a otra función"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un programa que registre primero 2 y después 7, y que pase sus dos resultados por valor a una función sumar. La función sumar sólo calcula la suma y no modifica marca. Guarda los resultados de las llamadas de registro en instrucciones sucesivas; no los obtengas como dos argumentos dentro de una única llamada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Muestra resultado:marca. Debe producir 9:27. Cambia sólo el orden de las dos llamadas de registro: la salida debe pasar a 9:72. Cambia los dígitos a 9 y 1, conservando el orden explícito: espera 10:91. La traza debe proceder de las llamadas y no de escribir una constante final."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Precondicion de esta practica: marca empieza en 0;\n// se hacen exactamente dos llamadas con digitos entre 1 y 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\n// Define una funcion de suma sin efectos sobre marca.\nint main() {\n    // Construye y comprueba las secuencias solicitadas.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "La ampliación exige separar la obtención de los argumentos de la llamada que los combina. Consulta la referencia después de intentarlo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior y garantías que sí comprobamos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Precondicion de esta practica: marca empieza en 0;\n// se hacen exactamente dos llamadas con digitos entre 1 y 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint sumar(int primero, int segundo) {\n    return primero + segundo;\n}\n\nint main() {\n    int marca{0};\n    int primero = registrar(marca, 2);\n    int segundo = registrar(marca, 7);\n    int resultado = sumar(primero, segundo);\n    std::cout << resultado << ':' << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: obtener cada argumento mediante una instrucción completa en el orden elegido, conservar los valores devueltos, pasar esos valores a sumar y separar resultado numérico de la traza. Las tres variantes producen 9:27, 9:72 y 10:91. Otra organización es válida si hace explícita la misma dependencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "La regla no exige convertir cualquier expresión en muchas instrucciones. && y || ya tienen evaluación con cortocircuito de izquierda a derecha, como usamos para proteger accesos. Las inserciones encadenadas con << también tienen secuencia de izquierda a derecha en C++23. No debe generalizarse la ausencia de orden de + a todos los operadores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tampoco debe confundirse un orden no especificado con comportamiento indefinido. Nuestro ejemplo de dos cuerpos de función tiene dos órdenes permitidos. Una expresión como ++marca + marca mezcla una modificación y una lectura sin la secuencia necesaria y tiene comportamiento indefinido; no se usa como programa de predicción ni se ejecuta aquí."
+        },
+        {
+          "type": "note",
+          "text": "Fuentes: Stroustrup, B. (2024). Programming: Principles and practice using C++ (3.ª ed.). Addison-Wesley, apartado 7.5.1, p. 207. ISO/IEC JTC 1/SC 22/WG 21. (2023). Working draft, standard for programming language C++ (N4950), apartado 6.9.1 [intro.execution] y reglas de expresiones. https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2023/n4950.pdf. Ejemplos y actividades originales de esta ruta."
+        }
+      ]
+    }
+  ]
+}

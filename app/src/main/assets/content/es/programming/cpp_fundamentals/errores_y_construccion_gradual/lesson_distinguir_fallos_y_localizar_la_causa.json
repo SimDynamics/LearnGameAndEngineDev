@@ -17,9 +17,9 @@
           "id": "declaracion_sin_definicion",
           "question": "Hay una declaración int estimar(int); y una llamada, pero no existe ninguna definición de estimar en el programa. ¿Qué etapa detecta normalmente esa definición ausente al construir el ejecutable?",
           "options": [
-            "El enlace.",
-            "La comparación manual de resultados después de ejecutar correctamente.",
-            "La lectura de datos desde el teclado."
+            "El enlace de las partes del ejecutable.",
+            "La ejecución normal del cuerpo de estimar.",
+            "El análisis de la declaración y los tipos de la llamada."
           ],
           "correctIndex": 0,
           "explanation": "La declaración permite comprobar la llamada; el enlace necesita resolver su definición."
@@ -29,9 +29,9 @@
           "id": "resultado_incorrecto",
           "question": "El requisito acepta 0 piezas sin preparación. La función siempre devuelve 3+2*piezas y el programa compila. ¿Qué caso revela un error lógico?",
           "options": [
-            "0 piezas, porque devuelve 3 cuando se esperaba 0.",
-            "4 piezas, porque siempre debe provocar un error de compilación.",
-            "Cambiar sólo el nombre de main."
+            "0 piezas.",
+            "4 piezas.",
+            "1 pieza."
           ],
           "correctIndex": 0,
           "explanation": "Una prueba del caso especial revela una regla omitida. Compilar no comprueba el requisito."
@@ -53,11 +53,11 @@
           "id": "diagnostico_nombre",
           "question": "Se declaró int pendientes{3}; y después se escribió std::cout << pendiente;. ¿Cuál es la corrección respaldada por esa evidencia?",
           "options": [
-            "Usar pendientes, si la intención era mostrar el objeto declarado.",
-            "Añadir un objeto pendiente de cero sin comprobar la intención.",
-            "Cambiar todos los int a double."
+            "Cambiar sólo el literal impreso antes del nombre pendiente.",
+            "Usar pendientes para mostrar el objeto declarado.",
+            "Cambiar sólo el tipo de pendientes de int a double."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "La diferencia de nombres explica el diagnóstico; crear otro dato podría ocultar un error de intención."
         },
         {
@@ -65,9 +65,9 @@
           "id": "cascada_diagnosticos",
           "question": "Después de omitir una llave aparecen varios diagnósticos en funciones posteriores. ¿Qué conviene comprobar primero?",
           "options": [
-            "La estructura de llaves alrededor del primer fallo relevante.",
-            "Eliminar todas las funciones posteriores sin leerlas.",
-            "Modificar cada línea informada de forma independiente y simultánea."
+            "Revisar las llaves cerca del primer fallo relevante.",
+            "Tratar todos los diagnósticos como causas independientes.",
+            "Reparar primero el último diagnóstico como un fallo aislado."
           ],
           "correctIndex": 0,
           "explanation": "Una ruptura de estructura puede producir una cascada. Corrige una hipótesis concreta y vuelve a construir."
@@ -111,11 +111,11 @@
           "id": "cambiar_sin_hipotesis",
           "question": "Una salida falla. Cambias a la vez el límite, la actualización y la condición de aceptación, y ahora ese caso pasa. ¿Qué incertidumbre permanece?",
           "options": [
-            "No sabes qué cambio explica la reparación ni qué comportamientos pudo alterar cada cambio.",
-            "El caso que pasó demuestra todos los casos posibles.",
-            "Tres cambios garantizan que las causas fueran tres."
+            "Sólo queda comprobar que los tres cambios usan nombres claros.",
+            "Ninguna: el mismo caso permite aceptar las tres modificaciones.",
+            "Qué cambio reparó el fallo y qué más alteró cada cambio."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "Una modificación por hipótesis y pruebas comparables conserva evidencia sobre la causa."
         }
       ]
@@ -135,11 +135,11 @@
           "id": "reparar_limite_de_vector",
           "question": "v tiene tres elementos, con índices 0,1,2. El recorrido por índice debe visitar todos una vez. ¿Qué condición corresponde al extremo exclusivo 3?",
           "options": [
+            "i == 3",
             "i < 3",
-            "i <= 3",
-            "i == 3"
+            "i <= 3"
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "El tamaño es el primer índice excluido, no el último índice válido."
         },
         {
@@ -149,6 +149,31 @@
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia del laboratorio"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y probar tu intento. Es una implementación posible; otras soluciones son válidas si cumplen el mismo contrato y los criterios indicados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. La versión inicial muestra 4: cada asignación reemplaza el total. El resultado exigido para 2,3,4 es 9. La reparación debe conservar el acumulado anterior y cambiar una causa concreta. Comprueba también un aporte {3}, que debe producir 3, y ningún aporte, que debe producir 0. No necesitas cambiar condición, valores y actualización a la vez."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La única reparación aquí es sustituir total = aporte por total += aporte. Para comprobar un único aporte, usa aporte{3} y aporte <= 3. Para comprobar ninguno, usa aporte{2} y aporte <= 1; el cuerpo no se ejecuta y el total conserva el cero. Restaurar el recorrido 2 a 4 debe volver a producir 9."
         }
       ]
     }

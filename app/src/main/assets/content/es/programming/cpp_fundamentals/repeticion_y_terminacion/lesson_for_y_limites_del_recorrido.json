@@ -116,11 +116,11 @@
           "id": "pruebas_recorrido",
           "question": "Un programa debe mostrar un aviso por cada trabajo solicitado, con cantidad válida entre 0 y 6. ¿Qué grupo examina ausencia, un caso mínimo y repetición?",
           "options": [
-            "Sólo cantidad 6.",
             "Cantidades 0,1 y 4.",
-            "Cantidades 4,4 y 4."
+            "Cantidades 4,4 y 4.",
+            "Sólo cantidad 6."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "Los casos 0,1 y varios distinguen comportamientos que repetir el mismo valor no examina."
         }
       ]
@@ -166,11 +166,11 @@
           "id": "salto_extremo",
           "question": "Analiza sin ejecutar: i empieza en 0, avanza 2 y se repite mientras i!=5. ¿Qué problema tiene ese criterio de salida?",
           "options": [
-            "El avance no alcanza 5; exigir igualdad no expresa el final de este recorrido.",
-            "Los números pares nunca pueden usarse en for.",
-            "El punto y coma imprime el límite."
+            "Se sale en 4 porque ese es el último valor del cuerpo antes de 5.",
+            "El avance no alcanza 5; la igualdad no expresa el final del recorrido.",
+            "Se sale en 6 porque != equivale aquí a estar por debajo del límite."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Los valores generados son pares; una desigualdad que limite el recorrido expresa la intención sin depender de llegar a 5."
         }
       ]
@@ -216,11 +216,11 @@
           "id": "contador_fuera",
           "question": "Se ha declarado int i en el encabezado de for. Después del bucle se escribe std::cout << i;, sin otra declaración de i. ¿Qué falla?",
           "options": [
-            "El nombre i no está disponible en ese ámbito.",
-            "Todo contador debe imprimirse automáticamente.",
-            "El compilador cambia i por cero."
+            "i sigue disponible y conserva el último valor mostrado en el cuerpo.",
+            "i pertenece al ámbito del for y no está disponible después.",
+            "i sigue disponible y conserva el valor que rechazó la condición."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "El alcance de la declaración termina con la estructura for."
         }
       ]
@@ -261,6 +261,27 @@
         {
           "type": "note",
           "text": "La construcción usa inicio 2, condición i<5 y actualización++i. Las vueltas usan 2,3,4. El 5 sólo aparece en la comprobación que permite terminar; no se imprime en ese cuerpo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contrasta después de convertir el recorrido. Criterios: mostrar Puesto 1 hasta Puesto 4, una línea por puesto y sin una visita a 0 o 5. En while debes conservar explícitamente la inicialización, la comprobación antes del cuerpo y el avance después de la salida."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int i{1};\n    while (i <= 4) {\n        std::cout << \"Puesto \" << i << \"\\n\";\n        ++i;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera condición falsa comprueba i=5. Aquí i fue declarado antes del while y sigue en ese ámbito; en el for original pertenece al ámbito de su encabezado. Los dos programas son equivalentes respecto de las líneas mostradas, aunque la disponibilidad posterior del nombre no sea idéntica. Mover ++i antes de mostrar cambia los puestos de la salida."
         }
       ]
     }

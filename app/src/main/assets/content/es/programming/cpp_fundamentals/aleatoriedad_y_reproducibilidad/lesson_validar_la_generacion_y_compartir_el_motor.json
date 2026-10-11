@@ -1,0 +1,187 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__validar_la_generacion_y_compartir_el_motor",
+  "title": "Validar la generación y compartir el motor",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los límites son un contrato previo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El constructor de uniform_int_distribution<int> exige minimo <= maximo. No debemos construir una distribución con límites invertidos para comprobar después si falla: ya habríamos incumplido su precondición. No hay que prometer una excepción automática de ese constructor. Valida los datos antes de construirlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "En nuestros servicios aceptaremos límites entre -12 y 12. Ese dominio pertenece al ejercicio; no es el intervalo máximo de la biblioteca. Las comparaciones bastan para comprobarlo. No restamos primero los extremos para decidir si el intervalo es válido: con datos generales esa resta podría no ser representable."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Recibes minimo=5 y maximo=2. ¿Dónde debe ocurrir el rechazo?",
+          "options": [
+            "Antes de construir la distribución y de obtener valores.",
+            "Después de obtener un primer dato, para comprobar dónde cayó.",
+            "Construirla primero y confiar en que lance invalid_argument automáticamente."
+          ],
+          "correctIndex": 0,
+          "explanation": "La validez del intervalo es una responsabilidad previa del llamador o del servicio que lo construye."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un rechazo no consume el motor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera detección y tratamiento: obtener recibe el motor por referencia, valida el intervalo y sólo después usa la distribución. Un rechazo de sus argumentos ocurre antes de consumir valores. En std::mt19937, == compara estados capaces de producir la misma secuencia futura; no compara sólo el número de semilla recordado por nosotros."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint main() {\n    std::mt19937 motor{127};\n    const std::mt19937 guardado = motor;\n    try {\n        const int dato = obtener(motor, 6, 2);\n        std::cout << \"Dato:\" << dato;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazado:\" << (motor == guardado);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia guiada muestra Rechazado:1: la validación lanza antes de construir la distribución. El catch trata el rechazo sin fingir que se obtuvo un dato. Copiar el motor conservó su estado actual en otro objeto."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint main() {\n    std::mt19937 motor{149};\n    const std::mt19937 anterior = motor;\n    try {\n        const int dato = obtener(motor, -13, 0);\n        std::cout << \"Dato:\" << dato;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Fuera del dominio:\" << (motor == anterior);\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Fuera del dominio:1"
+          ],
+          "explanation": "El mínimo queda fuera del dominio del servicio, aunque el orden de los límites sea correcto. No se ejecuta la obtención."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar estado y compartir estado son decisiones distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::mt19937 copia = motor; copia el estado al que llegó motor, que puede estar lejos de su comienzo. Después son objetos separados. Un parámetro por valor recibe otra copia; una referencia modificable permite continuar el motor del llamador. No escogeremos esa forma sólo para evitar escribir un tipo: cambia el contrato del experimento."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalo invalido\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint obtener_copia(std::mt19937 motor) {\n    return obtener(motor, 0, 9);\n}\n\nint main() {\n    std::mt19937 motor{163};\n    const std::mt19937 anterior = motor;\n    const int primero = obtener_copia(motor);\n    const int segundo = obtener_copia(motor);\n    std::cout << \"Conservado:\" << (motor == anterior) << '\\n';\n    std::cout << \"Coinciden:\" << (primero == segundo);\n    return 0;\n}\n",
+          "answers": [
+            "Conservado:1\nCoinciden:1"
+          ],
+          "explanation": "Cada llamada recibe el mismo estado del motor original, que no cambia. Usa una distribución nueva con el mismo intervalo en cada copia."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una función debe continuar el motor de main entre llamadas válidas. ¿Qué parámetro expresa ese contrato?",
+          "options": [
+            "const std::mt19937& motor: permite avanzar el motor sin modificarlo.",
+            "std::mt19937 motor: cada llamada trabaja sobre su copia.",
+            "std::mt19937& motor: la obtención puede modificar el objeto de main."
+          ],
+          "correctIndex": 2,
+          "explanation": "Generar requiere poder avanzar estado. Por valor se conserva el motor del llamador; const no permite ese avance."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cero datos sigue teniendo una configuración"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nuestro generador de colecciones validará cantidad 0..20 y el intervalo completo. Cero datos es una solicitud válida si la configuración lo es: devuelve un vector vacío y no consume el motor. No usaremos cantidad=0 como permiso para aceptar límites invertidos. Esta política mantiene la misma definición de configuración válida."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 motor{179};\n    const std::mt19937 anterior = motor;\n    const int cantidad{0};\n    const int minimo{3};\n    const int maximo{3};\n    std::vector<int> datos;\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        std::cout << \"Configuracion invalida\";\n    } else {\n        std::uniform_int_distribution<int> elegir{minimo, maximo};\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(elegir(motor));\n        }\n        std::cout << datos.size() << ':' << (motor == anterior);\n    }\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "La configuración es válida y el recorrido tiene cero vueltas. Construir la distribución no obtiene ningún dato del motor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir el generador desde su contrato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Implementa generar: recibe std::mt19937& motor, int cantidad, int minimo e int maximo y devuelve vector<int>. Acepta cantidad entre cero y veinte, ambos límites entre -12 y 12 y minimo <= maximo. Rechaza con invalid_argument antes de construir la distribución o consumir el motor. Con datos válidos devuelve exactamente cantidad enteros del intervalo, en orden de obtención; cero produce vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "En main, con semilla 191, genera cuatro datos de -2..5 y copia entonces el motor. Desde el original y desde esa copia genera otros tres de -2..5. Muestra Continuacion:1 si esos dos lotes posteriores coinciden. La copia debe ocurrir después de la primera muestra: queremos conservar ese punto de continuación. Prueba además cantidad cero y una configuración inválida con minimo=5, maximo=2: muestra Vacio:0:1 y Rechazo:1, donde cada último uno compara el motor antes y después. Ninguna prueba debe construir el intervalo invertido."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia y criterios después del intento"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuracion invalida\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nint main() {\n    std::mt19937 por_lotes{191};\n    const std::vector<int> primero = generar(por_lotes, 4, -2, 5);\n    std::mt19937 continuacion = por_lotes;\n    const std::vector<int> segundo = generar(por_lotes, 3, -2, 5);\n    const std::vector<int> repetido = generar(continuacion, 3, -2, 5);\n    std::cout << \"Continuacion:\" << (primero.size() == 4 && segundo == repetido) << '\\n';\n    const std::mt19937 antes_vacio = por_lotes;\n    const std::vector<int> vacio = generar(por_lotes, 0, 2, 2);\n    std::cout << \"Vacio:\" << vacio.size() << ':';\n    std::cout << (por_lotes == antes_vacio) << '\\n';\n    const std::mt19937 antes_error = por_lotes;\n    try {\n        const std::vector<int> datos = generar(por_lotes, 3, 5, 2);\n        std::cout << \"Aceptado:\" << datos.size();\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rechazo:\" << (por_lotes == antes_error);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: validación completa antes de obtener valores, parámetro por referencia, cantidad y rango correctos, rechazo sin consumo y vacío sin consumo. Las líneas son Continuacion:1, Vacio:0:1 y Rechazo:1. Ambos lotes posteriores comienzan con motores copiados del mismo punto y construyen su distribución de la misma forma. No afirmamos que reconstruir una distribución entre lotes equivalga siempre a conservarla; para repetir hay que mantener también esa decisión."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba límites -12 y 12, intervalos -12..-12 y 12..12, cantidades cero, uno y veinte, límites invertidos, extremos -13 o 13 y cantidades -1 o 21. El intervalo degenerado obliga a un valor; no exige una cierta cantidad de avances internos. No prometemos conservación del motor ante cualquier fallo posible posterior a una obtención: la garantía que construimos se refiere al rechazo previo de argumentos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar el contrato exige otra prueba"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Para una solicitud válida de cero datos, el vector está vacío. ¿Qué comprobación adicional corresponde al contrato de generar?",
+          "options": [
+            "Que se obtenga un dato y se descarte para certificar que el motor funciona.",
+            "Que el motor conserve su estado, porque no hubo obtenciones.",
+            "Que el motor vuelva a su semilla inicial aunque ya hubiera avanzado."
+          ],
+          "correctIndex": 1,
+          "explanation": "Ausencia de llamadas conserva el estado actual; no equivale a reiniciarlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transferencia: copia un motor después de consumir una primera muestra. Continúa desde la copia y desde el original con iguales llamadas y compara sus siguientes muestras. Luego decide cuál de los dos debe recibir una obtención adicional. Explica qué objetos se comparten, cuáles se copiaron y qué configuración se validó. No esperes desigualdad obligatoria de muestras para demostrar que elegiste procedimientos distintos."
+        },
+        {
+          "type": "note",
+          "text": "Fuente principal: PPP, 3.ª edición (2024), §4.7.5, pp. 108–110. Requisitos de intervalo, copia, estado y generación estándar consultados en [rand.dist.uni.int] y [rand.req.eng]. Las políticas de dominio y rechazo de esta lección son propias."
+        }
+      ]
+    }
+  ]
+}

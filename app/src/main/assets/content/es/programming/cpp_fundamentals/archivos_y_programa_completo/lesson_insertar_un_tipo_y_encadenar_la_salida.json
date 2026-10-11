@@ -1,0 +1,174 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__insertar_un_tipo_y_encadenar_la_salida",
+  "title": "Insertar un tipo y encadenar la salida",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dar una representación a un valor propio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Usaremos Recuento: un registro con aceptados y rechazados, ambos entre 0 y 10. Su representación acordada será [aceptados;rechazados], en ese orden. Los corchetes y el punto y coma forman parte del texto; no son campos del objeto. Una representación útil para nuestras pruebas no tiene por qué ser el formato preferido de todos los programas."
+        },
+        {
+          "type": "paragraph",
+          "text": "El struct tiene miembros públicos: el compilador no impide construir valores fuera del dominio. recuento_valido permite comprobarlos. Aquí construiremos valores válidos y el escritor los recibirá con esa precondición. La próxima lección validará los campos obtenidos del texto antes de asignar un Recuento."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "formato_no_es_memoria",
+          "question": "Al escribir [2;1] para un Recuento, ¿qué hemos producido?",
+          "options": [
+            "Una copia de la memoria del objeto con sus métodos.",
+            "Una representación de sus campos según un acuerdo.",
+            "Un objeto nuevo que el lector reconstruirá automáticamente."
+          ],
+          "correctIndex": 1,
+          "explanation": "Escribimos caracteres interpretables. Reconstruir un valor exige un lector que compruebe ese acuerdo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El operador propio también es una función"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para admitir destino << valor definimos una función llamada operator<<. Antes de construir el escritor de Recuento, observa un ejemplo menor: Cantidad contiene unidades entre 0 y 5 y se representa como (unidades). El primer parámetro del operador es std::ostream& y el segundo const Cantidad&. El flujo cambia al escribir; el valor sólo se consulta. El retorno std::ostream& entrega la referencia al mismo destino para continuar insertando."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    const Cantidad resumen{2};\n    std::cout << resumen;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La función se define junto a nuestro tipo, fuera de namespace std. En este caso, cout << resumen llama a operator<<(cout, resumen). Dentro usamos las inserciones conocidas de caracteres y enteros. No hace falta acceder a una representación oculta ni convertir el registro en una cadena primero."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "retorno_para_encadenar",
+          "question": "¿Qué retorno permite usar cout << resumen << \" fin\" con el operador que acabamos de definir?",
+          "options": [
+            "void, porque la segunda inserción comienza de nuevo.",
+            "Recuento, porque lo siguiente debe modificar el registro.",
+            "std::ostream&, referida al mismo destino recibido."
+          ],
+          "correctIndex": 2,
+          "explanation": "La segunda inserción recibe el resultado de la primera. Necesita el flujo en el que debe continuar escribiendo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Continuar sobre el mismo destino"
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_registros_encadenados",
+          "question": "Predice la salida completa de las dos cantidades, incluido el separador que aporta main.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    const Cantidad primero{5};\n    const Cantidad segundo{0};\n    std::cout << primero << \"|\" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "(5)|(0)"
+          ],
+          "explanation": "Cada inserción del tipo devuelve cout. El texto | se inserta entre las representaciones de las dos cantidades."
+        },
+        {
+          "type": "output_prediction",
+          "id": "registro_en_memoria",
+          "question": "Predice la salida. El operador recibe aquí un ostringstream.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    std::ostringstream captura;\n    captura << Cantidad{1} << \";fin\";\n    std::cout << \"Captura=\" << captura.str();\n    return 0;\n}\n",
+          "answers": [
+            "Captura=(1);fin"
+          ],
+          "explanation": "El operador compone (1) en captura; la cadena ;fin continúa en ese mismo flujo. main es quien muestra después la cadena."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "retornar_no_certifica_escritura",
+          "question": "El operador devolvió el destino. ¿Qué significa ese retorno?",
+          "options": [
+            "Permite continuar; los errores se consultan en el estado del flujo.",
+            "Certifica que todos los caracteres llegaron al archivo físico.",
+            "Borra un posible fallo antes de la siguiente inserción."
+          ],
+          "correctIndex": 0,
+          "explanation": "Devolver la referencia no repara ni certifica el destino. En un archivo mantenemos la comprobación de escritura y cierre."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un operador para memoria y archivo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde el editor define operator<< para el Recuento dado. Debe consultar el registro sin modificarlo, escribir [aceptados;rechazados] en el destino prestado y retornar ese mismo destino. Los campos de las pruebas son válidos y los flujos mantienen sus ajustes decimales predeterminados."
+        },
+        {
+          "type": "paragraph",
+          "text": "En main crea Recuento{3, 2}. Insértalo en un ostringstream seguido de ;fin y, por separado, en el archivo relativo recuento_lgp.txt. Comprueba la apertura y la escritura después del cierre. main muestra Memoria=[3;2];fin|Guardado; el archivo debe contener únicamente [3;2]. El operador no usa cout por dentro ni añade ;fin."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba también Recuento{0, 0} y Recuento{10, 10}. Comprueba que cambian los campos en ambos destinos, que la cadena conserva ;fin y que el archivo no lo recibe. Una coincidencia del mensaje final sin usar el registro no satisface el contrato."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nint main() {\n    // Define operator<< antes de main y prueba ambos destinos.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Crea solamente tu muestra relativa dentro de cada ejecución. La referencia aparece después del intento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior y criterios"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint main() {\n    const Recuento resumen{3, 2};\n    std::ostringstream captura;\n    captura << resumen << \";fin\";\n    std::ofstream archivo{\"recuento_lgp.txt\"};\n    if (!archivo) {\n        std::cout << \"Error apertura\";\n        return 1;\n    }\n    archivo << resumen;\n    archivo.close();\n    if (!archivo) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::cout << \"Memoria=\" << captura.str() << \"|Guardado\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: flujo por referencia modificable, registro por referencia constante, caracteres en el orden acordado y retorno del mismo flujo. Memoria y archivo usan el mismo operador; la elección de destino, su apertura y su cierre pertenecen al llamador. Con 0 y 0, la cadena visible es Memoria=[0;0];fin|Guardado y el archivo contiene [0;0]. Con 10 y 10, cambian ambos campos a 10."
+        },
+        {
+          "type": "paragraph",
+          "text": "También es válido insertar por etapas y terminar con return destino. Cambiar el nombre del parámetro no cambia el contrato. El operador conserva los ajustes de formato que recibe: estas pruebas usan decimal. No hemos definido una serialización independiente de toda configuración posible del flujo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "otro_formato_otro_proposito",
+          "question": "Otra pantalla necesita el texto 3 aceptados y 2 rechazados. ¿Qué organización conserva nuestro formato acordado para muestras?",
+          "options": [
+            "Cambiar los corchetes del operador sólo cuando el nombre del archivo coincida.",
+            "Crear otra función de presentación para ese propósito, sin alterar el acuerdo.",
+            "Suponer que str() transformará [3;2] en esa frase automáticamente."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un formato compartido no obliga a usarlo para todo. Otra presentación puede consultar los mismos datos con su propio contrato."
+        },
+        {
+          "type": "note",
+          "text": "Fuente principal: Stroustrup, B. (2024). Programming: Principles and practice using C++ (3.ª ed.). Addison-Wesley. 9.6, p. 266, con continuidad hacia 9.7–9.8. Modelo, formato y actividades originales de esta ruta."
+        }
+      ]
+    }
+  ]
+}

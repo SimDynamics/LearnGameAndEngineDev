@@ -1,0 +1,143 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__cerrar_reemplazar_y_anadir_datos",
+  "title": "Cerrar, reemplazar y añadir datos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cerrar y observar el resultado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un flujo de archivo posee una conexión abierta mientras opera. close la cierra explícitamente; el estado del flujo permite comprobar si se completó. Además, al salir del ámbito, el objeto de la biblioteca cierra automáticamente el archivo si aún lo tenía abierto. Ese cierre automático evita dejarlo abierto cuando se abandona el bloque, pero no sustituye un diagnóstico explícito de un fallo de escritura."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por eso nuestras pruebas cierran y comprueban la salida antes de afirmar que los datos están listos para leer. No basta que la apertura funcionara. Tampoco se debe leer la misma muestra mientras la escritura todavía puede estar pendiente en su búfer. El ámbito permite limitar dónde se usa cada conexión; no borra por sí mismo el contenido del archivo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "ambito_no_borra_archivo",
+          "question": "El objeto salida terminó su ámbito después de cerrar correctamente. ¿Qué desaparece con ese ámbito?",
+          "options": [
+            "El objeto flujo; los datos escritos no se borran por ese motivo.",
+            "El nombre y todo el contenido del archivo automáticamente.",
+            "La necesidad de comprobar la apertura de cualquier lector posterior."
+          ],
+          "correctIndex": 0,
+          "explanation": "La vida del objeto y la vida de los datos almacenados son conceptos distintos. En la app el directorio de la ejecución tiene además su propio ciclo de vida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reemplazar y añadir son decisiones distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construir un ofstream sólo con el nombre, como hemos hecho, abre la salida reemplazando el contenido anterior de esa muestra. Para añadir al final se indica std::ios::app como segundo argumento. Es una opción de apertura, no un texto que se escriba. Debes elegir según el requisito; añadir no es un modo universalmente mejor."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera etapa crea 1 2. Después de cerrarla, la segunda añade el texto que empieza con un espacio y termina en 3. Ese espacio conserva la separación de los enteros. El lector obtiene tres valores y el resultado es Total=6. Los dos objetos llamados salida son distintos: sus declaraciones pertenecen a bloques diferentes. Cada apertura y escritura se comprueba por separado."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "separador_en_anexado",
+          "question": "Si se añade sólo el texto 3, sin espacio, después de 1 2, ¿qué texto queda?",
+          "options": [
+            "1 2 3, porque app separa los datos automáticamente.",
+            "1 23, porque se concatenan los caracteres escritos.",
+            "3, porque app siempre reemplaza el contenido."
+          ],
+          "correctIndex": 1,
+          "explanation": "El modo app elige dónde escribir; no inventa separadores del formato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un cambio de modo altera el contenido"
+        },
+        {
+          "type": "output_prediction",
+          "id": "segunda_apertura_reemplaza",
+          "question": "Supón que las operaciones de archivo se completan. Esta versión omite app en la segunda apertura. Predice el diagnóstico visible.",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
+          "answers": [
+            "Lectura incompleta"
+          ],
+          "explanation": "La segunda apertura reemplaza la muestra y deja el texto espacio seguido de 3. No se obtienen los tres enteros; nunca se suman los destinos de una lectura fallida."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reiniciar_para_prueba_reproducible",
+          "question": "Quieres repetir una prueba con la misma muestra inicial, sin acumular datos de ejecuciones anteriores en un entorno que conserve archivos. ¿Qué comienzo cumple el objetivo?",
+          "options": [
+            "Abrir inicialmente con app sin revisar el contenido previo.",
+            "Conservar cualquier contenido y comprobar sólo la suma final.",
+            "Reemplazar la muestra propia con los datos iniciales previstos."
+          ],
+          "correctIndex": 2,
+          "explanation": "Recrear la muestra fija el estado inicial. En la app cada trabajo ya está aislado, pero el programa también expresa esa preparación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una prueba con dos escrituras"
+        },
+        {
+          "type": "paragraph",
+          "text": "Crea primero el archivo relativo serie_lgp.txt con el texto 3 4. Ciérralo y comprueba la escritura. Después ábrelo para añadir el texto espacio seguido de 5; vuelve a cerrar y comprobar. Lee tres int desde el archivo y calcula Total=12. Valida la extracción antes de sumar. Usa diagnósticos distintos para reconocer la etapa que falló."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba una segunda versión que reemplace en la segunda apertura: debe informar Lectura incompleta, sin sumar valores que no se obtuvieron. En otra prueba conserva app pero omite el espacio de separación: también deben faltar tres enteros. Razona los caracteres que quedan en cada versión antes de ejecutarla."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    // Construye las dos escrituras y la lectura comprobada.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Modifica únicamente archivos de muestra creados por tu programa dentro de su ejecución. La referencia siguiente contrasta el requisito; no presupone acceso a archivos personales ni conservación entre trabajos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior y criterios de corrección"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Error apertura inicial\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error escritura inicial\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Error segunda apertura\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Error segunda escritura\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lectura incompleta\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: primer contenido 3 4, segunda escritura que añade espacio y 5, cierre comprobado antes de cada nueva etapa y tres extracciones válidas antes de sumar. El contenido resultante es 3 4 5 y el total 12. Si se omite app, queda el texto espacio seguido de 5: un solo entero. Si se omite el espacio, queda 3 45. Ambos cambios impiden obtener tres valores y deben mostrar Lectura incompleta, sin ejecutar la suma."
+        },
+        {
+          "type": "paragraph",
+          "text": "También son válidas funciones que separen las etapas si conservan esas condiciones. El caso de fallo termina con código 1; el texto impreso identifica el fallo. Un mensaje Total=12 escrito como constante no acredita haber leído los tres datos. Explica por qué el modo de apertura, el separador y la comprobación responden a problemas diferentes."
+        }
+      ]
+    }
+  ]
+}

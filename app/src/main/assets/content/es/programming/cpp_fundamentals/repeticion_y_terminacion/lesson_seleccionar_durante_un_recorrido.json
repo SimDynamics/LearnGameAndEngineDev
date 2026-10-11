@@ -72,8 +72,8 @@
           "question": "Quieres contar únicamente puestos divisibles entre 3. Colocas ++aceptados después del if, dentro del for. ¿Qué cuenta esa ubicación?",
           "options": [
             "Todos los puestos visitados, aunque no cumplan la regla.",
-            "Únicamente los múltiplos de 3.",
-            "El último número divisible entre 3."
+            "El último número divisible entre 3.",
+            "Únicamente los múltiplos de 3."
           ],
           "correctIndex": 0,
           "explanation": "Una instrucción fuera de la rama se ejecuta también cuando la condición es falsa."
@@ -140,11 +140,11 @@
           "id": "avance_solo_aceptados",
           "question": "Analiza sin ejecutar: n empieza en 1; while(n<=4) contiene if(n%2==0){ ++n; }. No hay otra actualización. ¿Qué ocurre con el primer caso?",
           "options": [
-            "Es rechazado y n permanece en 1; no se avanza hacia la salida.",
-            "Se cambia a 2 porque toda condición falsa incrementa el contador.",
-            "Se salta automáticamente al final del intervalo."
+            "No hay casos aceptados, por lo que el while termina de inmediato.",
+            "El caso rechazado se omite y se pasa a 2 sin otra actualización.",
+            "1 se rechaza y n permanece en 1: no se avanza."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "La ruta falsa no ejecuta ++n. Es necesario justificar progreso también en las rutas rechazadas."
         },
         {
@@ -173,6 +173,27 @@
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n    for (int peso{1}; peso <= 6; ++peso) {\n        if (peso >= 4) {\n            std::cout << \"Aceptada \" << peso << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara después de construir tus resúmenes. Criterios: recorrer todos los pesos del intervalo; aceptar sólo los de peso al menos 4; incrementar cantidad y sumar peso únicamente al aceptar; mostrar el resumen una sola vez fuera del bucle. El avance no depende de la aceptación."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    int suma{0};\n    for (int peso{1}; peso <= 6; ++peso) {\n        if (peso >= 4) {\n            std::cout << \"Aceptada \" << peso << \"\\n\";\n            ++cantidad;\n            suma += peso;\n        }\n    }\n    std::cout << \"Cantidad=\" << cantidad << \";Peso=\" << suma;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con límite 6 se muestran 4,5,6 y el resumen Cantidad=3;Peso=15. Con límite 3 se visitan tres pesos, pero no se imprime ninguna línea de aceptación y el resumen es Cantidad=0;Peso=0. Este caso distingue contar visitas de contar aceptaciones. El estado cero no representa un peso inventado: es el resumen de no haber aceptado datos."
         }
       ]
     }

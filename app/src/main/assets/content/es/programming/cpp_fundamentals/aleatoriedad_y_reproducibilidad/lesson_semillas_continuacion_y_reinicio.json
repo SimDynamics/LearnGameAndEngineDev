@@ -1,0 +1,207 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__semillas_continuacion_y_reinicio",
+  "title": "Semillas, continuación y reinicio",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar el mismo comienzo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una semilla determina el estado inicial del motor. Para repetir un experimento necesitas además la misma distribución, sus parámetros y el mismo orden de llamadas. En el mismo entorno, preparar esos elementos igual permite repetir la secuencia. No hace falta conocer sus números de antemano para comprobar esa relación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para vector<int>, == compara el tamaño y los valores en el mismo orden. Dos muestras pueden compararse sin imprimir su contenido. En este contexto conservar el orden es importante: no ordenaremos las muestras antes de decidir si repetimos la ejecución."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 uno{43};\n    std::mt19937 dos{43};\n    std::uniform_int_distribution<int> reparto_uno{1, 8};\n    std::uniform_int_distribution<int> reparto_dos{1, 8};\n    std::vector<int> primera;\n    std::vector<int> segunda;\n    for (int i{0}; i < 5; ++i) {\n        primera.push_back(reparto_uno(uno));\n        segunda.push_back(reparto_dos(dos));\n    }\n    std::cout << (primera == segunda) << ':' << primera.size();\n    return 0;\n}\n",
+          "answers": [
+            "1:5"
+          ],
+          "explanation": "Ambos experimentos comienzan igual y hacen las mismas llamadas. La comparación conserva tamaño, valores y orden."
+        },
+        {
+          "type": "note",
+          "text": "El algoritmo que uniform_int_distribution utiliza para transformar valores puede variar entre bibliotecas. Registrar semilla, motor, límites y llamadas permite reproducir en el mismo entorno; conservar también los datos concretos ayuda a investigar en otro entorno. No exigiremos una lista numérica producida por el PC como salida de Android."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Continuar conserva el estado actual"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si reutilizas el motor y la distribución, la siguiente llamada continúa el experimento. Separar un recorrido en dos bucles no reinicia los objetos. Construirlos de nuevo sí prepara otros objetos desde su comienzo. La semilla elegida al construir no se aplica automáticamente otra vez en cada vuelta."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 entero{67};\n    std::mt19937 dividido{67};\n    std::uniform_int_distribution<int> a{2, 9};\n    std::uniform_int_distribution<int> b{2, 9};\n    std::vector<int> todos;\n    std::vector<int> por_partes;\n    for (int i{0}; i < 6; ++i) {\n        todos.push_back(a(entero));\n    }\n    for (int i{0}; i < 2; ++i) {\n        por_partes.push_back(b(dividido));\n    }\n    for (int i{0}; i < 4; ++i) {\n        por_partes.push_back(b(dividido));\n    }\n    std::cout << (todos == por_partes) << ':' << por_partes.size();\n    return 0;\n}\n",
+          "answers": [
+            "1:6"
+          ],
+          "explanation": "Las seis llamadas de cada experimento usan su mismo motor y distribución; dividir el bucle no cambia esa secuencia."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Necesitas continuar una muestra en un segundo lote. ¿Qué organización conserva esa intención?",
+          "options": [
+            "Construir en cada lote un motor nuevo con la semilla inicial.",
+            "Conservar el motor y la distribución entre ambos lotes.",
+            "Volver a sembrar antes de obtener cada dato."
+          ],
+          "correctIndex": 1,
+          "explanation": "La continuación usa el estado al que ya llegó el experimento. Reconstruir o volver a sembrar cambia el contrato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reiniciar es una acción explícita"
+        },
+        {
+          "type": "paragraph",
+          "text": "motor.seed(semilla) restablece el estado inicial asociado con esa semilla. No imprime ni devuelve una muestra. Una distribución también puede conservar información entre llamadas; reset() elimina esa dependencia sin cambiar sus parámetros. Para un reinicio completo restablecemos el motor y llamamos a reset() en la distribución. Otra opción es construir ambos de nuevo."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{97};\n    std::uniform_int_distribution<int> elegir{-4, 4};\n    std::vector<int> antes;\n    std::vector<int> despues;\n    for (int i{0}; i < 4; ++i) {\n        antes.push_back(elegir(motor));\n    }\n    motor.seed(97);\n    elegir.reset();\n    for (int i{0}; i < 4; ++i) {\n        despues.push_back(elegir(motor));\n    }\n    std::cout << (antes == despues);\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "explanation": "El motor vuelve al comienzo y la distribución no depende de obtenciones anteriores. Se repiten las cuatro llamadas en el mismo entorno."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Después de construir motor con semilla, asignas otro número sólo a la variable int semilla. ¿Qué acción aplica ese cambio al motor existente?",
+          "options": [
+            "La asignación a semilla ya cambia cualquier motor que la haya leído.",
+            "Llamar motor.seed(semilla); restablece el motor con el valor actual.",
+            "Reconstruir sólo la distribución hace que el motor existente lea otra vez la variable semilla."
+          ],
+          "correctIndex": 1,
+          "explanation": "El constructor leyó un valor; no dejó una conexión permanente con la variable. seed es la operación que modifica el estado del motor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La relación que sí podemos prometer"
+        },
+        {
+          "type": "paragraph",
+          "text": "Misma preparación y mismas llamadas permiten repetir. Semillas diferentes permiten preparar otros comienzos, pero no prometemos que cada dato distribuido sea diferente: dos experimentos pueden coincidir en un resultado o en una muestra pequeña. Tampoco exigimos que llamadas sucesivas produzcan valores distintos. Repetición de valores y repetición de todo el procedimiento son ideas diferentes."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dos semillas distintas producen el mismo primer entero dentro de 1..3. ¿Qué interpretación es correcta?",
+          "options": [
+            "Los valores distribuidos pueden coincidir; ese único dato no decide si el motor se reinició.",
+            "La distribución debe ampliar el intervalo para separar las semillas.",
+            "Las semillas son iguales porque cada semilla tiene su propio entero exclusivo."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un intervalo pequeño admite coincidencias. La semilla prepara estado, no reserva un resultado exclusivo."
+        },
+        {
+          "type": "paragraph",
+          "text": "El motor también tiene una llamada directa, motor(), que obtiene un valor de su secuencia y avanza su estado. Ese valor no está limitado por nuestra distribución. Si sólo vas a compararlo, auto conserva el tipo que devuelve el motor sin convertirlo a int. Una llamada directa adicional modifica la historia; para repetir hay que reproducirla también."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 a{113};\n    std::mt19937 b{113};\n    const auto primero_a = a();\n    const auto primero_b = b();\n    const auto segundo_a = a();\n    const auto segundo_b = b();\n    std::cout << (primero_a == primero_b) << ':';\n    std::cout << (segundo_a == segundo_b);\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "explanation": "Se comparan motores del mismo tipo con igual comienzo y dos avances directos cada uno; no se exige el valor numérico de esos avances."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir continuación y reproducción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Desde main mínimo prepara dos motores con semilla 53 y dos distribuciones independientes 1..9. Obtén seis datos con el primero en un bucle. Con el segundo obtén dos y luego cuatro, conservando los objetos y reuniendo todos los datos en otro vector. Muestra Por lotes:1 si ambas secuencias completas coinciden. Después reinicia el primer motor y su distribución, vuelve a obtener seis y muestra Reinicio:1 si repites la primera muestra."
+        },
+        {
+          "type": "paragraph",
+          "text": "Calcula las comparaciones, sin imprimir unos constantes. Antes de ejecutar anota qué objetos deben seguir vivos entre los lotes y cuáles se restablecen para reproducir. Cambia luego la cantidad total a cero y a uno; conserva una partición que sume esa cantidad. No elijas como criterio que dos semillas diferentes tengan muestras desiguales."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia después de los dos experimentos"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 primero{53};\n    std::mt19937 segundo{53};\n    std::uniform_int_distribution<int> a{1, 9};\n    std::uniform_int_distribution<int> b{1, 9};\n    std::vector<int> completa;\n    std::vector<int> lotes;\n    for (int i{0}; i < 6; ++i) {\n        completa.push_back(a(primero));\n    }\n    for (int i{0}; i < 2; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    for (int i{0}; i < 4; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    std::cout << \"Por lotes:\" << (completa == lotes) << '\\n';\n    primero.seed(53);\n    a.reset();\n    std::vector<int> repetida;\n    for (int i{0}; i < 6; ++i) {\n        repetida.push_back(a(primero));\n    }\n    std::cout << \"Reinicio:\" << (completa == repetida);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: los lotes comparten sus objetos de generación; la muestra original permanece intacta; cada muestra tiene seis elementos; el reinicio restablece ambos componentes; las comparaciones incluyen orden y tamaño. Las líneas son Por lotes:1 y Reinicio:1. Con cero y un dato ambas comparaciones también coinciden cuando la partición es correcta. La coincidencia vacía no demuestra haber obtenido datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para explorar una organización distinta, construye un motor dentro de cada lote con semilla 53. Eso reinicia el lote y deja de expresar una continuación. Inspecciona las muestras y explica la diferencia de procedimiento; no conviertas una posible desigualdad numérica observada en una garantía para todos los intervalos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reproducir también exige registrar las llamadas"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Guardas sólo semilla 41. ¿Qué información adicional necesitas para repetir una muestra distribuida en el mismo entorno?",
+          "options": [
+            "Motor y límites iniciales: las obtenciones descartadas no influyen en la repetición.",
+            "Motor, límites y valores ordenados: ordenar permite reconstruir el orden de obtención.",
+            "Motor, distribución con sus límites y cantidad y orden de llamadas, incluso las descartadas."
+          ],
+          "correctIndex": 2,
+          "explanation": "La historia de consumo forma parte del experimento. Los nombres locales no determinan la secuencia."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transferencia: produce una colección de cantidades para probar un cálculo ya conocido. Conserva la semilla y la configuración junto con la colección. Repite una ejecución y después continúa otra; explica cuál de esos procedimientos necesitaba cada pregunta. En una sesión posterior reconstruye el reinicio sin consultar su referencia."
+        },
+        {
+          "type": "note",
+          "text": "Fuente: PPP, 3.ª edición (2024), §4.7.5, pp. 108–110. Precisión de estado, seed y reset: [rand.req.eng] https://eel.is/c++draft/rand.req.eng y [rand.req.dist] https://eel.is/c++draft/rand.req.dist. Actividades propias; la reproducción de valores distribuidos se limita al mismo entorno."
+        }
+      ]
+    }
+  ]
+}

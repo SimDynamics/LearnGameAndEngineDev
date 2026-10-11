@@ -1,0 +1,164 @@
+{
+  "id": "cpp_fundamentals__excepciones_y_recuperacion__propagar_hasta_el_contexto_adecuado",
+  "title": "Propagar hasta el contexto que sabe tratar el error",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una llamada puede fallar a través de otra"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función puede llamar a otra que lance una excepción. Si no la captura, tampoco continúa normalmente después de esa llamada: la excepción sigue buscando un tratamiento en las funciones llamadoras. No necesitamos duplicar el mismo catch en cada función intermedia. Detectar puede pertenecer a una función pequeña; decidir abandonar o continuar una operación puede pertenecer al coordinador."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    int minutos{estimar(piezas)};\n    return minutos * 2;\n}\n\nint main() {\n    try {\n        std::cout << \"Sesion:\";\n        int total{estimacion_doble(11)};\n        std::cout << total;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "estimar rechaza 11 antes del cálculo. estimacion_doble no recibe minutos y no llega a multiplicar. El catch de main trata el fallo de toda esa operación. Los datos válidos permanecen entre 0 y 10, de modo que duplicar minutos también mantiene un resultado entero pequeño."
+        },
+        {
+          "type": "output_prediction",
+          "id": "propagacion_con_dato_distinto",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    int minutos{estimar(piezas)};\n    return minutos * 2;\n}\n\nint main() {\n    try {\n        int total{estimacion_doble(-1)};\n        std::cout << total;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Rechazado:Fin"
+          ],
+          "explanation": "El rechazo en estimar atraviesa la función intermedia hasta el tratamiento de main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Las acciones anteriores no se deshacen automáticamente"
+        },
+        {
+          "type": "paragraph",
+          "text": "El mecanismo abandona las llamadas y ámbitos afectados; los objetos locales de esos ámbitos terminan su vida. Los cambios ya hechos sobre datos externos no se revierten automáticamente. Si una operación debe dejar un estado intacto cuando falla, comprueba primero todo lo necesario y modifica después. El diseño del orden de acciones protege esa regla; capturar por sí solo no la protege."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cambio_previo_permanece",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int pendientes{5};\n    try {\n        --pendientes;\n        int minutos{estimar(11)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Fallo:\";\n    }\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "answers": [
+            "Fallo:4"
+          ],
+          "explanation": "El decremento ocurrió antes del fallo y no se revierte al capturar."
+        },
+        {
+          "type": "output_prediction",
+          "id": "validar_antes_de_cambiar",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int pendientes{5};\n    try {\n        int minutos{estimar(11)};\n        --pendientes;\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Fallo:\";\n    }\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "answers": [
+            "Fallo:5"
+          ],
+          "explanation": "La validación falla antes de alcanzar el decremento. El estado anterior se conserva."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "catch_no_es_reversion",
+          "question": "¿Qué necesitas para prometer «si el dato es inválido, pendientes no cambia»?",
+          "options": [
+            "Usar una variable int en vez de double, sin cambiar el orden.",
+            "Sólo añadir cualquier catch después de modificar.",
+            "Colocar la comprobación que puede fallar antes de la modificación correspondiente."
+          ],
+          "correctIndex": 2,
+          "explanation": "Las acciones externas anteriores a throw no se revierten por capturarlo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el contexto del tratamiento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una función de cálculo puede tener muchos llamadores: uno presenta un pedido, otro prepara un resumen. Un mensaje escrito dentro del cálculo impone una presentación común que puede no servirles. Comunica el fallo y permite que el coordinador decida el tratamiento. No conviertas cualquier error en un resultado normal silencioso sólo para continuar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cero_fabricado_en_catch",
+          "question": "Una función intermedia captura todo dato inválido y devuelve 0, aunque 0 sea estimación válida de un pedido vacío. ¿Qué información pierde el coordinador?",
+          "options": [
+            "Se confunden el éxito vacío y el fallo que se ocultó.",
+            "El coordinador vuelve a recibir automáticamente la excepción.",
+            "Devolver cero conserva la distinción sin revisar nada más."
+          ],
+          "correctIndex": 0,
+          "explanation": "Convertir un fallo en un resultado válido puede esconderlo. Necesitas un contrato que conserve la distinción."
+        },
+        {
+          "type": "output_prediction",
+          "id": "propagacion_camino_normal",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    int minutos{estimar(piezas)};\n    return minutos * 2;\n}\n\nint main() {\n    try {\n        std::cout << estimacion_doble(4);\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "22"
+          ],
+          "explanation": "La estimación válida es 11 y la función intermedia devuelve su doble."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio de propagación y conservación"
+        },
+        {
+          "type": "note",
+          "text": "Estos laboratorios usan el compilador predeterminado de la versión actual: Clang 23 con Wasmtime y soporte de excepciones C++. El compilador alternativo Clang 21 no admite esta práctica con throw/catch. Los datos se preparan en el código; no hace falta una consola interactiva."
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade una función estimacion_doble que llame a estimar y devuelva el doble. El catch debe estar sólo en main. Prueba 2 y 12. Conserva el contador de operaciones aceptadas que ya incluye el código inicial: sólo debe aumentar después de obtener una estimación válida. Comprueba que una entrada inválida no cambia el contador. Usa los límites originales de estimar."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int aceptadas{0};\n    try {\n        int minutos{estimar(2)};\n        ++aceptadas;\n        std::cout << minutos << \":\";\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n    std::cout << aceptadas;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia del laboratorio"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y probar tu intento. Es una implementación posible; otras soluciones son válidas si cumplen el mismo contrato y los criterios indicados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. estimacion_doble debe llamar a estimar y devolver dos veces el resultado válido; no captura ni fabrica un cero para ocultar errores. El único catch está en main. Para 2, la estimación doble es 14 y el contador pasa de 0 a 1; para 12, se informa Rechazado y el contador conserva 0. En esta referencia las salidas son 14:1 y Rechazado:0. Son válidas otras etiquetas que muestren resultado y estado del contador."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint estimacion_doble(int piezas) {\n    return 2 * estimar(piezas);\n}\n\nint main() {\n    int piezas{2};\n    int aceptadas{0};\n    try {\n        int minutos{estimacion_doble(piezas)};\n        ++aceptadas;\n        std::cout << minutos << \":\";\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Rechazado:\";\n    }\n    std::cout << aceptadas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambia piezas de 2 a 12 sin cambiar las funciones ni mover el incremento. Cuando estimar lanza, la función intermedia no obtiene un resultado normal; la propagación llega al coordinador y evita el incremento. El contador del código inicial ya estaba presente: la tarea consiste en conservar su posición después del éxito y comprobarlo con la nueva llamada intermedia."
+        }
+      ]
+    }
+  ]
+}

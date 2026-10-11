@@ -25,11 +25,11 @@
           "type": "multiple_choice",
           "question": "En A && B, A resulta false. ¿Qué ocurre con B?",
           "options": [
-            "Se evalúa siempre para mostrar su valor.",
             "No se evalúa; el resultado completo ya es false.",
+            "Se evalúa siempre para mostrar su valor.",
             "Se evalúa antes que A."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "La conjunción se decide con el primer false y omite su operando derecho."
         }
       ]
@@ -59,10 +59,10 @@
           "question": "¿Qué orden permite comprobar el divisor antes de calcular el resto?",
           "options": [
             "(cantidad % divisor == 0) && (divisor > 0)",
-            "(divisor > 0) && (cantidad % divisor == 0)",
-            "Ambos órdenes protegen por igual, porque && significa «y»."
+            "Ambos órdenes protegen por igual, porque && significa «y».",
+            "(divisor > 0) && (cantidad % divisor == 0)"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "Sólo la comprobación a la izquierda puede evitar que se evalúe el resto. El significado lógico no elimina esta dependencia de evaluación."
         },
         {
@@ -95,11 +95,11 @@
           "type": "multiple_choice",
           "question": "En A || B, ¿cuándo hace falta evaluar B para conocer el resultado?",
           "options": [
-            "Cuando A es false.",
             "Cuando A es true.",
+            "Cuando A es false.",
             "Nunca."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Si A es false, B todavía puede hacer verdadera la alternativa. Si A es true, el resultado ya está decidido."
         },
         {
@@ -149,11 +149,11 @@
           "type": "multiple_choice",
           "question": "Con total igual a 28, ¿qué plan observa capacidad negativa, cero, reparto exacto y reparto con sobrantes?",
           "options": [
-            "Capacidades -1, 0, 4 y 6.",
             "Capacidades 4, 4, 4 y 4.",
-            "Capacidades 4 y 7."
+            "Capacidades 4 y 7.",
+            "Capacidades -1, 0, 4 y 6."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "Los dos primeros valores prueban rechazo; 4 produce resto 0 y 6 produce resto 4. Cada caso responde una pregunta distinta."
         },
         {
@@ -182,11 +182,11 @@
           "type": "multiple_choice",
           "question": "valido_y_exacto es false para (capacidad > 0) && (total % capacidad == 0). ¿Qué puedes concluir sin conocer los datos?",
           "options": [
-            "La capacidad es necesariamente cero.",
+            "No se cumplen juntos validez y exactitud; falta distinguir el motivo.",
             "El reparto es necesariamente válido y tiene sobrantes.",
-            "No se cumplen juntos validez y exactitud; falta distinguir el motivo."
+            "La capacidad es necesariamente cero."
           ],
-          "correctIndex": 2,
+          "correctIndex": 0,
           "explanation": "Puede ser una capacidad rechazada o un reparto válido con sobrantes. La conjunción no conserva cuál de sus requisitos falló."
         },
         {
@@ -196,6 +196,31 @@
         {
           "type": "note",
           "text": "Las garantías de cortocircuito utilizadas aquí corresponden a && y || con operandos bool. Todos los cálculos ejecutados usan cantidades pequeñas, divisores positivos y resultados representables. Los datos rechazados no llegan a / ni a %."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparación posterior del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con total 28 y capacidad 4, la salida es 1 y Grupos: 7 en dos líneas. Con capacidad 0 o -1 es 0 y Capacidad invalida. Con capacidad 6 es 0 y Grupos: 4. La referencia conserva la condición que comprueba positividad antes del resto y la rama que protege la división."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    const int capacidad = 4;\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n    std::cout << valido_y_exacto << \"\\n\";\n    if (capacidad > 0) {\n        std::cout << \"Grupos: \" << total / capacidad;\n    } else {\n        std::cout << \"Capacidad invalida\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba dos requisitos distintos: ningún dato rechazado llega a / ni a %, y una capacidad positiva permite mostrar grupos aunque el reparto no sea exacto. Con total 0 y capacidad 4, se espera 1 y Grupos: 0. Mantén total entre 0 y 120 y capacidades positivas entre 1 y 12 para estos experimentos; el programa no valida sus límites superiores."
+        },
+        {
+          "type": "note",
+          "text": "Llega a esta comparación después de predecir y ejecutar tus pruebas. El editor no califica estas salidas automáticamente: contrástalas con los criterios y explica la primera diferencia. Conserva tu versión si cumple el mismo comportamiento."
         }
       ]
     }

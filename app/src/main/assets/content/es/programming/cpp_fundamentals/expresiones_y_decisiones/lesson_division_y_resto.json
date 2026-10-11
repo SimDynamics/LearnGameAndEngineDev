@@ -62,8 +62,8 @@
           "question": "Con una cantidad no negativa y grupos de tamaño 4, ¿qué restos son posibles?",
           "options": [
             "0, 1, 2 y 3",
-            "1, 2, 3 y 4",
-            "Cualquier número mayor que 4"
+            "Cualquier número mayor que 4",
+            "1, 2, 3 y 4"
           ],
           "correctIndex": 0,
           "explanation": "Si sobraran 4 elementos habría otro grupo completo. El resto puede ser 0 y siempre es menor que 4."
@@ -98,11 +98,11 @@
           "type": "multiple_choice",
           "question": "¿Qué comprueba que 6 grupos y 1 sobrante corresponden a 31 elementos con capacidad 5?",
           "options": [
-            "6 + 1 = 31",
             "6 * 5 + 1 = 31",
-            "31 * 5 = 6 + 1"
+            "31 * 5 = 6 + 1",
+            "6 + 1 = 31"
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "Cada grupo representa 5 elementos; los sobrantes se añaden al total agrupado."
         }
       ]
@@ -156,11 +156,11 @@
           "type": "multiple_choice",
           "question": "Un informe usa capacidad como divisor para formar cajas. ¿Qué dato debes verificar además del requisito sobre la cantidad?",
           "options": [
-            "Que capacidad sea positiva para este modelo de reparto.",
             "Que capacidad tenga un nombre corto.",
+            "Que capacidad sea positiva para este modelo de reparto.",
             "Que la salida contenga al menos dos líneas."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "El modelo necesita cajas con una capacidad positiva; así el divisor tampoco será cero."
         },
         {
@@ -176,6 +176,31 @@
         {
           "type": "note",
           "text": "La división entera descarta hacia cero, no redondea al entero más próximo. Los ejercicios usan valores pequeños cuya representación y resultados caben en int, sin depender de cuántos bits tenga ese tipo en una plataforma."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparación posterior del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los resultados completos del laboratorio son 2 h 17 min para 137, 2 h 7 min para 127, 0 h 0 min para 0 y 1 h 0 min para 60. La referencia calcula horas completas y minutos restantes con el mismo divisor positivo 60; no añade ceros de presentación."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n    std::cout << horas << \" h \" << minutos << \" min\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para cada total entre 0 y 600 comprueba dos propiedades: el resto está entre 0 y 59 y horas * 60 + minutos reconstruye el total. El extremo 600 debe producir 10 h 0 min. Estas comprobaciones explican por qué se necesitan dos operaciones diferentes y por qué se conserva el divisor positivo."
+        },
+        {
+          "type": "note",
+          "text": "Llega a esta comparación después de predecir y ejecutar tus pruebas. El editor no califica estas salidas automáticamente: contrástalas con los criterios y explica la primera diferencia. Conserva tu versión si cumple el mismo comportamiento."
         }
       ]
     }

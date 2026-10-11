@@ -1,0 +1,403 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos",
+  "title": "Interfaces, cabeceras y programas con varios archivos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La llamada necesita una interfaz; la ejecución necesita una definición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera la diferencia entre declarar una función y definirla. La declaración comunica su nombre, tipos de parámetros y tipo de retorno para comprobar una llamada. La definición añade el cuerpo que realiza el trabajo. Hasta ahora ambas podían aparecer en un archivo. Un programa también puede reunir varios archivos fuente: el cliente utiliza una interfaz común y otra parte proporciona sus definiciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una interfaz no es sólo una lista de tipos. Incluye el significado y el dominio que el llamador debe respetar. Vamos a preparar sobres para tarjetas: cada sobre admite hasta doce y el llamador entrega entre cero y ciento veinte tarjetas. Ninguna función lee del teclado. El cálculo y su descripción no imprimen; main decide qué presentar."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un cliente conoce int sobres_necesarios(int tarjetas); y llama sobres_necesarios(25). ¿Qué aporta esa declaración por sí sola?",
+          "options": [
+            "El algoritmo para calcular la cantidad.",
+            "La información de tipos necesaria para comprobar la llamada.",
+            "La ejecución anticipada del cuerpo para veinticinco tarjetas."
+          ],
+          "correctIndex": 1,
+          "explanation": "La declaración describe cómo usar la función. Su cuerpo debe existir en el programa que se reúna para ejecutar."
+        },
+        {
+          "type": "note",
+          "text": "Los fragmentos de esta lección llevan el nombre de su archivo. Los que incluyen una cabecera propia pertenecen al proyecto completo; no se presentan como programas autónomos que puedan pegarse aisladamente en un editor de un único archivo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "sobres.h: una cabecera compartida y autosuficiente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Guarda este contenido como sobres.h. Una cabecera es un archivo que se incorpora donde aparece #include. Aquí contiene las declaraciones que deben ver tanto el cliente como la implementación. El sufijo .h es una convención habitual; hemos elegido ese nombre y debemos usarlo exactamente al incluir el archivo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Archivo: sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define CPP_FUNDAMENTALS_SOBRES_H\n\n#include <string>\n\n// Dominio de ambas funciones: 0 <= tarjetas <= 120.\n// Cada sobre admite hasta 12 tarjetas.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::string aparece en la interfaz, por eso la propia cabecera incluye <string>. No depende de que el usuario haya incluido antes otra biblioteca. Las líneas #ifndef, #define y #endif forman una guarda; veremos su mecanismo después de seguir el proyecto. El comentario del dominio recuerda una responsabilidad del llamador: las declaraciones no validan automáticamente el intervalo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las comillas de #include \"sobres.h\" identifican nuestra cabecera. <string> identifica una cabecera estándar. La búsqueda concreta de archivos forma parte de la configuración de las herramientas; en este proyecto los tres archivos propios están en la misma carpeta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos archivos fuente comparten la misma declaración"
+        },
+        {
+          "type": "paragraph",
+          "text": "sobres.cpp incluye sobres.h antes de definir las funciones. Así el compilador puede comparar sus tipos con los anunciados. Con el dominio 0..120, el cociente es pequeño y el incremento también; doce nunca es un divisor cero. Si queda resto hace falta un sobre más, sin cambiar el dato recibido."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n    return \"Varios sobres\";\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "main.cpp es el segundo archivo fuente. Incluye la interfaz y <iostream>, que necesita para presentar. No incluye sobres.cpp. El cuerpo de main puede llamar a las funciones porque sus declaraciones ya son visibles, aunque sus cuerpos se compilen desde otro archivo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El proyecto completo produce Varios sobres: 3. La descripción se basa en el cálculo, pero ninguna de las dos funciones auxiliares depende de cout. Si cambias sólo los datos del cliente, puedes reutilizar la misma implementación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Inclusión, compilación y enlace son pasos distintos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al procesar main.cpp, #include incorpora el contenido pertinente de sobres.h en ese punto. Ese trabajo pertenece al preprocesamiento. El compilador analiza ese archivo fuente junto con sus inclusiones: una unidad de traducción. Al procesar sobres.cpp ocurre lo mismo en otra unidad. Incluir la cabecera en ambas no pega los dos .cpp entre sí."
+        },
+        {
+          "type": "paragraph",
+          "text": "En PC con GCC, desde la carpeta del proyecto, g++ -std=c++23 -Wall -Wextra -c sobres.cpp -o sobres.o compila la implementación sin enlazar. Después g++ -std=c++23 -Wall -Wextra -c main.cpp -o main.o compila el cliente. Los archivos .o son objetos producidos por esa herramienta; todavía no constituyen el programa completo."
+        },
+        {
+          "type": "paragraph",
+          "text": "g++ sobres.o main.o -o plan_sobres.exe enlaza los objetos y produce el ejecutable en el entorno Windows comprobado. El enlazador reúne las definiciones utilizadas. Ejecutar .\\plan_sobres.exe es un paso posterior. Una forma abreviada es g++ -std=c++23 -Wall -Wextra sobres.cpp main.cpp -o plan_sobres.exe: el controlador realiza la compilación de las dos unidades y el enlace; no convierte las fuentes en un solo archivo por incluirlas."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "main.cpp incluye sobres.h y su compilación a main.o termina correctamente. ¿Qué necesitas todavía para ejecutar las funciones de este proyecto?",
+          "options": [
+            "Ejecutar directamente la cabecera.",
+            "Incluir sobres.cpp dentro de main.cpp como paso de enlace.",
+            "Enlazar el objeto del cliente con el que contiene las definiciones."
+          ],
+          "correctIndex": 2,
+          "explanation": "El objeto del cliente puede referirse a funciones declaradas. El enlace debe encontrar las definiciones correspondientes; la cabecera compartida no las genera por sí sola."
+        },
+        {
+          "type": "note",
+          "text": "Los comandos describen una comprobación real en PC con GCC 15.2 y C++23. Requieren disponer de ese compilador y ejecutar desde la carpeta adecuada; no son instrucciones para la consola de salida de la app."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué protege una guarda de inclusión"
+        },
+        {
+          "type": "paragraph",
+          "text": "#ifndef pregunta si el marcador CPP_FUNDAMENTALS_SOBRES_H todavía no está definido para ese procesamiento. #define lo establece y se procesa el contenido hasta #endif. Si la misma cabecera se encuentra otra vez dentro de esa unidad, el marcador ya existe y se omite el contenido protegido. Es una decisión del preprocesamiento: no es un if que se ejecute al correr el programa."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Comparación guiada: completa sólo el nombre del marcador que debe coincidir exactamente con el de #ifndef. No añadas un valor ni otras palabras.",
+          "code": "// Archivo: sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define ___\n\n#include <string>\n\n// Dominio de ambas funciones: 0 <= tarjetas <= 120.\n// Cada sobre admite hasta 12 tarjetas.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n",
+          "answers": [
+            "CPP_FUNDAMENTALS_SOBRES_H"
+          ],
+          "explanation": "La prueba y la definición deben referirse al mismo marcador para excluir otra inclusión en esa unidad."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada .cpp se procesa por separado. Su guarda evita repeticiones dentro de su propia unidad; no elimina una definición ordinaria de función que hayas colocado en la cabecera e incluido en unidades diferentes. En nuestra cabecera, repetir declaraciones de función compatibles por sí solo sería legal. La guarda prepara una inclusión robusta para cabeceras que puedan crecer, pero no reemplaza las reglas sobre definiciones."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una cabecera protegida contiene el cuerpo de una función no inline como las de nuestros proyectos. main.cpp y otro.cpp la incluyen, y ambos objetos se enlazan. ¿Qué ha garantizado la guarda?",
+          "options": [
+            "Que todos los objetos compartirán automáticamente una única definición.",
+            "Que el contenido protegido no se repetirá dentro de cada unidad procesada.",
+            "Que el enlazador descartará cualquier definición sobrante."
+          ],
+          "correctIndex": 1,
+          "explanation": "La guarda actúa durante el procesamiento de cada unidad. La presencia de ese cuerpo en dos unidades sigue teniendo que respetar las reglas de definición del programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar la cabecera sin depender del orden del cliente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una cabecera autosuficiente puede incluirse primero, sin esperar que el cliente prepare tipos que ella usa. Para comprobar sobres.h en PC basta crear una fuente de prueba que la incluya antes de cualquier otra cabecera y compilar esa fuente a objeto. El enlace no es necesario para detectar que std::string dejó de estar declarado."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La interfaz devuelve std::string, pero alguien quita #include <string> de sobres.h porque main.cpp ya incluye otra biblioteca. ¿Qué revisión protege mejor a futuros clientes?",
+          "options": [
+            "Restaurar <string> dentro de la cabecera que lo necesita.",
+            "Exigir que todos los clientes conozcan un orden oculto de inclusiones.",
+            "Cambiar el comentario del dominio para mencionar string."
+          ],
+          "correctIndex": 0,
+          "explanation": "La dependencia pertenece a la interfaz que usa el tipo. La cabecera debe aportar esa dependencia de forma explícita."
+        },
+        {
+          "type": "paragraph",
+          "text": "No deduzcas que una cabecera nunca contiene definiciones. Las definiciones de tipos y plantillas, las funciones inline y algunas constantes pueden pertenecer a cabeceras según sus reglas. No necesitamos desarrollar esas reglas aquí. Para estas dos funciones libres ordinarias elegimos declaraciones en sobres.h y una definición de cada función en sobres.cpp. Una función constexpr es inline implícitamente, aunque no escribas la palabra inline: su ausencia visible no demuestra por sí sola que una función no sea inline. Los cuerpos ordinarios mostrados en sobres.cpp y serie.cpp no son constexpr ni inline."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tampoco copies una declaración por separado a cada .cpp. Pueden desviarse al editar sólo una de las copias. Incluir la misma interfaz en usuarios e implementación permite detectar pronto muchos desacuerdos. Conserva std::string explícito en la interfaz, sin imponer a quienes la incluyen una forma distinta de buscar los nombres."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el cálculo desde otro cliente"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Sustituye sólo main.cpp del proyecto de sobres por este archivo. Conserva sobres.h y sobres.cpp anteriores y supone compilación y enlace correctos. Predice toda la salida del ejecutable; este archivo no se ejecuta sin sus dependencias.",
+          "code": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << descripcion_sobres(1) << \": \" << sobres_necesarios(1) << \"\\n\";\n    std::cout << descripcion_sobres(12) << \": \" << sobres_necesarios(12) << \"\\n\";\n    std::cout << descripcion_sobres(13) << \": \" << sobres_necesarios(13);\n    return 0;\n}\n",
+          "answers": [
+            "Un sobre: 1\nUn sobre: 1\nVarios sobres: 2"
+          ],
+          "explanation": "Una tarjeta y doce ocupan un sobre. Trece requiere dos. El cliente usa la misma interfaz en todas las llamadas; no duplica los cuerpos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de responder, justifica qué prueba distingue dividir truncando de calcular sobres completos: trece no puede quedar en un solo sobre. Añade cero y ciento veinte como pruebas de los extremos del dominio; comprueba tanto el cálculo como la descripción. Los valores fuera de 0..120 no pertenecen al contrato de este proyecto."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El requisito cambia a sobres de veinte tarjetas, manteniendo los nombres y tipos de las funciones. ¿Qué parte debe revisar el autor de este proyecto?",
+          "options": [
+            "Únicamente main.cpp, porque la declaración calcula el tamaño del sobre.",
+            "Únicamente las comillas del include.",
+            "El contrato documentado, el cuerpo del cálculo y las pruebas, conservando las firmas si siguen representando la misma operación."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cambiar el cuerpo puede conservar la forma de llamar, pero su significado y sus pruebas también deben corresponder al requisito. Con veinticinco tarjetas se necesitarían dos sobres de veinte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Localizar un fallo sin confundir sus etapas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Usa la primera etapa que no logra terminar como evidencia. Durante la compilación importan las declaraciones visibles y los tipos del archivo que se procesa. Durante el enlace importan las definiciones reunidas. Una salida anterior de un ejecutable ya creado no demuestra que una construcción nueva fallida haya funcionado."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Se elimina #include \"sobres.h\" de main.cpp y no se añaden declaraciones. Las llamadas permanecen. ¿Dónde aparece el problema de este caso?",
+          "options": [
+            "Al compilar el cliente, porque esas funciones no están declaradas allí.",
+            "Sólo al ejecutar, cuando llegue la primera tarjeta.",
+            "Al predecir la descripción, porque las declaraciones sólo son comentarios."
+          ],
+          "correctIndex": 0,
+          "explanation": "La unidad del cliente carece de las declaraciones que necesita para comprobar las llamadas."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Ambos .cpp se compilan correctamente, pero el enlace usa sólo main.o. ¿Qué falta?",
+          "options": [
+            "Una segunda ejecución del preprocesador sobre cout.",
+            "El objeto que aporta las definiciones llamadas por main.",
+            "Un valor inicial para el marcador de la guarda durante la ejecución."
+          ],
+          "correctIndex": 1,
+          "explanation": "El cliente se compiló con la interfaz. El enlazador no recibió las definiciones de sobres_necesarios y descripcion_sobres."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "sobres.cpp incluye la cabecera con int sobres_necesarios(int), pero define double sobres_necesarios(int). ¿Qué revisión corresponde antes de enlazar?",
+          "options": [
+            "Agregar la cabecera dos veces para que el retorno sea ambos tipos.",
+            "Cambiar sólo la variable de main a double.",
+            "Hacer concordar el retorno de la declaración y la definición de esa función."
+          ],
+          "correctIndex": 2,
+          "explanation": "Con los mismos parámetros, estos retornos se contradicen. La compilación de la implementación permite detectar el desacuerdo visible."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un desacuerdo en parámetros merece otra atención: si la implementación define una función con otro tipo de parámetro, C++ puede entenderla como una función distinta. Eso no proporciona el cuerpo de la declarada para int. No presupongas que cualquier diferencia se detecta en la misma etapa: revisa la firma completa y reúne las definiciones realmente usadas."
+        },
+        {
+          "type": "note",
+          "text": "Los diagnósticos exactos cambian entre herramientas. Aquí se pide explicar la causa y la etapa, sin memorizar una frase de GCC ni ejecutar un programa cuya construcción falló."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción textual de un proyecto con otra interfaz"
+        },
+        {
+          "type": "paragraph",
+          "text": "Organiza un proyecto nuevo en serie.h, serie.cpp y main.cpp. El llamador aporta 0 <= hechas <= total <= 40. tareas_pendientes(int hechas, int total) devuelve cuántas quedan; estado_serie(int hechas, int total) devuelve Terminada cuando no queda ninguna y En curso en los demás casos del dominio. Ninguna auxiliar imprime ni modifica los datos. El cliente presenta estado, dos puntos, un espacio y cantidad pendiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de escribir cuerpos, decide qué declaraciones necesitan ambos .cpp, qué biblioteca usa la interfaz, qué información puede quedar sólo en la implementación y qué objeto aporta cada definición. Escribe los tres archivos por separado. En main prueba (3,5), (0,0) y (5,5), en ese orden y con una línea por caso; añade después (0,40) y (40,40). Debe conservarse el dominio y la independencia entre llamadas."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Recuperación guiada de la interfaz: completa sólo el nombre del tipo de cadena ya estudiado, después de std::. El fragmento pertenece a serie.h; escribirlo no compila ni enlaza el proyecto.",
+          "code": "// Archivo: serie.h\n#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n\n#include <string>\n\n// Dominio: 0 <= hechas <= total <= 40.\nint tareas_pendientes(int hechas, int total);\nstd::___ estado_serie(int hechas, int total);\n\n#endif\n",
+          "answers": [
+            "string"
+          ],
+          "explanation": "La descripción es una cadena de la biblioteca estándar. Su declaración necesita <string> dentro de la misma cabecera."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de tu construcción: cabecera autosuficiente y protegida; la misma cabecera incluida en cliente e implementación; cada definición ordinaria reunida una vez; cuerpos con firmas concordantes; resta dentro de 0..40; separación entre cálculo y salida; caso vacío terminado sin pendientes; cada llamada conserva sus argumentos. Si dispones de un compilador en PC, crea los archivos y compila/enlaza el proyecto; contrasta también un enlace al que le falte la implementación."
+        },
+        {
+          "type": "note",
+          "text": "La app actual permite leer los archivos y responder las actividades textuales. Su editor de C++ recibe una sola fuente: todavía no ofrece un proyecto con cabeceras y varios .cpp. La construcción y ejecución multifuente de esta actividad se realiza en un entorno de PC; ese laboratorio dentro de la app queda pendiente. Un archivo único con las piezas juntas comprobaría otra organización, no este enlace entre archivos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de tres archivos después del intento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contrasta cada responsabilidad con esta organización. Estos son tres archivos del mismo proyecto, no tres programas separados. Los nombres y textos mínimos bastan para construirlo en PC."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Archivo: serie.h\n#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n\n#include <string>\n\n// Dominio: 0 <= hechas <= total <= 40.\nint tareas_pendientes(int hechas, int total);\nstd::string estado_serie(int hechas, int total);\n\n#endif\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Archivo: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminada\";\n    }\n    return \"En curso\";\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El ejecutable presenta En curso: 2, Terminada: 0 y Terminada: 0 en líneas separadas. Los casos (0,40) y (40,40) deben entregar cuarenta y cero pendientes con los estados correspondientes. Se aceptan otras organizaciones de los cuerpos que cumplan la interfaz y los criterios; conservar nombres de archivos no basta para demostrar que las unidades compilan y se enlazan."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para verificarla en PC: g++ -std=c++23 -Wall -Wextra serie.cpp main.cpp -o serie.exe. Una comprobación adicional compila cada .cpp a objeto antes del enlace, para distinguir sus etapas. La cabecera no se añade como si fuera un tercer archivo fuente con main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir la interfaz y diagnosticar una duplicación"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "En el proyecto serie, sustituye sólo main.cpp por este archivo y conserva serie.h/serie.cpp de la referencia. Tras compilar y enlazar el proyecto, ¿qué salida produce?",
+          "code": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(0, 8) << \": \" << tareas_pendientes(0, 8) << \"\\n\";\n    std::cout << estado_serie(8, 8) << \": \" << tareas_pendientes(8, 8);\n    return 0;\n}\n",
+          "answers": [
+            "En curso: 8\nTerminada: 0"
+          ],
+          "explanation": "La primera serie conserva ocho pendientes; la segunda no conserva ninguno. Los cuerpos se obtienen de la misma implementación, no de la declaración visible en main."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Alguien pega el cuerpo ordinario de tareas_pendientes en serie.h y lo quita de serie.cpp. La guarda está bien escrita; ambos .cpp incluyen la cabecera y se enlazan. ¿Qué debe revisar?",
+          "options": [
+            "Que main tenga otra llamada para elegir entre los dos cuerpos.",
+            "Que la guarda deje de proteger la cabecera.",
+            "Que esa definición ordinaria aparezca en una sola unidad del programa, manteniendo la declaración compartida."
+          ],
+          "correctIndex": 2,
+          "explanation": "La guarda no actúa entre unidades distintas. Para la organización elegida, el cuerpo debe volver a la implementación y la interfaz conserva la declaración."
+        },
+        {
+          "type": "paragraph",
+          "text": "En otra sesión, reconstruye una interfaz pequeña a partir de su uso y explica qué sabe el cliente antes de compilar. Prueba un cambio de datos sin tocar cuerpos y un cambio de requisito que conserve la firma. Comprueba cada etapa antes de confiar en la salida. Consulta esta referencia después de escribir tu organización."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un puente hacia módulos de lenguaje"
+        },
+        {
+          "type": "paragraph",
+          "text": "PPP3 §7.7 distingue las cabeceras de los módulos. La inclusión de una cabecera incorpora texto al procesamiento de cada fuente. Un módulo de C++ ofrece una interfaz de lenguaje cuyas declaraciones se exportan y que el cliente importa; no consiste en pegar el archivo fuente del módulo mediante #include. Esa distinción ayuda a reconocer dos mecanismos diferentes de organizar interfaces."
+        },
+        {
+          "type": "paragraph",
+          "text": "La preparación y construcción de módulos requiere la configuración correspondiente del compilador y del proyecto. Esta lección verifica cabeceras y dos fuentes con GCC, y la app actual no ofrece esa configuración multifuente. No hemos probado aquí un módulo propio ni un módulo de la biblioteca estándar. Su práctica se retomará con herramientas capaces de construirlo; cambiar include por import no es una prueba de compatibilidad."
+        },
+        {
+          "type": "note",
+          "text": "Referencia de estudio: Bjarne Stroustrup, Programming: Principles and Practice Using C++, tercera edición (2024), §7.7 pp. 211–215; cabeceras, inclusión y comprobación de consistencia en §7.7.2 pp. 213–215. Los proyectos de sobres y series son originales de esta lección. Precisión sobre constexpr e inline: borrador del estándar de C++, [dcl.constexpr]/1, https://eel.is/c++draft/dcl.constexpr#1."
+        }
+      ]
+    }
+  ]
+}

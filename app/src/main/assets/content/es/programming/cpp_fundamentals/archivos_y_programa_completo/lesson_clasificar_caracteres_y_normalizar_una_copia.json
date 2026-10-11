@@ -1,0 +1,330 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__clasificar_caracteres_y_normalizar_una_copia",
+  "title": "Clasificar caracteres y normalizar una copia",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar categorías y elegir una operación de biblioteca"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya clasificaste caracteres con condiciones propias y conservaste los separadores mediante get. <cctype> ofrece funciones de clasificación: std::isalpha pregunta si una unidad representa una letra; std::isdigit, un dígito decimal; std::isspace, un blanco. La pregunta elegida sigue dependiendo del problema. No convierten por sí solas una secuencia en tokens ni validan un formato completo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta lección usa texto ASCII y el locale C inicial del programa, que aquí no se cambia. Un locale reúne convenciones de clasificación y conversión, entre otras. Bajo estas condiciones, las letras básicas son A..Z y a..z; los dígitos son 0..9. El límite permite razonar sobre las salidas sin prometer un análisis general de Unicode o de todas las lenguas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = 'Q';\n    const unsigned char unidad = static_cast<unsigned char>(caracter);\n    const bool letra = std::isalpha(unidad) != 0;\n    const bool digito = std::isdigit(unidad) != 0;\n    const bool blanco = std::isspace(unidad) != 0;\n    std::cout << letra << ':' << digito << ':' << blanco;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación guiada produce 1:0:0. Los clasificadores devuelven int: cero significa falso y un valor distinto de cero significa verdadero; no se exige que ese valor sea literalmente 1. Guardar resultado != 0 en bool expresa la pregunta y hace estable esta salida."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida con otro carácter.",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = '5';\n    const unsigned char unidad = static_cast<unsigned char>(caracter);\n    const bool letra = std::isalpha(unidad) != 0;\n    const bool digito = std::isdigit(unidad) != 0;\n    const bool blanco = std::isspace(unidad) != 0;\n    std::cout << letra << ':' << digito << ':' << blanco;\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0"
+          ],
+          "explanation": "Cinco es un dígito; no es una letra ni un blanco. Se imprimen bool, no los enteros internos de los clasificadores."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quieres comprobar si el clasificador reconoció una letra. ¿Qué condición expresa su contrato?",
+          "options": [
+            "std::isalpha(unidad) == 1, porque todo verdadero debe ser ese entero.",
+            "std::isalpha(unidad) != 0, porque cualquier resultado no nulo significa verdadero.",
+            "std::isalpha(unidad) < 0, porque todas las letras tienen códigos negativos."
+          ],
+          "correctIndex": 1,
+          "explanation": "La biblioteca promete cero o no cero; la comparación con 1 añadiría una condición que no promete."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar un argumento válido antes de clasificar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las funciones de <cctype> reciben int, pero su dominio está restringido: el valor debe ser representable como unsigned char o ser la marca EOF. unsigned char es un tipo entero sin signo que sirve aquí para representar la unidad de carácter. No necesitamos fijar su ancho. Los códigos ASCII de estas muestras, de 0 a 127, caben también en int."
+        },
+        {
+          "type": "paragraph",
+          "text": "char puede ser un tipo con signo. En otras entradas, promover directamente cierto char a int podría producir un negativo distinto de EOF: ese argumento incumple el contrato y causa comportamiento indefinido. static_cast<unsigned char>(caracter) obtiene primero el valor de la unidad sin signo; luego se pasa a la función. Convertir sólo a int no corrige un valor negativo. Aplicamos esta preparación incluso cuando el carácter básico del ejemplo ya era positivo."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el tipo de la conversión: debe obtener primero la unidad de carácter sin signo.",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = 'Q';\n    const unsigned char unidad = static_cast<___>(caracter);\n    const bool letra = std::isalpha(unidad) != 0;\n    const bool digito = std::isdigit(unidad) != 0;\n    const bool blanco = std::isspace(unidad) != 0;\n    std::cout << letra << ':' << digito << ':' << blanco;\n    return 0;\n}\n",
+          "answers": [
+            "unsigned char"
+          ],
+          "explanation": "La preparación ocurre antes de que el argumento llegue al clasificador. No cambia el texto ni decide qué categoría representa."
+        },
+        {
+          "type": "note",
+          "text": "EOF es una marca entera de la interfaz de C, declarada por <cstdio>; no es un carácter del string ni la bandera entrada.eof(). No se inventa suponiendo que siempre vale -1. Si una interfaz entrega esa marca como int, se conserva como marca y se comprueba antes de convertir el dato a char; el cast de una unidad char no es un procedimiento para conservar EOF."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Aquí se usa la marca permitida, sin convertirla en char. Predice ambos bool.",
+          "code": "#include <cctype>\n#include <cstdio>\n#include <iostream>\n\nint main() {\n    const bool digito = std::isdigit(EOF) != 0;\n    const bool sigue_fin = std::tolower(EOF) == EOF;\n    std::cout << digito << ':' << sigue_fin;\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "La marca no es un dígito. La conversión de caja no la transforma en una letra ni la pierde."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Recibes un char para analizar. ¿Qué afirmación justifica la preparación del argumento?",
+          "options": [
+            "La conversión a unsigned char evita entregar al clasificador un negativo indebido; no convierte bytes en letras Unicode.",
+            "Convertir a int elimina siempre el signo de cualquier char.",
+            "Usar unsigned char hace que todo carácter sea una letra válida."
+          ],
+          "correctIndex": 0,
+          "explanation": "El dominio de la llamada y la categoría de su argumento son cuestiones distintas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los blancos de la biblioteca no son siempre los del lenguaje"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el locale C, isspace reconoce espacio, tabulador horizontal (\\t), salto de línea (\\n), retorno de carro (\\r), avance de página (\\f) y tabulador vertical (\\v). La categoría reúne varios caracteres; no significa sólo el espacio que vemos entre palabras."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nuestro intérprete anterior acordó tres separadores: espacio, tabulador horizontal y salto de línea. Esa política permanece intacta. Sustituirla sin más por isspace admitiría entradas nuevas. Una categoría de biblioteca puede ser útil para un informe y demasiado amplia para una gramática concreta."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Compara biblioteca y política de tres separadores. Predice la salida.",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char caracter = '\\r';\n    const bool biblioteca = std::isspace(static_cast<unsigned char>(caracter)) != 0;\n    const bool separador = caracter == ' ' || caracter == '\\t' || caracter == '\\n';\n    std::cout << biblioteca << ':' << separador;\n    return 0;\n}\n",
+          "answers": [
+            "1:0"
+          ],
+          "explanation": "El retorno de carro pertenece a la categoría de blancos, pero no a la lista de tres separadores acordada."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un informe quiere contar todos los blancos del locale C; el lector de un formato sólo admite tres separadores. ¿Qué elección cumple ambas finalidades?",
+          "options": [
+            "Cambiar ambos a isspace, porque una biblioteca determina la gramática.",
+            "Eliminar los blancos antes de cualquier lectura, sin comprobar el formato.",
+            "Usar isspace para el informe y conservar la condición explícita de tres separadores para el lector."
+          ],
+          "correctIndex": 2,
+          "explanation": "El mismo texto puede analizarse con políticas diferentes. Cambiar el lector requiere cambiar sus requisitos y pruebas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Este informe conserva todos los caracteres del string. Predice los cuatro recuentos.",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    const std::string texto{\"A\\v9_\"};\n    int letras{0};\n    int digitos{0};\n    int blancos{0};\n    int otros{0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++letras; }\n        else if (std::isdigit(unidad) != 0) { ++digitos; }\n        else if (std::isspace(unidad) != 0) { ++blancos; }\n        else { ++otros; }\n    }\n    std::cout << letras << ':' << digitos << ':' << blancos << ':' << otros;\n    return 0;\n}\n",
+          "answers": [
+            "1:1:1:1"
+          ],
+          "explanation": "La letra, el dígito, el tabulador vertical y el guion bajo van a categorías distintas. Guion bajo no es una letra para isalpha. Hay cuatro caracteres y cuatro incrementos en total."
+        },
+        {
+          "type": "paragraph",
+          "text": "El tamaño de estas muestras es pequeño y conocido. if/else if/else asigna una categoría a cada carácter. Para un informe más amplio, decide cuáles categorías son excluyentes y cuáles se superponen antes de sumar; no sumes resultados int internos del clasificador como si fueran cantidades."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conversión de caja: obtener un carácter básico nuevo"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::tolower y std::toupper también reciben int y retornan int. En nuestro dominio básico con locale C, cambian respectivamente mayúscula a minúscula y minúscula a mayúscula; dígitos, blancos y signos se conservan. Cuando el resultado corresponde a estos caracteres básicos, puede convertirse a char para guardarlo. No trasladamos esa garantía a una conversión general de textos multibyte."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char original = 'R';\n    const int resultado = std::tolower(static_cast<unsigned char>(original));\n    const char minuscula = static_cast<char>(resultado);\n    const char mayuscula = static_cast<char>(std::toupper(static_cast<unsigned char>(minuscula)));\n    const char signo = static_cast<char>(std::tolower(static_cast<unsigned char>('#')));\n    std::cout << original << ':' << minuscula << ':' << mayuscula << ':' << signo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación guiada produce R:r:R:#. original sigue siendo R: una llamada que devuelve un valor no reasigna ese objeto. Cada conversión expresa dos pasos distintos: preparar el argumento para la biblioteca y guardar el resultado representable como carácter de este dominio."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice las tres partes; ningún resultado es la marca EOF.",
+          "code": "#include <cctype>\n#include <iostream>\n\nint main() {\n    const char letra = 'k';\n    const char numero = '8';\n    std::cout << static_cast<char>(std::toupper(static_cast<unsigned char>(letra))) << ':'\n              << static_cast<char>(std::tolower(static_cast<unsigned char>(numero))) << ':'\n              << letra;\n    return 0;\n}\n",
+          "answers": [
+            "K:8:k"
+          ],
+          "explanation": "La copia del carácter convertido es K; ocho no cambia; el objeto letra conserva k."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una llamada a tolower recibe la unidad de un carácter básico y devuelve int. ¿Por qué no guardamos primero la entrada arbitraria en char para ignorar cualquier caso especial?",
+          "options": [
+            "Porque todo int es necesariamente una letra.",
+            "Porque char conserva siempre EOF y cualquier texto Unicode completo.",
+            "Porque hay que mantener separados el dominio del argumento, posibles marcas y la representación del resultado."
+          ],
+          "correctIndex": 2,
+          "explanation": "Sólo los resultados de caracteres del dominio establecido se convierten aquí a char. Una marca de fin se conserva como marca."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Normalizar una copia expresa una política, no una corrección universal"
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos copiar un string y cambiar los caracteres de la copia mediante referencias. La función de biblioteca no recorre el string por nosotros. La copia nos permite mantener el texto recibido para presentarlo, diagnosticarlo o compararlo según otra política. Normalizar aquí significa elegir una caja para las letras básicas, sin quitar espacios ni signos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nint main() {\n    const std::string recibido{\"LaGo-4\"};\n    std::string copia = recibido;\n    for (char& caracter : copia) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    std::cout << recibido << ':' << copia;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación guiada produce LaGo-4:lago-4. La referencia del recorrido enlaza un carácter de copia. Si recorrieras el texto original por referencia modificable, cambiarías el origen. Pasar un string por referencia const a una función y devolver otro string permite expresar ese permiso de lectura y ese resultado."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una interfaz acepta una palabra ignorando caja; otra exige el nombre exacto. ¿Qué política corresponde?",
+          "options": [
+            "Convertir siempre todo texto antes de cualquiera de las dos comprobaciones.",
+            "Comparar una copia normalizada sólo en la interfaz que acordó ignorar caja; conservar comparación exacta en la otra.",
+            "Suponer que obtener minúsculas elimina signos y vuelve válido cualquier nombre."
+          ],
+          "correctIndex": 1,
+          "explanation": "La normalización sólo se aplica cuando el requisito la permite. Una comparación exacta puede rechazar una variante de caja deliberadamente."
+        },
+        {
+          "type": "paragraph",
+          "text": "No introducimos esta conversión en el intérprete ni en los lectores ya construidos. También sería incorrecto afirmar que un string UTF-8 se transforma por completo recorriendo char uno a uno: una letra puede ocupar varias unidades y las reglas lingüísticas pueden ser más complejas. La conversión a unsigned char protege el argumento, pero no descodifica Unicode."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un informe y dos copias desde el editor mínimo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye texto_admitido(const string&): acepta hasta 40 unidades ASCII, cuyos valores sin signo están entre 0 y 127; rechaza lo demás antes de clasificar o convertir. El string vacío es válido. Este control corresponde a nuestro dominio de trabajo, no a un validador de Unicode."
+        },
+        {
+          "type": "paragraph",
+          "text": "Define Resumen_caracteres con cuatro contadores int: letras, digitos, blancos y otros. resumir recibe texto admitido por referencia const y devuelve los recuentos según isalpha, isdigit e isspace del locale C, con categorías exclusivas. Define copiar_en_minusculas y copiar_en_mayusculas: reciben texto admitido por referencia const, conservan todas sus unidades y devuelven una copia convertida. Las tres funciones trabajan sin imprimir."
+        },
+        {
+          "type": "paragraph",
+          "text": "main conserva una copia previa de la entrada, valida todo y sólo después llama a las funciones. Usa \"NoDo 7!\" inicialmente. Muestra Original:<texto>, Minusculas:<copia>, Mayusculas:<copia>, Letras:L;Digitos:D;Blancos:B;Otros:O y Entrada conservada:V, cada informe en su línea. V es el bool de comparar entrada con la copia previa. Para un rechazo muestra únicamente Texto rechazado."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <cctype>\n#include <iostream>\n#include <string>\n\n// Construye el modelo, las funciones y las pruebas desde los requisitos.\nint main() {\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, predice el caso inicial. Prueba después vacío, \"aZ09_\", cuarenta letras y cuarenta y una. El límite hace que cada contador y su suma no excedan 40. Para \" \\t\\n\\r\\f\\v\", contrasta los seis blancos y la conservación de las copias; esos controles pueden producir saltos o movimientos al mostrarse, así que observa también los recuentos, el tamaño y la comparación de las unidades."
+        },
+        {
+          "type": "note",
+          "text": "La referencia está después del intento. No se entregan las funciones ni la validación dentro del editor; no escribas un informe fijo que sólo imite la primera muestra. Todas las entradas son strings preparados dentro de esta ejecución."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior y criterios de conservación"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nbool texto_admitido(const std::string& texto) {\n    if (texto.size() > 40) { return false; }\n    for (char caracter : texto) {\n        if (static_cast<unsigned char>(caracter) > 127) { return false; }\n    }\n    return true;\n}\n\nstruct Resumen_caracteres {\n    int letras;\n    int digitos;\n    int blancos;\n    int otros;\n};\n\nResumen_caracteres resumir(const std::string& texto) {\n    Resumen_caracteres resultado{0, 0, 0, 0};\n    for (char caracter : texto) {\n        const unsigned char unidad = static_cast<unsigned char>(caracter);\n        if (std::isalpha(unidad) != 0) { ++resultado.letras; }\n        else if (std::isdigit(unidad) != 0) { ++resultado.digitos; }\n        else if (std::isspace(unidad) != 0) { ++resultado.blancos; }\n        else { ++resultado.otros; }\n    }\n    return resultado;\n}\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nstd::string copiar_en_mayusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::toupper(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nint main() {\n    std::string entrada{\"CaJa 2.\"};\n    const std::string previo = entrada;\n    if (!texto_admitido(entrada)) {\n        std::cout << \"Texto rechazado\";\n        return 0;\n    }\n    const Resumen_caracteres resumen = resumir(entrada);\n    const std::string minusculas = copiar_en_minusculas(entrada);\n    const std::string mayusculas = copiar_en_mayusculas(entrada);\n    std::cout << \"Original:<\" << entrada << \">\\n\"\n              << \"Minusculas:<\" << minusculas << \">\\n\"\n              << \"Mayusculas:<\" << mayusculas << \">\\n\"\n              << \"Letras:\" << resumen.letras << \";Digitos:\" << resumen.digitos\n              << \";Blancos:\" << resumen.blancos << \";Otros:\" << resumen.otros\n              << \"\\nEntrada conservada:\" << (entrada == previo);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia utiliza otros datos: Original:<CaJa 2.>, Minusculas:<caja 2.>, Mayusculas:<CAJA 2.>, Letras:4;Digitos:1;Blancos:1;Otros:1 y Entrada conservada:1. Para la muestra del intento, las tres primeras líneas muestran NoDo 7!, nodo 7! y NODO 7!, respectivamente, entre los delimitadores acordados; los recuentos también son 4,1,1,1."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: validar antes del cálculo; convertir a unsigned char antes de cada llamada; usar cero/no cero como condición, no exigir 1; contar cada unidad una vez; conservar entrada, espacios, signos, longitud y orden; devolver dos copias distintas según su política; imprimir sólo en main. Las funciones de cálculo tienen la precondición texto admitido. Otra organización que cumpla estos contratos es válida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con vacío, las tres representaciones son <> y los cuatro contadores son cero; la entrada permanece igual. Con aZ09_, las copias son az09_ y AZ09_, y los contadores son 2,2,0,1. Cuarenta letras producen cuarenta letras contadas; cuarenta y una provocan sólo Texto rechazado. Los seis blancos no se eliminan ni se convierten en letras."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar la decisión y detectar una ampliación accidental"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu informe cuenta el tabulador vertical como blanco. ¿Qué demuestra eso acerca del intérprete que sólo admitía tres separadores?",
+          "options": [
+            "Que el intérprete debe aceptarlo ahora, aunque no cambies sus requisitos.",
+            "Que cualquier string con un blanco tiene formato válido.",
+            "Que el informe usa otra categoría; no cambia el contrato del intérprete."
+          ],
+          "correctIndex": 2,
+          "explanation": "Reconocer una categoría y admitirla en una posición de una gramática son decisiones distintas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Esta política de consulta ignora caja básica y conserva el texto recibido. Predice los tres bool.",
+          "code": "#include <cctype>\n#include <iostream>\n#include <string>\n\nstd::string copiar_en_minusculas(const std::string& texto) {\n    std::string resultado = texto;\n    for (char& caracter : resultado) {\n        caracter = static_cast<char>(std::tolower(static_cast<unsigned char>(caracter)));\n    }\n    return resultado;\n}\n\nint main() {\n    const std::string recibido{\"TaBlA\"};\n    const std::string copia = copiar_en_minusculas(recibido);\n    std::cout << (recibido == \"tabla\") << ':' << (copia == \"tabla\") << ':'\n              << (recibido == \"TaBlA\");\n    return 0;\n}\n",
+          "answers": [
+            "0:1:1"
+          ],
+          "explanation": "La igualdad exacta del texto original es falsa; la copia satisface la política de caja; el original se conserva."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recuperación: reconstruye una de las funciones de copia sin mirar la referencia y prueba letras ya convertidas, dígitos y signos. Después explica por qué un contador con get podía observar blancos que una extracción formateada de char omitía. La biblioteca clasifica el dato entregado; no recupera caracteres que una lectura anterior ya descartó."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transferencia: antes de hacer una búsqueda de etiquetas decide si los nombres se comparan exactamente o ignorando caja. Escribe un caso que distinga ambas políticas y otro con un signo no permitido. Normalizar no elimina ese signo ni acredita la validez del nombre. Una política nueva debe quedar en sus requisitos y pruebas, además del código."
+        },
+        {
+          "type": "note",
+          "text": "Fuentes: Stroustrup, B. (2024). Programming: Principles and Practice Using C++ (3.ª ed.), Addison-Wesley, §9.10.4, pp. 280–281. Dominio y resultados contrastados con el borrador C++ [cctype.syn], https://eel.is/c++draft/cctype.syn, que remite a la biblioteca de C; WG14 N3096 (2023), §§7.4, 7.4.1, 7.4.2 y 7.11.1.1: https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3096.pdf. Ejemplos, políticas, límites y práctica originales de esta ruta."
+        }
+      ]
+    }
+  ]
+}

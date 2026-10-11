@@ -1,0 +1,147 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__abrir_escribir_y_leer_una_muestra",
+  "title": "Abrir, escribir y leer una muestra propia",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos direcciones del flujo"
+        },
+        {
+          "type": "paragraph",
+          "text": "<fstream> declara los flujos de archivo. std::ofstream escribe hacia un archivo; std::ifstream lee desde un archivo. El nombre indicado al construir el flujo identifica el archivo que intentamos abrir. El objeto flujo permite operar sobre él, pero no es el contenido completo almacenado ni es el nombre del archivo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de abrir, comprueba el flujo antes de usarlo. No poder abrir es un fallo distinto de encontrar un dato que no cumple el formato. En este laboratorio sólo usaremos nombres relativos de muestras propias; se resuelven dentro del directorio de trabajo aislado de la ejecución. No uses rutas de libros, recursos de la app ni documentos personales para experimentar."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "direccion_del_flujo",
+          "question": "¿Qué pareja expresa las direcciones correctas?",
+          "options": [
+            "ofstream escribe; ifstream lee.",
+            "ifstream escribe; ofstream lee.",
+            "Ambos flujos almacenan sólo el nombre, sin operar sobre datos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los nombres reflejan salida y entrada. Las operaciones de inserción y extracción conservan su papel."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Crear la muestra antes de intentar interpretarla"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"muestra_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n    salida << \"2 5\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::ifstream entrada{\"muestra_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n    std::cout << \"Total=\" << primero + segundo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta ejecución crea su propia muestra con dos valores. La apertura de ofstream en este modo comienza un archivo de salida vacío: si ya existía ese archivo de prueba, reemplaza su contenido. close termina la escritura y permite comprobar el estado antes de abrir el lector. Comprobar después de cerrar importa: parte de la escritura puede haberse mantenido temporalmente en un búfer."
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa sólo suma después de extraer los dos enteros correctamente. Los return 1 de las ramas de fallo terminan main indicando una salida de error; no imprimen un 1. Si toda la operación tiene éxito, el resultado visible es Total=7 y el archivo de prueba contiene el texto 2 5. El lector no imprime esos caracteres por sí mismo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "apertura_no_garantiza_formato",
+          "question": "El archivo se abrió correctamente. ¿Qué comprobación sigue siendo necesaria antes de sumar?",
+          "options": [
+            "Únicamente que el nombre acabe en .txt.",
+            "Que la extracción haya obtenido los dos enteros esperados.",
+            "Que el programa tenga más de una instrucción de salida."
+          ],
+          "correctIndex": 1,
+          "explanation": "La apertura acredita acceso al archivo, no el formato de sus datos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar los datos conserva el procedimiento"
+        },
+        {
+          "type": "output_prediction",
+          "id": "otra_muestra_misma_suma",
+          "question": "Supón que apertura, escritura y lectura se completan. Predice la salida de esta versión con otros dos valores.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"muestra_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n    salida << \"3 8\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::ifstream entrada{\"muestra_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n    std::cout << \"Total=\" << primero + segundo;\n    return 0;\n}\n",
+          "answers": [
+            "Total=11"
+          ],
+          "explanation": "El archivo aporta 3 y 8; la suma se calcula después de comprobar la extracción."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "orden_de_las_etapas",
+          "question": "¿Qué orden permite leer la muestra recién producida y comprobar el resultado?",
+          "options": [
+            "Abrir lector, sumar valores iniciales y después escribir.",
+            "Escribir y cerrar, abrir lector, extraer y comprobar, sumar.",
+            "Sumar las constantes sin leer y afirmar que se comprobó el archivo."
+          ],
+          "correctIndex": 1,
+          "explanation": "El resultado debe provenir de los datos leídos. Sumar constantes no comprueba ese recorrido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una prueba de ida y vuelta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye aquí la prueba con el archivo relativo datos_recarga.txt. Debe contener el texto 4 7, completarse su escritura y luego leerse hacia dos int. Si todas las etapas tienen éxito, muestra Total=11 calculado desde los valores leídos. Comprueba cada apertura, la escritura después de close y la extracción antes de usar sus destinos. En un fallo muestra el diagnóstico de su etapa y termina con return 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, señala qué operaciones prueban escribir y cuáles prueban leer. Después cambia los datos a 0 6: debe aparecer Total=6. Conserva las comprobaciones; los ceros iniciales de las variables no sustituyen la lectura. No basta imprimir directamente 11 o 6."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <fstream>\n\nint main() {\n    // Construye la escritura, el cierre, la lectura y la comprobacion.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Esta prueba es reproducible porque cada ejecución vuelve a crear su propia muestra. No acredita importar archivos del usuario ni conservarlos entre ejecuciones. La referencia aparece después del intento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia y criterios posteriores al intento"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"datos_recarga.txt\"};\n    if (!salida) {\n        std::cout << \"Error apertura de salida\";\n        return 1;\n    }\n    salida << \"4 7\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Error escritura\";\n        return 1;\n    }\n    std::ifstream entrada{\"datos_recarga.txt\"};\n    if (!entrada) {\n        std::cout << \"Error apertura de entrada\";\n        return 1;\n    }\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Formato invalido\";\n        return 1;\n    }\n    std::cout << \"Total=\" << primero + segundo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: el archivo recibe los dos valores previstos; el lector opera después del cierre comprobado; ambas extracciones se completan antes de sumar; la salida se calcula desde sus destinos. Con 4 7 se obtiene Total=11; con 0 6, Total=6. Otros nombres de variables u otra distribución en funciones son válidos si conservan estos comportamientos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si tu programa sólo muestra el total esperado, revisa de dónde salió: una constante puede coincidir sin haber usado el archivo. Si informa Formato invalido, observa qué texto escribiste y qué tipo intentaste extraer. Si falla una apertura o escritura, no atribuyas ese fallo al cálculo: su etapa es anterior. Las predicciones de esta lección suponen que el directorio admite la creación y que las operaciones de archivo se completan; el programa mantiene diagnósticos para los demás casos."
+        },
+        {
+          "type": "note",
+          "text": "Fuente principal: Stroustrup, B. (2024). Programming: Principles and practice using C++ (3.ª ed.). Addison-Wesley. Capítulo 9, especialmente 9.1–9.4 y 9.11. Ejemplos y actividades originales de esta ruta."
+        }
+      ]
+    }
+  ]
+}

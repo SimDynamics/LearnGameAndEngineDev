@@ -26,11 +26,11 @@
           "id": "accion_visible",
           "question": "¿Qué parte del ejemplo produce el mensaje visible?",
           "options": [
+            "#include <iostream>",
             "std::cout << \"Inicio confirmado\";",
-            "return 0;",
-            "#include <iostream>"
+            "return 0;"
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "La inserción en std::cout produce la salida. La inclusión permite conocer la biblioteca y return comunica un resultado al entorno."
         }
       ]
@@ -93,10 +93,10 @@
           "question": "En el programa que estamos construyendo, ¿qué nombre debe conservarse como punto de entrada?",
           "options": [
             "Main",
-            "main",
-            "inicio"
+            "inicio",
+            "main"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "C++ distingue mayúsculas y minúsculas. El punto de entrada de este programa es main."
         },
         {
@@ -156,11 +156,11 @@
           "id": "return_no_imprime",
           "question": "Un programa ejecuta std::cout << \"Listo\"; y después return 0;. ¿Qué salida de texto produce?",
           "options": [
+            "0",
             "Listo0",
-            "Listo",
-            "0"
+            "Listo"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "return no inserta el cero en std::cout. El mensaje visible sigue siendo Listo."
         }
       ]
@@ -188,12 +188,33 @@
           "id": "cambiar_mensaje",
           "question": "Después del experimento, ¿qué cambio modifica directamente el mensaje sin cambiar la estructura de main?",
           "options": [
-            "Cambiar los caracteres dentro de las comillas del literal.",
             "Cambiar main por un nombre cualquiera.",
-            "Eliminar la declaración de iostream."
+            "Eliminar la declaración de iostream.",
+            "Cambiar los caracteres dentro de las comillas del literal."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "El literal proporciona el texto. Cambiar el punto de entrada o quitar una declaración necesaria rompe otra parte del programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consulta esta referencia después de modificar y ejecutar tu programa. Una solución cumple la tarea si conserva main y el recurso de salida, se construye sin errores y muestra únicamente el literal solicitado en cada prueba. El número de instrucciones no es el criterio de corrección."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Caja recibida\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al probar primero Zona segura y después Caja recibida, sólo cambia el literal. return 0 no añade un 0 a la salida. Si aparecen comillas, se añadieron como parte de los datos; las comillas que delimitan el literal no se muestran. Una instrucción diferente que produzca exactamente el mismo texto también es válida."
         }
       ]
     }

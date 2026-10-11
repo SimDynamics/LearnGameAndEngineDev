@@ -21,11 +21,11 @@
           "id": "plausible_no_es_exactamente_correcto",
           "question": "Los datos son 2,4,6 y el programa informa media 5. ¿Qué puede concluir una comprobación que sólo verifica rango entre 2 y 6?",
           "options": [
-            "Que el resultado es plausible por esa propiedad, pero aún necesita la comparación exacta.",
-            "Que la media exacta queda demostrada.",
-            "Que el programa necesariamente provocó un error de compilación."
+            "Ser distinto de los datos basta para rechazar toda media calculada.",
+            "Cumple el rango comprobado, pero falta contrastar la media exacta.",
+            "Cumplir el rango basta para demostrar que la media es correcta."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Una condición necesaria no es siempre suficiente. La media exacta es 4."
         },
         {
@@ -33,11 +33,11 @@
           "id": "detectar_division_omitida",
           "question": "Los datos son 1,3,5 y se informa media 9. ¿Qué propiedad permite rechazar ese resultado sin conocer más del código?",
           "options": [
+            "Una media siempre debe ser igual al último dato.",
             "Una media de esos datos debe estar entre 1 y 5.",
-            "Todo resultado impar es inválido.",
-            "Una media siempre debe ser igual al último dato."
+            "Todo resultado impar es inválido."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "La media queda dentro del rango de los datos; 9 no cumple esa condición necesaria."
         }
       ]
@@ -79,11 +79,11 @@
           "id": "conversion_tardia_media",
           "question": "Con suma=5 y cantidad=2, se calcula static_cast<double>(suma/cantidad). ¿Qué pierde?",
           "options": [
+            "La posibilidad de convertir un int a double.",
             "La parte fraccionaria ya descartada por la división entera.",
-            "Toda la parte entera del resultado.",
-            "La posibilidad de convertir un int a double."
+            "Toda la parte entera del resultado."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Convertir el cociente entero después no recupera la información que la división perdió."
         }
       ]
@@ -151,6 +151,31 @@
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        std::cout << \"Suma=\" << suma;\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia del laboratorio"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y probar tu intento. Es una implementación posible; otras soluciones son válidas si cumplen el mismo contrato y los criterios indicados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Para {1,4,7}, suma=12, media=4, mínimo=1 y máximo=7. La media debe quedar dentro del rango y también coincidir con la expectativa exacta. Para {1,2}, suma=3, media=1.5, mínimo=1 y máximo=2; para {5}, los cuatro valores son 5. Con {}, debe mostrarse Sin datos antes de dividir o consultar un elemento. Usa como máximo cinco datos entre 0 y 10; otras formas de presentar estos resultados son válidas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Sin datos\";\n        return 0;\n    }\n    int suma{0};\n    int minimo{datos[0]};\n    int maximo{datos[0]};\n    for (int dato : datos) {\n        suma += dato;\n        if (dato < minimo) { minimo = dato; }\n        if (dato > maximo) { maximo = dato; }\n    }\n    int cantidad{static_cast<int>(datos.size())};\n    double media{static_cast<double>(suma) / cantidad};\n    bool dentro{media >= minimo && media <= maximo};\n    std::cout << \"Suma=\" << suma << \" Media=\" << media\n              << \" Minimo=\" << minimo << \" Maximo=\" << maximo\n              << \" Dentro=\" << dentro;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La guarda vacía precede tanto al acceso datos[0] como al cociente. La conversión de suma ocurre antes de dividir. Dentro=1 informa que se cumple la propiedad de rango, pero todavía compara media con el cálculo manual exacto. Cambia sólo la colección para comprobar los otros tres casos; el dominio pequeño también mantiene representable la suma."
         }
       ]
     }

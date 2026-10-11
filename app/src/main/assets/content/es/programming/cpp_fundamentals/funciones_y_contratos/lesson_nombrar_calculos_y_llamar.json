@@ -25,11 +25,11 @@
           "type": "multiple_choice",
           "question": "En la llamada doble(fichas), ¿qué papel cumple fichas?",
           "options": [
-            "Es el nombre de la función.",
             "Es el argumento que aporta un valor para el parámetro.",
+            "Es el nombre de la función.",
             "Es una instrucción return."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "El argumento pertenece a la llamada; el parámetro cantidad pertenece a la definición."
         }
       ]
@@ -90,9 +90,9 @@
           "type": "multiple_choice",
           "question": "restantes requiere dos datos: primero total y después usados. ¿Qué llamada expresa 12 disponibles y 4 usados?",
           "options": [
-            "restantes(4, 12)",
+            "restantes(12)",
             "restantes(12, 4)",
-            "restantes(12)"
+            "restantes(4, 12)"
           ],
           "correctIndex": 1,
           "explanation": "La posición conecta cada argumento con su parámetro. Invertirlos cambiaría el cálculo."
@@ -154,16 +154,41 @@
           "type": "multiple_choice",
           "question": "¿Qué ventaja concreta aporta separar un cálculo pequeño con un nombre claro?",
           "options": [
-            "Permite llamarlo con distintos datos y comprobar su resultado por separado.",
-            "Hace que todo resultado se imprima automáticamente.",
-            "Elimina la necesidad de saber qué datos son válidos."
+            "Obtener la salida en pantalla aunque la función sólo devuelva un valor.",
+            "Evitar definir su dominio porque ya está fuera de main.",
+            "Llamarlo con distintos datos y comprobar su resultado por separado."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "La separación aclara el propósito y permite reutilizar y probar el cálculo. Su dominio sigue siendo necesario."
         },
         {
           "type": "note",
           "text": "Al leer una llamada, identifica qué función se usa, qué valores aporta cada argumento y qué se hará con el resultado. Sigue después la secuencia de main, igual que en las unidades anteriores."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: Una regla utilizada por varias llamadas"
+        },
+        {
+          "type": "note",
+          "text": "Compara después de realizar el laboratorio y anotar sus resultados previstos. La referencia presenta una organización posible; los criterios permiten reconocer otras implementaciones que cumplan los mismos contratos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Con la regla original +1, las llamadas para 3 y 5 devuelven 7 y 11. Si sólo cambia el primer argumento a 0 o a 8, las salidas son 1 11 o 17 11. Cambiar el cuerpo a +2 aumenta cada respuesta en uno: con 3 y 5 se obtiene 8 12, como en esta referencia; si conservaste el primer argumento 8 del experimento anterior, se obtiene 18 12. Restaura +1 y respeta cantidades entre 0 y 20."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint separadores(int cantidad) {\n    return cantidad * 2 + 2;\n}\n\nint main() {\n    const int primera = separadores(3);\n    const int segunda = separadores(5);\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia muestra el experimento de cambiar una regla común, con argumentos 3 y 5. Cada llamada aporta su propia cantidad y recibe un resultado calculado usando el cuerpo vigente. No se corrige la salida de cada llamada de forma independiente ni se conserva un resultado anterior al cambio de regla. Otras implementaciones son válidas si una sola función expresa el cálculo y las llamadas muestran los casos previstos."
         }
       ]
     }

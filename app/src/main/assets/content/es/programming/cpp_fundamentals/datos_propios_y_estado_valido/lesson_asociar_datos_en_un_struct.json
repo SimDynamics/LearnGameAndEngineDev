@@ -1,0 +1,253 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__asociar_datos_en_un_struct",
+  "title": "Asociar datos en un struct",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una idea puede necesitar varios datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una observación de asistencia contiene una etiqueta de sitio y una cantidad de personas. Esa pareja representa una sola observación: la cantidad corresponde a ese sitio. Podemos crear un tipo que mantenga la asociación. Un tipo propio describe cómo se representa una idea y qué operaciones tendrá; aquí empezaremos agrupando datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "struct Lectura { std::string sitio; int personas; }; define un tipo llamado Lectura. sitio y personas son miembros de datos. Cada objeto Lectura contiene sus propios miembros. El punto y coma después de la llave final termina la definición del tipo; los puntos y coma interiores terminan sus declaraciones."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura una{\"Patio\", 4};\n    std::cout << una.sitio << \":\" << una.personas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llaves de una inicializan los miembros en el orden en que se declararon: primero sitio y después personas. La definición del tipo todavía no crea esa observación; la declaración de una crea el objeto concreto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tipo, objeto y miembro"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En Lectura registro{\"Norte\", 6};, ¿qué representa Lectura?",
+          "options": [
+            "El objeto concreto que conserva Norte y seis.",
+            "El miembro que cuenta las personas.",
+            "El tipo propio que describe la observación."
+          ],
+          "correctIndex": 2,
+          "explanation": "El tipo se llama Lectura, el objeto registro y su miembro numérico personas."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dos objetos Lectura llamados a y b…",
+          "options": [
+            "Sólo pueden existir si sus etiquetas son diferentes.",
+            "Tienen cada uno sus propios miembros aunque sigan la misma estructura.",
+            "Comparten necesariamente la misma cantidad porque pertenecen al mismo tipo."
+          ],
+          "correctIndex": 1,
+          "explanation": "Compartir un tipo no significa compartir el estado de los objetos."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre del miembro que conserva la cantidad de personas.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura registro{\"Este\", 8};\n    std::cout << registro.___;\n    return 0;\n}\n",
+          "answers": [
+            "personas"
+          ],
+          "explanation": "El acceso con punto identifica el miembro del objeto indicado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El punto nombra un miembro de ese objeto"
+        },
+        {
+          "type": "paragraph",
+          "text": "registro.sitio accede a la etiqueta de registro; registro.personas accede a su cantidad. Leer uno de esos datos no modifica el otro. Si asignamos registro.personas = 7;, cambiamos un miembro del mismo objeto, manteniendo su etiqueta."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura a{\"Sala\", 3};\n    Lectura b{\"Taller\", 9};\n    a.personas += 2;\n    std::cout << a.sitio << \":\" << a.personas << \" \" << b.sitio << \":\" << b.personas;\n    return 0;\n}\n",
+          "answers": [
+            "Sala:5 Taller:9"
+          ],
+          "explanation": "El cambio corresponde sólo a a.personas; b conserva su estado."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué diferencia hay entre registro.personas y \"registro.personas\" en una salida?",
+          "options": [
+            "El primero lee el miembro; el segundo imprime esos caracteres como texto.",
+            "El primero representa el nombre del tipo.",
+            "Ambos leen siempre la cantidad del objeto."
+          ],
+          "correctIndex": 0,
+          "explanation": "Recupera la distinción entre una expresión del programa y un literal de texto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copiar la observación completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lectura copia = original; crea otro objeto con copias de sus miembros. La etiqueta y la cantidad se copian juntas. Después, modificar original.personas no modifica copia.personas. Con estos miembros string e int, la copia por valor tiene ese significado directo."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura original{\"Sur\", 5};\n    Lectura copia = original;\n    original.sitio = \"Patio\";\n    original.personas = 7;\n    std::cout << copia.sitio << \":\" << copia.personas << \" \" << original.sitio << \":\" << original.personas;\n    return 0;\n}\n",
+          "answers": [
+            "Sur:5 Patio:7"
+          ],
+          "explanation": "La copia conserva ambos miembros del momento en que se creó."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa sólo el nombre del tipo y el nombre del objeto que se copia.",
+          "template": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura original{\"A\", 2};\n    [] copia = [];\n    std::cout << copia.sitio << \":\" << copia.personas;\n    return 0;\n}\n",
+          "answers": [
+            "Lectura",
+            "original"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Qué garantiza esta estructura y qué falta decidir"
+        },
+        {
+          "type": "paragraph",
+          "text": "La solución anterior copia una Lectura llamada original. Agrupar evita separar accidentalmente sus campos al copiar el objeto completo. Sin embargo, este struct deja sus miembros accesibles. El tipo int acepta una cantidad negativa, aunque eso no represente una asistencia válida. La asociación y las reglas de validez son problemas distintos; desarrollaremos esas reglas antes de diseñar una clase que las proteja."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Asignas -2 a registro.personas en este struct público. ¿Qué conclusión corresponde?",
+          "options": [
+            "La privacidad de struct impide escribir ese miembro.",
+            "El compilador rechaza cualquier entero negativo por ser una cantidad de personas.",
+            "int admite -2; el dominio de asistencia sigue sin comprobarse."
+          ],
+          "correctIndex": 2,
+          "explanation": "El nombre personas no introduce una validación de dominio."
+        },
+        {
+          "type": "paragraph",
+          "text": "struct es una clase cuyos miembros son públicos por defecto. Puede incluir funciones y constructores; no es un mecanismo limitado a datos. Lo usamos aquí como una estructura sencilla porque todavía queremos observar y manipular directamente la asociación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Inicializar antes de leer"
+        },
+        {
+          "type": "paragraph",
+          "text": "En estas primeras observaciones escribimos ambos valores iniciales. No declararemos una Lectura local sin preparar su miembro entero y después la imprimiremos. La existencia del struct no convierte una lectura sin inicialización en segura. Más adelante usaremos valores iniciales de miembros y constructores para dar una política de construcción al tipo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué preparación permite leer todos los miembros de nuestra Lectura?",
+          "options": [
+            "Lectura registro; y asignar sólo sitio antes de leer ambos miembros.",
+            "Lectura registro; y leer personas antes de asignarle nada.",
+            "Lectura registro{\"Patio\", 0};"
+          ],
+          "correctIndex": 2,
+          "explanation": "La primera declaración prepara ambos miembros; un comentario no ejecuta una inicialización."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint main() {\n    Lectura registro{\"Norte\", 0};\n    std::cout << registro.personas << \" \" << registro.sitio;\n    return 0;\n}\n",
+          "answers": [
+            "0 Norte"
+          ],
+          "explanation": "Cero es un valor inicial escrito; no se infiere por el nombre del miembro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción desde una consigna"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define un tipo Registro con dos miembros: codigo como string y unidades como int. Construye un objeto con codigo \"R4\" y unidades seis; muestra R4:6. Copia el objeto, aumenta sólo las unidades del original en tres y muestra ambas versiones en líneas distintas: Original R4:9 y Copia R4:6. Usa después otro código y cero unidades para comprobar que el programa lee sus miembros."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe antes qué objeto cambia en cada instrucción. La solución no requiere que haya una única etiqueta global ni dos variables sueltas que deban mantenerse sincronizadas. Define el tipo antes de declarar sus objetos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y recuperación de funciones"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int unidades;\n};\n\nint main() {\n    Registro original{\"R4\", 6};\n    std::cout << original.codigo << \":\" << original.unidades << \"\\n\";\n    Registro copia = original;\n    original.unidades += 3;\n    std::cout << \"Original \" << original.codigo << \":\" << original.unidades << \"\\n\";\n    std::cout << \"Copia \" << copia.codigo << \":\" << copia.unidades;\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Lectura {\n    std::string sitio;\n    int personas;\n};\n\nint doble(int cantidad) {\n    return cantidad * 2;\n}\n\nint main() {\n    Lectura registro{\"Este\", 4};\n    int total = doble(registro.personas);\n    std::cout << registro.personas << \" \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "4 8"
+          ],
+          "explanation": "La función recibe una copia del entero y calcula ocho sin modificar el miembro original."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué permite representar una observación como un único objeto?",
+          "options": [
+            "Evitar que existan dos observaciones del mismo sitio.",
+            "Copiar juntos los campos de la observación.",
+            "Garantizar automáticamente cualquier regla de negocio."
+          ],
+          "correctIndex": 1,
+          "explanation": "La asociación es una razón para crear el tipo; las restricciones requieren diseño adicional."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: el tipo conserva juntos codigo y unidades; la copia se realiza antes del aumento; sólo cambian las unidades del original; ambos informes leen sus miembros reales; todos los miembros se inicializan antes de usarse. Se aceptan otras implementaciones que cumplan estas condiciones y el formato solicitado."
+        }
+      ]
+    }
+  ]
+}

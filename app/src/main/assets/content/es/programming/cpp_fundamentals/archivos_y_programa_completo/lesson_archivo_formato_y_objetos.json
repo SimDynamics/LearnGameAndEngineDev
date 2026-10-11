@@ -1,0 +1,112 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__archivo_formato_y_objetos",
+  "title": "Distinguir archivo, formato y objetos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los datos almacenados no son los objetos del programa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un archivo conserva una secuencia de datos identificada por un nombre o una ruta. Un archivo de texto puede representar valores mediante caracteres: el número doce puede escribirse con los caracteres 1 y 2. Leer esos caracteres para obtener un int es una interpretación. El archivo no contiene una variable C++ con nombre, ámbito y tipo que reaparezca automáticamente al abrirlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "El formato fija cómo interpretar los datos: por ejemplo, dos enteros decimales en el orden turno y cajas, separados por espacio en blanco. El programa debe conocer y comprobar ese acuerdo. La extensión .txt es una convención de nombre; no garantiza que el contenido cumpla el formato ni que sea válido para nuestro dominio."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "nombre_no_certifica_datos",
+          "question": "Un archivo se llama pedidos.txt. ¿Qué puedes concluir sólo por ese nombre?",
+          "options": [
+            "Todos sus registros son válidos para nuestro programa.",
+            "Se han guardado objetos Pedido con sus métodos.",
+            "El nombre no demuestra el formato ni la validez del contenido."
+          ],
+          "correctIndex": 2,
+          "explanation": "El contenido se valida leyendo e interpretando según un formato definido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La representación puede perder detalles deliberadamente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya sabemos extraer datos desde una cadena con istringstream. Este ejemplo aísla la interpretación que después realizaremos desde un archivo. No abre un archivo: el texto conocido permite estudiar la regla sin mezclarla con apertura y cierre."
+        },
+        {
+          "type": "output_prediction",
+          "id": "interpretar_ceros_de_presentacion",
+          "question": "Predice la salida. ¿Qué caracteres producen los valores enteros leídos?",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"0007 03\"};\n    int turno{0};\n    int cajas{0};\n    if (entrada >> turno >> cajas) {\n        std::cout << turno << \":\" << cajas;\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "7:3"
+          ],
+          "explanation": "La lectura decimal produce los enteros 7 y 3. Los ceros iniciales del texto no forman parte de esos valores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si 0007 es sólo la presentación de un turno numérico, conservar 7 puede ser correcto. Si los cuatro caracteres son un identificador significativo, el tipo adecuado puede ser una cadena: 0007 y 7 no son entonces la misma representación admitida. Escoge según el requisito, sin suponer que todos los textos con dígitos deben convertirse a int."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "identificador_con_longitud",
+          "question": "La especificación exige conservar exactamente un código de cuatro caracteres como 0007. ¿Qué elección mantiene esa información al leer?",
+          "options": [
+            "Leerlo en int y asumir que recordarás los ceros.",
+            "Leerlo como string y comprobar su formato exigido.",
+            "Leerlo en double para que el tipo añada los ceros."
+          ],
+          "correctIndex": 1,
+          "explanation": "La cadena conserva los caracteres. Todavía hay que comprobar longitud y caracteres si el formato lo exige."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar forma, dominio y significado"
+        },
+        {
+          "type": "output_prediction",
+          "id": "texto_no_es_entero",
+          "question": "El segundo campo debe ser un entero. Predice la salida cuando llega el texto tres.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"0007 tres\"};\n    int turno{0};\n    int cajas{0};\n    if (entrada >> turno >> cajas) {\n        std::cout << turno << \":\" << cajas;\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Formato invalido"
+          ],
+          "explanation": "La extracción compuesta no completó ambos enteros; se toma la rama de fallo sin usar cajas como un dato válido."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "campos_intercambiados",
+          "question": "El formato exige turno y después cajas. Ambas extracciones de 7 3 hacia int tienen éxito. ¿Qué ocurriría si el código guarda el primer campo como cajas?",
+          "options": [
+            "La biblioteca reordenaría los campos según sus nombres.",
+            "Se impediría compilar porque ambos valores tienen el mismo tipo.",
+            "Se interpretaría otro significado sin que el tipo int detecte el intercambio."
+          ],
+          "correctIndex": 2,
+          "explanation": "La biblioteca sigue el orden de las operaciones; los nombres no corrigen un acuerdo de formato equivocado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una lectura correcta no demuestra que un turno exista ni que una cantidad pertenezca al dominio. Distingue apertura, interpretación del formato, validación de valores y uso de esos valores. En la siguiente lección añadiremos la apertura real, conservando esta separación."
+        },
+        {
+          "type": "note",
+          "text": "En el laboratorio de esta app los archivos del programa viven dentro de una ejecución aislada. No presupongas que sobreviven a la siguiente ejecución ni que aparecen como archivos personales accesibles desde el teléfono. Los ejemplos crearán sus propios datos de prueba dentro de esa ejecución."
+        }
+      ]
+    }
+  ]
+}

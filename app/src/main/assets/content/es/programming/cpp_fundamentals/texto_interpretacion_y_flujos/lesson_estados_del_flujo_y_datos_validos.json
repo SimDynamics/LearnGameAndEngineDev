@@ -1,0 +1,227 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__estados_del_flujo_y_datos_validos",
+  "title": "Estados del flujo y datos válidos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convertir texto en un número también puede fallar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una extracción a int interpreta una representación de entero: puede omitir espacio inicial, reconocer un signo y reunir dígitos. Si intenta leer un entero donde encuentra x, no obtiene el dato solicitado. Aunque el destino estuviera inicializado, no debes usarlo como el resultado de una lectura que falló."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" 8\"};\n    int cantidad = 0;\n    if (entrada >> cantidad) {\n        std::cout << \"Cantidad: \" << cantidad;\n    } else {\n        std::cout << \"No se obtuvo un entero\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí la lectura obtiene 8 antes de terminar el texto. Su resultado controla qué alternativa usa el dato. Con x debe presentarse el diagnóstico, sin suponer que cantidad representa una entrada válida. Leer válidamente tampoco demuestra que el número esté dentro del dominio de un problema: esa validación se hace después."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El problema admite cantidades de 1 a 6. El flujo entrega válidamente el entero 9. ¿Qué falta comprobar?",
+          "options": [
+            "Que el flujo haya reconocido la palabra nueve además de sus dígitos.",
+            "Que el valor obtenido pertenezca al dominio 1..6.",
+            "Nada: el éxito de >> garantiza cualquier contrato del programa."
+          ],
+          "correctIndex": 1,
+          "explanation": "La extracción comprueba una representación de int; el contrato del problema establece un dominio adicional. Son validaciones diferentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los estados recuerdan lo ocurrido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un flujo conserva indicadores de sus operaciones. eof() indica que una operación llegó al final de la entrada. fail() indica fallo de la operación solicitada e incluye los fallos graves señalados por bad(). bad() señala un problema del flujo que no debe tratarse como un simple formato incorrecto. good() sólo es verdadero cuando no hay ningún indicador de error ni de final activado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pueden coexistir indicadores: no son cuatro alternativas excluyentes. En una condición, el flujo es válido mientras fail() sea falso; eof() por sí solo no hace fallar esa condición. Por eso comprobar good() y comprobar si una extracción tuvo éxito no son preguntas equivalentes. eof() y fail() juntos también pueden aparecer si una conversión numérica llega al final con una representación incompleta, como un signo menos sin dígitos. Los indicadores solos no distinguen ese caso de un intento que no encontró más datos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"8\"};\n    int valor = 0;\n    if (entrada >> valor) {\n        std::cout << \"Dato: \" << valor;\n    }\n    std::cout << \"\\neof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    std::cout << \" bad: \" << entrada.bad();\n    std::cout << \" good: \" << entrada.good();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El resultado es Dato: 8 y, en otra línea, eof: 1 fail: 0 bad: 0 good: 0. La lectura reconoció el entero y encontró el final al buscar cómo continuaba. El dato es válido aunque good() sea falso. Las consultas se presentan como 0 o 1 porque cout utiliza aquí su formato habitual para bool."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El intento siguiente tiene su propio resultado"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice la salida completa después de intentar obtener un segundo entero.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"6\"};\n    int primero = 0;\n    int segundo = 0;\n    if (entrada >> primero) {\n        std::cout << \"Primero: \" << primero << \"\\n\";\n    }\n    if (entrada >> segundo) {\n        std::cout << \"Segundo: \" << segundo << \"\\n\";\n    } else {\n        std::cout << \"Sin segundo\\n\";\n    }\n    std::cout << \"eof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    return 0;\n}\n",
+          "answers": [
+            "Primero: 6\nSin segundo\neof: 1 fail: 1"
+          ],
+          "explanation": "La primera lectura obtiene 6 y llega al final. El segundo intento no puede obtener otro entero y activa también el estado de fallo. No se usa segundo en la alternativa de éxito."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué explica que un bucle while (entrada >> valor) procese el último entero de \"2 7\"?",
+          "options": [
+            "La lectura de 7 tiene éxito, aunque encuentre el final; el intento posterior termina el bucle.",
+            "El bucle deja de leer antes de 7 porque ya sabe cuántos caracteres quedan.",
+            "eof() siempre permanece falso mientras exista un destino int."
+          ],
+          "correctIndex": 0,
+          "explanation": "La extracción válida permite usar 7. El final y el éxito de esa lectura pueden coexistir; el siguiente intento falla al no encontrar otro dato."
+        },
+        {
+          "type": "paragraph",
+          "text": "No uses while (!entrada.eof()) como sustituto. Pregunta por un estado anterior y permite entrar antes de saber si la próxima extracción obtendrá un dato. La condición con la lectura pone la comprobación en el lugar donde nace el dato, antes de procesarlo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un prefijo numérico puede ser una lectura válida"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"12x\"};\n    int valor = 0;\n    char resto = '?';\n    if (entrada >> valor) {\n        std::cout << \"Valor: \" << valor << \"\\n\";\n    }\n    if (entrada.get(resto)) {\n        std::cout << \"Resto: \" << resto;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La extracción obtiene 12 y deja x para una operación posterior. >> a int no exige que todo el texto sea exclusivamente un entero. Si el formato pide un número por línea sin residuos, habrá que comprobar también lo que queda. Tener éxito y consumir una operación completa son requisitos diferentes."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice qué datos presenta el bucle y qué estado queda al detenerse.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"4 9x 3\"};\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << valor << \"\\n\";\n    }\n    std::cout << \"eof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    return 0;\n}\n",
+          "answers": [
+            "4\n9\neof: 0 fail: 1"
+          ],
+          "explanation": "Obtiene 4 y luego el prefijo entero 9. El intento siguiente encuentra x donde esperaba un entero y falla sin llegar al final; 3 todavía no se ha obtenido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir un fallo grave con una prueba controlada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con texto almacenado en memoria no esperamos un fallo de un dispositivo. Para observar el significado del estado grave podemos activarlo deliberadamente: setstate añade el indicador que le pasamos. std::ios::badbit es el nombre de la biblioteca para ese indicador; usarlo aquí no simula una avería física ni demuestra cómo reparar un origen dañado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <ios>\n\nint main() {\n    std::istringstream entrada{\"3\"};\n    entrada.setstate(std::ios::badbit);\n    std::cout << \"bad: \" << entrada.bad();\n    std::cout << \" fail: \" << entrada.fail();\n    std::cout << \" eof: \" << entrada.eof();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es bad: 1 fail: 1 eof: 0. fail() incluye bad(): un estado grave también impide tratar la lectura como exitosa. Cuando se decide por qué terminó una lectura, conviene comprobar primero bad() para no ocultar un problema grave bajo otro indicador que pudiera coexistir."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un flujo señala bad(). ¿Qué justificación es válida para intentar seguir?",
+          "options": [
+            "Cambiar el destino de int a string repara cualquier problema del origen.",
+            "eof() falso demuestra que el flujo es seguro para cualquier operación.",
+            "Hace falta una política del origen y del problema; borrar un indicador no demuestra que el daño desapareció."
+          ],
+          "correctIndex": 2,
+          "explanation": "El estado comunica un fallo. Cambiar un destino o borrar el indicador no repara por sí mismo el problema que lo produjo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un informe que termina por la lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un lector de enteros para \"2 7 x 4\". Presenta cada entero obtenido válidamente en una línea Dato: N. Al detenerse, muestra una única etiqueta final: Fallo del flujo si bad() es verdadero; en otro caso Fin si eof() es verdadero; en otro caso Formato invalido. No uses el destino después del intento fallido ni intentes saltar todavía el texto inválido. En este informe, Fin sólo comunica que se observó eof(); no certifica que toda la representación de entrada fuera correcta. Por ejemplo, \"2 -\" presenta Dato: 2 y Fin porque el intento de convertir el signo aislado termina con eof y fail. Esta política de observación es limitada: la siguiente lección analizará una línea completa y rechazará también las representaciones incompletas."
+        },
+        {
+          "type": "paragraph",
+          "text": "En estas pruebas el texto tiene hasta 8 unidades pequeñas separadas por espacio; los enteros escritos están entre -20 y 99, y los residuos son letras o signos cortos. El caso inicial produce Dato: 2, Dato: 7 y Formato invalido. \"3 8\" produce ambos datos y Fin. La cadena vacía produce sólo Fin. \"5 \" produce Dato: 5 y Fin. \"9z\" produce Dato: 9 y Formato invalido. Establece también lo esperado para \"x 6\" antes de ejecutar."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2 7 x 4\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para comprobar la rama grave, puedes añadir setstate(std::ios::badbit) antes de leer, con <ios> incluido. Debe aparecer sólo Fallo del flujo. Es una prueba deliberada del indicador, no una entrada del usuario. Comprueba los criterios y explica por qué el intento final no añade un Dato a la salida."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar las responsabilidades del informe"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia usa \"5 11z 2\". El cuerpo presenta sólo lecturas válidas; después del bucle se interpreta el estado. Este programa no recupera el texto posterior a z: detenerse y recuperarse son políticas diferentes. La próxima construcción enseñará cómo descartar una operación incorrecta sin repetir el mismo fallo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"5 11z 2\"};\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << \"Dato: \" << valor << \"\\n\";\n    }\n    if (entrada.bad()) {\n        std::cout << \"Fallo del flujo\";\n    } else if (entrada.eof()) {\n        std::cout << \"Fin\";\n    } else {\n        std::cout << \"Formato invalido\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara también los casos sin un separador final. Una implementación que exige good() antes de procesar el dato puede perder el último entero de \"3 8\". Una que entra al cuerpo sin comprobar la extracción puede presentar un valor que no corresponde a una lectura nueva."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una prueba con \"4 10\" imprime sólo Dato: 4 y después Fin. ¿Qué cambio del diseño conviene revisar primero?",
+          "options": [
+            "La decisión de procesar el último dato exige good() en vez del éxito de la extracción.",
+            "El diagnóstico final debería escribirse antes del primer dato.",
+            "Los enteros 4 y 10 no caben en el tipo int de una implementación conforme."
+          ],
+          "correctIndex": 0,
+          "explanation": "El éxito de la extracción permite procesar el último entero aunque eof() ya esté activo. good() es más estricto y puede omitirlo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el lugar de la validación completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente problema tendrá una operación por línea. Primero obtendremos la línea completa; luego un flujo local intentará convertir sus partes. Esto permite rechazar residuos y recuperar la operación siguiente conservando una frontera clara. La lectura válida, el dominio del valor y la ausencia de texto extra tendrán comprobaciones distintas."
+        },
+        {
+          "type": "note",
+          "text": "En los programas mostrados no se cambió la máscara de excepciones del flujo: un formato incorrecto comunica su resultado mediante el estado y la condición. El tratamiento de excepciones enseñado antes del curso sigue siendo útil para otros contratos; aquí no hay que suponer que cada fail() lanza automáticamente."
+        }
+      ]
+    }
+  ]
+}

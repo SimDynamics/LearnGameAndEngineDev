@@ -1,0 +1,282 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__texto_con_campos_y_patrones_literales",
+  "title": "Texto con campos y patrones literales",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un patrón y sus argumentos producen una cadena"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::format, declarado en <format>, compone y devuelve std::string. El primer argumento describe el texto y los lugares donde insertar los valores siguientes. Un par de llaves {} es un campo: reserva un lugar para un argumento. Los caracteres ordinarios se conservan. Componer la cadena no imprime; main puede guardarla, mostrarla o pasarla a otra función."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string texto = std::format(\"Zona {}; cantidad {}\", \"Sur\", 6);\n    std::cout << texto;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta comparación guiada produce Zona Sur; cantidad 6. El literal contiene dos campos; sus valores son los dos argumentos posteriores al patrón. No escribimos Sur ni 6 dentro del patrón. Mantendremos los patrones como literales conocidos en el código y cambiaremos los datos por medio de argumentos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué obtiene el llamador de std::format(\"Fila {}\", 3)?",
+          "options": [
+            "Una escritura directa sobre cout.",
+            "Una cadena que puede usar después.",
+            "Un objeto ostringstream que conserva el patrón."
+          ],
+          "correctIndex": 1,
+          "explanation": "La función devuelve texto. Para mostrarlo hace falta una operación de salida elegida por el programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Campos automáticos en el orden de los argumentos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando todos los campos son {}, se consumen argumentos en orden: el primer campo usa el primer argumento después del patrón; el segundo, el segundo. El número no pertenece al campo hasta que se construye la cadena. Una variable usada como argumento conserva su tipo y su valor."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    int cantidad = 9;\n    std::string texto = std::format(\"{}:{}\", \"Este\", cantidad);\n    cantidad = 2;\n    std::cout << texto << \"|\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "Este:9|2"
+          ],
+          "explanation": "La cadena se compuso con nueve. Cambiar luego la variable no vuelve a componer los caracteres almacenados."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string primero = std::format(\"[{}]\", \"\");\n    std::string segundo = std::format(\"[{}]-[{}]\", \"N\", 0);\n    std::cout << primero << \"|\" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "[]|[N]-[0]"
+          ],
+          "explanation": "La cadena vacía ocupa su campo sin aportar caracteres. Cero sí aporta el carácter 0."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un patrón contiene \"{} / {}\". Se pasan 4 y 12 después del patrón. ¿De dónde procede cada campo?",
+          "options": [
+            "El primero usa 12 porque es el argumento más reciente.",
+            "Ambos reutilizan el primer argumento.",
+            "El primero usa 4 y el segundo usa 12."
+          ],
+          "correctIndex": 2,
+          "explanation": "La selección automática recorre los argumentos en su orden."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir y repetir un argumento por su índice"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un campo {0} selecciona el primer argumento posterior al patrón; {1}, el segundo. Los índices comienzan en cero, como en vector, pero aquí seleccionan argumentos de la llamada. Pueden cambiar el orden de presentación o reutilizar un dato. Si eliges esta forma, escribe índices en todos los campos de esa llamada; no mezcles {0} con {}."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{1}/{0}/{1}\", \"Sol\", 8);\n    return 0;\n}\n",
+          "answers": [
+            "8/Sol/8"
+          ],
+          "explanation": "El índice uno selecciona ocho y se reutiliza. El índice cero selecciona Sol."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el índice que vuelve a seleccionar el primer argumento, sin cambiar los restantes campos.",
+          "code": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::format(\"{1}:{0}:{___}\", \"R\", 5);\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "El primer argumento posterior al patrón tiene índice cero. El patrón entero conserva selección manual."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Se pasan \"A\" y 7. ¿Qué patrón selecciona sólo el segundo argumento dos veces?",
+          "options": [
+            "\"{0}/{1}\"",
+            "\"{0}/{0}\"",
+            "\"{1}/{1}\""
+          ],
+          "correctIndex": 2,
+          "explanation": "El índice uno identifica el segundo argumento, sin consumirlo ni modificarlo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir llaves del patrón y caracteres del dato"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llaves simples del patrón delimitan campos. Para producir una llave literal, escribe {{ o }} dentro del patrón. Se obtiene una sola llave de cada par. En \"{{{}}}\" se combinan una llave literal inicial, un campo automático y una llave literal final. El resultado rodea al argumento con llaves."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{{codigo={}}}\", \"T\") << \"|\"\n        << std::format(\"{}\", \"{dato}\");\n    return 0;\n}\n",
+          "answers": [
+            "{codigo=T}|{dato}"
+          ],
+          "explanation": "Las llaves dobles pertenecen al patrón. Las llaves que ya contiene el argumento se copian como datos; no se vuelven a interpretar como campos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El argumento string contiene \"{}\" y se pasa a std::format(\"[{}]\", argumento). ¿Qué sucede con sus llaves?",
+          "options": [
+            "Se insertan como caracteres del dato.",
+            "Se eliminan porque el argumento no es un patrón.",
+            "Crean otro campo que exige un argumento adicional."
+          ],
+          "correctIndex": 0,
+          "explanation": "Sólo el primer argumento es el patrón interpretado por esta llamada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El tipo del argumento decide su presentación básica"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sin especificación adicional, un int se presenta decimal, un char como carácter y un bool como true o false. Para una cadena se copian sus caracteres. Esta presentación básica de bool difiere de cout sin boolalpha, que en las lecciones anteriores presentaba cero o uno. Elegir otra operación de composición no convierte los datos a otro tipo."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{}|{}|{}|{}\", 7, '7', true, false);\n    return 0;\n}\n",
+          "answers": [
+            "7|7|true|false"
+          ],
+          "explanation": "El entero y el carácter producen aquí caracteres iguales. Los valores lógicos se presentan como palabras."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::hex << std::format(\"{}:{}\", 31, false) << \"|\" << 31;\n    return 0;\n}\n",
+          "answers": [
+            "31:false|1f"
+          ],
+          "explanation": "format compone su cadena con sus propias reglas. cout conserva hexadecimal sólo para el entero que recibe directamente."
+        },
+        {
+          "type": "paragraph",
+          "text": "El patrón no hereda hex, fixed, precisión ni relleno de cout. La inserción posterior de la cadena sí se realiza en ese flujo: por ejemplo, un setw pendiente puede rellenar la cadena completa. Más adelante compararemos el formato interno de un campo con el formato externo de su destino."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar que el patrón corresponde a los argumentos"
+        },
+        {
+          "type": "paragraph",
+          "text": "En estas llamadas C++23 el patrón literal se comprueba durante la compilación según la cantidad y los tipos de argumentos. \"{}:{}\" necesita argumentos para ambos campos; {1} necesita que exista un segundo argumento. Las especificaciones que aprenderemos también deben corresponder al tipo. Un patrón mal escrito debe corregirse: no es una salida alternativa que haya que adivinar."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Cuál llamada mezcla selección automática y manual y debe corregirse antes de ejecutar?",
+          "options": [
+            "std::format(\"{1}:{0}\", 2, 5)",
+            "std::format(\"{}:{}\", 2, 5)",
+            "std::format(\"{}:{0}\", 2, 5)"
+          ],
+          "correctIndex": 2,
+          "explanation": "El patrón \"{}:{0}\" combina un campo automático con otro de índice explícito. Cada patrón debe usar una sola forma de seleccionar sus argumentos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué cambio completa los argumentos exigidos por std::format(\"{}:{}\", \"A\")?",
+          "options": [
+            "Pasar después otro argumento para el segundo campo.",
+            "Duplicar las comillas que rodean A.",
+            "Añadir un salto de línea después de los campos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Los caracteres del patrón no proporcionan el valor que necesita el segundo campo."
+        },
+        {
+          "type": "note",
+          "text": "La biblioteca estándar también tiene mecanismos para patrones conocidos durante la ejecución. Aquí el contrato es más pequeño: patrones literales y datos como argumentos. Una variable string con un patrón no se intercambia sin más con el literal de estas llamadas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una función que devuelve el mensaje"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe resumen(const string& codigo, int unidades), que devuelve pedido {CODIGO}: UNIDADES unidades; copia=CODIGO. El código puede ser una cadena ASCII de cero a ocho caracteres y unidades está entre cero y mil. Usa un patrón literal con índices: el mismo argumento codigo debe servir en sus dos lugares. Las llaves visibles que rodean el código son parte del resultado. La función no imprime ni modifica los argumentos. En main compón mensajes para \"B\", 4 y para \"\", 0 en líneas separadas."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice cada cadena antes de compilar. Comprueba después un código que contenga llaves, por ejemplo \"{X}\", con seis unidades. Ese dato no debe convertirse en otro patrón. Guarda un mensaje, cambia una variable original y verifica que la cadena guardada conserva el texto ya compuesto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia y criterios del mensaje"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string resumen(const std::string& codigo, int unidades) {\n    return std::format(\"pedido {{{0}}}: {1} unidades; copia={0}\", codigo, unidades);\n}\n\nint main() {\n    std::string codigo = \"B\";\n    int cantidad = 4;\n    std::string guardado = resumen(codigo, cantidad);\n    cantidad = 9;\n    std::cout << guardado << \"\\n\" << resumen(\"\", 0) << \"\\n\" << resumen(\"{X}\", 6);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las líneas son pedido {B}: 4 unidades; copia=B, pedido {}: 0 unidades; copia= y pedido {{X}}: 6 unidades; copia={X}. Criterios: la función devuelve una cadena completa; reutiliza el mismo código sin modificarlo; el patrón distingue sus llaves literales de los campos; vacío y cero conservan separadores; las llamadas no acumulan resultados; la cantidad cambiada después no altera guardado. Se aceptan otras escrituras que cumplan el contrato."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string dato = \"{R}\";\n    std::cout << std::format(\"{0}-{0}\", dato) << \"|\" << dato;\n    return 0;\n}\n",
+          "answers": [
+            "{R}-{R}|{R}"
+          ],
+          "explanation": "El argumento se copia en dos campos y permanece intacto. Sus llaves no se interpretan de nuevo."
+        },
+        {
+          "type": "paragraph",
+          "text": "En otra sesión recupera primero el significado de devolver string y el de los índices. Crea un mensaje de una tarea propia con dos tipos de datos, una repetición y una llave literal. Comprueba cadena vacía y cero antes de consultar esta referencia."
+        }
+      ]
+    }
+  ]
+}

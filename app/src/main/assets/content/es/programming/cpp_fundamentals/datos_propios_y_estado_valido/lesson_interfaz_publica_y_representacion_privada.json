@@ -1,0 +1,235 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__interfaz_publica_y_representacion_privada",
+  "title": "Interfaz pública y representación privada",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Permitir operaciones con significado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un marcador de esta actividad admite entre cero y veinte puntos. La intención es sumar uno mientras quede espacio y consultar la cantidad actual. Si todos pueden escribir directamente cualquier entero, cada usuario del tipo debe recordar la regla. Una clase puede ofrecer las operaciones necesarias y mantener sus datos fuera del acceso directo."
+        },
+        {
+          "type": "paragraph",
+          "text": "public: identifica los miembros accesibles al código que usa el objeto. private: identifica los detalles a los que acceden las funciones de esa clase. En class los miembros son privados por defecto; en struct son públicos por defecto. Ambos pueden definir datos, funciones y constructores. La elección expresa cómo queremos presentar el tipo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    marcador.sumar_uno();\n    std::cout << marcador.puntos();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "puntos_ empieza en cero mediante el inicializador escrito en su declaración. sumar_uno() comprueba el límite antes de cambiarlo. puntos() proporciona una consulta: el usuario no necesita escribir ni leer puntos_ directamente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Datos y funciones miembro"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador a;\n    Marcador b;\n    a.sumar_uno();\n    a.sumar_uno();\n    b.sumar_uno();\n    std::cout << a.puntos() << \" \" << b.puntos();\n    return 0;\n}\n",
+          "answers": [
+            "2 1"
+          ],
+          "explanation": "Cada llamada opera sobre el objeto indicado antes del punto."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dentro de a.sumar_uno(), ¿a qué dato se refiere puntos_?",
+          "options": [
+            "Al miembro de a, el objeto de esa llamada.",
+            "A una única variable compartida por todos los objetos.",
+            "Siempre al miembro del último Marcador creado."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una función miembro conoce el objeto para el que se llamó."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el nombre de la consulta pública del marcador.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    std::cout << marcador.___();\n    return 0;\n}\n",
+          "answers": [
+            "puntos"
+          ],
+          "explanation": "La consulta pertenece al objeto y se llama con paréntesis."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La privacidad rechaza un acceso directo"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    std::cout << marcador.puntos_; // Error intencional: el miembro es privado.\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué reparación usa la interfaz que ya proporciona el tipo?",
+          "options": [
+            "Usar \"marcador.puntos_\" para obtener el mismo valor.",
+            "Asignar primero marcador.puntos_ y luego leerlo directamente.",
+            "Llamar marcador.puntos()."
+          ],
+          "correctIndex": 2,
+          "explanation": "La función pública consulta la representación; el literal sólo imprimiría texto."
+        },
+        {
+          "type": "paragraph",
+          "text": "La privacidad no valida datos por sí sola. Una función miembro todavía podría implementar mal la actualización. Su utilidad es limitar los lugares donde se pueden modificar los detalles, para razonar y comprobar esas operaciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rechazar una operación conservando el estado"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    for (int i = 0; i < 20; ++i) { marcador.sumar_uno(); }\n    bool aceptado = marcador.sumar_uno();\n    std::cout << aceptado << \" \" << marcador.puntos();\n    return 0;\n}\n",
+          "answers": [
+            "0 20"
+          ],
+          "explanation": "La operación adicional se rechaza antes del incremento y conserva veinte."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué expresa false en este contrato de sumar_uno()?",
+          "options": [
+            "Que esa solicitud no se aplicó y el marcador conservó su cantidad.",
+            "Que el marcador perdió todos sus puntos.",
+            "Que el programa no pudo compilar."
+          ],
+          "correctIndex": 0,
+          "explanation": "El resultado informa de una decisión de la operación, no de una cantidad nueva."
+        },
+        {
+          "type": "paragraph",
+          "text": "La interfaz debe documentar qué significa su resultado. Aquí false no modifica el estado; true significa que se añadió exactamente un punto. Esa distinción permite al llamador presentar el rechazo sin intentar adivinar lo ocurrido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Completa y suficientemente pequeña"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Necesitas sumar uno y consultar puntos. ¿Qué interfaz cubre esa tarea y protege el límite?",
+          "options": [
+            "Dos funciones públicas: sumar_uno y puntos, con el dato privado.",
+            "Una función pública que permita asignar cualquier entero al dato.",
+            "Sólo una consulta y ningún modo de aumentar puntos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una interfaz útil debe permitir lo necesario sin ofrecer una vía que incumpla la regla."
+        },
+        {
+          "type": "paragraph",
+          "text": "No añadimos una función pública para cambiar todos los detalles sólo porque sea posible. Una operación adicional debe responder a una necesidad y preservar las reglas. Tampoco eliminamos operaciones indispensables para conseguir una clase pequeña: la interfaz ha de ser suficiente para su uso."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Inicialización de miembros y valores de partida"
+        },
+        {
+          "type": "paragraph",
+          "text": "int puntos_ = 0; dentro de la clase establece un valor inicial de miembro. En esta versión, cada nuevo Marcador comienza vacío y ese estado tiene sentido. No se trata de que todos los int de una clase comiencen por sí solos en cero: la inicialización está escrita. Veremos ahora constructores para los casos en que los datos iniciales deban entregarse al crear el objeto."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador original;\n    original.sumar_uno();\n    Marcador copia = original;\n    original.sumar_uno();\n    std::cout << copia.puntos() << \" \" << original.puntos();\n    return 0;\n}\n",
+          "answers": [
+            "1 2"
+          ],
+          "explanation": "La copia conserva el miembro del momento en que se creó; sus operaciones posteriores son independientes."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué garantiza el inicializador de puntos_ de esta versión?",
+          "options": [
+            "Que ninguna operación podrá contener un error.",
+            "Que todos los objetos compartirán ese mismo miembro.",
+            "Que cada objeto empieza con el valor escrito antes de su primera consulta."
+          ],
+          "correctIndex": 2,
+          "explanation": "Inicializar prepara el estado; todavía hay que comprobar las operaciones que lo cambian."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción de una interfaz propia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define una clase RegistroVisitas con dato privado visitas_ inicialmente cero, consulta visitas() y operación registrar(). La operación admite como máximo tres visitas: devuelve true al añadir una y false si ya hay tres, sin cambiar el estado. Ejecuta cuatro solicitudes y muestra 1:1;1:2;1:3;0:3;. Comprueba también un objeto recién creado y dos objetos que reciban cantidades diferentes de solicitudes."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El código usuario debe trabajar mediante esas dos funciones públicas. No cambies el límite mediante un acceso directo ni reinicies el estado cuando se rechaza una solicitud."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución y criterios de comparación"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass RegistroVisitas {\npublic:\n    int visitas() { return visitas_; }\n    bool registrar() {\n        if (visitas_ >= 3) { return false; }\n        ++visitas_;\n        return true;\n    }\nprivate:\n    int visitas_ = 0;\n};\n\nint main() {\n    RegistroVisitas registro;\n    for (int i = 0; i < 4; ++i) {\n        bool aceptado = registro.registrar();\n        std::cout << aceptado << \":\" << registro.visitas() << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: el dato queda privado, cada objeto comienza preparado, la consulta no cambia el estado y el rechazo conserva el último valor válido. La interfaz cubre ambas necesidades. Tu implementación puede usar otra organización de líneas si cumple esas propiedades y las salidas de los casos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Si una operación privada deja visitas_ en cuatro, ¿la privacidad vuelve correcto ese estado?",
+          "options": [
+            "Sí: cualquier valor privado satisface la regla.",
+            "Sí: el llamador no lo puede leer directamente.",
+            "No: la propia implementación también debe mantener el límite."
+          ],
+          "correctIndex": 2,
+          "explanation": "La separación de acceso ayuda a controlar la representación; no sustituye su corrección."
+        }
+      ]
+    }
+  ]
+}

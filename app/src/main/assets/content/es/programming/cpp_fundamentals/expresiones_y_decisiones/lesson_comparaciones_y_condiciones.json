@@ -36,10 +36,10 @@
           "question": "¿Qué tipo tiene el resultado de cantidad <= limite cuando ambos datos son int?",
           "options": [
             "int, porque los datos son enteros.",
-            "bool, porque se obtiene una respuesta verdadera o falsa.",
-            "double, porque hay dos operandos."
+            "double, porque hay dos operandos.",
+            "bool, porque se obtiene una respuesta verdadera o falsa."
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "El operador relacional determina el tipo de su resultado: bool."
         }
       ]
@@ -73,10 +73,10 @@
           "question": "La regla exige al menos 8 registros. ¿Qué condición incluye la frontera correcta?",
           "options": [
             "registros > 8",
-            "registros >= 8",
-            "registros <= 8"
+            "registros <= 8",
+            "registros >= 8"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "Al menos 8 acepta 8 y cantidades mayores."
         }
       ]
@@ -143,22 +143,22 @@
           "type": "multiple_choice",
           "question": "Para humedad igual a 40, ¿qué respuestas se muestran?",
           "options": [
+            "0 0",
             "1 1",
-            "0 1",
-            "0 0"
+            "0 1"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "40 no es menor que 40, pero sí es igual. Las dos preguntas no son intercambiables."
         },
         {
           "type": "multiple_choice",
           "question": "¿Qué comparación detectaría la diferencia entre usar < y <= con minimo igual a 40?",
           "options": [
+            "Cambiar el nombre del objeto humedad.",
             "Probar sólo humedad igual a 10.",
-            "Probar humedad igual a 40.",
-            "Cambiar el nombre del objeto humedad."
+            "Probar humedad igual a 40."
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "El valor de la frontera distingue una condición estricta de otra que incluye la igualdad."
         }
       ]
@@ -184,15 +184,40 @@
           "question": "La regla dice que se permiten exactamente 3 acompañantes, sin aceptar otra cantidad. ¿Qué comparación expresa esa regla?",
           "options": [
             "acompanantes = 3",
-            "acompanantes >= 3",
-            "acompanantes == 3"
+            "acompanantes == 3",
+            "acompanantes >= 3"
           ],
-          "correctIndex": 2,
+          "correctIndex": 1,
           "explanation": "== responde si la cantidad actual es exactamente 3. = asigna y >= también acepta cantidades mayores."
         },
         {
           "type": "note",
           "text": "Para una condición, concreta el significado de true, el de false y lo que ocurre en la igualdad. Compara datos de tipos compatibles y usa aquí cantidades enteras pequeñas. Estas actividades no establecen una regla general para comparar aproximaciones de punto flotante por igualdad."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparación posterior del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos respuestas del laboratorio, en su orden de presentación, son 1 0 para humedad 38 y 39; 0 1 para 40; y 0 0 para 41. La referencia conserva ambas preguntas: estar por debajo y estar exactamente en el mínimo. Un false en la primera no demuestra por sí solo que el valor sea igual al mínimo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int humedad = 38;\n    const int minimo = 40;\n    const bool por_debajo = humedad < minimo;\n    const bool justo_en_minimo = humedad == minimo;\n    std::cout << por_debajo << \" \" << justo_en_minimo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba que sólo la igualdad produce true en la segunda pregunta y que atravesar la frontera cambia la primera. No cambies las preguntas para forzar una salida esperada. Las comparaciones no asignan nuevos valores a humedad ni a minimo; la salida permite observar sus respuestas bool."
+        },
+        {
+          "type": "note",
+          "text": "Llega a esta comparación después de predecir y ejecutar tus pruebas. El editor no califica estas salidas automáticamente: contrástalas con los criterios y explica la primera diferencia. Conserva tu versión si cumple el mismo comportamiento."
         }
       ]
     }

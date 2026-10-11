@@ -79,9 +79,9 @@
           "id": "primer_paso_traza",
           "question": "Antes de trazar while (saldo > 0), ¿qué necesitas conocer?",
           "options": [
-            "El valor de saldo con el que se evalúa la primera condición.",
-            "Únicamente cuántas líneas ocupa el archivo.",
-            "El color del texto en el editor."
+            "El valor inicial de saldo al comprobar la condición.",
+            "El saldo final que deseas obtener después del recorrido.",
+            "El número de vueltas, aunque no conozcas el saldo inicial."
           ],
           "correctIndex": 0,
           "explanation": "La entrada al cuerpo depende del estado, no del aspecto del código."
@@ -129,11 +129,11 @@
           "id": "actualizacion_ausente",
           "question": "Se analiza, sin ejecutarlo, while (n < 3) { std::cout << n; } con n=0 y ninguna otra modificación. ¿Qué impide justificar la salida?",
           "options": [
-            "La condición no cambia: n sigue siendo 0.",
-            "std::cout siempre aumenta n automáticamente.",
-            "La primera salida cambia 3 por 0."
+            "Evaluar n<3 basta para acercar n al extremo del recorrido.",
+            "Mostrar n cuenta como modificarlo para la siguiente vuelta.",
+            "n conserva 0 y la condición sigue siendo verdadera."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "La salida de texto no modifica el contador. El mismo estado hace verdadera la condición una y otra vez."
         }
       ]
@@ -158,8 +158,8 @@
           "question": "Quieres mostrar n y aumentarlo en cada vuelta. ¿Qué estructura reúne ambas acciones como cuerpo?",
           "options": [
             "while (n<4) { std::cout<<n; ++n; }",
-            "while (n<4) std::cout<<n; ++n;",
-            "while (n<4); std::cout<<n; ++n;"
+            "while (n<4); std::cout<<n; ++n;",
+            "while (n<4) std::cout<<n; ++n;"
           ],
           "correctIndex": 0,
           "explanation": "El bloque incluye la salida y el avance. En la segunda forma el incremento queda fuera; la tercera repite una instrucción vacía."
@@ -194,6 +194,27 @@
         {
           "type": "note",
           "text": "Registra el valor comprobado, el valor mostrado y el valor después de actualizar en cada vuelta. Esa traza permite localizar la causa de una diferencia; ejecutar repetidamente sin una predicción aporta menos información."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara esta versión después de tus trazas. Criterios: se comprueba puesto<5 antes de mostrar; sólo se muestran valores aceptados por esa condición; el avance de dos se ejecuta en cada vuelta y la salida Fin ocurre una sola vez, fuera del bucle."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int puesto{0};\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 2;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con inicio 0 y avance 1 se obtiene 0:1:2:3:4:Fin; con inicio 5 no hay cuerpo y se obtiene Fin. Con inicio 0 y avance 2, esta referencia produce 0:2:4:Fin y termina con puesto igual a 6. Llegar exactamente a 5 no es necesario: 6 ya hace falsa la condición. Una actualización fuera del cuerpo no cumple el progreso requerido."
         }
       ]
     }

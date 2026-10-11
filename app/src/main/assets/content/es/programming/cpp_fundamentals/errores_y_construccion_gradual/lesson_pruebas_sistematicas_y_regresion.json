@@ -21,9 +21,9 @@
           "id": "resultado_esperado_independiente",
           "question": "¿Cómo obtienes un resultado esperado útil para comprobar estimar(4)?",
           "options": [
-            "Copiando sin revisar el cuerpo de estimar en otra función.",
+            "Usando cualquier salida que el programa haya producido primero.",
             "Calculando 3 minutos de preparación más 2 por cada una de las cuatro piezas, según el requisito.",
-            "Usando cualquier salida que el programa haya producido primero."
+            "Copiando sin revisar el cuerpo de estimar en otra función."
           ],
           "correctIndex": 1,
           "explanation": "El requisito es la referencia. Repetir la implementación puede repetir su defecto."
@@ -33,11 +33,11 @@
           "id": "prueba_que_falta",
           "question": "Sólo has probado pedidos de 2 y 6 piezas. ¿Qué caso es especialmente útil para revelar que siempre sumas preparación?",
           "options": [
-            "0 piezas.",
             "4 piezas.",
+            "0 piezas.",
             "8 piezas."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Los casos positivos comparten preparación. El vacío exige una rama diferente."
         }
       ]
@@ -141,9 +141,9 @@
           "id": "limite_de_evidencia",
           "question": "Pasaron seis pruebas elegidas de la estimación. ¿Qué afirmación está respaldada directamente?",
           "options": [
-            "La implementación produjo lo esperado en esos seis casos y las comparaciones realizadas.",
-            "Ya no puede existir ningún defecto en una ampliación futura.",
-            "Ningún usuario puede tener un requisito distinto."
+            "Se obtuvo lo esperado en esos seis casos y comparaciones.",
+            "Esos seis casos sustituyen las comprobaciones de futuros cambios.",
+            "Esos seis casos garantizan todas las entradas de un dominio ampliado."
           ],
           "correctIndex": 0,
           "explanation": "La evidencia tiene un alcance concreto. Cambios de dominio o comportamiento requieren nuevas pruebas."
@@ -155,6 +155,31 @@
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Cero=\" << estimar(0) << \"\\n\";\n    std::cout << \"Cuatro=\" << estimar(4) << \"\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia del laboratorio"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y probar tu intento. Es una implementación posible; otras soluciones son válidas si cumplen el mismo contrato y los criterios indicados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. verificar debe comparar resultado real y expectativa independiente, mostrar ambos con una etiqueta y devolver si coinciden. Deben ejecutarse las seis pruebas -1,0,1,4,10,11, incluso si una falla. Las expectativas son -1,0,5,11,23,-1 y la versión correcta termina con cero fallos. Si se introduce preparación en el caso cero, sólo ese caso pasa a fallar en este conjunto: el resumen debe indicar un fallo; después se restaura cero fallos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nbool verificar(int piezas, int esperado) {\n    int real{estimar(piezas)};\n    bool coincide{real == esperado};\n    std::cout << \"Piezas=\" << piezas << \" real=\" << real\n              << \" esperado=\" << esperado << \" \";\n    if (coincide) { std::cout << \"Correcto\\n\"; }\n    else { std::cout << \"Fallo\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!verificar(-1, -1)) { ++fallos; }\n    if (!verificar(0, 0)) { ++fallos; }\n    if (!verificar(1, 5)) { ++fallos; }\n    if (!verificar(4, 11)) { ++fallos; }\n    if (!verificar(10, 23)) { ++fallos; }\n    if (!verificar(11, -1)) { ++fallos; }\n    std::cout << \"Fallos=\" << fallos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las llamadas ocupan instrucciones independientes; ninguna se omite por un && anterior. Para comprobar que el verificador detecta el defecto, cambia temporalmente el return 0 del caso piezas==0 por return 3. La comparación de ese caso mostrará real=3, esperado=0 y Fallo. Restaura la regla original y vuelve a ejecutar todo el conjunto."
         }
       ]
     }

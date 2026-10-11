@@ -1,0 +1,244 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__ancho_relleno_y_alineacion_de_campos",
+  "title": "Ancho, relleno y alineación de campos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ancho mínimo de un campo"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::setw(n), de <iomanip>, solicita un mínimo de n posiciones de caracteres para el siguiente campo. Si la representación ocupa menos, se completa con relleno; si ocupa más, se presenta completa. No convierte el valor, no recorta el texto y no limita cuántas cifras puede tener un entero. Comenzaremos con relleno de espacios y alineación a la derecha."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(4) << 7 << \"]|[\" << std::setw(4) << 12345 << \"]\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación guiada produce [   7]|[12345]: tres espacios y un dígito dentro del primer campo; cinco dígitos dentro del segundo, aunque el mínimo fuera cuatro. Los corchetes hacen visibles los límites. En las predicciones conserva los espacios interiores; no se piden espacios fuera de los delimitadores."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(3) << 12 << \"]|[\" << std::setw(3) << 1234 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[ 12]|[1234]"
+          ],
+          "explanation": "El primer campo necesita un espacio; el segundo crece porque el contenido supera el mínimo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El ancho se consume con el siguiente campo"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(4) << 8 << \"]|[\" << 9 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[   8]|[9]"
+          ],
+          "explanation": "El ancho cuatro se aplica a ocho; nueve no recibe otro setw."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las inserciones de número, cadena o carácter que usamos aquí consumen el ancho y lo vuelven cero. Por eso se repite setw antes de cada campo que lo necesita. Este comportamiento difiere de hex, fixed o setprecision, que permanecen hasta cambiarlos."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(4) << \":\" << 7 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[   :7]"
+          ],
+          "explanation": "La cadena : es el siguiente campo y consume el ancho antes de insertar siete."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quieres reservar cuatro posiciones para el entero. ¿Dónde sitúas setw(4) si también insertas una etiqueta?",
+          "options": [
+            "Después de insertar la etiqueta y antes del entero.",
+            "Una vez al comienzo de main para todos los campos.",
+            "Antes de insertar la etiqueta y después cualquier entero."
+          ],
+          "correctIndex": 0,
+          "explanation": "La etiqueta también consume un ancho pendiente; la colocación debe corresponder al campo elegido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el carácter de relleno"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setfill('0') << std::setw(4) << 7 << \"]|[\"\n        << std::setw(4) << 12 << \"]\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación guiada produce [0007]|[0012]. setfill cambia el relleno del flujo y permanece; setw sigue siendo necesario para cada campo. Los ceros añadidos son caracteres del informe: el entero siete no se convierte en otro tipo ni se vuelve un literal octal del fuente."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setfill('.') << std::setw(3) << 4 << \"]|[\"\n        << std::setw(3) << 25 << \"]|[\" << 6 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[..4]|[.25]|[6]"
+          ],
+          "explanation": "El punto permanece como relleno, pero el tercer entero no tiene ancho pedido."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el carácter de relleno dentro de las comillas para formar ceros iniciales.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setfill('___') << std::setw(3) << 5 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "El carácter 0 produce dos ceros de relleno antes del dígito cinco."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los manipuladores preparan, pero no son un campo"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(4) << std::setfill('0') << 9 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[0009]"
+          ],
+          "explanation": "setfill configura el relleno sin insertar un campo; el ancho pendiente se usa al presentar nueve."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los controles de formato de estos ejemplos modifican el estado antes de presentar un valor. Insertar otro manipulador entre setw y el dato no es lo mismo que insertar una etiqueta o carácter. Lee cada elemento de la cadena de inserciones y señala si configura o produce caracteres."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué control debe repetirse para cada campo con ancho cuatro?",
+          "options": [
+            "setw, porque el siguiente campo consume ese ancho.",
+            "hex, porque cada número restaura decimal.",
+            "setfill, porque el relleno siempre se borra."
+          ],
+          "correctIndex": 0,
+          "explanation": "setw describe un ancho pendiente; las otras configuraciones permanecen."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Izquierda y derecha son estados persistentes"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::left << std::setw(5) << \"Sol\" << \"]|[\"\n        << std::right << std::setw(5) << 7 << \"]\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación guiada produce [Sol  ]|[    7]. left coloca el relleno después del contenido; right lo coloca antes. También permanecen en el flujo. Podemos alinear etiquetas a la izquierda y cantidades a la derecha cambiando de modo antes de los campos correspondientes."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::left << std::setfill('.') << std::setw(4) << \"A\" << \"]|[\"\n        << std::setw(4) << 2 << \"]|[\" << std::right << std::setw(4) << 2 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[A...]|[2...]|[...2]"
+          ],
+          "explanation": "La alineación izquierda permanece para dos; right cambia la última posición del relleno."
+        },
+        {
+          "type": "note",
+          "text": "Las tablas usan caracteres ASCII para contar posiciones de forma sencilla. setw mide posiciones de caracteres en estos campos; no es una herramienta para decidir el ancho visual de cualquier texto Unicode en una pantalla."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar filas reutilizables"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe una función que recibe una etiqueta ASCII de hasta ocho caracteres y una cantidad int de cero a mil. Devuelve [ETIQUETA]|[CANTIDAD]. El primer campo solicita mínimo seis posiciones, alineado a la izquierda; el segundo solicita mínimo tres, a la derecha. Usa espacios de relleno, sin recortar los campos que excedan esos mínimos. Presenta filas de \"Sol\" y 4 y de \"Pasillo\" y 1000. Comprueba también etiqueta vacía y cantidad cero."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice el número de espacios interiores de cada campo. La función compone con un flujo local, no imprime y no cambia el formato del llamador. No se exige una única escritura del cuerpo; se evalúa el contrato observado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia y criterios de ancho"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string fila(const std::string& etiqueta, int cantidad) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << etiqueta\n        << \"]|[\" << std::right << std::setw(3) << cantidad << \"]\";\n    return texto.str();\n}\n\nint main() {\n    std::cout << fila(\"Sol\", 4) << \"\\n\" << fila(\"Pasillo\", 1000) << \"\\n\" << fila(\"\", 0);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las líneas de referencia son [Sol   ]|[  4], [Pasillo]|[1000] y [      ]|[  0]. Criterios: las etiquetas quedan a la izquierda, las cantidades a la derecha; cada campo recibe su propio ancho; el relleno es espacio; los contenidos largos se conservan completos; los argumentos se usan sin sustituirlos por cadenas fijas; cada llamada devuelve sólo su fila. Comprueba el límite exacto de seis caracteres con \"Taller\"."
+        },
+        {
+          "type": "paragraph",
+          "text": "El ancho mínimo no valida el dominio numérico de una cantidad. En esta consigna el llamador proporciona cantidades permitidas. Si otro programa necesitara rechazar datos, esa comprobación pertenecería a su contrato antes de formar la fila."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar precisión, base y ancho por separado"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"[\" << std::fixed << std::setprecision(2) << std::setfill('.')\n        << std::setw(7) << 3.5 << \"]|[\" << 27 << \"]\";\n    std::cout << texto.str();\n    return 0;\n}\n",
+          "answers": [
+            "[...3.50]|[27]"
+          ],
+          "explanation": "3.50 tiene cuatro caracteres y recibe tres puntos; el entero siguiente no tiene ancho y no adquiere dos decimales."
+        },
+        {
+          "type": "paragraph",
+          "text": "En una sesión posterior explica qué controla cada petición: base para enteros, modo y precisión para double, ancho mínimo para un campo, carácter y lado del relleno. Prepara otro ejemplo que distinga un control persistente de uno consumido por el siguiente campo. Comprueba la predicción después de justificarla."
+        }
+      ]
+    }
+  ]
+}

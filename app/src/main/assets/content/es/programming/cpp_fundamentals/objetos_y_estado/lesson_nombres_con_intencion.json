@@ -48,9 +48,9 @@
           "type": "multiple_choice",
           "question": "¿Qué impide usar int como nombre de una variable?",
           "options": [
-            "Es demasiado corto.",
+            "Sólo se permite en nombres de archivos.",
             "Es una palabra reservada del lenguaje.",
-            "Sólo se permite en nombres de archivos."
+            "Es demasiado corto."
           ],
           "correctIndex": 1,
           "explanation": "int ya identifica un tipo del lenguaje; no es una etiqueta disponible para nombrar un dato."
@@ -87,8 +87,8 @@
           "question": "¿Qué reparación conserva la variable ya definida en el ejemplo?",
           "options": [
             "Cambiar Cajas por cajas en la salida.",
-            "Añadir comillas a Cajas para imprimir el valor cinco.",
-            "Borrar la cabecera iostream."
+            "Borrar la cabecera iostream.",
+            "Añadir comillas a Cajas para imprimir el valor cinco."
           ],
           "correctIndex": 0,
           "explanation": "Leer cajas usa el identificador definido. Escribir \"Cajas\" sólo imprime ese texto."
@@ -120,10 +120,10 @@
           "question": "Se guardan dos cantidades: libros prestados y libros devueltos. ¿Qué pareja comunica mejor la diferencia?",
           "options": [
             "a y A",
-            "libros_prestados y libros_devueltos",
-            "numero y numero2"
+            "numero y numero2",
+            "libros_prestados y libros_devueltos"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "Los nombres explican qué cantidad corresponde a cada etapa del problema."
         },
         {
@@ -131,8 +131,8 @@
           "question": "x1 es un nombre válido, pero en un inventario sin más contexto resulta poco claro. ¿Qué clase de problema tiene?",
           "options": [
             "Una falta de claridad para el lector.",
-            "Una violación obligatoria de la gramática.",
-            "Un valor numérico fuera de rango."
+            "Un valor numérico fuera de rango.",
+            "Una violación obligatoria de la gramática."
           ],
           "correctIndex": 0,
           "explanation": "La validez del identificador y su utilidad para comprender el código son preguntas diferentes."
@@ -197,12 +197,37 @@
           "type": "multiple_choice",
           "question": "¿Qué debe verificarse después de renombrar una variable?",
           "options": [
-            "Que todas las referencias al mismo dato usen el nombre nuevo y que el resultado siga cumpliendo la consigna.",
-            "Que el nombre tenga el mayor número posible de letras.",
-            "Que el programa imprima siempre el nombre en vez del valor."
+            "Referencias coherentes y comportamiento que siga cumpliendo la consigna.",
+            "Sólo la declaración: el cambio de nombre no afecta sus otros usos.",
+            "Sólo la salida: los diagnósticos por usos del nombre viejo no importan."
           ],
           "correctIndex": 0,
           "explanation": "Un renombrado coherente mejora comunicación y conserva comportamiento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia: Renombrar conservando el cálculo"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Los tres nombres deben corresponder a cantidad inicial, cantidad agregada y cantidad final. Actualiza todas sus apariciones y conserva valores 4 y 3, la suma y la salida 7. Renombrar no debe introducir variables extra, cambiar la operación ni imprimir un número fijo para ocultar un error de uso."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas_iniciales{4};\n    int cajas_agregadas{3};\n    int cajas_finales{cajas_iniciales + cajas_agregadas};\n    std::cout << cajas_finales;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "cajas_iniciales conserva lo que había; cajas_agregadas, lo que se incorpora; cajas_finales, el resultado de sumar ambos. La dependencia queda visible en el código. La salida 7 comprueba este caso concreto; además revisa que cada uso corresponda al nuevo nombre correcto."
         }
       ]
     }

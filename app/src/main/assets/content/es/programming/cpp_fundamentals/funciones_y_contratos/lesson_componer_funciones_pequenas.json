@@ -25,11 +25,11 @@
           "type": "multiple_choice",
           "question": "Quieres comprobar faltantes con 5 necesarias y 8 disponibles sin exigir un formato de texto. ¿Qué resultado debes contrastar?",
           "options": [
-            "El valor devuelto, que debe ser 0.",
             "La cantidad de letras del nombre de la función.",
+            "El valor devuelto, que debe ser 0.",
             "La presencia de cout dentro de faltantes."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "La promesa del cálculo es una cantidad, no un mensaje concreto."
         }
       ]
@@ -58,11 +58,11 @@
           "type": "multiple_choice",
           "question": "¿Qué debe revisarse si una función llama a otra con un resultado intermedio?",
           "options": [
-            "Que ese resultado esté dentro del dominio exigido por la función llamada.",
             "Sólo que ambas funciones tengan nombres distintos.",
+            "Que ese resultado esté dentro del dominio exigido por la función llamada.",
             "Que las dos impriman el mismo mensaje."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Un contrato también importa entre funciones auxiliares, no sólo en las llamadas realizadas desde main."
         }
       ]
@@ -90,11 +90,11 @@
           "type": "multiple_choice",
           "question": "La función de inspección recibe const std::vector<int>&. ¿Qué conserva main después de la llamada?",
           "options": [
-            "El vector original con los mismos elementos.",
             "Un vector vacío, porque sumar consume los elementos.",
-            "Un resultado sin relación con los datos."
+            "Un resultado sin relación con los datos.",
+            "El vector original con los mismos elementos."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "El recorrido lee valores y acumula en un objeto local; no modifica la colección a través de la referencia const."
         }
       ]
@@ -125,11 +125,11 @@
           "type": "multiple_choice",
           "question": "Con el lote vacío y capacidad 5, ¿qué plan corresponde al contrato?",
           "options": [
-            "Unidades: 0\nContenedores: 0",
+            "Unidades: 0\nContenedores: 1",
             "Datos fuera del dominio",
-            "Unidades: 0\nContenedores: 1"
+            "Unidades: 0\nContenedores: 0"
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "La colección vacía cumple los límites. Su suma es 0 y no deja sobrantes."
         }
       ]
@@ -154,11 +154,11 @@
           "type": "multiple_choice",
           "question": "¿Qué casos distinguen el cálculo con resto del reparto exacto y del total cero, usando capacidad 4?",
           "options": [
-            "Totales 0, 8 y 9.",
             "Totales 8, 8 y 8.",
+            "Totales 0, 8 y 9.",
             "Sólo total 25."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "0 comprueba ausencia de contenedores, 8 reparto exacto y 9 el contenedor adicional."
         },
         {
@@ -177,11 +177,11 @@
           "type": "multiple_choice",
           "question": "¿Qué reparto de responsabilidades permite cambiar el formato sin alterar la suma ni el número de contenedores?",
           "options": [
-            "Validar datos, calcular valores y pasar esos valores a una función de presentación.",
             "Imprimir cada elemento dentro de todas las funciones y mezclar los mensajes con la suma.",
+            "Validar datos, calcular valores y pasar esos valores a una función de presentación.",
             "Hacer que cada función cambie el vector aunque sólo necesite leerlo."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Las funciones de cálculo devuelven datos. La función de presentación decide cómo mostrarlos."
         },
         {
@@ -191,6 +191,31 @@
         {
           "type": "note",
           "text": "El proyecto reúne colecciones, recorridos, condiciones, contratos y llamadas. Sus programas siguen siendo de un solo archivo; la separación en archivos, las clases y otros mecanismos de organización se estudiarán después."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: Componer un plan con sobrante"
+        },
+        {
+          "type": "note",
+          "text": "Compara después de realizar el laboratorio y anotar sus resultados previstos. La referencia presenta una organización posible; los criterios permiten reconocer otras implementaciones que cumplan los mismos contratos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Con {3,4,5} y capacidad 5, el plan es Unidades: 12 y Contenedores: 3 en líneas distintas. Para {}, las cantidades son 0 y 0; para {5}, 5 y 1; para {5,5}, 10 y 2; para {6}, 6 y 2, como en la referencia. Capacidad 0 o un pedido negativo producen sólo Datos fuera del dominio. Conserva hasta seis pedidos de 0 a 20 y capacidad de 1 a 10; tamaño excesivo, pedido 21 o capacidad 11 también deben rechazarse antes del cálculo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unidades: \" << total << \"\\n\";\n    std::cout << \"Contenedores: \" << contenedores;\n}\n\nint main() {\n    const std::vector<int> pedidos = {6};\n    const int capacidad = 5;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Datos fuera del dominio\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las funciones distinguen validación del lote, validación de capacidad, suma, cantidad de contenedores y presentación. La división cuenta los contenedores completos; un resto distinto de cero exige otro. El lote vacío no necesita contenedores y no contradice su dominio válido. Otras implementaciones son válidas si conservan esas responsabilidades, permisos de lectura y orden protegido de cálculo."
         }
       ]
     }

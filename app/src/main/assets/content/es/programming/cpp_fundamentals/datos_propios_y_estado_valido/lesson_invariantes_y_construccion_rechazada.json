@@ -1,0 +1,240 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__invariantes_y_construccion_rechazada",
+  "title": "Invariantes y construcción rechazada",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Precisar qué estados representan el concepto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para este modelo, un Pedido tiene un código no vacío, entre una y veinte unidades y uno de los estados preparado, enviado o cancelado. Un pedido nuevo siempre empieza preparado. Son requisitos del ejemplo, no una regla universal de todos los pedidos. Establecerlos permite decidir qué datos aceptamos y qué operaciones deberán conservarlos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un invariante es una regla del estado que debe cumplirse cuando un objeto terminó de construirse y antes y después de sus operaciones públicas. La construcción tiene que establecerlo; los datos privados y las operaciones deben preservarlo. Un código no vacío no garantiza que exista realmente en un sistema externo: sólo estamos comprobando la regla que acabamos de especificar."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué datos satisfacen el requisito inicial de esta versión?",
+          "options": [
+            "Código \"P2\" y seis unidades.",
+            "Código \"P2\" y cero unidades.",
+            "Código vacío y seis unidades."
+          ],
+          "correctIndex": 0,
+          "explanation": "Se necesitan conjuntamente código no vacío y unidades entre una y veinte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar antes de terminar la construcción"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"P2\", 6};\n    std::cout << pedido.codigo() << \":\" << pedido.unidades() << \" \" << (pedido.estado() == Estado::preparado);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los inicializadores preparan los miembros con los argumentos recibidos; el cuerpo comprueba la regla. Si falla, throw interrumpe la construcción. No queda disponible un Pedido que haya terminado de construirse con esos datos inválidos. La regla se exige al finalizar la construcción, no se presupone ya cumplida antes de comprobar sus argumentos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué debe ocurrir si se intenta construir con cero unidades?",
+          "options": [
+            "Crear un pedido inválido y pedir a cada consulta que lo arregle.",
+            "Rechazar la construcción según el contrato.",
+            "Cambiar silenciosamente cero por una unidad."
+          ],
+          "correctIndex": 1,
+          "explanation": "Cambiar el dato sin informar no cumple la petición ni el requisito de rechazo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Informar del rechazo al llamador"
+        },
+        {
+          "type": "paragraph",
+          "text": "PedidoInvalido es un tipo sencillo que usamos como señal de esta construcción rechazada. El llamador coloca la construcción dentro de try y responde con catch al recibir esa excepción. La señal no es el pedido: no debe usarse como si contuviera un objeto construido correctamente. El mecanismo de excepciones se ha desarrollado en su unidad anterior."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"A1\", 0};\n        std::cout << \"Creado\";\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Rechazado"
+          ],
+          "explanation": "El constructor lanza antes de terminar; la instrucción posterior a la construcción no se ejecuta."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"B2\", 20};\n        std::cout << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "20"
+          ],
+          "explanation": "Veinte pertenece al dominio y la construcción termina normalmente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Límites y condiciones conjuntas"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"\", 4};\n        std::cout << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Codigo no valido\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Codigo no valido"
+          ],
+          "explanation": "El número válido no compensa un código vacío."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué casos distinguen los límites de la cantidad?",
+          "options": [
+            "Una y veinte aceptadas; cero y veintiuna rechazadas.",
+            "Una y diecinueve aceptadas; veinte rechazada.",
+            "Cero y veinte aceptadas; veintiuna rechazada."
+          ],
+          "correctIndex": 0,
+          "explanation": "Las fronteras y sus valores vecinos ponen a prueba ambas comparaciones."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el operador que detecta una cantidad por encima del máximo.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ ___ 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"R\", 21};\n        std::cout << \"Creado\";\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            ">"
+          ],
+          "explanation": "La condición debe rechazar unidades mayores que veinte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un tipo correcto no implica un dato válido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los argumentos \"A1\" y -3 tienen los tipos string e int que solicita el constructor. Aun así, no cumplen la regla del Pedido. El compilador detecta tipos equivocados; la comprobación del constructor detecta estos valores que no representan el estado permitido. enum class también tiene límites: una conversión explícita puede producir valores no nombrados, de modo que no debe usarse como sustituto de verificar un dominio."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué diferencia hay entre entregar una cadena en lugar de las unidades y entregar -3 como unidades?",
+          "options": [
+            "Ambas se comprueban únicamente después de completar la construcción.",
+            "La primera es una incompatibilidad de tipos; la segunda requiere la comprobación del dominio.",
+            "Ambas se rechazan al compilar por el tipo de sus argumentos."
+          ],
+          "correctIndex": 1,
+          "explanation": "Los controles se complementan: tipos al compilar y valores al construir."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta versión el estado inicial no es un argumento: el constructor siempre lo prepara como Estado::preparado. La interfaz evita crear pedidos con un estado arbitrario de llegada. Si otro modelo necesitara aceptar un estado inicial, tendría que definir y comprobar esa necesidad."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La privacidad y el constructor trabajan juntos"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un constructor comprueba unidades, pero deja ese dato público. ¿Qué problema persiste?",
+          "options": [
+            "El usuario podría cambiar después el valor a uno que incumpla la regla.",
+            "Los argumentos públicos ya no podrían comprobarse al construir.",
+            "El usuario no podría cambiarlo porque el constructor ya lo comprobó."
+          ],
+          "correctIndex": 0,
+          "explanation": "Establecer el invariante al construir no basta si se puede romper después por acceso directo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Los miembros son privados, pero el constructor acepta cualquier dato. ¿Qué falta?",
+          "options": [
+            "Establecer el invariante antes de completar la construcción.",
+            "Revisar cada dato sólo cuando una consulta lo solicite.",
+            "Declarar las consultas const y aceptar cualquier argumento."
+          ],
+          "correctIndex": 0,
+          "explanation": "La privacidad no transforma argumentos inválidos en un objeto correcto."
+        },
+        {
+          "type": "paragraph",
+          "text": "La construcción y el acceso controlado dan razones complementarias para confiar en un Pedido construido. A continuación haremos explícitas las condiciones de las operaciones que cambian su estado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción con rechazo comprobable"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define una clase Lote con un código string no vacío y una cantidad int de una a cinco. El constructor debe rechazar los demás argumentos mediante una señal LoteInvalido, sin cambiarlos silenciosamente. Sus consultas codigo() y cantidad() son const y sus datos privados. Prueba {\"L\", 1}, {\"L\", 5}, {\"L\", 0}, {\"L\", 6}, {\"\", 2} y {\"L\", -1}. Muestra el código y cantidad al aceptar, y Rechazado al capturar la señal."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice cada aceptación o rechazo antes de compilar. La captura debe estar fuera del constructor: si éste atrapara su propia señal para completar un lote con otros datos, no estaría cumpliendo el rechazo solicitado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución con criterios de validez"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct LoteInvalido {};\n\nclass Lote {\npublic:\n    Lote(std::string codigo, int cantidad) : codigo_{codigo}, cantidad_{cantidad} {\n        if (codigo_.empty() || cantidad_ < 1 || cantidad_ > 5) { throw LoteInvalido{}; }\n    }\n    std::string codigo() const { return codigo_; }\n    int cantidad() const { return cantidad_; }\nprivate:\n    std::string codigo_;\n    int cantidad_;\n};\n\nint main() {\n    try {\n        Lote lote{\"L\", 6};\n        std::cout << lote.codigo() << \":\" << lote.cantidad();\n    } catch (const LoteInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: las consultas sólo se usan después de una construcción aceptada; todos los argumentos fuera del dominio interrumpen la construcción; los argumentos válidos se conservan sin cambios; el código usuario distingue éxito de rechazo; los miembros privados no permiten romper la regla por asignación directa."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido a{\"A\", 1};\n        std::cout << \"A \";\n        Pedido b{\"B\", 21};\n        std::cout << \"B\";\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "A Rechazado"
+          ],
+          "explanation": "La primera construcción y su salida ocurrieron; la segunda lanza y no ejecuta su salida posterior."
+        }
+      ]
+    }
+  ]
+}

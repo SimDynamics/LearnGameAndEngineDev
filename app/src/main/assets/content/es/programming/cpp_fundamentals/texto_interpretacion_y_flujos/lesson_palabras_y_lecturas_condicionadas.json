@@ -1,0 +1,210 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__palabras_y_lecturas_condicionadas",
+  "title": "Palabras y lecturas condicionadas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El texto necesita una regla de lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta ahora los datos de los laboratorios ya estaban declarados con sus tipos. Un texto como sol  luna contiene caracteres: para convertirlo en datos debes decidir qué separa una unidad de la siguiente. Leer palabras sirve para una lista de nombres simples; conservar una frase completa exige otra regla que construiremos después."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un flujo de entrada entrega datos en un orden y conserva el lugar desde el que continuará la próxima lectura. std::istringstream, declarado en <sstream>, construye ese flujo a partir de una cadena. El nombre entrada designa el objeto lector; no es la cadena de destino. Aquí el origen está preparado en el programa: puedes cambiarlo entre ejecuciones para repetir una prueba. El laboratorio no solicita texto al teclado."
+        },
+        {
+          "type": "paragraph",
+          "text": "La extracción entrada >> palabra intenta leer una std::string. Omite los espacios iniciales y después reúne caracteres hasta el siguiente espacio en blanco: también separan un tabulador o un salto de línea. La próxima extracción continúa desde ese lugar. El operador cambia el flujo y el objeto destino; por eso leer es una operación con estado."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  sol  luna \"};\n    std::string primera;\n    std::string segunda;\n    if (entrada >> primera >> segunda) {\n        std::cout << \"<\" << primera << \">|<\" << segunda << \">\";\n    } else {\n        std::cout << \"Faltan palabras\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las extracciones devuelven el propio flujo, lo que permite encadenarlas y comprobar su estado en if. La condición pregunta si las lecturas necesarias tuvieron éxito. Sólo entonces se usan ambas palabras. Los signos < > y | los añade la salida para hacer visibles sus límites; no estaban en la entrada."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Seguir el avance sin volver al principio"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice la salida completa. Los caracteres \\t y \\n dentro de la cadena representan un tabulador y un salto de línea.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\tbrisa\\npuente camino\"};\n    std::string palabra;\n    if (entrada >> palabra) {\n        std::cout << \"1:<\" << palabra << \">\\n\";\n    }\n    if (entrada >> palabra) {\n        std::cout << \"2:<\" << palabra << \">\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "1:<brisa>\n2:<puente>"
+          ],
+          "explanation": "Cada extracción omite el espacio en blanco y avanza una palabra. La segunda continúa después de brisa; camino queda disponible para una lectura posterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "El destino palabra puede reutilizarse: tras una lectura válida contiene la palabra recién leída. Si necesitas conservar todas, tendrás que copiarlas a una colección o procesarlas antes de la siguiente lectura. Cambiar el destino no hace que el flujo retroceda."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Se lee una sola std::string desde \"alto-bajo+medio\" con >>. ¿Qué unidad entrega?",
+          "options": [
+            "Sólo alto, porque el guion siempre separa palabras.",
+            "Tres palabras, porque los signos representan operadores.",
+            "La cadena alto-bajo+medio completa, porque no contiene espacio en blanco."
+          ],
+          "correctIndex": 2,
+          "explanation": "La lectura de string separa por espacio en blanco. Los signos no adquieren un significado de operación por aparecer dentro del texto; habrá que definir y construir esa interpretación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una cadena de lecturas no es una transacción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si se necesitan dos palabras y sólo existe una, la primera extracción puede haber tenido éxito aunque la segunda falle. El if conjunto evita usar un par incompleto; no promete deshacer lo que ya se consumió ni conservar todos los destinos. No deduzcas el valor de un destino después de una lectura fallida: toma decisiones con el resultado de la lectura y usa datos obtenidos válidamente."
+        },
+        {
+          "type": "output_prediction",
+          "question": "¿Qué imprime este programa cuando sólo hay una palabra?",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"cauce\"};\n    std::string origen;\n    std::string destino;\n    if (entrada >> origen >> destino) {\n        std::cout << origen << \" -> \" << destino;\n    } else {\n        std::cout << \"Par incompleto\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Par incompleto"
+          ],
+          "explanation": "Falta la segunda palabra. La condición conjunta falla y la alternativa muestra un diagnóstico sin utilizar el par incompleto."
+        },
+        {
+          "type": "fill_code",
+          "question": "Práctica guiada: completa únicamente el operador que obtiene izquierda antes de continuar con la extracción de derecha.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"norte sur\"};\n    std::string izquierda;\n    std::string derecha;\n    if (entrada ___ izquierda >> derecha) {\n        std::cout << izquierda << \" / \" << derecha;\n    } else {\n        std::cout << \"Par incompleto\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            ">>"
+          ],
+          "explanation": "El resultado de la cadena es el flujo después de ambas operaciones. La condición exige que no haya fallado la extracción necesaria."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Repetir mientras se obtiene una palabra válida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la cantidad de palabras no se conoce, la lectura puede ser la condición del bucle. Una iteración se ejecuta sólo cuando obtuvo una palabra. Al no poder obtener otra, la condición falla y el cuerpo no se repite. No se procesa una palabra antigua como si fuera nueva."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  cobre\\tplata\\noro \"};\n    std::string palabra;\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El progreso depende de la extracción: cada vuelta válida consume una palabra de un texto finito. La lectura siguiente empieza más adelante. La condición controla la validez; el cuerpo se dedica a usar lo que ya se obtuvo. Separar ambas responsabilidades ayuda a evitar procesar el destino después de un fallo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quieres contar todas las palabras obtenidas. ¿Dónde debe incrementarse un contador que empieza en 0?",
+          "options": [
+            "Dentro del cuerpo, una vez por cada lectura válida.",
+            "Antes del bucle, para contar también el intento de lectura final.",
+            "Después del bucle, una vez por cada carácter que no se pudo leer."
+          ],
+          "correctIndex": 0,
+          "explanation": "Cada ejecución del cuerpo corresponde a una palabra válida. El intento final que termina el bucle no debe contarse como dato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un informe de palabras"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un informe para el texto preparado \"  eco\\tmar\\nsol  \". Cada palabra debe aparecer en su propia línea entre < y >. Después escribe Palabras: seguido de un espacio y la cantidad obtenida. Mantén el orden de lectura y no añadas una palabra por los espacios sobrantes. El texto de cada prueba contendrá como máximo 8 palabras, de hasta 20 caracteres ASCII cada una; un contador int de 0 a 8 es suficiente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, establece lo esperado: el texto inicial produce <eco>, <mar>, <sol> y Palabras: 3 en cuatro líneas. La cadena vacía y una cadena con sólo espacios producen únicamente Palabras: 0. \"una dos\" produce dos palabras; \"unodos\" produce una sola. Añade un caso con espacios al principio y al final. El editor proporciona el origen, pero debes elegir destino, repetición, contador y presentación."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  eco\\tmar\\nsol  \"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "El editor permite construir y ejecutar tu programa; estos criterios no se comprueban automáticamente. Revisa cada salida y explica qué lectura hace avanzar el bucle y qué condición impide usar un dato que no se obtuvo. Compara con la referencia después del intento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar una implementación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta referencia usa rio, monte y valle. El contador pertenece al cuerpo porque sólo allí existe una nueva palabra válida. La salida final se realiza una vez cuando termina la lectura. Conserva tu solución si cumple los mismos criterios aunque utilice otros nombres."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  rio\\tmonte\\nvalle  \"};\n    std::string palabra;\n    int cantidad = 0;\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n        ++cantidad;\n    }\n    std::cout << \"Palabras: \" << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para comprobar los casos del intento, cambia sólo el texto del constructor y vuelve a ejecutar. Con una cadena vacía no entra al cuerpo; cantidad conserva 0. Con separadores consecutivos no aparecen palabras vacías: la extracción de string los omite."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Recupera la lectura y el contador: predice la salida para estos datos distintos.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  uno\\n\\t  dos-tres \"};\n    std::string palabra;\n    int cantidad = 0;\n    while (entrada >> palabra) {\n        ++cantidad;\n        std::cout << cantidad << \":<\" << palabra << \">\\n\";\n    }\n    std::cout << \"Total: \" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "1:<uno>\n2:<dos-tres>\nTotal: 2"
+          ],
+          "explanation": "El salto, el tabulador y los espacios separan. El guion sigue dentro de dos-tres, por lo que sólo hay dos lecturas válidas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la unidad que el problema necesita"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Una etiqueta completa debe conservar \"Taller del rio\" con sus espacios internos. ¿Qué limitación tiene leerla mediante una sola extracción de string con >>?",
+          "options": [
+            "La extracción rechaza todas las letras porque espera un número.",
+            "Obtiene sólo Taller; los espacios separan las siguientes palabras.",
+            "Obtiene la frase completa y elimina únicamente el espacio final."
+          ],
+          "correctIndex": 1,
+          "explanation": "La unidad de >> para string es una palabra delimitada por espacio en blanco. Leer una línea completa permitirá conservar los espacios internos y después decidir qué significan."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una palabra, una línea y un carácter son unidades distintas. Elegir una depende de lo que debas conservar. En las siguientes lecturas construiremos esas diferencias y validaremos el formato de números y operaciones; tener caracteres disponibles todavía no demuestra que constituyan un dato aceptable."
+        }
+      ]
+    }
+  ]
+}

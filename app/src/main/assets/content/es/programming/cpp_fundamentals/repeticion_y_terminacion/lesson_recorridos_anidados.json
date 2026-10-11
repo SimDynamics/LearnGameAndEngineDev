@@ -72,8 +72,8 @@
           "question": "En el programa anterior mueves ++parejas después del for interior, conservándolo dentro del exterior. ¿Qué cuenta ahora?",
           "options": [
             "Las tres filas visitadas.",
-            "Las doce parejas fila-columna.",
-            "Las cuatro columnas de la última fila."
+            "Las cuatro columnas de la última fila.",
+            "Las doce parejas fila-columna."
           ],
           "correctIndex": 0,
           "explanation": "La ubicación determina la frecuencia de la actualización."
@@ -147,11 +147,11 @@
           "id": "restaurar_recorrido_interior",
           "question": "Quieres recorrer columnas 1 y 2 en cada fila usando un while interior. ¿Dónde debe ejecutarse columna=1;?",
           "options": [
-            "Dentro del cuerpo exterior, antes de comprobar el while interior de esa fila.",
+            "Después de terminar ambos bucles.",
             "Sólo antes de comenzar el bucle exterior.",
-            "Después de terminar ambos bucles."
+            "Dentro del cuerpo exterior, antes de comprobar el while interior de esa fila."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "La inicialización debe repetirse por cada recorrido interior nuevo."
         }
       ]
@@ -199,6 +199,27 @@
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 2; ++fila) {\n        for (int columna{0}; columna < 3; ++columna) {\n            std::cout << \"(\" << fila << \",\" << columna << \")\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara después de tus trazas. Criterios: visitar cada pareja fila-columna una sola vez, reiniciar columna en cada fila, insertar un salto al terminar cada fila y mostrar Fin sólo después de ambos bucles. No elimines el final de fila cuando su recorrido de columnas está vacío."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 3; ++fila) {\n        for (int columna{0}; columna < 2; ++columna) {\n            std::cout << \"(\" << fila << \",\" << columna << \")\";\n        }\n        std::cout << \"\\n\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con tres filas y dos columnas se obtienen las líneas (0,0)(0,1), (1,0)(1,1), (2,0)(2,1) y luego Fin. Con dos filas y cero columnas, cada cuerpo exterior aporta su salto: hay dos líneas vacías antes de Fin. Con cero filas no se ejecuta ningún final de fila y sólo aparece Fin. Las líneas vacías tienen una causa en el código; no son parejas inexistentes."
         }
       ]
     }

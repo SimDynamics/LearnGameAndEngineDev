@@ -57,9 +57,9 @@
           "type": "multiple_choice",
           "question": "Convertir -4.8 a int, dentro del rango del tipo, produce…",
           "options": [
-            "-5",
+            "4",
             "-4",
-            "4"
+            "-5"
           ],
           "correctIndex": 1,
           "explanation": "La fracción se descarta hacia cero; el signo de la parte entera se conserva."
@@ -68,11 +68,11 @@
           "type": "multiple_choice",
           "question": "Una cantidad medida necesita conservar 2.75. ¿Qué decisión mantiene el dato requerido?",
           "options": [
+            "Guardarla primero en int y copiar después ese int a double.",
             "Guardarla directamente en double.",
-            "Convertirla a int y recuperar después .75 automáticamente.",
-            "Cambiar sólo el comentario para que el entero sea decimal."
+            "Guardar sólo 2 en double porque su tipo conserva por sí mismo .75."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Una conversión que descartó la fracción no conserva la información necesaria para recuperarla."
         }
       ]
@@ -96,11 +96,11 @@
           "type": "multiple_choice",
           "question": "La consigna necesita conservar 3.75 sin redondeo. ¿Qué reparación responde a esa intención?",
           "options": [
+            "Borrar la salida y conservar el error.",
             "double cantidad{3.75};",
-            "int cantidad{3};",
-            "Borrar la salida y conservar el error."
+            "int cantidad{3};"
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Cambiar el tipo a double permite conservar la parte fraccionaria necesaria; reemplazar el dato por 3 cambiaría la consigna."
         },
         {
@@ -181,11 +181,11 @@
           "type": "multiple_choice",
           "question": "En auto cantidad = 6;, ¿qué tipo tiene cantidad?",
           "options": [
-            "Un tipo nuevo llamado auto que cambia en ejecución.",
             "int, deducido del literal entero 6.",
-            "double porque cualquier número puede dividirse."
+            "double porque cualquier número puede dividirse.",
+            "Un tipo nuevo llamado auto que cambia en ejecución."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "auto solicita deducir el tipo inicial; el literal 6 tiene tipo int."
         }
       ]
@@ -282,12 +282,37 @@
           "type": "multiple_choice",
           "question": "¿Qué permite distinguir una conversión deliberada de una pérdida inadvertida?",
           "options": [
-            "Explicar qué información puede perderse y por qué esa pérdida es aceptable para la tarea.",
             "Usar siempre auto, sin mirar el inicializador.",
-            "Confiar sólo en que el programa compiló."
+            "Confiar sólo en que el programa compiló.",
+            "Explicar qué información puede perderse y por qué esa pérdida es aceptable para la tarea."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "El tipo y el momento de la conversión deben responder al significado del resultado, además de cumplir la sintaxis."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia: Convertir antes de dividir"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. total y partes comienzan como enteros 15 y 2. La salida tiene dos líneas: Entero: 7 y Decimal: 7.5. Con total=14, ambas cantidades mostradas son 7. El primer cálculo mantiene división entera; en el segundo se convierte un operando antes de la división. Convertir el cociente entero después no cumple la expectativa 7.5 para 15."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{15};\n    int partes{2};\n    int entero{total / partes};\n    double decimal{static_cast<double>(total) / partes};\n    std::cout << \"Entero: \" << entero << '\\n';\n    std::cout << \"Decimal: \" << decimal;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La conversión cambia el tipo de un operando antes de evaluar /. Con 14 y 2, el valor de los dos cocientes coincide, pero entero sigue siendo int y decimal sigue siendo double. El caso impar permite detectar una conversión demasiado tardía; el caso par por sí solo la ocultaría."
         }
       ]
     }

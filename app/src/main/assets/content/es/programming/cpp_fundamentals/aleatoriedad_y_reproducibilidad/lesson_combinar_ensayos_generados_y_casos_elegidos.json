@@ -1,0 +1,184 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__combinar_ensayos_generados_y_casos_elegidos",
+  "title": "Combinar ensayos generados y casos elegidos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La generación complementa una pregunta de prueba"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera una prueba completa: datos, expectativa y comparación. Generar datos sólo resuelve la primera parte. Para decidir si el programa responde correctamente necesitas una expectativa obtenida desde el requisito o una propiedad que deba cumplirse. Mirar números distintos en pantalla no sustituye esa comparación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Trabajaremos sobre contar_desde: recibe hasta doce enteros de 0..9 y un mínimo de 0..9. Devuelve cuántos datos son mayores o iguales al mínimo, sin modificar la colección. Por ejemplo, en {2,4,4,7} con mínimo cuatro hay tres aceptados. Conserva la igualdad y las repeticiones: son observaciones distintas."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Antes de producir muestras para contar_desde, ¿qué caso elegido distingue >= de >?",
+          "options": [
+            "Cambiar la semilla sin especificar ninguna expectativa.",
+            "Una colección con valores iguales al mínimo y una expectativa que los cuenta.",
+            "Una colección que sólo tenga valores muy superiores al mínimo."
+          ],
+          "correctIndex": 1,
+          "explanation": "La frontera de igualdad distingue ambas reglas. Una semilla no expresa por sí sola el comportamiento esperado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir fronteras que una muestra puede omitir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe casos vacíos, sin aceptados, con todos aceptados y con igualdad repetida. Son preguntas distintas. Una distribución puede generar cualquiera de esas situaciones dentro de su dominio, pero una cantidad finita de muestras no promete visitarlas. Los casos escogidos siguen siendo necesarios aunque los ensayos generados pasen."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Cuarenta muestras generadas pasan. ¿Qué puedes afirmar sin ampliar esa evidencia?",
+          "options": [
+            "Pasaron esas muestras; todavía hay que ejecutar las fronteras elegidas y revisar el contrato.",
+            "Se comprobó todo el dominio de tamaños, valores y mínimos.",
+            "La distribución uniforme garantiza que cada frontera apareció alguna vez."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una muestra finita no demuestra cobertura completa. El conjunto de casos y el contrato deben quedar explícitos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si aparece un fallo, conserva los datos concretos, el mínimo y la configuración de generación. La semilla ayuda a repetir la historia en el mismo entorno; los datos concretos permiten volver a probar el caso sin depender de cómo otra biblioteca transforme la secuencia. Evita cambiar varias cosas antes de haber explicado la primera diferencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar muestras variables sin perder control"
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos generar primero la cantidad de elementos y después sus valores. En cada intento conservaremos un vector propio y un mínimo. La distribución de tamaños incluye cero, pero no obliga a que un ensayo concreto produzca una muestra vacía. El límite doce permite copiar size() a int de forma deliberada y mantener pequeños los conteos."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 a{211};\n    std::mt19937 b{211};\n    std::uniform_int_distribution<int> tam_a{0, 4};\n    std::uniform_int_distribution<int> tam_b{0, 4};\n    std::uniform_int_distribution<int> val_a{0, 9};\n    std::uniform_int_distribution<int> val_b{0, 9};\n    bool iguales = true;\n    for (int intento{0}; intento < 5; ++intento) {\n        const int cantidad_a = tam_a(a);\n        const int cantidad_b = tam_b(b);\n        std::vector<int> uno;\n        std::vector<int> dos;\n        for (int i{0}; i < cantidad_a; ++i) {\n            uno.push_back(val_a(a));\n        }\n        for (int i{0}; i < cantidad_b; ++i) {\n            dos.push_back(val_b(b));\n        }\n        iguales = iguales && uno == dos;\n    }\n    std::cout << \"Repeticion:\" << iguales;\n    return 0;\n}\n",
+          "answers": [
+            "Repeticion:1"
+          ],
+          "explanation": "Ambos experimentos preparan y consumen sus distribuciones en el mismo orden. La igualdad de datos no depende de sus valores exactos."
+        },
+        {
+          "type": "paragraph",
+          "text": "El código obtiene valores aunque una comparación anterior hubiera fallado: esas obtenciones están en instrucciones anteriores al &&. Una llamada necesaria no debe ocultarse detrás de un cortocircuito que cambie la historia de generación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Otra forma de calcular una expectativa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para cada muestra podemos contar los datos que NO cumplen el mínimo y restarlos del tamaño. Ese cálculo da otra representación del requisito: aceptados = observaciones - rechazados. No copies sólo la misma condición y la misma suma de la función bajo prueba; podrías repetir su defecto. Tampoco una segunda implementación demuestra por sí sola que interpretamos bien el requisito: conserva los casos calculados a mano."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El conteo real y un conteo alternativo coinciden, pero ambos excluyen la igualdad. ¿Qué ayuda a descubrir el error compartido?",
+          "options": [
+            "Repetir únicamente esa comparación con más semillas.",
+            "Usar un caso elegido con datos iguales al mínimo y una expectativa manual que los incluya.",
+            "Guardar sólo el tamaño, porque determina cuántos cumplen cualquier mínimo."
+          ],
+          "correctIndex": 1,
+          "explanation": "Una expectativa independiente del código puede detectar una interpretación equivocada compartida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una propiedad puede ser más débil que el requisito. Que el resultado esté entre cero y el tamaño no distingue todos los conteos equivocados. Para este laboratorio combinaremos comparación exacta, un cálculo alternativo y fronteras manuales."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir y poner a prueba el conteo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye contar_desde y verificar, donde verificar recibe datos, mínimo y cantidad esperada y devuelve si coincide. Ejecuta cuatro casos manuales independientes: vacío con mínimo cuatro espera cero; {1,2} con mínimo tres espera cero; {4,4} con mínimo cuatro espera dos; {3,4,4,5} con mínimo cuatro espera tres. Muestra Fallos elegidos:N. No uses una cadena de && que pueda omitir pruebas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade esperado_por_descartes usando conteo de valores menores al mínimo. Prepara un motor con semilla 229 y tres distribuciones: tamaño 0..12, mínimo 0..9 y valor 0..9. En cada uno de cuarenta intentos obtiene primero tamaño, después mínimo y luego los valores. Compara contar_desde con el cálculo alternativo y muestra Fallos generados:N. Si hay una diferencia, conserva y muestra ese vector y su mínimo antes del resumen. Todos los bucles deben ser finitos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con una implementación correcta ambos totales son cero. Después cambia deliberadamente >= por > en contar_desde. Los casos manuales de igualdad deben detectarlo; no se exige un número concreto de fallos generados. Restaura el requisito y vuelve a ejecutar ambos grupos. La modificación es un error lógico definido, sin acceso inválido."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construye las funciones y las pruebas de la consigna.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia después de construir las pruebas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n    if (!verificar({}, 4, 0)) { ++fallos_elegidos; }\n    if (!verificar({1, 2}, 3, 0)) { ++fallos_elegidos; }\n    if (!verificar({4, 4}, 4, 2)) { ++fallos_elegidos; }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) { ++fallos_elegidos; }\n    std::cout << \"Fallos elegidos:\" << fallos_elegidos << '\\n';\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cout << \"Caso:\" << intento << \";Minimo:\" << minimo << \";Datos:\";\n            for (int dato : datos) { std::cout << '[' << dato << ']'; }\n            std::cout << '\\n';\n        }\n    }\n    std::cout << \"Fallos generados:\" << fallos_generados;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: conservar los datos; incluir igualdad y repetidos; obtener expectativas manuales correctas; ejecutar todos los casos elegidos; respetar los dominios de tamaño y valor; consumir tamaño, mínimo y valores en el orden declarado; informar cualquier diferencia con su caso concreto. La referencia correcta muestra Fallos elegidos:0 y Fallos generados:0. Con el defecto >, dos casos elegidos fallan: {4,4} y {3,4,4,5}. Los fallos generados dependen de las muestras; no son una respuesta exacta entre bibliotecas."
+        },
+        {
+          "type": "paragraph",
+          "text": "No se trata de fabricar un verificador que reconozca sólo cuatro soluciones impresas: las funciones calculan sobre los argumentos y los ensayos agregan combinaciones nuevas. Como ampliación elegida, prueba mínimo cero, mínimo nueve y doce valores iguales. Predice sus expectativas desde la consigna, antes de ejecutar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Localizar un error de igualdad con datos fijos"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_estricto(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato > minimo) { ++cantidad; }\n    }\n    return cantidad;\n}\n\nint main() {\n    const std::vector<int> datos{1, 4, 4, 9};\n    const int real = contar_estricto(datos, 4);\n    const int esperado{3};\n    std::cout << \"Real:\" << real << \";Esperado:\" << esperado;\n    std::cout << \";Coincide:\" << (real == esperado);\n    return 0;\n}\n",
+          "answers": [
+            "Real:1;Esperado:3;Coincide:0"
+          ],
+          "explanation": "El código cuenta sólo el nueve. El requisito incluye los dos cuatros, por lo que la expectativa fija distingue el defecto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transferencia: elige otra operación pequeña, como seleccionar los elementos que cumplen una condición. Prepara casos manuales de vacío, igualdad, todos y ninguno. Después produce muestras acotadas y comprueba conservación del original, orden y criterio de selección. Guarda los datos de cualquier fallo para convertirlo en un caso fijo de regresión."
+        },
+        {
+          "type": "note",
+          "text": "Fuente: PPP, 3.ª edición (2024), §4.7.4–4.7.5, pp. 107–110. Las pruebas y el conteo de esta lección son originales. Los ensayos generados complementan fronteras elegidas y no certifican cobertura completa por su cantidad."
+        }
+      ]
+    }
+  ]
+}

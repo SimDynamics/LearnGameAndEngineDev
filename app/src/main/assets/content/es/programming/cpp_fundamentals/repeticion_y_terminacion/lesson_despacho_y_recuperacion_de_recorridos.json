@@ -21,11 +21,11 @@
           "id": "estado_persistente_del_despacho",
           "question": "¿Qué estado debe conservarse entre pedidos para producir el total final?",
           "options": [
-            "El acumulador de cajas, declarado antes del recorrido.",
-            "Un nuevo total de cero declarado dentro de cada vuelta y usado sólo allí.",
-            "El literal de texto que nombra el archivo."
+            "El aporte del pedido actual, reemplazado en cada vuelta.",
+            "Un total de cero que vuelve a declararse dentro de cada vuelta.",
+            "El acumulador de cajas, declarado antes del recorrido."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "El resumen combina contribuciones de varios casos y debe durar durante todo el recorrido."
         },
         {
@@ -33,11 +33,11 @@
           "id": "plan_de_pruebas_despacho",
           "question": "¿Qué conjunto comprueba ausencia de pedidos, primer caso, ambos tipos y extremo permitido?",
           "options": [
-            "ultimo igual a 0,1,4 y 8.",
-            "Sólo ultimo igual a 4, repetido varias veces.",
-            "Sólo valores negativos que el dominio prohíbe."
+            "ultimo igual a 1,2,4 y 8.",
+            "ultimo igual a 0,1,4 y 7.",
+            "ultimo igual a 0,1,4 y 8."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "Las pruebas ejercitan comportamientos distintos, incluidos cero y la frontera superior."
         }
       ]
@@ -143,11 +143,11 @@
           "id": "compilar_no_basta",
           "question": "Tu despacho compila y termina, pero reinicia el total de cajas al comenzar cada pedido. ¿Qué verificación falta?",
           "options": [
-            "Comparar el resultado con el requisito y con un caso manual de varios pedidos.",
-            "Repetir la compilación sin cambiar nada hasta aceptar el resultado.",
-            "Cambiar el nombre del archivo para que el total se conserve."
+            "Comprobar sólo el caso de un pedido y generalizarlo al resto.",
+            "Comparar varios pedidos con su resultado calculado a mano.",
+            "Aceptar el total porque el programa compila sin errores."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Compilar, terminar y resolver correctamente son propiedades distintas. Un caso con varios aportes revela el reinicio."
         }
       ]
@@ -191,6 +191,27 @@
         {
           "type": "note",
           "text": "Base conceptual: Programming: Principles and Practice Using C++, tercera edición, capítulo 3: cómputo, selección e iteración. Esta unidad desarrolla ejemplos propios y recuperación de conceptos previos. Referencia de semántica: borrador público de C++, secciones stmt.for, stmt.cont, stmt.break y stmt.switch."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contrasta después de tu construcción independiente. Criterios: una línea con cajas para cada pedido; dos resúmenes persistentes; aporte 2 para impares y 1 para pares; caso cero sin pedidos ficticios. La organización de las ramas puede variar si cumple todos esos comportamientos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        std::cout << \"Pedido \" << pedido << \": \" << aporte << \" cajas\\n\";\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << \"Pedidos=\" << pedidos << \";Cajas=\" << cajas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para ultimo=0,1,4,8, los resúmenes son respectivamente 0 pedidos y 0 cajas, 1 y 2, 4 y 6, 8 y 12. En el caso 4 los aportes individuales son 2,1,2,1. Comprueba tanto cada línea como el resumen: un total correcto puede ocultar aportes equivocados que se compensan. Conservar sólo el aporte final tampoco sustituye el acumulador. Después de comparar, vuelve al editor vacío y explica por qué cada objeto se declara en ese lugar."
         }
       ]
     }

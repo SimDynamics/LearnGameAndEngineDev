@@ -57,11 +57,11 @@
           "type": "multiple_choice",
           "question": "Una función promete un resultado para un dato entero. ¿Qué revisión comprueba sus caminos?",
           "options": [
-            "Contar el número de llaves sin seguir las condiciones.",
             "Seguir cada alternativa posible y verificar qué valor entrega antes de salir.",
-            "Probar sólo un dato para el que el primer if sea true."
+            "Probar sólo un dato para el que el primer if sea true.",
+            "Contar el número de llaves sin seguir las condiciones."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "El resultado debe estar definido también en los caminos que no cumplen la primera condición."
         },
         {
@@ -95,10 +95,10 @@
           "question": "¿Qué uso corresponde a una función void llamada mostrar_pendientes?",
           "options": [
             "int resultado = mostrar_pendientes(3);",
-            "mostrar_pendientes(3);",
-            "mostrar_pendientes(3) + 1;"
+            "mostrar_pendientes(3) + 1;",
+            "mostrar_pendientes(3);"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "La llamada realiza una acción; no aporta un valor para inicializar un int ni para sumar."
         }
       ]
@@ -162,16 +162,41 @@
           "type": "multiple_choice",
           "question": "¿Qué resultado corresponde a limitar(2)?",
           "options": [
-            "1",
             "2",
+            "1",
             "6"
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "2 no está por debajo ni por encima de la banda. Se devuelve el dato de la llamada."
         },
         {
           "type": "paragraph",
           "text": "Relaciona 1 con el primer retorno, 7 con el segundo y 2/4/6 con el último. Un mismo return puede cubrir muchos datos, y un caso de igualdad puede compartir camino con datos interiores. Lo que importa es el resultado prometido para cada dato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: Resultados para todos los caminos"
+        },
+        {
+          "type": "note",
+          "text": "Compara después de realizar el laboratorio y anotar sus resultados previstos. La referencia presenta una organización posible; los criterios permiten reconocer otras implementaciones que cumplan los mismos contratos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Los casos 7,1,2,4,6 deben devolver 6,2,2,4,6, respectivamente. En esta referencia se muestran en ese orden como 6 2 2 4 6. Los datos por debajo de 2 se limitan a 2, los superiores a 6 a 6, y los extremos iguales se conservan junto con los interiores. Cada camino debe devolver un int; mantén datos entre -10 y 10."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint limitar(int nivel) {\n    if (nivel < 2) {\n        return 2;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nint main() {\n    std::cout << limitar(7) << \" \" << limitar(1) << \" \" << limitar(2)\n              << \" \" << limitar(4) << \" \" << limitar(6);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El primer if cubre datos menores que 2; el segundo cubre mayores que 6; el último return cubre la banda completa, incluidas sus igualdades. Son posibles otras organizaciones correctas, pero no deben omitir un retorno ni convertir un extremo válido en otro resultado. Una lista de casos ayuda a distinguir caminos del texto de la función."
         }
       ]
     }

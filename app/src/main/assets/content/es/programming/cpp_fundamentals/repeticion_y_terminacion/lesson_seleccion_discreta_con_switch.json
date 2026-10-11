@@ -147,11 +147,11 @@
           "id": "etiquetas_duplicadas",
           "question": "En un mismo switch aparecen dos etiquetas case 2:. ¿Qué problema hay?",
           "options": [
-            "No puede haber dos case con el mismo valor en ese switch.",
-            "Se ejecutan ambas como dos decisiones independientes.",
-            "El compilador elige la etiqueta de texto más largo."
+            "El segundo case queda ignorado y el programa sigue siendo válido.",
+            "El mismo valor no puede etiquetar dos case en ese switch.",
+            "Ambos case se prueban en orden como dos if independientes."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Cada valor de selección debe identificar un punto de entrada sin etiquetas duplicadas."
         }
       ]
@@ -184,6 +184,27 @@
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    std::cout << \"Comando=\" << comando << \"\\n\";\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consulta después de construir el selector. Criterios: g produce Guardado, m produce Mostrado y cualquier otro carácter produce Desconocido; cada prueba ejecuta una sola alternativa y llega a Fin después del switch."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    std::cout << \"Comando=\" << comando << \"\\n\";\n    switch (comando) {\n        case 'g':\n            std::cout << \"Guardado\\n\";\n            break;\n        case 'm':\n            std::cout << \"Mostrado\\n\";\n            break;\n        default:\n            std::cout << \"Desconocido\\n\";\n            break;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba g, m y x cambiando sólo comando. La primera línea permite identificar el caso probado. Quitar break tras Guardado haría ejecutar también Mostrado y dejaría de cumplir la exclusividad. default cubre aquí cualquier carácter que no coincida; no es una acción adicional que se ejecuta siempre."
         }
       ]
     }

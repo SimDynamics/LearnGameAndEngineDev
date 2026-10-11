@@ -40,10 +40,10 @@
           "question": "En la declaración const int total = cajas * piezas;, ¿qué parte calcula el valor usado para inicializar total?",
           "options": [
             "const int",
-            "cajas * piezas",
-            "El punto y coma"
+            "El punto y coma",
+            "cajas * piezas"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "Los operandos y el operador forman la expresión que produce el valor."
         }
       ]
@@ -66,9 +66,9 @@
           "type": "multiple_choice",
           "question": "¿Qué valor produce 6 + 2 * 5?",
           "options": [
-            "40",
+            "30",
             "16",
-            "30"
+            "40"
           ],
           "correctIndex": 1,
           "explanation": "La multiplicación produce 10; la suma da 16. Para obtener 40 sería necesario (6 + 2) * 5."
@@ -157,11 +157,11 @@
           "type": "multiple_choice",
           "question": "Con los datos originales, ¿qué comparación explica el experimento?",
           "options": [
-            "Ambas expresiones muestran 14 porque los paréntesis nunca cambian una suma.",
             "La original muestra 14; la modificada muestra 18 y trata las fichas sueltas como si fueran sobres.",
+            "Ambas expresiones muestran 14 porque los paréntesis nunca cambian una suma.",
             "La original no puede compilar porque mezcla nombres y números."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "4 * 3 + 2 produce 14. (4 + 2) * 3 produce 18 y cuenta una cantidad distinta."
         }
       ]
@@ -196,6 +196,31 @@
         {
           "type": "note",
           "text": "Para resolver una expresión, identifica el significado y el tipo de los datos, agrupa los operadores y calcula con el estado actual. Aquí usamos enteros pequeños y resultados representables. Que una expresión compile no autoriza a ignorar los límites del tipo ni el significado de los datos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparación posterior del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con los datos originales, el recuento correcto muestra Fichas: 14. La agrupación alternativa muestra Fichas: 18: trata las dos fichas sueltas como si fueran sobres. Restaurar el modelo debe recuperar 14. La referencia siguiente conserva el requisito original, no la agrupación que se utilizó para observar el error."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int sobres = 4;\n    const int fichas_por_sobre = 3;\n    const int sueltas = 2;\n    const int total = sobres * fichas_por_sobre + sueltas;\n    std::cout << \"Fichas: \" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprueba tanto el valor como su significado: sobres * fichas_por_sobre cuenta las fichas empaquetadas y sueltas se suma una sola vez. Con 0 sobres, 3 fichas por sobre y 2 sueltas deben quedar 2 fichas. Con 4 sobres, 3 por sobre y 0 sueltas deben quedar 12. Conserva valores pequeños y representables; una compilación correcta no distingue estos modelos."
+        },
+        {
+          "type": "note",
+          "text": "Llega a esta comparación después de predecir y ejecutar tus pruebas. El editor no califica estas salidas automáticamente: contrástalas con los criterios y explica la primera diferencia. Conserva tu versión si cumple el mismo comportamiento."
         }
       ]
     }

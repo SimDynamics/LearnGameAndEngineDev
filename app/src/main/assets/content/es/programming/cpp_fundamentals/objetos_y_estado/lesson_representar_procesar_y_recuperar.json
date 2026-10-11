@@ -56,9 +56,9 @@
           "type": "multiple_choice",
           "question": "Un informe se llama al_inicio, pero copia la cantidad después de modificarla. ¿Qué hay que corregir para conservar el estado inicial?",
           "options": [
-            "El momento de la copia, antes de la modificación.",
-            "Sólo añadir otro comentario que diga inicial.",
-            "Eliminar el punto y coma del programa."
+            "Situar la copia antes de modificar la cantidad.",
+            "Renombrar el informe sin cambiar el momento de la copia.",
+            "Conservar la copia tardía y cambiar sólo su mensaje de salida."
           ],
           "correctIndex": 0,
           "explanation": "El nombre comunica una intención que las instrucciones deben realizar. La copia guarda el valor del momento en que se ejecuta."
@@ -139,11 +139,11 @@
           "type": "multiple_choice",
           "question": "¿Qué dato sería útil para comprobar si reparaste la división y no sólo el ejemplo de cinco metros?",
           "options": [
-            "Otra longitud conocida, como ocho metros, cuyo resultado debe ser cuatro.",
-            "Sólo el número de letras del nombre mitad.",
-            "Un comentario idéntico al de la primera versión."
+            "Una salida fija 2.5, sin usar otra longitud para el cálculo.",
+            "Otra ejecución de cinco metros sin cambiar nada más.",
+            "Otro caso, ocho metros, cuyo resultado calculado es cuatro."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "Un caso nuevo comprueba la relación de cálculo, además de la salida esperada para el caso original."
         }
       ]
@@ -216,9 +216,9 @@
           "type": "multiple_choice",
           "question": "La ejecución coincide con la salida de un solo caso. ¿Qué conviene hacer para entender y comprobar la solución?",
           "options": [
-            "Explicar los estados y repetir con datos que distingan los casos importantes.",
-            "Declarar que ya se domina cualquier problema de programación.",
-            "Dejar de comparar la salida con la consigna."
+            "Explicar estados y probar otros casos que distingan los comportamientos.",
+            "Repetir el mismo dato como única prueba de los casos distintos.",
+            "Cambiar datos sin calcular las salidas que deberían producir."
           ],
           "correctIndex": 0,
           "explanation": "Un acierto es evidencia de ese caso; explicación, variación y construcción independiente aportan evidencias distintas."
@@ -259,6 +259,56 @@
         {
           "type": "paragraph",
           "text": "La copia anterior al aumento distingue el estado inicial del actual. Con libros = 0 y devolucion = 2 se obtienen Inicio: 0 y Ahora: 2; el nombre continúa siendo Modulo 02. Si puedes explicar esa dependencia, escribir una versión propia y probar sus casos, dispones de evidencia de comprensión y de práctica independiente. Seguiremos recuperando los fundamentos: terminar esta página no equivale a certificar dominio por una cantidad de aciertos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia: Informe de la estación"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. La salida debe tener tres líneas: Puesto 03; Mesas: 6; Cable: 3.75 m. El punto y coma de esta enumeración separa líneas y no es un carácter que deba imprimirse. La etiqueta se conserva como texto, las mesas como cantidad entera y los tramos permiten parte fraccionaria. Con mesas=0 y tramos 2.0 y 3.5, sólo cambian la segunda línea a Mesas: 0 y la tercera a Cable: 5.5 m; Puesto 03 se conserva."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre{\"Puesto 03\"};\n    int mesas{6};\n    double primer_tramo{1.5};\n    double segundo_tramo{2.25};\n    double cable_total{primer_tramo + segundo_tramo};\n    std::cout << nombre << '\\n';\n    std::cout << \"Mesas: \" << mesas << '\\n';\n    std::cout << \"Cable: \" << cable_total << \" m\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La suma de longitudes mantiene la misma unidad: metros. Guardar el identificador como texto conserva su cero. Para la segunda versión cambia sólo los tres valores indicados; el nombre, las unidades y las instrucciones de salida permanecen. Se admiten otros nombres apropiados de variables y otras definiciones válidas que produzcan el informe exigido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia: Registro de la biblioteca"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. La salida tiene tres líneas: Modulo 02; Inicio: 7; Ahora: 10. al_inicio copia libros antes de sumar la devolución de 3. Con libros inicialmente 0 y devolución 2, muestra Modulo 02; Inicio: 0; Ahora: 2, conservando las tres líneas y el nombre. Una implementación equivalente es válida si guarda el momento inicial, procesa los datos y no imprime resultados fijos para simular el cálculo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre{\"Modulo 02\"};\n    int libros{7};\n    int al_inicio{libros};\n    int devolucion{3};\n    libros = libros + devolucion;\n    std::cout << nombre << '\\n';\n    std::cout << \"Inicio: \" << al_inicio << '\\n';\n    std::cout << \"Ahora: \" << libros;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de la copia, libros y al_inicio valen 7. La devolución cambia sólo libros a 10; al_inicio conserva 7. Para el segundo caso cambia los valores iniciales de libros y devolucion, sin mover la copia ni editar las salidas. Recuperar el orden de estas instrucciones explica el informe, además de comprobar que compile."
         }
       ]
     }

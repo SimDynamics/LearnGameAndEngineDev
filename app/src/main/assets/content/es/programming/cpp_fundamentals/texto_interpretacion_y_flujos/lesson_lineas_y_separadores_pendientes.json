@@ -1,0 +1,210 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__lineas_y_separadores_pendientes",
+  "title": "Líneas y separadores pendientes",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar una línea completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una etiqueta como Patio norte es un solo dato aunque contenga dos palabras. std::getline(entrada, linea) lee caracteres hasta un salto de línea. Los guarda en una std::string, consume el salto que termina la línea y no lo incluye en el destino. A diferencia de >> para string, conserva los espacios iniciales, internos y finales."
+        },
+        {
+          "type": "paragraph",
+          "text": "std::getline recibe primero el flujo y después el destino. Devuelve el flujo para que puedas comprobar la lectura en una condición. La función se declara en <string>; el flujo de texto preparado sigue necesitando <sstream>. No representa una lectura del teclado en estos laboratorios."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  Patio norte  \\nSala azul\"};\n    std::string linea;\n    while (std::getline(entrada, linea)) {\n        std::cout << \"<\" << linea << \">\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera línea conserva sus dos espacios iniciales y finales. La segunda también se obtiene aunque el texto termine sin otro salto. Cada cuerpo del bucle corresponde a una línea que se leyó válidamente; el intento posterior que no obtiene una nueva línea no ejecuta el cuerpo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una línea vacía puede ser un dato válido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el siguiente carácter es un salto de línea, getline lo consume y obtiene una cadena vacía. Esa lectura tiene éxito: encontró una línea vacía. Si no quedan caracteres ni un delimitador por consumir, el intento de obtener otra línea falla. La validez de la lectura y el contenido de la línea son preguntas distintas."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice la salida, conservando las líneas y los espacios que aparecen entre < y >.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Puerta 4\\n\\n  Rampa\"};\n    std::string linea;\n    int numero = 0;\n    while (std::getline(entrada, linea)) {\n        ++numero;\n        std::cout << numero << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Total: \" << numero;\n    return 0;\n}\n",
+          "answers": [
+            "1:<Puerta 4>\n2:<>\n3:<  Rampa>\nTotal: 3"
+          ],
+          "explanation": "Hay tres líneas. El segundo salto termina una línea vacía; la tercera conserva dos espacios iniciales y se obtiene antes de llegar al final del texto."
+        },
+        {
+          "type": "paragraph",
+          "text": "linea.empty() pregunta si la string contiene cero caracteres. No pregunta si el flujo falló. Una línea con dos espacios tiene dos caracteres y no está vacía, aunque parezca una zona en blanco al presentarla sin delimitadores."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El texto preparado es \"\\n\". ¿Cuántas ejecuciones tiene while (std::getline(entrada, linea))?",
+          "options": [
+            "Ninguna: una cadena vacía siempre representa una lectura fallida.",
+            "Una: se obtiene una línea vacía terminada por el salto disponible.",
+            "Dos: una por el salto y otra por el final del texto."
+          ],
+          "correctIndex": 1,
+          "explanation": "El salto permite obtener una línea vacía válida. El siguiente intento no dispone de caracteres ni de otro delimitador, por lo que termina el bucle."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un salto final no inventa una línea adicional"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Obtén el número de líneas que presenta este programa.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"A\\nB\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Los saltos terminan A y B. Después no queda un delimitador que produzca otra línea vacía ni caracteres para una línea nueva."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compáralo con A\\nB\\n\\n: el segundo salto consecutivo sí termina una tercera línea vacía. Con una cadena completamente vacía no hay líneas que obtener. Estas fronteras conviene decidirlas antes de escribir un contador; contar saltos y contar lecturas válidas no son reglas intercambiables para todo texto."
+        },
+        {
+          "type": "fill_code",
+          "question": "Práctica guiada: completa únicamente el nombre de la función de std que conserva frases y líneas vacías en esta lectura.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Paso alto\\n\\nPaso bajo\"};\n    std::string linea;\n    while (std::___(entrada, linea)) {\n        std::cout << \"<\" << linea << \">\\n\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "getline"
+          ],
+          "explanation": "getline obtiene una línea completa, conserva los espacios y permite procesar también una línea vacía leída válidamente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar reglas requiere conocer lo que quedó"
+        },
+        {
+          "type": "paragraph",
+          "text": ">> deja de leer una palabra al encontrar espacio en blanco y no consume ese separador final como parte de la palabra. Una getline inmediata empieza exactamente donde terminó esa operación; puede encontrar el salto de línea que todavía queda. No se ha saltado una línea nueva: se ha leído el resto de la línea actual."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"inicio\\nTaller verde\\n\"};\n    std::string orden;\n    std::string resto;\n    std::string etiqueta;\n    if (entrada >> orden && std::getline(entrada, resto)\n            && std::getline(entrada, etiqueta)) {\n        std::cout << \"Orden:<\" << orden << \">\\n\";\n        std::cout << \"Resto:<\" << resto << \">\\n\";\n        std::cout << \"Etiqueta:<\" << etiqueta << \">\";\n    } else {\n        std::cout << \"Formato incompleto\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En este formato, la primera getline consume el resto vacío de la línea de inicio; la segunda obtiene Taller verde. Si el formato fuera inicio aviso\\nTaller verde, el resto contendría el espacio y aviso. Descartarlo sin comprobarlo escondería datos. Primero decide qué admite el formato y luego qué hacer con ese resto."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un formato exige conservar una línea vacía situada antes de la etiqueta. ¿Qué riesgo tiene eliminar sin distinción todo el espacio en blanco antes de getline?",
+          "options": [
+            "Convertir cada espacio de la etiqueta en un carácter de otro tipo.",
+            "Leer el resto como una palabra y duplicar la etiqueta.",
+            "Perder líneas vacías que forman parte de los datos."
+          ],
+          "correctIndex": 2,
+          "explanation": "Los saltos también son espacio en blanco. Si se eliminan todos, una línea vacía significativa desaparece antes de la lectura que debía conservarla."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un informe que distingue vacío de espacios"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un informe de líneas para \"Patio norte\\n\\n  Muelle\\n\". Numera cada línea obtenida desde 1 y preséntala como número:<contenido>, conservando sus caracteres. Al terminar, presenta dos líneas: Lineas: con la cantidad total y Vacias: con la cantidad que contiene cero caracteres. Usa un espacio después de cada etiqueta. El dominio de estas pruebas es de hasta 6 líneas de hasta 40 caracteres ASCII; ambos contadores caben en int."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para el caso inicial se esperan 1:<Patio norte>, 2:<> y 3:<  Muelle>, seguidos por Lineas: 3 y Vacias: 1. La cadena vacía produce sólo Lineas: 0 y Vacias: 0. \"\\n\" produce una línea vacía. \"  \" produce una línea con dos espacios, que no debe contarse como vacía. \"A\\n\" produce una línea y \"A\\n\\n\" produce dos. Decide lo esperado antes de ejecutar cada caso."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Patio norte\\n\\n  Muelle\\n\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Elige la lectura, los destinos y el lugar de cada actualización. Al revisar, distingue un fallo que termina el bucle de una línea válida cuyo contenido es vacío. El editor no evalúa estos criterios automáticamente; compara salidas completas y vuelve a los casos anteriores después de corregir."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar después de construir"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia utiliza Zona este como primera línea. Se incrementa el total en cada lectura válida y se inspecciona el contenido para decidir si aumenta vacias. Las decisiones se toman dentro del cuerpo, donde existe una nueva línea."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Zona este\\n\\n  Muelle\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n        if (linea.empty()) {\n            ++vacias;\n        }\n        std::cout << cantidad << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Lineas: \" << cantidad << \"\\nVacias: \" << vacias;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara la referencia con tu implementación y explica por qué el espacio inicial de Muelle se conserva. Una solución que elimina todos los espacios o rechaza las líneas vacías incumple el informe aunque cuente algunas líneas correctamente."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Recupera la lectura y las condiciones para estos datos diferentes.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\n \\nFin\"};\n    std::string linea;\n    int total = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++total;\n        if (linea.empty()) {\n            ++vacias;\n        }\n    }\n    std::cout << \"Lineas: \" << total << \"\\nVacias: \" << vacias;\n    return 0;\n}\n",
+          "answers": [
+            "Lineas: 3\nVacias: 1"
+          ],
+          "explanation": "La primera línea está vacía, la segunda contiene un espacio y la tercera contiene Fin. Sólo una de las tres tiene cero caracteres."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar el origen del significado"
+        },
+        {
+          "type": "paragraph",
+          "text": "getline decide dónde acaba una línea; no comprueba que su contenido tenga el formato que un problema exige. Una línea como agregar tres puede haberse leído válidamente y seguir siendo una orden inválida. Más adelante pondremos una línea obtenida dentro de otro istringstream para analizar sus partes sin perder la frontera de la operación."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quieres conservar la etiqueta completa de cada línea y después analizarla por separado. ¿Qué responsabilidad corresponde a la primera lectura?",
+          "options": [
+            "Obtener una línea válida y conservar sus caracteres para el análisis posterior.",
+            "Aceptar cualquier texto como una orden correcta porque getline tuvo éxito.",
+            "Convertir automáticamente cada palabra de la línea en un número."
+          ],
+          "correctIndex": 0,
+          "explanation": "La lectura de línea obtiene una unidad de texto. Validar su estructura y convertir sus partes son responsabilidades posteriores."
+        }
+      ]
+    }
+  ]
+}

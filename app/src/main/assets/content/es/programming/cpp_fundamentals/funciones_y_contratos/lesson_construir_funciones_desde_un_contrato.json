@@ -1,0 +1,171 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__construir_funciones_desde_un_contrato",
+  "title": "Construir funciones desde un contrato",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un problema que necesita varias responsabilidades"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye un programa para preparar los niveles de un panel de práctica. La entrada se declara como vector de int: admite hasta 8 elementos, cada uno entre -10 y 10. Un dato fuera de ese dominio debe producir únicamente Lecturas invalidas, sin transformar la colección. El vector vacío es válido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con una entrada válida, cada nivel negativo se convierte en 0, cada nivel mayor que 6 se convierte en 6 y los niveles de 0 a 6 se conservan. La transformación debe cambiar el vector original, sin alterar su tamaño ni su orden. Después se cuenta cuántos niveles transformados son iguales al límite superior."
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa muestra una primera línea que empieza con Niveles: y añade cada nivel transformado precedido por un espacio. La segunda línea empieza con Al limite: seguida de un espacio y el número contado. Con el vector vacío, la primera línea contiene sólo Niveles: y la segunda Al limite: 0."
+        },
+        {
+          "type": "paragraph",
+          "text": "Organiza el trabajo en funciones: una pregunta que valida la colección; un cálculo que limita un nivel y devuelve el resultado sin modificar el argumento del llamador; una acción que transforma la colección reutilizando ese cálculo; y una inspección que cuenta el estado posterior sin modificarlo. Elige los nombres, parámetros y tipos de retorno adecuados. Los datos deben pasar explícitamente por las llamadas, sin variables globales modificables."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convertir el contrato en pruebas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El caso inicial {-3, 2, 9} debe producir Niveles: 0 2 6 y Al limite: 1 en dos líneas. {-10, 0, 6, 10} debe producir Niveles: 0 0 6 6 y Al limite: 2. La igualdad en 0 y 6 debe conservar el valor; los extremos -10 y 10 de entrada siguen siendo datos válidos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba también una colección vacía y {1, 4, 5}, que no necesita cambios. Un elemento -11, un elemento 11 o una colección de 9 elementos deben rechazarse. Añade un caso de un solo elemento y establece lo esperado antes de ejecutar. Usa datos pequeños; el contador nunca debe superar 8 para una entrada válida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de escribir cada función, formula qué recibe, qué exige y qué devuelve o modifica. Para la función de lectura, el vector debe conservar sus elementos. Para la transformación, comprueba tanto los nuevos valores como el tamaño y el orden. Para el contador, usa el estado posterior a la transformación."
+        },
+        {
+          "type": "note",
+          "text": "Estos criterios describen el comportamiento y los permisos. No obligan a un único texto de programa: una implementación diferente puede ser correcta si cumple los contratos y supera las mismas pruebas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construcción libre desde la estructura mínima"
+        },
+        {
+          "type": "paragraph",
+          "text": "Declara el vector inicial {-3, 2, 9}, escribe tus funciones fuera de main y conecta sus llamadas. Si una función llama a otra, asegúrate de que su declaración ya sea visible. El editor no contiene firmas ni condiciones resueltas. Prueba primero cada cálculo pequeño con datos válidos; después comprueba el programa integrado y los casos rechazados."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando encuentres una diferencia, decide a qué contrato pertenece: validación, límite individual, modificación de la colección, contador o formato. Sigue una llamada concreta y observa sus argumentos, su resultado y el estado que conserva main. Corrige una causa y vuelve a los otros casos para comprobar que la corrección no cambió sus resultados."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisar los permisos después del intento"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu función de transformación recibe el vector por referencia modificable, pero su recorrido usa int nivel y asigna sólo a nivel. ¿Qué explica que main conserve los valores originales?",
+          "options": [
+            "Cada iteración modifica una copia local del elemento, no el elemento original.",
+            "La llamada devuelve void y por eso ninguna función puede modificar datos.",
+            "La referencia al contenedor conserva una copia independiente de todos los elementos."
+          ],
+          "correctIndex": 0,
+          "explanation": "Recibir el contenedor por referencia no cambia el significado de int nivel dentro del recorrido. Para modificar el elemento actual se necesita referirse a él o asignar al contenedor de forma segura."
+        },
+        {
+          "type": "paragraph",
+          "text": "Revisa también si el cálculo individual cambia sólo su parámetro local y si la inspección final trabaja después de la transformación. Una función puede ser correcta aislada y recibir datos del momento equivocado al integrarse. Ese fallo pertenece al orden de llamadas."
+        },
+        {
+          "type": "note",
+          "text": "Vuelve a tu solución y aplica esta revisión antes de abrir la referencia. Comparar es más útil cuando puedes explicar qué decisión tomaste y qué resultado obtuviste."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una implementación de comparación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta versión utiliza {-5, 4, 10}, distintos datos del intento inicial. Observa qué funciones reciben una copia, cuáles reciben lectura del vector y cuál puede cambiarlo. La acción normalizar delega el cálculo individual; main valida antes y presenta después. Compara esos contratos con los de tu programa."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n    for (int nivel : niveles) {\n        if (nivel == 6) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles = {-5, 4, 10};\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "No necesitas reemplazar tu implementación por esta si ambas cumplen las pruebas. Si difieren, identifica primero la salida esperada y después el contrato que explica la diferencia. El orden de una colección también importa: el programa limita valores, no los reordena."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir la lectura a otros datos"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice la salida completa para {-1, 6, 8, 3}, conservando las reglas del problema.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool datos_validos(const std::vector<int>& niveles) {\n    if (niveles.size() > 8) {\n        return false;\n    }\n    for (int nivel : niveles) {\n        if ((nivel < -10) || (nivel > 10)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nint limitar_nivel(int nivel) {\n    if (nivel < 0) {\n        return 0;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nvoid normalizar(std::vector<int>& niveles) {\n    for (int& nivel : niveles) {\n        nivel = limitar_nivel(nivel);\n    }\n}\n\nint contar_al_limite(const std::vector<int>& niveles) {\n    int cuenta = 0;\n    for (int nivel : niveles) {\n        if (nivel == 6) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    std::vector<int> niveles = {-1, 6, 8, 3};\n\n    if (!datos_validos(niveles)) {\n        std::cout << \"Lecturas invalidas\";\n    } else {\n        normalizar(niveles);\n        const int al_limite = contar_al_limite(niveles);\n        std::cout << \"Niveles:\";\n        for (int nivel : niveles) {\n            std::cout << \" \" << nivel;\n        }\n        std::cout << \"\\nAl limite: \" << al_limite;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Niveles: 0 6 6 3\nAl limite: 2"
+          ],
+          "explanation": "La transformación produce 0, 6, 6 y 3. El contador inspecciona ese estado y encuentra dos niveles iguales a 6."
+        },
+        {
+          "type": "paragraph",
+          "text": "Explica por qué el 8 de entrada cuenta en el límite posterior aunque no fuera igual a 6 antes de transformar. Distinguir esas dos etapas permite comprobar si el contador se llamó en el momento correcto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar un contrato y conservar los demás"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vuelve a tu programa: ahora la banda de salida va de 0 a 4 y el contador debe contar niveles en ese nuevo límite superior. El dominio de entrada sigue siendo hasta 8 elementos entre -10 y 10. Decide qué funciones necesitan cambiar y cuáles pueden seguir delegando. Escribe lo esperado para {4} y {-2, 3, 6} antes de ejecutar."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué funciones necesitan revisar su regla para el nuevo límite 4, manteniendo la delegación de la transformación?",
+          "options": [
+            "Sólo main; los cálculos pueden seguir usando 6.",
+            "El cálculo que limita cada nivel y la inspección que cuenta el límite posterior.",
+            "La validación del dominio y el formato de ambas líneas."
+          ],
+          "correctIndex": 1,
+          "explanation": "Ambas reglas dependen del límite de salida. La validación de entrada conserva su dominio y la transformación puede seguir llamando al cálculo individual."
+        },
+        {
+          "type": "note",
+          "text": "La construcción combina elección de interfaces, copia, referencias, ámbito, composición y pruebas. No consiste sólo en cambiar datos de una solución entregada. Conserva una explicación de los contratos y de los casos que comprobaron cada uno."
+        }
+      ]
+    }
+  ]
+}

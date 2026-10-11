@@ -97,11 +97,11 @@
           "id": "fuente_vs_salida",
           "question": "Dos instrucciones aparecen en líneas distintas del código, sin \\n en sus textos. ¿Qué asegura eso sobre la salida?",
           "options": [
-            "Que cada texto aparecerá en una línea diferente.",
             "No asegura un salto: la salida depende de los caracteres insertados.",
+            "Que cada texto aparecerá en una línea diferente.",
             "Que el programa no puede compilar."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "Las líneas del código ayudan a leer el programa; los caracteres enviados controlan el formato de salida."
         }
       ]
@@ -152,11 +152,11 @@
           "id": "escape_no_literal",
           "question": "En un literal válido, ¿qué representa \\n?",
           "options": [
-            "Siempre dos letras visibles: barra y n.",
             "Un salto de línea.",
-            "El final automático de main."
+            "Un espacio que separa las dos palabras de la salida.",
+            "Los dos caracteres visibles barra invertida y n."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "Dentro del literal, el escape describe un carácter de salto de línea."
         }
       ]
@@ -202,9 +202,9 @@
           "id": "comentario_contradictorio",
           "question": "El comentario dice «Muestra Norte», pero la instrucción envía \"Sur\" a std::cout. ¿Qué se muestra?",
           "options": [
-            "Norte, porque el comentario tiene prioridad.",
-            "Sur, porque esa es la instrucción ejecutada.",
-            "Ambas palabras automáticamente."
+            "NorteSur",
+            "Sur",
+            "Norte"
           ],
           "correctIndex": 1,
           "explanation": "El comentario no altera la instrucción. La contradicción debe corregirse al revisar el programa."
@@ -276,6 +276,32 @@
         {
           "type": "note",
           "text": "Comprueba que cada línea tenga el texto previsto y que no aparezcan los caracteres \\n como parte del mensaje. Anota tu predicción antes de ejecutar; así la observación comprueba una hipótesis."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contrasta después de construir tus dos versiones. Ambas deben mostrar Informe, Zona Este y Fin en ese orden, en tres líneas, sin barras invertidas visibles ni espacios adicionales. Puedes dejar o no un salto después de Fin: la consigna no fija ese carácter final. Un salto entre líneas sí es obligatorio."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Informe\\nZona Este\\nFin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Informe\\n\";\n    std::cout << \"Zona Este\\n\";\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera versión reúne los caracteres en un literal; la segunda los distribuye entre tres instrucciones. Los caracteres enviados a cout son los mismos. Partir una instrucción en varias líneas del archivo no inserta por sí mismo saltos en el resultado."
         }
       ]
     }

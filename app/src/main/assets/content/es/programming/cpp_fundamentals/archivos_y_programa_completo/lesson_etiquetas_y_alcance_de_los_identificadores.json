@@ -1,0 +1,167 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__etiquetas_y_alcance_de_los_identificadores",
+  "title": "Etiquetas y alcance de los identificadores",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los nombres del archivo y los ID del programa"
+        },
+        {
+          "type": "paragraph",
+          "text": "El formato de una estación de inspección nombra sus grupos rojo, verde y azul. En memoria les asignamos ID 0, 1 y 2. El nombre es una representación textual; el ID permite consultar una posición pequeña. La tabla establece la correspondencia: no deducimos que el nombre de un color sea por sí mismo un número."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "const std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El orden de esta tabla forma parte de la correspondencia acordada. Cambiarlo sin adaptar los datos en memoria cambiaría qué significa cada ID. Podemos consultar el nombre por índice sólo después de comprobar 0..2; para obtener el índice de un nombre necesitamos una búsqueda."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "buscar_o_indexar",
+          "question": "Llega el texto \"azul\" y necesitamos su ID. ¿Qué operación corresponde?",
+          "options": [
+            "Usar la cantidad de letras del nombre como índice.",
+            "Buscar una coincidencia completa en la tabla.",
+            "Leer el texto como si fuera un entero decimal."
+          ],
+          "correctIndex": 1,
+          "explanation": "La posición de la coincidencia azul es 2. La longitud ni una conversión numérica expresan la correspondencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un fallo de búsqueda no fabrica un ID"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    int id{9};\n    bool encontrado = buscar_grupo(\"azul\", id);\n    std::cout << encontrado << ':' << id << '\\n';\n    encontrado = buscar_grupo(\"gris\", id);\n    std::cout << encontrado << ':' << id;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida tiene dos líneas: 1:2 y 0:2. Ante false el parámetro conserva su valor previo. Por eso no basta mirar id: es imprescindible decidir con el bool si la búsqueda actual tuvo éxito."
+        },
+        {
+          "type": "fill_code",
+          "id": "validar_antes_de_buscar_nombre",
+          "question": "Completa sólo el operador que rechaza el ID 3 y los superiores, junto con la comprobación de negativos, antes de at().",
+          "language": "cpp",
+          "code": "bool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id ____ 3) { return false; }\n    destino = nombres_grupos.at(id);\n    return true;\n}",
+          "answers": [
+            ">="
+          ],
+          "explanation": "El dominio incluye 0, 1 y 2. El límite superior no incluye 3; se rechaza antes de acceder a la tabla."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "igualdad_del_nombre",
+          "question": "La búsqueda compara cadenas completas y no transforma letras. ¿Qué ocurre con \"Azul\"?",
+          "options": [
+            "Se acepta como 2 porque la comparación ignora mayúsculas.",
+            "Se acepta como 0 porque es el primer nombre no exacto.",
+            "Se rechaza y el destino conserva su valor."
+          ],
+          "correctIndex": 2,
+          "explanation": "Azul y azul son cadenas distintas. Aceptar variantes de escritura exigiría definir y aplicar otra política."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La identidad puede depender del grupo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada grupo contiene registros con ID 0..9 y un Recuento. El registro 7 de rojo y el registro 7 de azul son entidades distintas: su identidad completa es grupo + ID del registro. No rechazamos un ID sólo porque exista en otro grupo. En cambio, dentro del mismo grupo cada ID debe aparecer como máximo una vez."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "repetido_local",
+          "question": "Recibimos (rojo,7), (azul,7), (rojo,7), en ese orden. Si cada grupo prohíbe ID repetidos, ¿cuál es el primer conflicto?",
+          "options": [
+            "El segundo, por repetir el ID 7 en cualquier lugar.",
+            "El tercero, por repetir el ID 7 dentro de rojo.",
+            "Ninguno, porque los tres ID están en 0..9."
+          ],
+          "correctIndex": 1,
+          "explanation": "El dominio numérico válido no basta. La primera asociación azul–7 es nueva; la segunda asociación rojo–7 repite una identidad del mismo grupo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una colección plana de registros necesitaría conservar también el grupo. Una estructura Grupo con sus propios registros expresa ese alcance directamente. No confundas esta identidad de los datos con el ámbito de un nombre declarado en el código: son dos decisiones diferentes."
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_direcciones_de_la_tabla",
+          "question": "Predice las dos líneas. Cada bool indica el resultado de una conversión actual.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    std::string nombre{\"previo\"};\n    bool obtenido = nombre_grupo(1, nombre);\n    std::cout << obtenido << ':' << nombre << '\\n';\n    obtenido = nombre_grupo(3, nombre);\n    std::cout << obtenido << ':' << nombre;\n    return 0;\n}\n",
+          "answers": [
+            "1:verde\n0:verde"
+          ],
+          "explanation": "El ID 1 se convierte a verde. El ID 3 queda fuera del dominio y no cambia el texto previo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruir y comprobar las dos conversiones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Como práctica de recuperación, reconstruye sin copiar buscar_grupo y nombre_grupo, ya estudiadas en los ejemplos. Mantén estos contratos: nombre exacto o ID 0..2; true actualiza el destino, false lo conserva. Haz una prueba para cada nombre y comprueba que la conversión nombre → ID → nombre recupera el original. Después prueba gris, una cadena vacía, Rojo y los ID -1 y 3 con destinos iniciales distintos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Decide las salidas esperadas antes de ejecutar. Que un destino conserve un ID permitido después de false no vuelve válida una entrada desconocida. No llames a la conversión inversa para continuar como si la búsqueda hubiera tenido éxito."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\n// Define las dos funciones y las pruebas de sus contratos.\nint main() {\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Consulta la referencia en la página siguiente después de construir tu propia solución. Usa at() con dominio comprobado; esta práctica no necesita un contenedor nuevo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior y cambio de representación"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nint main() {\n    for (const std::string& original : nombres_grupos) {\n        int id{-1};\n        std::string recuperado{\"previo\"};\n        bool encontrado = buscar_grupo(original, id);\n        bool convertido = false;\n        if (encontrado) { convertido = nombre_grupo(id, recuperado); }\n        std::cout << original << ':' << encontrado << ':'\n                  << convertido << ':' << (recuperado == original) << '\\n';\n    }\n    int id{8};\n    bool encontrado = buscar_grupo(\"gris\", id);\n    std::string nombre{\"previo\"};\n    bool convertido = nombre_grupo(-1, nombre);\n    std::cout << encontrado << ':' << id << ':' << convertido << ':' << nombre;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia produce rojo:1:1:1, verde:1:1:1 y azul:1:1:1, una línea por nombre; termina con 0:8:0:previo. Criterios: ambas direcciones coherentes, dominio comprobado, coincidencia exacta y destino conservado ante false. Completa además las fronteras solicitadas en el laboratorio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si una versión nueva del formato acepta nombres adicionales o sinónimos, habrá que decidir si la conversión inversa escribe el nombre recibido o una forma elegida. Recuperar los datos y recuperar cada carácter original no son el mismo objetivo. La siguiente parte define un formato propio y sus cierres."
+        },
+        {
+          "type": "note",
+          "text": "Fuente principal: Stroustrup, B. (2024). Programming: Principles and practice using C++ (3.ª ed.). Addison-Wesley. Apartados 9.9.1–9.9.3, pp. 270–275. Modelo, formato y actividades originales; recuperación de tablas, búsqueda, contratos y presencia de esta ruta."
+        }
+      ]
+    }
+  ]
+}

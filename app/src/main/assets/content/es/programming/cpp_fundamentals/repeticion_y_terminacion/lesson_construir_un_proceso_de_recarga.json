@@ -1,0 +1,141 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__construir_un_proceso_de_recarga",
+  "title": "Construir un proceso y justificar su salida",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una recarga con límite y seguimiento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una estación empieza con una energía entera entre 0 y 9. Cada ronda aporta 3 unidades, salvo que falten menos para llegar a 9: en ese caso aporta únicamente lo que falta. Debe mostrar la energía después de cada ronda y un resumen con energía final y número de rondas. Si ya empieza en 9, no realiza rondas. Un valor fuera del dominio debe producir Dato invalido sin iniciar la recarga."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construirás el programa completo con las herramientas ya estudiadas. Los datos estarán definidos en el código, sin lectura por cin. Decide qué estado dura durante todo el procedimiento, qué dato corresponde sólo a una ronda y cuándo comprobar que el proceso ha terminado. Resuelve a mano los casos iniciales 0,1,8 y 9 antes de abrir el laboratorio."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_estado_ya_completo",
+          "question": "¿Qué debe ocurrir si la energía inicial es 9?",
+          "options": [
+            "Ejecutar una ronda de aporte cero y contarla.",
+            "Mostrar el resumen con cero rondas y conservar energía 9.",
+            "Rechazar 9 porque la condición del bucle es falsa."
+          ],
+          "correctIndex": 1,
+          "explanation": "9 pertenece al dominio, pero ya cumple el objetivo; no se inventa una ronda."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cantidades_distintas_de_recarga",
+          "question": "¿Qué dato permite contar las rondas sin confundirlas con la energía?",
+          "options": [
+            "La energía inicial usada también como contador.",
+            "Un acumulador al que se suman los aportes de energía.",
+            "Un contador que comienza en cero y aumenta una vez por ronda."
+          ],
+          "correctIndex": 2,
+          "explanation": "Una ronda y una unidad de energía son magnitudes distintas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el procedimiento sin un bucle preparado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe tu programa en este editor. Usa energia inicial igual a 1 para la primera prueba. Muestra cada ronda como Ronda N: E en su propia línea, donde N cuenta desde 1 y E es la energía después del aporte. El resumen debe tener el formato Estado=E;Rondas=N. Los valores inválidos producen únicamente Dato invalido. Conserva esos formatos para comparar sin ambigüedad."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección: validación antes del recorrido, ningún estado de final de ronda superior a 9, aporte positivo en toda ronda realizada, cuenta exacta y ausencia de rondas cuando el objetivo ya está cumplido. Comprueba también -1 y 10. Antes de ejecutar cada caso, predice la secuencia y el resumen; explica qué cantidad disminuye hasta que deja de ser necesario actuar."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construye aqui la validacion, la recarga y el resumen.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Prueba primero tu construcción. La referencia aparece después para contrastar el comportamiento y el razonamiento; varias organizaciones correctas son posibles. El laboratorio no califica automáticamente el programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior al intento"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int energia{1};\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Ronda \" << rondas << \": \" << energia << \"\\n\";\n        }\n        std::cout << \"Estado=\" << energia << \";Rondas=\" << rondas;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La validación distingue fuera del dominio de ya terminado. rondas vive durante todo el procedimiento; aporte se calcula de nuevo en cada ronda. Primero se limita el aporte a lo que falta, después se actualiza energía y se cuenta la ronda. Por eso no se imprime un exceso que luego se intente ocultar. El resumen queda fuera del bucle y funciona también cuando no hubo cuerpo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Resultados de control: inicio 0 produce energías 3,6,9 y 3 rondas; inicio 1 produce 4,7,9 y 3 rondas; inicio 8 produce 9 y 1 ronda; inicio 9 no produce líneas de ronda y su resumen es Estado=9;Rondas=0. -1 y 10 producen sólo Dato invalido. No basta comprobar únicamente el caso 1: una versión que siempre haga tres vueltas falla en 8 y 9."
+        },
+        {
+          "type": "paragraph",
+          "text": "La cantidad que falta, 9-energia, empieza entre 0 y 9. Cuando es positiva, el aporte es al menos 1 y como máximo lo que falta; por eso la cantidad pendiente disminuye y sigue no negativa. La condición se vuelve falsa al llegar a cero pendiente. Los valores usados quedan dentro de un dominio pequeño y representable. Un for con una condición y avance equivalentes también puede cumplir la tarea; no es obligatorio copiar este while."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el comportamiento y cambiar el objetivo"
+        },
+        {
+          "type": "output_prediction",
+          "id": "recarga_desde_ocho",
+          "question": "Predice la salida completa de la referencia con energía inicial 2. Conserva los saltos internos y no añadas comillas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int energia{2};\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Dato invalido\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Ronda \" << rondas << \": \" << energia << \"\\n\";\n        }\n        std::cout << \"Estado=\" << energia << \";Rondas=\" << rondas;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Ronda 1: 5\nRonda 2: 8\nRonda 3: 9\nEstado=9;Rondas=3"
+          ],
+          "explanation": "Faltan siete unidades al comenzar. Los aportes son 3,3 y 1: los estados posteriores son 5,8 y 9, y se cuentan tres rondas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "ultimo_aporte_no_completo",
+          "question": "Una versión añade siempre 3, incluso si sólo falta 1, y luego muestra el resultado. ¿Qué criterio incumple?",
+          "options": [
+            "La cuenta de rondas debe usar un double.",
+            "La energía después de esa ronda supera el objetivo permitido.",
+            "Un while no puede comprobar una cantidad de energía."
+          ],
+          "correctIndex": 1,
+          "explanation": "Terminar no basta: la transición también debe respetar el requisito de no superar 9."
+        },
+        {
+          "type": "output_prediction",
+          "id": "misma_regla_otra_meta",
+          "question": "Esta variante usa meta=10 y un dato conocido válido. Predice la salida; conserva el punto y coma que separa el resumen.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int meta{10};\n    int energia{8};\n    int rondas{0};\n    while (energia < meta) {\n        int aporte{3};\n        if (meta - energia < aporte) {\n            aporte = meta - energia;\n        }\n        energia += aporte;\n        ++rondas;\n        std::cout << energia << \";\";\n    }\n    std::cout << \"Rondas=\" << rondas;\n    return 0;\n}\n",
+          "answers": [
+            "10;Rondas=1"
+          ],
+          "explanation": "La diferencia meta-energia es 2 y limita el aporte a 2. La regla se conserva aunque cambie el objetivo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el nuevo programa debe aceptar cualquier energía de 0 a meta, también debes adaptar la validación y comprobar el caso igual a meta y el primer rechazo meta+1. Esta variante sólo calcula con el dato válido fijado: no demuestra esa validación general. Después de comparar, vuelve al editor mínimo y reconstruye la versión original sin mirar la referencia. Explica las ubicaciones de la comprobación, el avance y el resumen."
+        }
+      ]
+    }
+  ]
+}

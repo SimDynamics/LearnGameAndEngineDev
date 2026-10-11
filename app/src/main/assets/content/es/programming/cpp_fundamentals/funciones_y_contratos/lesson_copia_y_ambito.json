@@ -57,11 +57,11 @@
           "type": "multiple_choice",
           "question": "¿Qué dato necesita contar_pasos para repetir un número distinto de veces en otra llamada?",
           "options": [
-            "El estado oculto de la llamada anterior.",
             "Un nuevo argumento para repeticiones.",
+            "El estado oculto de la llamada anterior.",
             "Un nombre distinto para cada variable local."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "La interfaz aporta el dato que determina el recorrido de esa llamada."
         },
         {
@@ -104,11 +104,11 @@
           "type": "multiple_choice",
           "question": "Si main y una función auxiliar tienen ambos un objeto local llamado nivel, ¿qué los distingue?",
           "options": [
-            "Sus ámbitos; son objetos locales distintos.",
-            "Nada: siempre representan un único objeto compartido.",
-            "Sólo los comentarios."
+            "Comparten el mismo objeto porque tienen idéntico nombre.",
+            "El objeto de main se modifica al usar el nombre en la auxiliar.",
+            "Sus ámbitos: son objetos locales distintos."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "Un nombre igual en ámbitos distintos no une los objetos ni comparte su estado."
         }
       ]
@@ -131,9 +131,9 @@
           "type": "multiple_choice",
           "question": "¿Qué instrucción cambia estado en el programa inicial?",
           "options": [
-            "La declaración del parámetro actual.",
+            "return nuevo; por sí solo modifica cualquier argumento.",
             "estado = siguiente(estado);",
-            "return nuevo; por sí solo modifica cualquier argumento."
+            "La declaración del parámetro actual."
           ],
           "correctIndex": 1,
           "explanation": "El retorno aporta un valor; la asignación del llamador lo guarda en estado."
@@ -171,16 +171,41 @@
           "type": "multiple_choice",
           "question": "Una función recibe un int por valor y devuelve otro int. Su llamada se ejecuta, pero el programa descarta el resultado. ¿Qué puede conservar un cambio en el objeto original?",
           "options": [
-            "Nada por el mero paso por valor; hace falta una asignación explícita del resultado u otro mecanismo de modificación.",
+            "La existencia de una instrucción return dentro de la función.",
             "El mismo nombre del parámetro y del argumento.",
-            "La existencia de una instrucción return dentro de la función."
+            "Nada por el mero paso por valor; hace falta una asignación explícita del resultado u otro mecanismo de modificación."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "El paso por valor trabaja con una copia. Devolver un valor no lo asigna automáticamente al argumento."
         },
         {
           "type": "note",
           "text": "Mantén locales los nombres que sólo necesita un cálculo. Un ámbito reducido permite leer qué instrucciones pueden usar y cambiar cada dato. Las funciones libres de la unidad se definen fuera de otras funciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: Actualizar dos veces de forma explícita"
+        },
+        {
+          "type": "note",
+          "text": "Compara después de realizar el laboratorio y anotar sus resultados previstos. La referencia presenta una organización posible; los criterios permiten reconocer otras implementaciones que cumplan los mismos contratos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. En el programa inicial con estado=3, la primera línea es 3 4 y el estado final es 4. En la referencia se añade la segunda asignación solicitada y el final pasa a 5; la primera línea sigue siendo 3 4. Con inicios 0 y 8, la primera línea es 0 1 o 8 9; el final original es 1 o 9 y con dos asignaciones es 2 o 10. Mantén inicio entre 0 y 20."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint siguiente(int actual) {\n    const int nuevo = actual + 1;\n    return nuevo;\n}\n\nint main() {\n    int estado = 3;\n    const int propuesta = siguiente(estado);\n    std::cout << estado << \" \" << propuesta << \"\\n\";\n    estado = siguiente(estado);\n    estado = siguiente(estado);\n    std::cout << estado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "siguiente recibe una copia y entrega la propuesta; calcularla no cambia estado. Cada instrucción estado = siguiente(estado); sí asigna el resultado a main y la siguiente llamada recibe ese estado actualizado. El resultado se conserva porque hay una asignación explícita, no porque un parámetro por valor permanezca enlazado al objeto del llamador."
         }
       ]
     }

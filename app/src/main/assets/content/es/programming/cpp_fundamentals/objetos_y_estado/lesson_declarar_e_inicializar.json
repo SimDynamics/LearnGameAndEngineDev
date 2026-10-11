@@ -98,11 +98,11 @@
           "type": "multiple_choice",
           "question": "¿Qué intención expresa int asientos{0};?",
           "options": [
-            "Crear un entero preparado con valor cero.",
+            "Dejar el valor para que el compilador elija.",
             "Crear texto que contiene 0.",
-            "Dejar el valor para que el compilador elija."
+            "Crear un entero preparado con valor cero."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "El inicializador 0 está escrito explícitamente y cabe como entero."
         },
         {
@@ -130,11 +130,11 @@
           "type": "multiple_choice",
           "question": "La consigna dice que un depósito comienza vacío. ¿Qué razón justifica inicializar cantidad con cero?",
           "options": [
-            "Porque cualquier variable entera empieza automáticamente en cero.",
             "Porque el valor inicial debe representar la situación que especifica la consigna.",
+            "Porque cualquier variable entera empieza automáticamente en cero.",
             "Porque cero siempre es la cantidad final."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "La inicialización debe describir el estado de partida. No garantiza el estado final de un programa que luego modifique la variable."
         },
         {
@@ -198,12 +198,37 @@
           "type": "multiple_choice",
           "question": "El programa compiló, pero olvidaste dar valor a una variable local que luego lees. ¿Qué conclusión corresponde?",
           "options": [
-            "Ya es seguro: el compilador eligió cero.",
-            "Compilar no demuestra que esa lectura sea correcta; hay que establecer el valor antes de leerla.",
-            "Debe bastar con añadir un comentario que diga cero."
+            "Hay que establecer su valor antes de leerla; compilar no basta.",
+            "Basta asignar el valor después de la primera lectura y salida.",
+            "La compilación correcta garantiza el valor inicial que pide la tarea."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "El código necesita inicialización efectiva. Un comentario comunica intención, pero no modifica el objeto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia: Dos cantidades con valores iniciales"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Cada objeto debe quedar definido con su valor antes de usarse. La primera versión muestra dos líneas: Cajas: 4 y Sobres: 9. La segunda, cambiando sólo los valores iniciales a 0 y 2, muestra Cajas: 0 y Sobres: 2. Conserva nombres asociados a los datos, espacios tras los dos puntos y separación entre líneas; no se exige una única sintaxis válida de inicialización."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas{4};\n    int sobres{9};\n    std::cout << \"Cajas: \" << cajas << '\\n';\n    std::cout << \"Sobres: \" << sobres;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las definiciones aparecen antes de las lecturas de cajas y sobres. El salto después de la primera salida separa los mensajes. Un cero es un valor inicial definido: no representa por sí solo un objeto sin inicializar."
         }
       ]
     }

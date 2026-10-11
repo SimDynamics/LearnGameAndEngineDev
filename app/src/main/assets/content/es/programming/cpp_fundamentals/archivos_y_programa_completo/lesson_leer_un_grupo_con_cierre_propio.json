@@ -1,0 +1,165 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__leer_un_grupo_con_cierre_propio",
+  "title": "Leer un grupo con cierre propio",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Agrupar registros cambia qué significa terminar"
+        },
+        {
+          "type": "paragraph",
+          "text": "El formato de un grupo comienza con { grupo NOMBRE, contiene cero o más registros y termina con }. Cada registro tiene ID 0..9 seguido de un Recuento [aceptados;rechazados], con cantidades 0..10. Los nombres válidos son rojo, verde y azul. Ejemplo: { grupo rojo 7[0;0] 2[3;1] }. Dentro del grupo no se repite un ID; su orden se conserva."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las etiquetas y los nombres se leen como cadenas con >>: deben terminar con un blanco antes del token siguiente. Por eso { grupo rojo } admite un grupo vacío, pero { grupo rojo} no pertenece a este formato: la cadena sería rojo}. Los blancos pueden ser espacios, tabulaciones o saltos de línea del flujo habitual. Entre un ID y [ no exigimos un blanco; las cantidades se leen como enteros decimales, permitiendo signo + y ceros iniciales. No estamos definiendo un lector universal de JSON."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cierre_del_grupo",
+          "question": "Un lector ha comenzado { grupo rojo y llega a EOF después de 7[2;1], sin }. ¿Cuál es el resultado del grupo?",
+          "options": [
+            "Válido, porque el registro está completo.",
+            "Válido si el flujo tiene eofbit.",
+            "Inválido: falta cerrar el grupo que ya comenzó."
+          ],
+          "correctIndex": 2,
+          "explanation": "EOF termina la fuente de caracteres. No completa un objeto al que aún le falta su cierre."
+        },
+        {
+          "type": "paragraph",
+          "text": "leer_grupo recibe un flujo prestado y un Grupo destino. Devuelve true después de consumir exactamente un grupo completo; no exige EOF ni consume lo que sigue a }. Ante false conserva el destino, pero no devuelve los caracteres ya consumidos al flujo. Los rechazos de dominio o etiqueta también pueden dejar el flujo sin failbit: decide con el bool de esta función. En estas prácticas se usan flujos nuevos con la configuración habitual: lectura decimal, salto de blancos y sin máscara de excepciones añadida. El lector no adapta automáticamente un flujo que haya sido configurado de otra manera."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mirar el cierre antes de intentar otro registro"
+        },
+        {
+          "type": "paragraph",
+          "text": "El lector de una línea completa anterior exige que no haya ningún dato posterior a su Registro. Aquí no sirve: después de un registro puede venir otro o }. Reutilizamos operator>> de Recuento y comprobamos por separado el ID. Para decidir si hay un cierre, descartamos blancos con ws y miramos el carácter próximo con peek(). peek() permite observar sin extraer; get() consume un carácter cuando hemos decidido hacerlo."
+        },
+        {
+          "type": "output_prediction",
+          "id": "mirar_no_consume",
+          "question": "Predice la salida. Este ejemplo ya comprobó que hay caracteres disponibles.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::istringstream entrada{\"  } fin\"};\n    entrada >> std::ws;\n    bool cierre = entrada.peek() == '}';\n    std::cout << cierre << ':';\n    char caracter{0};\n    entrada.get(caracter);\n    std::string siguiente;\n    entrada >> siguiente;\n    std::cout << caracter << ':' << siguiente;\n    return 0;\n}\n",
+          "answers": [
+            "1:}:fin"
+          ],
+          "explanation": "peek observó }, pero get lo extrajo. La cadena posterior sigue disponible."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de peek, el lector debe comprobar !entrada y entrada.eof() después de ws. Si ya no queda un cierre, devuelve false. No limpia el estado de un registro mal formado para convertirlo en un final permitido: un cierre reconocido es diferente de una extracción fallida."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cierre_o_error_de_registro",
+          "question": "Después de saltar blancos, el siguiente carácter es [ donde se esperaba el ID de otro Registro. ¿Qué debe hacer el lector?",
+          "options": [
+            "Intentar extraer el registro y rechazar al no obtener un ID válido.",
+            "Interpretar cualquier fallo como si hubiera visto }.",
+            "Borrar el estado y guardar un registro con ID inicial 0."
+          ],
+          "correctIndex": 0,
+          "explanation": "Sólo } es el cierre permitido. Una extracción inválida no crea un registro ni justifica aceptar el grupo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un candidato y proteger el destino"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define leer_grupo. Comprueba apertura, etiqueta, nombre e ID del grupo. Prepara un Grupo candidato nuevo, sin registros. En cada vuelta: salta blancos; rechaza si el flujo no permite continuar o alcanzó EOF; consume } y acepta el candidato si era el siguiente carácter; de otro modo intenta un Registro nuevo, comprueba su ID y que no exista en ese candidato y añádelo. No modifiques destino hasta reconocer el cierre."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye cuatro pruebas con un destino inicial azul que contiene 9[1;1]: grupo rojo con 7[0;0] y 2[3;1]; grupo verde vacío; rojo con ID 7 repetido; rojo con un registro completo pero sin cierre. Muestra bool:ID_del_grupo:cantidad_de_registros y los registros obtenidos. Predice antes de ejecutar."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\n// Define leer_grupo y las pruebas antes de consultar la referencia.\nint main() {\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "La siguiente página contiene la referencia. La práctica es construir el control del lector, no copiar un cuerpo completo. El modelo mantiene cero como valor válido y vacío como grupo presente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: el cierre confirma el candidato"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nvoid probar(const std::string& texto) {\n    std::istringstream entrada{texto};\n    Grupo grupo{2, {{9, {1, 1}}}};\n    bool aceptado = leer_grupo(entrada, grupo);\n    std::cout << aceptado << ':' << grupo.id << ':' << grupo.registros.size();\n    for (const Registro& registro : grupo.registros) {\n        std::cout << ' ' << registro.id << registro.recuento;\n    }\n    std::cout << '\\n';\n}\n\nint main() {\n    probar(\"{ grupo rojo 7[0;0] 2[3;1] }\");\n    probar(\"{ grupo verde }\");\n    probar(\"{ grupo rojo 7[0;0] 7[3;1] }\");\n    probar(\"{ grupo rojo 7[0;0]\");\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las líneas esperadas son 1:0:2 7[0;0] 2[3;1], 1:1:0, 0:2:1 9[1;1] y 0:2:1 9[1;1]. El grupo vacío reemplaza el destino por un grupo válido sin registros. En los dos rechazos se conserva íntegro el grupo anterior, incluso si se había leído un primer registro correcto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: estado nuevo por lectura, duplicados comprobados dentro de su grupo, cierre exacto, dominios antes de usar los datos, orden conservado y destino intacto ante false. Prueba también cantidades -1 y 11, ID -1 y 10, nombre desconocido, etiqueta distinta y una entrada truncada en cada campo del primer registro. Un rechazo semántico no está obligado a cambiar las banderas del flujo."
+        },
+        {
+          "type": "paragraph",
+          "text": "La vuelta válida consume un registro; el cierre termina; un fallo rechaza. Además, sólo existen diez ID distintos admisibles en un grupo. Este límite no sustituye los límites del entorno sobre tiempo, memoria o tamaño de los caracteres que recibe un programa."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un grupo completo no es todavía una muestra completa"
+        },
+        {
+          "type": "output_prediction",
+          "id": "sufijo_para_el_llamador",
+          "question": "Predice la salida. leer_grupo consume únicamente el grupo y deja el resto al llamador.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"rojo\", \"verde\", \"azul\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"grupo\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nint main() {\n    std::istringstream entrada{\"{ grupo azul } resto\"};\n    Grupo grupo{0, {}};\n    bool aceptado = leer_grupo(entrada, grupo);\n    std::string siguiente;\n    entrada >> siguiente;\n    std::cout << aceptado << ':' << grupo.id << ':'\n              << grupo.registros.size() << ':' << siguiente;\n    return 0;\n}\n",
+          "answers": [
+            "1:2:0:resto"
+          ],
+          "explanation": "El grupo azul vacío es válido; resto sigue disponible. La validación de toda la muestra debe decidir si ese sufijo está permitido."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mismo_id_otro_grupo",
+          "question": "Se leyó correctamente 7[0;0] en rojo. Al leer un grupo azul nuevo llega 7[3;1]. ¿Qué comprobación de duplicados corresponde?",
+          "options": [
+            "Buscar el ID en todos los grupos anteriores y rechazarlo.",
+            "No comprobar duplicados porque el nombre ya es válido.",
+            "Buscar el ID dentro del candidato azul actual."
+          ],
+          "correctIndex": 2,
+          "explanation": "La identidad de un registro incluye su grupo. La colección superior comprobará que el grupo no esté repetido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transferencia: añade saltos de línea entre registros y un sufijo tras }. El primer cambio conserva los datos; el lector de grupo deja el sufijo pendiente. Quitar } debe rechazar aunque las cantidades y los ID sean válidos. En la siguiente lección, el llamador tendrá su propio cierre."
+        },
+        {
+          "type": "note",
+          "text": "Fuente principal: Stroustrup, B. (2024). Programming: Principles and practice using C++ (3.ª ed.). Addison-Wesley. Apartados 9.8–9.9.2, pp. 267–274. Gramática, garantías y prácticas originales de esta ruta."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__leer_y_validar_una_linea_completa",
+  "title": "Leer y validar una línea completa",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un objeto leído no acredita toda la línea"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nuestro operator>> de Recuento lee un objeto y deja lo que venga después. Esa conducta permite encadenar lecturas. Para una línea que debe contener un único registro necesitamos un contrato más estricto: identificador y recuento, ningún dato adicional y conservación del destino si falla cualquier comprobación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Acordamos el formato ID [aceptados;rechazados]. ID está entre 0 y 9; las cantidades están entre 0 y 10. Admitimos los espacios que omiten las extracciones formateadas y los espacios finales. Los enteros se leen en decimal: un signo positivo o ceros iniciales pueden representar el mismo valor. Una línea vacía no contiene un registro. El lector de registro recibe una línea ya delimitada, sin el salto que retiraría getline; los ejemplos construyen esas líneas en cadenas conocidas. No exigimos un espacio entre ID y el corchete: 3[2;1] también cumple este formato."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "registro_y_sufijo",
+          "question": "La línea 2 [4;1] extra permite extraer ID y Recuento. ¿Qué falta comprobar para nuestro contrato?",
+          "options": [
+            "Si el identificador conserva sus ceros iniciales.",
+            "Si el recuento puede imprimirse con otro separador.",
+            "Si después del registro quedan datos que no son espacios."
+          ],
+          "correctIndex": 2,
+          "explanation": "Extraer los campos no valida el sufijo. extra infringe la regla de un único registro por línea."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Resolver primero el caso de un solo campo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este lector obtiene un identificador en un candidato local. Comprueba extracción y dominio antes de consultar el final. std::ws consume espacios, tabulaciones y otros blancos según el flujo; si alcanza el final, eof() lo indica. Si permanece un carácter diferente, el texto no está completo. bad() identifica una avería del flujo y tampoco se acepta."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_id_completo(const std::string& texto, int& destino) {\n    std::istringstream origen{texto};\n    int candidato{0};\n    if (!(origen >> candidato) || candidato < 0 || candidato > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int id{8};\n    bool valido = leer_id_completo(\"03  \", id);\n    std::cout << valido << \":\" << id;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La salida es 1:3. 03 representa el identificador numérico 3; los espacios finales son admisibles. El destino sólo se actualiza después de comprobar todo el texto. No devolvemos éxito por ver eof() aislado: también una extracción incompleta puede llegar al final. Si un entero termina justo al final del texto, su extracción puede indicar EOF sin fallar. Al recibir ese estado, ws puede añadir failbit. Aquí ya comprobamos la extracción; la ausencia de sufijo sigue siendo válida. Por eso no sustituimos esta comprobación final por exigir que el flujo siga en good() o por comprobar !origen después de ws."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "eof_no_basta",
+          "question": "Un texto termina antes de completar los campos y el flujo indica EOF y fallo. ¿Es válido el registro?",
+          "options": [
+            "Sí, porque no queda ningún carácter adicional.",
+            "No: alcanzar el final no sustituye obtener todos los campos.",
+            "Sí, si los candidatos comenzaron inicializados en cero."
+          ],
+          "correctIndex": 1,
+          "explanation": "Los valores iniciales no acreditan una lectura. Primero debe completarse la extracción; después comprobamos el sufijo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar el destino incluso después de leer un prefijo"
+        },
+        {
+          "type": "output_prediction",
+          "id": "id_con_texto_sobrante",
+          "question": "Predice la salida. El lector exige consumir toda la representación, salvo blancos finales.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_id_completo(const std::string& texto, int& destino) {\n    std::istringstream origen{texto};\n    int candidato{0};\n    if (!(origen >> candidato) || candidato < 0 || candidato > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int id{8};\n    bool valido = leer_id_completo(\"4 extra\", id);\n    std::cout << valido << \":\" << id;\n    return 0;\n}\n",
+          "answers": [
+            "0:8"
+          ],
+          "explanation": "Se obtiene 4, pero extra permanece después de omitir el espacio. eof() es false; se rechaza antes de asignar al destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conservar el objeto del llamador y devolver false no significa devolver al flujo sus caracteres. Nuestro origen local se destruye al terminar. Para este contrato recibimos una cadena completa y creamos un origen nuevo en cada llamada, por lo que una línea inválida no contamina la lectura de otra."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "destino_y_origen_distintos",
+          "question": "Si una lectura conserva el destino al fallar, ¿qué puedes afirmar del origen?",
+          "options": [
+            "También recuperó automáticamente todos sus caracteres.",
+            "No pudo consumir ningún carácter antes del fallo.",
+            "La conservación del destino no garantiza recuperar el origen."
+          ],
+          "correctIndex": 2,
+          "explanation": "Objeto y flujo tienen estados distintos. La garantía de asignación aplazada protege el destino."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir el lector de un registro completo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Usa el tipo Registro dado y el operator>> de Recuento que ya aprendiste. Construye leer_linea: recibe una string por referencia const y un Registro por referencia; devuelve bool. Debe admitir exactamente el formato acordado, validar ID, rechazar sufijos y actualizar todo el registro sólo al tener éxito. No imprimas dentro del lector."
+        },
+        {
+          "type": "paragraph",
+          "text": "En main prueba cuatro líneas, en este orden: 3 [2;1]; 3 [2;1] sobra; 10 [2;1]; 3 [2;11]. Antes de cada llamada reinicia el destino como {8,{9,9}}. Muestra éxito como 0 o 1, seguido de ID, aceptados y rechazados, separados por dos puntos. Predice cada resultado antes de ejecutar."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\n// Define leer_linea antes de main.\nint main() {\n    // Construye tus pruebas y comprueba el destino tras cada llamada.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "La referencia está después del intento. El código del operador se proporciona como una dependencia ya estudiada; la decisión de aceptación de toda la línea debe estar en tu nueva función."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia y casos que distinguen el contrato"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    const std::vector<std::string> pruebas{\n        \"3 [2;1]\", \"3 [2;1] sobra\", \"10 [2;1]\", \"3 [2;11]\"\n    };\n    for (const std::string& linea : pruebas) {\n        Registro destino{8, {9, 9}};\n        bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las cuatro líneas producen respectivamente 1:3:2:1, 0:8:9:9, 0:8:9:9 y 0:8:9:9. Criterios: extracción conjunta hacia un candidato, dominio de ID comprobado, dominio y separadores de Recuento comprobados por su operador, sólo blancos tras el registro y asignación final de todos los campos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade estas pruebas: 03 [02;+1] y 3 [2;1] con espacios finales deben aceptarse como el mismo registro; la línea vacía, 3 [2;1 sin cierre, -1 [2;1], 3 [2,1] y 3 [2;1][0;0] deben rechazarse conservando {8,{9,9}}. 0 [0;0] y 9 [10;10] son fronteras válidas. No estamos comparando caracteres idénticos: comparamos el valor permitido por nuestro formato."
+        },
+        {
+          "type": "paragraph",
+          "text": "Otra organización es correcta si mantiene esas garantías. No basta con borrar un fallo mediante clear(): eso no convierte un sufijo o un campo incompleto en un registro válido. La siguiente decisión corresponde a la colección: qué hacemos con líneas válidas, inválidas y repetidas."
+        },
+        {
+          "type": "note",
+          "text": "Fuente principal: Stroustrup, B. (2024). Programming: Principles and practice using C++ (3.ª ed.). Addison-Wesley. Capítulo 9, apartados 9.4–9.9, pp. 259–275. Formato, lector y actividades originales de esta ruta."
+        }
+      ]
+    }
+  ]
+}

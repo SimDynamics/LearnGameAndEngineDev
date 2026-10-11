@@ -104,11 +104,11 @@
           "type": "multiple_choice",
           "question": "¿Qué cambia al asignar \"Sur\" a una variable std::string?",
           "options": [
-            "El valor de texto conservado.",
+            "El nombre se renombra automáticamente a Sur.",
             "El tipo se convierte en un número.",
-            "El nombre se renombra automáticamente a Sur."
+            "El valor de texto conservado."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "El objeto conserva su tipo y su nombre; cambia la secuencia de caracteres almacenada."
         }
       ]
@@ -173,11 +173,11 @@
           "type": "multiple_choice",
           "question": "Dos etiquetas de texto contienen \"04\" y \"2\". ¿Qué produce concatenarlas en ese orden?",
           "options": [
-            "\"6\"",
             "\"042\"",
-            "Una cantidad entera de valor 42"
+            "Una cantidad entera de valor 42",
+            "\"6\""
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "La concatenación conserva los caracteres, incluido el cero inicial; no suma números."
         },
         {
@@ -216,11 +216,11 @@
           "type": "multiple_choice",
           "question": "¿Qué dato depende de que escribamos el espacio en \" abierto\"?",
           "options": [
+            "El espacio que cout inserta siempre entre dos cadenas.",
             "La separación visible entre Taller y abierto.",
-            "El tipo entero de la variable.",
-            "El nombre del archivo fuente."
+            "La separación entre instrucciones del archivo fuente."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Concatenar no inserta espacios que no estén en sus operandos."
         }
       ]
@@ -280,6 +280,31 @@
           ],
           "correctIndex": 0,
           "explanation": "La tarea necesita conservar una secuencia y su formato, no sólo una magnitud numérica."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia: Construir y conservar una etiqueta"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. edificio y codigo son textos; etiqueta reúne sus valores con un guion y produce Aula-04. Al definir codigo inicialmente como \"07\", se obtiene Aula-07. Si codigo cambia a \"07\" después de construir etiqueta, la etiqueta ya guardada conserva Aula-04 hasta que se le asigne una nueva concatenación. Conserva el cero y la distinción entre texto y número."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio{\"Aula\"};\n    std::string codigo{\"04\"};\n    std::string etiqueta{edificio + \"-\" + codigo};\n    std::cout << etiqueta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero prueba la versión de referencia y luego cambia sólo el literal inicial de codigo a \"07\". Para la exploración de estado, restaura \"04\" e inserta codigo = \"07\"; después de definir etiqueta y antes de mostrarla: la salida sigue siendo Aula-04. Si quieres actualizarla, debes ejecutar de nuevo etiqueta = edificio + \"-\" + codigo; después del cambio."
         }
       ]
     }

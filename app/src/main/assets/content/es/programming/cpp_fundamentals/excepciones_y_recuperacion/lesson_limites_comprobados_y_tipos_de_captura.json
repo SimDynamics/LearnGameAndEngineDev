@@ -1,0 +1,159 @@
+{
+  "id": "cpp_fundamentals__excepciones_y_recuperacion__limites_comprobados_y_tipos_de_captura",
+  "title": "Límites comprobados y tipos de captura",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprobar un índice sin provocar comportamiento indefinido"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::vector::at comprueba el índice y, en un entorno estándar con soporte de excepciones, lanza std::out_of_range si el índice no está dentro del tamaño. operator[] exige que el índice sea válido; no ofrece esa misma promesa de excepción recuperable. No ejecutes [] fuera del rango para intentar predecir su salida. Las guardas previas siguen siendo útiles cuando un dato externo puede rechazarse de forma normal."
+        },
+        {
+          "type": "output_prediction",
+          "id": "at_con_indice_valido",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{4, 8};\n    try {\n        std::cout << datos.at(1);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Fuera\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "8:Fin"
+          ],
+          "explanation": "El índice 1 está dentro del tamaño 2 y la consulta devuelve el segundo dato."
+        },
+        {
+          "type": "output_prediction",
+          "id": "at_con_extremo_excluido",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{3, 7};\n    try {\n        int valor{datos.at(2)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Fuera\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Fuera:Fin"
+          ],
+          "explanation": "El tamaño 2 es el primer índice excluido. at lanza antes de proporcionar un elemento."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "no_adivinar_fuera_de_corchetes",
+          "question": "¿Qué debes hacer con una predicción que usa datos[2] cuando el vector sólo tiene dos elementos?",
+          "options": [
+            "Prometer que siempre devolverá 0.",
+            "Rechazarla como una consulta fuera del dominio y corregir el índice antes de ejecutar.",
+            "Prometer que siempre se capturará como runtime_error."
+          ],
+          "correctIndex": 1,
+          "explanation": "No existe una salida portable que debamos inventar para ese acceso con []."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El tipo de la excepción determina qué tratamiento coincide"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::invalid_argument y std::out_of_range son tipos distintos. Un catch de uno no captura automáticamente el otro. La biblioteca también ofrece std::exception, un tipo más general que permite tratar esas excepciones estándar. Incluye <exception> cuando lo uses. Si tienes tratamientos específico y general, escribe el específico primero; un tratamiento general anterior puede recibir los fallos que querías distinguir."
+        },
+        {
+          "type": "output_prediction",
+          "id": "captura_especifica_antes_general",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n#include <exception>\n\nint main() {\n    std::vector<int> datos{6};\n    try {\n        std::cout << datos.at(1);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice\";\n    } catch (const std::exception& error) {\n        std::cout << \"Otro fallo\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Indice"
+          ],
+          "explanation": "El primer tratamiento compatible es el específico de rango."
+        },
+        {
+          "type": "output_prediction",
+          "id": "argumento_no_es_error_de_rango",
+          "question": "Predice la salida. Conserva espacios y saltos internos; no escribas comillas que el programa no produce.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <exception>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Cantidad fuera de 0 a 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    try {\n        std::cout << estimar(12);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice\";\n    } catch (const std::exception& error) {\n        std::cout << \"Otro fallo\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Otro fallo"
+          ],
+          "explanation": "invalid_argument no coincide con out_of_range. La captura general estándar sí recibe ese fallo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "captura_general_primero",
+          "question": "Tienes un tratamiento general de std::exception seguido de uno específico de std::out_of_range. ¿Qué organización permite distinguir el rango?",
+          "options": [
+            "Cambiar el nombre de error en el segundo catch.",
+            "Repetir el acceso fallido dentro del catch general.",
+            "Mover el específico antes del general."
+          ],
+          "correctIndex": 2,
+          "explanation": "Los tratamientos se buscan en orden. El general puede interceptar antes al específico."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Diagnosticar sin depender del texto de biblioteca"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las excepciones estándar ofrecen what() para consultar un diagnóstico textual. El texto de un error de rango puede diferir entre bibliotecas; una actividad no debe pedir memorizar una frase que sólo produce un compilador. Conserva un mensaje de dominio estable y usa el diagnóstico adicional para investigar. No clasifiques tipos examinando palabras de what(): la captura ya utiliza el tipo del objeto."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mensaje_portable_de_prediccion",
+          "question": "Quieres una predicción portable de un acceso at rechazado. ¿Qué salida conviene definir en el catch?",
+          "options": [
+            "Un mensaje fijo elegido por el programa, por ejemplo Indice invalido.",
+            "Un elemento inventado de fuera del vector.",
+            "La frase exacta que una única biblioteca devuelve en what(), sin identificar entorno."
+          ],
+          "correctIndex": 0,
+          "explanation": "El mensaje de dominio tiene una expectativa estable. Los diagnósticos internos pueden variar."
+        },
+        {
+          "type": "note",
+          "text": "Estos laboratorios usan el compilador predeterminado de la versión actual: Clang 23 con Wasmtime y soporte de excepciones C++. El compilador alternativo Clang 21 no admite esta práctica con throw/catch. Los datos se preparan en el código; no hace falta una consola interactiva."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el laboratorio, prueba índice 0,1 y 2 con un vector de dos elementos. Muestra Indice invalido en el catch de out_of_range y Fin después del try/catch. Predice cada salida antes de ejecutar. Después consulta error.what() como diagnóstico adicional, observando que ese texto no forma parte de la expectativa portable. Conserva at; no sustituyas la práctica de error por [] fuera de rango."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    try {\n        int valor{datos.at(0)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia del laboratorio"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y probar tu intento. Es una implementación posible; otras soluciones son válidas si cumplen el mismo contrato y los criterios indicados."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Con datos {2,9}, los índices 0,1,2 deben producir respectivamente 2:Fin, 9:Fin e Indice invalido:Fin en la parte estable de la salida. Se usa at y se captura out_of_range; no se provoca un acceso inválido con []. Al habilitar el diagnóstico adicional, el texto de what() puede variar y no sustituye ni cambia la expectativa estable. Fin debe seguir alcanzándose después del tratamiento."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{0};\n    bool mostrarDiagnostico{false};\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Indice invalido\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba cada índice cambiando indice. Con mostrarDiagnostico=false, la salida de dominio se compara de forma exacta. Después cambia esa bandera a true y consulta el diagnóstico adicional del índice 2 en stderr; no exijas una frase específica de biblioteca para considerar correcta la captura."
+        }
+      ]
+    }
+  ]
+}

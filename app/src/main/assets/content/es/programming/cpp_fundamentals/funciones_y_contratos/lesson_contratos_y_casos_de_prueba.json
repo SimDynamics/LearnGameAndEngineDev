@@ -58,11 +58,11 @@
           "type": "multiple_choice",
           "question": "¿Qué orden protege la precondición de grupos_completos?",
           "options": [
-            "Calcular primero y validar el resultado después.",
             "Validar los argumentos y llamar sólo en el camino que cumple el contrato.",
-            "Escribir el contrato únicamente en un comentario y llamar con cualquier dato."
+            "Escribir el contrato únicamente en un comentario y llamar con cualquier dato.",
+            "Calcular primero y validar el resultado después."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "La comprobación debe controlar el camino que llega al cálculo, antes de ejecutar la operación."
         }
       ]
@@ -92,10 +92,10 @@
           "question": "Un cálculo devuelve 0 grupos completos. ¿Qué se puede concluir sólo con ese resultado?",
           "options": [
             "Que los argumentos eran inválidos.",
-            "Que puede ser un resultado válido, por ejemplo con cantidad 0 o menor que capacidad.",
-            "Que todos los grupos tienen capacidad cero."
+            "Que todos los grupos tienen capacidad cero.",
+            "Que puede ser un resultado válido, por ejemplo con cantidad 0 o menor que capacidad."
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "Un resultado válido puede ser 0. La validez de los argumentos se establece antes y no se deduce de un número aislado."
         },
         {
@@ -122,11 +122,11 @@
           "type": "multiple_choice",
           "question": "¿Qué debe ocurrir con cantidad igual a 120 y capacidad igual a 12?",
           "options": [
-            "Rechazar por estar exactamente en los límites superiores.",
             "Mostrar 10 0 1, porque ambos extremos están incluidos y el reparto es exacto.",
-            "Mostrar 0 10 1."
+            "Mostrar 0 10 1.",
+            "Rechazar por estar exactamente en los límites superiores."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "El contrato incluye los extremos 120 y 12. Diez grupos consumen toda la cantidad."
         },
         {
@@ -145,11 +145,11 @@
           "type": "multiple_choice",
           "question": "¿Qué plan revisa inclusión de los extremos y rechazo justo fuera del dominio de cantidad, usando capacidad válida igual a 6?",
           "options": [
-            "Cantidades -1, 0, 120 y 121.",
             "Cantidades 20, 30 y 40.",
+            "Cantidades -1, 0, 120 y 121.",
             "Cantidad 25 repetida cuatro veces."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Los casos -1/0 prueban el extremo inferior y 120/121 el superior. Los datos interiores no distinguen una frontera mal escrita."
         },
         {
@@ -170,6 +170,31 @@
         {
           "type": "note",
           "text": "En esta unidad usamos comentarios, condiciones bool y caminos de llamada explícitos. La validación no se confunde con una postcondición: una comprueba qué entra y la otra qué queda al terminar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: Comprobar dominio y postcondición"
+        },
+        {
+          "type": "note",
+          "text": "Compara después de realizar el laboratorio y anotar sus resultados previstos. La referencia presenta una organización posible; los criterios permiten reconocer otras implementaciones que cumplan los mismos contratos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Para cantidad=25 y capacidad=6, q=4, r=1 y cumple=1: salida 4 1 1. Para 0 y 6, 0 0 1; para 120 y 12, 10 0 1, como en la referencia. Capacidad 0 o cantidad -1 producen Fuera del dominio sin evaluar división ni resto. Al cambiar temporalmente el cálculo a cantidad/capacidad+1 con los datos originales 25 y 6, la salida pasa a 5 1 0; termina, pero incumple la postcondición."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) es true.\n// Post: devuelve el cociente entero de ese reparto.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    int cantidad = 120;\n    int capacidad = 12;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Fuera del dominio\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La pregunta de validez se resuelve antes de llamar a grupos_completos y antes de calcular el resto. q*capacidad+r==cantidad y 0<=r<capacidad comprueban el reparto para estos datos. La referencia muestra una frontera válida del dominio pequeño. Restaura el cociente correcto tras probar el defecto y conserva los rechazos como pruebas separadas de los resultados válidos."
         }
       ]
     }

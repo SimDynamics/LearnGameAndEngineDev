@@ -75,11 +75,11 @@
           "id": "reemplazar_no_sumar",
           "question": "El objetivo es reunir todos los aportes. En cada vuelta se escribe total=aporte. ¿Qué conserva al final esa actualización?",
           "options": [
+            "El número de vueltas, independientemente de los datos.",
             "Sólo el último aporte incorporado.",
-            "La suma de todos los aportes anteriores.",
-            "El número de vueltas, independientemente de los datos."
+            "La suma de todos los aportes anteriores."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "La asignación reemplaza el valor. Para reunir se combina el estado previo con la contribución."
         }
       ]
@@ -117,9 +117,9 @@
           "id": "unidad_del_resumen",
           "question": "n representa piezas aportadas por un pedido. ¿Qué representa suma+=n después de procesar varios pedidos?",
           "options": [
-            "Piezas acumuladas.",
-            "Un número de segundos, sin otra conversión.",
-            "El texto del último pedido."
+            "Cantidad total de piezas aportadas.",
+            "Cantidad de piezas del último pedido.",
+            "Cantidad total de pedidos atendidos."
           ],
           "correctIndex": 0,
           "explanation": "El acumulador conserva la magnitud de los aportes; el nombre y la presentación deben reflejarla."
@@ -206,6 +206,27 @@
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{1}; n <= 4; ++n) {\n        total += n;\n    }\n    std::cout << \"Piezas=\" << total;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de añadir el contador, comprueba dos magnitudes distintas: total reúne las piezas y pedidos cuenta cuántos aportes se procesaron. Ambos se inicializan antes del bucle; en cada vuelta se suma el aporte a uno y una unidad al otro. El resumen se muestra después del recorrido."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    int pedidos{0};\n    for (int n{1}; n <= 5; ++n) {\n        total += n;\n        ++pedidos;\n    }\n    std::cout << \"Piezas=\" << total << \";Pedidos=\" << pedidos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para límite 1, el resumen de esta versión es Piezas=1;Pedidos=1. Para límite 5 es Piezas=15;Pedidos=5. Los cinco aportes son 1,2,3,4,5. Un total correcto con contador 15 no cumple el requisito: confunde piezas con pedidos. Puedes elegir otras etiquetas claras si conservas y compruebas esas dos cantidades."
         }
       ]
     }

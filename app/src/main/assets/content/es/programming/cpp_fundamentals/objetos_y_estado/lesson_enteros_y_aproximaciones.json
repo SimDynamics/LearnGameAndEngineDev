@@ -27,7 +27,7 @@
           "options": [
             "int",
             "double",
-            "Un comentario"
+            "bool"
           ],
           "correctIndex": 1,
           "explanation": "double permite valores con parte fraccionaria; int representa enteros."
@@ -58,11 +58,11 @@
           "type": "multiple_choice",
           "question": "Se imprime 7 a partir de una variable double. ¿Qué sabemos de su tipo?",
           "options": [
-            "Cambió automáticamente a int porque no se ve un punto.",
-            "Sigue siendo double; el formato de salida no cambia el tipo.",
-            "Ya no tiene tipo."
+            "Sigue siendo double aunque la salida no muestre punto decimal.",
+            "Se convirtió en int porque la salida no incluye parte fraccionaria.",
+            "La inserción en cout cambió el objeto a un valor de texto."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "El tipo se establece al definir la variable y no depende de cómo aparece su valor en pantalla."
         },
         {
@@ -106,11 +106,11 @@
           "type": "multiple_choice",
           "question": "Necesitas repartir una longitud de 7 metros entre dos partes y conservar la mitad de metro. ¿Qué cálculo cumple esa intención?",
           "options": [
+            "Mostrar el texto \"7 / 2\"",
             "7 / 2",
-            "7.0 / 2",
-            "Mostrar el texto \"7 / 2\""
+            "7.0 / 2"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "7.0 participa como double y la división conserva 3.5. El literal entre comillas sólo sería texto."
         }
       ]
@@ -196,11 +196,11 @@
           "type": "multiple_choice",
           "question": "Un programa guarda una longitud. ¿Qué información aporta el mensaje Longitud: 2.5 m además del número?",
           "options": [
-            "La unidad con la que debe interpretarse.",
             "Que cualquier cálculo con ese número será exacto.",
+            "La unidad con la que debe interpretarse.",
             "Que el valor dejó de ser double."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "El valor necesita una interpretación; la unidad permite entender qué mide."
         },
         {
@@ -265,12 +265,37 @@
           "type": "multiple_choice",
           "question": "¿Cuál es la primera revisión si se esperaba 4.5 y el programa muestra 4 a partir de 9 / 2?",
           "options": [
-            "Si ambos operandos eran enteros al calcular.",
-            "Si el comentario contiene la palabra mitad.",
-            "Si el archivo tiene más líneas que antes."
+            "Si basta añadir .0 al mensaje impreso sin cambiar el cálculo.",
+            "Si el destino double garantiza conservar la fracción ya descartada.",
+            "Si ambos operandos eran enteros al calcular."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "Una pérdida de la parte fraccionaria puede ocurrir al calcular la división entera, aunque después se guarde en double."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia: Longitud de cada parte"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Para 9 metros divididos en dos partes iguales, la salida es Parte: 4.5 m; para 8, Parte: 4 m. La división debe conservar la parte fraccionaria antes de guardar el resultado. La exploración con operandos enteros 9 y 2 produce 4; ese cociente no cumple la intención de dos longitudes iguales que sumen 9 metros. Mantén divisor distinto de cero y los valores pequeños indicados."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double longitud{9.0};\n    double parte{longitud / 2.0};\n    std::cout << \"Parte: \" << parte << \" m\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los operandos de la referencia permiten división con parte fraccionaria. Cambia 9.0 a 8.0 para el segundo caso. Como exploración separada, sustituye el cálculo por int longitud{9}; int parte{longitud / 2};: el resultado 4 se debe al cociente entero, no a un fallo de cout ni a un cambio de unidad."
         }
       ]
     }

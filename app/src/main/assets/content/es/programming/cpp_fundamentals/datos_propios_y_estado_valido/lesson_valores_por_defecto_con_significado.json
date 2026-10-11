@@ -1,0 +1,207 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado",
+  "title": "Valores por defecto con significado",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decidir si existe una construcción sin argumentos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un contador de cero a cinco puede empezar en cero cuando no se proporciona un valor. Ese valor representa una situación válida y concreta. Nuestro Pedido necesita un código no vacío y una cantidad: no hay un código que podamos inventar para satisfacer cualquier solicitud. La posibilidad de construir sin argumentos es una decisión de la interfaz, no una obligación de todas las clases."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Cuándo conviene ofrecer construcción sin argumentos?",
+          "options": [
+            "Cuando sustituye cualquier dato rechazado por otro cualquiera.",
+            "Siempre que todos sus miembros tengan tipos incorporados.",
+            "Cuando produce un estado válido con significado definido."
+          ],
+          "correctIndex": 2,
+          "explanation": "El estado inicial debe cumplir las reglas y representar lo que promete esa construcción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos constructores, dos formas de construir"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador a;\n    Contador b{4};\n    std::cout << a.valor() << \" \" << b.valor();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contador() es el constructor sin argumentos. El inicializador de valor_ escribe cero y el cuerpo vacío no necesita hacer más. Contador(int inicial) solicita un valor: su lista de inicializadores prevalece sobre el inicializador escrito junto al miembro, y el cuerpo comprueba el dominio. Ambos se llaman como el tipo; las listas de parámetros permiten distinguirlos."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador a{2};\n    Contador b;\n    Contador c{0};\n    std::cout << a.valor() << \":\" << b.valor() << \":\" << c.valor();\n    return 0;\n}\n",
+          "answers": [
+            "2:0:0"
+          ],
+          "explanation": "La construcción explícita de a usa dos; b usa el valor por defecto y c recibe cero explícitamente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El valor por defecto no repara argumentos inválidos"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    try {\n        Contador contador{6};\n        std::cout << contador.valor();\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rechazado\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Rechazado"
+          ],
+          "explanation": "El constructor con argumento comprueba seis y rechaza la construcción. No cambia a la construcción sin argumentos."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Existe Contador() válido. Al solicitar Contador{-1}, ¿qué exige este contrato?",
+          "options": [
+            "Crear el objeto con menos uno y confiar en valor().",
+            "Usar Contador() silenciosamente.",
+            "Rechazar el argumento de esa construcción."
+          ],
+          "correctIndex": 2,
+          "explanation": "Una alternativa válida sin argumentos no convierte todos los argumentos en válidos."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el valor inicial del miembro para que la construcción sin argumentos empiece en cero.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = ___;\n};\n\nint main() {\n    Contador contador;\n    std::cout << contador.valor();\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "El inicializador del miembro define el valor que usa Contador()."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "No solicitar una construcción que el tipo no ofrece"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Error intencional: Pedido necesita codigo y unidades.\n    Pedido pedido;\n    std::cout << pedido.unidades();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando declaramos el constructor de Pedido con esos dos parámetros, no aparece automáticamente otro sin argumentos. El diagnóstico indica que ninguna construcción ofrecida coincide con la solicitud. La reparación consiste en proporcionar argumentos válidos o cambiar justificadamente el diseño; no en hacer públicos los miembros para completarlos después."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué declaración utiliza la interfaz disponible de Pedido?",
+          "options": [
+            "Pedido pedido{}; sin argumentos.",
+            "Pedido pedido; y luego asignar sus datos privados.",
+            "Pedido pedido{\"Q\", 3};"
+          ],
+          "correctIndex": 2,
+          "explanation": "La primera proporciona los dos argumentos requeridos. Las otras solicitan una construcción ausente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Colección vacía y elementos construidos son decisiones distintas"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> pedidos;\n    pedidos.push_back(Pedido{\"T\", 2});\n    std::cout << pedidos.size() << \" \" << pedidos.at(0).codigo();\n    return 0;\n}\n",
+          "answers": [
+            "1 T"
+          ],
+          "explanation": "La colección vacía no necesita construir ningún Pedido. push_back recibe uno construido con argumentos válidos."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Error intencional: dos elementos requieren construccion por defecto de Pedido.\n    std::vector<Pedido> pedidos(2);\n    std::cout << pedidos.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El paréntesis con dos pide una colección que ya contenga dos objetos. Esa forma necesita poder construir cada elemento por defecto. Una colección vacía, en cambio, puede existir aunque el tipo no tenga esa construcción. También podemos dar directamente elementos completos mediante una lista de inicialización."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> pedidos{{\"A\", 1}, {\"B\", 5}};\n    std::cout << pedidos.size() << \":\" << pedidos.at(1).unidades();\n    return 0;\n}\n",
+          "answers": [
+            "2:5"
+          ],
+          "explanation": "Cada elemento recibe sus propios argumentos, en vez de solicitar dos construcciones sin argumentos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir un valor inicial deliberado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Diseña Nivel con un valor entero de cero a tres. Sin argumentos empieza en cero; con un argumento acepta solamente ese dominio y conserva el valor recibido. Usa datos privados, consulta valor() const y señal NivelInvalido para rechazar. Prueba sin argumentos y los valores cero, tres, menos uno y cuatro. Después construye un vector de dos niveles por defecto y presenta ambos valores."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de compilar explica por qué el vector de dos niveles sí tiene sentido aquí, mientras nuestro vector de dos pedidos sin argumentos no podía construirse. No uses un constructor que cambie los argumentos inválidos por cero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia y criterios del valor inicial"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct NivelInvalido {};\nclass Nivel {\npublic:\n    Nivel() {}\n    Nivel(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 3) { throw NivelInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Nivel primero;\n    Nivel segundo{3};\n    std::vector<Nivel> niveles(2);\n    std::cout << primero.valor() << \":\" << segundo.valor() << \" \";\n    for (const auto& nivel : niveles) { std::cout << nivel.valor(); }\n    try {\n        Nivel rechazado{4};\n        std::cout << rechazado.valor();\n    } catch (const NivelInvalido&) { std::cout << \" Rechazado\"; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: la construcción sin argumentos representa cero; la construcción con argumentos conserva cero y tres; rechaza menos uno y cuatro sin completar un objeto inválido; cada elemento del vector empieza en cero; todas las consultas pueden usarse con objetos const. Otras implementaciones que satisfagan estas condiciones también son válidas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    const Contador origen{5};\n    Contador copia = origen;\n    std::cout << copia.valor();\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "explanation": "Copiar un valor existente no solicita el constructor sin argumentos. La copia conserva sus miembros."
+        }
+      ]
+    }
+  ]
+}

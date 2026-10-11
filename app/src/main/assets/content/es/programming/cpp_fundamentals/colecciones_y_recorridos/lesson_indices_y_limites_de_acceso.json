@@ -22,10 +22,10 @@
           "question": "En {6, 10, 3}, ¿cuál es el índice del valor diez?",
           "options": [
             "10",
-            "1",
-            "2"
+            "2",
+            "1"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "La primera posición tiene índice cero; diez está en la segunda, índice uno."
         },
         {
@@ -54,11 +54,11 @@
           "type": "multiple_choice",
           "question": "Un vector tiene tamaño cuatro. ¿Qué lista contiene exactamente sus índices válidos?",
           "options": [
-            "1, 2, 3, 4",
             "0, 1, 2, 3",
-            "0, 1, 2, 3, 4"
+            "0, 1, 2, 3, 4",
+            "1, 2, 3, 4"
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "Son cuatro posiciones desde cero; cuatro es el límite excluido."
         },
         {
@@ -66,10 +66,10 @@
           "question": "¿Qué acceso puede hacerse en un vector vacío?",
           "options": [
             "El índice cero.",
-            "El índice size().",
-            "Ningún acceso a un elemento."
+            "Ningún acceso a un elemento.",
+            "El índice size()."
           ],
-          "correctIndex": 2,
+          "correctIndex": 1,
           "explanation": "Vacío significa que no hay elementos que leer o modificar."
         },
         {
@@ -112,9 +112,9 @@
           "type": "multiple_choice",
           "question": "Un vector de dos elementos recibe push_back(7). ¿Qué diferencia hay frente a asignar siete al índice uno?",
           "options": [
-            "Ambas acciones aumentan siempre el tamaño.",
+            "La asignación busca todas las apariciones de siete.",
             "push_back añade una tercera posición; la asignación cambia la segunda que ya existía.",
-            "La asignación busca todas las apariciones de siete."
+            "Ambas acciones aumentan siempre el tamaño."
           ],
           "correctIndex": 1,
           "explanation": "Añadir y reemplazar describen operaciones diferentes."
@@ -145,11 +145,11 @@
           "type": "multiple_choice",
           "question": "¿Qué diferencia describe correctamente at() y [] para std::vector?",
           "options": [
-            "at() comprueba el índice; [] requiere que ya sea válido.",
             "[] añade elementos automáticamente.",
+            "at() comprueba el índice; [] requiere que ya sea válido.",
             "at() permite cualquier índice sin error."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "La comprobación no sustituye decidir qué hacer si la posición no existe."
         },
         {
@@ -158,7 +158,7 @@
         },
         {
           "type": "note",
-          "text": "at() comprueba el rango en C++ estándar. En la app usamos sólo índices válidos y guardas previas: su ejecutor actual no admite todavía recuperar un fallo mediante out_of_range. Para practicar el manejo de esa excepción hace falta un entorno con soporte de excepciones; aquí no provocamos un acceso fallido."
+          "text": "at() comprueba el rango y señala out_of_range si una posición no existe. La unidad de excepciones enseña cómo informar y recuperarse de ese fallo. Aquí mantenemos los índices válidos y las guardas previas para justificar cada acceso; no hace falta provocar un fallo para comprobar el dominio."
         }
       ]
     },
@@ -224,10 +224,10 @@
           "question": "Quieres acceder al último elemento para cualquier colección. ¿Qué orden es seguro?",
           "options": [
             "Primero acceder; después comprobar el vacío.",
-            "Primero comprobar que no está vacía; dentro de esa rama usar size() - 1.",
-            "Usar siempre size() como índice."
+            "Usar siempre size() como índice.",
+            "Primero comprobar que no está vacía; dentro de esa rama usar size() - 1."
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "La existencia se demuestra antes de calcular y leer la última posición."
         }
       ]
@@ -277,12 +277,16 @@
           "type": "multiple_choice",
           "question": "Con un solo elemento, ¿qué ocurre al modificar el primero y luego leer el último?",
           "options": [
-            "Se observa la modificación: son la misma posición.",
             "Se crea una segunda posición.",
+            "Se observa la modificación: son la misma posición.",
             "El último mantiene una copia independiente."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Los nombres primero y último describen el mismo índice cero cuando el tamaño es uno."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios del laboratorio: modificar una posición existente sin aumentar el tamaño; comprobar vacío antes de acceder; tratar primero y último como la misma posición cuando sólo hay un elemento; comparar todas las salidas con los casos de la consigna."
         }
       ]
     }

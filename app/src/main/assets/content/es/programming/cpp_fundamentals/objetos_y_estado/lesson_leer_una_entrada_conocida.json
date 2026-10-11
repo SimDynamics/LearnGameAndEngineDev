@@ -14,7 +14,7 @@
         },
         {
           "type": "note",
-          "text": "En esta lección analizamos código con una entrada especificada en el enunciado. El laboratorio de la app no ofrece entrada estándar: no puedes introducir allí datos para cin. Para comprobar una lectura real hace falta un entorno C++ que admita esa entrada; los laboratorios de esta unidad usan valores definidos en el código."
+          "text": "En esta lección analizamos código con una entrada especificada en el enunciado. El motor C++ actual admite entrada estándar preparada antes de ejecutar, pero el editor de estas lecciones todavía no ofrece un campo para entregarla: ejecuta con entrada vacía. Tampoco ofrece una consola para escribir durante la ejecución. Los laboratorios de esta unidad usan datos fijados en el código; la lectura real con cin necesita un entorno que permita suministrar el texto de entrada."
         },
         {
           "type": "code",
@@ -83,11 +83,11 @@
           "type": "multiple_choice",
           "question": "El dato que se entregará es una longitud de 1.75. ¿Qué variable permite leerla conservando su parte fraccionaria?",
           "options": [
-            "int longitud = 0;",
             "double longitud = 0.0;",
+            "int longitud = 0;",
             "bool longitud = false;"
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "El tipo destino double permite interpretar esa longitud decimal."
         },
         {
@@ -248,11 +248,11 @@
           "type": "multiple_choice",
           "question": "¿Qué parte verificó directamente el laboratorio con nombre y cajas definidos en el código?",
           "options": [
-            "El procesamiento y la salida para esos datos.",
             "Que una persona pudo introducir datos en cin dentro de la app.",
+            "El procesamiento y la salida para esos datos.",
             "Que cualquier entrada inválida está bien manejada."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "La simulación tiene datos de partida conocidos; no sustituye la prueba de entrada real ni la validación de errores."
         },
         {
@@ -264,6 +264,31 @@
             "6 7"
           ],
           "explanation": "La lectura da seis; la copia conserva seis antes del incremento a siete."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia: Procesamiento con datos fijados"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Esta actividad comprueba una simulación explícita: nombre comienza como \"Rita\", cajas como 4, y se añaden tres cajas antes de presentar Rita: 7. Con \"Leo\" y 2, muestra Leo: 5. Deben cambiar los datos y conservarse el procesamiento y el formato. Esta referencia no realiza una lectura con cin y no acredita esa parte de la práctica."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre{\"Rita\"};\n    int cajas{4};\n    cajas = cajas + 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las definiciones sustituyen aquí sólo la etapa de recibir los datos. Cambia el nombre y las cajas iniciales para el segundo caso. Compara después con el código de lectura real de la página anterior usando el texto de entrada indicado en un entorno que permita entregarlo a cin. La interfaz curricular todavía no ofrece ese campo; mantener esa distinción evita confundir dos habilidades distintas."
         }
       ]
     }

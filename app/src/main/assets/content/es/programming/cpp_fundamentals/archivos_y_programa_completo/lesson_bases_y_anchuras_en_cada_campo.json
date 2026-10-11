@@ -1,0 +1,306 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__bases_y_anchuras_en_cada_campo",
+  "title": "Bases y anchuras en cada campo",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Añadir una especificación después de dos puntos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera la representación decimal, hexadecimal y octal. Dentro de un campo de format, los dos puntos introducen una especificación: {:d} pide decimal, {:x} hexadecimal con letras minúsculas y {:o} octal. El valor sigue siendo el mismo entero. Un campo sin especificación, {}, presenta int decimal. El formato pertenece a ese campo, no a los que aparecen después."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    int numero = 26;\n    std::cout << std::format(\"{:d}|{:x}|{:o}|{}\", numero, numero, numero, numero);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación guiada produce 26|1a|32|26. El último campo sigue siendo decimal aunque el anterior haya pedido octal. Con índices manuales puedes presentar un mismo argumento de distintas formas: {0:d}, {0:x} y {0:o}."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{0:x}|{0:o}|{0}\", 31);\n    return 0;\n}\n",
+          "answers": [
+            "1f|37|31"
+          ],
+          "explanation": "Treinta y uno se representa en cada base. No hay una base persistente que cambie el tercer campo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué significa la x en {0:x}?",
+          "options": [
+            "Presentar el argumento de índice cero en hexadecimal.",
+            "Seleccionar el argumento llamado x.",
+            "Multiplicar el primer argumento por dieciséis."
+          ],
+          "correctIndex": 0,
+          "explanation": "Antes de los dos puntos se selecciona el argumento; después se describe su presentación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La base dos también tiene significado numérico"
+        },
+        {
+          "type": "paragraph",
+          "text": "format ofrece {:b} para base dos. No hace falta estudiar bits para leerla: sus únicas cifras son cero y uno, y las posiciones de derecha a izquierda valen uno, dos, cuatro, ocho, dieciséis, y así sucesivamente, duplicándose. 1101 representa ocho más cuatro más uno: trece. Las posiciones cuyo dígito es cero no aportan cantidad. La escritura binaria es otra representación del mismo valor."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    int numero = 21;\n    std::cout << std::format(\"{:b}|{:d}\", numero, numero);\n    return 0;\n}\n",
+          "answers": [
+            "10101|21"
+          ],
+          "explanation": "Veintiuno es dieciséis más cuatro más uno. Las posiciones de ocho y dos llevan cero."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "En base dos, ¿qué cantidad representa 1010?",
+          "options": [
+            "Doce: ocho más cuatro.",
+            "Diez: ocho más dos.",
+            "Mil diez: se leen las cifras como decimal."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las cuatro posiciones valen ocho, cuatro, dos y uno; sólo aportan ocho y dos."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{0:b}|{0:x}|{0}\", 0);\n    return 0;\n}\n",
+          "answers": [
+            "0|0|0"
+          ],
+          "explanation": "Cero se representa con un dígito cero en estas bases. Ningún campo necesita inventar una posición no nula."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prefijos y mayúsculas son opciones de presentación"
+        },
+        {
+          "type": "paragraph",
+          "text": "La letra X selecciona hexadecimal con A..F mayúsculas. La opción # pide el prefijo correspondiente: 0x para x, 0X para X, 0b para b y un cero inicial para octal cuando el valor no es cero. Esos caracteres se añaden al resultado; no convierten un dato en texto antes de calcular. Decimal no añade un prefijo de base."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{0:#x}|{0:#X}|{0:#o}|{0:#b}\", 31);\n    return 0;\n}\n",
+          "answers": [
+            "0x1f|0X1F|037|0b11111"
+          ],
+          "explanation": "Se selecciona el mismo argumento y cada campo incluye el indicador de su base. Treinta y uno suma las primeras cinco posiciones binarias."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{0:#x}|{0:#o}|{0:d}\", 0);\n    return 0;\n}\n",
+          "answers": [
+            "0x0|0|0"
+          ],
+          "explanation": "Hexadecimal conserva el prefijo solicitado. Octal cero ya se representa como 0, sin añadir otro cero de prefijo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué produce {0:X} para el entero veintiséis, sin #?",
+          "options": [
+            "1A",
+            "0X1A",
+            "1a"
+          ],
+          "correctIndex": 0,
+          "explanation": "X elige letras mayúsculas. El prefijo exige además la opción #."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un ancho mínimo pertenece a un campo"
+        },
+        {
+          "type": "paragraph",
+          "text": "En {:4d}, el cuatro pide un ancho mínimo de cuatro posiciones y d pide decimal. En los datos ASCII de estas prácticas cada carácter ocupa una posición. Por defecto un entero se alinea a la derecha con espacios. Si ya ocupa cuatro o más posiciones, no necesita relleno ni se recorta. El ancho se escribe en cada campo que lo requiere."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:4d}]|[{:4d}]|[{}]\", 7, 1000, 2);\n    return 0;\n}\n",
+          "answers": [
+            "[   7]|[1000]|[2]"
+          ],
+          "explanation": "El primer entero recibe tres espacios. El segundo alcanza el mínimo. El último campo no tiene un ancho pedido."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:4d}]|[{}]\", 12345, 8);\n    return 0;\n}\n",
+          "answers": [
+            "[12345]|[8]"
+          ],
+          "explanation": "El mínimo no limita ni trunca las cinco cifras. Tampoco se hereda al campo siguiente."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dos campos necesitan mínimo cinco posiciones. ¿Qué patrón lo expresa para dos enteros?",
+          "options": [
+            "\"[{}]|[{:5d}]\"",
+            "\"[{:5d}]|[{:5d}]\"",
+            "\"[{:5d}]|[{}]\""
+          ],
+          "correctIndex": 1,
+          "explanation": "Cada especificación se aplica al argumento de su propio campo."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir alineación y carácter de relleno"
+        },
+        {
+          "type": "paragraph",
+          "text": "La opción < alinea el contenido a la izquierda y > lo alinea a la derecha. {:<6} pide mínimo seis posiciones con contenido a la izquierda. Si delante de la alineación aparece un carácter, se usa como relleno: {:.>4d} significa relleno punto, alineación derecha, ancho cuatro y entero decimal. El punto de esa posición es relleno; no es una precisión. Cada campo establece sus propias opciones."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:<6}]|[{:.>4d}]|[{}]\", \"Luz\", 12, 5);\n    return 0;\n}\n",
+          "answers": [
+            "[Luz   ]|[..12]|[5]"
+          ],
+          "explanation": "La cadena añade espacios después; el entero añade puntos antes. El último entero no hereda ninguno de esos formatos."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:>5}]|[{:_<4}]\", \"A\", \"BC\");\n    return 0;\n}\n",
+          "answers": [
+            "[    A]|[BC__]"
+          ],
+          "explanation": "La primera cadena se alinea a la derecha con espacios; la segunda a la izquierda con guiones bajos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Seguimos con etiquetas ASCII pequeñas para que la predicción del ancho sea inequívoca. Con texto Unicode, las posiciones de presentación no se deducen contando bytes. Aquí tampoco usaremos ancho mínimo para recortar etiquetas: una cadena más larga se conserva."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ceros iniciales para una secuencia decimal"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para un entero no negativo, {:04d} pide mínimo cuatro posiciones decimales y relleno numérico con ceros. La opción 0 va delante del ancho cuatro; d hace explícita la base. Este cero no convierte el argumento en octal. Cada llamada produce caracteres nuevos y no deja una configuración persistente."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"muestra_{:04d}.txt\", 23) << \"|\"\n        << std::format(\"{}\", 23);\n    return 0;\n}\n",
+          "answers": [
+            "muestra_0023.txt|23"
+          ],
+          "explanation": "El número recibe ceros sólo dentro del primer campo. El siguiente patrón lo presenta sin relleno."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:04d}]|[{:04d}]\", 0, 1000);\n    return 0;\n}\n",
+          "answers": [
+            "[0000]|[1000]"
+          ],
+          "explanation": "Cero necesita cuatro cifras por el relleno pedido. Mil ya alcanza las cuatro posiciones."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo la letra que pide base decimal en el campo con ancho cuatro y ceros.",
+          "code": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::format(\"{:04___}\", 8);\n    return 0;\n}\n",
+          "answers": [
+            "d"
+          ],
+          "explanation": "La especificación 04d separa relleno y ancho de la elección de base."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una etiqueta con un dato reutilizado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe etiqueta(const string& codigo, int cantidad), que devuelve [CODIGO]|[DECIMAL]|[HEX]. codigo contiene de cero a ocho caracteres ASCII y cantidad está entre cero y mil. El código se alinea a la izquierda con mínimo seis posiciones y espacios; DECIMAL usa mínimo cuatro con ceros; HEX usa minúsculas sin prefijo ni ancho pedido. Usa un patrón literal con índices para presentar cantidad de las dos formas. No imprimas dentro de la función. En main compón \"Sur\", 10 y \"Pasillo\", 31 en líneas separadas."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de compilar, predice qué etiquetas requieren relleno y cuál supera su mínimo. Añade código vacío con cantidad cero y un código de seis caracteres con cantidad mil. Comprueba que las dos representaciones proceden de un solo dato, y que ese dato sigue disponible para sumar uno después."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia y criterios de las etiquetas"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string etiqueta(const std::string& codigo, int cantidad) {\n    return std::format(\"[{0:<6}]|[{1:04d}]|[{1:x}]\", codigo, cantidad);\n}\n\nint main() {\n    int cantidad = 10;\n    std::cout << etiqueta(\"Sur\", cantidad) << \"\\n\" << etiqueta(\"Pasillo\", 31) << \"\\n\"\n        << etiqueta(\"\", 0) << \"\\n\" << etiqueta(\"Taller\", 1000) << \"\\n\" << cantidad + 1;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las líneas son [Sur   ]|[0010]|[a], [Pasillo]|[0031]|[1f], [      ]|[0000]|[0], [Taller]|[1000]|[3e8] y 11. Criterios: cada campo tiene sus propias opciones; se reutiliza la misma cantidad; la función devuelve texto sin cambiar los argumentos ni imprimir; los campos vacíos, largos y de ancho exacto conservan sus separadores; los ceros no cambian la base de los cálculos. Se aceptan otras implementaciones que cumplan el contrato."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::hex << std::format(\"{:04d}\", 15) << \"|\" << 15;\n    return 0;\n}\n",
+          "answers": [
+            "0015|f"
+          ],
+          "explanation": "El patrón presenta decimal con ceros; cout conserva hexadecimal para el entero insertado directamente."
+        },
+        {
+          "type": "paragraph",
+          "text": "En una sesión posterior reconstruye una etiqueta con otros datos sin mirar el patrón de referencia. Justifica primero base, ancho mínimo y lado del relleno de cada campo. Cambia un dato manteniendo el patrón y luego cambia una especificación manteniendo el dato para separar ambas decisiones."
+        }
+      ]
+    }
+  ]
+}

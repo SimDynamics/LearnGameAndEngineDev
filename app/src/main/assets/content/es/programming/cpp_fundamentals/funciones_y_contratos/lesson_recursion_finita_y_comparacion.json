@@ -25,11 +25,11 @@
           "type": "multiple_choice",
           "question": "¿Qué dos elementos justifican el fin de este cálculo para un argumento entre 0 y 8?",
           "options": [
-            "El caso 0 que regresa y el argumento que disminuye en 1.",
+            "Que return aparezca después de una suma.",
             "Sólo el nombre de la función.",
-            "Que return aparezca después de una suma."
+            "El caso 0 que regresa y el argumento que disminuye en 1."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "El descenso no negativo alcanza 0 y el caso base no hace otra llamada."
         }
       ]
@@ -86,11 +86,11 @@
           "type": "multiple_choice",
           "question": "¿Qué se compara al probar ambas versiones con los mismos datos válidos?",
           "options": [
-            "Los valores devueltos y el resultado esperado del problema.",
+            "Que las dos usen un parámetro por referencia.",
             "Sólo que tengan el mismo número de líneas.",
-            "Que las dos usen un parámetro por referencia."
+            "Los valores devueltos y el resultado esperado del problema."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "La equivalencia se refiere al cálculo prometido. La organización interna puede ser distinta."
         },
         {
@@ -117,9 +117,9 @@
           "type": "multiple_choice",
           "question": "Con tope igual a 8, ¿qué deben entregar las dos versiones?",
           "options": [
-            "8 8",
+            "0 36",
             "36 36",
-            "0 36"
+            "8 8"
           ],
           "correctIndex": 1,
           "explanation": "La suma de 1 a 8 es 36. Los dos recorridos cumplen el mismo contrato."
@@ -140,22 +140,22 @@
           "type": "multiple_choice",
           "question": "Para una llamada recursiva con pendientes positivo que debe alcanzar 0, ¿qué argumento aporta progreso hacia la base?",
           "options": [
-            "pendientes - 1",
             "pendientes",
-            "pendientes + 1"
+            "pendientes + 1",
+            "pendientes - 1"
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "La resta reduce un entero positivo y conserva un argumento no negativo hasta alcanzar 0."
         },
         {
           "type": "multiple_choice",
           "question": "¿Qué prueba aísla directamente el caso base de suma_recursiva sin realizar otras llamadas recursivas?",
           "options": [
-            "tope igual a 0.",
             "tope igual a 8.",
-            "Un argumento fuera del dominio."
+            "Un argumento fuera del dominio.",
+            "tope igual a 0."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "0 entra en la base y regresa de inmediato. Un dato rechazado por main no prueba ese cuerpo."
         },
         {
@@ -165,6 +165,31 @@
         {
           "type": "note",
           "text": "Ya puedes nombrar cálculos, comunicar sus dominios, distinguir lectura y modificación, componer funciones y justificar sus caminos. Las clases, la gestión de recursos y otros mecanismos del lenguaje ampliarán estas ideas después."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: La base y la suma que se promete"
+        },
+        {
+          "type": "note",
+          "text": "Compara después de realizar el laboratorio y anotar sus resultados previstos. La referencia presenta una organización posible; los criterios permiten reconocer otras implementaciones que cumplan los mismos contratos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Las versiones iterativa y recursiva deben coincidir: tope 3 produce 6 6, 0 produce 0 0, 1 produce 1 1 y 8 produce 36 36. -1 y 9 producen Fuera del dominio, sin llamadas a las funciones. Con la variante recursiva cuyo caso base devuelve 1, tope 0 produce 0 1; para 3 sería 6 7. Esta variante termina pero ya no cumple la suma. Restaura el caso base 0."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 0;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Fuera del dominio\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia prueba el caso base. Con un tope positivo validado, cada llamada recursiva usa un entero no negativo menor: tope-1, hasta alcanzar cero. El bucle visita de 1 a tope, y no tiene cuerpo para cero. La validación limita ambas versiones a 0..8 y los resultados a 0..36. Verificar que termina y verificar que devuelve la suma correcta son obligaciones distintas."
         }
       ]
     }

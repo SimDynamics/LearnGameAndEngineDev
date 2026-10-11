@@ -1,0 +1,294 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__precision_por_campo_y_resumenes_formateados",
+  "title": "Precisión por campo y resúmenes formateados",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la notación del double en su campo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera fixed, scientific y general como decisiones de presentación. En format las letras correspondientes son f, e y g dentro de cada campo. Una precisión se escribe con punto y número: {:.2f} pide dos cifras tras el punto en notación fija; {:.2e}, dos cifras tras el punto de la parte científica; {:.2g}, dos cifras significativas en total. Cada campo elige su regla sin cambiar otros campos ni el valor recibido."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    double medida = 8.8125;\n    std::cout << std::format(\"{0:.2f}|{0:.2e}|{0:.2g}\", medida);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparación guiada produce 8.81|8.81e+00|8.8. El mismo argumento se presenta tres veces con reglas distintas. El punto de .2 es precisión; en un relleno como .>8, que ya estudiaste, el punto ocupa otra posición de la especificación."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    double medida = 4.3125;\n    std::cout << std::format(\"{0:.2f}|{0:.2e}|{0:.2g}\", medida);\n    return 0;\n}\n",
+          "answers": [
+            "4.31|4.31e+00|4.3"
+          ],
+          "explanation": "Las dos primeras precisiones cuentan cifras tras el punto; la tercera cuenta las significativas totales."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Qué pide {:.3e} para un double?",
+          "options": [
+            "Tres posiciones de ancho para toda la cadena.",
+            "Tres cifras tras el punto de la parte científica.",
+            "Tres cifras significativas incluyendo la anterior al punto."
+          ],
+          "correctIndex": 1,
+          "explanation": "La e elige notación científica y .3 controla las cifras posteriores al punto de esa parte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un campo básico no hereda precisión seis del flujo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para double, {} sin letra ni precisión elige una representación compacta que permite recuperar el mismo valor al convertirla de nuevo a double. No equivale a heredar la precisión seis de un ostream. Con letra f o e pero sin precisión explícita se usan seis cifras tras el punto; con g sin precisión explícita, seis significativas. Si tu contrato exige dos decimales, escríbelo en el campo."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    double medida = 6.91015625;\n    std::cout << std::defaultfloat << std::setprecision(6) << medida << \"|\"\n        << std::format(\"{}\", medida);\n    return 0;\n}\n",
+          "answers": [
+            "6.91016|6.91015625"
+          ],
+          "explanation": "El flujo aplica seis cifras significativas; el campo básico de format compone una representación que conserva más detalle de este dato."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{0:f}|{0:e}|{0:g}\", 6.91015625);\n    return 0;\n}\n",
+          "answers": [
+            "6.910156|6.910156e+00|6.91016"
+          ],
+          "explanation": "f y e usan seis cifras tras el punto; g usa seis significativas en total."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un informe exige siempre dos cifras tras el punto. ¿Qué campo expresa esa decisión para double?",
+          "options": [
+            "{}",
+            "{:.2f}",
+            "{:.2g}"
+          ],
+          "correctIndex": 1,
+          "explanation": "La notación fija con precisión dos pide las dos cifras posteriores al punto. La general no conserva esa forma en todos los valores."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El formato no cambia el dato ni deja un modo activo"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    double medida = 6.9375;\n    std::string corta = std::format(\"{:.2f}\", medida);\n    std::cout << corta << \"|\" << std::format(\"{}\", medida * 16);\n    return 0;\n}\n",
+          "answers": [
+            "6.94|111"
+          ],
+          "explanation": "La cadena corta presenta el valor redondeado. El cálculo posterior sigue usando 6.9375."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::scientific << std::setprecision(1)\n        << std::format(\"{:.2f}\", 7.8125) << \"|\" << 7.8125;\n    return 0;\n}\n",
+          "answers": [
+            "7.81|7.8e+00"
+          ],
+          "explanation": "format compone notación fija en una cadena. cout conserva científico con una cifra tras el punto para el double que recibe directamente."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{:.2f}|{}\", 3.5, 3.5);\n    return 0;\n}\n",
+          "answers": [
+            "3.50|3.5"
+          ],
+          "explanation": "La precisión fija pertenece al primer campo. El segundo vuelve a sus reglas básicas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los ejemplos usan valores conocidos y pequeños que permiten comprobar la representación sin quedar justo a mitad entre dos resultados de redondeo. Aumentar la precisión muestra otra representación de double; no corrige por sí solo una aproximación previa. Calcula antes de componer y conserva el dato original."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar ancho y precisión sin confundirlos"
+        },
+        {
+          "type": "paragraph",
+          "text": "En {:8.2f}, el ocho es ancho mínimo, .2 es precisión y f es notación fija. Primero se obtiene la representación numérica y luego se añade relleno si no alcanza el mínimo. La alineación predeterminada de este double es derecha. {:*>8.2f} añade relleno asterisco y esa alineación explícita. Un ancho menor que la representación tampoco la recorta."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:8.2f}]|[{:*>8.2f}]\", 3.5, 3.5);\n    return 0;\n}\n",
+          "answers": [
+            "[    3.50]|[****3.50]"
+          ],
+          "explanation": "Cada representación 3.50 ocupa cuatro posiciones; se añaden otras cuatro con el relleno elegido."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:3.2f}]|[{:.0f}]\", 12.5, 6.9375);\n    return 0;\n}\n",
+          "answers": [
+            "[12.50]|[7]"
+          ],
+          "explanation": "12.50 supera el mínimo tres y se conserva. Precisión cero pide una presentación redondeada sin cifras tras el punto."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Completa sólo el número de precisión para pedir dos cifras tras el punto y mínimo siete posiciones.",
+          "code": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::format(\"[{:7.___f}]\", 2.0);\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "El siete describe el ancho. El número después del punto describe la precisión fija."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La especificación debe corresponder al tipo"
+        },
+        {
+          "type": "paragraph",
+          "text": "La f y su precisión numérica se aplican aquí a double. Un int no se vuelve double porque escribas f en el patrón. Para presentar una cantidad entera como un valor con decimales debes decidir una conversión de tipo explícita antes de formatear. Esa decisión no modifica la variable entera original."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    int cantidad = 7;\n    std::cout << std::format(\"{:.2f}|{}\", static_cast<double>(cantidad), cantidad);\n    return 0;\n}\n",
+          "answers": [
+            "7.00|7"
+          ],
+          "explanation": "La conversión produce un argumento double para el primer campo. La variable cantidad sigue siendo int y el segundo campo presenta siete."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Cuál llamada corresponde a los tipos del patrón y puede presentar dos decimales?",
+          "options": [
+            "std::format(\"{:.2f}\", 3)",
+            "std::format(\"{:.2f}\", 3.5)",
+            "std::format(\"{:.2d}\", 3)"
+          ],
+          "correctIndex": 1,
+          "explanation": "El argumento 3.5 es double y corresponde a .2f. El entero 3 no corresponde a la especificación flotante f, y la precisión numérica .2 no se aplica al campo entero d."
+        },
+        {
+          "type": "paragraph",
+          "text": "El contrato de estas actividades usa patrones literales comprobados. Revisa los argumentos y sus tipos al corregir un diagnóstico; no cambies silenciosamente el dato para hacer coincidir un resultado visto. La conversión debe responder a lo que el programa quiere representar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir un informe a patrones explícitos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construye Lectura con codigo string, cantidad int y medida double. El llamador entrega hasta veinte lecturas, con códigos ASCII de cero a ocho caracteres, cantidades de cero a mil y medidas de cero a veinte. Escribe componer_resumen(const vector<Lectura>&), que devuelve string sin imprimir ni modificar las lecturas. Cada línea es [CODIGO]|[CANTIDAD]|[MEDIDA]: código a la izquierda con mínimo seis y espacios, cantidad decimal con mínimo cuatro y ceros, medida fija con dos decimales. Usa format para las filas y el resumen no vacío."
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de las filas, añade Datos:N;Total:T;Media:M. N es el número de lecturas; T suma cantidades; M es la media simple de las medidas originales, una por lectura, presentada con dos decimales. Cantidad no es un peso de esa media. Para vacío devuelve Datos:0;Total:0;Sin media, sin dividir. Usa {\"N\", 4, 8.8125} y {\"E\", 9, 4.3125}. Presenta el resultado y comprueba después que la primera medida multiplicada por dieciséis sigue dando ciento cuarenta y uno."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construye aqui el programa de la consigna.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice los campos, el total y la media antes de compilar. Prueba también vacío, una lectura de cantidad cero y una etiqueta más larga que seis posiciones. Cada llamada debe comenzar un resultado nuevo. Los límites dados mantienen la suma de cantidades dentro de int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia y criterios del resumen"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstruct Lectura {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_resumen(const std::vector<Lectura>& lecturas) {\n    std::string texto;\n    int total = 0;\n    double suma = 0.0;\n    for (const auto& lectura : lecturas) {\n        texto += std::format(\"[{:<6}]|[{:04d}]|[{:.2f}]\\n\", lectura.codigo,\n            lectura.cantidad, lectura.medida);\n        total += lectura.cantidad;\n        suma += lectura.medida;\n    }\n    if (lecturas.empty()) {\n        texto += \"Datos:0;Total:0;Sin media\";\n    } else {\n        double media = suma / static_cast<double>(lecturas.size());\n        texto += std::format(\"Datos:{};Total:{};Media:{:.2f}\", lecturas.size(), total, media);\n    }\n    return texto;\n}\n\nint main() {\n    const std::vector<Lectura> lecturas{{\"N\", 4, 8.8125}, {\"E\", 9, 4.3125}};\n    std::cout << componer_resumen(lecturas) << \"\\n\";\n    std::cout << std::format(\"{}\", lecturas.at(0).medida * 16) << \"\\n\";\n    const std::vector<Lectura> vacias;\n    std::cout << componer_resumen(vacias);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos filas son [N     ]|[0004]|[8.81] y [E     ]|[0009]|[4.31]. El resumen es Datos:2;Total:13;Media:6.56: las medidas suman 13.125 y su media original es 6.5625. Las líneas siguientes son 141 y Datos:0;Total:0;Sin media. Criterios: asociaciones y orden conservados; especificaciones propias para cada campo; cuentas realizadas con los datos originales; vacío sin división; composición devuelta sin imprimir dentro de la función; llamadas independientes; argumentos intactos. Otra organización que cumpla ese contrato es válida."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para una lectura, la media es su propia medida. Para un código de ocho caracteres no debe recortarse el nombre. Los ceros de la cantidad son caracteres de presentación decimal; no intervienen en la suma. Una colección constante permite leer y componer, pero no modificar sus registros."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir el formato interno del destino"
+        },
+        {
+          "type": "paragraph",
+          "text": "format devuelve una cadena ya compuesta. Si luego insertas esa cadena en un flujo con setw pendiente, se puede rellenar la cadena completa. El patrón no lee ese estado; el destino actúa cuando recibe el resultado. Esta diferencia permite explicar cuándo configurar cada operación, sin atribuir a format los efectos de una inserción posterior."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predice la salida exacta.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << \"[\" << std::setfill('.') << std::setw(9)\n        << std::format(\"[{:3d}]\", 5) << \"]|\" << 5;\n    return 0;\n}\n",
+          "answers": [
+            "[....[  5]]|5"
+          ],
+          "explanation": "El campo interno produce [  5], de cinco caracteres. El destino añade cuatro puntos hasta ancho nueve para la cadena completa; setw se consume en esa inserción."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un nombre compuesto debe conservar ceros internos y no añadir relleno externo al mostrarlo. ¿Dónde expresas los ceros de su número?",
+          "options": [
+            "En la especificación de ese campo dentro del patrón.",
+            "En una modificación del entero almacenado.",
+            "En setw aplicado después de insertar toda la cadena."
+          ],
+          "correctIndex": 0,
+          "explanation": "La representación del número se decide dentro del patrón. El ancho externo trataría la cadena completa."
+        },
+        {
+          "type": "paragraph",
+          "text": "En una sesión posterior crea un resumen de datos propios dentro del dominio. Antes de programar, escribe qué se calcula, qué se presenta y qué destino recibe la cadena. Recupera vacío, una lectura y varias; cambia la precisión sin cambiar las cuentas, y comprueba los datos además de los caracteres. Consulta la referencia sólo después del intento."
+        }
+      ]
+    }
+  ]
+}

@@ -14,7 +14,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Para justificar una terminación identifica una magnitud que se aproxima al final y que no puede seguir cambiando indefinidamente dentro del dominio del problema. Para una cuenta pequeña, quedan disminuye hasta cero; para partir una cantidad entera positiva en mitades, la cantidad se reduce hasta cero. La condición debe rechazar el estado final. Los límites de representación del tipo también forman parte del razonamiento."
+          "text": "Para justificar una terminación identifica una magnitud que se aproxima al final y que no puede seguir cambiando indefinidamente dentro del dominio del problema. Para una cuenta pequeña, quedan disminuye hasta cero; para partir una cantidad entera positiva en mitades, la cantidad se reduce hasta cero. La condición debe rechazar el estado final. Los límites de representación del tipo también forman parte del razonamiento. La actualización cantidad /= 2 del siguiente programa equivale aquí a cantidad = cantidad / 2: obtiene el cociente entero y lo guarda en el mismo objeto. Con cantidad positiva y divisor fijo 2, el cociente se trunca hacia cero y es menor que la cantidad anterior. La operación no utiliza un divisor variable ni intenta dividir entre cero."
         },
         {
           "type": "code",
@@ -98,9 +98,9 @@
           "id": "igualdad_incompatible",
           "question": "Analiza sin ejecutar: n empieza en 1 y el procedimiento suma 2 mientras n!=4. ¿Qué defecto revela la secuencia inicial 1,3,5,7?",
           "options": [
-            "El avance salta el valor que la condición exige alcanzar; no se ha justificado una salida.",
-            "El operador != cambia n a 4 cuando se supera ese valor.",
-            "Todo incremento positivo garantiza encontrar cualquier entero."
+            "El avance salta el valor exigido y no justifica una salida.",
+            "La primera cantidad mayor que 4 hace falsa la condición n!=4.",
+            "El recorrido termina en 3 porque es el último valor menor que 4."
           ],
           "correctIndex": 0,
           "explanation": "El criterio de salida debe ser compatible con la secuencia de estados. No se debe depender de desbordamientos."
@@ -121,11 +121,11 @@
           "id": "no_usar_desbordamiento",
           "question": "Un recorrido incrementa un int sin límite pequeño justificable. ¿Por qué no debes proponer que terminará cuando el número se vuelva negativo por desbordamiento?",
           "options": [
-            "El desbordamiento de enteros con signo no define una vuelta segura al inicio; hay que limitar el dominio antes.",
-            "Todo int se convierte automáticamente en double antes de desbordar.",
-            "El lenguaje garantiza que un desbordamiento termina el bucle."
+            "Un int con signo siempre vuelve a un negativo y permite continuar.",
+            "El límite sólo afecta la impresión y no el cálculo del siguiente int.",
+            "El desbordamiento con signo no garantiza una vuelta segura."
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "La prueba de terminación debe mantenerse dentro de valores representables. Aquí no ejecutamos ejemplos con desbordamiento."
         }
       ]
@@ -186,11 +186,11 @@
           "id": "procedimiento_cero_casos",
           "question": "El requisito permite una cantidad de trabajo de cero. Ninguna acción de preparación debe ocurrir si ya está terminado. ¿Dónde corresponde la primera comprobación?",
           "options": [
-            "Antes del cuerpo, mediante while o un for apropiado.",
             "Siempre después del cuerpo, mediante do-while.",
+            "Antes del cuerpo, mediante while o un for apropiado.",
             "Después de imprimir obligatoriamente el primer trabajo."
           ],
-          "correctIndex": 0,
+          "correctIndex": 1,
           "explanation": "Cero casos es parte del requisito, por lo que la estructura debe poder omitir todo el cuerpo."
         },
         {
@@ -200,6 +200,27 @@
         {
           "type": "cpp_compiler",
           "initialCode": "#include <iostream>\n\nint main() {\n    int cantidad{13};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        std::cout << cantidad << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la construcción del laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contrasta después de predecir y ejecutar los cuatro casos. Criterios: dividir siempre entre 2; mostrar cantidad después de cada actualización; incrementar pasos exactamente una vez por actualización; conservar cero pasos cuando la cantidad inicial es cero. La cuenta final pertenece a la salida posterior al bucle."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{13};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n        std::cout << cantidad << \";\";\n    }\n    std::cout << \"Fin;Pasos=\" << pasos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Salidas de esta referencia: inicio 0 → Fin;Pasos=0; inicio 1 → 0;Fin;Pasos=1; inicio 8 → 4;2;1;0;Fin;Pasos=4; inicio 13 → 6;3;1;0;Fin;Pasos=4. El divisor fijo nunca es cero. Con enteros positivos, cada nueva cantidad es menor que la anterior y permanece no negativa; esa reducción y la comprobación antes del cuerpo justifican la terminación en el dominio dado."
         }
       ]
     }

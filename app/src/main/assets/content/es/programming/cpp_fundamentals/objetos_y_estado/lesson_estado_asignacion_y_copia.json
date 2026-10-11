@@ -57,11 +57,11 @@
           "type": "multiple_choice",
           "question": "En cajas = cajas + 5;, cajas valía 2. ¿Cuál es el orden de acciones?",
           "options": [
+            "Crear una segunda variable llamada cajas.",
             "Guardar 5 y después sumar 2.",
-            "Leer 2, calcular 2 + 5 y almacenar 7 en cajas.",
-            "Crear una segunda variable llamada cajas."
+            "Leer 2, calcular 2 + 5 y almacenar 7 en cajas."
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "explanation": "Una asignación usa el valor anterior para calcular su derecha y luego modifica el objeto indicado a la izquierda."
         }
       ]
@@ -100,8 +100,8 @@
           "question": "Tras copiar cantidad a anterior, modificas cantidad. ¿Qué dato conserva anterior si no lo vuelves a asignar?",
           "options": [
             "El valor que recibió al copiar.",
-            "Siempre el valor más reciente de cantidad.",
-            "El nombre de cantidad como texto."
+            "El nombre de cantidad como texto.",
+            "Siempre el valor más reciente de cantidad."
           ],
           "correctIndex": 0,
           "explanation": "La copia guarda un valor, no una instrucción para mantener ambas variables sincronizadas."
@@ -220,11 +220,11 @@
           "type": "multiple_choice",
           "question": "¿Qué versión expresa directamente aumentar en una unidad el entero turnos?",
           "options": [
-            "++turnos;",
             "turnos = 1;",
-            "int turnos = 1;"
+            "int turnos = 1;",
+            "++turnos;"
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "La primera modifica el valor existente. Asignar 1 lo reemplaza por uno; volver a definirlo no es esa actualización."
         },
         {
@@ -271,7 +271,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Copiar antes de aumentar conserva una fotografía del estado inicial. Copiar después conservaría 8 y produciría Antes: 8. El nombre anterior sólo describe una intención: el orden efectivo debe hacerla verdadera."
+          "text": "Copiar antes de aumentar conserva una fotografía del estado inicial. Copiar después conservaría 8 y produciría Antes: 8. El nombre anterior sólo describe una intención: el orden efectivo debe hacerla verdadera. En la recuperación siguiente aparece cajas *= 3: multiplica el valor actual de cajas por tres y guarda el resultado en cajas. En este caso equivale a cajas = cajas * 3. El símbolo * expresa multiplicación, y *= combina ese cálculo con la actualización del mismo objeto; no cambia las copias que ya se hicieron."
         },
         {
           "type": "output_prediction",
@@ -287,12 +287,37 @@
           "type": "multiple_choice",
           "question": "Un comentario dice que el valor anterior es 4, pero el código copia después de asignar 9. ¿Qué determina la salida?",
           "options": [
-            "El comentario obliga al programa a conservar 4.",
-            "Las instrucciones efectivas conservan 9; hay que corregir el código o la explicación según la intención.",
-            "El compilador elige entre ambos valores."
+            "La copia recibe 4 porque el comentario fija ese valor esperado.",
+            "La copia recibe 9; el momento debe concordar con la intención.",
+            "La copia recibe 4 porque el nombre anterior conserva la historia."
           ],
           "correctIndex": 1,
           "explanation": "Los comentarios no se ejecutan; un nombre o comentario no puede sustituir una actualización correcta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solución de referencia: Conservar el estado anterior"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta comparación después de construir y comprobar tu intento. La referencia muestra una implementación posible; los criterios permiten reconocer otras soluciones correctas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Antes del aumento, aforo vale 5 y anterior recibe una copia de ese valor. La primera versión muestra Antes: 5 y Ahora: 8 en líneas distintas. Si anterior se define después del aumento, muestra Antes: 8 y Ahora: 8. La tabla debe explicar el momento de la copia; anterior no se mantiene enlazado al valor futuro de aforo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int aforo{5};\n    int anterior{aforo};\n    aforo = aforo + 3;\n    std::cout << \"Antes: \" << anterior << '\\n';\n    std::cout << \"Ahora: \" << aforo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tras definir aforo: aforo=5. Tras la copia: aforo=5, anterior=5. Tras el aumento: aforo=8, anterior=5. Para la segunda versión mueve la definición de anterior debajo de aforo = aforo + 3;: entonces copia 8. Cambiar sólo la etiqueta Antes no explica ni modifica el estado guardado."
         }
       ]
     }

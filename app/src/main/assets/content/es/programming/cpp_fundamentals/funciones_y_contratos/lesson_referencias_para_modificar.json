@@ -47,11 +47,11 @@
           "type": "multiple_choice",
           "question": "Para void aumentar_nivel(int& nivel), main declara int actual = 3;. ¿Qué llamada aporta ese objeto modificable?",
           "options": [
-            "aumentar_nivel(actual);",
+            "aumentar_nivel(\"actual\");",
             "aumentar_nivel(3);",
-            "aumentar_nivel(\"actual\");"
+            "aumentar_nivel(actual);"
           ],
-          "correctIndex": 0,
+          "correctIndex": 2,
           "explanation": "actual nombra un objeto int modificable. El parámetro puede vincularse con él."
         },
         {
@@ -128,7 +128,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Comprueba esa variante con los datos iniciales y restaura int&. El programa de la variante tiene un comportamiento definido; su salida permite detectar que ya no cumple el requisito de modificación."
+          "text": "Como variante, cambia el recorrido de for (int& valor : datos) a for (int valor : datos). Comprueba la salida con los datos iniciales y restaura int&. El programa de la variante tiene un comportamiento definido; su salida permite detectar que ya no cumple el requisito de modificación."
         }
       ]
     },
@@ -142,11 +142,11 @@
           "type": "multiple_choice",
           "question": "Una función sólo cuenta elementos y otra debe reemplazar negativos. ¿Qué interfaces expresan respectivamente lectura y modificación del vector original?",
           "options": [
-            "Ambas con std::vector<int> por valor.",
             "La primera con const std::vector<int>& y la segunda con std::vector<int>&.",
+            "Ambas con std::vector<int> por valor.",
             "La primera con std::vector<int>& y la segunda con const std::vector<int>&."
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "explanation": "La primera recibe permiso de lectura y la segunda permiso de modificación, sin copiar el contenedor."
         },
         {
@@ -162,6 +162,31 @@
         {
           "type": "note",
           "text": "Antes de una llamada, revisa los permisos de sus parámetros. Después, observa qué objetos pueden haber cambiado. Prefiere devolver un valor cuando el objetivo sea un cálculo y usa referencias modificables cuando cambiar el estado forme parte del propósito."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia posterior: Modificar los elementos permitidos"
+        },
+        {
+          "type": "note",
+          "text": "Compara después de realizar el laboratorio y anotar sus resultados previstos. La referencia presenta una organización posible; los criterios permiten reconocer otras implementaciones que cumplan los mismos contratos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección. Con {-2,4,-1,6}, el estado posterior es {0,4,0,6} y el tamaño permanece 4. La referencia con {-12,0,12} conserva tres elementos y produce {0,0,12}. {} mantiene tamaño cero, sin líneas de elementos; una colección sin negativos se conserva. Cambiar temporalmente int& valor por int valor en el recorrido deja intactos los negativos del vector: es un contraste definido, pero incumple la transformación. Restaura la referencia después."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-12, 0, 12};\n    quitar_negativos(datos);\n    std::cout << \"Elementos: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El parámetro enlaza con el vector original y cada int& valor enlaza con su elemento actual. Se asigna cero sólo a los valores negativos; no se elimina ni reordena ningún elemento. La variante con int valor modifica una copia local, de modo que {-2,4,-1,6} sigue mostrando esos cuatro valores iniciales. Usa hasta ocho elementos entre -12 y 12 y compara estado, orden y tamaño."
         }
       ]
     }

@@ -1,0 +1,190 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto",
+  "title": "Nombres del lenguaje y tokens con texto",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una variable del programa y un nombre del texto"
+        },
+        {
+          "type": "paragraph",
+          "text": "La string \"crea saldo=8;saldo+2;\" es dato para nuestro intérprete. Compilar C++ no declara por sí mismo una variable llamada saldo a partir de esos caracteres. Primero debemos reconocer nombres, una palabra de declaración y el signo =. Después construiremos dónde se guardan sus valores y qué frases los crean."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nuestro nombre comienza por una letra ASCII A..Z o a..z. Continúa con letras, dígitos o _. Tiene de uno a doce caracteres. Mayúsculas y minúsculas importan. La palabra exacta crea se reserva; crea2 y Crea son nombres. Esta es una decisión del lenguaje interpretado, con un alcance menor que los identificadores generales de C++."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "¿Cuál es un nombre permitido por ese contrato?",
+          "options": [
+            "_saldo",
+            "saldo_2",
+            "2saldo"
+          ],
+          "correctIndex": 1,
+          "explanation": "El inicio debe ser una letra. El guion bajo y los dígitos se admiten después del inicio.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__e01"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una categoría con un dato adecuado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Token ahora conserva clase, valor y texto. Un número usa valor y deja texto vacío. Un nombre usa texto y deja valor en cero. Los signos, la palabra crea y el final dejan ambos campos sin información adicional: cero y cadena vacía. Todos los campos quedan inicializados; el lector verifica esa coherencia antes de reservar."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nint main() {\n    const Token dato{nombre, 0, \"Turno_4\"};\n    std::cout << dato.texto;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las constantes numero, nombre, declaracion y final_texto nombran categorías internas. Su valor char no impone qué letras se permiten en el origen. Ahora la entrada f se reconoce como nombre, no como final; sólo el agotamiento del flujo produce la categoría de final."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Completa los campos para un token de nombre llamado Mesa9, conservando la coherencia descrita.",
+          "language": "cpp",
+          "template": "Token t{nombre, [], \"[]\"};\n",
+          "answers": [
+            "0",
+            "Mesa9"
+          ],
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__e02"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer hasta el límite del nombre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Extraer una string con >> leería saldo+2; como una sola palabra si no hay espacios. Nuestro lexer acumula sólo caracteres de nombre. Conserva el primer delimitador leído con éxito para la llamada siguiente. Si se agota el flujo al terminar el nombre, devuelve ese nombre sin intentar devolver un carácter inexistente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por eso saldo+2; entrega nombre, +, número, ; y final. La palabra reservada se compara cuando el nombre está completo: crea2 no puede dividirse en crea seguido de 2. Una decimotercera letra rechaza el nombre; el descarte de una operación se enseñó para continuar después de su ;."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "El flujo se agota al terminar la palabra Caja. ¿Qué debe hacer el lexer?",
+          "options": [
+            "Devolver el último carácter aunque la última lectura falló.",
+            "Inventar un punto y coma para completar la operación.",
+            "Entregar Nombre: Caja; la lectura posterior entrega final."
+          ],
+          "correctIndex": 2,
+          "explanation": "EOF termina el nombre, pero no completa una sentencia que exija ;. No se devuelve un carácter cuando su lectura falló.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__e03"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Inspección trabajada antes de interpretar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este programa sólo inspecciona tokens. La palabra crea y = ya se reconocen, pero aún no ejecutamos una declaración ni damos valor a saldo. Leer caracteres y aceptar una frase pertenecen a responsabilidades distintas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint main() {\n    std::istringstream entrada{\"crea saldo=8;saldo+2;\"};\n    try {\n        while (true) {\n            const Token t = leer_token(entrada);\n            if (t.clase == numero) std::cout << \"Numero: \" << t.valor << \"\\n\";\n            else if (t.clase == nombre) std::cout << \"Nombre: \" << t.texto << \"\\n\";\n            else if (t.clase == declaracion) std::cout << \"Palabra: crea\\n\";\n            else if (t.clase == final_texto) { std::cout << \"Fin\\n\"; break; }\n            else std::cout << \"Signo: \" << t.clase << \"\\n\";\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La reserva admite un solo token. token_valido debe admitir las categorías nuevas con sus datos adecuados; una ampliación del lexer sin la ampliación de esa comprobación rompería la conexión entre módulos. Los separadores siguen siendo espacio, tabulador y salto de línea; el texto preparado tiene hasta 120 caracteres."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar delimitadores y palabras completas"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predice las líneas del inspector para una palabra semejante a la reservada y un nombre con guion bajo.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint main() {\n    std::istringstream entrada{\"crea2=7;A_3\"};\n    try {\n        while (true) {\n            const Token t = leer_token(entrada);\n            if (t.clase == numero) std::cout << \"Numero: \" << t.valor << \"\\n\";\n            else if (t.clase == nombre) std::cout << \"Nombre: \" << t.texto << \"\\n\";\n            else if (t.clase == declaracion) std::cout << \"Palabra: crea\\n\";\n            else if (t.clase == final_texto) { std::cout << \"Fin\\n\"; break; }\n            else std::cout << \"Signo: \" << t.clase << \"\\n\";\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what() << \"\\n\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Nombre: crea2\nSigno: =\nNumero: 7\nSigno: ;\nNombre: A_3\nFin"
+          ],
+          "explanation": "crea2 es un nombre completo. A_3 termina al agotarse el origen; ese final no aporta un ;.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__e04"
+        },
+        {
+          "type": "fill_code",
+          "question": "Escribe sólo la operación miembro de string que comprueba que el campo de texto de un signo está vacío.",
+          "language": "cpp",
+          "code": "const bool signo_coherente = token.valor == 0 && token.texto.___();",
+          "answers": [
+            "empty"
+          ],
+          "explanation": "empty consulta si la cadena está vacía. El número cero por sí solo no comprueba el campo textual.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__nombres_del_lenguaje_y_tokens_con_texto__e05"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Integración guiada: comprobar la reserva ampliada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera el lector y el lexer mostrados; integra los tokens con texto y construye un cliente sobre \"Pasillo_2*4;\". Lee el primer nombre, devuélvelo, recupéralo y continúa inspeccionando el resto. La reserva conserva tanto la categoría como el texto. Imprime Reservado: Pasillo_2; después Signo: *, Numero: 4, Signo: ; y Fin, una línea por elemento."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prueba también \"n;\", \"Crea;\", \"crea;\", \"A1_B;\", \"abcdefghijkl;\", \"abcdefghijklm;\" y \"_A;\". La letra n no se vuelve número por coincidir con una etiqueta interna. Doce caracteres se admiten y trece se rechazan. Una palabra al final se entrega antes de Fin."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    const std::string texto{\"Pasillo_2*4;\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: payload íntegro al reservar, palabra reservada sólo por coincidencia completa, delimitadores conservados, límite de nombre comprobado y ningún putback de carácter tras una lectura fallida. Una reserva ya llena debe rechazar otra devolución sin perder lo que conservaba."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Referencia de la comprobación posterior"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Numero fuera de dominio\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nombre demasiado largo\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"No se pudo conservar el caracter\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caracter no admitido\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Fallo del flujo\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texto demasiado largo\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Buffer ocupado\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalido\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Fallo grave del flujo\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Fallo del flujo\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Resultado fuera de dominio\");\n    }\n    return candidato;\n}\n\nint main() {\n    Lector_tokens lector{\"Patio_6+3;\"};\n    const Token primero = lector.leer();\n    lector.devolver(primero);\n    const Token recuperado = lector.leer();\n    std::cout << \"Reservado: \" << recuperado.texto << \"\\n\";\n    while (true) {\n        const Token t = lector.leer();\n        if (t.clase == final_texto) { std::cout << \"Fin\\n\"; break; }\n        if (t.clase == numero) std::cout << \"Numero: \" << t.valor << \"\\n\";\n        else if (t.clase == nombre) std::cout << \"Nombre: \" << t.texto << \"\\n\";\n        else if (t.clase == declaracion) std::cout << \"Palabra: crea\\n\";\n        else std::cout << \"Signo: \" << t.clase << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La referencia usa otros nombres y signos, pero mantiene la misma interfaz. No reserva dos tokens ni copia el lector: istringstream no se copia. La próxima etapa asociará los nombres con valores persistentes."
+        },
+        {
+          "type": "note",
+          "text": "Fuente de estudio: Stroustrup, B. (2024). Programming: Principles and Practice Using C++ (3.ª ed.), §6.6.1, §6.8.2 y ejercicio1 del capítulo6. La gramática ASCII, palabra crea y casos de práctica son originales."
+        }
+      ]
+    }
+  ]
+}
