@@ -6,7 +6,8 @@
     android:background="#101114"
     android:orientation="vertical">
 
-    <!-- Barra superior -->
+    <!-- The header keeps its original 72dp height plus the progress bar.
+         Separate actions and labels so page counts never push Settings off screen. -->
     <LinearLayout
         android:id="@+id/lessonHeader"
         android:layout_width="match_parent"
@@ -15,147 +16,140 @@
         android:orientation="vertical">
 
         <LinearLayout
+            android:id="@+id/lessonHeaderActions"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
+            android:layout_height="48dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="4dp"
             android:paddingEnd="2dp">
 
-            <LinearLayout
-                android:layout_width="88dp"
-                android:layout_height="match_parent"
-                android:gravity="start"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/buttonBack"
-                    android:layout_width="48dp"
-                    android:layout_height="40dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:text="@string/lesson_back_symbol"
-            android:contentDescription="@string/nav_go_back"
-                    android:textColor="#FFFFFF"
-                    android:textSize="30sp" />
-
-                <TextView
-                    android:id="@+id/textTopLesson"
-                    android:layout_width="match_parent"
-                    android:layout_height="32dp"
-                    android:gravity="start|center_vertical"
-                    android:includeFontPadding="false"
-                    android:paddingStart="4dp"
-                    android:singleLine="true"
-                    android:translationY="-5dp"
-                    android:textColor="#FFFFFF"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
             <TextView
-                android:id="@+id/textProgress"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:layout_gravity="bottom"
-                android:layout_marginStart="4dp"
-                android:gravity="center_vertical"
-                android:translationY="-5dp"
-                android:textColor="#AEB4BE"
-                android:textSize="15sp" />
+                android:id="@+id/buttonBack"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="@string/lesson_back_symbol"
+                android:contentDescription="@string/nav_go_back"
+                android:textColor="#FFFFFF"
+                android:textSize="30sp" />
 
             <View
                 android:layout_width="0dp"
                 android:layout_height="1dp"
                 android:layout_weight="1" />
 
-            <!-- Silueta de 38dp: aproximadamente el 80% de los 48dp anteriores. -->
+            <!-- 38dp previous silhouette x 0.8 = 30.4dp, inside a 48dp touch target. -->
             <ImageView
                 android:id="@+id/buttonNarrationToggle"
-                android:layout_width="46dp"
-                android:layout_height="46dp"
-                android:layout_marginEnd="9dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="@android:color/transparent"
                 android:clickable="true"
                 android:focusable="true"
                 android:contentDescription="@string/lesson_narration_hide_controls"
-                android:padding="4dp"
+                android:padding="8.8dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_person_speaking" />
 
-            <FrameLayout
-                android:id="@+id/attemptIndicator"
-                android:layout_width="86dp"
-                android:layout_height="58dp"
-                android:layout_marginEnd="-2dp">
+            <com.learngraphicsprogramming.app.LessonLanguageButton
+                android:id="@+id/buttonLessonLanguage"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@android:color/transparent"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@string/lesson_header_language"
+                android:padding="5dp"
+                android:scaleType="fitCenter"
+                android:tint="#AAAEB7"
+                android:src="@drawable/ic_lesson_language" />
 
-                <ImageView
-                    android:id="@+id/imageAttemptRoute"
-                    android:layout_width="43dp"
-                    android:layout_height="43dp"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:contentDescription="@string/lesson_available_attempts"
-                    android:src="@drawable/ic_attempt_programming" />
+            <!-- Keep the existing 43dp fill geometry used by LessonActivity.
+                 Scale the whole indicator, including count and percentage, to 80%. -->
+            <com.learngraphicsprogramming.app.LessonAttemptTouchTarget
+                android:id="@+id/attemptIndicatorSlot"
+                android:layout_width="68.8dp"
+                android:layout_height="48dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
 
                 <FrameLayout
-                    android:id="@+id/attemptFillClip"
-                    android:layout_width="43dp"
-                    android:layout_height="43dp"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:clipChildren="true">
+                    android:id="@+id/attemptIndicator"
+                    android:layout_width="86dp"
+                    android:layout_height="58dp"
+                    android:layout_gravity="center"
+                    android:scaleX="0.8"
+                    android:scaleY="0.8">
 
                     <ImageView
-                        android:id="@+id/imageAttemptFill"
+                        android:id="@+id/imageAttemptRoute"
                         android:layout_width="43dp"
                         android:layout_height="43dp"
                         android:layout_gravity="bottom|center_horizontal"
-                        android:importantForAccessibility="no"
+                        android:contentDescription="@string/lesson_available_attempts"
                         android:src="@drawable/ic_attempt_programming" />
 
+                    <FrameLayout
+                        android:id="@+id/attemptFillClip"
+                        android:layout_width="43dp"
+                        android:layout_height="43dp"
+                        android:layout_gravity="bottom|center_horizontal"
+                        android:clipChildren="true">
+
+                        <ImageView
+                            android:id="@+id/imageAttemptFill"
+                            android:layout_width="43dp"
+                            android:layout_height="43dp"
+                            android:layout_gravity="bottom|center_horizontal"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_attempt_programming" />
+
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/textAttemptCount"
+                        android:layout_width="22dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|start"
+                        android:gravity="center"
+                        android:includeFontPadding="false"
+                        android:singleLine="true"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:translationX="12dp"
+                        android:translationY="-1dp" />
+
+                    <ImageView
+                        android:id="@+id/imageAttemptInfinity"
+                        android:layout_width="30dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="top|start"
+                        android:src="@drawable/ic_infinity_premium"
+                        android:translationX="8dp"
+                        android:translationY="-1dp"
+                        android:visibility="gone"
+                        android:importantForAccessibility="no" />
+
+                    <TextView
+                        android:id="@+id/textAttemptPercent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|end"
+                        android:gravity="center"
+                        android:includeFontPadding="false"
+                        android:singleLine="true"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold"
+                        android:translationX="-4dp"
+                        android:translationY="-1dp" />
+
                 </FrameLayout>
-
-                <TextView
-                    android:id="@+id/textAttemptCount"
-                    android:layout_width="22dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="top|start"
-                    android:gravity="center"
-                    android:includeFontPadding="false"
-                    android:singleLine="true"
-                    android:textColor="#FFFFFF"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:translationX="12dp"
-                    android:translationY="-1dp" />
-
-                <ImageView
-                    android:id="@+id/imageAttemptInfinity"
-                    android:layout_width="30dp"
-                    android:layout_height="26dp"
-                    android:layout_gravity="top|start"
-                    android:src="@drawable/ic_infinity_premium"
-                    android:translationX="8dp"
-                    android:translationY="-3dp"
-                    android:visibility="gone"
-                    android:importantForAccessibility="no" />
-
-                <TextView
-                    android:id="@+id/textAttemptPercent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="top|end"
-                    android:gravity="center"
-                    android:includeFontPadding="false"
-                    android:singleLine="true"
-                    android:textColor="#FFFFFF"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:translationX="-4dp"
-                    android:translationY="-1dp" />
-
-            </FrameLayout>
+            </com.learngraphicsprogramming.app.LessonAttemptTouchTarget>
 
             <ImageButton
                 android:id="@+id/buttonLessonSettings"
@@ -165,6 +159,42 @@
                 android:contentDescription="@string/lesson_settings_title"
                 android:padding="4dp"
                 android:src="@drawable/ic_settings" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/lessonHeaderLabels"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="24dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="4dp">
+
+            <TextView
+                android:id="@+id/textTopLesson"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="start|center_vertical"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/textProgress"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:gravity="center_vertical"
+                android:includeFontPadding="false"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:textColor="#AEB4BE"
+                android:textSize="15sp" />
 
         </LinearLayout>
 
