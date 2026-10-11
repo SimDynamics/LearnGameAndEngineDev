@@ -307,7 +307,7 @@
         },
         {
           "type": "note",
-          "text": "La app actual permite leer los archivos y responder las actividades textuales. Su editor de C++ recibe una sola fuente: todavía no ofrece un proyecto con cabeceras y varios .cpp. La construcción y ejecución multifuente de esta actividad se realiza en un entorno de PC; ese laboratorio dentro de la app queda pendiente. Un archivo único con las piezas juntas comprobaría otra organización, no este enlace entre archivos."
+          "text": "Construye primero tu organización de serie.h, serie.cpp y main.cpp; después contrástala con la referencia de la página siguiente. Al final de esta lección, los laboratorios de sobres y serie permiten editar archivos individuales y compilar/enlazar ambos .cpp dentro de la app. Prueba tu organización allí. Un archivo único con las piezas juntas comprobaría otra organización, no este enlace entre archivos."
         }
       ]
     },
@@ -391,11 +391,107 @@
         },
         {
           "type": "paragraph",
-          "text": "La preparación y construcción de módulos requiere la configuración correspondiente del compilador y del proyecto. Esta lección verifica cabeceras y dos fuentes con GCC, y la app actual no ofrece esa configuración multifuente. No hemos probado aquí un módulo propio ni un módulo de la biblioteca estándar. Su práctica se retomará con herramientas capaces de construirlo; cambiar include por import no es una prueba de compatibilidad."
+          "text": "La preparación y construcción de módulos requiere la configuración correspondiente del compilador y del proyecto. Los laboratorios siguientes construyen cabeceras y archivos .cpp, pero ese proceso no certifica módulos nombrados ni import std. No hemos probado aquí un módulo propio ni un módulo de la biblioteca estándar. Su práctica se retomará con herramientas capaces de construirlo; cambiar include por import no es una prueba de compatibilidad."
         },
         {
           "type": "note",
           "text": "Referencia de estudio: Bjarne Stroustrup, Programming: Principles and Practice Using C++, tercera edición (2024), §7.7 pp. 211–215; cabeceras, inclusión y comprobación de consistencia en §7.7.2 pp. 213–215. Los proyectos de sobres y series son originales de esta lección. Precisión sobre constexpr e inline: borrador del estándar de C++, [dcl.constexpr]/1, https://eel.is/c++draft/dcl.constexpr#1."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: construir y modificar el proyecto de sobres"
+        },
+        {
+          "type": "paragraph",
+          "text": "Estos archivos conservan las fuentes de las páginas 2 y 3. Antes de ejecutar, predice la salida para 25 tarjetas y señala qué fuente aporta cada definición. Compila sobres.cpp y main.cpp; sobres.h se incluye desde ellos. Debe producir Varios sobres: 3. Selecciona los archivos para leer y editar cada responsabilidad sin mezclar los tres textos en una sola fuente."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "sobres.h",
+              "initialCode": "// Archivo: sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define CPP_FUNDAMENTALS_SOBRES_H\n\n#include <string>\n\n// Dominio de ambas funciones: 0 <= tarjetas <= 120.\n// Cada sobre admite hasta 12 tarjetas.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n"
+            },
+            {
+              "path": "sobres.cpp",
+              "initialCode": "// Archivo: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Sin tarjetas\";\n    }\n    if (cantidad == 1) {\n        return \"Un sobre\";\n    }\n    return \"Varios sobres\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "// Archivo: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "sobres.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambia sólo tarjetas en main.cpp y contrasta los límites: 0 produce Sin tarjetas: 0; 12, Un sobre: 1; 13, Varios sobres: 2; 25, Varios sobres: 3; 120, Varios sobres: 10. Conserva el dominio 0..120. Después recupera 25 y cambia la capacidad de cada sobre a 20 en sobres.cpp: actualiza tanto la división como el resto, y el comentario del requisito en sobres.h, conservando sus declaraciones. Debe producir Varios sobres: 2. La siguiente ejecución debe usar las ediciones actuales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Restaura la capacidad de 12 y realiza las pruebas por separado. Quita de main.cpp la inclusión necesaria de sobres.h: las llamadas carecen de declaración visible y fallan durante la compilación del cliente. Recupera la inclusión; luego quita de sobres.h la declaración de una función usada por main: vuelve a observar un fallo de compilación. Restaura la cabecera. Deja seleccionada sólo main.cpp para compilar: ya puede reconocer las llamadas, pero falta el objeto de sobres.cpp y el enlace falla por sus definiciones ausentes. Recupera las dos fuentes y comprueba la salida inicial."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para observar una definición duplicada, mueve el cuerpo ordinario de sobres_necesarios desde sobres.cpp a sobres.h, conservando la guarda y sin marcarlo inline. Ambos .cpp incluyen entonces ese cuerpo y sus objetos aportan dos definiciones: compilar cada fuente no basta, y el enlace debe fallar. La guarda protege la inclusión dentro de cada unidad; no coordina unidades distintas. Devuelve el cuerpo a sobres.cpp y verifica otra vez el proyecto válido."
+        },
+        {
+          "type": "note",
+          "text": "Antes de cada prueba, identifica la salida o el diagnóstico esperado y el archivo responsable. Cambiar de archivo y recrear la pantalla debe conservar las ediciones y la selección de fuentes. Las pruebas con errores se restauran antes de pasar al siguiente caso: así cada cambio explica un resultado concreto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio de transferencia: serie.h, serie.cpp y main.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este proyecto conserva exactamente las tres fuentes de la referencia de la página 10. Contrasta primero tu construcción con esa interfaz y traslada tus cuerpos al archivo correspondiente. Con serie.cpp y main.cpp seleccionados, predice y ejecuta los casos (3,5), (0,0) y (5,5): se presentan En curso: 2, Terminada: 0 y Terminada: 0 en líneas separadas. La cabecera no se compila como una tercera fuente."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "serie.h",
+              "initialCode": "// Archivo: serie.h\n#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n\n#include <string>\n\n// Dominio: 0 <= hechas <= total <= 40.\nint tareas_pendientes(int hechas, int total);\nstd::string estado_serie(int hechas, int total);\n\n#endif\n"
+            },
+            {
+              "path": "serie.cpp",
+              "initialCode": "// Archivo: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminada\";\n    }\n    return \"En curso\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "// Archivo: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "serie.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade al cliente los casos (0,40) y (40,40), conservando una línea por caso: espera En curso: 40 y Terminada: 0. Reproduce también los datos de la predicción de la página 11, (0,8) y (8,8), sin modificar la implementación. Explica por qué ninguna llamada altera los argumentos de las siguientes y cómo el cliente utiliza la misma interfaz con otros datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Repite una prueba de cada etapa: escribe mal el nombre de una función en main.cpp para observar un error de compilación; restaura el cliente y deja fuera serie.cpp en la selección de fuentes para observar la definición ausente durante el enlace; restaura ambas fuentes y verifica la salida. Si mueves el cuerpo ordinario de tareas_pendientes a la cabecera como en la pregunta de la página 11, ambos objetos lo definen y el enlace falla aunque la guarda esté presente. Devuelve el cuerpo a la implementación."
+        },
+        {
+          "type": "note",
+          "text": "Justifica cada resultado con el contrato: dominio 0 <= hechas <= total <= 40, declaraciones compartidas, firmas concordantes y una definición ordinaria por función. Editar el proyecto, compilar sus fuentes, enlazar y observar una ejecución válida son comprobaciones distintas. Estos laboratorios no certifican módulos nombrados ni import std."
         }
       ]
     }

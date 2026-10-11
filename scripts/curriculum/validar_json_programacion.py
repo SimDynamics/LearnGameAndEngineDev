@@ -5,7 +5,7 @@ No compila C++, no modifica archivos y no certifica las respuestas pedagógicas.
 
 import json
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,10 +21,13 @@ FIELDS = {
     "order_code": {"type", "id", "question", "fragments", "correctOrder", "explanation"},
     "drag_fill_code": {"type", "id", "question", "language", "template", "choices", "correctOrder"},
     "inline_fill_code": {"type", "id", "question", "language", "template", "answers"},
-    # language existe en fixtures previos; el renderer sólo lee initialCode.
-    "cpp_compiler": {"type", "language", "initialCode"},
+    # Los proyectos sustituyen initialCode al ejecutar; se conserva el campo legacy.
+    "cpp_compiler": {"type", "language", "initialCode", "initialStandardInput", "projectFiles", "sourceFiles"},
 }
 EXERCISES = set(FIELDS) - {"heading", "paragraph", "note", "code", "cpp_compiler"}
+COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles"}
+SOURCE_SUFFIXES = {"cpp", "cc", "cxx", "c++"}
+STDIN_LESSON = "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json"
 ERRORS = []
 
 
@@ -35,6 +38,86 @@ def require(condition, where, message):
 
 def load(path):
     return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
+def validate_project_path(value, where):
+    """Rutas virtuales relativas y portables, sin normalización que oculte escapes."""
+    valid = (
+        isinstance(value, str)
+        and bool(value.strip())
+        and value == value.strip()
+        and not any(ord(char) < 32 or char in '\\:<>"|?*' for char in value)
+        and all(part not in {"", ".", ".."} for part in value.split("/"))
+    )
+    require(valid, where, "ruta de proyecto inválida: debe ser relativa, sin escapes ni separadores de Windows")
+    return valid
+
+
+def is_source_file(path):
+    return "." in path and path.rsplit(".", 1)[1].lower() in SOURCE_SUFFIXES
+
+
+def validate_cpp_compiler(block, where):
+    require(isinstance(block.get("initialCode"), str), where, "initialCode debe ser texto")
+    if "initialStandardInput" in block:
+        require(isinstance(block["initialStandardInput"], str), where, "initialStandardInput debe ser texto")
+
+    if "projectFiles" not in block:
+        require("sourceFiles" not in block, where, "sourceFiles requiere projectFiles")
+        return
+
+    files = block["projectFiles"]
+    require(isinstance(files, list) and bool(files), where, "projectFiles debe ser una lista no vacía")
+    if not isinstance(files, list):
+        return
+    paths = {}
+    for index, item in enumerate(files, 1):
+        file_where = f"{where} archivo {index}"
+        require(isinstance(item, dict), file_where, "archivo debe ser un objeto")
+        if not isinstance(item, dict):
+            continue
+        require(set(item) == {"path", "initialCode"}, file_where, "archivo requiere sólo path e initialCode")
+        require(isinstance(item.get("initialCode"), str), file_where, "initialCode de archivo debe ser texto")
+        path = item.get("path")
+        if validate_project_path(path, file_where):
+            require(path not in paths, file_where, "ruta de archivo duplicada")
+            paths[path] = path
+
+    # También se rechaza archivo/carpeta: a.cpp y a.cpp/util.h no pueden coexistir.
+    for path in paths:
+        for parent in PurePosixPath(path).parents:
+            require(str(parent) not in paths, where, "una ruta de archivo también se usa como carpeta")
+
+    inferred = [path for path in paths if is_source_file(path)]
+    sources = block.get("sourceFiles", inferred)
+    require(isinstance(sources, list) and bool(sources), where, "sourceFiles debe seleccionar al menos una fuente")
+    if not isinstance(sources, list):
+        return
+    selected = set()
+    for index, source in enumerate(sources, 1):
+        source_where = f"{where} fuente {index}"
+        if not validate_project_path(source, source_where):
+            continue
+        require(source not in selected, source_where, "fuente seleccionada más de una vez")
+        selected.add(source)
+        require(source in paths, source_where, "fuente no existe en projectFiles con ese nombre exacto")
+        require(is_source_file(source), source_where, "se seleccionó una cabecera o archivo no fuente")
+
+
+def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):
+    """Permite nuevos campos, manteniendo el programa anterior salvo la migración cin."""
+    base = {key: value for key, value in current.items() if key not in COMPILER_EXTENSIONS or key in old}
+    if relative == STDIN_LESSON and (pn, bn) == (6, 2):
+        # Única sustitución autorizada: p7 b3 pasa del esqueleto a p8 b2 existente.
+        expected = dict(old)
+        expected["initialCode"] = old_lesson["pages"][7]["blocks"][1]["code"]
+        return base == old or (
+            base == expected
+            and current.get("initialStandardInput") == "Rita 4"
+            and "projectFiles" not in current
+            and "sourceFiles" not in current
+        )
+    return base == old
 
 
 def main():
@@ -57,6 +140,8 @@ def main():
                 if kind not in FIELDS:
                     continue
                 require(set(block) <= FIELDS[kind], where, "campo ajeno al contrato comprobado")
+                if kind == "cpp_compiler":
+                    validate_cpp_compiler(block, where)
                 if kind in {"heading", "paragraph", "note"}:
                     require(bool(block.get("text", "").strip()), where, "texto vacío")
                 if kind == "multiple_choice":
@@ -118,7 +203,9 @@ def main():
                         require(False, relative, f"bloque previo perdido p{pn+1} b{bn+1}")
                         continue
                     require(current["type"] == kind and current.get("id") == block.get("id"), relative, f"posición/ID previo modificado p{pn+1} b{bn+1}")
-                    if kind != "multiple_choice":
+                    if kind == "cpp_compiler":
+                        require(preserves_previous_compiler(relative, pn, bn, block, current, old), relative, f"código legacy previo modificado p{pn+1} b{bn+1}")
+                    elif kind != "multiple_choice":
                         require(current == block, relative, f"código/respuesta previa modificada p{pn+1} b{bn+1}")
 
     if ERRORS:

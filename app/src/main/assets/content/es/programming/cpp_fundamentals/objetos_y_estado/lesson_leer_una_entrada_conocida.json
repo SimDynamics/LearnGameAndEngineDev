@@ -14,7 +14,7 @@
         },
         {
           "type": "note",
-          "text": "En esta lección analizamos código con una entrada especificada en el enunciado. El motor C++ actual admite entrada estándar preparada antes de ejecutar, pero el editor de estas lecciones todavía no ofrece un campo para entregarla: ejecuta con entrada vacía. Tampoco ofrece una consola para escribir durante la ejecución. Los laboratorios de esta unidad usan datos fijados en el código; la lectura real con cin necesita un entorno que permita suministrar el texto de entrada."
+          "text": "En esta lección analizamos código con una entrada especificada en el enunciado y practicamos la lectura real en el laboratorio. Escribe todo el texto en Entrada preparada antes de ejecutar: cin consume sus tokens en orden hasta el final del texto. Cada ejecución comienza a leer su propia entrada desde el principio. No se escribe durante la ejecución; una entrada vacía llega a EOF sin esperar el teclado."
         },
         {
           "type": "code",
@@ -213,19 +213,20 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Un modelo con valores fijados en la app"
+          "text": "Laboratorio: leer, procesar y presentar"
         },
         {
           "type": "paragraph",
-          "text": "Construye aquí una simulación explícita de datos recibidos: nombre = \"Rita\" y cajas = 4 ya estarán definidos en el código. Incrementa cajas en tres y muestra Rita: 7. Cambia después los datos a \"Leo\" y 2: debe mostrar Leo: 5. Este laboratorio comprueba el procesamiento y la salida; no comprueba que cin haya recibido entrada real."
+          "text": "Antes de ejecutar, identifica los dos tokens de Entrada preparada: Rita y 4. Predice qué guarda cada extracción, qué cambia cajas += 3 y qué caracteres produce cout. Ejecuta y contrasta Rita: 7. Sin modificar el código, cambia sólo la entrada a Leo 2 y comprueba Leo: 5. Repite con un salto de línea entre el nombre y el número: la extracción de estos dos tokens admite ambas separaciones."
         },
         {
           "type": "cpp_compiler",
-          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Escribe aqui tu programa.\n    return 0;\n}\n"
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre >> cajas;\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n",
+          "initialStandardInput": "Rita 4"
         },
         {
           "type": "paragraph",
-          "text": "Para practicar la lectura de verdad, lleva el código de la página siguiente a un entorno que admita entrada estándar, entrega Rita 4 y luego Leo 2, y compara sus resultados con la simulación. Mantener clara esa diferencia permite saber qué parte del programa hemos comprobado y qué habilidad falta practicar en un laboratorio con stdin."
+          "text": "Repite una ejecución sin cambiar los datos: debe volver a producir la misma salida, porque la entrada se entrega desde el comienzo. El texto de Entrada preparada se envía a cin; no forma parte del código ni aparece automáticamente en la salida. Distingue un diagnóstico de compilación de la salida del programa y de un error de ejecución. Este programa presupone un nombre y un entero válidos: probar Rita 4 y Leo 2 no demuestra que se compruebe una entrada vacía o mal formada."
         }
       ]
     },
@@ -242,7 +243,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Con entrada Rita 4, la lectura fija nombre y cajas; después se procesa la cantidad y se presenta el resultado Rita: 7. En la simulación, las definiciones sustituyen únicamente la etapa de lectura. El programa mostrado presupone que esos datos concretos se entregan correctamente; la versión que acepta cualquier entrada necesita comprobar el flujo."
+          "text": "Con entrada Rita 4, la lectura fija nombre y cajas; después se procesa la cantidad y se presenta el resultado Rita: 7. La referencia final conserva una simulación con valores definidos en el código: en ella las definiciones sustituyen únicamente la etapa de lectura. La siguiente pregunta contrasta esa versión con el laboratorio de cin. El programa mostrado presupone datos válidos; una versión que acepte otras entradas necesita comprobar el flujo, porque el cero inicial de cajas no acredita una lectura correcta."
         },
         {
           "type": "multiple_choice",
@@ -271,7 +272,7 @@
       "blocks": [
         {
           "type": "heading",
-          "text": "Solución de referencia: Procesamiento con datos fijados"
+          "text": "Referencia comparativa: procesamiento con datos fijados"
         },
         {
           "type": "note",
@@ -279,7 +280,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Criterios de corrección. Esta actividad comprueba una simulación explícita: nombre comienza como \"Rita\", cajas como 4, y se añaden tres cajas antes de presentar Rita: 7. Con \"Leo\" y 2, muestra Leo: 5. Deben cambiar los datos y conservarse el procesamiento y el formato. Esta referencia no realiza una lectura con cin y no acredita esa parte de la práctica."
+          "text": "Criterios de corrección del laboratorio: cin obtiene nombre y cajas de Entrada preparada; con Rita 4 presenta Rita: 7 y con Leo 2 presenta Leo: 5, conservando el procesamiento y el formato. La página anterior muestra su código. La comparación siguiente fija nombre como \"Rita\" y cajas como 4: reproduce el cálculo y la salida, pero no realiza una lectura ni acredita esa parte de la práctica."
         },
         {
           "type": "code",
@@ -288,7 +289,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Las definiciones sustituyen aquí sólo la etapa de recibir los datos. Cambia el nombre y las cajas iniciales para el segundo caso. Compara después con el código de lectura real de la página anterior usando el texto de entrada indicado en un entorno que permita entregarlo a cin. La interfaz curricular todavía no ofrece ese campo; mantener esa distinción evita confundir dos habilidades distintas."
+          "text": "Las definiciones sustituyen aquí sólo la etapa de recibir los datos. Para cambiar el caso en esta simulación debes editar el código; en el laboratorio de lectura mantienes el código y editas Entrada preparada. Compara ambos caminos para Rita 4 y Leo 2 y explica dónde se obtiene cada valor, qué operación lo transforma y qué parte de la salida decide cout."
         }
       ]
     }

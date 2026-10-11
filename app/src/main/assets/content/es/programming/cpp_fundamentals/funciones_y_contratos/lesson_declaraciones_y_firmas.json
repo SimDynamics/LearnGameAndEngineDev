@@ -190,6 +190,56 @@
           "text": "Aquí la definición completa aparece antes de la llamada. Su encabezado conserva la misma interfaz que la declaración anterior. No dejes dos definiciones de la función al moverla. Cambia sólo horas para comprobar los casos indicados y compara con la versión original; reorganizar texto no cambia el resultado prometido."
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratorio: una interfaz, dos archivos fuente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora separa el ejemplo de diferencia de la primera página. Selecciona cada archivo y reconoce su responsabilidad: diferencia.h declara la interfaz, diferencia.cpp aporta la definición y main.cpp la utiliza. Predice el resultado de diferencia(9, 2) y ejecuta el proyecto con ambos .cpp seleccionados. La cabecera se incluye desde las fuentes; no se selecciona como un tercer archivo fuente. Debes observar 7."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "diferencia.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_DIFERENCIA_H\n#define CPP_FUNDAMENTALS_DIFERENCIA_H\n\nint diferencia(int primero, int segundo);\n\n#endif\n"
+            },
+            {
+              "path": "diferencia.cpp",
+              "initialCode": "#include \"diferencia.h\"\n\nint diferencia(int primero, int segundo) {\n    return primero - segundo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "diferencia.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Modifica sólo el cuerpo en diferencia.cpp: cambia la resta por suma, sin tocar la interfaz ni la llamada. Predice y comprueba 11. Cambia de archivo y vuelve a la implementación: tu edición debe conservarse. Ejecutar otra vez debe usar el cuerpo actual. Restaura la resta para las siguientes pruebas; cambia también de orientación o recrea la pantalla y comprueba que el proyecto conserva sus archivos y ediciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Haz una modificación por prueba y restáurala después. Primero deja seleccionada sólo main.cpp: la cabecera sigue visible y la llamada puede compilar, pero el enlace falla porque falta la definición aportada por diferencia.cpp. Recupera las dos fuentes. Después cambia sólo el tipo de resultado de la definición a double, conservando int en diferencia.h: como la implementación incluye la interfaz, el compilador diagnostica esa incoherencia en diferencia.cpp. No se llega a ejecutar un resultado válido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Añade otra vez #include \"diferencia.h\" en main.cpp y ejecuta con la resta restaurada: la guarda evita repetir su contenido dentro de esa fuente y el resultado sigue siendo 7. Para contrastar un fallo anterior al enlace, cambia temporalmente el nombre de la cabecera en un #include: la lectura de ese archivo falla durante la compilación. Relaciona cada diagnóstico con su archivo, línea y etapa; una declaración visible no garantiza una definición enlazada."
+        },
+        {
+          "type": "note",
+          "text": "El proyecto tiene una sola definición de main. Los archivos del laboratorio son propios de este proyecto: la cabecera se materializa antes de compilar, ambos .cpp se compilan y sus objetos se enlazan en un programa. Cambiar una cabecera o una implementación debe afectar la ejecución siguiente. Conservar el mismo nombre de archivo no permite reutilizar una versión antigua de su contenido."
+        }
+      ]
     }
   ]
 }
