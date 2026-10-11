@@ -21,6 +21,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.test.core.app.ActivityScenario
@@ -91,6 +92,10 @@ class ProgrammingLandscapeDeviceTest {
 
     @Test fun normalLandscapeCompilerExerciseAndFakeConsoleUseSafeWidthAndRestorePortrait() {
         for (page in listOf(1, 3, 7)) {
+            // A detached input from the previous scenario cannot settle another activity's layout.
+            trackedInput = null
+            trackedNormalToolbarHeight = null
+            trackedFocusLosses = emptyList()
             ProgressRepository.saveCurrentPage(context, route, lesson, page)
             ActivityScenario.launch<LessonActivity>(intent()).use { scenario ->
                 orient(scenario, false)
@@ -194,7 +199,9 @@ class ProgrammingLandscapeDeviceTest {
             awaitUi(scenario, "Portrait compiler shows the real SwiftKey and normal shortcuts") { activity ->
                 imeVisible(activity) && toolbar.isShown && toolbar.height > 0
             }
-            val normalToolbarHeight = toolbar.height
+            lateinit var shortcutBaseline: ShortcutBaseline
+            scenario.onActivity { shortcutBaseline = captureShortcutBaseline(toolbar) }
+            val normalToolbarHeight = shortcutBaseline.toolbarHeight
             trackedNormalToolbarHeight = normalToolbarHeight
             orient(scenario, true)
             var diagnostic = "Compact compiler not yet sampled"
@@ -202,7 +209,8 @@ class ProgrammingLandscapeDeviceTest {
                 val viewport = available(activity)
                 val imeTop = actualImeTop()
                 diagnostic = "viewport=$viewport, input=${bounds(input)}, body=${bounds(body)}, toolbar=${bounds(toolbar)}, losses=$focusLosses"
-                imeVisible(activity) && toolbar.isShown && toolbar.height in 1..(viewport.height() / 2 + 1) &&
+                imeVisible(activity) && toolbar.isShown && responsiveToolbarMatches(toolbar, shortcutBaseline, viewport) &&
+                    toolbar.height in 1..(viewport.height() / 2 + 1) &&
                     imeTop != null && viewport.height() < fullscreenHeightWithoutIme &&
                     abs(bounds(toolbar).bottom - imeTop) <= 3 && !body.isLayoutRequested &&
                     caretVisible(input, viewport, bounds(toolbar).top)
@@ -218,6 +226,7 @@ class ProgrammingLandscapeDeviceTest {
                 emitMetric("compiler landscape IME: H=${viewport.height()}, toolbar=${toolbar.height}, " +
                     "editor=${input.height}, body=${body.height}, viewport=$viewport, ${imeDiagnostic(activity)}")
                 assertEquals(viewport.width(), card.width)
+                assertResponsiveToolbar(toolbar, shortcutBaseline, viewport)
                 assertTrue(toolbar.height <= viewport.height() / 2 + 1)
                 assertTrue("The physical SwiftKey window reduces the usable fullscreen height", viewport.height() < fullscreenHeightWithoutIme)
                 assertEquals("The toolbar ends above the physical SwiftKey window", requireNotNull(actualImeTop()).toDouble(),
@@ -244,31 +253,45 @@ class ProgrammingLandscapeDeviceTest {
             }
             awaitUi(scenario, "Reopened fullscreen shortcuts compact again") { activity ->
                 imeVisible(activity) && toolbar.isShown && toolbar.height <= available(activity).height() / 2 + 1 &&
+                    responsiveToolbarMatches(toolbar, shortcutBaseline, available(activity)) &&
                     caretVisible(input, available(activity), bounds(toolbar).top)
             }
             scenario.onActivity { fullscreen.performClick() }
-            awaitUi(scenario, "Leaving fullscreen restores the normal shortcut height") { activity ->
+            awaitUi(scenario, "Leaving fullscreen in landscape keeps responsive shortcuts and the same caret") { activity ->
+                val viewport = available(activity)
+                val imeTop = actualImeTop()
                 imeVisible(activity) && fullscreen.contentDescription == "Pantalla completa" && toolbar.isShown &&
-                    toolbar.height == normalToolbarHeight
+                    activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE &&
+                    responsiveToolbarMatches(toolbar, shortcutBaseline, viewport) &&
+                    imeTop != null && abs(bounds(toolbar).bottom - imeTop) <= 3 &&
+                    input.hasFocus() && activity.currentFocus === input &&
+                    caretVisible(input, viewport, bounds(toolbar).top)
             }
             scenario.onActivity { activity ->
+                assertResponsiveToolbar(toolbar, shortcutBaseline, available(activity))
+                assertTrue(input.hasFocus())
                 assertSame(input, activity.currentFocus)
                 assertEquals(edited, input.text.toString())
+                assertEquals(4, input.selectionStart)
                 assertEquals(4, input.selectionEnd)
+                assertTrue("Leaving compiler fullscreen in landscape keeps focus: $focusLosses", focusLosses.isEmpty())
             }
             orient(scenario, false)
             awaitUi(scenario, "Portrait restores normal programming shortcuts") { activity ->
-                imeVisible(activity) && toolbar.isShown && toolbar.height == normalToolbarHeight &&
+                imeVisible(activity) && toolbar.isShown && normalToolbarMatches(toolbar, shortcutBaseline) &&
                     activity.findViewById<View>(R.id.lessonHeader).visibility == View.VISIBLE &&
                     activity.findViewById<View>(R.id.lessonProgress).isShown
             }
             scenario.onActivity { activity ->
+                assertNormalToolbar(toolbar, shortcutBaseline)
                 assertTrue(input.hasFocus())
                 assertSame(input, activity.currentFocus)
                 assertEquals(edited, input.text.toString())
                 assertEquals(4, input.selectionStart)
                 assertEquals(4, input.selectionEnd)
                 assertTrue("All compiler transitions preserve focus: $focusLosses", focusLosses.isEmpty())
+                assertTrue("Portrait compiler restores the visible caret: ${programmingDiagnostic(activity)}",
+                    caretVisible(input, available(activity), bounds(toolbar).top))
                 assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.lessonHeader).visibility)
                 assertTrue(activity.findViewById<View>(R.id.lessonProgress).isShown)
             }
@@ -323,7 +346,9 @@ class ProgrammingLandscapeDeviceTest {
             awaitUi(scenario, "Portrait exercise shows normal shortcuts above SwiftKey") { activity ->
                 imeVisible(activity) && toolbar.isShown && toolbar.height > 0
             }
-            val normalToolbarHeight = toolbar.height
+            lateinit var shortcutBaseline: ShortcutBaseline
+            scenario.onActivity { shortcutBaseline = captureShortcutBaseline(toolbar) }
+            val normalToolbarHeight = shortcutBaseline.toolbarHeight
             trackedNormalToolbarHeight = normalToolbarHeight
             orient(scenario, true)
             var diagnostic = "Compact exercise not yet sampled"
@@ -331,7 +356,8 @@ class ProgrammingLandscapeDeviceTest {
                 val viewport = available(activity)
                 val imeTop = actualImeTop()
                 diagnostic = "viewport=$viewport, input=${bounds(input)}, body=${bounds(body)}, toolbar=${bounds(toolbar)}, losses=$focusLosses"
-                imeVisible(activity) && toolbar.isShown && toolbar.height in 1..(viewport.height() / 2 + 1) &&
+                imeVisible(activity) && toolbar.isShown && responsiveToolbarMatches(toolbar, shortcutBaseline, viewport) &&
+                    toolbar.height in 1..(viewport.height() / 2 + 1) &&
                     imeTop != null && viewport.height() < fullscreenHeightWithoutIme && abs(bounds(toolbar).bottom - imeTop) <= 3 &&
                     caretVisible(input, viewport, bounds(toolbar).top)
             }
@@ -344,6 +370,7 @@ class ProgrammingLandscapeDeviceTest {
                 assertEquals(2, input.selectionStart)
                 assertEquals(4, input.selectionEnd)
                 assertEquals(available(activity).width(), body.width)
+                assertResponsiveToolbar(toolbar, shortcutBaseline, available(activity))
                 assertTrue(toolbar.height <= available(activity).height() / 2 + 1)
                 assertTrue("The physical SwiftKey window reduces exercise fullscreen height", available(activity).height() < fullscreenHeightWithoutIme)
                 assertEquals("Exercise shortcuts end above the physical SwiftKey window", requireNotNull(actualImeTop()).toDouble(),
@@ -362,13 +389,15 @@ class ProgrammingLandscapeDeviceTest {
             scenario.onActivity { activity -> showIme(activity, input) }
             awaitUi(scenario, "Reopened exercise shortcuts compact again") { activity ->
                 imeVisible(activity) && toolbar.isShown && toolbar.height <= available(activity).height() / 2 + 1 &&
+                    responsiveToolbarMatches(toolbar, shortcutBaseline, available(activity)) &&
                     caretVisible(input, available(activity), bounds(toolbar).top)
             }
             orient(scenario, false)
             awaitUi(scenario, "Portrait fullscreen restores normal exercise shortcut height") { activity ->
-                imeVisible(activity) && toolbar.isShown && toolbar.height == normalToolbarHeight
+                imeVisible(activity) && toolbar.isShown && normalToolbarMatches(toolbar, shortcutBaseline)
             }
             scenario.onActivity { activity ->
+                assertNormalToolbar(toolbar, shortcutBaseline)
                 assertTrue(input.hasFocus())
                 assertSame(input, activity.currentFocus)
                 assertEquals("ab2ef", input.text.toString())
@@ -378,11 +407,12 @@ class ProgrammingLandscapeDeviceTest {
             }
             awaitUi(scenario, "Leaving exercise fullscreen restores its hierarchy while the same input and SwiftKey remain active") { activity ->
                 fullscreen.contentDescription == "Pantalla completa" && input.parent === originalInputParent &&
-                    toolbar.height == normalToolbarHeight && toolbar.isShown && imeVisible(activity) &&
+                    normalToolbarMatches(toolbar, shortcutBaseline) && toolbar.isShown && imeVisible(activity) &&
                     input.hasFocus() && activity.currentFocus === input &&
                     caretVisible(input, available(activity), bounds(toolbar).top)
             }
             scenario.onActivity { activity ->
+                assertNormalToolbar(toolbar, shortcutBaseline)
                 assertTrue("The original exercise input retains focus when leaving fullscreen", input.hasFocus())
                 assertSame(input, activity.currentFocus)
                 assertTrue("SwiftKey remains open after leaving exercise fullscreen", imeVisible(activity))
@@ -398,6 +428,9 @@ class ProgrammingLandscapeDeviceTest {
     @Test fun normalLandscapeWithSwiftKeyKeepsFullWidthNormalToolbarAndSelectedCaret() {
         requireSwiftKey()
         for (page in listOf(3, 7)) {
+            trackedInput = null
+            trackedNormalToolbarHeight = null
+            trackedFocusLosses = emptyList()
             ProgressRepository.saveCurrentPage(context, route, lesson, page)
             ActivityScenario.launch<LessonActivity>(intent()).use { scenario ->
                 orient(scenario, false)
@@ -428,11 +461,13 @@ class ProgrammingLandscapeDeviceTest {
                 awaitUi(scenario, "The normal portrait programming toolbar appears on page ${page + 1}") { activity ->
                     imeVisible(activity) && toolbar.isShown && toolbar.height > 0
                 }
-                val normalToolbarHeight = toolbar.height
+                lateinit var shortcutBaseline: ShortcutBaseline
+                scenario.onActivity { shortcutBaseline = captureShortcutBaseline(toolbar) }
+                val normalToolbarHeight = shortcutBaseline.toolbarHeight
                 trackedNormalToolbarHeight = normalToolbarHeight
                 orient(scenario, true)
                 var diagnostic = "Normal landscape IME geometry not yet sampled"
-                awaitUi(scenario, "Normal landscape keeps its toolbar size and reveals the selected caret on page ${page + 1}",
+                awaitUi(scenario, "Normal landscape uses responsive shortcuts and reveals the selected caret on page ${page + 1}",
                     { diagnostic }) { activity ->
                     val viewport = available(activity)
                     val scroll = activity.findViewById<View>(R.id.lessonScroll)
@@ -443,13 +478,17 @@ class ProgrammingLandscapeDeviceTest {
                         "card=${bounds(card)}, body=${bounds(body)}, input=${bounds(input)}, textSize=${input.textSize}, " +
                         "lineHeight=$lineHeight, padding=${input.totalPaddingTop}/${input.totalPaddingBottom}, " +
                         "inputScroll=${input.scrollX}/${input.scrollY}, selection=${input.selectionStart}/${input.selectionEnd}, losses=$focusLosses"
-                    imeVisible(activity) && toolbar.isShown && toolbar.height == normalToolbarHeight &&
+                    imeVisible(activity) && toolbar.isShown && responsiveToolbarMatches(toolbar, shortcutBaseline, viewport) &&
                         card.width == scroll.width && body.width == card.width &&
                         caretVisible(input, viewport, bounds(toolbar).top)
                 }
                 scenario.onActivity { activity ->
                     assertEquals("Normal mode remains outside fullscreen", "Pantalla completa", fullscreen.contentDescription)
-                    assertEquals("Normal mode does not apply the fullscreen toolbar cap", normalToolbarHeight, toolbar.height)
+                    assertResponsiveToolbar(toolbar, shortcutBaseline, available(activity))
+                    assertTrue("Normal landscape shortcuts leave at least half the viewport for editing",
+                        toolbar.height <= available(activity).height() / 2 + 1)
+                    assertEquals("Normal shortcuts end above the physical SwiftKey window", requireNotNull(actualImeTop()).toDouble(),
+                        bounds(toolbar).bottom.toDouble(), 3.0)
                     assertEquals(bounds(activity.findViewById(R.id.lessonScroll)).left, bounds(card).left)
                     assertEquals(bounds(activity.findViewById(R.id.lessonScroll)).right, bounds(card).right)
                     assertTrue(input.hasFocus())
@@ -483,8 +522,70 @@ class ProgrammingLandscapeDeviceTest {
                     assertEquals("Pantalla completa", fullscreen.contentDescription)
                     assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.lessonHeader).visibility)
                     assertTrue(activity.findViewById<View>(R.id.lessonProgress).isShown)
+                    showIme(activity, input)
+                }
+                awaitUi(scenario, "Reopening SwiftKey in portrait restores the original toolbar and selected caret") { activity ->
+                    imeVisible(activity) && toolbar.isShown && normalToolbarMatches(toolbar, shortcutBaseline) &&
+                        input.hasFocus() && activity.currentFocus === input &&
+                        activity.findViewById<View>(R.id.lessonHeader).visibility == View.VISIBLE &&
+                        activity.findViewById<View>(R.id.lessonProgress).isShown &&
+                        caretVisible(input, available(activity), bounds(toolbar).top)
+                }
+                scenario.onActivity { activity ->
+                    assertNormalToolbar(toolbar, shortcutBaseline)
+                    assertTrue(input.hasFocus())
+                    assertSame(input, activity.currentFocus)
+                    assertTrue("Normal portrait restoration never clears focus: $focusLosses", focusLosses.isEmpty())
+                    assertEquals(edited, input.text.toString())
+                    assertEquals(3, input.selectionStart)
+                    assertEquals(3, input.selectionEnd)
+                    assertEquals("Pantalla completa", fullscreen.contentDescription)
+                    assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.lessonHeader).visibility)
+                    assertTrue(activity.findViewById<View>(R.id.lessonProgress).isShown)
+                    assertTrue("Normal portrait caret is visible above SwiftKey: ${programmingDiagnostic(activity)}",
+                        caretVisible(input, available(activity), bounds(toolbar).top))
                 }
             }
+        }
+    }
+
+    private data class ShortcutBaseline(val toolbarHeight: Int, val keyHeights: Map<TextView, Int>)
+
+    private fun captureShortcutBaseline(toolbar: View): ShortcutBaseline {
+        val keys = tree(toolbar).filterIsInstance<TextView>().filter { it.isClickable }
+        assertTrue("Portrait shortcuts must have measured keys", keys.isNotEmpty() && keys.all { it.height > 0 })
+        assertTrue("Portrait shortcut toolbar must be measured", toolbar.height > 0)
+        return ShortcutBaseline(toolbar.height, keys.associateWith { it.height })
+    }
+
+    // The landscape design introduced in 5a1b8dc compacts keys in normal and fullscreen modes.
+    private fun expectedResponsiveToolbarHeight(baseline: ShortcutBaseline, viewport: Rect): Int =
+        minOf(baseline.keyHeights.values.maxOf { (it * 0.70f).toInt().coerceAtLeast(1) },
+            (viewport.height() / 2).coerceAtLeast(1))
+
+    private fun responsiveToolbarMatches(toolbar: View, baseline: ShortcutBaseline, viewport: Rect): Boolean {
+        val expected = expectedResponsiveToolbarHeight(baseline, viewport)
+        return toolbar.height == expected && baseline.keyHeights.all { (key, normalHeight) ->
+            key.height == minOf((normalHeight * 0.70f).toInt().coerceAtLeast(1), expected)
+        }
+    }
+
+    private fun assertResponsiveToolbar(toolbar: View, baseline: ShortcutBaseline, viewport: Rect) {
+        val expected = expectedResponsiveToolbarHeight(baseline, viewport)
+        assertEquals("Landscape toolbar uses 70 percent keys capped at half the current viewport", expected, toolbar.height)
+        baseline.keyHeights.forEach { (key, normalHeight) ->
+            assertEquals("Landscape shortcut ${key.text} uses its exact responsive height",
+                minOf((normalHeight * 0.70f).toInt().coerceAtLeast(1), expected), key.height)
+        }
+    }
+
+    private fun normalToolbarMatches(toolbar: View, baseline: ShortcutBaseline): Boolean =
+        toolbar.height == baseline.toolbarHeight && baseline.keyHeights.all { (key, height) -> key.height == height }
+
+    private fun assertNormalToolbar(toolbar: View, baseline: ShortcutBaseline) {
+        assertEquals("Portrait restores the exact original shortcut toolbar height", baseline.toolbarHeight, toolbar.height)
+        baseline.keyHeights.forEach { (key, height) ->
+            assertEquals("Portrait restores the original height of shortcut ${key.text}", height, key.height)
         }
     }
 
