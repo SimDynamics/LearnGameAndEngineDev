@@ -56,6 +56,19 @@ internal class CppCompiler(private val context: Context) {
     fun compile(
         source: String,
         compilerVariant: CppCompilerVariant = CppCompilerVariant.DEFAULT
+    ): CppCompilationResult = compileProject(
+        CppProject(mapOf("main.cpp" to source)), compilerVariant, projectSubdirectory = false
+    )
+
+    fun compile(
+        project: CppProject,
+        compilerVariant: CppCompilerVariant = CppCompilerVariant.DEFAULT
+    ): CppCompilationResult = compileProject(project, compilerVariant, projectSubdirectory = true)
+
+    private fun compileProject(
+        project: CppProject,
+        compilerVariant: CppCompilerVariant,
+        projectSubdirectory: Boolean
     ): CppCompilationResult {
         val startedAt = System.nanoTime()
         if (compilerVariant == CppCompilerVariant.OPTIONAL_CLANG_21) {
@@ -66,7 +79,12 @@ internal class CppCompiler(private val context: Context) {
         }
         val runtimeDirectory = prepareRuntime()
         val workspace = File(context.cacheDir, "cpp-jobs/${UUID.randomUUID()}").apply { mkdirs() }
-        val sourceFile = File(workspace, "main.cpp").apply { writeText(source) }
+        val projectDirectory = if (projectSubdirectory) File(workspace, "project") else workspace
+        val projectFiles = project.materialize(projectDirectory)
+        val buildDirectory = File(workspace, "build").apply { mkdirs() }
+        val objects = project.sourceFiles.mapIndexed { index, path ->
+            path to File(buildDirectory, "$index-${File(path).name}.o")
+        }
         val wasmFile = File(workspace, "program.wasm")
         val nativeDirectory = File(context.applicationInfo.nativeLibraryDir)
         // Legacy -Plgp.clang23=false APKs continue using their original toolchain.
@@ -121,92 +139,96 @@ internal class CppCompiler(private val context: Context) {
                 "-lunwind"
             ) else emptyList()
 
-        val command = listOf(
+        val driverCommand = listOf(
             clang.absolutePath,
             "--driver-mode=g++",
             "--target=wasm32-wasip1",
             "--sysroot=${sysroot.absolutePath}",
-            "-resource-dir=${resourceDirectory.absolutePath}",
+            "-resource-dir=${resourceDirectory.absolutePath}"
+        )
+        val compileFlags = listOf(
             "-isystem",
             cppHeaders.absolutePath,
-            "-std=c++23"
+            "-std=c++23",
+            "-I${projectDirectory.absolutePath}"
         ) + exceptionFlags + listOf(
             // Keep learning-oriented diagnostics compact in both modes.
             "-ferror-limit=1",
             "-fshow-overloads=best",
-            "-static",
             "-O0",
-            "-g0",
-            sourceFile.absolutePath,
-            "-Wl,--strip-all"
-        ) + exceptionLinkFlags + listOf(
-            "-o", wasmFile.absolutePath
+            "-g0"
+        )
+        val steps = objects.map { (path, objectFile) ->
+            CppBuildStep(
+                CppBuildPhase.COMPILATION,
+                path,
+                driverCommand + compileFlags + listOf(
+                    "-x", "c++", "-c", projectFiles.getValue(path).absolutePath,
+                    "-o", objectFile.absolutePath
+                )
+            )
+        } + CppBuildStep(
+            CppBuildPhase.LINK,
+            null,
+            // Code generation flags belong to the -c steps; EH libraries remain link inputs.
+            driverCommand + listOf("-static") +
+                objects.map { it.second.absolutePath } + listOf("-Wl,--strip-all") +
+                exceptionLinkFlags + listOf("-o", wasmFile.absolutePath)
         )
 
-        val process = ProcessBuilder(command)
-            .directory(workspace)
-            .apply {
-                environment()["LD_LIBRARY_PATH"] = nativeDirectory.absolutePath
-                if (useClang21) {
-                    environment()["LGP_LLD_CORE"] = lldCore.absolutePath
+        val buildOutput = CppBuildPipeline.run(steps) { step ->
+            val process = ProcessBuilder(step.command)
+                .directory(workspace)
+                .apply {
+                    environment()["LD_LIBRARY_PATH"] = nativeDirectory.absolutePath
+                    if (useClang21) environment()["LGP_LLD_CORE"] = lldCore.absolutePath
+                    environment()["PATH"] = "${linkerDirectory.absolutePath}:/system/bin:/system/xbin"
+                    environment()["TMPDIR"] = workspace.absolutePath
+                    environment()["HOME"] = workspace.absolutePath
+                }.start()
+            val readers = Executors.newFixedThreadPool(2)
+            try {
+                val stdout = readers.submit<String> { process.inputStream.bufferedReader().use { it.readText() } }
+                val stderr = readers.submit<String> { process.errorStream.bufferedReader().use { it.readText() } }
+                val finished = process.waitFor(COMPILER_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                if (!finished) process.destroyForcibly()
+                fun clean(text: String): String {
+                    // Object paths in linker diagnostics should identify the student's sources.
+                    val namedObjects = objects.fold(text) { output, (path, objectFile) ->
+                        output.replace(objectFile.absolutePath, "$path.o")
+                    }
+                    return cleanCompilerOutput(namedObjects, workspace, projectDirectory, runtimeDirectory)
                 }
-                environment()["PATH"] = "${linkerDirectory.absolutePath}:/system/bin:/system/xbin"
-                environment()["TMPDIR"] = workspace.absolutePath
-                environment()["HOME"] = workspace.absolutePath
+                CppBuildOutput(
+                    exitCode = if (finished) process.exitValue() else TIMEOUT_EXIT_CODE,
+                    stdout = clean(stdout.get(5, TimeUnit.SECONDS)),
+                    stderr = clean(stderr.get(5, TimeUnit.SECONDS)),
+                    timedOut = !finished,
+                    phase = step.phase,
+                    sourcePath = step.sourcePath
+                )
+            } finally {
+                readers.shutdownNow()
             }
-            .start()
-
-        val readers = Executors.newFixedThreadPool(2)
-        val stdout = readers.submit<String> { process.inputStream.bufferedReader().use { it.readText() } }
-        val stderr = readers.submit<String> { process.errorStream.bufferedReader().use { it.readText() } }
-        val finished = process.waitFor(COMPILER_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        if (!finished) process.destroyForcibly()
-        val compilerStdout =
-            cleanCompilerOutput(
-                stdout.get(
-                    5,
-                    TimeUnit.SECONDS
-                ),
-                workspace,
-                sourceFile,
-                runtimeDirectory
-            )
-
-        val compilerStderr =
-            cleanCompilerOutput(
-                stderr.get(
-                    5,
-                    TimeUnit.SECONDS
-                ),
-                workspace,
-                sourceFile,
-                runtimeDirectory
-            )
-
-        readers.shutdownNow()
-
-        val exitCode =
-            if (finished) {
-                process.exitValue()
-            } else {
-                TIMEOUT_EXIT_CODE
-            }
+        }
 
         return CppCompilationResult(
-            exitCode = exitCode,
-            stdout = compilerStdout,
-            stderr = compilerStderr,
-            wasmFile = wasmFile.takeIf { exitCode == 0 && it.isFile },
+            exitCode = buildOutput.exitCode,
+            stdout = buildOutput.stdout,
+            stderr = buildOutput.stderr,
+            wasmFile = wasmFile.takeIf { buildOutput.exitCode == 0 && it.isFile },
             workspace = workspace,
             durationMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt),
-            timedOut = !finished
+            timedOut = buildOutput.timedOut,
+            phase = buildOutput.phase,
+            sourcePath = buildOutput.sourcePath
         )
     }
 
     private fun cleanCompilerOutput(
         text: String,
         workspace: File,
-        sourceFile: File,
+        projectDirectory: File,
         runtimeDirectory: File
     ): String {
 
@@ -224,8 +246,8 @@ internal class CppCompiler(private val context: Context) {
          */
         cleaned =
             cleaned.replace(
-                sourceFile.absolutePath,
-                "main.cpp"
+                projectDirectory.absolutePath + File.separator,
+                ""
             )
 
         /*
@@ -471,6 +493,40 @@ internal class CppCompiler(private val context: Context) {
 
 }
 
+internal enum class CppBuildPhase { COMPILATION, LINK }
+
+internal data class CppBuildStep(
+    val phase: CppBuildPhase,
+    val sourcePath: String?,
+    val command: List<String>
+)
+
+internal data class CppBuildOutput(
+    val exitCode: Int,
+    val stdout: String = "",
+    val stderr: String = "",
+    val timedOut: Boolean = false,
+    val phase: CppBuildPhase = CppBuildPhase.COMPILATION,
+    val sourcePath: String? = null
+)
+
+/** Stop before linking a failed unit, retaining warnings from preceding units. */
+internal object CppBuildPipeline {
+    fun run(steps: List<CppBuildStep>, execute: (CppBuildStep) -> CppBuildOutput): CppBuildOutput {
+        require(steps.isNotEmpty()) { "La construcción necesita al menos una etapa." }
+        val stdout = mutableListOf<String>()
+        val stderr = mutableListOf<String>()
+        var result = CppBuildOutput(0)
+        for (step in steps) {
+            result = execute(step).copy(phase = step.phase, sourcePath = step.sourcePath)
+            if (result.stdout.isNotEmpty()) stdout += result.stdout
+            if (result.stderr.isNotEmpty()) stderr += result.stderr
+            if (result.exitCode != 0 || result.timedOut) break
+        }
+        return result.copy(stdout = stdout.joinToString("\n"), stderr = stderr.joinToString("\n"))
+    }
+}
+
 internal data class CppCompilationResult(
     val exitCode: Int,
     val stdout: String,
@@ -478,5 +534,7 @@ internal data class CppCompilationResult(
     val wasmFile: File?,
     val workspace: File,
     val durationMillis: Long,
-    val timedOut: Boolean = false
+    val timedOut: Boolean = false,
+    val phase: CppBuildPhase = CppBuildPhase.COMPILATION,
+    val sourcePath: String? = null
 )

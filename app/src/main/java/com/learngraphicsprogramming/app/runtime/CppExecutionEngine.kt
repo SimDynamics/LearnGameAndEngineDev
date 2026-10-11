@@ -26,6 +26,17 @@ internal class CppExecutionEngine(context: Context) {
         source: String,
         standardInput: String = "",
         compilerVariant: CppCompilerVariant = CppCompilerVariant.DEFAULT
+    ): CppEngineResult = compileAndRun(standardInput) { compiler.compile(source, compilerVariant) }
+
+    fun compileAndRun(
+        project: CppProject,
+        standardInput: String = "",
+        compilerVariant: CppCompilerVariant = CppCompilerVariant.DEFAULT
+    ): CppEngineResult = compileAndRun(standardInput) { compiler.compile(project, compilerVariant) }
+
+    private fun compileAndRun(
+        standardInput: String,
+        compile: () -> CppCompilationResult
     ): CppEngineResult {
         // Stop optional background narration before BOTH compilation and WASM
         // execution, releasing the priority only when execution finishes.
@@ -33,9 +44,9 @@ internal class CppExecutionEngine(context: Context) {
         try {
         // Recreated for each test invocation; safe if the process ends suddenly.
         checkpoint("K00 starting Clang compilation", reset = true)
-        val compilation = compiler.compile(source, compilerVariant)
+        val compilation = compile()
         checkpoint(
-            "K01 Clang finished: exit=${compilation.exitCode}, wasm=${compilation.wasmFile != null}"
+            "K01 Clang finished: phase=${compilation.phase}, exit=${compilation.exitCode}, wasm=${compilation.wasmFile != null}"
         )
         val wasmFile = compilation.wasmFile ?: return CppEngineResult(compilation, null)
 
