@@ -6096,7 +6096,8 @@ class LessonActivity : AppCompatActivity() {
     }
 
     private fun addCppCompiler(
-        block: JSONObject
+        block: JSONObject,
+        blockIndex: Int
     ) {
 
         val initialCode =
@@ -6104,6 +6105,33 @@ class LessonActivity : AppCompatActivity() {
                 "initialCode",
                 ""
             )
+
+        val initialStandardInput = block.optString("initialStandardInput", "")
+        val draftKey = "$currentRouteId/$currentLessonId/$currentPage/$blockIndex"
+        val labDrafts = getSharedPreferences("cpp_lesson_drafts", Context.MODE_PRIVATE)
+        val inputLabel = TextView(this).apply {
+            text = getString(R.string.cpp_prepared_input)
+            setPadding(0, dp(16), 0, dp(4))
+        }
+        val standardInput = EditText(this).apply {
+            tag = "cpp_input"
+            contentDescription = getString(R.string.cpp_prepared_input)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE or
+                android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            imeOptions = android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI
+            gravity = Gravity.TOP or Gravity.START
+            typeface = Typeface.MONOSPACE
+            minLines = 2
+            setText(labDrafts.getString("$draftKey/input", initialStandardInput))
+            addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+                override fun afterTextChanged(s: Editable?) {
+                    labDrafts.edit().putString("$draftKey/input", s.toString()).apply()
+                }
+            })
+        }
 
         /*
          * TARJETA DEL EDITOR.
@@ -6573,8 +6601,9 @@ class LessonActivity : AppCompatActivity() {
         }
 
         sourceCode.setText(
-            initialCode
+            labDrafts.getString("$draftKey/source", initialCode)
         )
+        sourceCode.tag = "cpp_source"
 
         sourceCode.text?.let { editable ->
 
@@ -6784,6 +6813,7 @@ class LessonActivity : AppCompatActivity() {
                 if (text == null) return
                 CppSyntaxHighlighter.applyTo(text)
                 compactCompilerSpaces(text)
+                labDrafts.edit().putString("$draftKey/source", text.toString()).apply()
             }
         })
 
@@ -6792,6 +6822,9 @@ class LessonActivity : AppCompatActivity() {
          */
         val runButton =
             MaterialButton(this)
+        runButton.tag = "cpp_run"
+        lessonContent.addView(inputLabel)
+        lessonContent.addView(standardInput)
 
         runButton.text =
             getString(R.string.cpp_runtime_run)
@@ -6830,6 +6863,7 @@ class LessonActivity : AppCompatActivity() {
          */
         val statusText =
             TextView(this)
+        statusText.tag = "cpp_status"
 
         statusText.text =
             getString(R.string.cpp_runtime_ready)
@@ -6861,6 +6895,7 @@ class LessonActivity : AppCompatActivity() {
          */
         val outputText =
             TextView(this)
+        outputText.tag = "cpp_compilation_output"
 
         outputText.typeface =
             Typeface.MONOSPACE
@@ -6898,10 +6933,32 @@ class LessonActivity : AppCompatActivity() {
             true
         )
 
-        lessonContent.addView(
-            outputText
-        )
+        fun addOutputLabel(title: Int) {
+            lessonContent.addView(TextView(this).apply {
+                text = getString(title)
+                setPadding(0, dp(8), 0, dp(4))
+            })
+        }
+        addOutputLabel(R.string.cpp_build_diagnostics)
+        lessonContent.addView(outputText)
         makeCodeCardFullWidth(outputText, extendInPortrait = false)
+        fun addProgramOutput(title: Int, viewTag: String): TextView {
+            addOutputLabel(title)
+            return TextView(this).apply {
+                tag = viewTag
+                typeface = Typeface.MONOSPACE
+                textSize = 18f
+                setTextColor(Color.rgb(121, 226, 157))
+                setBackgroundColor(Color.rgb(5, 6, 7))
+                setPadding(dp(16), dp(16), dp(16), dp(16))
+                minHeight = dp(48)
+                setTextIsSelectable(true)
+                lessonContent.addView(this)
+                makeCodeCardFullWidth(this, extendInPortrait = false)
+            }
+        }
+        val programOutput = addProgramOutput(R.string.cpp_program_stdout, "cpp_stdout")
+        val programError = addProgramOutput(R.string.cpp_program_stderr, "cpp_stderr")
 
         /*
  * PANTALLA COMPLETA DEL EDITOR.
@@ -7314,6 +7371,10 @@ class LessonActivity : AppCompatActivity() {
          */
         resetButton.setOnClickListener {
 
+            standardInput.setText(initialStandardInput)
+            programOutput.text = ""
+            programError.text = ""
+
             sourceCode.setText(
                 initialCode
             )
@@ -7417,6 +7478,9 @@ class LessonActivity : AppCompatActivity() {
 
             val source =
                 sourceCode.text.toString()
+            val preparedInput = standardInput.text.toString()
+            programOutput.text = ""
+            programError.text = ""
 
             runButton.isEnabled =
                 false
@@ -7435,7 +7499,8 @@ class LessonActivity : AppCompatActivity() {
                         CppExecutionEngine(
                             this
                         ).compileAndRun(
-                            source
+                            source,
+                            standardInput = preparedInput
                         )
                     }
 
@@ -7480,19 +7545,9 @@ class LessonActivity : AppCompatActivity() {
                                     append(getString(R.string.math_ui_compiler_timeout))
                                 }
 
-                                if (
-                                    execution != null
-                                ) {
-
-                                    append(
-                                        execution.stdout
-                                    )
-
-                                    append(
-                                        execution.stderr
-                                    )
-                                }
                             }.trimEnd()
+                        programOutput.text = execution?.stdout.orEmpty()
+                        programError.text = execution?.stderr.orEmpty()
                     }
 
                     result.onFailure { error ->
@@ -8828,7 +8883,8 @@ class LessonActivity : AppCompatActivity() {
                 "cpp_compiler" -> {
 
                     addCppCompiler(
-                        block
+                        block,
+                        i
                     )
                 }
 
