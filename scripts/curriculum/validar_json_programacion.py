@@ -90,6 +90,26 @@ MULTIPLE_CHOICE_OPTION_PERMUTATIONS = {
     ("colecciones_y_recorridos/lesson_media_y_cantidad_de_datos.json", 4, 4): (2, 1, 0),
     ("colecciones_y_recorridos/lesson_media_y_cantidad_de_datos.json", 5, 4): (0, 2, 1),
 }
+# Equivalentes C++ verificados para estas consignas concretas. Sólo se permite
+# ampliar answers; el programa, la pregunta, el feedback y la posición se conservan.
+ACCEPTED_ANSWER_EXTENSIONS = {
+    ("expresiones_y_decisiones/lesson_combinar_condiciones.json", 1, 5):
+        (("&&",), ("&&", "and")),
+    ("expresiones_y_decisiones/lesson_decisiones_compuestas_y_pruebas.json", 7, 4):
+        (("&&",), ("&&", "and")),
+    ("colecciones_y_recorridos/lesson_un_vector_para_una_coleccion.json", 2, 3):
+        (("int",), ("int", "signed", "signed int", "int signed")),
+    ("colecciones_y_recorridos/lesson_recorrer_valores_por_rango.json", 2, 4):
+        (("int",), ("int", "signed", "signed int", "int signed")),
+    ("funciones_y_contratos/lesson_declaraciones_y_firmas.json", 2, 3):
+        (("int",), ("int", "signed", "signed int", "int signed")),
+    ("errores_y_construccion_gradual/lesson_pruebas_sistematicas_y_regresion.json", 3, 5):
+        (("!=",), ("!=", "not_eq")),
+    ("errores_y_construccion_gradual/lesson_validar_antes_y_elegir_reporte.json", 4, 3):
+        (("||",), ("||", "or")),
+    ("archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json", 2, 4):
+        (("unsigned char",), ("unsigned char", "char unsigned")),
+}
 ERRORS = []
 
 
@@ -186,6 +206,14 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
     if current == old:
         return True
     lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
+    extension = ACCEPTED_ANSWER_EXTENSIONS.get((lesson_path, pn + 1, bn + 1))
+    if extension is not None and old["type"] == "fill_code":
+        previous_answers, accepted_answers = extension
+        if (
+            old["answers"] == list(previous_answers)
+            and current == dict(old, answers=list(accepted_answers))
+        ):
+            return True
     text = EXERCISE_TEXT_CLARIFICATIONS.get((lesson_path, pn + 1, bn + 1))
     if text is not None and old["type"] == text[0]:
         return current == dict(old, question=text[1], explanation=text[2])
