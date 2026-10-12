@@ -298,6 +298,215 @@ class CppCurricularProgramsInstrumentedTest {
     }
 
     @Test
+    fun structuredEqualityRejectsValidSingleFieldAndOrderDifferences() {
+        // Keep the published comparator and validators unchanged. Every negative
+        // contrast is valid and has the same group and record counts as the control.
+        val technicalTail = """
+            bool contraste_valido(const char* nombre, const Conjunto& original,
+                                  const Conjunto& distinto) {
+                const bool validos = conjunto_valido(original) && conjunto_valido(distinto);
+                bool tamanos = original.grupos.size() == distinto.grupos.size();
+                if (tamanos) {
+                    for (std::size_t i = 0; i < original.grupos.size(); ++i) {
+                        if (original.grupos.at(i).registros.size()
+                            != distinto.grupos.at(i).registros.size()) {
+                            tamanos = false;
+                        }
+                    }
+                }
+                const bool ida = mismos_datos(original, distinto);
+                const bool vuelta = mismos_datos(distinto, original);
+                std::cout << nombre << ':' << validos << ':' << tamanos
+                          << ':' << ida << ':' << vuelta << '\n';
+                return validos && tamanos && !ida && !vuelta;
+            }
+
+            int main() {
+                const Conjunto original{{
+                    Grupo{2, {{7, {0, 0}}, {4, {3, 1}}}},
+                    Grupo{0, {{7, {2, 4}}, {1, {0, 2}}}}
+                }};
+                const Conjunto copia = original;
+                const Conjunto vacio{};
+                const bool copia_ida = mismos_datos(original, copia);
+                const bool copia_vuelta = mismos_datos(copia, original);
+                const bool vacio_igual = mismos_datos(vacio, Conjunto{});
+                std::cout << "Copia:" << copia_ida << ':' << copia_vuelta << '\n';
+                std::cout << "Vacio:" << conjunto_valido(vacio) << ':' << vacio_igual << '\n';
+                bool correcto = copia_ida && copia_vuelta && conjunto_valido(vacio) && vacio_igual;
+
+                Conjunto distinto = original;
+                distinto.grupos.at(0).id = 1;
+                correcto = contraste_valido("Grupo inicial", original, distinto) && correcto;
+                distinto = original;
+                distinto.grupos.at(1).id = 1;
+                correcto = contraste_valido("Grupo final", original, distinto) && correcto;
+
+                distinto = original;
+                distinto.grupos.at(0).registros.at(0).id = 8;
+                correcto = contraste_valido("ID inicial", original, distinto) && correcto;
+                distinto = original;
+                distinto.grupos.at(1).registros.at(1).id = 2;
+                correcto = contraste_valido("ID final", original, distinto) && correcto;
+
+                distinto = original;
+                distinto.grupos.at(0).registros.at(0).recuento.aceptados = 10;
+                correcto = contraste_valido("Aceptados inicial", original, distinto) && correcto;
+                distinto = original;
+                distinto.grupos.at(1).registros.at(1).recuento.aceptados = 10;
+                correcto = contraste_valido("Aceptados final", original, distinto) && correcto;
+
+                distinto = original;
+                distinto.grupos.at(0).registros.at(0).recuento.rechazados = 10;
+                correcto = contraste_valido("Rechazados inicial", original, distinto) && correcto;
+                distinto = original;
+                distinto.grupos.at(1).registros.at(1).recuento.rechazados = 10;
+                correcto = contraste_valido("Rechazados final", original, distinto) && correcto;
+
+                distinto = original;
+                distinto.grupos.at(0) = original.grupos.at(1);
+                distinto.grupos.at(1) = original.grupos.at(0);
+                correcto = contraste_valido("Orden grupos", original, distinto) && correcto;
+                distinto = original;
+                distinto.grupos.at(0).registros.at(0) = original.grupos.at(0).registros.at(1);
+                distinto.grupos.at(0).registros.at(1) = original.grupos.at(0).registros.at(0);
+                correcto = contraste_valido("Orden registros inicial", original, distinto) && correcto;
+                distinto = original;
+                distinto.grupos.at(1).registros.at(0) = original.grupos.at(1).registros.at(1);
+                distinto.grupos.at(1).registros.at(1) = original.grupos.at(1).registros.at(0);
+                correcto = contraste_valido("Orden registros final", original, distinto) && correcto;
+
+                Conjunto invalido = original;
+                invalido.grupos.at(0).registros.at(0).recuento.aceptados = 11;
+                const bool invalido_valido = conjunto_valido(invalido);
+                const bool invalido_igual = mismos_datos(invalido, invalido);
+                std::cout << "Fuera de dominio:" << invalido_valido << ':' << invalido_igual << '\n';
+                correcto = !invalido_valido && !invalido_igual && correcto;
+                return correcto ? 0 : 1;
+            }
+        """.trimIndent() + "\n"
+        runProgram(
+            AssetProgram("$FILES/lesson_comprobar_ida_y_vuelta_sin_perder_datos.json", 4, 2),
+            "Copia:1:1\nVacio:1:1\n" +
+                "Grupo inicial:1:1:0:0\nGrupo final:1:1:0:0\n" +
+                "ID inicial:1:1:0:0\nID final:1:1:0:0\n" +
+                "Aceptados inicial:1:1:0:0\nAceptados final:1:1:0:0\n" +
+                "Rechazados inicial:1:1:0:0\nRechazados final:1:1:0:0\n" +
+                "Orden grupos:1:1:0:0\nOrden registros inicial:1:1:0:0\n" +
+                "Orden registros final:1:1:0:0\nFuera de dominio:0:0\n",
+            sourceTransformation = SourceTransformation("valid-equality-field-and-order-contrasts") { source ->
+                val mainOpening = "int main() {\n"
+                assertEquals("Unique round-trip reference main", 1, source.split(mainOpening).size - 1)
+                source.substringBefore(mainOpening) + technicalTail
+            }
+        )
+    }
+
+    @Test
+    fun multiDigitLexerKeepsBoundaryTokensAndRejectsOneHundred() {
+        val lessonPath = "texto_interpretacion_y_flujos/lesson_numeros_de_varios_digitos_y_limites.json"
+        val reference = AssetProgram(lessonPath, 6, 3)
+        val context = guardedContext()
+        val lesson = JSONObject(context.assets.open(reference.assetPath).bufferedReader().use { it.readText() })
+        val laboratory = lesson.getJSONArray("pages").getJSONObject(4)
+            .getJSONArray("blocks").getJSONObject(3)
+        assertEquals("U11L10 p5b4 laboratory type", "cpp_compiler", laboratory.getString("type"))
+        val initialSource = laboratory.getString("initialCode")
+        val referenceSource = loadCompleteProgram(context, reference)
+        val mainOpening = "int main() {\n"
+        val digitOpening = "        if (actual >= '0' && actual <= '9') {\n"
+        val signOpening = "        if (actual == '+' || actual == '-' || actual == '*'\n"
+        val singleDigit = digitOpening + "            return Token{'n', actual - '0'};\n        }\n"
+        val oldReserveDomain = "return token.valor >= 0 && token.valor <= 9;"
+        assertEquals("Unique laboratory digit implementation", 1, initialSource.split(singleDigit).size - 1)
+        assertEquals("Unique laboratory reserve domain", 1, initialSource.split(oldReserveDomain).size - 1)
+        assertEquals("Unique reference outer digit opening", 1, referenceSource.split("\n" + digitOpening).size - 1)
+        assertEquals("Unique reference sign opening", 1, referenceSource.split(signOpening).size - 1)
+        assertEquals("Unique laboratory main", 1, initialSource.split(mainOpening).size - 1)
+        assertEquals("Unique reference main", 1, referenceSource.split(mainOpening).size - 1)
+        val completeDigits = digitOpening + referenceSource.substringAfter(digitOpening).substringBefore(signOpening)
+        val completedLaboratory = initialSource.replace(singleDigit, completeDigits)
+            .replace(oldReserveDomain, "return token.valor >= 0 && token.valor <= 99;")
+        assertEquals(
+            "Only multi-digit recognition and reserve-domain changes complete the published laboratory",
+            referenceSource.substringBefore(mainOpening), completedLaboratory.substringBefore(mainOpening)
+        )
+        // The completed laboratory and reference have identical implementations;
+        // run that implementation once with new Android boundary and reserve clients.
+        val technicalMain = """
+            int main() {
+                try {
+                    Lector_tokens maximo{"99"};
+                    const Token numero = maximo.leer();
+                    std::cout << "Maximo:" << numero.clase << ':' << numero.valor << '\n';
+                    maximo.devolver(numero);
+                    std::cout << "Reserva maximo:" << maximo.tiene_pendiente() << '\n';
+                    const Token repetido = maximo.leer();
+                    std::cout << "Repetido maximo:" << repetido.clase << ':' << repetido.valor
+                              << ':' << maximo.tiene_pendiente() << '\n';
+                    const Token fin = maximo.leer();
+                    std::cout << "EOF:" << fin.clase << ':' << fin.valor
+                              << ':' << maximo.tiene_pendiente() << '\n';
+                } catch (const std::runtime_error& error) {
+                    std::cout << "Error maximo: " << error.what() << '\n';
+                    return 1;
+                }
+
+                Lector_tokens exceso{"100"};
+                bool rechazado = false;
+                try {
+                    const Token incorrecto = exceso.leer();
+                    std::cout << "Exceso aceptado:" << incorrecto.clase << ':' << incorrecto.valor << '\n';
+                } catch (const std::runtime_error& error) {
+                    rechazado = std::string{error.what()} == "Numero fuera de dominio";
+                    std::cout << "Exceso:" << error.what() << ':' << exceso.tiene_pendiente() << '\n';
+                }
+                if (!rechazado) { return 1; }
+
+                try {
+                    Lector_tokens lector{"42+6;"};
+                    const Token primero = lector.leer();
+                    std::cout << "Numero:" << primero.clase << ':' << primero.valor << '\n';
+                    lector.devolver(primero);
+                    std::cout << "Reserva numero:" << lector.tiene_pendiente() << '\n';
+                    const Token repetido = lector.leer();
+                    std::cout << "Repetido:" << repetido.clase << ':' << repetido.valor
+                              << ':' << lector.tiene_pendiente() << '\n';
+                    const Token signo = lector.leer();
+                    std::cout << "Signo:" << signo.clase << ':' << signo.valor << '\n';
+                    lector.devolver(signo);
+                    std::cout << "Reserva signo:" << lector.tiene_pendiente() << '\n';
+                    const Token signo_repetido = lector.leer();
+                    std::cout << "Signo repetido:" << signo_repetido.clase << ':' << signo_repetido.valor
+                              << ':' << lector.tiene_pendiente() << '\n';
+                    const Token siguiente = lector.leer();
+                    const Token cierre = lector.leer();
+                    const Token fin = lector.leer();
+                    std::cout << "Siguiente:" << siguiente.clase << ':' << siguiente.valor << '\n';
+                    std::cout << "Cierre:" << cierre.clase << ':' << cierre.valor << '\n';
+                    std::cout << "Fin:" << fin.clase << ':' << fin.valor
+                              << ':' << lector.tiene_pendiente() << '\n';
+                } catch (const std::runtime_error& error) {
+                    std::cout << "Error reserva: " << error.what() << '\n';
+                    return 1;
+                }
+                return 0;
+            }
+        """.trimIndent() + "\n"
+        runProgram(
+            reference,
+            "Maximo:n:99\nReserva maximo:1\nRepetido maximo:n:99:0\nEOF:f:0:0\n" +
+                "Exceso:Numero fuera de dominio:0\nNumero:n:42\nReserva numero:1\n" +
+                "Repetido:n:42:0\nSigno:+:0\nReserva signo:1\nSigno repetido:+:0:0\n" +
+                "Siguiente:n:6\nCierre:;:0\nFin:f:0:0\n",
+            sourceTransformation = SourceTransformation("multi-digit-eof-domain-and-token-reserve") { source ->
+                assertEquals("Exact published reference used for laboratory completion", referenceSource, source)
+                source.substringBefore(mainOpening) + technicalMain
+            }
+        )
+    }
+
+    @Test
     fun interpreterContractVariantRecoversMissingNameBeforeNextOperation() {
         // Contract variant of the real session reference, not another published main.
         // A missing name must leave n=4 committed and retain the following n+2 operation.

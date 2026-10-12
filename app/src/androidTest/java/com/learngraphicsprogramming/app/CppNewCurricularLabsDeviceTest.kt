@@ -1942,6 +1942,194 @@ class CppNewCurricularLabsDeviceTest {
         }
     }
 
+    @Test fun controlledMovementLabPreservesPositionAndRecoversAfterBothRejections() {
+        val location = LabLocation("cpp_fundamentals__excepciones_y_recuperacion__transferencia_con_movimientos_controlados", 2, 4)
+        withLab(location) { scenario, lesson, _ ->
+            val reference = referenceCode(lesson, 4, 4)
+            val orders = "std::vector<int>{1, 3, 3, 3, 9, 2}"
+            assertEquals(1, reference.split(orders).size - 1)
+            val prediction = blockAt(lesson, 3, 2)
+            assertEquals("output_prediction", prediction.getString("type"))
+            assertEquals("movimientos_con_rechazos", prediction.getString("id"))
+            assertEquals("L0,0;A1,0;O1,0;A1,1;", prediction.getJSONArray("answers").getString(0))
+            assertEquals(2, reference.split("> 2").size - 1)
+            val largerBoard = reference.replace("> 2", "> 3")
+                .replace("entre 0 y 2.", "entre 0 y 3.")
+                .replace(orders, "std::vector<int>{1, 1, 1, 1, 9, 3}")
+            // Each oracle records the state after the attempt, including every rejected move.
+            val cases = listOf(
+                reference to "A1,0;A1,1;A1,2;L1,2;O1,2;A0,2;",
+                prediction.getString("code") to "L0,0;A1,0;O1,0;A1,1;",
+                reference.replace(orders, "std::vector<int>{9, 1}") to "O0,0;A1,0;",
+                reference.replace(orders, "std::vector<int>{2, 4, 1, 1, 1, 3, 3, 3, 2, 4}") to
+                    "L0,0;L0,0;A1,0;A2,0;L2,0;A2,1;A2,2;L2,2;A1,2;A1,1;",
+                largerBoard to "A1,0;A2,0;A3,0;L3,0;O3,0;A3,1;"
+            )
+            for ((source, expected) in cases) {
+                scenario.onActivity { editor(it).setText(source) }
+                assertSuccessful(run(scenario), expected)
+            }
+        }
+    }
+
+    @Test fun orderModelLabsEnforceConstructionTerminalStatesAndIndependentCopies() {
+        val lessonId = "cpp_fundamentals__datos_propios_y_estado_valido__construir_y_comprobar_un_modelo_de_pedidos"
+        withLab(LabLocation(lessonId, 2, 3)) { scenario, lesson, _ ->
+            val reference = referenceCode(lesson, 3, 2)
+            val mainOpening = "int main() {\n"
+            assertEquals(1, reference.split(mainOpening).size - 1)
+            val checks = reference.substringBefore(mainOpening) + """
+                int main() {
+                    for (int cantidad : std::vector<int>{0, 1, 20, 21}) {
+                        try {
+                            const Pedido pedido{"Q", cantidad};
+                            std::cout << "Aceptado:" << pedido.unidades() << '\n';
+                        } catch (const PedidoInvalido&) {
+                            std::cout << "Rechazado:" << cantidad << '\n';
+                        }
+                    }
+                    try {
+                        const Pedido pedido{"", 4};
+                        std::cout << "Codigo aceptado\n";
+                    } catch (const PedidoInvalido&) {
+                        std::cout << "Codigo rechazado\n";
+                    }
+                    Pedido cancelado{"C", 5};
+                    std::cout << cancelado.cancelar() << ':' << cancelado.enviar() << ':';
+                    std::cout << cancelado.cancelar() << ':' << cancelado.cambiar_unidades(8) << ':';
+                    std::cout << cancelado.unidades() << ':' << (cancelado.estado() == Estado::cancelado) << '\n';
+                    Pedido enviado{"E", 2};
+                    std::cout << enviado.enviar() << ':' << enviado.enviar() << ':';
+                    std::cout << enviado.cancelar() << ':' << enviado.cambiar_unidades(8) << ':';
+                    std::cout << enviado.unidades() << ':' << (enviado.estado() == Estado::enviado) << '\n';
+                    Pedido original{"P", 3};
+                    Pedido copia = original;
+                    std::cout << copia.cambiar_unidades(20) << ':' << copia.cancelar() << ':';
+                    std::cout << original.enviar() << ':' << original.unidades() << ':' << copia.unidades() << ':';
+                    std::cout << (original.estado() == Estado::enviado) << ':';
+                    std::cout << (copia.estado() == Estado::cancelado);
+                    return 0;
+                }
+            """.trimIndent() + "\n"
+            for ((page, expected) in listOf(3 to "1 0 3", 7 to "8 20")) {
+                val prediction = blockAt(lesson, page, if (page == 3) 5 else 3)
+                assertEquals("output_prediction", prediction.getString("type"))
+                assertEquals(expected, prediction.getJSONArray("answers").getString(0))
+                scenario.onActivity { editor(it).setText(prediction.getString("code")) }
+                assertSuccessful(run(scenario), expected)
+            }
+            for ((source, expected) in listOf(
+                reference to "1:7\n0:7\n1:1\n0:1\n0:7",
+                checks to "Rechazado:0\nAceptado:1\nAceptado:20\nRechazado:21\n" +
+                    "Codigo rechazado\n1:0:0:0:5:1\n1:0:0:0:2:1\n1:1:1:3:20:1:1"
+            )) {
+                scenario.onActivity { editor(it).setText(source) }
+                assertSuccessful(run(scenario), expected)
+            }
+        }
+        withLab(LabLocation(lessonId, 5, 3)) { scenario, lesson, _ ->
+            val reference = referenceCode(lesson, 6, 2)
+            val initial = "std::vector<Pedido> pedidos{{\"A\", 2}, {\"B\", 5}, {\"C\", 1}};"
+            val sent = "    pedidos.at(1).enviar();\n"
+            assertEquals(1, reference.split(initial).size - 1)
+            assertEquals(1, reference.split(sent).size - 1)
+            val empty = reference.replace(initial, "std::vector<Pedido> pedidos{};").replace(sent, "")
+            for ((source, expected) in listOf(
+                reference to "A:Aplicada\nB:Rechazada\nX:Ausente\nA:Rechazada\nC:Aplicada\n" +
+                    "A:6;B:5;C:20; Total:31",
+                empty to "A:Ausente\nB:Ausente\nX:Ausente\nA:Ausente\nC:Ausente\n Total:0"
+            )) {
+                scenario.onActivity { editor(it).setText(source) }
+                assertSuccessful(run(scenario), expected)
+            }
+        }
+    }
+
+    @Test fun validatedGenerationLabPreservesEngineOnEmptyAndRejectedConfigurations() {
+        val location = LabLocation("cpp_fundamentals__aleatoriedad_y_reproducibilidad__validar_la_generacion_y_compartir_el_motor", 5, 4)
+        withLab(location) { scenario, lesson, _ ->
+            val reference = referenceCode(lesson, 6, 2)
+            val mainOpening = "int main() {\n"
+            assertEquals(1, reference.split(mainOpening).size - 1)
+            val checks = reference.substringBefore(mainOpening) + """
+                int main() {
+                    std::mt19937 motor{191};
+                    const std::vector<int> minimo = generar(motor, 20, -12, -12);
+                    std::cout << "Minimo:" << (minimo == std::vector<int>(20, -12)) << '\n';
+                    const std::vector<int> maximo = generar(motor, 1, 12, 12);
+                    std::cout << "Maximo:" << (maximo == std::vector<int>{12}) << '\n';
+                    const std::mt19937 antes_vacio = motor;
+                    const std::vector<int> vacio = generar(motor, 0, -12, 12);
+                    std::cout << "Vacio:" << vacio.size() << ':' << (motor == antes_vacio) << '\n';
+                    struct Configuracion { int cantidad; int minimo; int maximo; };
+                    for (const Configuracion caso : std::vector<Configuracion>{
+                            {-1, -12, 12}, {21, -12, 12}, {1, -13, 0}, {1, 0, 13}, {3, 5, 2}, {0, 5, 2}}) {
+                        const std::mt19937 antes = motor;
+                        try {
+                            const std::vector<int> datos = generar(motor, caso.cantidad, caso.minimo, caso.maximo);
+                            std::cout << "Aceptado:" << datos.size();
+                        } catch (const std::invalid_argument&) {
+                            std::cout << "Rechazado:" << (motor == antes);
+                        }
+                        const std::vector<int> siguiente = generar(motor, 1, 12, 12);
+                        std::cout << ':' << (siguiente == std::vector<int>{12}) << '\n';
+                    }
+                    return 0;
+                }
+            """.trimIndent() + "\n"
+            val cases = mutableListOf(
+                reference to "Continuacion:1\nVacio:0:1\nRechazo:1",
+                checks to "Minimo:1\nMaximo:1\nVacio:0:1\n" + "Rechazado:1:1\n".repeat(6)
+            )
+            for ((page, block, expected) in listOf(
+                Triple(2, 5, "Fuera del dominio:1"),
+                Triple(3, 3, "Conservado:1\nCoinciden:1"), Triple(4, 3, "0:1")
+            )) {
+                val prediction = blockAt(lesson, page, block)
+                assertEquals("output_prediction", prediction.getString("type"))
+                assertEquals(expected, prediction.getJSONArray("answers").getString(0))
+                cases.add(prediction.getString("code") to expected)
+            }
+            for ((source, expected) in cases) {
+                scenario.onActivity { editor(it).setText(source) }
+                assertSuccessful(run(scenario), expected)
+            }
+        }
+    }
+
+    @Test fun rejectedOrderSessionLabKeepsAcceptedTotalsAndAppliesOnlyTheNewBoundary() {
+        val location = LabLocation("cpp_fundamentals__errores_y_construccion_gradual__sesion_de_pedidos_con_errores_controlados", 2, 3)
+        withLab(location) { scenario, lesson, _ ->
+            val reference = referenceCode(lesson, 5, 4)
+            val initial = "std::vector<int> piezas{2, 11, 0, 3, -1};"
+            assertEquals(1, reference.split(initial).size - 1)
+            assertEquals(1, reference.split("piezas <= 10").size - 1)
+            val extended = reference.replace("piezas <= 10", "piezas <= 12")
+            val cases = mutableListOf(
+                reference to "Dato=2:7\nDato=11:Invalido\nDato=0:0\nDato=3:9\nDato=-1:Invalido\n3:2:16",
+                reference.replace(initial, "std::vector<int> piezas{};") to "0:0:0",
+                reference.replace(initial, "std::vector<int> piezas{11, -1};") to
+                    "Dato=11:Invalido\nDato=-1:Invalido\n0:2:0",
+                reference.replace(initial, "std::vector<int> piezas{0};") to "Dato=0:0\n1:0:0",
+                reference.replace(initial, "std::vector<int> piezas{10};") to "Dato=10:23\n1:0:23",
+                extended.replace(initial, "std::vector<int> piezas{1, 12, 4, 0};") to
+                    "Dato=1:5\nDato=12:27\nDato=4:11\nDato=0:0\n4:0:43",
+                extended.replace(initial, "std::vector<int> piezas{2, 13, 3};") to
+                    "Dato=2:7\nDato=13:Invalido\nDato=3:9\n2:1:16"
+            )
+            for ((page, block, expected) in listOf(Triple(3, 2, "3:1:16"), Triple(3, 3, "0:2:0"))) {
+                val prediction = blockAt(lesson, page, block)
+                assertEquals("output_prediction", prediction.getString("type"))
+                assertEquals(expected, prediction.getJSONArray("answers").getString(0))
+                cases.add(prediction.getString("code") to expected)
+            }
+            for ((source, expected) in cases) {
+                scenario.onActivity { editor(it).setText(source) }
+                assertSuccessful(run(scenario), expected)
+            }
+        }
+    }
+
     private fun nestedReviewOutput(teams: Int, tools: Int, rows: List<List<Int>>) = buildString {
         var total = 0
         rows.take(teams).forEachIndexed { index, accepted ->
