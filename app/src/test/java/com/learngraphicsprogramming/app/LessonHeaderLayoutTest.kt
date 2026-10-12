@@ -49,7 +49,7 @@ class LessonHeaderLayoutTest {
         assertEquals("86dp", attr("attemptIndicator", "layout_width"))
         assertEquals("58dp", attr("attemptIndicator", "layout_height"))
         assertEquals("68.8dp", attr("attemptIndicatorSlot", "layout_width"))
-        assertEquals("48dp", attr("attemptIndicatorSlot", "layout_height"))
+        assertEquals("64dp", attr("attemptIndicatorSlot", "layout_height"))
         for (id in listOf("imageAttemptRoute", "imageAttemptFill", "attemptFillClip")) {
             assertEquals("43dp", attr(id, "layout_width"))
             assertEquals("43dp", attr(id, "layout_height"))
@@ -84,7 +84,7 @@ class LessonHeaderLayoutTest {
         assertTrue("Action row must fit at 320dp", fixedWidth + padding <= 320.0)
         assertEquals("@+id/lessonHeaderLabels", (element("textProgress").parentNode as Element).getAttributeNS(android, "id"))
         assertEquals("24dp", attr("lessonHeaderLabels", "minHeight"))
-        assertEquals("48dp", attr("lessonHeaderActions", "layout_height"))
+        assertEquals("64dp", attr("lessonHeaderActions", "layout_height"))
     }
 
     @Test fun shortcutLabelsExistInAllThreeUiLanguages() {

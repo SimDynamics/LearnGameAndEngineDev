@@ -98,6 +98,94 @@ class LessonNarrationController(
     private val watchdogs = mutableMapOf<String, Runnable>()
     private var reportedFallback = false
     private var warnedNetwork = false
+    private var playbackGate: NarrationExerciseGate? = null
+    private var activePageIdentity = ""
+    private var waitingForExercise = false
+
+    /** A changed answer only changes playback permission, never the pre-render queue. */
+    fun updateSolvedExercises(pageIdentity: String, correctBlocks: Set<Int>) = onMain {
+        if (closed || pageIdentity != activePageIdentity) return@onMain
+        val gate = playbackGate ?: return@onMain
+        gate.updateCorrect(correctBlocks)
+        if (finished) return@onMain
+        val point = playbackPoint()
+        val permitted = gate.clamp(NarrationGatePosition(point.segment,point.positionMs))
+        if (permitted.segment != point.segment || permitted.positionMs != point.positionMs) {
+            val shouldWait = playing || waitingForExercise
+            pause()
+            index = permitted.segment
+            offset = permitted.positionMs
+            waitingForExercise = shouldWait && gate.blockedByAnswer(index)
+            rememberPlaybackPosition()
+        }
+        if (waitingForExercise && gate.canPlay(index)) {
+            val key = resumeKey
+            // Another explicit playback request wins over an old answer callback.
+            if (key != null && resumeStore.owns(key,resumeOwner) &&
+                NarrationSettingsRepository.controlsVisible(appContext)) {
+                waitingForExercise = false
+                resume()
+            } else waitingForExercise = false
+        }
+    }
+
+    private fun waitForExercise() {
+        val armed = playing || waitingForExercise
+        pause()
+        waitingForExercise = armed
+    }
+
+    /** Terminal state. Only a later user Play/Restart can leave this state. */
+    private fun finishPage() {
+        finished = true
+        waitingForExercise = false
+        playing = false
+        rememberPlaybackPosition()
+        main.removeCallbacks(playbackCheckpoint)
+        releasePlayer()
+        NarrationPlaybackOwner.release(this)
+        foregroundPlayback?.close()
+        foregroundPlayback = null
+        releaseFocus()
+        onState(false)
+    }
+
+    // Bookmarks are bounded metadata. Only explicit playback owns and updates one.
+    private val resumeStore = NarrationResumeStore(appContext)
+    private var resumeKey: String? = null
+    private var resumeOwner: String? = null
+    private var userPositionChosen = false
+    private val playbackCheckpoint = object : Runnable {
+        override fun run() {
+            if (closed || !playing) return
+            rememberPlaybackPosition()
+            main.postDelayed(this, 5_000L)
+        }
+    }
+
+    private fun playbackPoint() = NarrationResumePoint(index,
+        (if (playerReady) runCatching { player?.currentPosition?.toLong() ?: offset }
+            .getOrDefault(offset) else offset).coerceAtLeast(0L), finished,
+        playbackGate?.heardThrough ?: 0)
+
+    private fun rememberPlaybackPosition() {
+        val key = resumeKey ?: return
+        val owner = resumeOwner ?: return
+        // A negative unresolved seek is relative to the previous segment end, not zero.
+        if (!playerReady && offset < 0L) return
+        if (segments.isNotEmpty()) resumeStore.save(key, owner, playbackPoint())
+    }
+
+    fun checkpointPlayback() = onMain {
+        if (!closed) rememberPlaybackPosition()
+    }
+
+    private fun playbackIdentity(page: String, selected: NarrationSettings,
+                                 prepared: List<String>): String = NarrationResumePolicy.key(
+        page, selected.language.tag, selected.engine.name,
+        if (selected.engine == NarrationEngine.ANDROID) selected.androidVoice.orEmpty()
+        else selected.kokoroVoice, prepared
+    )
 
     // Construction, inference and close belong to the worker; main may request cancellation.
     @Volatile private var english: EnglishMisakiG2P? = null
@@ -127,39 +215,54 @@ class LessonNarrationController(
 
     fun toggle(
         segments: List<String>,
-        language: NarrationLanguage = NarrationSettingsRepository.get(appContext).language
+        language: NarrationLanguage = NarrationSettingsRepository.get(appContext).language,
+        pageIdentity: String = "",
+        feedbackGates: List<NarrationTextGate> = emptyList(),
+        correctBlocks: Set<Int> = emptySet(),
+        restartFromBeginning: Boolean = false
     ) = onMain {
         if (closed) return@onMain
-        val selectedSettings = NarrationSettingsRepository.forLanguage(appContext, language)
-        val prepared = narrationParts(segments, selectedSettings)
-        if (this.segments.isNotEmpty() && this.language == language &&
-            this.segments.map { it.text } == prepared
-        ) {
-            if (playing) pause() else resume()
+        val selected = NarrationSettingsRepository.forLanguage(appContext, language)
+        if (!selected.enabled) return@onMain
+        val prepared = narrationParts(segments, selected)
+        val key = playbackIdentity(pageIdentity, selected, prepared)
+        if (this.segments.isNotEmpty() && resumeKey == key && this.language == language &&
+            this.segments.map { it.text } == prepared) {
+            updateSolvedExercises(pageIdentity,correctBlocks)
+            if (restartFromBeginning) restart()
+            else if (playing) pause() else resume()
             return@onMain
         }
-        if (!startPage(prepared, selectedSettings)) return@onMain
-        resume()
+        val gates = NarrationScriptSegments.gates(segments,selected.engine,feedbackGates)
+        if (!startPage(prepared,selected,pageIdentity,gates,correctBlocks)) return@onMain
+        if (restartFromBeginning) restart() else resume()
     }
 
     private fun narrationParts(texts: List<String>, selected: NarrationSettings): List<String> =
         if (selected.engine == NarrationEngine.ANDROID) NarrationSegments.prepare(texts, 250)
         else NarrationSegments.sentences(texts)
 
-    private fun startPage(prepared: List<String>, selected: NarrationSettings): Boolean {
+    private fun startPage(prepared: List<String>, selected: NarrationSettings,
+                          pageIdentity: String, gates: List<NarrationFeedbackGate> = emptyList(),
+                          correctBlocks: Set<Int> = emptySet()): Boolean {
         stopInternal()
         settings = selected
         if (!settings.enabled) return false
-        if (prepared.isEmpty()) {
-            onError(s(R.string.narration_no_text))
-            return false
-        }
+        if (prepared.isEmpty()) { onError(s(R.string.narration_no_text)); return false }
         language = selected.language
+        activePageIdentity = pageIdentity
         segments = prepared.map { Segment(it) }.toMutableList()
-        directory = File(appContext.cacheDir, "lesson-narration-" + UUID.randomUUID())
-        if (selected.engine != NarrationEngine.ANDROID) {
-            preservePagePriority(prepared, selected)
-        }
+        resumeKey = playbackIdentity(pageIdentity,selected,prepared)
+        resumeOwner = null
+        userPositionChosen = false
+        val saved = resumeStore.restore(requireNotNull(resumeKey),segments.size)
+        playbackGate = NarrationExerciseGate(segments.size,gates,correctBlocks,saved?.feedbackHeardThrough ?: 0)
+        val position = requireNotNull(playbackGate).clamp(NarrationGatePosition(
+            saved?.segment ?: 0, saved?.positionMs ?: 0L))
+        index = position.segment; offset = position.positionMs
+        finished = false; waitingForExercise = false
+        directory = File(appContext.cacheDir,"lesson-narration-" + UUID.randomUUID())
+        if (selected.engine != NarrationEngine.ANDROID) preservePagePriority(prepared,selected)
         return true
     }
 
@@ -167,27 +270,29 @@ class LessonNarrationController(
      * Start synthesis when a page is OPENED, without playing audio or taking
      * audio focus. Replay uses the same cached WAV files; no new inference.
      */
-    fun prefetchPage(
-        texts: List<String>,
-        pageLanguage: NarrationLanguage
-    ) = onMain {
+    fun prefetchPage(texts: List<String>, pageLanguage: NarrationLanguage,
+                     pageIdentity: String = "", feedbackGates: List<NarrationTextGate> = emptyList(),
+                     correctBlocks: Set<Int> = emptySet()) = onMain {
         if (closed) return@onMain
-        val selected = NarrationSettingsRepository.forLanguage(appContext, pageLanguage)
+        val selected = NarrationSettingsRepository.forLanguage(appContext,pageLanguage)
         if (!selected.enabled || selected.engine == NarrationEngine.ANDROID) return@onMain
-        // AUTO should not silently launch Android TTS just because a page
-        // appeared: passive preparation is only for installed Kokoro files.
         val installed = runCatching {
             val root = models.directory()
-            File(root, "model.onnx").isFile &&
-                (KokoroVoiceCatalog.find(selected.kokoroVoice)?.let { voice ->
-                    File(root, voice.artifact.fileName).isFile
-                } == true)
+            File(root,"model.onnx").isFile &&
+                (KokoroVoiceCatalog.find(selected.kokoroVoice)?.let { File(root,it.artifact.fileName).isFile } == true)
         }.getOrDefault(false)
         if (!installed) return@onMain
-        val prepared = narrationParts(texts, selected)
+        val prepared = narrationParts(texts,selected)
         if (prepared.isEmpty()) return@onMain
-        if (language == pageLanguage && segments.map { it.text } == prepared) return@onMain
-        if (!startPage(prepared, selected)) return@onMain
+        val key = playbackIdentity(pageIdentity,selected,prepared)
+        if (resumeKey == key && language == pageLanguage && segments.map { it.text } == prepared) {
+            updateSolvedExercises(pageIdentity,correctBlocks)
+            return@onMain
+        }
+        if (!startPage(prepared,selected,pageIdentity,
+            NarrationScriptSegments.gates(texts,selected.engine,feedbackGates),correctBlocks)) return@onMain
+        // The +2 completion chain prepares the COMPLETE page, including gated feedback.
+        // It does not start a player or promote a resume bookmark.
         ensureSegment(0)
         ensureSegment(1)
     }
@@ -220,59 +325,106 @@ class LessonNarrationController(
     }
 
     private fun pause() {
-        if (!playing) return
+        waitingForExercise = false
+        val wasPlaying = playing
         playing = false
+        main.removeCallbacks(playbackCheckpoint)
         if (playerReady) runCatching { player?.pause() }
+        if (playerReady) offset = playbackPoint().positionMs
+        rememberPlaybackPosition()
+        // A paused page keeps its position, not a decoder/file handle.
+        releasePlayer()
+        NarrationPlaybackOwner.release(this)
         foregroundPlayback?.close()
         foregroundPlayback = null
         releaseFocus()
-        onState(false)
+        if (wasPlaying) onState(false)
     }
 
     private fun resume() {
         if (closed || segments.isEmpty() || !NarrationSettingsRepository.get(appContext).enabled) return
+        val key = resumeKey ?: return
+        waitingForExercise = false
+        if (finished) {
+            // This method is reached by explicit Play, or a guarded answer-wait callback.
+            finished = false; userPositionChosen = true
+            releasePlayer(); index = 0; offset = 0
+            playbackGate?.restart()
+        }
+        NarrationPlaybackOwner.acquire(this) { pause() }
         if (!acquireFocus()) {
-            onError(s(R.string.narration_focus_error))
-            return
+            NarrationPlaybackOwner.release(this)
+            onState(false); onError(s(R.string.narration_focus_error)); return
+        }
+        if (!resumeStore.owns(key,resumeOwner)) {
+            val saved = if (userPositionChosen) playbackPoint()
+                else resumeStore.restore(key,segments.size) ?: NarrationResumePoint()
+            playbackGate?.restoreHeard(saved.feedbackHeardThrough)
+            val target = playbackGate?.clamp(NarrationGatePosition(saved.segment,saved.positionMs))
+                ?: NarrationGatePosition(saved.segment,saved.positionMs)
+            val current = playbackPoint()
+            if (current.segment != target.segment || current.positionMs != target.positionMs) {
+                releasePlayer(); index = target.segment; offset = target.positionMs
+            }
+            resumeOwner = resumeStore.begin(key,playbackPoint())
+        }
+        userPositionChosen = false
+        playing = true
+        if (playbackGate?.canPlay(index) == false) {
+            if (playbackGate?.blockedByAnswer(index) == true) waitForExercise()
+            else { index = requireNotNull(playbackGate).clamp(NarrationGatePosition(index,offset)).segment; offset = 0 }
+            if (!playing) { onState(false); return }
         }
         foregroundPlayback = foregroundPlayback ?: NarrationWorkPriority.beginInteractive()
-        playing = true
         onState(true)
-        if (finished) {
-            finished = false
-            selectSegment(0, 0)
-        } else if (playerReady) {
+        if (playerReady) {
             applyRate()
-            runCatching { player?.start() }.onFailure { fail(s(R.string.narration_resume_error)) }
+            if (!finished && playing) runCatching { player?.start() }.onFailure { fail(s(R.string.narration_resume_error)) }
         } else ensureSegment(index)
+        rememberPlaybackPosition()
+        main.removeCallbacks(playbackCheckpoint)
+        if (playing && !finished) main.postDelayed(playbackCheckpoint,5_000L)
+    }
+
+    /** Hide controls without resetting position; pause releases the native player. */
+    fun pauseKeepingPosition() = onMain {
+        if (!closed) pause()
     }
 
     fun stop() = onMain { stopInternal() }
 
     fun restart() = onMain {
         if (closed || segments.isEmpty()) return@onMain
+        pause()
+        userPositionChosen = true
         finished = false
-        selectSegment(0, 0)
-        if (!playing) resume()
+        playbackGate?.restart()
+        index = 0; offset = 0
+        rememberPlaybackPosition()
+        resume()
     }
 
     /** Offsets are measured in source audio seconds, independent of playback speed. */
     fun seekBy(seconds: Int) = onMain {
-        if (closed || segments.isEmpty()) return@onMain
-        val position = if (playerReady) runCatching { player?.currentPosition?.toLong() ?: offset }.getOrDefault(offset) else offset
-        var target = position + seconds.toLong() * 1_000L
+        if (closed || segments.isEmpty() || finished) return@onMain
+        val point = playbackPoint()
+        var target = point.positionMs + seconds.toLong() * 1_000L
         var targetIndex = index
-        var previousDurationUnknown = false
-        while (target < 0L && targetIndex > 0) {
+        var previousUnknown = false
+        while (target < 0 && targetIndex > 0) {
             targetIndex--
             val duration = segments[targetIndex].duration
-            if (duration == null) { previousDurationUnknown = true; break }
+            if (duration == null) { previousUnknown = true; break }
             target += duration
         }
-        finished = false
-        // A negative offset means "from the previous segment's end" only if that
-        // duration is still unknown. At the beginning of the page it must clamp to zero.
-        selectSegment(targetIndex, if (previousDurationUnknown) target else target.coerceAtLeast(0L))
+        val from = NarrationGatePosition(point.segment,point.positionMs)
+        val requested = NarrationGatePosition(targetIndex,if(previousUnknown) target else target.coerceAtLeast(0))
+        val bounded = if (previousUnknown) requested else playbackGate?.seek(from,requested) ?: requested
+        if (bounded == from) return@onMain
+        userPositionChosen = true
+        waitingForExercise = false
+        selectSegment(bounded.segment,bounded.positionMs)
+        rememberPlaybackPosition()
     }
 
     fun settingsChanged() = onMain {
@@ -319,9 +471,14 @@ class LessonNarrationController(
     }
 
     private fun selectSegment(next: Int, position: Long) {
+        if (closed || segments.isEmpty() || finished) return
         releasePlayer()
-        index = next.coerceIn(0, segments.lastIndex)
-        offset = position
+        val desired = NarrationGatePosition(next.coerceIn(0,segments.lastIndex),position)
+        // Negative offsets are resolved against the previous audio duration, not lost.
+        val target = if (position < 0) desired else playbackGate?.clamp(desired) ?: desired
+        index = target.segment; offset = target.positionMs
+        rememberPlaybackPosition()
+        if (playing && playbackGate?.blockedByAnswer(index) == true) waitForExercise()
         ensureSegment(index)
     }
 
@@ -329,7 +486,7 @@ class LessonNarrationController(
         if (closed || next !in segments.indices) return
         val segment = segments[next]
         if (segment.file?.isFile == true) {
-            if (next == index && player == null) preparePlayer(segment)
+            if (playing && next == index && player == null) preparePlayer(segment)
             return
         }
         if (!pending.add(next)) return
@@ -598,7 +755,7 @@ class LessonNarrationController(
                 if (pending.isEmpty()) releaseSynthesisCpu()
                 segments[request.index].file = request.file
                 segments[request.index].duration = duration
-                if (request.index == index && player == null) preparePlayer(segments[index])
+                if (playing && request.index == index && player == null) preparePlayer(segments[index])
                 if (request.settings.engine != NarrationEngine.ANDROID) {
                     // Continue rendering the whole page in the background,
                     // even before Play is pressed. A two-sentence window
@@ -613,55 +770,66 @@ class LessonNarrationController(
     }
 
     private fun preparePlayer(segment: Segment) {
+        if (closed || finished || !playing) return
+        if (playbackGate?.canPlay(index) == false) { waitForExercise(); return }
         val file = segment.file ?: return
         val duration = segment.duration ?: return
-        if (offset < 0L) {
+        if (offset < 0) {
             offset += duration
-            if (offset < 0L && index > 0) {
-                selectSegment(index - 1, offset)
-                return
-            }
+            if (offset < 0 && index > 0) { selectSegment(index-1,offset); return }
         }
-        if (offset >= duration && index < segments.lastIndex) {
-            selectSegment(index + 1, offset - duration)
+        if (offset >= duration) {
+            if (index == segments.lastIndex) { finishPage(); return }
+            // Do not carry the unused part of a forward seek across a feedback boundary.
+            val proposed = NarrationGatePosition(index+1,offset-duration)
+            val safe = playbackGate?.seek(NarrationGatePosition(index,duration.toLong()),proposed) ?: proposed
+            selectSegment(safe.segment,safe.positionMs)
             return
         }
-        offset = offset.coerceIn(0L, (duration - 1).coerceAtLeast(0).toLong())
+        offset = offset.coerceIn(0,(duration-1).coerceAtLeast(0).toLong())
         val currentGeneration = generation
         val currentIndex = index
         try {
             val media = MediaPlayer()
-            media.setWakeMode(appContext, PowerManager.PARTIAL_WAKE_LOCK)
-            player = media
-            playerReady = false
+            media.setWakeMode(appContext,PowerManager.PARTIAL_WAKE_LOCK)
+            player = media; playerReady = false
             media.setAudioAttributes(attributes)
             media.setDataSource(file.absolutePath)
+            media.isLooping = false
             media.setOnPreparedListener {
-                if (closed || generation != currentGeneration || index != currentIndex || player !== media) return@setOnPreparedListener
+                if (closed || finished || !playing || generation != currentGeneration || index != currentIndex || player !== media) return@setOnPreparedListener
+                fun finishPreparation() {
+                    if (closed || finished || !playing || generation != currentGeneration || index != currentIndex || player !== media) return
+                    if (playbackGate?.canPlay(index) == false) { waitForExercise(); return }
+                    try {
+                        playerReady = true
+                        applyRate()
+                        if (!finished && playing && player === media) media.start()
+                        rememberPlaybackPosition()
+                        if (index+1 < segments.size) ensureSegment(index+1)
+                        if (index+2 < segments.size) ensureSegment(index+2)
+                    } catch (_: RuntimeException) { fail(s(R.string.narration_audio_start_error)) }
+                }
                 try {
-                    playerReady = true
-                    media.seekTo(offset.toInt())
-                    applyRate()
-                    if (playing && player === media) media.start()
-                    // Build the following sentences while this one plays.
-                    if (index + 1 < segments.size) ensureSegment(index + 1)
-                    if (index + 2 < segments.size) ensureSegment(index + 2)
+                    if (offset > 0) {
+                        media.setOnSeekCompleteListener {
+                            if (closed || finished || generation != currentGeneration || index != currentIndex || player !== media) return@setOnSeekCompleteListener
+                            media.setOnSeekCompleteListener(null)
+                            finishPreparation()
+                        }
+                        if (Build.VERSION.SDK_INT >= 26) media.seekTo(offset,MediaPlayer.SEEK_CLOSEST)
+                        else media.seekTo(offset.toInt())
+                    } else finishPreparation()
                 } catch (_: RuntimeException) { fail(s(R.string.narration_audio_start_error)) }
             }
             media.setOnCompletionListener {
-                if (closed || generation != currentGeneration || player !== media) return@setOnCompletionListener
-                if (index < segments.lastIndex) selectSegment(index + 1, 0)
-                else {
-                    finished = true
-                    playing = false
-                    foregroundPlayback?.close()
-                    foregroundPlayback = null
-                    releaseFocus()
-                    onState(false)
-                }
+                if (closed || finished || !playing || generation != currentGeneration || index != currentIndex || player !== media) return@setOnCompletionListener
+                playbackGate?.completedNaturally(currentIndex)
+                rememberPlaybackPosition()
+                if (index < segments.lastIndex) selectSegment(index+1,0) else finishPage()
             }
             media.setOnErrorListener { _, _, _ ->
-                if (generation == currentGeneration && player === media) fail(s(R.string.narration_audio_play_error))
+                if (!finished && generation == currentGeneration && player === media) fail(s(R.string.narration_audio_play_error))
                 true
             }
             media.prepareAsync()
@@ -672,7 +840,7 @@ class LessonNarrationController(
         val media = player ?: return
         // A nonzero PlaybackParams speed starts a prepared MediaPlayer. Keep the
         // preference while paused and apply it on resume, before normal playback.
-        if (!playerReady || !playing) return
+        if (!playerReady || !playing || finished) return
         try {
             media.playbackParams = PlaybackParams().setSpeed(NarrationSettingsRepository.get(appContext).rate).setPitch(1f)
         } catch (_: RuntimeException) { fail(s(R.string.narration_rate_error)) }
@@ -714,6 +882,15 @@ class LessonNarrationController(
     }
 
     private fun stopInternal(releaseNeuralResources: Boolean = false) {
+        rememberPlaybackPosition()
+        main.removeCallbacks(playbackCheckpoint)
+        NarrationPlaybackOwner.release(this)
+        resumeKey = null
+        resumeOwner = null
+        userPositionChosen = false
+        playbackGate = null
+        activePageIdentity = ""
+        waitingForExercise = false
         val previous = directory
         generation++
         KokoroEngineCoordinator.cancel(this)

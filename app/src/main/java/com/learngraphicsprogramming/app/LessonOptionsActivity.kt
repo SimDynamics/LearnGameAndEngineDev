@@ -468,10 +468,7 @@ class LessonOptionsActivity : AppCompatActivity() {
          * Si hubo modificaciones pero no
          * se pulsó Guardar, se descartan.
          */
-        buttonBack.setOnClickListener {
-
-            finish()
-        }
+        UnsavedSettingsExit.install(this, buttonBack) { buttonSaveCourseSettings.isEnabled }
 
         /*
          * ATAJOS DE PROGRAMACIÓN.
@@ -707,6 +704,8 @@ class LessonOptionsActivity : AppCompatActivity() {
             content
         )
 
+        var shortcutChangesSaved = false
+        val shortcutDraftAtOpen = inputs.map { it.text.toString() }
         val dialog =
             AlertDialog.Builder(
                 this
@@ -761,10 +760,17 @@ class LessonOptionsActivity : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
 
+                    shortcutChangesSaved = true
                     dialog.dismiss()
                 }
         }
 
+        dialog.setOnDismissListener {
+            if (!shortcutChangesSaved && !isChangingConfigurations &&
+                inputs.map { it.text.toString() } != shortcutDraftAtOpen) {
+                UnsavedSettingsExit.notifyDiscarded(this)
+            }
+        }
         dialog.show()
     }
 

@@ -315,10 +315,7 @@ class CourseOptionsActivity : AppCompatActivity() {
                 updateSaveButtonState()
             }
 
-        buttonBack.setOnClickListener {
-
-            finish()
-        }
+        UnsavedSettingsExit.install(this, buttonBack) { buttonSave.isEnabled }
 
         buttonResetCourse.setOnClickListener {
 
