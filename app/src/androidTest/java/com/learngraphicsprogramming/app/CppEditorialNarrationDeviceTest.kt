@@ -117,6 +117,11 @@ class CppEditorialNarrationDeviceTest {
     @Test fun editorialU1PagesRenderAndNarrateCurrentText() =
         verifyFixture("cpp_editorial_u1.json", setOf("programas_y_ejecucion"))
 
+    @Test fun firstLiteralOutputInstructionsRenderAndNarrateWithoutHiddenFeedback() =
+        verifyFixture("cpp_editorial_u1.json", setOf("programas_y_ejecucion"), setOf(
+            "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida p2b4.question",
+            "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida p2b4.explanation"))
+
     @Test fun editorialU2ToU4PagesRenderAndNarrateCurrentText() =
         verifyFixture("cpp_editorial_u2_u4.json", setOf(
             "objetos_y_estado", "expresiones_y_decisiones", "repeticion_y_terminacion"))
@@ -146,16 +151,20 @@ class CppEditorialNarrationDeviceTest {
         val location: String get() = "$lessonId p${page}b${block}.${this.field}"
     }
 
-    private fun verifyFixture(asset: String, allowedUnits: Set<String>) {
+    private fun verifyFixture(asset: String, allowedUnits: Set<String>, locations: Set<String>? = null) {
         requireQaPackage()
         val array = JSONArray(instrumentation.context.assets.open(asset)
             .bufferedReader(Charsets.UTF_8).use { it.readText() })
         assertTrue("The packaged editorial fixture must be nonempty: $asset", array.length() > 0)
-        val revisions = (0 until array.length()).map { index ->
+        val fixture = (0 until array.length()).map { index ->
             val item = array.getJSONObject(index)
             Revision(item.getString("file"), item.getString("lessonId"), item.getInt("page"),
                 item.getInt("block"), item.getString("field"), item.getString("before"), item.getString("after"))
         }
+        val revisions = fixture.filter { locations == null || it.location in locations }
+        if (locations != null) assertEquals("Every requested scalar is present in the fixture",
+            locations, revisions.map { it.location }.toSet())
+        assertTrue("The selected editorial fixture must be nonempty: $asset", revisions.isNotEmpty())
         assertEquals("One before/after entry per exact scalar coordinate", revisions.size,
             revisions.map { it.location }.toSet().size)
         revisions.forEach { change ->

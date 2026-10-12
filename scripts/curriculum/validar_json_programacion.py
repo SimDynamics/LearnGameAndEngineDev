@@ -51,6 +51,15 @@ EXPLANATION_CLARIFICATIONS = {
     ("repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json", 3, 3):
         ("output_prediction", "La condición inicial es falsa y el acumulador conserva su valor inicial cero."),
 }
+# Esta precisión revisa juntos consigna y feedback de una predicción. El
+# programa, respuesta, ID y todos los demás campos conservan igualdad exacta.
+EXERCISE_TEXT_CLARIFICATIONS = {
+    ("programas_y_ejecucion/lesson_primer_programa_y_salida.json", 2, 4): (
+        "output_prediction",
+        "Predice la salida. Escribe el mensaje sin las comillas del código y conserva el espacio entre las palabras. El programa no añade un salto de línea al mensaje.",
+        "Se muestra Archivo preparado, con un espacio entre las palabras. Las comillas, el punto y coma y los saltos de línea que separan las instrucciones del código fuente no forman parte de esta salida.",
+    ),
+}
 # Reordenaciones puntuales que retiran pistas de posición, sin cambiar opciones
 # ni la respuesta por contenido. Los índices indican el orden nuevo de HEAD.
 MULTIPLE_CHOICE_OPTION_PERMUTATIONS = {
@@ -159,6 +168,9 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
     if current == old:
         return True
     lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
+    text = EXERCISE_TEXT_CLARIFICATIONS.get((lesson_path, pn + 1, bn + 1))
+    if text is not None and old["type"] == text[0]:
+        return current == dict(old, question=text[1], explanation=text[2])
     permutation = MULTIPLE_CHOICE_OPTION_PERMUTATIONS.get((lesson_path, pn + 1, bn + 1))
     if permutation is not None and old["type"] == "multiple_choice":
         if sorted(permutation) != list(range(len(old["options"]))):

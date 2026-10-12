@@ -1652,6 +1652,70 @@ class CppNewCurricularLabsDeviceTest {
         }
     }
 
+    @Test fun firstLiteralOutputKeepsItsExactBytesAndChecksItsPreservedAnswer() {
+        val lessonId = "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida"
+        val lesson = LessonRepository.loadLessonJson(context, ROUTE, lessonId)
+        val prediction = blockAt(lesson, 2, 4)
+        assertEquals("output_prediction", prediction.getString("type"))
+        assertEquals("literal_independiente", prediction.getString("id"))
+        assertEquals(listOf("Archivo preparado"),
+            (0 until prediction.getJSONArray("answers").length()).map {
+                prediction.getJSONArray("answers").getString(it)
+            })
+        assertEquals("#include <iostream>\n\nint main() {\n" +
+            "    std::cout << \"Archivo preparado\";\n    return 0;\n}\n", prediction.getString("code"))
+        withLab(LabLocation(lessonId, 5, 3)) { scenario, loaded, _ ->
+            assertEquals(lesson.toString(), loaded.toString())
+            scenario.onActivity { editor(it).setText(prediction.getString("code")) }
+            assertSuccessful(run(scenario), "Archivo preparado")
+        }
+        for (answer in listOf("Archivo preparado", "ArchivoPreparado", "\"Archivo preparado\"")) {
+            assertTrue(context.getSharedPreferences(ATTEMPTS, Context.MODE_PRIVATE).edit()
+                .putFloat("reserve_$ROUTE", 4f).commit())
+            ProgressRepository.resetLesson(context, ROUTE, lessonId)
+            ProgressRepository.saveCurrentPage(context, ROUTE, lessonId, 1)
+            val intent = Intent(context, LessonActivity::class.java)
+                .putExtra("routeId", ROUTE).putExtra("courseId", "cpp_fundamentals")
+                .putExtra("unitId", "programas_y_ejecucion").putExtra("lessonId", lessonId)
+                .putExtra("lessonNumber", 2).putExtra("lessonTotal", 5)
+            ActivityScenario.launch<LessonActivity>(intent).use { scenario ->
+                scenario.onActivity { activity ->
+                    assertEquals(QA_PACKAGE, activity.packageName)
+                    assertEquals(lessonId, field(activity, "currentLessonId"))
+                    assertEquals(1, field(activity, "currentPage"))
+                    val page = content(activity)
+                    assertTrue(descendants(page).filterIsInstance<TextView>()
+                        .any { it.text.toString() == prediction.getString("question") })
+                    val response = descendants(page).filterIsInstance<EditText>()
+                        .single { it.hint?.toString() == activity.getString(R.string.exercise_expected_output) }
+                    response.setText(answer)
+                    var answerCard: View = response
+                    while (answerCard.parent !== page) answerCard = answerCard.parent as View
+                    val cardIndex = page.indexOfChild(answerCard)
+                    val check = page.getChildAt(cardIndex + 1) as android.widget.Button
+                    assertEquals(activity.getString(R.string.exercise_check), check.text.toString())
+                    assertTrue(check.isEnabled)
+                    check.performClick()
+                    val state = requireNotNull(ProgressRepository.getExerciseState(activity, lessonId, 1, 3))
+                    assertEquals(answer, state.getString("answer"))
+                    assertEquals(answer == "Archivo preparado", state.getBoolean("correct"))
+                    val feedback = page.getChildAt(cardIndex + 2) as TextView
+                    if (answer == "Archivo preparado") {
+                        assertEquals(activity.getString(R.string.lesson_correct_explanation,
+                            prediction.getString("explanation")), feedback.text.toString())
+                        assertFalse(response.isEnabled)
+                        assertFalse(check.isEnabled)
+                    } else {
+                        assertEquals(activity.getString(R.string.exercise_incorrect), feedback.text.toString())
+                        assertTrue(response.isEnabled)
+                    }
+                    assertEquals(if (answer == "Archivo preparado") 1 else 0,
+                        field(activity, "completedExercises"))
+                }
+            }
+        }
+    }
+
     @Test fun firstProgramLabShowsOnlyTheMessageAndRetainsItsCurrentDraft() {
         val location = LabLocation("cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida", 5, 3)
         // Clear only this additional QA draft; the shared twenty-six-location setup is preserved.
