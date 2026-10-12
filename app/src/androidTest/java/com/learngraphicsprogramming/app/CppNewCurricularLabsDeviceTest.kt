@@ -1942,6 +1942,115 @@ class CppNewCurricularLabsDeviceTest {
         }
     }
 
+    @Test fun numericCollectionReportLabSeparatesAbsenceAndBothCentersWhilePreservingOrder() {
+        withLab(NUMERIC_COLLECTION_REPORT) { scenario, lesson, block ->
+            assertSingleSourceSkeleton(scenario, block)
+            val reference = referenceCode(lesson, 4, 2)
+            val initial = "std::vector<int> datos{2, 8, 3, 3};"
+            assertEquals("Only the published example collection is replaced", 1,
+                reference.split(initial).size - 1)
+            // Expected results follow the stated quantities and central positions;
+            // the Order line independently checks the original observation sequence.
+            val cases = listOf(
+                "{2, 8, 3, 3}" to "N=4 Total=16\nMin=2 Max=8 Media=4 Mediana=3\nOrden:2;8;3;3;",
+                "{}" to "N=0 Total=0\nSin sesiones\nOrden:",
+                "{0}" to "N=1 Total=0\nMin=0 Max=0 Media=0 Mediana=0\nOrden:0;",
+                "{5}" to "N=1 Total=5\nMin=5 Max=5 Media=5 Mediana=5\nOrden:5;",
+                "{1, 2}" to "N=2 Total=3\nMin=1 Max=2 Media=1.5 Mediana=1.5\nOrden:1;2;",
+                "{6, 6, 6}" to "N=3 Total=18\nMin=6 Max=6 Media=6 Mediana=6\nOrden:6;6;6;",
+                "{1, 2, 12}" to "N=3 Total=15\nMin=1 Max=12 Media=5 Mediana=2\nOrden:1;2;12;",
+                "{0, 50, 1, 49, 2, 48, 3, 47, 4, 46, 5, 45, 6, 44, 7, 43, 8, 42, 9, 41}" to
+                    "N=20 Total=500\nMin=0 Max=50 Media=25 Mediana=25\n" +
+                    "Orden:0;50;1;49;2;48;3;47;4;46;5;45;6;44;7;43;8;42;9;41;"
+            )
+            assertEquals("The first case is the unmodified published reference", reference,
+                reference.replace(initial, "std::vector<int> datos${cases.first().first};"))
+            for ((values, expected) in cases) {
+                val source = reference.replace(initial, "std::vector<int> datos$values;")
+                scenario.onActivity { editor(it).setText(source) }
+                assertSuccessful(run(scenario), expected)
+            }
+            val draft = reference + "\n// Numeric report draft: absence, centers and original order.\n"
+            scenario.onActivity { editor(it).setText(draft) }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(NUMERIC_COLLECTION_REPORT.page - 1, field(it, "currentPage"))
+                assertEquals(draft, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+                showPage(it, LABEL_COLLECTION_CATALOG.page - 1)
+            }
+            assertSingleSourceSkeleton(scenario,
+                blockAt(lesson, LABEL_COLLECTION_CATALOG.page, LABEL_COLLECTION_CATALOG.block))
+            scenario.onActivity {
+                showPage(it, NUMERIC_COLLECTION_REPORT.page - 1)
+                assertEquals(draft, editor(it).text.toString())
+            }
+            assertSuccessful(run(scenario), cases.first().second)
+        }
+    }
+
+    @Test fun labelCollectionCatalogLabFindsTheOriginalFirstPositionAndPreservesEveryLabel() {
+        withLab(LABEL_COLLECTION_CATALOG) { scenario, lesson, block ->
+            assertSingleSourceSkeleton(scenario, block)
+            val reference = referenceCode(lesson, 8, 2)
+            val initial = """std::vector<std::string> etiquetas{"patio", "taller", "patio", "sala"};"""
+            val returnStatement = "    return 0;\n"
+            assertEquals("Only the published example collection is replaced", 1,
+                reference.split(initial).size - 1)
+            assertEquals("The observation is added before the unique normal return", 1,
+                reference.split(returnStatement).size - 1)
+            scenario.onActivity { editor(it).setText(reference) }
+            assertSuccessful(run(scenario), "Primera:1\nDistintas:3")
+
+            // This read-only observation follows all published decisions. It exposes
+            // original order and duplicates without changing the search or sorting.
+            val observeOriginal = """
+                std::cout << "\nOriginal:";
+                for (const auto& etiqueta : etiquetas) {
+                    std::cout << "[" << etiqueta << "]";
+                }
+                return 0;
+            """.trimIndent().prependIndent("    ") + "\n"
+            val cases = listOf(
+                "{}" to "No encontrado\nDistintas:0\nOriginal:",
+                """{"taller", "taller"}""" to "Primera:0\nDistintas:1\nOriginal:[taller][taller]",
+                """{"sala"}""" to "No encontrado\nDistintas:1\nOriginal:[sala]",
+                """{"Taller", "taller"}""" to "Primera:1\nDistintas:2\nOriginal:[Taller][taller]",
+                """{"taller", "patio", "taller"}""" to
+                    "Primera:0\nDistintas:2\nOriginal:[taller][patio][taller]",
+                """{"z19", "z18", "z17", "z16", "z15", "z14", "z13", "z12", "z11", "z10", "z09", "z08", "z07", "z06", "z05", "z04", "z03", "z02", "z01", "taller"}""" to
+                    "Primera:19\nDistintas:20\n" +
+                    "Original:[z19][z18][z17][z16][z15][z14][z13][z12][z11][z10]" +
+                    "[z09][z08][z07][z06][z05][z04][z03][z02][z01][taller]"
+            )
+            for ((values, expected) in cases) {
+                val source = reference.replace(initial, "std::vector<std::string> etiquetas$values;")
+                    .replaceFirst(returnStatement, observeOriginal)
+                scenario.onActivity { editor(it).setText(source) }
+                assertSuccessful(run(scenario), expected)
+            }
+            val draft = reference.replace(initial,
+                "std::vector<std::string> etiquetas${cases[4].first};")
+                .replaceFirst(returnStatement, observeOriginal) +
+                "\n// Label catalog draft: first occurrence, distinct labels and unchanged original.\n"
+            scenario.onActivity { editor(it).setText(draft) }
+            recreateWithAwakeQaDisplay(scenario)
+            scenario.onActivity {
+                assertEquals(LABEL_COLLECTION_CATALOG.page - 1, field(it, "currentPage"))
+                assertEquals(draft, editor(it).text.toString())
+                assertEquals("", input(it).text.toString())
+                showPage(it, NUMERIC_COLLECTION_REPORT.page - 1)
+            }
+            assertSingleSourceSkeleton(scenario,
+                blockAt(lesson, NUMERIC_COLLECTION_REPORT.page, NUMERIC_COLLECTION_REPORT.block))
+            scenario.onActivity {
+                showPage(it, LABEL_COLLECTION_CATALOG.page - 1)
+                assertEquals(draft, editor(it).text.toString())
+            }
+            assertSuccessful(run(scenario), cases[4].second)
+        }
+    }
+
     @Test fun controlledMovementLabPreservesPositionAndRecoversAfterBothRejections() {
         val location = LabLocation("cpp_fundamentals__excepciones_y_recuperacion__transferencia_con_movimientos_controlados", 2, 4)
         withLab(location) { scenario, lesson, _ ->
@@ -2482,11 +2591,13 @@ class CppNewCurricularLabsDeviceTest {
         private val INTENTIONAL_FALLTHROUGH = LabLocation("cpp_fundamentals__repeticion_y_terminacion__seleccion_discreta_con_switch", 9, 4)
         private val EXPLICIT_CONSTRUCTION = LabLocation("cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado", 13, 4)
         private val ASSIGNMENT_RECOVERY = LabLocation(EXPLICIT_CONSTRUCTION.lesson, 15, 8)
+        private val NUMERIC_COLLECTION_REPORT = LabLocation("cpp_fundamentals__colecciones_y_recorridos__informes_y_transferencia_de_colecciones", 3, 3)
+        private val LABEL_COLLECTION_CATALOG = LabLocation(NUMERIC_COLLECTION_REPORT.lesson, 7, 3)
         private val LABS = listOf(THREE_INPUTS, LINES, PROJECT, TRANSFER, OVERLOAD_FOUR, OVERLOAD_EIGHT,
             RECURSIVE_PAIRS, RECURSIVE_GROUPS, REFERENCE_SWAP, REFERENCE_ALIASES, DIAGNOSTIC_INTERVAL, REFACTOR_REPORT,
             NESTED_REVIEW, NESTED_PARITY, DEPOSIT_OPERATIONS, DEPOSIT_BATCH, EXACT_INTEGER_CONVERSION, EXACT_INTEGER_COLLECTION,
             DELIBERATE_ROUNDING, UNIQUE_ROUNDED_MARKS, CONSECUTIVE_WORDS, CONSECUTIVE_LINES, UNIQUE_SELECTION, UNIQUE_PAIRS,
             FREQUENCY_TABLE, TIED_LABEL_FREQUENCIES, INTENTIONAL_FALLTHROUGH, EXPLICIT_CONSTRUCTION,
-            ASSIGNMENT_RECOVERY)
+            ASSIGNMENT_RECOVERY, NUMERIC_COLLECTION_REPORT, LABEL_COLLECTION_CATALOG)
     }
 }
