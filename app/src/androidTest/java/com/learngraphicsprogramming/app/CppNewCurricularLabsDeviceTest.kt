@@ -25,6 +25,7 @@ import com.learngraphicsprogramming.app.narration.LessonNarrationText
 import com.learngraphicsprogramming.app.narration.NarrationLanguage
 import com.learngraphicsprogramming.app.narration.NarrationSegments
 import com.learngraphicsprogramming.app.narration.phonemes.SpanishFluidG2P
+import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.After
@@ -1575,6 +1576,82 @@ class CppNewCurricularLabsDeviceTest {
         }
     }
 
+    @Test fun reorderedChoicesKeepTheirOriginalMeaningThroughTheRealCheckButton() {
+        val revisions = JSONArray(instrumentation.context.assets
+            .open("cpp_multiple_choice_position_revision.json")
+            .bufferedReader(Charsets.UTF_8).use { it.readText() })
+        assertEquals("The eight reviewed permutations have independent original-answer fixtures", 8,
+            revisions.length())
+        val coordinates = mutableSetOf<String>()
+        for (index in 0 until revisions.length()) {
+            val revision = revisions.getJSONObject(index)
+            val lessonId = revision.getString("lessonId")
+            val pageNumber = revision.getInt("page")
+            val blockNumber = revision.getInt("block")
+            assertTrue(coordinates.add("$lessonId p${pageNumber}b$blockNumber"))
+            val parts = lessonId.split("__")
+            assertEquals(3, parts.size)
+            assertEquals("cpp_fundamentals", parts[0])
+            assertEquals("app/src/main/assets/content/es/$ROUTE/${parts[0]}/${parts[1]}/lesson_${parts[2]}.json",
+                revision.getString("file"))
+            val lesson = LessonRepository.loadLessonJson(context, ROUTE, lessonId)
+            val exercise = blockAt(lesson, pageNumber, blockNumber)
+            assertEquals("multiple_choice", exercise.getString("type"))
+            assertEquals(revision.getString("exerciseId"), exercise.optString("id"))
+            val beforeOptions = revision.getJSONArray("beforeOptions")
+            val original = (0 until beforeOptions.length()).map { beforeOptions.getString(it) }
+            val permutationJson = revision.getJSONArray("permutation")
+            val permutation = (0 until permutationJson.length()).map { permutationJson.getInt(it) }
+            assertEquals(original.indices.toList(), permutation.sorted())
+            val options = exercise.getJSONArray("options")
+            val current = (0 until options.length()).map { options.getString(it) }
+            assertEquals("Only the recorded option order changes", permutation.map { original[it] }, current)
+            val correctText = original[revision.getInt("beforeCorrectIndex")]
+            assertEquals("The correct answer is the original content", correctText,
+                current[exercise.getInt("correctIndex")])
+            val distractorText = original.first { it != correctText }
+            for (selectedText in listOf(correctText, distractorText)) {
+                // Only the isolated QA package is reset; this test is not an attempt-ledger test.
+                assertTrue(context.getSharedPreferences(ATTEMPTS, Context.MODE_PRIVATE).edit()
+                    .putFloat("reserve_$ROUTE", 4f).commit())
+                ProgressRepository.resetLesson(context, ROUTE, lessonId)
+                ProgressRepository.saveCurrentPage(context, ROUTE, lessonId, pageNumber - 1)
+                val intent = Intent(context, LessonActivity::class.java)
+                    .putExtra("routeId", ROUTE).putExtra("courseId", parts[0])
+                    .putExtra("unitId", parts[1]).putExtra("lessonId", lessonId)
+                    .putExtra("lessonNumber", 1).putExtra("lessonTotal", 1)
+                ActivityScenario.launch<LessonActivity>(intent).use { scenario ->
+                    scenario.onActivity { activity ->
+                        assertEquals(QA_PACKAGE, activity.packageName)
+                        assertEquals(lessonId, (field(activity, "lessonJson") as JSONObject).getString("id"))
+                        assertEquals(pageNumber - 1, field(activity, "currentPage"))
+                        val page = content(activity)
+                        val choice = descendants(page).filterIsInstance<android.widget.RadioButton>()
+                            .single { it.text.toString() == selectedText }
+                        choice.performClick()
+                        var answerCard: View = choice
+                        while (answerCard.parent !== page) answerCard = answerCard.parent as View
+                        val cardIndex = page.indexOfChild(answerCard)
+                        val check = page.getChildAt(cardIndex + 1) as android.widget.Button
+                        assertEquals(activity.getString(R.string.exercise_check), check.text.toString())
+                        assertTrue(check.isEnabled)
+                        check.performClick()
+                        val state = requireNotNull(ProgressRepository.getExerciseState(activity, lessonId,
+                            pageNumber - 1, blockNumber - 1))
+                        assertEquals(current.indexOf(selectedText), state.getInt("selectedIndex"))
+                        assertEquals(selectedText == correctText, state.getBoolean("correct"))
+                        val feedback = page.getChildAt(cardIndex + 2) as TextView
+                        if (selectedText == correctText) {
+                            assertTrue(feedback.text.toString().contains(exercise.getString("explanation")))
+                        } else {
+                            assertEquals(activity.getString(R.string.exercise_incorrect), feedback.text.toString())
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Test fun firstProgramLabShowsOnlyTheMessageAndRetainsItsCurrentDraft() {
         val location = LabLocation("cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida", 5, 3)
         // Clear only this additional QA draft; the shared twenty-six-location setup is preserved.
@@ -1738,6 +1815,66 @@ class CppNewCurricularLabsDeviceTest {
             recreateWithAwakeQaDisplay(scenario)
             scenario.onActivity { assertEquals(draft, editor(it).text.toString()) }
             assertSuccessful(run(scenario), attemptOutput)
+        }
+    }
+
+    @Test fun assignmentRecoveryUsesExistingObjectsAndPreservesDestinationOnRejection() {
+        withLab(ASSIGNMENT_RECOVERY) { scenario, lesson, block ->
+            assertSingleSourceSkeleton(scenario, block)
+            assertSuccessful(run(scenario), "")
+            val example = referenceCode(lesson, 15, 3)
+            scenario.onActivity { editor(it).setText(example) }
+            assertSuccessful(run(scenario), "2:4:4")
+
+            val reference = referenceCode(lesson, 16, 3)
+            val referenceOutput = "Inicio:2\nDesde objeto:4\nDesde construccion:1\nRechazado:6\nConservado:1\n"
+            scenario.onActivity { editor(it).setText(reference) }
+            assertSuccessful(run(scenario), referenceOutput)
+            val prediction = blockAt(lesson, 16, 5)
+            assertEquals("output_prediction", prediction.getString("type"))
+            assertEquals("${ASSIGNMENT_RECOVERY.lesson}__asignacion_y_rechazo_conservan_destino",
+                prediction.getString("id"))
+            assertEquals("2:2:3:3", prediction.getJSONArray("answers").getString(0))
+            scenario.onActivity { editor(it).setText(prediction.getString("code")) }
+            assertSuccessful(run(scenario), "2:2:3:3")
+
+            // Only the assignment operand changes. Construction, the existing
+            // destination, and the observation of the unchanged source remain.
+            val assignment = "    destino = origen;"
+            assertEquals(1, example.split(assignment).size - 1)
+            val implicit = example.replace(assignment, "    destino = 3;")
+            scenario.onActivity { editor(it).setText(implicit) }
+            assertCompilationFailure(run(scenario), "main.cpp", "=")
+            val constructed = example.replace(assignment, "    destino = Contador{3};")
+            scenario.onActivity { editor(it).setText(constructed) }
+            assertSuccessful(run(scenario), "2:3:4")
+            assertEquals(1, implicit.split("explicit Contador(int inicial)").size - 1)
+            scenario.onActivity {
+                editor(it).setText(implicit.replace("explicit Contador(int inicial)", "Contador(int inicial)"))
+            }
+            assertSuccessful(run(scenario), "2:3:4")
+            for ((boundary, expected) in listOf(0 to "2:0:4", 5 to "2:5:4")) {
+                scenario.onActivity {
+                    editor(it).setText(example.replace(assignment, "    destino = Contador{$boundary};"))
+                }
+                assertSuccessful(run(scenario), expected)
+            }
+
+            assertEquals(1, reference.split("    // destino = 3;").size - 1)
+            scenario.onActivity {
+                editor(it).setText(reference.replace("    // destino = 3;", "    destino = 3;"))
+            }
+            assertCompilationFailure(run(scenario), "main.cpp", "=")
+            // The rejected RHS construction in the exact reference preserves 1.
+            // A valid explicit RHS inserted before that query changes it to 3.
+            val observation = "    std::cout << \"Conservado:\" << destino.valor() << '\\n';"
+            assertEquals(1, reference.split(observation).size - 1)
+            scenario.onActivity {
+                editor(it).setText(reference.replace(observation,
+                    "    destino = Contador{3};\n" + observation))
+            }
+            assertSuccessful(run(scenario),
+                "Inicio:2\nDesde objeto:4\nDesde construccion:1\nRechazado:6\nConservado:3\n")
         }
     }
 
@@ -2092,10 +2229,12 @@ class CppNewCurricularLabsDeviceTest {
         private val TIED_LABEL_FREQUENCIES = LabLocation(FREQUENCY_TABLE.lesson, 6, 6)
         private val INTENTIONAL_FALLTHROUGH = LabLocation("cpp_fundamentals__repeticion_y_terminacion__seleccion_discreta_con_switch", 9, 4)
         private val EXPLICIT_CONSTRUCTION = LabLocation("cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado", 13, 4)
+        private val ASSIGNMENT_RECOVERY = LabLocation(EXPLICIT_CONSTRUCTION.lesson, 15, 8)
         private val LABS = listOf(THREE_INPUTS, LINES, PROJECT, TRANSFER, OVERLOAD_FOUR, OVERLOAD_EIGHT,
             RECURSIVE_PAIRS, RECURSIVE_GROUPS, REFERENCE_SWAP, REFERENCE_ALIASES, DIAGNOSTIC_INTERVAL, REFACTOR_REPORT,
             NESTED_REVIEW, NESTED_PARITY, DEPOSIT_OPERATIONS, DEPOSIT_BATCH, EXACT_INTEGER_CONVERSION, EXACT_INTEGER_COLLECTION,
             DELIBERATE_ROUNDING, UNIQUE_ROUNDED_MARKS, CONSECUTIVE_WORDS, CONSECUTIVE_LINES, UNIQUE_SELECTION, UNIQUE_PAIRS,
-            FREQUENCY_TABLE, TIED_LABEL_FREQUENCIES, INTENTIONAL_FALLTHROUGH, EXPLICIT_CONSTRUCTION)
+            FREQUENCY_TABLE, TIED_LABEL_FREQUENCIES, INTENTIONAL_FALLTHROUGH, EXPLICIT_CONSTRUCTION,
+            ASSIGNMENT_RECOVERY)
     }
 }

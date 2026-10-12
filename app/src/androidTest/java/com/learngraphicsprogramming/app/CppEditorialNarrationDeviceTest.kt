@@ -131,6 +131,14 @@ class CppEditorialNarrationDeviceTest {
             "datos_propios_y_estado_valido", "aleatoriedad_y_reproducibilidad",
             "texto_interpretacion_y_flujos", "archivos_y_programa_completo"))
 
+    @Test fun masterApa7AttributionsAndNewlineBridgeRenderAndNarrateCurrentText() =
+        verifyFixture("cpp_master_apa7_revision.json", setOf(
+            "programas_y_ejecucion", "objetos_y_estado", "expresiones_y_decisiones",
+            "repeticion_y_terminacion", "colecciones_y_recorridos", "funciones_y_contratos",
+            "errores_y_construccion_gradual", "excepciones_y_recuperacion",
+            "datos_propios_y_estado_valido", "aleatoriedad_y_reproducibilidad",
+            "texto_interpretacion_y_flujos", "archivos_y_programa_completo"))
+
     private data class Revision(
         val file: String, val lessonId: String, val page: Int, val block: Int,
         val field: String, val before: String, val after: String
@@ -272,11 +280,11 @@ class CppEditorialNarrationDeviceTest {
                 }
                 observedPage = page - 1
                 instrumentation.waitForIdleSync()
-                observedActivity = awaitFocusedQaPage(scenario, observedActivity, lesson, observedPage)
-                scenario.onActivity { activity ->
+                observedActivity = awaitFocusedQaPage(scenario, observedActivity, lesson, observedPage) { activity ->
                     observedActivity = requireQaPageContinuity(observedActivity, activity, lesson, observedPage)
                     assertEquals(page - 1, field(activity, "currentPage"))
-                    assertTrue("The current QA renderer has a foreground window", activity.hasWindowFocus())
+                    assertTrue("The current QA renderer has a foreground window: $lessonId p$page",
+                        activity.hasWindowFocus())
                     val loaded = field(activity, "lessonJson") as JSONObject
                     assertEquals("The renderer uses the published current lesson", lesson.toString(), loaded.toString())
                     @Suppress("UNCHECKED_CAST")
@@ -315,7 +323,7 @@ class CppEditorialNarrationDeviceTest {
 
     private fun awaitFocusedQaPage(
         scenario: ActivityScenario<LessonActivity>, expectedActivity: LessonActivity,
-        lesson: JSONObject, page: Int
+        lesson: JSONObject, page: Int, verifyFocusedPage: (LessonActivity) -> Unit = {}
     ): LessonActivity {
         requireQaPackage()
         val lessonId = lesson.getString("id")
@@ -341,6 +349,9 @@ class CppEditorialNarrationDeviceTest {
                     "focus=${activity.hasWindowFocus()}, attached=${decor.isAttachedToWindow}, " +
                     "windowVisibility=${decor.windowVisibility}, contentShown=${content.isShown}, " +
                     "content=${content.width}x${content.height}"
+                // Observe focus and verify the page in the same main-thread callback.
+                // A later callback could receive a window whose focus has since changed.
+                if (focused) verifyFocusedPage(activity)
             }
             if (focused) return observedActivity
             if (SystemClock.uptimeMillis() >= deadline) break

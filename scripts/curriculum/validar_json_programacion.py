@@ -51,6 +51,18 @@ EXPLANATION_CLARIFICATIONS = {
     ("repeticion_y_terminacion/lesson_despacho_y_recuperacion_de_recorridos.json", 3, 3):
         ("output_prediction", "La condición inicial es falsa y el acumulador conserva su valor inicial cero."),
 }
+# Reordenaciones puntuales que retiran pistas de posición, sin cambiar opciones
+# ni la respuesta por contenido. Los índices indican el orden nuevo de HEAD.
+MULTIPLE_CHOICE_OPTION_PERMUTATIONS = {
+    ("objetos_y_estado/lesson_representar_procesar_y_recuperar.json", 1, 4): (2, 1, 0),
+    ("objetos_y_estado/lesson_representar_procesar_y_recuperar.json", 4, 3): (1, 0, 2),
+    ("expresiones_y_decisiones/lesson_comparaciones_y_condiciones.json", 2, 5): (2, 1, 0),
+    ("expresiones_y_decisiones/lesson_comparaciones_y_condiciones.json", 4, 6): (0, 2, 1),
+    ("colecciones_y_recorridos/lesson_extremos_sin_inventar_datos.json", 4, 4): (1, 0, 2),
+    ("colecciones_y_recorridos/lesson_extremos_sin_inventar_datos.json", 5, 3): (2, 1, 0),
+    ("colecciones_y_recorridos/lesson_media_y_cantidad_de_datos.json", 4, 4): (2, 1, 0),
+    ("colecciones_y_recorridos/lesson_media_y_cantidad_de_datos.json", 5, 4): (0, 2, 1),
+}
 ERRORS = []
 
 
@@ -147,6 +159,16 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
     if current == old:
         return True
     lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
+    permutation = MULTIPLE_CHOICE_OPTION_PERMUTATIONS.get((lesson_path, pn + 1, bn + 1))
+    if permutation is not None and old["type"] == "multiple_choice":
+        if sorted(permutation) != list(range(len(old["options"]))):
+            return False
+        expected = dict(
+            old,
+            options=[old["options"][index] for index in permutation],
+            correctIndex=permutation.index(old["correctIndex"]),
+        )
+        return current == expected
     explanation = EXPLANATION_CLARIFICATIONS.get((lesson_path, pn + 1, bn + 1))
     if (
         explanation is not None
@@ -264,7 +286,11 @@ def main():
                     require(current["type"] == kind and current.get("id") == block.get("id"), relative, f"posición/ID previo modificado p{pn+1} b{bn+1}")
                     if kind == "cpp_compiler":
                         require(preserves_previous_compiler(relative, pn, bn, block, current, old), relative, f"código legacy previo modificado p{pn+1} b{bn+1}")
-                    elif kind != "multiple_choice":
+                    elif kind != "multiple_choice" or (
+                        Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix(),
+                        pn + 1,
+                        bn + 1,
+                    ) in MULTIPLE_CHOICE_OPTION_PERMUTATIONS:
                         require(preserves_previous_exercise(relative, pn, bn, block, current), relative, f"código/respuesta previa modificada p{pn+1} b{bn+1}")
 
     if ERRORS:

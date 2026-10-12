@@ -10,7 +10,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Cuando una decisión compara una misma categoría con varios valores constantes, switch puede expresar directamente esa selección. En estos primeros ejemplos la categoría tiene tipo int o char. Un case marca el punto al que se transfiere el control si su valor coincide; default recibe los valores que no coinciden con ningún case. No uses switch para intervalos, condiciones con && o cadenas std::string: conserva if para esas reglas."
+          "text": "Cuando una decisión compara una misma categoría con varios valores constantes, switch puede expresar directamente esa selección. En estos primeros ejemplos la categoría tiene tipo int o char. Un case marca el punto al que se transfiere el control si su valor coincide; default recibe los valores que no coinciden con ningún case. No uses switch para intervalos, condiciones con && o cadenas std::string: conserva if para esas reglas (Stroustrup, 2024, secciones 3.4.1.2–3.4.1.3)."
         },
         {
           "type": "code",
@@ -84,7 +84,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Si alcanzas el final de las instrucciones de un case sin break ni otra transferencia de control, la ejecución continúa con las instrucciones siguientes, aunque estén bajo otra etiqueta. Esto se llama caída al caso siguiente. El valor de la categoría no cambia por pasar junto a otra etiqueta. Para alternativas exclusivas, coloca una salida explícita al terminar cada acción."
+          "text": "Si alcanzas el final de las instrucciones de un case sin break ni otra transferencia de control, la ejecución continúa con las instrucciones siguientes, aunque estén bajo otra etiqueta. Esto se llama caída al caso siguiente. El valor de la categoría no cambia por pasar junto a otra etiqueta. Para alternativas exclusivas, coloca una salida explícita al terminar cada acción (Stroustrup, 2024, sección 3.4.1.3)."
         },
         {
           "type": "output_prediction",
@@ -164,7 +164,7 @@
         },
         {
           "type": "paragraph",
-          "text": "break abandona el bucle o el switch más interno que lo contiene. Si el switch está dentro del for y el break está dentro del switch, ese break termina el switch; no termina el for que lo rodea. Esta regla se lee por anidamiento, no por cercanía visual en columnas."
+          "text": "break abandona el bucle o el switch más interno que lo contiene. Si el switch está dentro del for y el break está dentro del switch, ese break termina el switch; no termina el for que lo rodea. Esta regla se lee por anidamiento, no por cercanía visual en columnas (Working draft: Programming languages — C++, s. f., sección [stmt.break])."
         },
         {
           "type": "output_prediction",
@@ -220,7 +220,7 @@
         },
         {
           "type": "paragraph",
-          "text": "Escribe [[fallthrough]]; para señalar que esa continuación es intencional. Es un atributo: una anotación del programa que expresa nuestra intención al compilador. Aquí acompaña una instrucción vacía, por eso lleva punto y coma. No hace una operación ni salta a otra etiqueta; la ejecución continúa porque no hay un break que la termine. En este uso sencillo se coloca después de la última acción del primer caso y antes del siguiente case o default del mismo switch."
+          "text": "Escribe [[fallthrough]]; para señalar que esa continuación es intencional. Es un atributo: una anotación del programa que expresa nuestra intención al compilador (Stroustrup, 2024, sección 3.4.1.3). Aquí acompaña una instrucción vacía, por eso lleva punto y coma. No hace una operación ni salta a otra etiqueta; la ejecución continúa porque no hay un break que la termine. En este uso sencillo se coloca después de la última acción del primer caso y antes del siguiente case o default del mismo switch (Working draft: Programming languages — C++, s. f., sección [dcl.attr.fallthrough])."
         },
         {
           "type": "code",
@@ -359,7 +359,7 @@
         },
         {
           "type": "note",
-          "text": "Referencia: Stroustrup, B. (2024). Programming: Principles and Practice Using C++ (3.ª ed.). Addison-Wesley, §3.4.1.3, Switch technicalities. El libro distingue la caída accidental de la intención explícita con [[fallthrough]];. Semántica contrastada con el borrador público de C++, sección [dcl.attr.fallthrough]: https://eel.is/c++draft/dcl.attr.fallthrough. Las consignas, los programas y los casos de esta ampliación son originales."
+          "text": "El libro distingue la caída accidental de la intención explícita con [[fallthrough]]; (Stroustrup, 2024, sección 3.4.1.3). Para precisar su ubicación y el punto y coma se contrastó la sección [dcl.attr.fallthrough] del borrador público (Working draft: Programming languages — C++, s. f.). Las consignas, los programas y los casos de esta ampliación son originales; las referencias completas están reunidas al final del curso."
         }
       ]
     }

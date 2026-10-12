@@ -220,6 +220,34 @@ def explicit_plan() -> list[Case]:
     cases.append(variant(reference, "explicit_referencia_activar_error_argumento",
                          "    // leer(3);", "    leer(3);",
                          compile_ok=False, diagnostic_any=argument_diagnostic))
+
+    # Recuperación posterior: ambos objetos ya existen antes de asignar.
+    assignment = lesson.case(15, 3, "2:4:4", kind="code")
+    assignment_output = ("Inicio:2\nDesde objeto:4\nDesde construccion:1\n"
+                         "Rechazado:6\nConservado:1\n")
+    assignment_reference = lesson.case(16, 3, assignment_output, kind="code")
+    cases.extend([assignment, lesson.case(15, 8, "", kind="cpp_compiler"),
+                  assignment_reference,
+                  lesson.case(16, 5, "2:2:3:3", kind="output_prediction")])
+    assignment_diagnostic = ("no match for 'operator='",)
+    implicit_assignment = variant(assignment, "explicit_asignar_entero_sin_conversion_rechazado",
+                                  "    destino = origen;", "    destino = 3;", compile_ok=False,
+                                  diagnostic_any=assignment_diagnostic)
+    cases.append(implicit_assignment)
+    cases.append(variant(implicit_assignment, "explicit_asignar_rhs_construido",
+                         "    destino = 3;", "    destino = Contador{3};", "2:3:4"))
+    cases.append(variant(implicit_assignment, "sin_explicit_asignacion_entero_permitida",
+                         "explicit Contador(int inicial)", "Contador(int inicial)", "2:3:4"))
+    cases.append(variant(assignment_reference, "explicit_referencia_activar_error_asignacion",
+                         "    // destino = 3;", "    destino = 3;", compile_ok=False,
+                         diagnostic_any=assignment_diagnostic))
+    observation = "    std::cout << \"Conservado:\" << destino.valor() << '\\n';"
+    cases.append(variant(assignment_reference, "explicit_rhs_construido_antes_de_consultar",
+                         observation, "    destino = Contador{3};\n" + observation,
+                         "Inicio:2\nDesde objeto:4\nDesde construccion:1\nRechazado:6\nConservado:3\n"))
+    for boundary, output in [(0, "2:0:4"), (5, "2:5:4")]:
+        cases.append(variant(assignment, f"explicit_asignar_frontera_{boundary}",
+                             "    destino = origen;", f"    destino = Contador{{{boundary}}};", output))
     lesson.require_coverage(8)
     return cases
 
