@@ -41,10 +41,10 @@
           "options": [
             "std::isalpha(unidad) == 1, porque todo verdadero debe ser ese entero.",
             "std::isalpha(unidad) != 0, porque cualquier resultado no nulo significa verdadero.",
-            "std::isalpha(unidad) < 0, porque todas las letras tienen códigos negativos."
+            "std::isalpha(unidad) == unidad, porque devuelve el código original cuando reconoce una letra."
           ],
           "correctIndex": 1,
-          "explanation": "La biblioteca promete cero o no cero; la comparación con 1 añadiría una condición que no promete."
+          "explanation": "La biblioteca promete cero o no cero; la comparación con 1 añadiría una condición que no promete. El resultado comunica una categoría, no devuelve el código del carácter analizado."
         }
       ]
     },
@@ -184,12 +184,12 @@
           "type": "multiple_choice",
           "question": "Una llamada a tolower recibe la unidad de un carácter básico y devuelve int. ¿Por qué no guardamos primero la entrada arbitraria en char para ignorar cualquier caso especial?",
           "options": [
-            "Porque todo int es necesariamente una letra.",
-            "Porque char conserva siempre EOF y cualquier texto Unicode completo.",
+            "Porque convertir antes a char garantiza que tolower sólo reciba valores de su dominio.",
+            "Porque pasar primero por char conserva siempre EOF como marca distinta de cualquier carácter.",
             "Porque hay que mantener separados el dominio del argumento, posibles marcas y la representación del resultado."
           ],
           "correctIndex": 2,
-          "explanation": "Sólo los resultados de caracteres del dominio establecido se convierten aquí a char. Una marca de fin se conserva como marca."
+          "explanation": "Sólo los resultados de caracteres del dominio establecido se convierten aquí a char. Una marca de fin se conserva como marca. Convertir previamente a char no valida un int arbitrario ni garantiza conservar EOF."
         }
       ]
     },

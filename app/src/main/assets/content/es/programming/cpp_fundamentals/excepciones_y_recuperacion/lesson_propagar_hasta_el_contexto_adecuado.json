@@ -71,12 +71,12 @@
           "id": "catch_no_es_reversion",
           "question": "¿Qué necesitas para prometer «si el dato es inválido, pendientes no cambia»?",
           "options": [
-            "Usar una variable int en vez de double, sin cambiar el orden.",
+            "Guardar una copia del valor anterior, modificar pendientes y no restaurarlo cuando falla la comprobación.",
             "Sólo añadir cualquier catch después de modificar.",
             "Colocar la comprobación que puede fallar antes de la modificación correspondiente."
           ],
           "correctIndex": 2,
-          "explanation": "Las acciones externas anteriores a throw no se revierten por capturarlo."
+          "explanation": "El catch no restaura pendientes automáticamente. Si pasó de cinco a cuatro, conservar cinco en una copia no lo vuelve a asignar al objeto original. La segunda versión comprueba antes de modificar: el fallo impide alcanzar el decremento."
         }
       ]
     },

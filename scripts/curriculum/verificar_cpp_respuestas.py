@@ -18,6 +18,11 @@ import shutil
 import subprocess
 import sys
 
+if __package__:
+    from . import validar_json_programacion as curricular_contract
+else:
+    import validar_json_programacion as curricular_contract
+
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTENT_REL = "app/src/main/assets/content/es/programming/cpp_fundamentals"
@@ -75,7 +80,7 @@ def published(location: tuple[str, int, int]) -> tuple[dict, dict]:
 
 
 def structural_audit(baseline: str) -> dict:
-    """Whole JSON equality after removing only the approved optional fields."""
+    """Whole JSON equality after removing only approved optional fields or revisions."""
     inline_contracts = {**INLINE, **INLINE_REUSE}
     current = {path.relative_to(ROOT).as_posix(): path for path in CONTENT.rglob("*.json")}
     previous = set(git("ls-tree", "-r", "--name-only", baseline, "--", CONTENT_REL)
@@ -83,6 +88,7 @@ def structural_audit(baseline: str) -> dict:
     if set(current) != previous:
         raise ValueError(f"Inventario curricular distinto: {sorted(set(current) ^ previous)}")
     approved: list[dict] = []
+    editorial: list[dict] = []
     pages_count = blocks_count = 0
     for relative, path in sorted(current.items()):
         old = json.loads(git("show", f"{baseline}:{relative}").decode("utf-8-sig"))
@@ -94,6 +100,13 @@ def structural_audit(baseline: str) -> dict:
                 blocks_count += 1
                 location = (short, page, block)
                 old_item = old["pages"][page - 1]["blocks"][block - 1]
+                if location in curricular_contract.MULTIPLE_CHOICE_DISTRACTOR_REVISIONS and item != old_item:
+                    if not curricular_contract.preserves_previous_exercise(relative, page - 1, block - 1, old_item, item):
+                        raise ValueError(f"Revisión curricular distinta de la aprobada: {location}")
+                    data["blocks"][block - 1] = old_item
+                    editorial.append({"path": short, "page": page, "block": block,
+                                      "fields": [field for field in ("options", "explanation")
+                                                 if item.get(field) != old_item.get(field)]})
                 if location in PREDICTIONS:
                     if item.get("outputComparison") != "exact":
                         raise ValueError(f"Falta outputComparison exact: {location}")
@@ -122,7 +135,8 @@ def structural_audit(baseline: str) -> dict:
     return {"passed": True, "baseline": git("rev-parse", baseline).decode().strip(),
             "json_files": len(current), "pages": pages_count, "blocks": blocks_count,
             "preserved": ["identifiers", "positions", "answers", "templates", "all_other_content"],
-            "approved_optional_additions": approved}
+            "approved_optional_additions": approved,
+            "approved_editorial_revisions": editorial}
 
 
 def substitute(template: str, answers: list[str], marker: str = "[]") -> str:

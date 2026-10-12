@@ -90,6 +90,129 @@ MULTIPLE_CHOICE_OPTION_PERMUTATIONS = {
     ("colecciones_y_recorridos/lesson_media_y_cantidad_de_datos.json", 4, 4): (2, 1, 0),
     ("colecciones_y_recorridos/lesson_media_y_cantidad_de_datos.json", 5, 4): (0, 2, 1),
 }
+# Distractores revisados: se conserva la pregunta, el índice y el acierto literal.
+MULTIPLE_CHOICE_DISTRACTOR_REVISIONS = {
+    ("colecciones_y_recorridos/lesson_acumular_contar_y_seleccionar.json", 8, 4): (
+        [
+            "Porque una prueba con varios datos demuestra que funciona para cualquier tamaño de vector.",
+            "Porque ese caso sustituye las pruebas con un solo dato y con ninguno.",
+            "Porque puede revelar reinicializaciones y diferencias entre contar y sumar que un solo dato oculta.",
+        ],
+        "Con {2, 7, 4, 1}, sumar da 14 y contar da 4; reiniciar la suma en cada visita dejaría sólo 1. El caso {1} no distingue sumar de contar y tampoco comprueba conservar lo acumulado entre visitas. Estos casos no sustituyen las pruebas del vacío y de un solo dato.",
+    ),
+    ("colecciones_y_recorridos/lesson_informes_y_transferencia_de_colecciones.json", 5, 4): (
+        [
+            "Publicar cero como media y mediana, porque el total del vacío es cero.",
+            "Calcular el centro y la media antes de comprobar el vacío, para decidir después el mensaje.",
+            "La rama de ausencia antes de acceder o dividir, no inventar un dato inicial.",
+        ],
+        "El vacío tiene cantidad y total cero, pero no tiene media, mediana ni extremos. La rama de ausencia debe decidirse antes de acceder a una posición inexistente o de dividir por cero. Que {4} funcione no comprueba esa rama ni justifica publicar ceros como datos.",
+    ),
+    ("colecciones_y_recorridos/lesson_modificar_con_referencias.json", 8, 4): (
+        [
+            "Imprimir cada valor justo después de modificarlo dentro del recorrido.",
+            "Leer la colección después del recorrido y comparar sus elementos con los de partida.",
+            "Cambiar el nombre de valor por original.",
+        ],
+        "Una copia local también puede cambiar y mostrar el valor transformado dentro del bucle. Para comprobar que el cambio quedó almacenado, lee después la colección en un caso con elementos que deban cambiar. Renombrar valor no cambia la relación que expresa su declaración.",
+    ),
+    ("funciones_y_contratos/lesson_componer_funciones_pequenas.json", 1, 5): (
+        [
+            "El valor devuelto, que debe ser -3 al restar 5 - 8.",
+            "El valor devuelto, que debe ser 0.",
+            "La presencia de cout dentro de faltantes.",
+        ],
+        "Como hay más disponibles que necesarias, la primera rama devuelve 0: no hay faltantes negativos. Ese valor puede comprobarse sin imprimirlo. El formato corresponde a mostrar_faltantes; añadir cout al cálculo no es la prueba de su resultado.",
+    ),
+    ("errores_y_construccion_gradual/lesson_estimar_comprobar_y_no_exceder_el_dominio.json", 1, 5): (
+        [
+            "Una media siempre debe ser igual al último dato.",
+            "Una media de esos datos debe estar entre 1 y 5.",
+            "Una media de datos positivos debe ser positiva.",
+        ],
+        "La media queda dentro del rango de los datos; 9 no cumple esa condición necesaria. Comprobar sólo que sea positiva no detecta este error, porque 9 también es positivo. Tampoco se elige siempre el último dato: para 2, 4 y 6, la media es 4 y el último dato es 6.",
+    ),
+    ("excepciones_y_recuperacion/lesson_propagar_hasta_el_contexto_adecuado.json", 2, 5): (
+        [
+            "Guardar una copia del valor anterior, modificar pendientes y no restaurarlo cuando falla la comprobación.",
+            "Sólo añadir cualquier catch después de modificar.",
+            "Colocar la comprobación que puede fallar antes de la modificación correspondiente.",
+        ],
+        "El catch no restaura pendientes automáticamente. Si pasó de cinco a cuatro, conservar cinco en una copia no lo vuelve a asignar al objeto original. La segunda versión comprueba antes de modificar: el fallo impide alcanzar el decremento.",
+    ),
+    ("texto_interpretacion_y_flujos/lesson_lineas_y_separadores_pendientes.json", 4, 5): (
+        [
+            "No perder ninguna línea: los saltos no se consideran espacio en blanco.",
+            "Perder la primera palabra de la etiqueta, porque la lectura previa de blancos consume también esa palabra.",
+            "Perder líneas vacías que forman parte de los datos.",
+        ],
+        "Los saltos también son espacio en blanco. Si se eliminan todos, una línea vacía significativa desaparece antes de la lectura que debía conservarla. Consumir blancos no obtiene una palabra: se detiene al llegar al primer carácter que no es blanco.",
+    ),
+    ("texto_interpretacion_y_flujos/lesson_tokens_con_categoria_y_valor.json", 4, 2): (
+        [
+            "Nada: obtener tokens demuestra que la operación matemática es correcta.",
+            "Si el orden de los tokens cumple la gramática de una expresión.",
+            "Nada más si se borra un asterisco: se puede aceptar la entrada reparada como si la original hubiera sido válida.",
+        ],
+        "El reconocimiento acepta los signos por separado. La gramática deberá rechazar una multiplicación sin un operando entre ambos signos. Borrar un asterisco cambiaría la entrada; no demostraría que la expresión original era válida.",
+    ),
+    ("texto_interpretacion_y_flujos/lesson_una_gramatica_para_sumar_y_restar.json", 3, 3): (
+        [
+            "Cada vuelta con + consume el signo y un número; otro token se devuelve y la función retorna.",
+            "El token reservado garantiza que cada vuelta obtenga una unidad nueva, aunque la regla continúe después de devolverlo.",
+            "Devolver cualquier token hace que el flujo retroceda al principio.",
+        ],
+        "El caso repetido consume unidades; el caso que conserva una unidad termina la función. Una lectura que falla lanza un diagnóstico y abandona la regla.",
+    ),
+    ("texto_interpretacion_y_flujos/lesson_signos_unarios_parentesis_y_progreso_recursivo.json", 8, 2): (
+        [
+            "Sólo falta validar el valor: la longitud finita del texto ya garantiza que el recorrido terminará.",
+            "El nuevo recorrido puede volver a encontrar la misma apertura sin progreso.",
+            "Sólo falta comprobar el cierre: devolver la apertura ya asegura que la llamada siguiente avance.",
+        ],
+        "La recursión debe avanzar o reducir un problema. Un texto finito no garantiza terminación si se vuelve a preguntar por la misma unidad. Devolver la apertura la deja disponible; repetir la misma pregunta sin consumirla puede reproducir indefinidamente el mismo estado.",
+    ),
+    ("texto_interpretacion_y_flujos/lesson_asignaciones_con_anticipacion_limitada.json", 5, 3): (
+        [
+            "Porque un nombre existente sólo puede aparecer como destino y no dentro de una expresión.",
+            "Porque el lado derecho admite expresiones sin asignaciones y sobra =.",
+            "Porque una asignación debe volver a declarar ambos nombres.",
+        ],
+        "La gramática sólo permite asignación como sentencia superior. El = después de b impide aceptar el terminador y no publica el candidato.",
+    ),
+    ("archivos_y_programa_completo/lesson_abrir_escribir_y_leer_una_muestra.json", 2, 5): (
+        [
+            "Únicamente que el nombre acabe en .txt.",
+            "Que la extracción haya obtenido los dos enteros esperados.",
+            "Que los destinos se inicialicen en cero, aunque una de las extracciones falle.",
+        ],
+        "La apertura acredita acceso al archivo, no el formato de sus datos. Inicializar los destinos tampoco demuestra que las dos extracciones hayan obtenido valores válidos.",
+    ),
+    ("archivos_y_programa_completo/lesson_texto_con_campos_y_patrones_literales.json", 6, 4): (
+        [
+            "Pasar después otro argumento para el segundo campo.",
+            "Añadir {1} al patrón para crear automáticamente el argumento que falta.",
+            "Poner A como texto literal tras el segundo {} para darle un valor a ese campo.",
+        ],
+        "Los caracteres del patrón no proporcionan el valor que necesita el segundo campo. Un índice selecciona un argumento que ya debe existir; no lo crea. Añadir texto literal tampoco completa un campo sin argumento.",
+    ),
+    ("archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json", 1, 7): (
+        [
+            "std::isalpha(unidad) == 1, porque todo verdadero debe ser ese entero.",
+            "std::isalpha(unidad) != 0, porque cualquier resultado no nulo significa verdadero.",
+            "std::isalpha(unidad) == unidad, porque devuelve el código original cuando reconoce una letra.",
+        ],
+        "La biblioteca promete cero o no cero; la comparación con 1 añadiría una condición que no promete. El resultado comunica una categoría, no devuelve el código del carácter analizado.",
+    ),
+    ("archivos_y_programa_completo/lesson_clasificar_caracteres_y_normalizar_una_copia.json", 4, 6): (
+        [
+            "Porque convertir antes a char garantiza que tolower sólo reciba valores de su dominio.",
+            "Porque pasar primero por char conserva siempre EOF como marca distinta de cualquier carácter.",
+            "Porque hay que mantener separados el dominio del argumento, posibles marcas y la representación del resultado.",
+        ],
+        "Sólo los resultados de caracteres del dominio establecido se convierten aquí a char. Una marca de fin se conserva como marca. Convertir previamente a char no valida un int arbitrario ni garantiza conservar EOF.",
+    ),
+}
 # Equivalentes C++ verificados para estas consignas concretas. Sólo se permite
 # ampliar answers; el programa, la pregunta, el feedback y la posición se conservan.
 ACCEPTED_ANSWER_EXTENSIONS = {
@@ -248,6 +371,13 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
     if alternatives is not None and old["type"] == "inline_fill_code":
         if current == dict(old, answerAlternatives=alternatives):
             return True
+    revision = MULTIPLE_CHOICE_DISTRACTOR_REVISIONS.get(location)
+    if revision is not None and old["type"] == "multiple_choice":
+        options, explanation = revision
+        return (
+            options[old["correctIndex"]] == old["options"][old["correctIndex"]]
+            and current == dict(old, options=options, explanation=explanation)
+        )
     extension = ACCEPTED_ANSWER_EXTENSIONS.get((lesson_path, pn + 1, bn + 1))
     if extension is not None and old["type"] == "fill_code":
         previous_answers, accepted_answers = extension
@@ -391,7 +521,7 @@ def main():
                         Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix(),
                         pn + 1,
                         bn + 1,
-                    ) in MULTIPLE_CHOICE_OPTION_PERMUTATIONS:
+                    ) in (MULTIPLE_CHOICE_OPTION_PERMUTATIONS | MULTIPLE_CHOICE_DISTRACTOR_REVISIONS):
                         require(preserves_previous_exercise(relative, pn, bn, block, current), relative, f"código/respuesta previa modificada p{pn+1} b{bn+1}")
 
     if ERRORS:

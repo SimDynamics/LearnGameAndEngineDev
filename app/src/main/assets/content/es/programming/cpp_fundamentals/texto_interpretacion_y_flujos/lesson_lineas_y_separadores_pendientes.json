@@ -119,12 +119,12 @@
           "type": "multiple_choice",
           "question": "Un formato exige conservar una línea vacía situada antes de la etiqueta. ¿Qué riesgo tiene eliminar sin distinción todo el espacio en blanco antes de getline?",
           "options": [
-            "Convertir cada espacio de la etiqueta en un carácter de otro tipo.",
-            "Leer el resto como una palabra y duplicar la etiqueta.",
+            "No perder ninguna línea: los saltos no se consideran espacio en blanco.",
+            "Perder la primera palabra de la etiqueta, porque la lectura previa de blancos consume también esa palabra.",
             "Perder líneas vacías que forman parte de los datos."
           ],
           "correctIndex": 2,
-          "explanation": "Los saltos también son espacio en blanco. Si se eliminan todos, una línea vacía significativa desaparece antes de la lectura que debía conservarla."
+          "explanation": "Los saltos también son espacio en blanco. Si se eliminan todos, una línea vacía significativa desaparece antes de la lectura que debía conservarla. Consumir blancos no obtiene una palabra: se detiene al llegar al primer carácter que no es blanco."
         }
       ]
     },
