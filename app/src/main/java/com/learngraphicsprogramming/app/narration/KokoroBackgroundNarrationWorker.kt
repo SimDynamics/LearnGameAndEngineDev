@@ -101,7 +101,7 @@ internal class KokoroBackgroundNarrationWorker(private val app: Context) {
                             require(KokoroModelManifest.verify(file, artifact)) { "No está instalado el diccionario español verificado" }
                             spanish = SpanishFluidG2P.loadLexicon(file)
                         }
-                        SpanishFluidG2P.phonemize(item.text, spanish!!)
+                        MixedSpanishG2P.phonemizePrepared(item.text, spanish!!)
                     }
                     NarrationLanguage.FRENCH -> (french ?: FrenchFluidG2P(modelRoot, File(modelRoot, "tokenizer.json"))
                         .also { french = it }).phonemize(item.text)

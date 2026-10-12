@@ -22,6 +22,7 @@ object NarrationSettingsRepository {
 
     private const val PREFERENCES_NAME = "lesson_narration_settings"
     private const val KEY_ENABLED = "enabled"
+    private const val KEY_CONTROLS_VISIBLE = "controls_visible"
     private const val KEY_ENGINE = "engine"
     private const val KEY_KOKORO_VOICE = "kokoro_voice"
     private const val KEY_ANDROID_VOICE = "android_voice"
@@ -57,6 +58,14 @@ object NarrationSettingsRepository {
 
     fun saveEnabled(context: Context, enabled: Boolean) {
         preferences(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
+    }
+
+    /** Presentation only: hiding the controls does not disable background narration. */
+    fun controlsVisible(context: Context): Boolean =
+        preferences(context).getBoolean(KEY_CONTROLS_VISIBLE, true)
+
+    fun saveControlsVisible(context: Context, visible: Boolean) {
+        preferences(context).edit().putBoolean(KEY_CONTROLS_VISIBLE, visible).apply()
     }
 
     fun saveEngine(context: Context, engine: NarrationEngine) {
@@ -104,12 +113,15 @@ object NarrationSettingsRepository {
     }
 
     fun savePosition(context: Context, x: Float, y: Float) {
-        preferences(context).edit().putFloat("bar_x", x.coerceIn(0f, 1f))
-            .putFloat("bar_y", y.coerceIn(0f, 1f)).apply()
+        if (!x.isFinite() || !y.isFinite()) return
+        val prefs = preferences(context)
+        if (prefs.getFloat("bar_x",1f) == x && prefs.getFloat("bar_y",0.85f) == y) return
+        prefs.edit().putFloat("bar_x",x).putFloat("bar_y",y).apply()
     }
 
     fun position(context: Context): Pair<Float, Float> = preferences(context).let {
-        it.getFloat("bar_x", 1f).coerceIn(0f, 1f) to it.getFloat("bar_y", 0.85f).coerceIn(0f, 1f)
+        (it.getFloat("bar_x",1f).takeIf { value -> value.isFinite() } ?: 1f) to
+            (it.getFloat("bar_y",0.85f).takeIf { value -> value.isFinite() } ?: 0.85f)
     }
 
     fun saveRate(context: Context, rate: Float) {

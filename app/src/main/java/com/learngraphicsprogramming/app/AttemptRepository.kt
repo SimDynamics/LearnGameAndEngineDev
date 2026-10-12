@@ -19,7 +19,7 @@ data class AttemptState(
 object AttemptRepository {
 
     const val RECOVERY_MILLIS =
-        60L * 1000L
+        60L * 60L * 1000L
 
     private const val PREFS_NAME =
         "attempt_reserve_seconds_test"
@@ -37,6 +37,27 @@ object AttemptRepository {
             PREFS_NAME,
             Context.MODE_PRIVATE
         )
+
+    /** Keep the earned balance once when upgrading the old one-minute test build. */
+    @Synchronized
+    private fun ensureHourlyRecovery(prefs: android.content.SharedPreferences,
+                                     routeId: String, maximum: Int, now: Long) {
+        val intervalKey = "recovery_interval_" + routeId
+        if (prefs.getLong(intervalKey, 0L) == RECOVERY_MILLIS) return
+        val reserveKey = PREFIX_RESERVE + routeId
+        val timeKey = PREFIX_UPDATED_AT + routeId
+        val editor = prefs.edit().putLong(intervalKey, RECOVERY_MILLIS)
+        if (prefs.contains(reserveKey) && prefs.contains(timeKey)) {
+            // Legacy conversion only; all subsequent regeneration uses one full hour.
+            val previousInterval = prefs.getLong(intervalKey, 60_000L).coerceAtLeast(1L)
+            val elapsed = (now - prefs.getLong(timeKey, now)).coerceAtLeast(0L)
+            val saved = prefs.getFloat(reserveKey, maximum.toFloat()).toDouble()
+            val balance = (saved + elapsed.toDouble() / previousInterval)
+                .coerceIn(0.0, maximum.toDouble()).toFloat()
+            editor.putFloat(reserveKey, balance).putLong(timeKey, now)
+        }
+        editor.apply()
+    }
 
     fun maximumForRoute(
         routeId: String
@@ -67,6 +88,8 @@ object AttemptRepository {
             preferences(
                 context
             )
+
+        ensureHourlyRecovery(prefs, routeId, maximum, now)
 
         val reserveKey =
             PREFIX_RESERVE +

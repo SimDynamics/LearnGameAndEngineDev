@@ -16,10 +16,12 @@ import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.learngraphicsprogramming.app.AppearanceSettingsRepository
+import com.learngraphicsprogramming.app.FloatingPoint
+import com.learngraphicsprogramming.app.FloatingReaderPlacement
 import com.learngraphicsprogramming.app.R
 import kotlin.math.abs
 
-/** One draggable widget for either engine; coordinates persist as viewport fractions. */
+/** One draggable control strip. Off-screen placement is intentional until explicitly recovered. */
 class LessonNarrationControls(
     private val activity: Activity,
     private val onListen: () -> Unit,
@@ -30,39 +32,64 @@ class LessonNarrationControls(
     private val root = activity.findViewById<FrameLayout>(android.R.id.content)
     private var position = NarrationSettingsRepository.position(activity)
     private var closed = false
+    private var recoverPosition = false
     private val row = DraggableRow().apply {
         id = R.id.lessonNarrationControls
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER
+        isClickable = true
         elevation = dp(8).toFloat()
-        setPadding(dp(4), dp(4), dp(4), dp(4))
-        background = GradientDrawable().apply { setColor(Color.rgb(32, 33, 38)); cornerRadius = dp(30).toFloat() }
+        setPadding(dp(4),dp(4),dp(4),dp(4))
+        background = GradientDrawable().apply { setColor(Color.rgb(32,33,38)); cornerRadius = dp(30).toFloat() }
     }
     private val listen = ImageButton(activity).apply {
         id = R.id.buttonLessonListen
         setImageResource(R.drawable.ic_person_speaking)
-        setPadding(dp(11), dp(11), dp(11), dp(11))
+        setPadding(dp(11),dp(11),dp(11),dp(11))
         setBackgroundResource(android.R.drawable.list_selector_background)
         setOnClickListener { onListen() }
     }
-    private val rate = control(activity.getString(R.string.narration_rate_normal), activity.getString(R.string.narration_change_rate)) {
+    private val rate = control(activity.getString(R.string.narration_rate_normal),
+        activity.getString(R.string.narration_change_rate)) {
         val settings = NarrationSettingsRepository.get(activity)
-        NarrationSettingsRepository.saveRate(activity, NarrationSettingsRepository.nextRate(settings.rate))
+        NarrationSettingsRepository.saveRate(activity,NarrationSettingsRepository.nextRate(settings.rate))
         refresh(listen.isActivated)
         onRateChanged()
     }.apply { id = R.id.buttonLessonSpeechRate }
-    private val layoutListener = View.OnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> positionRow() }
+    private val restart = ImageButton(activity).apply {
+        id = R.id.buttonLessonRestartPage
+        setImageResource(R.drawable.ic_code_reset)
+        imageTintList = ColorStateList.valueOf(Color.rgb(170,174,183))
+        setPadding(dp(12),dp(12),dp(12),dp(12))
+        contentDescription = activity.getString(R.string.narration_restart_current_page)
+        setBackgroundResource(android.R.drawable.list_selector_background)
+        setOnClickListener { onRestart() }
+    }
+    private val layoutListener = View.OnLayoutChangeListener { _,_,_,_,_,_,_,_,_ -> positionRow() }
 
     init {
-        row.addView(control(activity.getString(R.string.narration_control_back_three), activity.getString(R.string.narration_back_three)) { onSeek(-3) }.apply { id = R.id.buttonLessonBackThree }, itemParams())
-        row.addView(control(activity.getString(R.string.narration_control_back_five), activity.getString(R.string.narration_back_five)) { onSeek(-5) }.apply {
-            id = R.id.buttonLessonBackFive
-            setOnLongClickListener { onRestart(); Toast.makeText(activity, activity.getString(R.string.narration_restarted), Toast.LENGTH_SHORT).show(); true }
-        }, itemParams())
-        row.addView(control(activity.getString(R.string.narration_control_forward_five), activity.getString(R.string.narration_forward_five)) { onSeek(5) }.apply { id = R.id.buttonLessonForwardFive }, itemParams())
-        row.addView(listen, itemParams())
-        row.addView(rate, itemParams())
-        root.addView(row, FrameLayout.LayoutParams(dp(256), dp(56), Gravity.TOP or Gravity.START))
+        row.addView(control(activity.getString(R.string.narration_control_back_three),
+            activity.getString(R.string.narration_back_three)) { onSeek(-3) }
+            .apply { id = R.id.buttonLessonBackThree },itemParams())
+        row.addView(control(activity.getString(R.string.narration_control_back_five),
+            activity.getString(R.string.narration_back_five)) { onSeek(-5) }.apply {
+                id = R.id.buttonLessonBackFive
+                setOnLongClickListener {
+                    onRestart()
+                    Toast.makeText(activity,activity.getString(R.string.narration_restarted),Toast.LENGTH_SHORT).show()
+                    true
+                }
+            },itemParams())
+        row.addView(control(activity.getString(R.string.narration_control_forward_five),
+            activity.getString(R.string.narration_forward_five)) { onSeek(5) }
+            .apply { id = R.id.buttonLessonForwardFive },itemParams())
+        row.addView(control(activity.getString(R.string.narration_control_forward_three),
+            activity.getString(R.string.narration_forward_three)) { onSeek(3) }
+            .apply { id = R.id.buttonLessonForwardThree },itemParams())
+        row.addView(listen,itemParams())
+        row.addView(rate,itemParams())
+        row.addView(restart,itemParams())
+        root.addView(row,FrameLayout.LayoutParams(dp(344),dp(56),Gravity.TOP or Gravity.LEFT))
         root.addOnLayoutChangeListener(layoutListener)
         row.addOnLayoutChangeListener(layoutListener)
         row.post { positionRow() }
@@ -72,13 +99,13 @@ class LessonNarrationControls(
     fun refresh(playing: Boolean) {
         val settings = NarrationSettingsRepository.get(activity)
         val route = activity.intent.getStringExtra("routeId") ?: AppearanceSettingsRepository.ROUTE_PROGRAMMING
-        val accent = AppearanceSettingsRepository.getRouteAccentColor(activity, route)
+        val accent = AppearanceSettingsRepository.getRouteAccentColor(activity,route)
         listen.isActivated = playing
         listen.imageTintList = ColorStateList.valueOf(if (playing) accent else Color.WHITE)
-        listen.contentDescription = if (playing) activity.getString(R.string.narration_pause) else activity.getString(R.string.narration_start_resume)
-        rate.text = NarrationSettingsRepository.rateLabel(activity, settings.rate)
+        listen.contentDescription = activity.getString(if (playing) R.string.narration_pause else R.string.narration_start_resume)
+        rate.text = NarrationSettingsRepository.rateLabel(activity,settings.rate)
         rate.setTextColor(accent)
-        rate.contentDescription = activity.getString(R.string.narration_rate_description, rate.text)
+        rate.contentDescription = activity.getString(R.string.narration_rate_description,rate.text)
     }
 
     fun setVisible(visible: Boolean) {
@@ -86,7 +113,19 @@ class LessonNarrationControls(
         if (visible) row.post { positionRow() }
     }
 
+    /** Called only by the head shortcut, not by passive layout or focus refresh. */
+    fun restoreVisiblePosition() {
+        recoverPosition = true
+        positionRow()
+        row.post { positionRow() }
+    }
+    fun isOutsideViewport(): Boolean {
+        if (closed || row.visibility != View.VISIBLE) return true
+        val b = bounds()
+        return FloatingReaderPlacement.outside(FloatingPoint(row.x,row.y),b[0],b[1],b[2],b[3])
+    }
     fun close() {
+        if (closed) return
         closed = true
         root.removeOnLayoutChangeListener(layoutListener)
         row.removeOnLayoutChangeListener(layoutListener)
@@ -94,67 +133,85 @@ class LessonNarrationControls(
     }
 
     private fun bounds(): FloatArray {
-        val insets = ViewCompat.getRootWindowInsets(root)?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-        val left = maxOf(dp(4), insets?.left ?: 0).toFloat()
-        val top = maxOf(dp(4), insets?.top ?: 0).toFloat()
-        val right = maxOf(left, root.width - row.width - maxOf(dp(4), insets?.right ?: 0).toFloat())
-        val bottom = maxOf(top, root.height - row.height - maxOf(dp(4), insets?.bottom ?: 0).toFloat())
-        return floatArrayOf(left, top, right, bottom)
+        val insets = ViewCompat.getRootWindowInsets(root)?.getInsets(
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+        val left = maxOf(dp(4),insets?.left ?: 0).toFloat()
+        val top = maxOf(dp(4),insets?.top ?: 0).toFloat()
+        val right = maxOf(left,root.width-row.width-maxOf(dp(4),insets?.right ?: 0).toFloat())
+        val bottom = maxOf(top,root.height-row.height-maxOf(dp(4),insets?.bottom ?: 0).toFloat())
+        return floatArrayOf(left,top,right,bottom)
     }
-
     private fun positionRow() {
         if (closed || row.dragging || root.width <= 0 || root.height <= 0) return
-        val insets = ViewCompat.getRootWindowInsets(root)?.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-        val available = (root.width - maxOf(dp(4), insets?.left ?: 0) - maxOf(dp(4), insets?.right ?: 0)).coerceAtLeast(1)
-        val width = minOf(dp(256), available)
-        if (row.layoutParams.width != width) { row.layoutParams = (row.layoutParams as FrameLayout.LayoutParams).apply { this.width = width }; return }
+        val insets = ViewCompat.getRootWindowInsets(root)?.getInsets(
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+        val available = (root.width-maxOf(dp(4),insets?.left ?: 0)-maxOf(dp(4),insets?.right ?: 0)).coerceAtLeast(1)
+        val width = minOf(dp(344),available)
+        if (row.layoutParams.width != width) {
+            row.layoutParams = (row.layoutParams as FrameLayout.LayoutParams).apply { this.width = width }
+            return
+        }
         val b = bounds()
-        row.x = b[0] + position.first * (b[2] - b[0])
-        row.y = b[1] + position.second * (b[3] - b[1])
+        var point = FloatingPoint(b[0]+position.first*maxOf(1f,b[2]-b[0]),
+            b[1]+position.second*maxOf(1f,b[3]-b[1]))
+        if (recoverPosition) {
+            point = FloatingReaderPlacement.visible(point,b[0],b[1],b[2],b[3])
+            recoverPosition = false
+        }
+        row.x = point.x; row.y = point.y
+        savePosition(b)
     }
-
+    private fun savePosition(b: FloatArray = bounds()) {
+        position = (row.x-b[0])/maxOf(1f,b[2]-b[0]) to (row.y-b[1])/maxOf(1f,b[3]-b[1])
+        NarrationSettingsRepository.savePosition(activity,position.first,position.second)
+    }
     private fun control(label: String, description: String, action: () -> Unit) = TextView(activity).apply {
         text = label; contentDescription = description; gravity = Gravity.CENTER; textSize = 16f
-        setTypeface(typeface, android.graphics.Typeface.BOLD); setTextColor(Color.WHITE)
-        isClickable = true; isFocusable = true; setBackgroundResource(android.R.drawable.list_selector_background)
+        setTypeface(typeface,android.graphics.Typeface.BOLD); setTextColor(Color.WHITE)
+        isClickable = true; isFocusable = true
+        setBackgroundResource(android.R.drawable.list_selector_background)
         setOnClickListener { action() }
     }
-    private fun itemParams() = LinearLayout.LayoutParams(0, dp(48), 1f)
-    private fun dp(value: Int) = (value * activity.resources.displayMetrics.density).toInt()
+    private fun itemParams() = LinearLayout.LayoutParams(0,dp(48),1f)
+    private fun dp(value: Int) = (value*activity.resources.displayMetrics.density).toInt()
 
     private inner class DraggableRow : LinearLayout(activity) {
         var dragging = false
-        private var downX = 0f
-        private var downY = 0f
-        private var startX = 0f
-        private var startY = 0f
+        private var downX = 0f; private var downY = 0f
+        private var startX = 0f; private var startY = 0f
         private val slop = ViewConfiguration.get(activity).scaledTouchSlop
-
+        private fun begin(event: MotionEvent) {
+            dragging = false; downX = event.rawX; downY = event.rawY; startX = x; startY = y
+        }
         override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> { dragging = false; downX = event.rawX; downY = event.rawY; startX = x; startY = y }
-                MotionEvent.ACTION_MOVE -> if (abs(event.rawX - downX) > slop || abs(event.rawY - downY) > slop) {
-                    dragging = true; parent.requestDisallowInterceptTouchEvent(true); return true
-                }
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) begin(event)
+            if (event.actionMasked == MotionEvent.ACTION_MOVE &&
+                (abs(event.rawX-downX) > slop || abs(event.rawY-downY) > slop)) {
+                dragging = true
+                parent?.requestDisallowInterceptTouchEvent(true)
             }
             return dragging
         }
-
         override fun onTouchEvent(event: MotionEvent): Boolean {
-            if (!dragging) return super.onTouchEvent(event)
-            val b = bounds()
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) { begin(event); return true }
             if (event.actionMasked == MotionEvent.ACTION_MOVE) {
-                x = (startX + event.rawX - downX).coerceIn(b[0], b[2])
-                y = (startY + event.rawY - downY).coerceIn(b[1], b[3])
-            } else if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
-                position = (if (b[2] == b[0]) 0f else (x - b[0]) / (b[2] - b[0])).coerceIn(0f, 1f) to
-                    (if (b[3] == b[1]) 0f else (y - b[1]) / (b[3] - b[1])).coerceIn(0f, 1f)
-                NarrationSettingsRepository.savePosition(activity, position.first, position.second)
+                if (abs(event.rawX-downX) > slop || abs(event.rawY-downY) > slop) dragging = true
+                if (dragging) {
+                    // No screen clamp here. The head restores a fully visible position later.
+                    x = startX + event.rawX-downX
+                    y = startY + event.rawY-downY
+                }
+                return true
+            }
+            if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
+                if (dragging) savePosition()
+                else if (event.actionMasked == MotionEvent.ACTION_UP) performClick()
                 dragging = false
-                parent.requestDisallowInterceptTouchEvent(false)
-                positionRow()
+                parent?.requestDisallowInterceptTouchEvent(false)
+                return true
             }
             return true
         }
+        override fun performClick(): Boolean { super.performClick(); return true }
     }
 }

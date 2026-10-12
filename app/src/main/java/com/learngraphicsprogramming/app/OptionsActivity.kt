@@ -1832,10 +1832,7 @@ class OptionsActivity : AppCompatActivity() {
                 updateSaveButtonState()
             }
 
-        buttonBack.setOnClickListener {
-
-            finish()
-        }
+        UnsavedSettingsExit.install(this, buttonBack) { buttonSave.isEnabled }
 
         /*
          * COMPRA PREMIUM.

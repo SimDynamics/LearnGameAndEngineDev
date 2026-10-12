@@ -1,3 +1,4 @@
+// LGP_READER_INTERACTIONS_V1: feedback gates, bounded bookmarks and floating controls.
 package com.learngraphicsprogramming.app
 
 import android.content.ClipData
@@ -374,6 +375,23 @@ class LessonActivity : AppCompatActivity() {
 
     private var narrationController: LessonNarrationController? = null
     private var narrationControls: LessonNarrationControls? = null
+    private var narrationExerciseObserver: com.learngraphicsprogramming.app.narration.LessonNarrationExerciseState? = null
+    private val floatingInteractions by lazy { LessonFloatingInteractions(this) }
+
+    private fun narrationScript(language: com.learngraphicsprogramming.app.narration.NarrationLanguage) =
+        com.learngraphicsprogramming.app.narration.LessonNarrationScript.page(lessonJson,currentPage,language,
+            forKokoro = com.learngraphicsprogramming.app.narration.MixedSpanishG2P.productionEnabled &&
+                NarrationSettingsRepository.forLanguage(this, language).engine !=
+                com.learngraphicsprogramming.app.narration.NarrationEngine.ANDROID) { type ->
+            NarrationUiInstructions.forBlock(this,type)
+        }
+
+    private fun narrationCorrectBlocks(): Set<Int> =
+        narrationExerciseObserver?.watch(narrationPageIdentity(),currentLessonId,lessonJson,currentPage) ?: emptySet()
+
+
+    private fun narrationPageIdentity(): String =
+        "$currentRouteId/$currentLessonId/$currentPage"
 
     /** Identical text for page prefetch, Play and Restart. */
     private fun pageNarrationText(
@@ -387,13 +405,21 @@ class LessonActivity : AppCompatActivity() {
         val language = com.learngraphicsprogramming.app.narration.NarrationLanguage.forLesson(
             lessonJson, currentPage, NarrationSettingsRepository.get(this).language
         )
+        val script = narrationScript(language)
         narrationController?.prefetchPage(
-            pageNarrationText(language),
-            language
+            script.texts,
+            language,
+            pageIdentity = narrationPageIdentity(),
+            feedbackGates = script.gates,
+            correctBlocks = narrationCorrectBlocks()
         )
     }
 
     private fun setupLessonNarration() {
+        narrationExerciseObserver?.close()
+        narrationExerciseObserver = com.learngraphicsprogramming.app.narration.LessonNarrationExerciseState(this) { identity,correct ->
+            narrationController?.updateSolvedExercises(identity,correct)
+        }
         narrationController = LessonNarrationController(
             this,
             onState = { playing -> narrationControls?.refresh(playing) },
@@ -405,22 +431,30 @@ class LessonActivity : AppCompatActivity() {
                 if (::lessonJson.isInitialized) {
                     val language = com.learngraphicsprogramming.app.narration.NarrationLanguage.forLesson(
                         lessonJson, currentPage, NarrationSettingsRepository.get(this).language)
+                    val script = narrationScript(language)
                     narrationController?.toggle(
-                        pageNarrationText(language),
-                        language
+                        script.texts,
+                        language,
+                        pageIdentity = narrationPageIdentity(),
+                        feedbackGates = script.gates,
+                        correctBlocks = narrationCorrectBlocks()
                     )
                 }
             },
             onRateChanged = { narrationController?.settingsChanged() },
             onSeek = { seconds -> narrationController?.seekBy(seconds) },
             onRestart = {
-                if (narrationController?.hasNarration == true) narrationController?.restart()
-                else if (::lessonJson.isInitialized) {
+                if (::lessonJson.isInitialized) {
                     val language = com.learngraphicsprogramming.app.narration.NarrationLanguage.forLesson(
                         lessonJson, currentPage, NarrationSettingsRepository.get(this).language)
+                    val script = narrationScript(language)
                     narrationController?.toggle(
-                        pageNarrationText(language),
-                        language
+                        script.texts,
+                        language,
+                        pageIdentity = narrationPageIdentity(),
+                        feedbackGates = script.gates,
+                        correctBlocks = narrationCorrectBlocks(),
+                        restartFromBeginning = true
                     )
                 }
             }
@@ -430,7 +464,8 @@ class LessonActivity : AppCompatActivity() {
 
     private fun updateNarrationVisibility() {
         val enabled = NarrationSettingsRepository.get(this).enabled
-        narrationControls?.setVisible(enabled && !keyboardVisible && programmingImeAnimations.isEmpty() &&
+        val controlsVisible = NarrationSettingsRepository.controlsVisible(this)
+        narrationControls?.setVisible(enabled && controlsVisible && !keyboardVisible && programmingImeAnimations.isEmpty() &&
             mathKeyboardHost?.isKeyboardVisible != true && !compilerFullscreenActive &&
             !exerciseFullscreenActive && hasWindowFocus())
         updateNarrationToggleAppearance()
@@ -460,7 +495,28 @@ class LessonActivity : AppCompatActivity() {
             }
         }
 
+    override fun onStop() {
+        floatingInteractions.dismissPopup()
+        val power = getSystemService(android.os.PowerManager::class.java)
+        val keyguard = getSystemService(android.app.KeyguardManager::class.java)
+        if (!isChangingConfigurations && power?.isInteractive == true &&
+            keyguard?.isKeyguardLocked != true) {
+            // Leaving the lesson keeps only bookmarks, not an Activity's audio thread/player.
+            narrationController?.pauseKeepingPosition()
+            narrationController?.close()
+            narrationController = null
+            narrationExerciseObserver?.close()
+            narrationExerciseObserver = null
+            narrationControls?.close()
+            narrationControls = null
+        } else narrationController?.checkpointPlayback()
+        super.onStop()
+    }
+
     override fun onDestroy() {
+        floatingInteractions.close()
+        narrationExerciseObserver?.close()
+        narrationExerciseObserver = null
 
         disposeCppEditorViewports()
         narrationController?.close()
@@ -489,6 +545,7 @@ class LessonActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_lesson)
+        floatingInteractions.install()
 
         /*
          * Atrás del sistema (botón o deslizamiento desde el borde).
@@ -594,11 +651,24 @@ class LessonActivity : AppCompatActivity() {
             findViewById(R.id.buttonNarrationToggle)
 
         buttonNarrationToggle.setOnClickListener {
-            val enabled = !NarrationSettingsRepository.get(this).enabled
-            NarrationSettingsRepository.saveEnabled(this, enabled)
-            if (enabled) prefetchVisibleNarration()
-            else narrationController?.settingsChanged()
+            val enabled = NarrationSettingsRepository.get(this).enabled
+            val showControls = !enabled || !NarrationSettingsRepository.controlsVisible(this) ||
+                narrationControls?.isOutsideViewport() == true
+            NarrationSettingsRepository.saveControlsVisible(this, showControls)
+            if (showControls) {
+                if (!enabled) {
+                    NarrationSettingsRepository.saveEnabled(this, true)
+                    narrationController?.settingsChanged()
+                    com.learngraphicsprogramming.app.narration.KokoroNarrationSessionMonitor.refresh(this)
+                }
+                // An unchanged page keeps its segments and paused MediaPlayer.
+                // Showing controls alone never starts or restarts playback.
+                prefetchVisibleNarration()
+            } else {
+                narrationController?.pauseKeepingPosition()
+            }
             updateNarrationVisibility()
+            if (showControls) narrationControls?.restoreVisiblePosition()
         }
 
         // La navegación de páginas sigue utilizando exactamente la misma
@@ -713,6 +783,7 @@ class LessonActivity : AppCompatActivity() {
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
+        narrationController?.checkpointPlayback()
         outState.putString(ATTEMPT_HISTORY_STATE, exerciseAttempts.save().toString())
         super.onSaveInstanceState(outState)
     }
@@ -727,6 +798,7 @@ class LessonActivity : AppCompatActivity() {
             getSharedPreferences("app_settings", MODE_PRIVATE)
                 .getBoolean("swipeNavigationEnabled", true)
 
+        if (narrationController == null) setupLessonNarration()
         narrationController?.settingsChanged()
         // The page cache is consulted before loading the large ONNX model.
         // A cached lesson starts promptly without an unnecessary warm-up.
@@ -1027,6 +1099,24 @@ class LessonActivity : AppCompatActivity() {
             attemptColor
         )
 
+        // The count and percentage are inside the 80%-scaled indicator.
+        // The countdown lives outside it: copy their real, visible style.
+        val remaining = findViewById<TextView>(R.id.textAttemptRemaining)
+        val visibleSizePx = textAttemptPercent.textSize * attemptIndicator.scaleY
+        if (kotlin.math.abs(remaining.textSize - visibleSizePx) > 0.1f) {
+            remaining.setTextSize(TypedValue.COMPLEX_UNIT_PX, visibleSizePx)
+        }
+        if (remaining.currentTextColor != textAttemptPercent.currentTextColor) {
+            remaining.setTextColor(textAttemptPercent.currentTextColor)
+        }
+        if (remaining.typeface != textAttemptPercent.typeface) {
+            remaining.typeface = textAttemptPercent.typeface
+        }
+
+        val label = AttemptRecoveryLabel.format(attemptState.maximum,attemptState.reserveUnits,
+            attemptState.unlimited,AttemptRepository.RECOVERY_MILLIS)
+        if (remaining.text.toString() != label) remaining.text = label
+        remaining.visibility = if (label.isEmpty()) View.INVISIBLE else View.VISIBLE
         refreshAttemptDetails()
     }
 
@@ -1209,12 +1299,14 @@ class LessonActivity : AppCompatActivity() {
         )
 
         popup.isOutsideTouchable =
-            true
+            false
+        if (android.os.Build.VERSION.SDK_INT >= 29) popup.isTouchModal = false
 
         popup.elevation =
             dp(8).toFloat()
 
         popup.setOnDismissListener {
+            floatingInteractions.dismissed(popup)
 
             attemptDetailsPopup =
                 null
@@ -1233,6 +1325,7 @@ class LessonActivity : AppCompatActivity() {
                 R.id.lessonHeader
             )
         )
+        floatingInteractions.shown(popup)
     }
 
     private fun refreshAttemptDetails() {
@@ -3526,7 +3619,8 @@ class LessonActivity : AppCompatActivity() {
     private fun updateNarrationToggleAppearance() {
         if (!::buttonNarrationToggle.isInitialized) return
 
-        val enabled = NarrationSettingsRepository.get(this).enabled
+        val enabled = NarrationSettingsRepository.get(this).enabled &&
+            NarrationSettingsRepository.controlsVisible(this)
         val accent = AppearanceSettingsRepository.getRouteAccentColor(
             this, currentRouteId
         )
