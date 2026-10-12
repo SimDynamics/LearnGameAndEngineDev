@@ -121,6 +121,7 @@ EXACT_OUTPUT_LOCATIONS = {
     ("datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json", 15, 3),
 }
 INLINE_ANSWER_ALTERNATIVES = {
+    ("objetos_y_estado/lesson_enteros_y_aproximaciones.json", 4, 4): [["int", "signed", "signed int", "int signed"], ["double"]],
     ("expresiones_y_decisiones/lesson_combinar_condiciones.json", 2, 4): [["&&", "and"], ["||", "or"]],
     ("expresiones_y_decisiones/lesson_comparaciones_y_condiciones.json", 3, 6): [["=="], ["!=", "not_eq"]],
     ("colecciones_y_recorridos/lesson_un_vector_para_una_coleccion.json", 4, 5): [["push_back", "emplace_back"], ["9"]],

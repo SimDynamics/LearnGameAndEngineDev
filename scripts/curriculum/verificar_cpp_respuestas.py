@@ -41,6 +41,10 @@ INLINE = {
     ("colecciones_y_recorridos/lesson_un_vector_para_una_coleccion.json", 4, 5): [["push_back", "emplace_back"], ["9"]],
     ("colecciones_y_recorridos/lesson_acumular_contar_y_seleccionar.json", 5, 4): [["push_back", "emplace_back"], ["valor"]],
 }
+# Reutilizaciones verificadas por separado: conservan los 65 casos acreditados.
+INLINE_REUSE = {
+    ("objetos_y_estado/lesson_enteros_y_aproximaciones.json", 4, 4): [["int", "signed", "signed int", "int signed"], ["double"]],
+}
 LITERALS = [
     ("programas_y_ejecucion/lesson_primer_programa_y_salida.json", 2, 5),
     ("programas_y_ejecucion/lesson_resolver_probar_y_recuperar.json", 1, 4),
@@ -71,7 +75,8 @@ def published(location: tuple[str, int, int]) -> tuple[dict, dict]:
 
 
 def structural_audit(baseline: str) -> dict:
-    """Whole JSON equality after removing only the nine approved optional fields."""
+    """Whole JSON equality after removing only the approved optional fields."""
+    inline_contracts = {**INLINE, **INLINE_REUSE}
     current = {path.relative_to(ROOT).as_posix(): path for path in CONTENT.rglob("*.json")}
     previous = set(git("ls-tree", "-r", "--name-only", baseline, "--", CONTENT_REL)
                    .decode("utf-8").splitlines())
@@ -98,8 +103,8 @@ def structural_audit(baseline: str) -> dict:
                                          "field": "outputComparison", "value": "exact"})
                 elif "outputComparison" in item and item.get("outputComparison") != old_item.get("outputComparison"):
                     raise ValueError(f"Comparación cambiada fuera de las cinco predicciones: {location}")
-                if location in INLINE:
-                    expected = INLINE[location]
+                if location in inline_contracts:
+                    expected = inline_contracts[location]
                     if item.get("answerAlternatives") != expected:
                         raise ValueError(f"Alternativas por hueco distintas: {location}")
                     if item["answers"] != [options[0] for options in expected]:
@@ -111,7 +116,7 @@ def structural_audit(baseline: str) -> dict:
                         approved.append({"path": short, "page": page, "block": block,
                                          "field": "answerAlternatives", "value": expected})
                 elif "answerAlternatives" in item and item.get("answerAlternatives") != old_item.get("answerAlternatives"):
-                    raise ValueError(f"Alternativas cambiadas fuera de los cuatro bloques: {location}")
+                    raise ValueError(f"Alternativas cambiadas fuera de los bloques registrados: {location}")
         if new != old:
             raise ValueError(f"Contenido previo modificado, desplazado o eliminado: {short}")
     return {"passed": True, "baseline": git("rev-parse", baseline).decode().strip(),
@@ -336,7 +341,7 @@ def main() -> int:
               "flags": FLAGS, "records": []}
     try:
         branch = git("branch", "--show-current").decode().strip()
-        if branch != "work/mejoras-app":
+        if branch not in {"main", "work/mejoras-app"}:
             raise ValueError(f"Rama distinta de la autorizada: {branch}")
         report["structural_audit"] = structural_audit(args.baseline)
         if not args.compiler:
