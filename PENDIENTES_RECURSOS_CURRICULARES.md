@@ -67,7 +67,8 @@ El estado corresponde a la incorporación en las lecciones: **pendiente**, **cre
 ## NARRACION_CPP_TERMINOS_INGLES_CONTEXTO
 
 - **PENDIENTE_ID:** `NARRACION_CPP_TERMINOS_INGLES_CONTEXTO`.
-- **Estado:** pendiente; evaluación con muestras breves en la copia Android aislada. La admisión de fonemas por Kokoro no acredita pronunciación natural ni integración en las lecciones.
+- **Estado:** INTEGRADO_Y_VERIFICADO. Pronunciación inglesa manual integrada en main.
+- **Evidencia de cierre:** Commit 188966b, fusionado mediante 9a3d3ce. 159 términos; 449 pruebas JVM sin fallos, 3 omitidas; verificación Android en LDPlayer y aceptación auditiva de los términos escuchados. Documentación: docs/MANUAL_ENGLISH_PRONUNCIATION.md.
 - **Ubicación:** curso `cpp_fundamentals`, lección `cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida`, archivo `E:/PersonalFiles/Projects/LearnGraphicsProgramming/app/src/main/assets/content/es/programming/cpp_fundamentals/programas_y_ejecucion/lesson_primer_programa_y_salida.json`; página 1, bloque 4, directiva `#include <iostream>`, `std::cout`, `main` y `return`; página 1, bloque 5, opciones con esas instrucciones. Páginas y bloques desde 1.
 - **Objetivo pedagógico:** reconocer los nombres técnicos ingleses de C++ mediante una pronunciación inteligible y consistente dentro de explicaciones españolas, conservando literalmente el texto visible y el código.
 - **Experiencia deseada:** mantener la voz española y la continuidad de cada frase; pronunciar en inglés únicamente términos ingleses seleccionados por su contexto técnico original. La palabra española `imprime`, los identificadores españoles como `imprime()` y la prosa ordinaria conservan pronunciación española.
