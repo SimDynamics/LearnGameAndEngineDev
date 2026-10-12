@@ -17,10 +17,10 @@ FIELDS = {
     "code": {"type", "language", "code"},
     "multiple_choice": {"type", "id", "question", "options", "correctIndex", "explanation"},
     "fill_code": {"type", "id", "question", "language", "code", "answers", "explanation"},
-    "output_prediction": {"type", "id", "question", "language", "code", "answers", "explanation"},
+    "output_prediction": {"type", "id", "question", "language", "code", "answers", "explanation", "outputComparison"},
     "order_code": {"type", "id", "question", "fragments", "correctOrder", "explanation"},
     "drag_fill_code": {"type", "id", "question", "language", "template", "choices", "correctOrder"},
-    "inline_fill_code": {"type", "id", "question", "language", "template", "answers"},
+    "inline_fill_code": {"type", "id", "question", "language", "template", "answers", "answerAlternatives"},
     # Los proyectos sustituyen initialCode al ejecutar; se conserva el campo legacy.
     "cpp_compiler": {"type", "language", "initialCode", "initialStandardInput", "projectFiles", "sourceFiles"},
 }
@@ -111,6 +111,39 @@ ACCEPTED_ANSWER_EXTENSIONS = {
         (("unsigned char",), ("unsigned char", "char unsigned")),
 }
 ERRORS = []
+
+# Ampliaciones opcionales: no sustituyen answers ni desplazan huecos/progreso.
+EXACT_OUTPUT_LOCATIONS = {
+    ("programas_y_ejecucion/lesson_primer_programa_y_salida.json", 2, 4),
+    ("repeticion_y_terminacion/lesson_recorridos_anidados.json", 10, 3),
+    ("repeticion_y_terminacion/lesson_recorridos_anidados.json", 12, 6),
+    ("datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json", 12, 3),
+    ("datos_propios_y_estado_valido/lesson_transferir_invariantes_a_un_deposito.json", 15, 3),
+}
+INLINE_ANSWER_ALTERNATIVES = {
+    ("expresiones_y_decisiones/lesson_combinar_condiciones.json", 2, 4): [["&&", "and"], ["||", "or"]],
+    ("expresiones_y_decisiones/lesson_comparaciones_y_condiciones.json", 3, 6): [["=="], ["!=", "not_eq"]],
+    ("colecciones_y_recorridos/lesson_un_vector_para_una_coleccion.json", 4, 5): [["push_back", "emplace_back"], ["9"]],
+    ("colecciones_y_recorridos/lesson_acumular_contar_y_seleccionar.json", 5, 4): [["push_back", "emplace_back"], ["valor"]],
+}
+
+
+def validate_answer_contract(block, where):
+    if block["type"] == "output_prediction" and "outputComparison" in block:
+        mode = block["outputComparison"]
+        require(isinstance(mode, str) and mode in {"trimmed", "exact"}, where, "outputComparison debe ser trimmed o exact")
+    if block["type"] == "inline_fill_code" and "answerAlternatives" in block:
+        groups = block["answerAlternatives"]
+        answers = block["answers"]
+        require(isinstance(groups, list) and len(groups) == len(answers), where, "una lista de alternativas por hueco")
+        if not isinstance(groups, list):
+            return
+        for index, group in enumerate(groups):
+            valid = isinstance(group, list) and bool(group) and all(isinstance(a, str) and a.strip() for a in group)
+            require(valid, where, f"alternativas vacías o no textuales en hueco {index+1}")
+            if valid:
+                require(len(set(group)) == len(group), where, "alternativa duplicada")
+                require(index < len(answers) and group[0] == answers[index], where, "conservar la respuesta previa como primera alternativa")
 
 
 def require(condition, where, message):
@@ -206,6 +239,14 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
     if current == old:
         return True
     lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
+    location = (lesson_path, pn + 1, bn + 1)
+    if location in EXACT_OUTPUT_LOCATIONS and old["type"] == "output_prediction":
+        if current == dict(old, outputComparison="exact"):
+            return True
+    alternatives = INLINE_ANSWER_ALTERNATIVES.get(location)
+    if alternatives is not None and old["type"] == "inline_fill_code":
+        if current == dict(old, answerAlternatives=alternatives):
+            return True
     extension = ACCEPTED_ANSWER_EXTENSIONS.get((lesson_path, pn + 1, bn + 1))
     if extension is not None and old["type"] == "fill_code":
         previous_answers, accepted_answers = extension
@@ -289,6 +330,7 @@ def main():
                     require(0 <= block["correctIndex"] < len(options), where, "índice de respuesta fuera de rango")
                 if kind in {"fill_code", "output_prediction", "inline_fill_code"}:
                     require(bool(block["answers"]) and all(isinstance(a, str) and a.strip() for a in block["answers"]), where, "respuesta vacía o no textual")
+                    validate_answer_contract(block, where)
                 if kind == "order_code":
                     require(sorted(block["correctOrder"]) == list(range(len(block["fragments"]))), where, "orden no es una permutación")
                 if kind in {"drag_fill_code", "inline_fill_code"}:

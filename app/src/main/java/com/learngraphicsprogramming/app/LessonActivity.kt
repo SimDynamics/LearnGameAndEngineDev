@@ -4284,9 +4284,7 @@ class LessonActivity : AppCompatActivity() {
         button.setOnClickListener {
 
             val userAnswer =
-                normalizeAnswer(
-                    input.text.toString()
-                )
+                CppCodeAnswerNormalizer.normalizeFill(block.getString("code"), input.text.toString())
 
             if (answeredCorrectly) return@setOnClickListener
             if (userAnswer.isBlank()) {
@@ -4296,10 +4294,7 @@ class LessonActivity : AppCompatActivity() {
 
             val correct = evaluateExerciseAttempt(exercisePage, blockIndex, userAnswer,
                 evaluation = {
-                    val answers = block.getJSONArray("answers")
-                    require(answers.length() > 0) { "Missing accepted answers" }
-                    val expected = List(answers.length()) { normalizeAnswer(answers.getString(it)) }
-                    userAnswer in expected
+                    CppExerciseAnswers.fillMatches(block, userAnswer)
                 }, verdict = { it }) ?: return@setOnClickListener
 
             val state =
@@ -4923,9 +4918,9 @@ class LessonActivity : AppCompatActivity() {
         button.setOnClickListener {
 
             val userAnswer =
-                input.text
-                    .toString()
-                    .trim()
+                if (block.optString("outputComparison", "trimmed") == "trimmed") {
+                    input.text.toString().trim()
+                } else input.text.toString()
 
             if (answeredCorrectly) return@setOnClickListener
             if (userAnswer.isBlank()) {
@@ -4935,10 +4930,7 @@ class LessonActivity : AppCompatActivity() {
 
             val correct = evaluateExerciseAttempt(exercisePage, blockIndex, userAnswer,
                 evaluation = {
-                    val answers = block.getJSONArray("answers")
-                    require(answers.length() > 0) { "Missing accepted outputs" }
-                    val expected = List(answers.length()) { answers.getString(it).trim() }
-                    userAnswer in expected
+                    CppExerciseAnswers.outputMatches(block, userAnswer)
                 }, verdict = { it }) ?: return@setOnClickListener
 
             val state =
@@ -7711,18 +7703,6 @@ class LessonActivity : AppCompatActivity() {
                 }
             }.start()
         }
-    }
-
-    private fun normalizeAnswer(
-        text: String
-    ): String {
-
-        return text
-            .trim()
-            .replace(
-                Regex("\\s+"),
-                " "
-            )
     }
 
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
@@ -14814,7 +14794,9 @@ class LessonActivity : AppCompatActivity() {
         checkButton.setOnClickListener {
 
             if (answeredCorrectly) return@setOnClickListener
-            val actual = inputs.map { normalizeAnswer(it.text.toString()) }
+            val actual = CppCodeAnswerNormalizer.normalizeInline(
+                block.getString("template"), inputs.map { it.text.toString() }
+            )
             if (actual.isEmpty() || actual.any { it.isBlank() }) {
                 showIncompleteAttempt()
                 return@setOnClickListener
@@ -14822,10 +14804,7 @@ class LessonActivity : AppCompatActivity() {
 
             val correct = evaluateExerciseAttempt(exercisePage, blockIndex, org.json.JSONArray(actual),
                 evaluation = {
-                    val expectedAnswers = block.getJSONArray("answers")
-                    require(actual.size == expectedAnswers.length()) { "Invalid inline fill configuration" }
-                    val expected = List(expectedAnswers.length()) { normalizeAnswer(expectedAnswers.getString(it)) }
-                    actual == expected
+                    CppExerciseAnswers.inlineMatches(block, actual)
                 }, verdict = { it }) ?: return@setOnClickListener
 
             /*
