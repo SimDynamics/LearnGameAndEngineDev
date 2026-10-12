@@ -1096,7 +1096,20 @@ class LessonActivity : AppCompatActivity() {
             attemptColor
         )
 
+        // The count and percentage are inside the 80%-scaled indicator.
+        // The countdown lives outside it: copy their real, visible style.
         val remaining = findViewById<TextView>(R.id.textAttemptRemaining)
+        val visibleSizePx = textAttemptPercent.textSize * attemptIndicator.scaleY
+        if (kotlin.math.abs(remaining.textSize - visibleSizePx) > 0.1f) {
+            remaining.setTextSize(TypedValue.COMPLEX_UNIT_PX, visibleSizePx)
+        }
+        if (remaining.currentTextColor != textAttemptPercent.currentTextColor) {
+            remaining.setTextColor(textAttemptPercent.currentTextColor)
+        }
+        if (remaining.typeface != textAttemptPercent.typeface) {
+            remaining.typeface = textAttemptPercent.typeface
+        }
+
         val label = AttemptRecoveryLabel.format(attemptState.maximum,attemptState.reserveUnits,
             attemptState.unlimited,AttemptRepository.RECOVERY_MILLIS)
         if (remaining.text.toString() != label) remaining.text = label
