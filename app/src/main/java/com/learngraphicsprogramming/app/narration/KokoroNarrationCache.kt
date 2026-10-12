@@ -28,14 +28,29 @@ internal object KokoroNarrationCache {
     // on low storage instead of evicting successfully generated lessons.
 
     fun key(language: String, voice: String, text: String): String {
-        val parts = mutableListOf(VERSION, KokoroModelManifest.revision, language, voice, text)
+        val annotated = language == NarrationLanguage.SPANISH.tag && ManualEnglishSpeech.isPrepared(text)
+        val spoken = if (annotated) ManualEnglishSpeech.strip(text) else text
+        val parts = mutableListOf(VERSION, KokoroModelManifest.revision, language, voice, spoken)
         if (language == NarrationLanguage.SPANISH.tag) {
-            val prepared = SpanishTechnicalSpeech.prepare(text)
-            if (prepared.changed || text.any { it in "ᵃᵇᶜ" }) {
+            val prepared = SpanishTechnicalSpeech.prepare(spoken)
+            if (prepared.changed || spoken.any { it in "ᵃᵇᶜ" }) {
                 // Preserve every legacy key whose pronunciation is unchanged. New
                 // technical readings and previously lost exponents need fresh audio.
                 parts += SPANISH_TECHNICAL_REVISION
                 parts += prepared.text
+            }
+            if (annotated) {
+                val terms = ManualEnglishSpeech.spans(text)
+                if (terms.isNotEmpty()) {
+                    parts += "manual-english-same-voice-v1"
+                    // Only the selected occurrences and their actual phones affect this
+                    // key. Adding an unrelated term preserves every compatible recording.
+                    terms.forEach { term ->
+                        parts += ManualEnglishSpeech.strip(text.substring(0, term.start)).length.toString()
+                        parts += term.entry.id
+                        parts += ManualEnglishPronunciations.phonemes(term.entry)
+                    }
+                }
             }
         }
         val payload = parts.joinToString("\u0000")

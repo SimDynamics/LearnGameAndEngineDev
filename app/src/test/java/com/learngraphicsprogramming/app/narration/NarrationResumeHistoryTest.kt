@@ -69,6 +69,53 @@ class NarrationResumeHistoryTest {
         assertNotEquals(key("a/1", parts = listOf("ab", "c")), key("a/1", parts = listOf("a", "bc")))
     }
 
+    @Test fun existingOrdinarySpanishBookmarksSurviveInternalPronunciationMetadata() {
+        val plain = listOf("El vector representa una dirección.", "El programa imprime el resultado.", "Otra explicación.")
+        val prepared = plain.map { SpanishTechnicalSpeech.prepareForKokoro(it).text }
+        assertTrue(prepared.all { ManualEnglishSpeech.spans(it).isEmpty() })
+        for (engine in listOf("KOKORO", "AUTO")) {
+            val legacy = NarrationResumePolicy.key("lesson/page", "es", engine, "ef_dora", plain)
+            val history = begin(NarrationResumeHistory(), legacy)
+            val current = NarrationResumePolicy.key("lesson/page", "es", engine, "ef_dora", prepared)
+            assertEquals(legacy, current)
+            assertEquals(point, NarrationResumePolicy.restore(history, current, prepared.size))
+        }
+    }
+
+    @Test fun changedEnglishAudioStartsAFreshBookmarkWithoutRemovingTheOldOne() {
+        val plain = listOf("Usa include para incluir iostream.", "El programa imprime el resultado.", "Otra explicación.")
+        val prepared = plain.map { SpanishTechnicalSpeech.prepareForKokoro(it).text }
+        assertTrue(prepared.any { ManualEnglishSpeech.spans(it).isNotEmpty() })
+        val legacy = NarrationResumePolicy.key("lesson/page", "es", "KOKORO", "ef_dora", plain)
+        val history = begin(NarrationResumeHistory(), legacy)
+        val current = NarrationResumePolicy.key("lesson/page", "es", "KOKORO", "ef_dora", prepared)
+        assertNotEquals(legacy, current)
+        assertNull(NarrationResumePolicy.restore(history, current, prepared.size))
+        assertEquals(point, NarrationResumePolicy.restore(history, legacy, plain.size))
+        val currentHistory = begin(history, current)
+        assertEquals(point, NarrationResumePolicy.restore(currentHistory, current, prepared.size))
+        assertEquals(point, NarrationResumePolicy.restore(currentHistory, legacy, plain.size))
+    }
+
+    @Test fun androidBookmarksUseOnlyTheRestoredSpokenText() {
+        val plain = listOf("Usa include para incluir iostream.", "El programa imprime el resultado.", "Otra explicación.")
+        val prepared = plain.map { SpanishTechnicalSpeech.prepareForKokoro(it).text }
+        val legacy = NarrationResumePolicy.key("lesson/page", "es", "ANDROID", "android-voice", plain)
+        val current = NarrationResumePolicy.key("lesson/page", "es", "ANDROID", "android-voice", prepared)
+        assertEquals(legacy, current)
+    }
+
+    @Test fun metadataVariantsWithIdenticalEnglishAudioShareTheSameBookmark() {
+        val entry = ManualEnglishTerms.entries.single { it.spelling == "include" }
+        val code = listOf("${ManualEnglishSpeech.PREPARED}Usa ${ManualEnglishSpeech.encode(entry)}.")
+        val prose = listOf("${ManualEnglishSpeech.PREPARED}Usa ${ManualEnglishSpeech.encode(entry, code = false)}.")
+        val codeKey = NarrationResumePolicy.key("lesson/page", "es", "KOKORO", "ef_dora", code)
+        val proseKey = NarrationResumePolicy.key("lesson/page", "es", "KOKORO", "ef_dora", prose)
+        assertEquals(codeKey, proseKey)
+        val history = NarrationResumePolicy.begin(NarrationResumeHistory(), codeKey, "same-audio", NarrationResumePoint(0, 456L))
+        assertEquals(NarrationResumePoint(0, 456L), NarrationResumePolicy.restore(history, proseKey, 1))
+    }
+
     @Test fun nextPlaybackReleasesPreviousResourcesBeforeAcquiringNewOnes() {
         var openPlayers = 0
         var previous: Any? = null

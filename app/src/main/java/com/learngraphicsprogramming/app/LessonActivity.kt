@@ -379,7 +379,10 @@ class LessonActivity : AppCompatActivity() {
     private val floatingInteractions by lazy { LessonFloatingInteractions(this) }
 
     private fun narrationScript(language: com.learngraphicsprogramming.app.narration.NarrationLanguage) =
-        com.learngraphicsprogramming.app.narration.LessonNarrationScript.page(lessonJson,currentPage,language) { type ->
+        com.learngraphicsprogramming.app.narration.LessonNarrationScript.page(lessonJson,currentPage,language,
+            forKokoro = com.learngraphicsprogramming.app.narration.MixedSpanishG2P.productionEnabled &&
+                NarrationSettingsRepository.forLanguage(this, language).engine !=
+                com.learngraphicsprogramming.app.narration.NarrationEngine.ANDROID) { type ->
             NarrationUiInstructions.forBlock(this,type)
         }
 

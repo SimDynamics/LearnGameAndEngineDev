@@ -36,6 +36,48 @@ object SpanishFluidG2P {
         return phonemes
     }
 
+    internal data class PhonemeSpan(val phonemes: String, val foreign: Boolean)
+
+    /** Foreign tokens are selected by an explicit term list before Spanish normalization.
+     * Their phones bypass Spanish spelling and allophones; surrounding Spanish retains
+     * the same sentence-level stress and linking rules as the ordinary frontend.
+     */
+    internal fun phonemizeWithForeignTokens(
+        text: String,
+        lexicon: Map<String, String>,
+        foreignTokens: Map<Char, String>
+    ): List<PhonemeSpan> {
+        require(text.length <= 32_768)
+        require(foreignTokens.keys.all { it in '\uE100'..'\uF8FF' })
+        require(foreignTokens.values.all { it.isNotBlank() && it.all { phone -> phone in kokoroAlphabet && phone != '$' } })
+        val tokens = normalizedTokens(normalizeText(text), lexicon, foreignTokens)
+        val spans = mutableListOf<PhonemeSpan>()
+        // Use exactly the ordinary joining rules, recording ownership as we join.
+        for (token in tokens) {
+            if (token.text == "¿" || token.text == "¡") continue
+            if (!token.word && token.text in attachLeft && spans.isNotEmpty()) {
+                val last = spans.removeAt(spans.lastIndex)
+                spans += last.copy(phonemes = last.phonemes.trimEnd() + token.text + " ")
+            } else {
+                val suffix = if (!token.word && token.text in attachRight) "" else " "
+                val phones = token.text + suffix
+                if (spans.lastOrNull()?.foreign == token.foreign) {
+                    val last = spans.removeAt(spans.lastIndex)
+                    spans += last.copy(phonemes = last.phonemes + phones)
+                } else spans += PhonemeSpan(phones, token.foreign)
+            }
+        }
+        if (spans.isNotEmpty()) {
+            spans[0] = spans.first().copy(phonemes = spans.first().phonemes.trimStart())
+            spans[spans.lastIndex] = spans.last().copy(phonemes = spans.last().phonemes.trimEnd())
+        }
+        val result = spans.filter { it.phonemes.isNotEmpty() }
+        require(result.isNotEmpty() && result.all { span -> span.phonemes.all { it in kokoroAlphabet && it != '$' } }) {
+            "La fonetización mixta produjo un símbolo no compatible con Kokoro"
+        }
+        return result
+    }
+
     /** Load once on the background synthesis worker, after the store verifies size and SHA-256. */
     fun loadLexicon(file: File): Map<String, String> {
         require(file.isFile && file.length() in 1L..8_000_000L) { "Diccionario español no válido" }
@@ -116,10 +158,17 @@ object SpanishFluidG2P {
 
     /** Exact upstream rule pipeline; input numbers must already have been verbalized. */
     internal fun phonemizeNormalized(text: String, lexicon: Map<String, String> = emptyMap()): String {
+        return join(normalizedTokens(text, lexicon))
+    }
+
+    private fun normalizedTokens(text: String, lexicon: Map<String, String>,
+                                 foreignTokens: Map<Char, String> = emptyMap()): List<Token> {
         val normalized = nfc(text).replace('«', '“').replace('»', '”').replace('\'', ' ')
         val tokens = tokenize(normalized)
         val items = tokens.mapIndexed { index, token ->
-            if (!token.word) Item(Kind.PUNCTUATION, token.text, Stress.PRIMARY) else {
+            val foreign = token.text.singleOrNull()?.let(foreignTokens::get)
+            if (foreign != null) Item(Kind.FOREIGN, foreign, Stress.PRIMARY)
+            else if (!token.word) Item(Kind.PUNCTUATION, token.text, Stress.PRIMARY) else {
                 val lower = token.text.lowercase(Locale.ROOT)
                 var stress = when (lower) {
                     in unstressedWords -> Stress.NONE
@@ -141,16 +190,18 @@ object SpanishFluidG2P {
             }
             val entry = if (item.kind != Kind.ACRONYM && item.stress == Stress.PRIMARY) lexicon[item.text] else null
             val word = when {
+                item.kind == Kind.FOREIGN -> item.text
                 item.kind == Kind.ACRONYM -> spell(item.text)
                 entry != null -> entry
                 item.text == "y" -> "i"
                 else -> phonemizeWord(item.text, item.stress)
             }
-            val phonemes = applyAllophones(word, previous, firstPhoneOnly = entry != null)
+            val phonemes = if (item.kind == Kind.FOREIGN) word else
+                applyAllophones(word, previous, firstPhoneOnly = entry != null)
             val bare = stripStress(phonemes)
             val last = output.lastOrNull()
             val first = bare.firstOrNull()
-            if (previous != null && last?.word == true && first != null) {
+            if (previous != null && last?.word == true && !last.foreign && first != null) {
                 val prior = when {
                     last.text.endsWith('n') && first in "bp" -> last.text.dropLast(1) + "m"
                     last.text.endsWith('n') && first in "ɡx" -> last.text.dropLast(1) + "ŋ"
@@ -159,17 +210,17 @@ object SpanishFluidG2P {
                 }
                 output[output.lastIndex] = last.copy(text = prior)
             }
-            output.add(Token(phonemes, true))
+            output.add(Token(phonemes, true, item.kind == Kind.FOREIGN))
             bare.lastOrNull()?.let { previous = it }
         }
-        return join(output)
+        return output
     }
 
     internal enum class Stress(val mark: String) { PRIMARY("ˈ"), SECONDARY("ˌ"), NONE("") }
-    private enum class Kind { WORD, ACRONYM, PUNCTUATION }
+    private enum class Kind { WORD, ACRONYM, FOREIGN, PUNCTUATION }
     private enum class SegmentKind { CONSONANT, VOWEL, GLIDE }
     private data class Item(val kind: Kind, val text: String, val stress: Stress)
-    private data class Token(val text: String, val word: Boolean)
+    private data class Token(val text: String, val word: Boolean, val foreign: Boolean = false)
     private data class Segment(var phone: String, var kind: SegmentKind, val accented: Boolean = false)
     private data class Syllable(val onset: List<Int>, val nucleus: List<Int>, var coda: List<Int> = emptyList())
 

@@ -17,8 +17,19 @@ internal object NarrationResumePolicy {
 
     fun key(page: String, language: String, engine: String, voice: String,
             sentences: List<String>): String {
+        val audioIdentity = sentences.map { sentence ->
+            if (language != NarrationLanguage.SPANISH.tag || !ManualEnglishSpeech.isPrepared(sentence)) sentence
+            else if (engine == NarrationEngine.ANDROID.name || ManualEnglishSpeech.spans(sentence).isEmpty()) {
+                // Internal metadata cannot invalidate a bookmark for unchanged audio.
+                ManualEnglishSpeech.strip(sentence)
+            } else {
+                // Duration can change after a corrected English pronunciation. The audio
+                // key includes the selected occurrences and their actual compiled phones.
+                "manual-english-resume-v1\u0000" + KokoroNarrationCache.key(language, voice, sentence)
+            }
+        }
         val digest = MessageDigest.getInstance("SHA-256")
-        for (text in listOf("resume-v1", page, language, engine, voice) + sentences) {
+        for (text in listOf("resume-v1", page, language, engine, voice) + audioIdentity) {
             val bytes = text.toByteArray(Charsets.UTF_8)
             digest.update(bytes.size.toString().toByteArray(Charsets.US_ASCII))
             digest.update(':'.code.toByte())

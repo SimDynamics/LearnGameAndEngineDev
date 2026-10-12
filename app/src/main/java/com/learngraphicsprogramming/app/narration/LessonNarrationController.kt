@@ -634,7 +634,7 @@ class LessonNarrationController(
                 require(KokoroModelManifest.verify(file, artifact)) { "Falta el diccionario español verificado" }
                 SpanishFluidG2P.loadLexicon(file).also { spanishLexicon = it }
             }
-            SpanishFluidG2P.phonemize(text, lexicon)
+            MixedSpanishG2P.phonemizePrepared(text, lexicon)
         }
         NarrationLanguage.AMERICAN_ENGLISH, NarrationLanguage.BRITISH_ENGLISH ->
             (english ?: EnglishMisakiG2P(root).also { english = it })
@@ -687,7 +687,7 @@ class LessonNarrationController(
                 ?: throw UiFailure(R.string.narration_offline_voice_missing, request.settings.language.label(uiContext))
             if (selected.isNetworkConnectionRequired) notice(request, s(R.string.narration_network_notice))
             require(engine.setSpeechRate(1f) == TextToSpeech.SUCCESS)
-            val result = engine.synthesizeToFile(request.text, Bundle(), request.file, request.id)
+            val result = engine.synthesizeToFile(ManualEnglishSpeech.strip(request.text), Bundle(), request.file, request.id)
             if (result != TextToSpeech.SUCCESS) {
                 ttsPending.remove(request.id)
                 synthesisFailed(request, s(R.string.narration_android_segment_error))

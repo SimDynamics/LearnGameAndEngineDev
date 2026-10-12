@@ -12,8 +12,13 @@ data class LessonNarrationScript(val texts: List<String>, val gates: List<Narrat
             "output_prediction", "order_code", "drag_fill_code")
         fun isExercise(type: String): Boolean = type in codeExercises || MathPuzzleTypes.isExercise(type)
 
+        fun page(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage,
+                 instruction: (String) -> String): LessonNarrationScript =
+            page(lesson, pageIndex, language, false, instruction)
+
         /** Authoring/validation trees stay private. Only explicit successful feedback is included. */
         fun page(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage,
+                 forKokoro: Boolean = false,
                  instruction: (String) -> String = { "" }): LessonNarrationScript {
             val blocks = lesson.optJSONArray("pages")?.optJSONObject(pageIndex)?.optJSONArray("blocks")
                 ?: return LessonNarrationScript(emptyList(), emptyList())
@@ -21,7 +26,7 @@ data class LessonNarrationScript(val texts: List<String>, val gates: List<Narrat
             val gates = mutableListOf<NarrationTextGate>()
             fun authored(block: JSONObject): List<String> {
                 val one = JSONObject().put("pages", JSONArray().put(JSONObject().put("blocks", JSONArray().put(block))))
-                return LessonNarrationText.page(one, 0, language, instruction)
+                return LessonNarrationText.page(one, 0, language, forKokoro, instruction)
             }
             fun paragraph(text: String, mode: String = "auto") = authored(JSONObject()
                 .put("type", "paragraph").put("text", text).put("mathMode", mode))

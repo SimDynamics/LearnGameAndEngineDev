@@ -67,7 +67,8 @@ internal object NarrationCurriculum {
                         for (pageIndex in 0 until pages.length()) {
                             val language = NarrationLanguage.forLesson(json, pageIndex, preference.language)
                             val options = NarrationSettingsRepository.forLanguage(context, language)
-                            val script = LessonNarrationScript.page(json, pageIndex, language) { blockType ->
+                            val script = LessonNarrationScript.page(json, pageIndex, language,
+                                forKokoro = MixedSpanishG2P.productionEnabled) { blockType ->
                                 NarrationUiInstructions.forBlock(context, blockType)
                             }
                             for (text in NarrationSegments.sentences(script.texts)) {

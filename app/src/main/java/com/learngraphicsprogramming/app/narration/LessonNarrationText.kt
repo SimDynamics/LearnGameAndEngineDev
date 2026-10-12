@@ -8,16 +8,23 @@ import org.json.JSONObject
 object LessonNarrationText {
     private const val MAX_SEGMENT_LENGTH = 700
 
+    /** Preserve callers that supplied the instruction callback positionally. */
+    fun page(lesson: JSONObject, pageIndex: Int, language: NarrationLanguage,
+             visibleInstruction: (String) -> String): List<String> =
+        page(lesson, pageIndex, language, false, visibleInstruction)
+
     fun page(
         lesson: JSONObject,
         pageIndex: Int,
         language: NarrationLanguage = NarrationLanguage.SPANISH,
+        forKokoro: Boolean = false,
         visibleInstruction: (String) -> String = { "" }
     ): List<String> =
-        Extractor(language, visibleInstruction).page(lesson, pageIndex)
+        Extractor(language, forKokoro, visibleInstruction).page(lesson, pageIndex)
 
     private class Extractor(
         private val speechLanguage: NarrationLanguage,
+        private val forKokoro: Boolean,
         private val visibleInstruction: (String) -> String
     ) {
     private fun localized(spanish: String, english: String, french: String): String = when (speechLanguage) {
@@ -177,9 +184,12 @@ object LessonNarrationText {
         // Recognize quoted/embedded C++ before math can reinterpret its operators.
         // Visible lesson content remains unchanged; only its spoken representation differs.
         val contextual = if (speechLanguage == NarrationLanguage.SPANISH) {
-            SpanishTechnicalSpeech.prepare(source, mathMode).text
+            if (forKokoro) SpanishTechnicalSpeech.prepareForKokoro(source, mathMode).text
+            else SpanishTechnicalSpeech.prepare(source, mathMode).text
         } else source
-        val spoken = MultilingualMathSpeech.text(contextual, mathMode, speechLanguage)
+        val spoken = if (forKokoro && speechLanguage == NarrationLanguage.SPANISH)
+            ManualEnglishSpeech.protect(contextual) { MultilingualMathSpeech.text(it, mathMode, speechLanguage) }
+        else MultilingualMathSpeech.text(contextual, mathMode, speechLanguage)
         if (spoken.isNotBlank()) output.add(spoken)
     }
 
@@ -206,6 +216,13 @@ object LessonNarrationText {
     }
 
     private fun segments(text: String): List<String> {
+        if (text.startsWith(ManualEnglishSpeech.PREPARED)) {
+            return ManualEnglishSpeech.segment(text, ::segmentsPlain)
+        }
+        return segmentsPlain(text)
+    }
+
+    private fun segmentsPlain(text: String): List<String> {
         val output = mutableListOf<String>()
         var remaining = text.trim()
         while (remaining.length > MAX_SEGMENT_LENGTH) {

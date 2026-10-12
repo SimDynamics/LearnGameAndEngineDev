@@ -4,7 +4,7 @@ package com.learngraphicsprogramming.app.narration
 internal object NarrationSegments {
     fun prepare(texts: List<String>, maxLength: Int): List<String> {
         require(maxLength >= 2)
-        return texts.flatMap { split(it.trim(), maxLength) }
+        return texts.flatMap { split(ManualEnglishSpeech.strip(it).trim(), maxLength) }
     }
 
     /**
@@ -15,8 +15,14 @@ internal object NarrationSegments {
      */
     fun sentences(texts: List<String>): List<String> =
         texts.flatMap { paragraph ->
+            if (paragraph.startsWith(ManualEnglishSpeech.PREPARED))
+                ManualEnglishSpeech.segment(paragraph, ::plainSentences)
+            else plainSentences(paragraph)
+        }
+
+    private fun plainSentences(paragraph: String): List<String> {
             val source = paragraph.trim()
-            if (source.isEmpty()) return@flatMap emptyList()
+            if (source.isEmpty()) return emptyList()
             val result = mutableListOf<String>()
             var start = 0
             source.forEachIndexed { index, symbol ->
@@ -33,8 +39,8 @@ internal object NarrationSegments {
                 val remainder = source.substring(start).trim()
                 if (remainder.isNotEmpty()) result += remainder
             }
-            result.flatMap { split(it, 2_000) }
-        }
+            return result.flatMap { split(it, 2_000) }
+    }
 
     private fun split(text: String, maxLength: Int): List<String> {
         val result = mutableListOf<String>()

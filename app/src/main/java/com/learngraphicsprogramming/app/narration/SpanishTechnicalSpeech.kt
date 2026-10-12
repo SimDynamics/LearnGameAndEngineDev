@@ -4,7 +4,26 @@ package com.learngraphicsprogramming.app.narration
 object SpanishTechnicalSpeech {
     data class Preparation(val text: String, val changed: Boolean)
 
-    fun prepare(text: String, mathMode: String = "auto"): Preparation {
+    fun prepare(text: String, mathMode: String = "auto"): Preparation =
+        prepareImpl(text, mathMode, emptyMap())
+
+    /** Select English readings while the original code context and whole identifiers remain visible. */
+    internal fun prepareForKokoro(text: String, mathMode: String = "auto"): Preparation {
+        if (text.isBlank()) return Preparation(text, false)
+        val annotations = ManualEnglishSpeech.spans(text)
+        if (ManualEnglishSpeech.isPrepared(text) || annotations.isNotEmpty()) {
+            return Preparation(if (ManualEnglishSpeech.isPrepared(text)) text else ManualEnglishSpeech.PREPARED + text, false)
+        }
+        val selected = ManualEnglishTerms.select(text, mathMode).associateBy { it.start }
+        val prepared = prepareImpl(text, mathMode, selected)
+        return prepared.copy(text = ManualEnglishSpeech.PREPARED + prepared.text)
+    }
+
+    private fun prepareImpl(
+        text: String,
+        mathMode: String,
+        selected: Map<Int, ManualEnglishTerms.Match>
+    ): Preparation {
         if (text.isBlank()) return Preparation(text, false)
         val forcedMath = mathMode == "inline" || mathMode == "block"
         // Ordinary formulas already have an AST reader. A technical reading must not
@@ -21,7 +40,8 @@ object SpanishTechnicalSpeech {
                 val end = text.indexOf(delimiter, index + delimiter.length)
                 if (end >= 0) {
                     val code = text.substring(index + delimiter.length, end)
-                    output.append("código, ").append(readCode(code)).append(", fin de código")
+                    output.append("código, ").append(readCode(code, index + delimiter.length, selected))
+                        .append(", fin de código")
                     index = end + delimiter.length
                     changed = true
                     continue
@@ -70,11 +90,15 @@ object SpanishTechnicalSpeech {
 
             val technicalEnd = codeEnd(text, index)
             if (technicalEnd != null) {
-                output.append(readCode(text.substring(index, technicalEnd)))
+                output.append(readCode(text.substring(index, technicalEnd), index, selected))
                 index = technicalEnd
                 changed = true
                 continue
             }
+            selected[index]?.let { match ->
+                output.append(ManualEnglishSpeech.encode(match.entry, code = false))
+                index = match.endExclusive
+            }?.also { continue }
             val operator = proseOperators.firstOrNull { text.startsWith(it.first, index) }
             if (operator != null) {
                 output.append(' ').append(operator.second).append(' ')
@@ -103,7 +127,9 @@ object SpanishTechnicalSpeech {
             index++
         }
         return Preparation(if (changed) output.toString().replace(Regex("[ \\t]+"), " ")
-            .replace(Regex(" +([,.;:!?])"), "$1").trim() else text, changed)
+            .replace(Regex(" +([,.;:!?])"), "$1").trim()
+            else if (selected.isNotEmpty()) output.toString() else text,
+            changed || selected.isNotEmpty())
     }
 
     private fun codeEnd(text: String, index: Int): Int? {
@@ -230,7 +256,11 @@ object SpanishTechnicalSpeech {
         return if (end < 0) null else end + delimiters.second.length
     }
 
-    private fun readCode(source: String): String {
+    private fun readCode(
+        source: String,
+        baseOffset: Int = 0,
+        selected: Map<Int, ManualEnglishTerms.Match> = emptyMap()
+    ): String {
         val result = mutableListOf<String>()
         var index = 0
         var angleDepth = 0
@@ -257,7 +287,10 @@ object SpanishTechnicalSpeech {
             val directive = directive.matchAt(source, index)
             if (directive != null) {
                 val name = directive.groupValues[1]
-                result += "directiva almohadilla $name"
+                val match = selected[baseOffset + requireNotNull(directive.groups[1]).range.first]
+                val spokenName = if (match?.endExclusive == baseOffset + requireNotNull(directive.groups[1]).range.last + 1)
+                    ManualEnglishSpeech.encode(match.entry) else name
+                result += "directiva almohadilla $spokenName"
                 include = name == "include"
                 index = directive.range.last + 1
                 continue
@@ -268,7 +301,9 @@ object SpanishTechnicalSpeech {
                 previousIdentifier = ""
             }?.also { continue }
             codeWord.matchAt(source, index)?.let { match ->
-                result += readIdentifier(match.value)
+                val selectedIdentifier = selected[baseOffset + match.range.first]
+                result += if (selectedIdentifier?.endExclusive == baseOffset + match.range.last + 1)
+                    ManualEnglishSpeech.encode(selectedIdentifier.entry) else readIdentifier(match.value)
                 previousIdentifier = match.value
                 index = match.range.last + 1
             }?.also { continue }
@@ -358,6 +393,9 @@ object SpanishTechnicalSpeech {
             }.joinToString(" "))
         }.filter(String::isNotEmpty).joinToString(" ")
     }
+
+    /** Recover the same spoken spelling when an internal English annotation is stripped. */
+    internal fun legacyIdentifier(identifier: String): String = readIdentifier(identifier)
 
     private fun readIdentifier(identifier: String): String {
         if (identifier == "std") return "ese te de"
