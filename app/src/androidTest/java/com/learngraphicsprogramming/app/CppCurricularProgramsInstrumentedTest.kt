@@ -85,6 +85,7 @@ class CppCurricularProgramsInstrumentedTest {
         sourceTransformation: SourceTransformation? = null,
         expectedExecutionExitCode: Int = 0,
         standardInput: String = "",
+        verifyStdout: ((String) -> Unit)? = null,
         verifyWorkspace: (File) -> Unit = {}
     ) {
         val context = guardedContext()
@@ -111,7 +112,11 @@ class CppCurricularProgramsInstrumentedTest {
             assertEquals("Runtime failure at $location: ${execution.stderr}", expectedExecutionExitCode, execution.exitCode)
             assertEquals("Runtime stderr at $location", "", execution.stderr)
             // Exact assertions preserve significant internal spaces and newline positions.
-            assertEquals("Contract output at $location", expectedStdout, execution.stdout)
+            if (verifyStdout == null) {
+                assertEquals("Contract output at $location", expectedStdout, execution.stdout)
+            } else {
+                verifyStdout(execution.stdout)
+            }
             verifyWorkspace(result.compilation.workspace)
         } finally {
             // The compiler owns a fresh direct child of this isolated package's cpp-jobs directory.
@@ -144,6 +149,155 @@ class CppCurricularProgramsInstrumentedTest {
         runProgram(
             AssetProgram("$RANDOM/lesson_construir_un_experimento_reproducible.json", 4, 2),
             "Cantidad:12\nRango:1\nConteo:1\nRepeticion:1"
+        )
+    }
+
+    @Test
+    fun chosenCountCasesDetectTheEqualityMutantWithoutFixingRandomFailures() {
+        val program = AssetProgram(
+            "$RANDOM/lesson_combinar_ensayos_generados_y_casos_elegidos.json", 6, 2
+        )
+        // U10L4 p5b4 requests this defined mutation; p5b5 is its laboratory.
+        runProgram(program, "Fallos elegidos:0\nFallos generados:0")
+        val observations = """
+                std::cout << "\nIgualdad:" << contar_desde({4, 4}, 4)
+                          << ':' << verificar({4, 4}, 4, 2) << '\n';
+                std::cout << "Mixta:" << contar_desde({3, 4, 4, 5}, 4)
+                          << ':' << verificar({3, 4, 4, 5}, 4, 3) << '\n';
+                std::cout << "Controles:" << verificar({}, 4, 0)
+                          << ':' << verificar({1, 2}, 3, 0) << '\n';
+        """.trimIndent() + "\n"
+        runProgram(
+            program,
+            "Fallos elegidos:2",
+            sourceTransformation = SourceTransformation("strict-count-equality-mutant") { source ->
+                val comparison = "if (dato >= minimo) {"
+                val ending = "    return 0;\n}\n"
+                assertEquals("Unique published count comparison", 1, source.split(comparison).size - 1)
+                assertEquals("Unique published main ending", 1, source.split(ending).size - 1)
+                assertTrue("Published ending closes the program", source.endsWith(ending))
+                // Keep all four manual tests, generation, diagnostics and summaries.
+                source.replace(comparison, "if (dato > minimo) {")
+                    .removeSuffix(ending) + observations + ending
+            },
+            verifyStdout = { stdout ->
+                assertTrue("Technical observations end with one LF", stdout.endsWith("\n"))
+                val lines = stdout.dropLast(1).split('\n')
+                assertTrue("Complete mutant summary and observations", lines.size >= 5)
+                assertEquals("Two discriminative manual failures", "Fallos elegidos:2", lines.first())
+                assertEquals("Equality is excluded by the mutant", "Igualdad:0:0", lines[lines.size - 3])
+                assertEquals("Only five survives the mixed manual case", "Mixta:1:0", lines[lines.size - 2])
+                assertEquals("Empty and no-accepted controls still pass", "Controles:1:1", lines.last())
+                val summaryIndex = lines.size - 4
+                val summary = Regex("Fallos generados:([0-9]+)").matchEntire(lines[summaryIndex])
+                assertNotNull("Generated summary has its exact format", summary)
+                val generatedFailures = summary!!.groupValues[1].toInt()
+                assertTrue("At most forty generated failures", generatedFailures in 0..40)
+                assertEquals("Every reported failure has one diagnostic", summaryIndex - 1, generatedFailures)
+                val diagnostic = Regex("Caso:([0-9]+);Minimo:([0-9]);Datos:((?:\\[[0-9]\\])*)")
+                val datum = Regex("\\[([0-9])\\]")
+                var previousAttempt = -1
+                for (line in lines.subList(1, summaryIndex)) {
+                    val match = diagnostic.matchEntire(line)
+                    assertNotNull("Exact generated diagnostic: $line", match)
+                    val attempt = match!!.groupValues[1].toInt()
+                    val minimum = match.groupValues[2].toInt()
+                    val values = datum.findAll(match.groupValues[3]).map { it.groupValues[1].toInt() }.toList()
+                    assertTrue("Attempts are ordered, unique and within forty", attempt in 0..39 && attempt > previousAttempt)
+                    assertTrue("Published generated size remains 0..12", values.size in 0..12)
+                    assertTrue("Only equality distinguishes this mutant from its contract", values.contains(minimum))
+                    previousAttempt = attempt
+                }
+            }
+        )
+    }
+
+    @Test
+    fun histogramReferenceCountsBoundariesAndPreservesInputsAfterRejection() {
+        val program = AssetProgram(
+            "$RANDOM/lesson_construir_un_experimento_reproducible.json", 7, 2
+        )
+        // U10L5 p6b4 specifies variants; p6b5 is the independent laboratory.
+        // p4b2 already has device evidence and is deliberately not repeated.
+        runProgram(program, "0:1\n2:2\n9:1\nTotal:4\nConservado:1")
+        val generationSource = loadCompleteProgram(
+            guardedContext(),
+            AssetProgram("$RANDOM/lesson_construir_un_experimento_reproducible.json", 4, 2)
+        )
+        val planOpening = "struct Plan {\n"
+        val reportOpening = "struct Informe {\n"
+        assertEquals("Unique published Plan opening", 1, generationSource.split(planOpening).size - 1)
+        assertEquals("Unique published Informe opening", 1, generationSource.split(reportOpening).size - 1)
+        // Copy the published Plan, validator and generator literally; do not run its main.
+        val publishedGeneration = planOpening +
+            generationSource.substringAfter(planOpening).substringBefore(reportOpening)
+        val technicalMain = """
+            int main() {
+                const std::vector<std::vector<int>> casos{
+                    {}, {0}, {9}, {3, 3, 3}, {-1}, {10}, {0, -1, 9}, {9, 10, 0},
+                    std::vector<int>(20, 9), std::vector<int>(21, 0)
+                };
+                int numero = 0;
+                for (const std::vector<int>& datos : casos) {
+                    const std::vector<int> original = datos;
+                    std::cout << "Caso:" << numero << '\n';
+                    ++numero;
+                    try {
+                        const std::vector<int> tabla = frecuencias(datos);
+                        std::cout << "Celdas:" << tabla.size() << '\n';
+                        int total = 0;
+                        for (int i = 0; i < 10; ++i) {
+                            total += tabla.at(i);
+                            if (tabla.at(i) != 0) {
+                                std::cout << i << ':' << tabla.at(i) << '\n';
+                            }
+                        }
+                        std::cout << "Total:" << total << '\n';
+                    } catch (const std::invalid_argument&) {
+                        std::cout << "Datos rechazados\n";
+                    }
+                    // Observe actual inputs after either acceptance or rejection.
+                    std::cout << "Conservado:" << (datos == original) << '\n';
+                }
+                const std::vector<int> generados = preparar(Plan{313, 20, 0, 9});
+                const std::vector<int> original = generados;
+                const std::vector<int> tabla = frecuencias(generados);
+                int total = 0;
+                bool conteos = true;
+                for (int i = 0; i < 10; ++i) {
+                    total += tabla.at(i);
+                    const auto esperado = std::count(original.begin(), original.end(), i);
+                    conteos = conteos && tabla.at(i) == esperado;
+                }
+                std::cout << "Generados:" << generados.size() << '\n';
+                std::cout << "Celdas:" << tabla.size() << '\n';
+                std::cout << "Total:" << total << '\n';
+                std::cout << "Conteos:" << conteos << '\n';
+                std::cout << "Conservado:" << (generados == original) << '\n';
+                return 0;
+            }
+        """.trimIndent() + "\n"
+        val expected =
+            "Caso:0\nCeldas:10\nTotal:0\nConservado:1\n" +
+            "Caso:1\nCeldas:10\n0:1\nTotal:1\nConservado:1\n" +
+            "Caso:2\nCeldas:10\n9:1\nTotal:1\nConservado:1\n" +
+            "Caso:3\nCeldas:10\n3:3\nTotal:3\nConservado:1\n" +
+            (4..7).joinToString("") { "Caso:$it\nDatos rechazados\nConservado:1\n" } +
+            "Caso:8\nCeldas:10\n9:20\nTotal:20\nConservado:1\n" +
+            "Caso:9\nDatos rechazados\nConservado:1\n" +
+            "Generados:20\nCeldas:10\nTotal:20\nConteos:1\nConservado:1\n"
+        runProgram(
+            program,
+            expected,
+            sourceTransformation = SourceTransformation("histogram-fixed-boundaries-and-rejected-inputs") { source ->
+                val mainOpening = "int main() {\n"
+                val publishedInput = "    const std::vector<int> datos{2, 0, 2, 9};\n"
+                assertEquals("Unique published histogram main", 1, source.split(mainOpening).size - 1)
+                assertEquals("Exact published histogram input anchor", 1, source.split(publishedInput).size - 1)
+                // Preserve the complete literal function, including prevalidation.
+                source.substringBefore(mainOpening) +
+                    "#include <algorithm>\n\n" + publishedGeneration + technicalMain
+            }
         )
     }
 
