@@ -19,7 +19,7 @@
         {
           "type": "output_prediction",
           "id": "sin_espacio",
-          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "question": "Predice la salida. Escribe únicamente los caracteres que el programa envía a la salida; distingue la separación de las instrucciones del contenido de los literales.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Roca\";\n    std::cout << \"Azul\";\n    return 0;\n}\n",
           "answers": [
@@ -30,7 +30,7 @@
         {
           "type": "output_prediction",
           "id": "espacio_interno",
-          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "question": "Predice la salida. Escribe el texto producido y conserva los espacios que el programa inserta dentro del mensaje.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Ruta\" << \" \" << \"Sur\";\n    return 0;\n}\n",
           "answers": [
@@ -41,7 +41,7 @@
         {
           "type": "output_prediction",
           "id": "signo_interno",
-          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "question": "Predice la salida. Escribe las partes del mensaje en el orden de ejecución y conserva el signo insertado entre ellas.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"A\" << \":\" << \"B\";\n    return 0;\n}\n",
           "answers": [
@@ -128,7 +128,7 @@
         {
           "type": "output_prediction",
           "id": "comillas_en_mensaje",
-          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "question": "Predice la salida. Omite las comillas que delimitan el literal, pero conserva las que el programa produce dentro del mensaje.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Estado: \\\"Listo\\\"\";\n    return 0;\n}\n",
           "answers": [
@@ -139,7 +139,7 @@
         {
           "type": "output_prediction",
           "id": "barra_en_mensaje",
-          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "question": "Predice la salida. Escribe los caracteres del mensaje después de interpretar el escape de barra inversa del literal.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Nivel\\\\Uno\";\n    return 0;\n}\n",
           "answers": [
@@ -178,7 +178,7 @@
         {
           "type": "output_prediction",
           "id": "comentario_no_salida",
-          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "question": "Predice la salida. Escribe sólo el texto que el programa muestra y conserva el espacio dentro del literal; distingue ese contenido del comentario.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    // El mensaje identifica la segunda zona.\n    std::cout << \"Zona B\";\n    return 0;\n}\n",
           "answers": [
@@ -189,7 +189,7 @@
         {
           "type": "output_prediction",
           "id": "barras_en_literal",
-          "question": "Predice la salida. Escribe lo que aparece, sin las comillas del código; conserva los espacios y saltos entre partes del mensaje.",
+          "question": "Predice la salida. Escribe los caracteres que se muestran; interpreta los signos según su posición dentro o fuera del literal.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint main() {\n    std::cout << \"A//B\";\n    return 0;\n}\n",
           "answers": [

@@ -43,6 +43,24 @@ QUESTION_CLARIFICATIONS = {
         "Extraes la comprobación de dominio. Completa sólo el operador de comparación para aceptar piezas de cero a diez, incluidas ambas fronteras, y rechazar los demás enteros.",
     ("datos_propios_y_estado_valido/lesson_operaciones_auxiliares_y_significado_de_igualdad.json", 3, 5):
         "Completa sólo el símbolo de negación que hace != coherente con ==.",
+    ("programas_y_ejecucion/lesson_texto_secuencia_y_formato.json", 1, 4):
+        "Predice la salida. Escribe únicamente los caracteres que el programa envía a la salida; distingue la separación de las instrucciones del contenido de los literales.",
+    ("programas_y_ejecucion/lesson_texto_secuencia_y_formato.json", 1, 5):
+        "Predice la salida. Escribe el texto producido y conserva los espacios que el programa inserta dentro del mensaje.",
+    ("programas_y_ejecucion/lesson_texto_secuencia_y_formato.json", 1, 6):
+        "Predice la salida. Escribe las partes del mensaje en el orden de ejecución y conserva el signo insertado entre ellas.",
+    ("programas_y_ejecucion/lesson_texto_secuencia_y_formato.json", 3, 5):
+        "Predice la salida. Omite las comillas que delimitan el literal, pero conserva las que el programa produce dentro del mensaje.",
+    ("programas_y_ejecucion/lesson_texto_secuencia_y_formato.json", 3, 6):
+        "Predice la salida. Escribe los caracteres del mensaje después de interpretar el escape de barra inversa del literal.",
+    ("programas_y_ejecucion/lesson_texto_secuencia_y_formato.json", 4, 4):
+        "Predice la salida. Escribe sólo el texto que el programa muestra y conserva el espacio dentro del literal; distingue ese contenido del comentario.",
+    ("programas_y_ejecucion/lesson_texto_secuencia_y_formato.json", 4, 5):
+        "Predice la salida. Escribe los caracteres que se muestran; interpreta los signos según su posición dentro o fuera del literal.",
+    ("programas_y_ejecucion/lesson_resolver_probar_y_recuperar.json", 3, 2):
+        "Predice la salida. Conserva el separador y sus espacios tal como los produce el programa; el formato del código fuente no forma parte del mensaje.",
+    ("programas_y_ejecucion/lesson_resolver_probar_y_recuperar.json", 3, 3):
+        "Predice la salida. Incluye las comillas del mensaje y representa su salto interno de línea; omite las comillas que sólo delimitan el literal.",
 }
 # Precisiones textuales revisadas. Se conserva el resto del ejercicio entero.
 EXPLANATION_CLARIFICATIONS = {
@@ -191,7 +209,7 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
     question = QUESTION_CLARIFICATIONS.get((lesson_path, pn + 1, bn + 1))
     if (
         question is not None
-        and old["type"] == "fill_code"
+        and old["type"] in {"fill_code", "output_prediction"}
         and current == dict(old, question=question)
     ):
         return True

@@ -122,6 +122,18 @@ class CppEditorialNarrationDeviceTest {
             "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida p2b4.question",
             "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida p2b4.explanation"))
 
+    @Test fun outputFormatQuestionsRenderAndNarrateOnlyProducedCharacters() =
+        verifyFixture("cpp_editorial_u1.json", setOf("programas_y_ejecucion"), setOf(
+            "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato p1b4.question",
+            "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato p1b5.question",
+            "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato p1b6.question",
+            "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato p3b5.question",
+            "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato p3b6.question",
+            "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato p4b4.question",
+            "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato p4b5.question",
+            "cpp_fundamentals__programas_y_ejecucion__resolver_probar_y_recuperar p3b2.question",
+            "cpp_fundamentals__programas_y_ejecucion__resolver_probar_y_recuperar p3b3.question"))
+
     @Test fun editorialU2ToU4PagesRenderAndNarrateCurrentText() =
         verifyFixture("cpp_editorial_u2_u4.json", setOf(
             "objetos_y_estado", "expresiones_y_decisiones", "repeticion_y_terminacion"))
