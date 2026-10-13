@@ -1,0 +1,158 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__problemas_instrucciones_y_resultados",
+  "title": "Problems, Instructions, and Results",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Start with a problem"
+        },
+        {
+          "type": "paragraph",
+          "text": "Programming means building and testing a solution that a computer can execute. Code is only part of that work: before writing it, we need to understand what outcome is expected, what information is available, and what rules must be followed. Then we must check whether the instructions actually produce the intended result. A program that runs has not automatically been shown to be correct."
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine an office that needs to identify its boxes with labels. If two boxes are red, the computer can print exactly «Red box» on both, but those labels do not distinguish one box from the other. This example shows why successfully printing something is not enough to solve the problem. Designing the solution requires choosing a piece of information that identifies each box and defining how to check the result: verify that two different boxes do not receive the same identifier. The computer will execute the instructions we write, even if the information we chose does not serve that purpose."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "objetivo_etiqueta",
+          "question": "The boxes must be distinguishable even when two have the same color. What requirement must be established before programming?",
+          "options": [
+            "Which printing order to use, even if the labels are repeated.",
+            "What information uniquely identifies each box.",
+            "Which color to use as the only information on each label."
+          ],
+          "correctIndex": 1,
+          "explanation": "Different boxes may have the same color. Before programming, we must identify a piece of information that distinguishes them; printing a label does not guarantee that identification."
+        },
+        {
+          "type": "note",
+          "text": "This course starts from the very beginning. You will learn to turn requirements into C++ programs, explain their data and execution, build and combine your own solutions, test them with planned cases, and maintain a valid state when errors occur. The exercises will progress from simple output to programs that process collections and text using functions and user-defined types. These foundations will prepare you for programming engines and graphics in later stages of the learning path."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Input data and output results"
+        },
+        {
+          "type": "paragraph",
+          "text": "Input is the information that a solution receives; output is what it produces to achieve its purpose. In a converter, the original measurement is input data and the converted measurement is an output result. A conversion rule specifies how the two are related. We should not confuse data with the procedure that transforms it: changing the measurement is not the same as changing the rule."
+        },
+        {
+          "type": "paragraph",
+          "text": "Some programs in this first unit will display a fixed message. Its text will be written directly in the code, and the programs will not read user input while running. Later, we will work with information that can vary. For now, separating the goal, the data, and the instructions already lets us ask useful questions: What do we know? What is missing? What do we want to obtain?"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "entrada_distancia",
+          "question": "A program will calculate travel time from a known distance and constant speed. What are the distance and speed in this task?",
+          "options": [
+            "The result that still needs to be calculated.",
+            "Syntax errors.",
+            "Input data."
+          ],
+          "correctIndex": 2,
+          "explanation": "These are the data used by the calculation rule; travel time is the requested output."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dato_insuficiente",
+          "question": "An application must display the name of a registered person, but it receives only the number of people. What is the problem?",
+          "options": [
+            "The number of people is sufficient to identify the registered person's name.",
+            "A list of names unrelated to the registration is sufficient.",
+            "There is not enough information to obtain the requested name."
+          ],
+          "correctIndex": 2,
+          "explanation": "A procedure cannot create information on its own if that information was neither provided nor can be inferred."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Precise instructions and order"
+        },
+        {
+          "type": "paragraph",
+          "text": "An instruction must have a meaning that the person or system executing it can recognize. «Prepare the report correctly» states an intention, but does not specify operations. A procedure might say: collect the data, calculate the required results, and display the report. Even then, each operation needs a concrete meaning. Precision does not mean describing the entire universe; it means specifying what matters to the executor and the task."
+        },
+        {
+          "type": "paragraph",
+          "text": "Order is also part of a procedure. If a document is printed first and its title is corrected afterward, the printed copy still has the old title. The computer does not go back and automatically apply a change that came later. A sequence may contain valid operations yet produce the wrong result because of their order."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "orden_revision",
+          "question": "You must print a card with the corrected name. Which sequence meets this requirement?",
+          "options": [
+            "Correct the name; print the corrected card; hand over that copy.",
+            "Print the card; correct the name; hand over the earlier copy.",
+            "Hand over a blank card; choose the name afterward."
+          ],
+          "correctIndex": 0,
+          "explanation": "The correction must be in place before producing the copy that will be handed over."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "precision_mover",
+          "question": "In this exercise, every instruction must be one of two complete, fixed commands: «move forward one step» or «turn right». You cannot change the number of steps within a command. Which of the following can the system execute directly as a single instruction?",
+          "options": [
+            "Turn left in a single instruction.",
+            "Move forward two steps in a single instruction.",
+            "Move forward one step."
+          ],
+          "correctIndex": 2,
+          "explanation": "«Move forward one step» is part of the command set defined for this exercise. «Move forward two steps» and «turn left» are not available as direct commands. To move forward two steps here, the system executes two «move forward one step» instructions. Another system might allow moving two steps or turning left with one instruction; it depends on which commands that system supports."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Algorithm, program, and test"
+        },
+        {
+          "type": "paragraph",
+          "text": "An algorithm describes a procedure for solving a family of situations: which steps to follow and under what conditions. A program expresses operations in a language that a system can process. We can discuss an algorithm before deciding every detail of C++. We can also write a program that represents the algorithm incorrectly or uses an unsuitable procedure. That is why we will learn both to reason about a solution and to express it precisely in code."
+        },
+        {
+          "type": "paragraph",
+          "text": "A test combines a known situation with an expected result. If we need the message «Ready» and the program displays «Pending», we already have a specific difference to investigate. Noticing that some word appeared does not verify the requirement. A passing case provides evidence for that case; it does not guarantee that every possible input will work."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_mensaje",
+          "question": "The requirement is to display «Box ready». Which check directly verifies that requirement?",
+          "options": [
+            "The tool finishes compiling without reporting an error.",
+            "Exactly the required message appears when the program runs.",
+            "The required message appears inside a comment."
+          ],
+          "correctIndex": 1,
+          "explanation": "The test examines the result required by the task. The editor's appearance does not verify that output."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_no_generaliza",
+          "question": "A program produces the expected result for one case. What conclusion does that observation support?",
+          "options": [
+            "All cases with different data must produce the same result.",
+            "Repeating that same case is enough to validate the other cases.",
+            "That case passed; other relevant cases still need to be examined."
+          ],
+          "correctIndex": 2,
+          "explanation": "Evidence from a single execution is limited. We will choose additional cases as our programs begin to accept decisions and data."
+        }
+      ]
+    }
+  ]
+}

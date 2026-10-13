@@ -1,0 +1,223 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida",
+  "title": "Build and Read Your First Program",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A small, complete program"
+        },
+        {
+          "type": "paragraph",
+          "text": "We will write a small program that displays a message. The text of the program we write is called source code. First, look at which part contains the message and what appears when the program runs. Then we will connect the other parts with their purposes."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Start confirmed\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "A library provides ready-made resources for common tasks. C++ includes a standard library. The line #include <iostream> makes its input and output facilities available. std::cout is the full name of the facility we use to send text to output; std:: indicates that this name belongs to the standard library. main contains the instructions we will execute, between the braces { and }. return 0 ends main and tells the system that the program finished successfully. That zero is not displayed: sending text and reporting how the program ended are two different actions."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "accion_visible",
+          "question": "Which part of the example produces the visible message?",
+          "options": [
+            "#include <iostream>",
+            "std::cout << \"Start confirmed\";",
+            "return 0;"
+          ],
+          "correctIndex": 1,
+          "explanation": "The instruction containing std::cout displays the message. #include <iostream> makes that facility available, and return 0 reports how the program ended to the system."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Quotation marks, content, and terminators"
+        },
+        {
+          "type": "paragraph",
+          "text": "Double quotation marks delimit a string literal: a way of writing a specific piece of text inside a program. In \"Port ready\", the content is Port ready; the quotation marks are part of the program's notation, not the displayed message. The semicolon that terminates the statement also belongs to the rules for writing the language, called syntax. Neither the quotation marks nor the terminator is automatically added to the output text."
+        },
+        {
+          "type": "paragraph",
+          "text": "Here, << is the operator: a symbol that specifies an operation. With std::cout, it sends the value on its right to output. In this example, it sends text. This action is called insertion. We will also use the term output stream for the facility that receives that data and carries it to the output. Write both << characters: a single < has a different meaning in C++."
+        },
+        {
+          "type": "output_prediction",
+          "id": "literal_independiente",
+          "question": "Predict the output. Write the message without the quotation marks from the code and keep the space between the words. The program does not append a newline to the message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"File ready\";\n    return 0;\n}\n",
+          "answers": [
+            "File ready"
+          ],
+          "explanation": "The program displays File ready, with a space between the words. The quotation marks, the semicolon, and the line breaks separating statements in the source code are not part of this output.",
+          "outputComparison": "exact"
+        },
+        {
+          "type": "fill_code",
+          "id": "literal_construido",
+          "question": "Write one string literal, including its double quotation marks, to display Dock closed.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "\"Dock closed\""
+          ],
+          "explanation": "The quotation marks delimit the string literal; std::cout receives its content."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The body of main and the library"
+        },
+        {
+          "type": "paragraph",
+          "text": "main is the entry point of these programs: execution of the instructions we write begins there. Its name must be spelled exactly that way. int is a language keyword that indicates the type of result returned by main; we will study types in detail in the next unit. The parentheses () are part of the syntax of main. The braces { and } delimit its body, the group of statements it contains."
+        },
+        {
+          "type": "paragraph",
+          "text": "Every output statement in our examples ends with ;. Do not add ; to every line: #include <iostream> is a directive, an instruction to prepare source code before compiling it, and does not use that terminator. The braces delimit a group of statements; they are not an output message either. When reviewing the program, check the purpose of each symbol before changing it."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "nombre_entrada",
+          "question": "In the program we are building, which name must remain the entry point?",
+          "options": [
+            "Main",
+            "start",
+            "main"
+          ],
+          "correctIndex": 2,
+          "explanation": "C++ is case-sensitive. The entry point of this program is main."
+        },
+        {
+          "type": "fill_code",
+          "id": "operador_salida",
+          "question": "Write only the two-character operator that inserts text into std::cout.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout ___ \"Door open\";\n    return 0;\n}\n",
+          "answers": [
+            "<<"
+          ],
+          "explanation": "The insertion operator used with this stream is <<, with two characters."
+        },
+        {
+          "type": "fill_code",
+          "id": "terminador_salida",
+          "question": "Write only the character that terminates this output statement.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Shift started\"___\n    return 0;\n}\n",
+          "answers": [
+            ";"
+          ],
+          "explanation": "The semicolon terminates this statement; it is not part of the message."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build the complete structure"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now we will connect pieces we already know. #include <iostream> must appear before std::cout is used, so that this facility is available. The instruction that displays the message must be inside main. We close the body with } after the statements. Recall the purpose of each part to assemble the complete program."
+        },
+        {
+          "type": "order_code",
+          "id": "armar_programa",
+          "question": "Arrange the pieces to build a program that displays Access granted.",
+          "fragments": [
+            "    std::cout << \"Access granted\";",
+            "#include <iostream>",
+            "    return 0;\n}",
+            "int main() {"
+          ],
+          "correctOrder": [
+            1,
+            3,
+            0,
+            2
+          ],
+          "explanation": "First, #include <iostream> makes the output facility available; then we open main, write the statement that displays the message, and close the body."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "return_no_imprime",
+          "question": "A program executes std::cout << \"Ready\"; and then return 0;. What text does it output?",
+          "options": [
+            "0",
+            "Ready0",
+            "Ready"
+          ],
+          "correctIndex": 2,
+          "explanation": "return does not insert the zero into std::cout. The visible message is still Ready."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "First run and modification"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before selecting Compile and Run, predict the message. Then inspect the output. Change only the text so that the program displays Safe zone, and run it again. Finally, change that message to Box received. Keep the structure you have already tested. Comparing these versions lets you connect a specific change in the program to a specific change in its result."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Initial zone\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "This exercise uses a program without keyboard input. The lab preserves your current draft. If you want to compare several versions later, save a copy of each version you may want to recover."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cambiar_mensaje",
+          "question": "After this experiment, what change directly modifies the message without changing the structure of main?",
+          "options": [
+            "Replace main with any other name.",
+            "Remove #include <iostream>.",
+            "Change the characters inside the string literal's quotation marks."
+          ],
+          "correctIndex": 2,
+          "explanation": "The string literal supplies the text. Changing the entry point or removing #include <iostream> alters something this program needs."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check the program built in the lab"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consult this reference after modifying and running your program. A solution meets the task if it keeps main and the output facility, builds without errors, and displays only the requested string literal in each test. The number of statements is not the criterion for correctness."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Box received\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "When you first test Safe zone and then Box received, only the string literal changes. return 0 does not add a 0 to output. If quotation marks appear in the output, they were included as data; the quotation marks delimiting the literal are not displayed. A different statement that produces exactly the same text is also valid."
+        }
+      ]
+    }
+  ]
+}

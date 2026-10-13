@@ -1,0 +1,223 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__primer_programa_y_salida",
+  "title": "Construire et comprendre un premier programme",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un petit programme complet"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous allons écrire un petit programme qui affiche un message. Le texte du programme que nous écrivons s'appelle le code source. Observe d'abord quelle partie contient le message et ce qui apparaît lors de l'exécution. Ensuite, nous relierons les autres parties à leur rôle."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Début confirmé\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une bibliothèque regroupe des ressources déjà préparées pour des tâches courantes. C++ possède une bibliothèque standard. La ligne #include <iostream> permet d'utiliser ses outils d'entrée et de sortie. std::cout est le nom complet de l'outil que nous utilisons pour envoyer du texte vers la sortie ; std:: indique que ce nom appartient à la bibliothèque standard. main contient les instructions que nous exécuterons, entre les accolades { et }. return 0 termine main et signale au système que le programme s'est achevé correctement. Ce zéro ne s'affiche pas : envoyer du texte et signaler la fin du programme sont deux actions différentes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "accion_visible",
+          "question": "Quelle partie de l'exemple produit le message visible ?",
+          "options": [
+            "#include <iostream>",
+            "std::cout << \"Début confirmé\";",
+            "return 0;"
+          ],
+          "correctIndex": 1,
+          "explanation": "L'instruction contenant std::cout affiche le message. #include <iostream> permet d'utiliser cet outil, tandis que return 0 indique au système comment le programme s'est terminé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Guillemets, contenu et terminateur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les guillemets doubles délimitent un littéral de chaîne : une façon d'écrire un texte précis dans le programme. Dans \"Port prêt\", le contenu est Port prêt ; les guillemets font partie de l'écriture du programme, pas du message affiché. Le point-virgule qui termine l'instruction appartient lui aussi aux règles d'écriture du langage, appelées syntaxe. Ni les guillemets ni ce terminateur ne s'ajoutent automatiquement au texte de sortie."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ici, << est l'opérateur : un symbole qui indique une opération. Avec std::cout, il envoie vers la sortie la valeur placée à sa droite. Dans cet exemple, il envoie du texte. Cet envoi s'appelle une insertion. Nous utiliserons aussi le terme flux de sortie pour l'outil qui reçoit ces données et les conduit vers la sortie. Écris bien les deux signes << : un seul < a un autre sens en C++."
+        },
+        {
+          "type": "output_prediction",
+          "id": "literal_independiente",
+          "question": "Prédis la sortie. Écris le message sans les guillemets du code et conserve l'espace entre les mots. Le programme n'ajoute pas de saut de ligne au message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Fichier préparé\";\n    return 0;\n}\n",
+          "answers": [
+            "Fichier préparé"
+          ],
+          "explanation": "Le programme affiche Fichier préparé, avec un espace entre les mots. Les guillemets, le point-virgule et les sauts de ligne qui séparent les instructions dans le code source ne font pas partie de cette sortie.",
+          "outputComparison": "exact"
+        },
+        {
+          "type": "fill_code",
+          "id": "literal_construido",
+          "question": "Écris un seul littéral de chaîne, avec les guillemets doubles, pour afficher Quai fermé.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "\"Quai fermé\""
+          ],
+          "explanation": "Les guillemets délimitent le littéral de chaîne ; std::cout reçoit son contenu."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le corps de main et la bibliothèque"
+        },
+        {
+          "type": "paragraph",
+          "text": "main est le point d'entrée de ces programmes : c'est là que commence l'exécution des instructions que nous écrivons. Son nom s'écrit exactement ainsi. int est un mot-clé du langage qui indique ici le type du résultat renvoyé par main ; nous étudierons les types en détail dans l'unité suivante. Les parenthèses () font partie de l'écriture de main. Les accolades { et } délimitent son corps, c'est-à-dire l'ensemble des instructions qu'il contient."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans nos exemples, chaque instruction d'affichage se termine par ;. N'ajoute pas ; à toutes les lignes : #include <iostream> est une directive, une indication servant à préparer le code avant la compilation, et elle n'utilise pas ce terminateur. Les accolades délimitent un groupe d'instructions ; ce ne sont pas non plus des messages de sortie. En relisant le programme, vérifie le rôle de chaque symbole avant de le modifier."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "nombre_entrada",
+          "question": "Dans le programme que nous construisons, quel nom doit rester celui du point d'entrée ?",
+          "options": [
+            "Main",
+            "début",
+            "main"
+          ],
+          "correctIndex": 2,
+          "explanation": "C++ distingue les majuscules et les minuscules. Le point d'entrée de ce programme est main."
+        },
+        {
+          "type": "fill_code",
+          "id": "operador_salida",
+          "question": "Écris uniquement l'opérateur de deux caractères qui insère le texte dans std::cout.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout ___ \"Porte ouverte\";\n    return 0;\n}\n",
+          "answers": [
+            "<<"
+          ],
+          "explanation": "L'opérateur d'insertion utilisé avec ce flux est <<, avec deux signes."
+        },
+        {
+          "type": "fill_code",
+          "id": "terminador_salida",
+          "question": "Écris uniquement le caractère qui termine cette instruction d'affichage.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Service commencé\"___\n    return 0;\n}\n",
+          "answers": [
+            ";"
+          ],
+          "explanation": "Le point-virgule termine cette instruction ; il ne fait pas partie du message."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire la structure complète"
+        },
+        {
+          "type": "paragraph",
+          "text": "Relions maintenant les éléments que nous connaissons déjà. #include <iostream> doit apparaître avant l'utilisation de std::cout pour que cet outil soit disponible. L'instruction qui affiche le message doit se trouver dans main. Nous fermons le corps avec } après les instructions. Rappelle-toi le rôle de chaque élément pour construire le programme complet."
+        },
+        {
+          "type": "order_code",
+          "id": "armar_programa",
+          "question": "Remets les éléments dans l'ordre pour construire un programme qui affiche Accès autorisé.",
+          "fragments": [
+            "    std::cout << \"Accès autorisé\";",
+            "#include <iostream>",
+            "    return 0;\n}",
+            "int main() {"
+          ],
+          "correctOrder": [
+            1,
+            3,
+            0,
+            2
+          ],
+          "explanation": "D'abord, #include <iostream> rend l'outil de sortie disponible ; ensuite, nous ouvrons main, écrivons l'instruction qui affiche le message, puis fermons le corps."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "return_no_imprime",
+          "question": "Un programme exécute std::cout << \"Prêt\"; puis return 0;. Quel texte affiche-t-il ?",
+          "options": [
+            "0",
+            "Prêt0",
+            "Prêt"
+          ],
+          "correctIndex": 2,
+          "explanation": "return n'insère pas le zéro dans std::cout. Le message visible reste Prêt."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Première exécution et modification"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de choisir Compiler et exécuter, prédis le message. Observe ensuite la sortie. Modifie uniquement le texte pour que le programme affiche Zone sécurisée, puis exécute-le de nouveau. Enfin, remplace ce message par Boîte reçue. Conserve la structure que tu as déjà vérifiée. Comparer ces versions te permet de relier une modification précise du programme à une modification précise du résultat."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Zone initiale\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Cet exercice utilise un programme sans saisie au clavier. Le laboratoire conserve ton brouillon actuel. Si tu souhaites comparer plusieurs versions plus tard, enregistre aussi une copie de chaque version que tu voudras retrouver."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cambiar_mensaje",
+          "question": "Après cette expérience, quel changement modifie directement le message sans changer la structure de main ?",
+          "options": [
+            "Remplacer main par n'importe quel autre nom.",
+            "Supprimer #include <iostream>.",
+            "Modifier les caractères entre les guillemets du littéral de chaîne."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le littéral fournit le texte. Modifier le point d'entrée ou supprimer #include <iostream> touche un élément nécessaire à ce programme."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier le programme construit au laboratoire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consulte cette référence après avoir modifié et exécuté ton programme. Une solution respecte la consigne si elle conserve main et l'outil de sortie, se compile sans erreur et affiche uniquement le littéral demandé à chaque essai. Le nombre d'instructions n'est pas le critère de validité."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Boîte reçue\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsque tu testes d'abord Zone sécurisée, puis Boîte reçue, seul le littéral change. return 0 n'ajoute pas de 0 à la sortie. Si des guillemets apparaissent dans la sortie, c'est qu'ils ont été ajoutés aux données ; les guillemets qui délimitent le littéral ne s'affichent pas. Une autre instruction produisant exactement le même texte est également valide."
+        }
+      ]
+    }
+  ]
+}

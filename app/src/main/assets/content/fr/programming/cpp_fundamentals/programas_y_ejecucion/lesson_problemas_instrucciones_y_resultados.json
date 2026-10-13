@@ -1,0 +1,158 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__problemas_instrucciones_y_resultados",
+  "title": "Problèmes, instructions et résultats",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Commencer par un problème"
+        },
+        {
+          "type": "paragraph",
+          "text": "Programmer consiste à construire et à vérifier une solution qu'un ordinateur peut exécuter. Le code n'est qu'une partie de ce travail : avant de l'écrire, nous devons comprendre quel résultat est attendu, quelles informations sont disponibles et quelles règles doivent être respectées. Ensuite, il faut vérifier que les instructions produisent réellement le résultat prévu. Le simple fait qu'un programme s'exécute ne prouve pas qu'il est correct."
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine un bureau qui doit identifier ses boîtes à l'aide d'étiquettes. Si deux boîtes sont rouges, l'ordinateur peut imprimer exactement « Boîte rouge » sur chacune, mais ces étiquettes ne permettent pas de les distinguer. Cet exemple montre pourquoi réussir à imprimer quelque chose ne suffit pas à résoudre le problème. Concevoir la solution exige de choisir une donnée qui identifie chaque boîte et de définir comment vérifier le résultat : s'assurer que deux boîtes différentes ne reçoivent pas le même identifiant. L'ordinateur exécutera les instructions que nous écrivons, même si les informations choisies ne permettent pas d'atteindre cet objectif."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "objetivo_etiqueta",
+          "question": "Les boîtes doivent pouvoir être distinguées, même lorsque deux ont la même couleur. Quelle exigence doit être définie avant de programmer ?",
+          "options": [
+            "Dans quel ordre imprimer, même si les étiquettes se répètent.",
+            "Quelle information identifie chaque boîte de manière unique.",
+            "Quelle couleur utiliser comme seule information de chaque étiquette."
+          ],
+          "correctIndex": 1,
+          "explanation": "Des boîtes différentes peuvent avoir la même couleur. Avant de programmer, il faut déterminer une information qui les distingue ; imprimer une étiquette ne garantit pas cette identification."
+        },
+        {
+          "type": "note",
+          "text": "Ce cours commence à zéro. Tu apprendras à transformer des exigences en programmes C++, à expliquer leurs données et leur exécution, à construire et combiner tes propres solutions, à les vérifier sur des cas prévus et à conserver un état valide en cas d'erreur. Les exercices progresseront des sorties simples vers des programmes qui traitent des collections et du texte à l'aide de fonctions et de types définis par le programmeur. Ces bases te prépareront à la programmation de moteurs et de graphismes dans les étapes suivantes du parcours."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Données d'entrée et résultats de sortie"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les données d'entrée sont les informations que reçoit une solution ; la sortie est ce qu'elle produit pour atteindre son objectif. Dans un convertisseur, la mesure initiale est une donnée d'entrée et la mesure convertie est un résultat de sortie. Une règle de conversion indique comment les relier. Il ne faut pas confondre les données avec la procédure qui les transforme : changer la mesure ne revient pas à changer la règle."
+        },
+        {
+          "type": "paragraph",
+          "text": "Certains programmes de cette première unité afficheront un message fixe. Son texte sera écrit dans le code et ils ne liront pas de données saisies par l'utilisateur pendant leur exécution. Plus tard, nous recevrons des informations variables. Pour le moment, distinguer l'objectif, les données et les instructions permet déjà de poser des questions utiles : que savons-nous ? Que manque-t-il ? Que voulons-nous obtenir ?"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "entrada_distancia",
+          "question": "Un programme doit calculer la durée d'un trajet à partir d'une distance connue et d'une vitesse constante connue. Que représentent la distance et la vitesse pour cette tâche ?",
+          "options": [
+            "Le résultat qu'il reste à calculer.",
+            "Des erreurs de syntaxe.",
+            "Des données d'entrée."
+          ],
+          "correctIndex": 2,
+          "explanation": "Ce sont les données utilisées par la règle de calcul ; la durée est le résultat demandé."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dato_insuficiente",
+          "question": "Une application doit afficher le nom de la personne inscrite, mais ne reçoit que le nombre de personnes. Quel est le problème ?",
+          "options": [
+            "Le nombre de personnes suffit à connaître le nom de la personne inscrite.",
+            "Une liste de noms sans lien avec l'inscription suffit.",
+            "Il manque des informations pour obtenir le nom demandé."
+          ],
+          "correctIndex": 2,
+          "explanation": "Une procédure ne crée pas d'elle-même une information qui ne lui a pas été fournie et qu'elle ne peut pas déduire."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Instructions précises et ordre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une instruction doit avoir un sens reconnaissable pour celui qui l'exécute. « Prépare correctement le rapport » exprime une intention, mais ne précise aucune opération. Une procédure pourrait indiquer : recueillir les données, calculer les résultats nécessaires, puis afficher le rapport. Même ainsi, chaque opération doit avoir un sens concret. Être précis ne signifie pas décrire l'univers entier : il faut définir ce qui compte pour l'exécutant et pour la tâche."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'ordre fait lui aussi partie de la procédure. Si l'on imprime d'abord un document, puis que l'on corrige son titre, la copie imprimée conserve l'ancien titre. L'ordinateur ne revient pas en arrière pour appliquer automatiquement une modification survenue après coup. Une séquence peut contenir des opérations correctes et produire un résultat incorrect à cause de leur ordre."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "orden_revision",
+          "question": "Tu dois imprimer une carte portant le nom corrigé. Quelle séquence respecte cette exigence ?",
+          "options": [
+            "Corriger le nom ; imprimer la carte corrigée ; remettre cette copie.",
+            "Imprimer la carte ; corriger le nom ; remettre l'ancienne copie.",
+            "Remettre une carte vierge ; choisir le nom ensuite."
+          ],
+          "correctIndex": 0,
+          "explanation": "La correction doit être effectuée avant la production de la copie remise."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "precision_mover",
+          "question": "Dans cet exercice, chaque instruction doit être l'une de ces deux commandes complètes et fixes : « avancer d'un pas » ou « tourner à droite ». On ne peut pas modifier le nombre de pas à l'intérieur d'une commande. Laquelle le système peut-il exécuter directement comme une seule instruction ?",
+          "options": [
+            "Tourner à gauche en une seule instruction.",
+            "Avancer de deux pas en une seule instruction.",
+            "Avancer d'un pas."
+          ],
+          "correctIndex": 2,
+          "explanation": "« Avancer d'un pas » fait partie des commandes définies pour cet exercice. « Avancer de deux pas » et « tourner à gauche » ne sont pas des commandes directes autorisées. Pour avancer de deux pas ici, le système exécute deux instructions « avancer d'un pas ». Un autre système pourrait permettre d'avancer de deux pas ou de tourner à gauche en une seule instruction : cela dépend de ses commandes disponibles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Algorithme, programme et test"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un algorithme décrit une procédure pour résoudre une famille de situations : quelles étapes suivre et à quelles conditions. Un programme exprime des opérations dans un langage qu'un système peut traiter. Nous pouvons discuter d'un algorithme avant de décider de tous les détails du C++. Nous pouvons aussi écrire un programme qui traduit mal l'algorithme ou qui utilise une procédure inadaptée. C'est pourquoi nous apprendrons à la fois à raisonner sur la solution et à l'exprimer précisément."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un test associe une situation connue à un résultat attendu. Si nous avons besoin du message « Prêt » et que le programme affiche « En attente », nous disposons déjà d'une différence concrète à examiner. Constater qu'un mot quelconque apparaît ne vérifie pas l'exigence. Un cas qui fonctionne fournit une preuve pour ce cas, mais ne garantit pas que toutes les données possibles fonctionneront."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_mensaje",
+          "question": "L'exigence est d'afficher « Boîte prête ». Quelle vérification y répond directement ?",
+          "options": [
+            "L'outil termine la compilation sans signaler d'erreur.",
+            "Le message demandé apparaît exactement à l'exécution.",
+            "Le message demandé figure dans un commentaire."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le test observe le résultat exigé par la tâche. L'apparence de l'éditeur ne permet pas de vérifier cette sortie."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_no_generaliza",
+          "question": "Un programme produit le résultat attendu pour un cas donné. Quelle conclusion cette observation permet-elle ?",
+          "options": [
+            "Tous les cas utilisant d'autres données doivent produire le même résultat.",
+            "Répéter ce même cas suffit à valider les autres.",
+            "Ce cas a réussi ; d'autres cas pertinents restent à examiner."
+          ],
+          "correctIndex": 2,
+          "explanation": "La preuve apportée par une seule exécution est limitée. Nous choisirons davantage de cas à mesure que nos programmes accepteront des décisions et des données."
+        }
+      ]
+    }
+  ]
+}
