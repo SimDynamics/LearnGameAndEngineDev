@@ -89,6 +89,9 @@ class NarrationOptionsSection(private val activity: Activity) {
 
     init {
         host.addView(text(s(R.string.narration_title), 23f).apply { setTypeface(typeface, android.graphics.Typeface.BOLD) })
+
+        // Shared controls apply to both Kokoro and Android TTS.
+        host.addView(sectionHeading(R.string.narration_section_general))
         host.addView(Switch(activity).apply {
             text = s(R.string.narration_show_controls)
             setTextColor(Color.WHITE)
@@ -96,12 +99,15 @@ class NarrationOptionsSection(private val activity: Activity) {
             isChecked = NarrationSettingsRepository.get(activity).enabled
             setOnCheckedChangeListener { _, enabled -> NarrationSettingsRepository.saveEnabled(activity, enabled) }
         })
-        listOf(engineButton, languageButton, voiceButton, systemStatus,
-            text(s(R.string.narration_model_description), 16f), modelStatus, progress,
-            downloadButton, cancelButton, removeButton, languageStatus, installLanguageButton,
-            removeLanguageButton, voicesButton, storageTitle, storageDetail,
-            storageSlider, storageMaximum, storageExplanation,
-            compatibility, auxiliaryStatus, importButton, removeAuxButton).forEach { host.addView(it) }
+        listOf(engineButton, languageButton, voiceButton).forEach { host.addView(it) }
+
+        // Kokoro resources and storage remain together.
+        host.addView(sectionHeading(R.string.narration_section_kokoro))
+        listOf(voicesButton, text(s(R.string.narration_model_description), 16f),
+            modelStatus, progress, downloadButton, cancelButton, removeButton,
+            languageStatus, installLanguageButton, removeLanguageButton,
+            storageTitle, storageDetail, storageSlider, storageMaximum,
+            storageExplanation).forEach { host.addView(it) }
         storageSlider.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onStartTrackingTouch(seekBar: SeekBar) { storageDragging = true }
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
@@ -115,8 +121,16 @@ class NarrationOptionsSection(private val activity: Activity) {
                 refreshStorage()
             }
         })
+
+        host.addView(sectionHeading(R.string.narration_section_kokoro_status))
+        listOf(compatibility, auxiliaryStatus, importButton, removeAuxButton).forEach { host.addView(it) }
+
+        host.addView(sectionHeading(R.string.narration_section_android))
+        host.addView(systemStatus)
         host.addView(button(s(R.string.narration_configure_android)) { openSystem(Intent("com.android.settings.TTS_SETTINGS")) })
         host.addView(button(s(R.string.narration_install_android)) { openSystem(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)) })
+
+        host.addView(sectionHeading(R.string.narration_section_licenses))
         host.addView(button(s(R.string.narration_licenses_reading)) { showLicenses() })
         refreshSelections()
     }
@@ -345,6 +359,19 @@ class NarrationOptionsSection(private val activity: Activity) {
             }.setNegativeButton(s(R.string.narration_close), null).show()
     }
     private fun size(bytes: Long) = s(R.string.narration_size_mib, bytes / 1_048_576.0)
+    private fun sectionHeading(titleRes: Int) = LinearLayout(activity).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(0, dp(14), 0, dp(6))
+        addView(View(activity).apply {
+            setBackgroundColor(Color.rgb(76, 79, 87))
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
+        })
+        addView(text(s(titleRes), 18f).apply {
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(Color.WHITE)
+            setPadding(0, dp(12), 0, dp(6))
+        })
+    }
     private fun text(value: String, size: Float) = TextView(activity).apply {
         text = value; textSize = size; setTextColor(Color.rgb(210, 214, 220)); setPadding(0, dp(8), 0, dp(8))
     }
