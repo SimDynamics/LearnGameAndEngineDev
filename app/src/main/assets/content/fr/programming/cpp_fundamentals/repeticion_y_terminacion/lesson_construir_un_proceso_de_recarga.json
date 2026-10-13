@@ -1,0 +1,141 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__construir_un_proceso_de_recarga",
+  "title": "Construire un processus de recharge et justifier sa terminaison",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une recharge avec une limite et un suivi"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une station commence avec un niveau d'énergie entier compris entre 0 et 9. Chaque tour ajoute 3 unités, sauf s'il en manque moins pour atteindre 9 : dans ce cas, il ajoute uniquement la quantité manquante. Le programme doit afficher l'énergie après chaque tour et un résumé avec l'énergie finale et le nombre de tours. S'il commence déjà à 9, aucun tour n'a lieu. Une valeur hors du domaine valide doit produire Donnée invalide sans commencer la recharge."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu construiras le programme complet avec les outils déjà étudiés. Les données seront définies dans le code, sans lecture par cin. Détermine quel état doit persister durant tout le procédé, quelle valeur ne concerne qu'un tour et quand vérifier que le procédé est terminé. Résous à la main les cas de départ 0, 1, 8 et 9 avant d'ouvrir l'atelier."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_estado_ya_completo",
+          "question": "Que doit-il se passer si l'énergie initiale vaut 9 ?",
+          "options": [
+            "Exécuter et compter un tour qui ajoute zéro.",
+            "Afficher le résumé avec zéro tour et conserver l'énergie à 9.",
+            "Rejeter 9 parce que la condition de la boucle est fausse."
+          ],
+          "correctIndex": 1,
+          "explanation": "9 appartient au domaine valide, mais l'objectif est déjà atteint ; on n'invente pas de tour."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cantidades_distintas_de_recarga",
+          "question": "Quelle donnée permet de compter les tours sans les confondre avec l'énergie ?",
+          "options": [
+            "L'énergie initiale, également utilisée comme compteur.",
+            "Un accumulateur qui additionne les apports d'énergie.",
+            "Un compteur qui commence à zéro et augmente une fois par tour."
+          ],
+          "correctIndex": 2,
+          "explanation": "Un tour et une unité d'énergie sont des quantités différentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir le procédé sans boucle préparée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris ton programme dans cet éditeur. Utilise une valeur initiale de energia égale à 1 pour le premier test. Affiche chaque tour sous la forme Tour N : E sur sa propre ligne, où N commence à 1 et E représente l'énergie après l'apport. Le résumé doit avoir le format État=E;Tours=N. Les valeurs invalides doivent produire uniquement Donnée invalide. Conserve ces formats pour permettre une comparaison sans ambiguïté."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : valider les données avant la boucle, ne jamais dépasser 9 à la fin d'un tour, ajouter une quantité positive à chaque tour effectué, compter exactement les tours et n'effectuer aucun tour si l'objectif est déjà atteint. Teste aussi -1 et 10. Avant chaque exécution, prévois la suite des états et le résumé ; explique quelle quantité diminue jusqu'à ce qu'aucune action ne soit nécessaire."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construis ici la validation, la recharge et le résumé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Teste d'abord ta propre construction. La référence vient ensuite pour comparer le comportement et le raisonnement ; plusieurs organisations correctes sont possibles. L'atelier n'évalue pas automatiquement le programme."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence à consulter après l'essai"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int energia{1};\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Donnée invalide\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Tour \" << rondas << \" : \" << energia << \"\\n\";\n        }\n        std::cout << \"État=\" << energia << \";Tours=\" << rondas;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La validation distingue les données hors domaine d'un procédé déjà terminé. rondas persiste pendant tout le procédé ; aporte est recalculé à chaque tour. On limite d'abord l'apport à la quantité manquante, puis on met à jour l'énergie et on compte le tour. On évite ainsi d'afficher un dépassement pour tenter ensuite de le masquer. Le résumé reste en dehors de la boucle et fonctionne aussi lorsque son corps ne s'exécute jamais."
+        },
+        {
+          "type": "paragraph",
+          "text": "Résultats à vérifier : un départ à 0 produit les énergies 3, 6, 9 et 3 tours ; un départ à 1 produit 4, 7, 9 et 3 tours ; un départ à 8 produit 9 et 1 tour ; un départ à 9 ne produit aucune ligne de tour et donne le résumé État=9;Tours=0. Les valeurs -1 et 10 produisent uniquement Donnée invalide. Tester seulement le départ à 1 ne suffit pas : une version qui fait systématiquement trois itérations échoue pour 8 et 9."
+        },
+        {
+          "type": "paragraph",
+          "text": "La quantité manquante, 9-energia, commence entre 0 et 9. Lorsqu'elle est positive, l'apport est d'au moins 1 et ne dépasse pas la quantité manquante ; celle-ci diminue donc tout en restant non négative. La condition devient fausse lorsque rien ne manque. Les valeurs restent dans un petit domaine représentable. Un for avec une condition et un avancement équivalents peut aussi résoudre le problème ; il n'est pas obligatoire de copier ce while."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver le comportement et changer l'objectif"
+        },
+        {
+          "type": "output_prediction",
+          "id": "recarga_desde_ocho",
+          "question": "Prévois la sortie complète de la référence avec une énergie initiale de 2. Conserve les sauts de ligne et n'ajoute pas de guillemets.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int energia{2};\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Donnée invalide\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Tour \" << rondas << \" : \" << energia << \"\\n\";\n        }\n        std::cout << \"État=\" << energia << \";Tours=\" << rondas;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Tour 1 : 5\nTour 2 : 8\nTour 3 : 9\nÉtat=9;Tours=3"
+          ],
+          "explanation": "Il manque sept unités au départ. Les apports sont 3, 3 et 1 : les énergies suivantes sont 5, 8 et 9, et trois tours sont comptés."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "ultimo_aporte_no_completo",
+          "question": "Une version ajoute toujours 3, même lorsqu'il ne manque qu'une unité, puis affiche le résultat. Quel critère n'est pas respecté ?",
+          "options": [
+            "Le compteur de tours doit être de type double.",
+            "L'énergie après ce tour dépasse l'objectif autorisé.",
+            "Un while ne peut pas vérifier une quantité d'énergie."
+          ],
+          "correctIndex": 1,
+          "explanation": "Se terminer ne suffit pas : la transition doit aussi respecter l'exigence de ne pas dépasser 9."
+        },
+        {
+          "type": "output_prediction",
+          "id": "misma_regla_otra_meta",
+          "question": "Cette variante utilise meta=10 et une donnée de départ valide connue. Prévois la sortie et conserve le point-virgule qui sépare le résumé.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int meta{10};\n    int energia{8};\n    int rondas{0};\n    while (energia < meta) {\n        int aporte{3};\n        if (meta - energia < aporte) {\n            aporte = meta - energia;\n        }\n        energia += aporte;\n        ++rondas;\n        std::cout << energia << \";\";\n    }\n    std::cout << \"Tours=\" << rondas;\n    return 0;\n}\n",
+          "answers": [
+            "10;Tours=1"
+          ],
+          "explanation": "La différence meta-energia vaut 2 et limite l'apport à 2. La règle est conservée même si l'objectif change."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si le nouveau programme doit accepter toute énergie de 0 à meta, tu dois aussi adapter la validation et tester le cas égal à meta ainsi que la première valeur rejetée, meta+1. Cette variante calcule seulement avec la donnée valide fixée ; elle ne démontre pas cette validation générale. Après la comparaison, reviens à l'éditeur minimal et reconstruis la version originale sans regarder la référence. Explique où se trouvent la vérification, la mise à jour et le résumé."
+        }
+      ]
+    }
+  ]
+}

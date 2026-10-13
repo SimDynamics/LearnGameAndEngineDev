@@ -1,0 +1,141 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__construir_un_proceso_de_recarga",
+  "title": "Build a Recharge Process and Justify Its Termination",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recharging with a limit and progress tracking"
+        },
+        {
+          "type": "paragraph",
+          "text": "A station starts with an integer energy level from 0 to 9. Each round adds 3 units, unless fewer are needed to reach 9: in that case, it adds only what is missing. The program must display the energy after each round and a summary with the final energy and the number of rounds. If it starts at 9, no rounds take place. A value outside the valid range must produce Invalid data without starting the recharge."
+        },
+        {
+          "type": "paragraph",
+          "text": "You will build the complete program using tools already studied. The data are defined in the code, with no input read through cin. Decide which state persists throughout the procedure, which value belongs only to one round, and when to check whether the process has finished. Work out the initial cases 0, 1, 8, and 9 by hand before opening the lab."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_estado_ya_completo",
+          "question": "What should happen if the initial energy is 9?",
+          "options": [
+            "Run one round that adds zero and count it.",
+            "Display the summary with zero rounds and keep the energy at 9.",
+            "Reject 9 because the loop condition is false."
+          ],
+          "correctIndex": 1,
+          "explanation": "9 is within the valid range, but the goal has already been reached; no fictitious round is added."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cantidades_distintas_de_recarga",
+          "question": "Which value lets you count rounds without confusing them with energy?",
+          "options": [
+            "The initial energy, also used as a counter.",
+            "An accumulator that adds the energy contributions.",
+            "A counter that starts at zero and increases once per round."
+          ],
+          "correctIndex": 2,
+          "explanation": "A round and one unit of energy are different quantities."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose the procedure without a prepared loop"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write your program in this editor. Use an initial energia of 1 for the first test. Show each round as Round N: E on its own line, where N starts at 1 and E is the energy after the contribution. The summary must have the format State=E;Rounds=N. Invalid values must produce only Invalid data. Keep these formats to allow an unambiguous comparison."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: validate before the loop, never end a round with energy above 9, add a positive amount on every round that runs, count the rounds exactly, and perform no rounds when the target has already been reached. Also test -1 and 10. Before running each case, predict the sequence and summary; explain which quantity decreases until no further action is needed."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Build the validation, recharge process, and summary.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Test your own implementation first. The reference comes afterward so you can compare both behavior and reasoning; more than one correct organization is possible. The lab does not automatically grade the program."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference after your attempt"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int energia{1};\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Invalid data\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Round \" << rondas << \": \" << energia << \"\\n\";\n        }\n        std::cout << \"State=\" << energia << \";Rounds=\" << rondas;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Validation distinguishes data outside the range from an already completed process. rondas persists throughout the procedure; aporte is recalculated on every round. First the contribution is limited to what is missing, then the energy is updated and the round is counted. This prevents printing a value above the limit and trying to conceal it afterward. The summary stays outside the loop and also works when its body never runs."
+        },
+        {
+          "type": "paragraph",
+          "text": "Check results: starting at 0 produces energies 3, 6, 9 and 3 rounds; starting at 1 produces 4, 7, 9 and 3 rounds; starting at 8 produces 9 and 1 round; starting at 9 produces no round lines and the summary State=9;Rounds=0. -1 and 10 produce only Invalid data. Testing only the case starting at 1 is not enough: a version that always runs three iterations fails for 8 and 9."
+        },
+        {
+          "type": "paragraph",
+          "text": "The remaining amount, 9-energia, starts between 0 and 9. When it is positive, the contribution is at least 1 and no greater than the remaining amount, so the remaining work decreases and stays nonnegative. The condition becomes false when nothing remains. All values stay within a small, representable range. A for loop with an equivalent condition and update could also solve the task; copying this while is not required."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall the behavior and change the target"
+        },
+        {
+          "type": "output_prediction",
+          "id": "recarga_desde_ocho",
+          "question": "Predict the complete output of the reference with initial energy 2. Preserve the line breaks and do not add quotation marks.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int energia{2};\n    if (energia < 0 || energia > 9) {\n        std::cout << \"Invalid data\";\n    } else {\n        int rondas{0};\n        while (energia < 9) {\n            int aporte{3};\n            if (9 - energia < aporte) {\n                aporte = 9 - energia;\n            }\n            energia += aporte;\n            ++rondas;\n            std::cout << \"Round \" << rondas << \": \" << energia << \"\\n\";\n        }\n        std::cout << \"State=\" << energia << \";Rounds=\" << rondas;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Round 1: 5\nRound 2: 8\nRound 3: 9\nState=9;Rounds=3"
+          ],
+          "explanation": "Seven units are missing at the start. The contributions are 3, 3, and 1: the later energy values are 5, 8, and 9, and three rounds are counted."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "ultimo_aporte_no_completo",
+          "question": "A version always adds 3, even when only 1 unit is missing, and then prints the result. Which requirement does it violate?",
+          "options": [
+            "The round counter must have type double.",
+            "The energy after that round exceeds the allowed target.",
+            "A while loop cannot check an amount of energy."
+          ],
+          "correctIndex": 1,
+          "explanation": "Termination alone is not enough: the transition must also respect the requirement not to exceed 9."
+        },
+        {
+          "type": "output_prediction",
+          "id": "misma_regla_otra_meta",
+          "question": "This variant uses meta=10 and a known valid starting value. Predict the output; preserve the semicolon separating the summary.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int meta{10};\n    int energia{8};\n    int rondas{0};\n    while (energia < meta) {\n        int aporte{3};\n        if (meta - energia < aporte) {\n            aporte = meta - energia;\n        }\n        energia += aporte;\n        ++rondas;\n        std::cout << energia << \";\";\n    }\n    std::cout << \"Rounds=\" << rondas;\n    return 0;\n}\n",
+          "answers": [
+            "10;Rounds=1"
+          ],
+          "explanation": "The difference meta-energia is 2, so the contribution is limited to 2. The rule still works when the target changes."
+        },
+        {
+          "type": "paragraph",
+          "text": "If the new program must accept any energy from 0 through meta, you must also adapt validation and test the value equal to meta and the first rejected value, meta+1. This variant only calculates using its fixed, valid data; it does not demonstrate general input validation. After comparing, return to the minimal editor and rebuild the original version without looking at the reference. Explain the placement of the check, the update, and the summary."
+        }
+      ]
+    }
+  ]
+}

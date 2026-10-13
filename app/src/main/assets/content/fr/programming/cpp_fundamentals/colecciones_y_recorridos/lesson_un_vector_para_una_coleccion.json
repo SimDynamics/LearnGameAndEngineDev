@@ -1,0 +1,278 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__un_vector_para_una_coleccion",
+  "title": "Une collection ordonnée dans un vecteur",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Plusieurs données ayant la même fonction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un registre de présence peut contenir le nombre de personnes de plusieurs séances. Conserver une variable distincte pour chaque séance oblige à répéter les instructions et à modifier le programme chaque fois que le nombre de séances change. std::vector permet de conserver une suite d'éléments et de la traiter comme une collection. L'ordre fait partie des données : la première séance n'est pas forcément celle qui a la plus forte participation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous incluons <vector> et écrivons std::vector<int> asistentes{6, 3, 8};. Les chevrons <int> indiquent le type de chaque élément ; ce n'est pas une comparaison. Les accolades contiennent les valeurs initiales, séparées par des virgules. Ce vecteur contient trois entiers dans l'ordre six, trois, huit. std::vector<int> est le type de cette collection d'entiers."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> asistentes{6, 3, 8};\n    std::cout << asistentes.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "size() renvoie le nombre d'éléments du vecteur, ici trois. Le point indique que nous demandons une opération à cet objet. Les parenthèses font partie de l'appel ; nous n'écrivons pas asistentes.size sans elles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Type des éléments et taille de la collection"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que désigne int dans std::vector<int> sesiones{2, 7, 4}; ?",
+          "options": [
+            "Le type de chaque élément.",
+            "Le fait que le vecteur ne peut contenir qu'un élément.",
+            "Le nombre de séances."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le type d'un élément et le nombre d'éléments sont deux propriétés différentes."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Utilise le même type que les littéraux entiers 4 et 9 : complète uniquement son nom explicite.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<___> cajas{4, 9};\n    std::cout << cajas.size();\n    return 0;\n}\n",
+          "answers": [
+            "int",
+            "signed",
+            "signed int",
+            "int signed"
+          ],
+          "explanation": "Le vecteur contient deux éléments de type int."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{8, 8, 2};\n    std::cout << datos.size();\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Les valeurs répétées sont des éléments distincts : huit occupe deux positions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un vecteur peut contenir des valeurs répétées. size() compte les éléments, pas les valeurs distinctes. Il ne trie pas non plus la collection automatiquement. Plus tard, nous choisirons quand trier et quand conserver l'ordre d'origine."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une collection vide est aussi un état valide"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::vector<int> datos; crée un vecteur vide. Il n'a aucun élément, donc size() renvoie zéro. datos.empty() demande s'il est vide et renvoie un bool : true lorsqu'il ne contient aucun élément, false dans le cas contraire. Une collection vide n'est pas la même chose qu'une collection contenant un élément de valeur zéro."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> ninguna;\n    std::vector<int> una{0};\n    std::cout << ninguna.size() << \":\" << ninguna.empty() << \" \";\n    std::cout << una.size() << \":\" << una.empty();\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "0:1 1:0"
+          ],
+          "explanation": "cout affiche les bool sous la forme 1 ou 0 ; le zéro stocké dans una compte comme un élément."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un vecteur contient {0, 0}. Que renvoie empty() ?",
+          "options": [
+            "true, parce que toutes les valeurs sont nulles.",
+            "false, parce qu'il contient deux éléments.",
+            "Il ne peut pas contenir de zéros."
+          ],
+          "correctIndex": 1,
+          "explanation": "Une collection est vide lorsqu'elle n'a aucun élément, quelles que soient les valeurs de ses éléments."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ajouter à la fin avec push_back"
+        },
+        {
+          "type": "paragraph",
+          "text": "datos.push_back(5); ajoute un nouvel élément de valeur cinq à la fin. Ensuite, size() augmente de un. L'opération conserve l'ordre des éléments déjà présents. Elle ne consiste pas à remplacer la dernière valeur ni à réserver une place à remplir ultérieurement."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> cantidades;\n    cantidades.push_back(5);\n    cantidades.push_back(2);\n    std::cout << cantidades.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> cajas{4};\n    cajas.push_back(7);\n    std::cout << cajas.size() << \" \" << cajas.empty();\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "2 0"
+          ],
+          "explanation": "Le vecteur qui contenait un élément en contient désormais deux et n'est pas vide."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète uniquement le nom de l'opération et le chiffre qui ajoute neuf à la fin d'un vecteur vide.",
+          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    datos.[]( [] );\n    std::cout << datos.size();\n    return 0;\n}\n",
+          "answers": [
+            "push_back",
+            "9"
+          ],
+          "answerAlternatives": [
+            [
+              "push_back",
+              "emplace_back"
+            ],
+            [
+              "9"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Accolades et parenthèses répondent à des questions différentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "La solution précédente appelle push_back(9); et la taille finale est un. Il existe une autre façon de préparer un vecteur : std::vector<int> datos(3); crée trois éléments entiers initialisés à zéro. En revanche, std::vector<int> datos{3}; crée un seul élément de valeur trois. Nous utilisons les accolades pour énumérer les valeurs et, ici, les parenthèses pour demander un nombre d'éléments."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> lista{3};\n    std::vector<int> espacios(3);\n    std::cout << lista.size() << \" \" << espacios.size();\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "1 3"
+          ],
+          "explanation": "{3} est une liste avec une seule valeur ; (3) demande trois éléments."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu as besoin de quatre quantités initialement égales à zéro. Quelle déclaration prépare cette collection ?",
+          "options": [
+            "std::vector<int> datos{4};",
+            "int datos = 4;",
+            "std::vector<int> datos(4);"
+          ],
+          "correctIndex": 2,
+          "explanation": "std::vector<int> datos(4); crée quatre éléments initialisés à zéro. En revanche, std::vector<int> datos{4}; ne crée qu'un élément dont la valeur est quatre."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Collections de textes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un vecteur peut aussi contenir des chaînes : std::vector<std::string> salas{\"Nord\", \"Cour\"};. Il faut inclure <vector> et <string>. Chaque élément est une chaîne ; les deux noms ne sont pas automatiquement fusionnés en une seule chaîne. Nous choisissons int pour les nombres et string pour les étiquettes, comme avec des variables individuelles."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> salas{\"Nord\", \"Cour\"};\n    salas.push_back(\"Atelier\");\n    std::cout << salas.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Les données sont des étiquettes telles que \"005\", dont les zéros initiaux doivent être conservés. Quelle collection convient ?",
+          "options": [
+            "Un seul bool.",
+            "std::vector<std::string>",
+            "std::vector<int>"
+          ],
+          "correctIndex": 1,
+          "explanation": "Les étiquettes sont du texte ; les convertir en quantités ferait perdre une partie de leur représentation."
+        },
+        {
+          "type": "note",
+          "text": "Pour les expériences de cette unité, utilise au maximum vingt éléments et de petites quantités. L'objectif est de vérifier la logique de la collection avec des boucles finies et des données définies dans le code."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une collection sans cases réservées"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis une collection de nombres de cahiers : pars d'un vecteur vide, ajoute quatre, puis sept. Affiche Nombre d'enregistrements : 2 et Vide : 0 sur deux lignes différentes. Avant l'exécution, prévois les deux résultats. Ensuite, conserve seulement la déclaration du vecteur vide et les affichages : ils doivent donner zéro et un. Enfin, commence avec un élément de valeur zéro et explique pourquoi la collection n'est plus vide."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construis ici le programme demandé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris une phrase qui distingue le nombre d'enregistrements des quantités stockées. Il ne suffit pas de voir le nombre deux : il doit provenir de size(), afin que toute modification de la collection actualise le résumé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence et révision des types"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> cuadernos;\n    cuadernos.push_back(4);\n    cuadernos.push_back(7);\n    std::cout << \"Nombre d'enregistrements : \" << cuadernos.size() << \"\\n\";\n    std::cout << \"Vide : \" << cuadernos.empty();\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    int cantidad = 5;\n    std::vector<int> registros;\n    registros.push_back(cantidad);\n    cantidad = 9;\n    std::cout << cantidad << \" \" << registros.size();\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "9 1"
+          ],
+          "explanation": "Modifier la variable n'ajoute pas un autre enregistrement : push_back n'a été appelé qu'une seule fois."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle preuve montre que ta solution représente correctement une collection vide ?",
+          "options": [
+            "Exécuter seulement le cas comportant deux enregistrements.",
+            "Modifier le texte du message pour qu'il indique « vide ».",
+            "Vérifier size() et empty() après avoir supprimé tous les ajouts."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le cas sans éléments permet de vérifier l'état vide sans le confondre avec des valeurs nulles."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de l'atelier : obtenir la taille et l'état vide du véritable vecteur ; ajouter des éléments à la fin dans l'ordre demandé ; distinguer le cas avec un élément zéro du cas sans élément. La solution de référence est une implémentation possible."
+        }
+      ]
+    }
+  ]
+}
