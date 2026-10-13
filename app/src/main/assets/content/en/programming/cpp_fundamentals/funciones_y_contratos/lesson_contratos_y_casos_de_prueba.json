@@ -1,0 +1,202 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__contratos_y_casos_de_prueba",
+  "title": "Contracts and Test Cases",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An interface needs a valid domain"
+        },
+        {
+          "type": "paragraph",
+          "text": "Types do not describe every condition for use. int allows a capacity of zero to be declared, but calculating complete groups cannot use it as a divisor. A contract specifies what a function requires and what it promises when those requirements are met. A precondition describes the valid data before a call; a postcondition describes the result or state that must hold afterward."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: 0 <= cantidad <= 120; 1 <= capacidad <= 12.\n// Post: returns the number of complete groups.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    std::cout << grupos_completos(25, 6);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The result is 4. The valid domain includes a quantity of zero but excludes a capacity of zero. The upper bounds keep values and results small without assuming a fixed width for int. Comments communicate the contract; they do not check inputs at runtime on their own."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which arguments satisfy the example's contract?",
+          "options": [
+            "quantity 120 and capacity 12",
+            "quantity 7 and capacity 0",
+            "quantity 121 and capacity 1"
+          ],
+          "correctIndex": 0,
+          "explanation": "Both arguments must fall within their permitted ranges. The int type alone does not distinguish the other two invalid cases."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Validate before calling the calculation"
+        },
+        {
+          "type": "paragraph",
+          "text": "In these programs, we can separate a validation question from the calculation that requires a true answer. main checks the inputs, calls the calculation only when they are valid, and displays another message if they are outside the domain. In this way, tests with invalid inputs observe rejection without executing an invalid division."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the output by following the validation before the call.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 0;\n    if (reparto_valido(cantidad, capacidad)) {\n        std::cout << grupos_completos(cantidad, capacidad);\n    } else {\n        std::cout << \"Outside the domain\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Outside the domain"
+          ],
+          "explanation": "Validation returns false, so the division call is skipped. The calculation never receives a zero divisor."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which sequence enforces the precondition of grupos_completos?",
+          "options": [
+            "Validate the arguments and call the function only on the path that meets the contract.",
+            "Write the contract only in a comment and call the function with any input.",
+            "Perform the calculation first and validate the result afterward."
+          ],
+          "correctIndex": 0,
+          "explanation": "The check must control the path to the calculation before the operation executes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A postcondition expresses what we promise"
+        },
+        {
+          "type": "paragraph",
+          "text": "For a valid quantity, the quotient q and remainder r must reconstruct it: q * capacidad + r == cantidad. The remainder must be nonnegative and smaller than capacidad. These are concrete properties for checking a result. Producing a number or knowing that a program terminated is not enough."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the quotient, remainder, and check for these valid inputs.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 23;\n    const int capacidad = 5;\n    const int q = grupos_completos(cantidad, capacidad);\n    const int r = cantidad % capacidad;\n    const bool cumple = (q * capacidad + r == cantidad)\n        && (r >= 0) && (r < capacidad);\n    std::cout << q << \" \" << r << \" \" << cumple;\n    return 0;\n}\n",
+          "answers": [
+            "4 3 1"
+          ],
+          "explanation": "Four groups contain 20 items and 3 remain. Reconstructing the quantity gives 23, and the remainder lies between 0 and 4."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A calculation returns zero complete groups. What can be concluded from that result alone?",
+          "options": [
+            "That the arguments were invalid.",
+            "That every group has zero capacity.",
+            "That it may be a valid result, for example when the quantity is zero or below the capacity."
+          ],
+          "correctIndex": 2,
+          "explanation": "Zero can be a valid result. Input validity is established before the calculation and cannot be deduced from a number alone."
+        },
+        {
+          "type": "note",
+          "text": "Testing a particular property provides evidence about that property. To justify the complete calculation, combine the contract, an examination of the body, and appropriate test cases; a single output does not prove correctness for every possible input."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Review the input domain and result separately"
+        },
+        {
+          "type": "paragraph",
+          "text": "cantidad is 25 and capacidad is 6, both declared in the program. Predict the three outputs and run it. Then test quantity 0 with capacity 6, quantity 120 with capacity 12, capacity 0 with quantity 25, and quantity -1 with capacity 6. First decide whether each case should reach the calculation or display rejection. The conditions in main also guard the remainder calculation."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) is true.\n// Post: returns the integer quotient for this division.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 6;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Outside the domain\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What should happen with cantidad equal to 120 and capacidad equal to 12?",
+          "options": [
+            "Display 10 0 1 because both endpoints are included and the division is exact.",
+            "Display 0 10 1.",
+            "Reject the inputs because they lie exactly on the upper bounds."
+          ],
+          "correctIndex": 0,
+          "explanation": "The contract includes 120 and 12. Ten groups use the entire quantity."
+        },
+        {
+          "type": "paragraph",
+          "text": "With the initial data, temporarily change the calculation's body to return cantidad / capacidad + 1;. Predict what happens to cumple and run it. This modification is well-defined for these small inputs but violates the postcondition. Restore the original body after observing the difference."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose inputs that distinguish rules"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which test plan checks both included endpoints and rejection immediately outside the quantity domain, with a valid capacity of 6?",
+          "options": [
+            "Quantities 20, 30, and 40.",
+            "Quantities -1, 0, 120, and 121.",
+            "Quantity 25 repeated four times."
+          ],
+          "correctIndex": 1,
+          "explanation": "-1 and 0 test the lower boundary, while 120 and 121 test the upper one. Interior values do not expose an incorrectly written boundary."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which new cases check the capacity boundaries when the quantity is a valid 24?",
+          "options": [
+            "Capacities 0, 1, 12, and 13.",
+            "Only capacity 6.",
+            "Capacities 6 and 6."
+          ],
+          "correctIndex": 0,
+          "explanation": "0 and 13 must be rejected; 1 and 12 must be accepted. This checks both boundaries."
+        },
+        {
+          "type": "paragraph",
+          "text": "A contract can also promise that an input passed by read-only reference is not modified, or that a transformation preserves the number of elements. With modifiable references, describe which changes are allowed and which properties must be preserved. That promise helps you choose post-state tests as well as tests of returned values."
+        },
+        {
+          "type": "note",
+          "text": "In this unit, we use comments, bool conditions, and explicit call paths. Validation must not be confused with a postcondition: one checks what enters, and the other checks what holds when execution finishes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later reference: Check the domain and postcondition"
+        },
+        {
+          "type": "note",
+          "text": "Compare after completing the lab and recording your predicted results. The reference presents one possible organization; the criteria allow other implementations that meet the same contracts."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: For cantidad=25 and capacidad=6, q=4, r=1, and cumple=1, so the output is 4 1 1. For 0 and 6 it is 0 0 1; for 120 and 12 it is 10 0 1, as in the reference. Capacity 0 or quantity -1 produces Outside the domain without evaluating division or remainder. Temporarily changing the calculation to cantidad/capacidad+1 with the original data 25 and 6 produces 5 1 0: it terminates but fails the postcondition."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Pre: reparto_valido(cantidad, capacidad) is true.\n// Post: returns the integer quotient for this division.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    int cantidad = 120;\n    int capacidad = 12;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Outside the domain\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The validity question is resolved before calling grupos_completos and before computing the remainder. q*capacidad+r==cantidad and 0<=r<capacidad check the division for these data. The reference uses a valid boundary of this small input domain. Restore the correct quotient after testing the defect, and keep rejection tests separate from valid-result tests."
+        }
+      ]
+    }
+  ]
+}

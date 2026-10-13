@@ -1,0 +1,223 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__componer_funciones_pequenas",
+  "title": "Composer de petites fonctions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Séparer le calcul de sa présentation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une fonction qui renvoie un résultat calculé permet de l'afficher, de le comparer ou de l'utiliser dans un autre calcul. Si elle affiche pendant le calcul, l'utiliser impose aussi son format de sortie. Séparer les responsabilités rend visibles les données reçues, le résultat obtenu et l'endroit où le message est choisi."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint faltantes(int necesarias, int disponibles) {\n    if (necesarias <= disponibles) {\n        return 0;\n    }\n    return necesarias - disponibles;\n}\n\nvoid mostrar_faltantes(int cantidad) {\n    std::cout << \"Manquant : \" << cantidad;\n}\n\nint main() {\n    const int resultado = faltantes(7, 3);\n    mostrar_faltantes(resultado);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "faltantes calcule avec des quantités de 0 à 20 ; mostrar_faltantes affiche le résultat. La sortie est Manquant : 4. Une modification du texte peut rester limitée à la fonction de présentation sans toucher à la règle de calcul."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu souhaites vérifier faltantes avec 5 unités nécessaires et 8 disponibles sans imposer de format de texte. Quel résultat dois-tu contrôler ?",
+          "options": [
+            "La valeur renvoyée devrait être -3 en calculant 5 - 8.",
+            "La valeur renvoyée devrait être 0.",
+            "La présence de cout dans faltantes."
+          ],
+          "correctIndex": 1,
+          "explanation": "Puisqu'il y a davantage d'unités disponibles que nécessaire, la première branche renvoie 0 : on ne signale pas de quantité manquante négative. Cette valeur peut être vérifiée sans affichage. Le format relève de mostrar_faltantes ; ajouter cout au calcul ne vérifie pas son résultat."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une fonction peut en appeler une autre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Composer des fonctions consiste à utiliser les résultats des unes dans le travail des autres. Chaque appel doit respecter son contrat. Dans cet exemple, con_reserva ajoute 2 à une quantité de 0 à 20. posiciones utilise ce résultat pour calculer trois positions par unité. Les valeurs intermédiaires, au plus 22 et 66, restent représentables."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Suis d'abord l'appel intérieur avant de déterminer le résultat extérieur.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint con_reserva(int cantidad) {\n    return cantidad + 2;\n}\n\nint posiciones(int cantidad) {\n    const int preparadas = con_reserva(cantidad);\n    return preparadas * 3;\n}\n\nint main() {\n    std::cout << posiciones(4);\n    return 0;\n}\n",
+          "answers": [
+            "18"
+          ],
+          "explanation": "con_reserva(4) renvoie 6. posiciones multiplie ce résultat par 3."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que faut-il vérifier lorsqu'une fonction en appelle une autre avec un résultat intermédiaire ?",
+          "options": [
+            "Uniquement que les deux fonctions portent des noms différents.",
+            "Que ce résultat appartient au domaine exigé par la fonction appelée.",
+            "Que les deux fonctions affichent le même message."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un contrat compte aussi entre les fonctions auxiliaires, pas seulement pour les appels provenant de main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réutiliser une fonction d'inspection de collection"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les parcours déjà connus peuvent devenir des calculs nommés. Une fonction bool peut utiliser le total renvoyé par une autre pour répondre à une question. Cet exercice comporte au plus 8 éléments de 0 à 20 et un seuil minimum de 0 à 160. Complète la composition selon l'exigence, y compris le cas d'égalité."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "cumple_minimo doit appeler la fonction de somme définie et renvoyer true lorsque le total atteint le minimum. Complète uniquement le nom de la fonction et l'opérateur de comparaison.",
+          "template": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nbool cumple_minimo(const std::vector<int>& datos, int minimo) {\n    return [](datos) [] minimo;\n}\n\nint main() {\n    const std::vector<int> datos = {3, 2};\n    std::cout << cumple_minimo(datos, 5);\n    return 0;\n}\n",
+          "answers": [
+            "sumar",
+            ">="
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La fonction d'inspection reçoit const std::vector<int>&. Que conserve main après l'appel ?",
+          "options": [
+            "Un vecteur vide, car sumar consomme les éléments.",
+            "Un résultat sans rapport avec les données.",
+            "Le vecteur d'origine avec les mêmes éléments."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le parcours lit les valeurs et les additionne dans un objet local ; il ne modifie pas la collection par la référence const."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Projet : planifier des conteneurs pour un lot"
+        },
+        {
+          "type": "note",
+          "text": "La composition précédente utilise sumar et >=. Avec un total de 5 et un minimum de 5, l'égalité est acceptée et la réponse est true."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le lot et la capacité sont déclarés dans le programme. Le contrat autorise au plus 6 commandes, chacune contenant de 0 à 20 unités, et une capacité de 1 à 10. Nous validons d'abord les données, puis additionnons les unités, calculons le nombre suffisant de conteneurs et affichons le plan. Un reste exige un conteneur supplémentaire. Un lot vide est valide et ne nécessite aucun conteneur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prévois le plan initial pour {3, 4, 5} avec une capacité de 5, puis exécute. Teste ensuite {}, {5}, {5, 5} et {6}. Change une seule collection à la fois en conservant la capacité 5. Enfin, teste une capacité de 0 et une commande négative pour vérifier qu'elles n'atteignent pas les calculs. Chaque fonction représente une responsabilité que tu peux expliquer séparément."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unités : \" << total << \"\\n\";\n    std::cout << \"Conteneurs : \" << contenedores;\n}\n\nint main() {\n    const std::vector<int> pedidos = {3, 4, 5};\n    const int capacidad = 5;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Données hors domaine\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Avec un lot vide et une capacité de 5, quel plan respecte le contrat ?",
+          "options": [
+            "Unités : 0\nConteneurs : 1",
+            "Données hors domaine",
+            "Unités : 0\nConteneurs : 0"
+          ],
+          "correctIndex": 2,
+          "explanation": "La collection vide respecte les limites. Sa somme est nulle et il n'y a aucun reste."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier un calcul sans répéter tout le projet"
+        },
+        {
+          "type": "output_prediction",
+          "question": "On teste uniquement le calcul du nombre de conteneurs avec des données conformes à son contrat. Prévois le résultat.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nint main() {\n    std::cout << contenedores_necesarios(25, 4);\n    return 0;\n}\n",
+          "answers": [
+            "7"
+          ],
+          "explanation": "Six conteneurs pleins contiennent 24 unités ; il en faut un autre pour l'unité restante."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quels cas distinguent un calcul avec reste d'un partage exact et d'un total nul, pour une capacité de 4 ?",
+          "options": [
+            "Les totaux 8, 8 et 8.",
+            "Les totaux 0, 8 et 9.",
+            "Seulement le total 25."
+          ],
+          "correctIndex": 1,
+          "explanation": "Zéro vérifie qu'aucun conteneur n'est nécessaire, 8 vérifie le partage exact et 9 le conteneur supplémentaire."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans ce projet, total_unidades exige un lot validé ; contenedores_necesarios exige un total de 0 à 120 et une capacité de 1 à 10. La validation du lot garantit la borne supérieure de la somme. Garder ces relations explicites permet de raisonner sur le plan sans cacher des hypothèses dans les calculs."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver les responsabilités et les permissions"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle répartition des responsabilités permet de modifier le format affiché sans changer la somme ni le nombre de conteneurs ?",
+          "options": [
+            "Afficher chaque élément dans toutes les fonctions et mélanger les messages au calcul de la somme.",
+            "Valider les données, calculer les valeurs, puis transmettre ces valeurs à une fonction de présentation.",
+            "Faire modifier le vecteur par chaque fonction, même lorsqu'elle doit seulement le lire."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les fonctions de calcul renvoient des données. La fonction de présentation décide comment les afficher."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une petite fonction ne se définit pas par un nombre fixe de lignes. Elle possède une responsabilité qui peut être nommée, des données nécessaires explicites et un résultat ou changement clair. S'il faut plusieurs explications différentes pour décrire son travail, cherche les calculs ou actions à séparer et à tester."
+        },
+        {
+          "type": "note",
+          "text": "Le projet réunit collections, parcours, conditions, contrats et appels dans un seul fichier. Chaque responsabilité est identifiée par sa fonction et peut être vérifiée séparément."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : composer un plan avec un reste"
+        },
+        {
+          "type": "note",
+          "text": "Compare après avoir terminé l'atelier et noté les résultats prévus. La référence présente une organisation possible ; les critères reconnaissent d'autres implémentations respectant les mêmes contrats."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : pour {3,4,5} et une capacité de 5, le plan affiche Unités : 12 et Conteneurs : 3 sur deux lignes. Pour {}, les quantités sont 0 et 0 ; pour {5}, 5 et 1 ; pour {5,5}, 10 et 2 ; pour {6}, 6 et 2, comme dans la référence. Une capacité de 0 ou une commande négative produit uniquement Données hors domaine. Accepte au plus six commandes de 0 à 20 unités et des capacités de 1 à 10 ; un lot trop grand, une commande de 21 ou une capacité de 11 doivent aussi être rejetés avant le calcul."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool lote_valido(const std::vector<int>& pedidos) {\n    if (pedidos.size() > 6) {\n        return false;\n    }\n    for (int cantidad : pedidos) {\n        if ((cantidad < 0) || (cantidad > 20)) {\n            return false;\n        }\n    }\n    return true;\n}\n\nbool capacidad_valida(int capacidad) {\n    return (capacidad >= 1) && (capacidad <= 10);\n}\n\nint total_unidades(const std::vector<int>& pedidos) {\n    int total = 0;\n    for (int cantidad : pedidos) {\n        total = total + cantidad;\n    }\n    return total;\n}\n\nint contenedores_necesarios(int total, int capacidad) {\n    int contenedores = total / capacidad;\n    if (total % capacidad != 0) {\n        ++contenedores;\n    }\n    return contenedores;\n}\n\nvoid mostrar_plan(int total, int contenedores) {\n    std::cout << \"Unités : \" << total << \"\\n\";\n    std::cout << \"Conteneurs : \" << contenedores;\n}\n\nint main() {\n    const std::vector<int> pedidos = {6};\n    const int capacidad = 5;\n    if (lote_valido(pedidos) && capacidad_valida(capacidad)) {\n        const int total = total_unidades(pedidos);\n        const int contenedores = contenedores_necesarios(total, capacidad);\n        mostrar_plan(total, contenedores);\n    } else {\n        std::cout << \"Données hors domaine\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les fonctions distinguent validation du lot, validation de la capacité, somme, nombre de conteneurs et présentation. La division compte les conteneurs pleins ; un reste non nul en exige un autre. Un lot vide n'en nécessite aucun et satisfait le domaine valide. D'autres implémentations sont possibles si elles conservent ces responsabilités, les permissions de lecture et l'ordre protégé des calculs."
+        }
+      ]
+    }
+  ]
+}

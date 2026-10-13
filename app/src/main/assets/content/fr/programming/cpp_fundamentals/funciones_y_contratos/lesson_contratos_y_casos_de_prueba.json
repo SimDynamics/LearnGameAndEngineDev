@@ -1,0 +1,202 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__contratos_y_casos_de_prueba",
+  "title": "Contrats et cas de test",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une interface a besoin d'un domaine valide"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les types ne décrivent pas toutes les conditions d'utilisation. int permet de déclarer une capacité nulle, mais le calcul de groupes complets ne peut pas l'utiliser comme diviseur. Un contrat précise ce qu'une fonction exige et ce qu'elle promet lorsque ces exigences sont respectées. La précondition décrit les données valides avant l'appel ; la postcondition décrit le résultat ou l'état qui doit être obtenu ensuite."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: 0 <= cantidad <= 120; 1 <= capacidad <= 12.\n// Post : renvoie le nombre de groupes complets.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    std::cout << grupos_completos(25, 6);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le résultat est 4. Le domaine valide accepte une quantité nulle, mais exclut une capacité nulle. Les bornes supérieures maintiennent de petites valeurs et de petits résultats sans supposer une largeur fixe pour int. Les commentaires communiquent le contrat, mais ne vérifient pas eux-mêmes les données pendant l'exécution."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quels arguments respectent le contrat de l'exemple ?",
+          "options": [
+            "Une quantité de 120 et une capacité de 12.",
+            "Une quantité de 7 et une capacité de 0.",
+            "Une quantité de 121 et une capacité de 1."
+          ],
+          "correctIndex": 0,
+          "explanation": "Les deux arguments doivent se trouver dans leurs intervalles autorisés. Le type int ne permet pas à lui seul de distinguer les deux autres cas invalides."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valider les données avant d'appeler le calcul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans ces programmes, nous pouvons séparer une question de validation du calcul qui exige une réponse true. main vérifie les données, appelle le calcul uniquement si elles sont valides et affiche un autre message lorsqu'elles sont hors domaine. Les tests avec des données invalides permettent ainsi d'observer le rejet sans exécuter de division invalide."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prévois la sortie en suivant la validation avant l'appel.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 0;\n    if (reparto_valido(cantidad, capacidad)) {\n        std::cout << grupos_completos(cantidad, capacidad);\n    } else {\n        std::cout << \"Hors domaine\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Hors domaine"
+          ],
+          "explanation": "La validation renvoie false et l'appel qui divise est ignoré. Le calcul ne reçoit jamais de diviseur nul."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel ordre permet de respecter la précondition de grupos_completos ?",
+          "options": [
+            "Valider les arguments et appeler seulement dans la branche qui respecte le contrat.",
+            "Écrire le contrat seulement dans un commentaire et appeler avec n'importe quelles données.",
+            "Calculer d'abord et valider ensuite le résultat."
+          ],
+          "correctIndex": 0,
+          "explanation": "La vérification doit protéger le chemin qui atteint le calcul avant l'exécution de l'opération."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une postcondition exprime ce que nous promettons"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour une quantité valide, le quotient q et le reste r doivent permettre de la reconstruire : q * capacidad + r == cantidad. Le reste doit être non négatif et inférieur à capacidad. Ce sont des propriétés concrètes permettant de vérifier un résultat. Obtenir un nombre ou savoir que le programme s'est terminé ne suffit pas."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prévois le quotient, le reste et la vérification pour ces données valides.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 23;\n    const int capacidad = 5;\n    const int q = grupos_completos(cantidad, capacidad);\n    const int r = cantidad % capacidad;\n    const bool cumple = (q * capacidad + r == cantidad)\n        && (r >= 0) && (r < capacidad);\n    std::cout << q << \" \" << r << \" \" << cumple;\n    return 0;\n}\n",
+          "answers": [
+            "4 3 1"
+          ],
+          "explanation": "Quatre groupes contiennent vingt éléments et il en reste trois. La reconstruction donne 23 et le reste est compris entre 0 et 4."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un calcul renvoie zéro groupe complet. Que peut-on conclure de ce seul résultat ?",
+          "options": [
+            "Que les arguments étaient invalides.",
+            "Que tous les groupes ont une capacité nulle.",
+            "Qu'il peut s'agir d'un résultat valide, par exemple avec une quantité nulle ou inférieure à la capacité."
+          ],
+          "correctIndex": 2,
+          "explanation": "Zéro peut être un résultat valide. La validité des arguments est établie avant le calcul et ne se déduit pas d'un nombre isolé."
+        },
+        {
+          "type": "note",
+          "text": "Tester une propriété précise fournit une preuve concernant cette propriété. Pour justifier le calcul complet, combine le contrat, l'examen du corps et des cas de test appropriés ; une seule sortie ne prouve pas le fonctionnement pour toutes les données possibles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Atelier : vérifier séparément le domaine et le résultat"
+        },
+        {
+          "type": "paragraph",
+          "text": "cantidad vaut 25 et capacidad vaut 6 ; les deux objets sont déclarés dans le programme. Prévois les trois résultats et exécute. Teste ensuite la quantité 0 avec capacité 6, la quantité 120 avec capacité 12, la capacité 0 avec quantité 25 et la quantité -1 avec capacité 6. Détermine d'abord si chaque cas doit atteindre le calcul ou afficher le rejet. Les conditions de main protègent aussi le calcul du reste."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Précondition : reparto_valido(cantidad, capacidad) est true.\n// Postcondition : renvoie le quotient entier de ce partage.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 6;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Hors domaine\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que doit-il se passer avec cantidad égal à 120 et capacidad égal à 12 ?",
+          "options": [
+            "Afficher 10 0 1, car les deux bornes sont incluses et la division est exacte.",
+            "Afficher 0 10 1.",
+            "Rejeter ces données parce qu'elles correspondent exactement aux bornes supérieures."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le contrat comprend les bornes 120 et 12. Dix groupes utilisent toute la quantité."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec les données initiales, change temporairement le corps du calcul en return cantidad / capacidad + 1;. Prévois ce qui arrivera à cumple et exécute. Cette modification a un comportement défini pour ces petites données, mais viole la postcondition. Rétablis le corps initial après avoir observé la différence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir des données qui distinguent les règles"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel plan de tests vérifie les bornes incluses et le rejet juste en dehors du domaine de cantidad, avec une capacité valide égale à 6 ?",
+          "options": [
+            "Les quantités 20, 30 et 40.",
+            "Les quantités -1, 0, 120 et 121.",
+            "La quantité 25 répétée quatre fois."
+          ],
+          "correctIndex": 1,
+          "explanation": "-1 et 0 vérifient la borne inférieure, tandis que 120 et 121 vérifient la borne supérieure. Les valeurs intérieures ne révèlent pas une frontière incorrectement écrite."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quels nouveaux cas vérifient les bornes de capacidad, avec une quantité valide égale à 24 ?",
+          "options": [
+            "Les capacités 0, 1, 12 et 13.",
+            "Seulement la capacité 6.",
+            "Les capacités 6 et 6."
+          ],
+          "correctIndex": 0,
+          "explanation": "0 et 13 doivent être rejetés ; 1 et 12 doivent être acceptés. Cela vérifie les deux frontières."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un contrat peut aussi promettre qu'un paramètre transmis par référence de lecture ne sera pas modifié, ou qu'une transformation conservera le nombre d'éléments. Avec des références modifiables, décris quels changements sont autorisés et quelles propriétés doivent être préservées. Cette promesse aide à choisir des tests de l'état final en plus des tests des valeurs renvoyées."
+        },
+        {
+          "type": "note",
+          "text": "Dans cette unité, nous utilisons des commentaires, des conditions bool et des chemins d'appel explicites. Il ne faut pas confondre validation et postcondition : l'une vérifie ce qui entre, l'autre ce qui doit être vrai après l'exécution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : vérifier le domaine et la postcondition"
+        },
+        {
+          "type": "note",
+          "text": "Compare après avoir réalisé l'atelier et noté les résultats prévus. La référence propose une organisation possible ; les critères reconnaissent aussi d'autres implémentations conformes aux mêmes contrats."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : pour cantidad=25 et capacidad=6, q=4, r=1 et cumple=1 ; la sortie est donc 4 1 1. Pour 0 et 6, elle vaut 0 0 1 ; pour 120 et 12, elle vaut 10 0 1, comme dans la référence. Une capacité de 0 ou une quantité de -1 entraîne Hors domaine, sans calcul de division ni de reste. Si le corps devient temporairement cantidad/capacidad+1 pour les données initiales 25 et 6, la sortie est 5 1 0 : le programme se termine mais ne respecte plus la postcondition."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool reparto_valido(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= 120)\n        && (capacidad >= 1) && (capacidad <= 12);\n}\n\n// Précondition : reparto_valido(cantidad, capacidad) est true.\n// Postcondition : renvoie le quotient entier de ce partage.\nint grupos_completos(int cantidad, int capacidad) {\n    return cantidad / capacidad;\n}\n\nint main() {\n    int cantidad = 120;\n    int capacidad = 12;\n    if (reparto_valido(cantidad, capacidad)) {\n        const int q = grupos_completos(cantidad, capacidad);\n        const int r = cantidad % capacidad;\n        const bool cumple = (q * capacidad + r == cantidad)\n            && (r >= 0) && (r < capacidad);\n        std::cout << q << \" \" << r << \" \" << cumple;\n    } else {\n        std::cout << \"Hors domaine\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La question de validité est résolue avant l'appel à grupos_completos et avant le calcul du reste. q*capacidad+r==cantidad et 0<=r<capacidad vérifient ce partage pour ces données. La référence montre une borne valide de ce petit domaine. Rétablis le quotient correct après avoir testé le défaut et conserve les tests de rejet séparément des résultats valides."
+        }
+      ]
+    }
+  ]
+}
