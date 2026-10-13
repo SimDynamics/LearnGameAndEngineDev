@@ -1,0 +1,230 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__combinar_condiciones",
+  "title": "Combining Conditions with Logic",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two requirements that must be met together"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sometimes a condition depends on two questions. To accept a temperature from 15 through 25, including both endpoints, temperatura >= 15 and temperatura <= 25 must both be satisfied. The && operator expresses conjunction, a logical 'and': it produces true only when both conditions are true. If either is false, the result is false."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int temperatura = 18;\n    const bool alcanza_minimo = temperatura >= 15;\n    const bool no_supera_maximo = temperatura <= 25;\n    const bool en_intervalo = alcanza_minimo && no_supera_maximo;\n    std::cout << en_intervalo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The program displays 1. You could also write (temperatura >= 15) && (temperatura <= 25). The parentheses delimit each comparison. Do not translate a mathematical interval into 15 <= temperatura <= 25: in C++, that expression chains comparisons, and the second comparison receives the bool result of the first, rather than comparing temperatura against 25."
+        },
+        {
+          "type": "fill_code",
+          "question": "The counter is valid from 2 through 9, including both endpoints. Enter only the logical operator requiring both comparisons.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int contador = 6;\n    const bool valido = (contador >= 2) ___ (contador <= 9);\n    std::cout << valido;\n    return 0;\n}\n",
+          "answers": [
+            "&&",
+            "and"
+          ],
+          "explanation": "To be inside the interval, the value must reach the minimum and not exceed the maximum at the same time."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A conjunction A && B receives true for A and false for B. What is its result?",
+          "options": [
+            "false",
+            "true",
+            "A bool result cannot be produced."
+          ],
+          "correctIndex": 0,
+          "explanation": "Conjunction requires both answers to be true."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One alternative is enough"
+        },
+        {
+          "type": "paragraph",
+          "text": "The || operator means 'or': it produces true when at least one condition is true. It is inclusive OR: the result is also true when both conditions are true. It is false only when both are false. For example, a drawing workshop allows students to work with pencils or markers; bringing both also meets the requirement."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool trae_lapices = false;\n    const bool trae_rotuladores = true;\n    const bool tiene_material = trae_lapices || trae_rotuladores;\n    std::cout << tiene_material;\n    return 0;\n}\n"
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complete the conditions according to their purpose: ambos should be true only if both requirements are met; alguno should be true if at least one is met. Enter one logical operator per blank.",
+          "template": "#include <iostream>\n\nint main() {\n    const bool conoce_clave = true;\n    const bool trae_tarjeta = false;\n    const bool ambos = conoce_clave [] trae_tarjeta;\n    const bool alguno = conoce_clave [] trae_tarjeta;\n    std::cout << ambos << \" \" << alguno;\n    return 0;\n}\n",
+          "answers": [
+            "&&",
+            "||"
+          ],
+          "answerAlternatives": [
+            [
+              "&&",
+              "and"
+            ],
+            [
+              "||",
+              "or"
+            ]
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "question": "If A and B are both true, what does A || B produce?",
+          "options": [
+            "true, because at least one condition is true.",
+            "false, because two conditions are true.",
+            "A number other than true and false."
+          ],
+          "correctIndex": 0,
+          "explanation": "|| does not mean 'exactly one'. Inclusive OR allows both conditions to hold."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Negate a question and group a rule"
+        },
+        {
+          "type": "note",
+          "text": "In the previous exercise, ambos is false and alguno is true. With one true answer and one false answer, && and || answer different questions."
+        },
+        {
+          "type": "paragraph",
+          "text": "The ! operator negates a bool answer: !true is false and !false is true. If bloqueado indicates an obstacle, !bloqueado indicates that the obstacle is absent. To negate a complete comparison, write !(cantidad < minimo). The parentheses clarify which question is negated."
+        },
+        {
+          "type": "paragraph",
+          "text": "In logical expressions, ! has higher precedence than &&, and && has higher precedence than ||. Even knowing this precedence, grouping according to the requirement is helpful. In (sensor_a || sensor_b) && !silenciado, either sensor may request the signal, but silenciado must be false. The grouping makes that last requirement apply to both alternatives."
+        },
+        {
+          "type": "output_prediction",
+          "question": "This is a practice panel. Predict whether the program displays 1 or 0.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool sensor_a = true;\n    const bool sensor_b = false;\n    const bool silenciado = true;\n    const bool senal = (sensor_a || sensor_b) && !silenciado;\n    std::cout << senal;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "The sensors satisfy the OR condition, but !silenciado is false. The complete conjunction is false."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Outside the interval from 4 through 10, including its endpoints, means below 4 or above 10. Which condition expresses this?",
+          "options": [
+            "(valor < 4) && (valor > 10)",
+            "(valor >= 4) && (valor <= 10)",
+            "(valor < 4) || (valor > 10)"
+          ],
+          "correctIndex": 2,
+          "explanation": "A quantity cannot be on both sides at once. || accepts either way of falling outside the interval."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: alternatives within a shared requirement"
+        },
+        {
+          "type": "paragraph",
+          "text": "All three values are declared as bool. The rule allows entry if the room is open and the person has either a pass or an invitation. Predict the initial result and run the program. Then change only sala_abierta to false. Restore true and test with neither pass nor invitation. Finally, test with both. Explain every result using the rule, without changing it to produce a desired output."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const bool tiene_pase = false;\n    const bool tiene_invitacion = true;\n    const bool sala_abierta = true;\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n    if (permitido) {\n        std::cout << \"Entry allowed\";\n    } else {\n        std::cout << \"Entry denied\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "With both a pass and an invitation true, but sala_abierta false, what does the rule require?",
+          "options": [
+            "Execute both branches.",
+            "Deny entry, because the room being open is a shared requirement.",
+            "Allow entry, because there are already two credentials."
+          ],
+          "correctIndex": 1,
+          "explanation": "The credentials satisfy the alternative, but conjunction additionally requires the room to be open."
+        },
+        {
+          "type": "paragraph",
+          "text": "If you omit the parentheses and write tiene_pase || tiene_invitacion && sala_abierta, operator precedence groups only the invitation together with the room being open. With a true pass, that expression could allow entry to a closed room. The grouping must match the requirement; successful compilation does not guarantee that."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Test relationships between requirements"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Review arithmetic, precedence, comparisons, and output. Predict the complete line.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 7 + 3 * 2;\n    const bool en_rango = (cantidad >= 12) && (cantidad <= 14);\n    std::cout << cantidad << \" \" << en_rango;\n    return 0;\n}\n",
+          "answers": [
+            "13 1"
+          ],
+          "explanation": "The quantity is 13. Both comparisons are true, and so is their conjunction."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "To observe every combination of two independent bool values, which test plan is complete?",
+          "options": [
+            "Test true/true four times.",
+            "Test false/false, false/true, true/false, and true/true.",
+            "Test only true/true and false/false."
+          ],
+          "correctIndex": 1,
+          "explanation": "Each value can be true or false. There are four different combinations; repeating one does not cover another."
+        },
+        {
+          "type": "paragraph",
+          "text": "Not every condition in a problem is independent. In an ordered interval, valor < minimo and valor > maximo cannot both be true. Choose cases based on possible input data and the rules, as well as theoretical bool values. For intervals, keep tests at both endpoints and immediately outside them."
+        },
+        {
+          "type": "note",
+          "text": "Name conditions when it helps explain their meaning. && requires both, || accepts at least one, and ! reverses an answer. The next examples will also use an evaluation property of && and || to protect operations."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Follow-up comparison from the lab"
+        },
+        {
+          "type": "paragraph",
+          "text": "The original case allows entry. Closing the room denies entry; with the room open and neither pass nor invitation, entry is also denied; with both credentials and the room open, entry is allowed. The reference keeps the room being open as a requirement for either credential."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool tiene_pase = false;\n    const bool tiene_invitacion = true;\n    const bool sala_abierta = true;\n    const bool permitido = (tiene_pase || tiene_invitacion) && sala_abierta;\n    if (permitido) {\n        std::cout << \"Entry allowed\";\n    } else {\n        std::cout << \"Entry denied\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Check all eight combinations of these three bool values: when the room is closed, all four combinations must be denied; when it is open, only having neither credential is denied. The case tiene_pase true, tiene_invitacion false, and sala_abierta false must be denied: it detects the grouping that wrongly allows a pass to bypass the opening requirement. An equivalent implementation can be correct if it respects every decision."
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after predicting and running your tests. The editor does not automatically grade these outputs: compare them with the criteria and explain the first discrepancy. Keep your version if it meets the same requirements."
+        }
+      ]
+    }
+  ]
+}

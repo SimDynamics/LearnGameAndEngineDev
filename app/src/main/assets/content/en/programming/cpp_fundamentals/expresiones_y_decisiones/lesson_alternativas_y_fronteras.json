@@ -1,0 +1,240 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__alternativas_y_fronteras",
+  "title": "Choosing Alternatives and Testing Boundaries",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One condition changes the path"
+        },
+        {
+          "type": "paragraph",
+          "text": "So far, instructions have run in sequence without choosing between paths. An if executes a block only when its condition is true. If there is an else, that other block runs when the condition is false. An if with else selects exactly one of its two branches; the program then continues with the statements that follow."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int plazas_libres = 2;\n    if (plazas_libres > 0) {\n        std::cout << \"Space available\\n\";\n    } else {\n        std::cout << \"Full\\n\";\n    }\n    std::cout << \"Review complete\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output has two lines: Space available and Review complete. Braces delimit the statements in each block. The last output is outside both branches, so it runs after either choice. We will use braces even for a single statement so the extent of each decision remains visible."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In an if with else, the condition is false. Which path does the program follow?",
+          "options": [
+            "Execute the else branch and then continue.",
+            "Execute both branches and then continue.",
+            "Skip everything left in the program."
+          ],
+          "correctIndex": 0,
+          "explanation": "else provides the path for false. It neither ends the program nor runs the true branch."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A block can contain multiple statements"
+        },
+        {
+          "type": "paragraph",
+          "text": "Braces group statements, not data. Every statement in the chosen block runs in order. An if can also have no else: when its condition is false, the block is skipped and execution continues afterward. A statement after a closing brace is not inside that block, even if its leading spaces suggest otherwise. Those leading spaces are indentation: they help readability, but braces determine structure."
+        },
+        {
+          "type": "output_prediction",
+          "question": "The additional inspection is only shown when there are pending items. Predict the entire output for these data.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int pendientes = 0;\n    std::cout << \"Start\\n\";\n    if (pendientes > 0) {\n        std::cout << \"Additional inspection\\n\";\n        std::cout << pendientes << \"\\n\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "Start\nEnd"
+          ],
+          "explanation": "pendientes > 0 is false. Both statements inside the block are skipped, and the later output End remains."
+        },
+        {
+          "type": "fill_code",
+          "question": "The signal should appear only when nivel is greater than 7. Fill in only the word that begins that selection.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int nivel = 9;\n    ___ (nivel > 7) {\n        std::cout << \"Signal\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "if"
+          ],
+          "explanation": "if evaluates the condition and executes the block when it is true."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Translate the rule before choosing symbols"
+        },
+        {
+          "type": "paragraph",
+          "text": "The requirement 'Ready with 6 or more pieces' includes the quantity 6. One solution compares piezas >= 6. A rule stating 'More than 6' would use > and give a different answer exactly at 6. Define the expected output below, at, and above the boundary before writing the if."
+        },
+        {
+          "type": "output_prediction",
+          "question": "The batch is ready starting at 6 pieces. Which line appears?",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int piezas = 5;\n    if (piezas >= 6) {\n        std::cout << \"Ready\";\n    } else {\n        std::cout << \"Pending\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Pending"
+          ],
+          "explanation": "5 does not reach the minimum of 6, so the else branch runs."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A test should check immediately below 10, exactly 10, and immediately above 10. Which integers cover these three positions?",
+          "options": [
+            "0, 5, and 20",
+            "10, 10, and 10",
+            "9, 10, and 11"
+          ],
+          "correctIndex": 2,
+          "explanation": "9 and 11 are the integer neighbors of the boundary 10; testing 10 checks whether equality is included."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reaching both branches is not enough: a program using > instead of >= might pass tests with 5 and 8 yet still fail with 6. Boundary cases test the meaning of the requirement as well as the paths executed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: signal and result state"
+        },
+        {
+          "type": "paragraph",
+          "text": "The data are declared: nivel is 4 and limite is 4. Before running, predict the text and the flag. Then try nivel equal to 3 and 5, keeping limite unchanged. The requirement is to show Alert starting at the limit, including equality, and set marca to 1 only when that alert appears. The output afterward also lets you observe an assignment made inside the branch."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int nivel = 4;\n    const int limite = 4;\n    int marca = 0;\n    if (nivel >= limite) {\n        marca = 1;\n        std::cout << \"Alert\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n    std::cout << \"Flag: \" << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "With the original data, which output follows the rule?",
+          "options": [
+            "Normal\nFlag: 0",
+            "Alert\nNormal\nFlag: 1",
+            "Alert\nFlag: 1"
+          ],
+          "correctIndex": 2,
+          "explanation": "Equality satisfies >=. marca changes, Alert appears, and then the current flag is shown."
+        },
+        {
+          "type": "paragraph",
+          "text": "Now change >= to > without changing the data. The program still compiles, but notice the case where nivel equals limite. Explain how the result differs from the expected output, then restore the condition from the requirement. A test detects an error when it combines suitable input data with a result specified in advance."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruct a decision in context"
+        },
+        {
+          "type": "order_code",
+          "question": "Arrange the program: include and open main, declare the data, write the complete decision, then close. The rule allows removing up to 4 items, including 4.",
+          "fragments": [
+            "    if (cantidad <= 4) {\n        std::cout << \"Allowed\";\n    } else {\n        std::cout << \"Over the limit\";\n    }",
+            "    return 0;\n}",
+            "    const int cantidad = 4;",
+            "#include <iostream>\n\nint main() {"
+          ],
+          "correctOrder": [
+            3,
+            2,
+            0,
+            1
+          ],
+          "explanation": "The condition reads cantidad after it is declared. <= includes the boundary 4 and prints Allowed."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The program compiles and prints Allowed when cantidad is 3. The rule permits up to 4. Which new test distinguishes <= 4 from < 4?",
+          "options": [
+            "Quantity 5, which must be rejected.",
+            "Quantity 4, which must produce Allowed.",
+            "Quantity 3, which must produce Allowed."
+          ],
+          "correctIndex": 1,
+          "explanation": "Both conditions accept 3; only equality distinguishes the two versions."
+        },
+        {
+          "type": "note",
+          "text": "If a result does not match, trace the condition with the values from that run, find the branch taken, and then inspect the statements that follow. Keep condition errors, state errors, and formatting errors separate."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choosing a branch can also prevent an invalid operation"
+        },
+        {
+          "type": "paragraph",
+          "text": "An if can check data before using it. In this grouping problem, fichas is a nonnegative quantity and grupos must be positive. If grupos is not positive, the program displays a warning and skips division. The operation is inside the protected block, so it is not evaluated for rejected data."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the output when the declared divisor is zero. Determine which branch runs before attempting the calculation.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int grupos = 0;\n    if (grupos > 0) {\n        std::cout << fichas / grupos;\n    } else {\n        std::cout << \"Invalid data\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Invalid data"
+          ],
+          "explanation": "The condition is false and the division is in the skipped branch. The warning is displayed without dividing by zero."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Where must fichas / grupos be placed so the check protects it?",
+          "options": [
+            "Inside the branch that runs only when grupos > 0.",
+            "In both branches so there is always a number.",
+            "Before the if, even though grupos has not been validated yet."
+          ],
+          "correctIndex": 0,
+          "explanation": "A condition protects an operation only when it is checked before execution and controls the path leading to that operation."
+        },
+        {
+          "type": "note",
+          "text": "An explicit warning makes rejected input observable. Do not assume a numeric output for an invalid operation: design the control path to avoid it."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Follow-up comparison from the lab"
+        },
+        {
+          "type": "paragraph",
+          "text": "With nivel 4 and limite 4, the reference prints Alert and Flag: 1 on two lines. nivel 3 produces Normal and Flag: 0; nivel 5 produces Alert and Flag: 1. Replacing >= with > produces Normal and Flag: 0 only at the equality that should trigger the alert: that is the test distinguishing the rules."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int nivel = 4;\n    const int limite = 4;\n    int marca = 0;\n    if (nivel >= limite) {\n        marca = 1;\n        std::cout << \"Alert\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n    std::cout << \"Flag: \" << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Check the message and flag together: 1 must appear exactly when Alert appears. The flag starts at 0 and is assigned only in that branch. Restoring >= must recover the boundary result without changing the results for 3 and 5."
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after predicting and running your tests. The editor does not automatically grade these outputs: compare them with the criteria and explain the first discrepancy. Keep your version if it meets the same requirements."
+        }
+      ]
+    }
+  ]
+}

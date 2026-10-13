@@ -1,0 +1,240 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__alternativas_y_fronteras",
+  "title": "Choisir des alternatives et tester les valeurs limites",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une condition change le parcours"
+        },
+        {
+          "type": "paragraph",
+          "text": "Jusqu’ici, les instructions s’exécutaient successivement sans choisir de chemin. if permet d’exécuter un bloc uniquement lorsque la condition est true. S’il y a un else, cet autre bloc s’exécute lorsque la condition est false. Avec if et else, exactement une des deux branches est choisie ; ensuite, le programme poursuit les instructions suivantes."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int plazas_libres = 2;\n    if (plazas_libres > 0) {\n        std::cout << \"Place disponible\\n\";\n    } else {\n        std::cout << \"Complet\\n\";\n    }\n    std::cout << \"Vérification terminée\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie comporte deux lignes : Place disponible et Vérification terminée. Les accolades délimitent les instructions de chaque bloc. Le dernier affichage se situe en dehors des deux branches : il s’exécute donc après le choix effectué. Nous utiliserons des accolades même pour une seule instruction afin de rendre visible la portée de chaque décision."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dans un if avec else, la condition est false. Quel parcours correspond à cette décision ?",
+          "options": [
+            "Exécuter la branche else, puis continuer.",
+            "Exécuter les deux branches, puis continuer.",
+            "Ignorer tout le reste du programme."
+          ],
+          "correctIndex": 0,
+          "explanation": "else fournit le chemin correspondant à false. Il ne termine pas le programme et n’exécute pas la branche true."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un bloc peut contenir plusieurs instructions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les accolades regroupent des instructions, pas des données. Toutes les instructions du bloc choisi s’exécutent dans leur ordre. Un if peut aussi exister sans else : lorsque sa condition est false, son bloc est ignoré et l’exécution reprend après lui. Une instruction placée après l’accolade fermante n’appartient pas au bloc, même si les espaces en début de ligne semblent la rapprocher. Ce retrait s’appelle l’indentation : il facilite la lecture, mais ce sont les accolades qui fixent la structure."
+        },
+        {
+          "type": "output_prediction",
+          "question": "L’inspection supplémentaire n’apparaît que s’il reste des éléments en attente. Prédis la sortie complète pour ces données.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int pendientes = 0;\n    std::cout << \"Début\\n\";\n    if (pendientes > 0) {\n        std::cout << \"Inspection supplémentaire\\n\";\n        std::cout << pendientes << \"\\n\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Début\nFin"
+          ],
+          "explanation": "pendientes > 0 est false. Les deux instructions du bloc sont ignorées, puis le programme affiche Fin."
+        },
+        {
+          "type": "fill_code",
+          "question": "Le signal ne doit s’afficher que si nivel est supérieur à 7. Complète uniquement le mot qui commence cette sélection.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int nivel = 9;\n    ___ (nivel > 7) {\n        std::cout << \"Signal\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "if"
+          ],
+          "explanation": "if évalue la condition et exécute le bloc lorsque la réponse est true."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Traduire la règle avant de choisir les symboles"
+        },
+        {
+          "type": "paragraph",
+          "text": "La consigne « Prêt à partir de 6 pièces » inclut la quantité 6. Une solution compare piezas >= 6. La règle « Plus de 6 » utiliserait > et donnerait une autre réponse exactement à 6. Avant d’écrire le if, précise la sortie attendue en dessous, sur et au-dessus de la frontière."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Le lot est prêt à partir de 6 pièces. Quelle ligne s’affiche ?",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int piezas = 5;\n    if (piezas >= 6) {\n        std::cout << \"Prêt\";\n    } else {\n        std::cout << \"En attente\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "En attente"
+          ],
+          "explanation": "5 n’atteint pas le minimum de 6. La branche else s’exécute."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un test doit vérifier la valeur juste en dessous de 10, exactement 10 et juste au-dessus. Quels entiers correspondent à ces trois positions ?",
+          "options": [
+            "0, 5 et 20",
+            "10, 10 et 10",
+            "9, 10 et 11"
+          ],
+          "correctIndex": 2,
+          "explanation": "9 et 11 sont les entiers voisins de la frontière 10 ; tester 10 permet de vérifier si l’égalité est incluse."
+        },
+        {
+          "type": "paragraph",
+          "text": "Il ne suffit pas de parcourir les deux branches : un programme avec > au lieu de >= pourrait réussir un test avec 5 et un autre avec 8, mais échouer avec 6. Les cas limites vérifient le sens de la consigne autant que les chemins empruntés."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : signal et état du résultat"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les données sont déclarées : nivel vaut 4 et limite vaut 4. Avant d’exécuter, prédis le texte et l’indicateur. Essaie ensuite nivel égal à 3 puis à 5, sans modifier limite. La consigne demande d’afficher Alerte dès la limite, en incluant l’égalité, et d’enregistrer 1 dans marca uniquement lorsque cette alerte apparaît. La sortie suivante permet aussi d’observer une affectation à l’intérieur de la branche."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int nivel = 4;\n    const int limite = 4;\n    int marca = 0;\n    if (nivel >= limite) {\n        marca = 1;\n        std::cout << \"Alerte\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n    std::cout << \"Indicateur : \" << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Avec les données initiales, quelle sortie respecte la règle ?",
+          "options": [
+            "Normal\nIndicateur : 0",
+            "Alerte\nNormal\nIndicateur : 1",
+            "Alerte\nIndicateur : 1"
+          ],
+          "correctIndex": 2,
+          "explanation": "L’égalité satisfait >=. marca est modifié, Alerte s’affiche, puis la valeur actuelle de l’indicateur apparaît."
+        },
+        {
+          "type": "paragraph",
+          "text": "Remplace maintenant >= par > sans modifier les données. Le programme compile toujours, mais observe le cas où nivel est égal à limite. Explique la différence avec la sortie attendue, puis rétablis la condition demandée. Un test détecte une erreur en combinant des données adaptées et un résultat attendu défini à l’avance."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruire une décision dans son contexte"
+        },
+        {
+          "type": "order_code",
+          "question": "Remets le programme dans l’ordre : inclusion et ouverture, déclaration, décision complète et fermeture. La règle permet de retirer jusqu’à 4 éléments, y compris 4.",
+          "fragments": [
+            "    if (cantidad <= 4) {\n        std::cout << \"Autorisé\";\n    } else {\n        std::cout << \"Limite dépassée\";\n    }",
+            "    return 0;\n}",
+            "    const int cantidad = 4;",
+            "#include <iostream>\n\nint main() {"
+          ],
+          "correctOrder": [
+            3,
+            2,
+            0,
+            1
+          ],
+          "explanation": "La condition lit cantidad après sa déclaration. <= inclut la frontière 4 et affiche Autorisé."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le programme compile et affiche Autorisé pour cantidad égal à 3. La règle autorise jusqu’à 4. Quel nouveau test distingue <= 4 de < 4 ?",
+          "options": [
+            "La quantité 5, qui doit être refusée.",
+            "La quantité 4, qui doit afficher Autorisé.",
+            "La quantité 3, qui doit afficher Autorisé."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les deux conditions acceptent 3 ; seul le cas d’égalité distingue les deux versions."
+        },
+        {
+          "type": "note",
+          "text": "Si un résultat est incorrect, suis la condition avec les données de cette exécution, identifie la branche choisie, puis examine les instructions suivantes. Distingue une erreur de condition, une erreur d’état et une erreur de format."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir une branche peut éviter une opération invalide"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un if peut vérifier une donnée avant de l’utiliser. Dans cette répartition, fichas est une quantité non négative et grupos doit être positif. Si grupos n’est pas positif, le programme affiche un avertissement et ignore la division. L’opération se trouve dans le bloc protégé : elle n’est donc pas évaluée pour les données rejetées."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis la sortie lorsque le diviseur déclaré vaut zéro. Détermine quelle branche s’exécute avant de tenter le calcul.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int grupos = 0;\n    if (grupos > 0) {\n        std::cout << fichas / grupos;\n    } else {\n        std::cout << \"Donnée invalide\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Donnée invalide"
+          ],
+          "explanation": "La condition est false et la division se trouve dans la branche ignorée. L’avertissement s’affiche sans division par zéro."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Où faut-il placer fichas / grupos pour que cette vérification le protège ?",
+          "options": [
+            "Dans la branche exécutée uniquement si grupos > 0.",
+            "Dans les deux branches pour toujours obtenir un nombre.",
+            "Avant le if, même si grupos n’a pas encore été validé."
+          ],
+          "correctIndex": 0,
+          "explanation": "Une condition ne protège une opération que si elle est vérifiée avant son exécution et contrôle le chemin menant à cette opération."
+        },
+        {
+          "type": "note",
+          "text": "Un avertissement explicite rend visible le rejet d’une donnée. N’attribue pas de sortie numérique supposée à une opération invalide : conçois le parcours pour l’éviter."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparaison après le laboratoire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec nivel égal à 4 et limite égal à 4, la référence affiche Alerte et Indicateur : 1 sur deux lignes. nivel égal à 3 produit Normal et Indicateur : 0 ; nivel égal à 5 produit Alerte et Indicateur : 1. Remplacer >= par > ne donne Normal et Indicateur : 0 qu’au point d’égalité où l’alerte devait s’activer : c’est le test qui distingue les règles."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int nivel = 4;\n    const int limite = 4;\n    int marca = 0;\n    if (nivel >= limite) {\n        marca = 1;\n        std::cout << \"Alerte\\n\";\n    } else {\n        std::cout << \"Normal\\n\";\n    }\n    std::cout << \"Indicateur : \" << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie ensemble le message et l’indicateur : 1 doit apparaître exactement dans les cas où Alerte s’affiche. L’indicateur commence à 0 et n’est affecté que dans cette branche. Rétablir >= doit restituer le résultat à la frontière sans modifier les résultats pour 3 et 5."
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir prédit et exécuté tes essais. L’éditeur ne note pas automatiquement les sorties : confronte-les aux critères et explique la première différence. Conserve ta version si elle répond aux mêmes exigences."
+        }
+      ]
+    }
+  ]
+}
