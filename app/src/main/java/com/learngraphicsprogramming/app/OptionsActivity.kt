@@ -69,9 +69,23 @@ class OptionsActivity : AppCompatActivity() {
         val languageTags = listOf("") + UiLanguageSettings.supportedTags(this)
         val appLanguageLabels = listOf(getString(R.string.settings_language_auto)) +
             resources.getStringArray(R.array.ui_language_names).toList()
-        val languageAdapter = android.widget.ArrayAdapter(
+        val languageAdapter = object : android.widget.ArrayAdapter<String>(
             this, android.R.layout.simple_spinner_item, appLanguageLabels
-        ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+        ) {
+            override fun getView(
+                position: Int, convertView: View?, parent: android.view.ViewGroup
+            ): View = super.getView(position, convertView, parent).apply {
+                (this as? TextView)?.setTextColor(Color.WHITE)
+            }
+
+            override fun getDropDownView(
+                position: Int, convertView: View?, parent: android.view.ViewGroup
+            ): View = super.getDropDownView(position, convertView, parent).apply {
+                (this as? TextView)?.setTextColor(Color.WHITE)
+            }
+        }.apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
         spinnerAppLanguage.adapter = languageAdapter
         val selectedTag = UiLanguageSettings.selectedTag(this)
         val selectedIndex = languageTags.indexOf(selectedTag).takeIf { it >= 0 }

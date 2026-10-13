@@ -88,7 +88,6 @@ class NarrationOptionsSection(private val activity: Activity) {
     }
 
     init {
-        host.addView(text(s(R.string.narration_title), 23f).apply { setTypeface(typeface, android.graphics.Typeface.BOLD) })
 
         // Shared controls apply to both Kokoro and Android TTS.
         host.addView(sectionHeading(R.string.narration_section_general))
