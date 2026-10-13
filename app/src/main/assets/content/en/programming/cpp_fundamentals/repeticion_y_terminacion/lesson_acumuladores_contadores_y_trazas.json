@@ -1,0 +1,234 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__acumuladores_contadores_y_trazas",
+  "title": "Accumulators, Counters, and Traces",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Keep a summary of the loop"
+        },
+        {
+          "type": "paragraph",
+          "text": "A counter records the number of cases; an accumulator combines a contribution from each case. Both may start at zero and still represent different quantities. If we process orders, counting orders is not the same as adding up items. Naming objects after their meaning helps prevent a calculation that works mechanically but answers the wrong question."
+        },
+        {
+          "type": "paragraph",
+          "text": "To add contributions, an accumulator usually starts at 0: nothing has been included yet. On every iteration, we add the new contribution to the previous total. The update total=total+aporte must preserve everything collected so far; writing total=aporte replaces the summary with the latest value."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{1}; aporte <= 4; ++aporte) {\n        total = total + aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The example collects 1, 2, 3, and 4: the successive totals are 1, 3, 6, and 10. These values belong to the accumulator; the contributions are 1, 2, 3, and 4. Mixing those two columns in a trace can make an update seem correct without revealing what each object represents."
+        },
+        {
+          "type": "output_prediction",
+          "id": "suma_otro_recorrido",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 5; ++aporte) {\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "14"
+          ],
+          "explanation": "The accumulator adds 2+3+4+5; += preserves the previous value and adds the current contribution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observe state before and after"
+        },
+        {
+          "type": "paragraph",
+          "text": "A trace is not just a list of input data: it records the values used by each statement. When adding values, distinguish the total before adding, the current contribution, and the total afterward. Also note whether an output happens before or after the update; both are valid operations and show different states."
+        },
+        {
+          "type": "output_prediction",
+          "id": "mostrar_despues_acumular",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{1}; n <= 3; ++n) {\n        total += n;\n        std::cout << total << \";\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "1;3;6;End"
+          ],
+          "explanation": "The totals are displayed after adding 1, 2, and 3."
+        },
+        {
+          "type": "output_prediction",
+          "id": "mostrar_antes_acumular",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{2}; n <= 4; ++n) {\n        std::cout << total << \";\";\n        total += n;\n    }\n    std::cout << \"Final=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "0;2;5;Final=9"
+          ],
+          "explanation": "The body prints before adding each contribution. By the end, 4 has also been included."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reemplazar_no_sumar",
+          "question": "The goal is to combine all contributions. Each iteration uses total=aporte. What does this update retain at the end?",
+          "options": [
+            "The number of iterations, regardless of the data.",
+            "Only the last contribution assigned.",
+            "The sum of all previous contributions."
+          ],
+          "correctIndex": 1,
+          "explanation": "Assignment replaces the value. To accumulate, combine the previous state with the new contribution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguish how many from how much"
+        },
+        {
+          "type": "output_prediction",
+          "id": "contar_y_sumar",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int casos{0};\n    int suma{0};\n    for (int n{3}; n <= 5; ++n) {\n        ++casos;\n        suma += n;\n    }\n    std::cout << casos << \":\" << suma;\n    return 0;\n}\n",
+          "answers": [
+            "3:12"
+          ],
+          "explanation": "There are 3 cases, with contributions of 3, 4, and 5. Counting and summing produce different quantities."
+        },
+        {
+          "type": "fill_code",
+          "id": "sumar_en_lugar_de_reemplazar",
+          "question": "Complete with += or = to preserve and add every value of n.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{1}; n <= 3; ++n) {\n        total ___ n;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "+="
+          ],
+          "explanation": "+= combines the previous total with the current value; = replaces it."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "unidad_del_resumen",
+          "question": "n represents items contributed by one order. What does suma+=n represent after processing several orders?",
+          "options": [
+            "The total number of items contributed.",
+            "The number of items in the last order.",
+            "The total number of orders processed."
+          ],
+          "correctIndex": 0,
+          "explanation": "The accumulator keeps the quantity represented by the contributions; the name and output should reflect it."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The initial state matters even when there are no values"
+        },
+        {
+          "type": "paragraph",
+          "text": "If a loop has no iterations, the accumulator keeps its initial value. A sum over no contributions should produce 0, not an uninitialized value. That starting value connects the summary's meaning to its implementation. A previous total other than 0 may be correct if it represents an initial quantity that truly belongs to the problem."
+        },
+        {
+          "type": "paragraph",
+          "text": "Not every summary starts at 0. When multiplying contributions, the value that leaves the first factor unchanged is 1. Initializing a product to 0 would make all products zero. For minimums and maximums, we will not choose an arbitrary starting value without justification: when we reach collections, we will first check whether any initial data exist."
+        },
+        {
+          "type": "output_prediction",
+          "id": "suma_sin_vueltas",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{1}; n <= 0; ++n) {\n        total += n;\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Total=0"
+          ],
+          "explanation": "There are no contributions. The object retains its initial value, which represents the empty sum."
+        },
+        {
+          "type": "output_prediction",
+          "id": "producto_acumulado",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int producto{1};\n    for (int factor{2}; factor <= 4; ++factor) {\n        producto *= factor;\n    }\n    std::cout << producto;\n    return 0;\n}\n",
+          "answers": [
+            "24"
+          ],
+          "explanation": "Starting from 1 lets us multiply 2×3×4 without zeroing the result."
+        },
+        {
+          "type": "output_prediction",
+          "id": "saldo_con_cantidad_inicial",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{6};\n    for (int lote{1}; lote <= 3; ++lote) {\n        piezas += 2;\n    }\n    std::cout << piezas;\n    return 0;\n}\n",
+          "answers": [
+            "12"
+          ],
+          "explanation": "The initial 6 is part of the total, and three batches of 2 are added."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a summary using several objects"
+        },
+        {
+          "type": "order_code",
+          "id": "orden_acumulacion",
+          "question": "Arrange the code fragments to add 1, 2, and 3, then display the total after the loop.",
+          "fragments": [
+            "    std::cout << total;\n    return 0;\n}",
+            "        total += n;\n    }",
+            "#include <iostream>\nint main() {\n    int total{0};",
+            "    for (int n{1}; n <= 3; ++n) {"
+          ],
+          "correctOrder": [
+            2,
+            3,
+            1,
+            0
+          ],
+          "explanation": "Initialize the total before the loop, add each contribution inside it, and display the result afterward."
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lab, change the limit to 1 and then to 5. Before running, predict the number of contributions and their sum. Next, add a separate counter before the loop, increment it once per iteration, and extend the output to show the number of cases as well. Do not treat the total number of items as the number of orders."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int n{1}; n <= 4; ++n) {\n        total += n;\n    }\n    std::cout << \"Pieces=\" << total;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the lab solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "After adding the counter, check two distinct quantities: total adds the items, while pedidos counts how many contributions were processed. Both are initialized before the loop; on each iteration, the contribution is added to one and one unit is added to the other. The summary is printed after the loop."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    int pedidos{0};\n    for (int n{1}; n <= 5; ++n) {\n        total += n;\n        ++pedidos;\n    }\n    std::cout << \"Pieces=\" << total << \";Orders=\" << pedidos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "With a limit of 1, this version summarizes Pieces=1;Orders=1. With a limit of 5, it prints Pieces=15;Orders=5. The five contributions are 1, 2, 3, 4, and 5. A correct sum paired with a counter of 15 does not meet the requirement: it confuses items with orders. You may choose other clear labels as long as you preserve and check both quantities."
+        }
+      ]
+    }
+  ]
+}

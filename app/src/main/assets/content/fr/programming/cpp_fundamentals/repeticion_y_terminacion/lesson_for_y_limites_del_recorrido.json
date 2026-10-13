@@ -1,0 +1,289 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__for_y_limites_del_recorrido",
+  "title": "La boucle for et les limites d'un parcours",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Regrouper les éléments de contrôle du parcours"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsqu'un parcours possède un début, une condition et un pas clairement définis, for permet de réunir ces trois éléments. Dans for (int i{0}; i<4; ++i), i est initialisé une seule fois, i<4 est vérifié avant chaque itération et ++i s'exécute après chaque passage du corps qui atteint normalement sa fin. Une condition fausse termine le parcours."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{0}; i < 4; ++i) {\n        std::cout << i << \":\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le parcours utilise 0, 1, 2 et 3, sans exécuter le corps pour 4. Le premier point-virgule sépare l'initialisation de la condition ; le deuxième sépare la condition de la mise à jour. La condition ne signifie pas « combien de fois » : c'est une expression évaluée avec l'état actuel. Comprendre ces rôles permet de construire de nouveaux parcours au lieu de mémoriser une ligne."
+        },
+        {
+          "type": "output_prediction",
+          "id": "for_otro_intervalo",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{2}; i < 6; ++i) {\n        std::cout << i << \":\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "2:3:4:5:Fin"
+          ],
+          "explanation": "La condition est vérifiée avant chaque itération et exclut 6."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Inclure ou exclure la borne"
+        },
+        {
+          "type": "paragraph",
+          "text": "Remplacer < par <= change les valeurs qui satisfont la condition. Pour afficher de 1 à 4 inclus, utilise i<=4 ; pour parcourir quatre positions à partir de 0, utilise i<4. Les deux peuvent effectuer quatre itérations, mais avec des valeurs différentes. Le nombre d'éléments et leurs positions ne sont pas interchangeables."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant d'écrire une condition, énumère les valeurs d'un petit exemple du parcours attendu. Vérifie la première valeur, la dernière et celle qui suit. Ce raisonnement permet de repérer les erreurs de décalage d'une unité : dernière valeur manquante, valeur en trop ou début décalé. Plus tard, avec les indices des collections, distinguer le nombre d'éléments du dernier indice sera encore plus important."
+        },
+        {
+          "type": "output_prediction",
+          "id": "extremo_incluido",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{1}; i <= 3; ++i) {\n        std::cout << i;\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "123:Fin"
+          ],
+          "explanation": "L'égalité permet d'exécuter le corps avec 3 ; la vérification avec 4 termine le parcours."
+        },
+        {
+          "type": "output_prediction",
+          "id": "extremo_excluido",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{1}; i < 3; ++i) {\n        std::cout << i;\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "12:Fin"
+          ],
+          "explanation": "Le corps utilise 1 et 2. La valeur 3 ne satisfait plus la condition."
+        },
+        {
+          "type": "fill_code",
+          "id": "limite_sin_extra",
+          "question": "Écris uniquement < ou <= pour afficher 0, 1, 2 et 3, sans aucun autre nombre.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{0}; i ___ 4; ++i) {\n        std::cout << i;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "<"
+          ],
+          "explanation": "La borne 4 doit être exclue."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zéro, une ou plusieurs itérations"
+        },
+        {
+          "type": "output_prediction",
+          "id": "for_cero",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{5}; i < 2; ++i) {\n        std::cout << \"X\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Fin"
+          ],
+          "explanation": "5<2 est faux dès la première vérification."
+        },
+        {
+          "type": "output_prediction",
+          "id": "for_una",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{4}; i <= 4; ++i) {\n        std::cout << \"X\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "XFin"
+          ],
+          "explanation": "L'égalité au début permet une itération ; la mise à jour rend la condition suivante fausse."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "pruebas_recorrido",
+          "question": "Un programme doit afficher un avis pour chaque tâche demandée, avec un nombre valide de tâches entre 0 et 6. Quel ensemble teste l'absence de tâches, le plus petit cas non nul et la répétition ?",
+          "options": [
+            "Quantités 0, 1 et 4.",
+            "Quantités 4, 4 et 4.",
+            "Seulement la quantité 6."
+          ],
+          "correctIndex": 0,
+          "explanation": "Les cas 0, 1 et plusieurs itérations distinguent des comportements que la répétition d'une même valeur ne teste pas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Des pas différents"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le pas peut être différent de un. Si i commence à 1 et augmente de 2, les valeurs sont 1, 3, 5, etc. Une limite peut ne plus être satisfaite sans que le compteur atteigne exactement la borne. Vérifier si le compteur reste au-dessous ou au-dessus d'une limite décrit donc souvent mieux un parcours qu'exiger l'égalité avec un nombre que le pas peut sauter."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans un compte à rebours, le pas et la comparaison doivent aller dans le même sens. Soustraire une unité avec la condition i>=2 laisse i à 1 lorsque la boucle se termine. Augmenter i sous cette même condition ne le rapproche pas de la sortie. Choisir for ne corrige pas à lui seul un mauvais sens de progression."
+        },
+        {
+          "type": "output_prediction",
+          "id": "pasos_de_dos",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{1}; i < 8; i += 2) {\n        std::cout << i << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "1;3;5;7;Fin"
+          ],
+          "explanation": "Après 7, le compteur passe à 9 ; il n'a pas besoin d'atteindre 8 pour que 9<8 soit faux."
+        },
+        {
+          "type": "output_prediction",
+          "id": "for_descendente",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{5}; i >= 2; --i) {\n        std::cout << i << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "5;4;3;2;Fin"
+          ],
+          "explanation": "La décrémentation rapproche le compteur de la borne qui sera exclue après 2."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "salto_extremo",
+          "question": "Analyse sans exécuter : i commence à 0, augmente de 2 et se répète tant que i!=5. Quel est le problème de ce critère de sortie ?",
+          "options": [
+            "La boucle s'arrête à 4, car c'est la dernière valeur du corps avant 5.",
+            "Le pas n'atteint jamais 5 ; l'égalité ne traduit pas la fin du parcours.",
+            "La boucle s'arrête à 6, car != signifie ici « être inférieur à la limite »."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les valeurs générées sont paires. Comparer avec une borne du parcours exprime l'intention sans dépendre de l'atteinte de 5."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "État de contrôle et portée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un compteur déclaré dans l'en-tête d'un for appartient à cette structure et à son corps. Son nom n'est plus accessible ensuite. Si nous devons examiner l'état final à l'extérieur, nous pouvons déclarer le compteur avant la boucle et l'utiliser dans l'en-tête. Cette décision concerne la portée et l'utilisation, pas seulement l'apparence du code."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un parcours simple est plus facile à lire lorsque la mise à jour se trouve à un seul endroit. Ajouter un autre ++i dans le corps tout en gardant celui de l'en-tête fait avancer deux fois à chaque itération. Si nous voulons un pas de deux, écrire i+=2 dans l'en-tête rend ce choix clair. Ne confonds pas une recommandation de lisibilité avec une interdiction du langage."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contador_externo",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int i{2};\n    for (; i < 5; ++i) {\n        std::cout << i << \":\";\n    }\n    std::cout << \"Final=\" << i;\n    return 0;\n}\n",
+          "answers": [
+            "2:3:4:Final=5"
+          ],
+          "explanation": "La déclaration extérieure laisse i accessible après la boucle. Son état final résulte de la dernière mise à jour."
+        },
+        {
+          "type": "output_prediction",
+          "id": "doble_avance_observable",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{0}; i < 6; ++i) {\n        std::cout << i << \":\";\n        ++i;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "0:2:4:Fin"
+          ],
+          "explanation": "Chaque corps augmente i, puis l'en-tête l'augmente à nouveau. Le programme est valide, mais ce double avancement doit correspondre aux exigences."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "contador_fuera",
+          "question": "int i est déclaré dans l'en-tête d'un for. Après la boucle, on écrit std::cout << i; sans autre déclaration de i. Qu'est-ce qui ne fonctionne pas ?",
+          "options": [
+            "i reste accessible et conserve la dernière valeur affichée dans le corps.",
+            "i appartient à la portée du for et n'est plus accessible ensuite.",
+            "i reste accessible et conserve la valeur qui a rendu la condition fausse."
+          ],
+          "correctIndex": 1,
+          "explanation": "La portée de la déclaration se termine avec l'instruction for."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruire et vérifier"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "encabezado_por_objetivo",
+          "question": "Complète la valeur initiale, la borne supérieure exclue et l'opérateur d'incrémentation pour afficher 2, 3 et 4. Écris seulement un nombre dans chacun des deux premiers espaces et seulement l'opérateur dans le troisième.",
+          "template": "#include <iostream>\n\nint main() {\n    for (int i{[]}; i < []; []i) {\n        std::cout << i;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "2",
+            "5",
+            "++"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de poursuivre, énumère les valeurs utilisées par le corps et justifie quelle vérification devient fausse en premier. Dans l'atelier, tu peux comparer for et while en conservant le début, la condition et le pas ; l'équivalence exige aussi de conserver l'ordre des actions."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int i{1}; i <= 4; ++i) {\n        std::cout << \"Poste \" << i << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérification de l'en-tête"
+        },
+        {
+          "type": "note",
+          "text": "La construction utilise un début à 2, la condition i<5 et la mise à jour ++i. Le corps s'exécute pour 2, 3 et 4. La valeur 5 apparaît uniquement dans la vérification qui permet de terminer ; elle n'est pas affichée par le corps."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la solution de l'atelier"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare après avoir converti le parcours. Critères : afficher Poste 1 jusqu'à Poste 4, une ligne par poste, sans passer par 0 ou 5. Avec while, tu dois conserver explicitement l'initialisation, la vérification avant le corps et la mise à jour après l'affichage."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int i{1};\n    while (i <= 4) {\n        std::cout << \"Poste \" << i << \"\\n\";\n        ++i;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La première condition fausse vérifie i=5. Ici, i a été déclaré avant while et reste accessible dans cette portée ; dans le for initial, il appartient à la portée de l'en-tête. Les deux programmes sont équivalents pour les lignes affichées, même si l'accessibilité ultérieure du nom diffère. Déplacer ++i avant l'affichage change les postes présentés."
+        }
+      ]
+    }
+  ]
+}

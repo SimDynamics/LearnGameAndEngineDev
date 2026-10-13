@@ -1,0 +1,289 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__for_y_limites_del_recorrido",
+  "title": "For Loops and Sequence Boundaries",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Bring the loop's controls together"
+        },
+        {
+          "type": "paragraph",
+          "text": "When a sequence has a clear starting point, condition, and step, for brings those three parts together. In for (int i{0}; i<4; ++i), i is initialized once, i<4 is checked before each iteration, and ++i runs after each body execution that reaches its end normally. A false check ends the sequence."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{0}; i < 4; ++i) {\n        std::cout << i << \":\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The loop uses 0, 1, 2, and 3 and does not run the body at 4. The first semicolon separates initialization from the condition; the second separates the condition from the update. The condition does not mean 'how many times': it is an expression evaluated using the current state. Understanding these roles lets you build new loops instead of memorizing one line."
+        },
+        {
+          "type": "output_prediction",
+          "id": "for_otro_intervalo",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{2}; i < 6; ++i) {\n        std::cout << i << \":\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "2:3:4:5:End"
+          ],
+          "explanation": "The condition is checked before each iteration and excludes 6."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Include or exclude the endpoint"
+        },
+        {
+          "type": "paragraph",
+          "text": "Changing < to <= changes which values satisfy the condition. To display 1 through 4 inclusive, use i<=4; to visit four positions starting at 0, use i<4. Both can perform four iterations, but they use different values. The number of items and their positions are not interchangeable."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before writing a condition, list the values in a small example of the intended loop. Check the first value, the last one, and the one immediately after it. This reasoning catches off-by-one errors: a missing last value, an extra one, or a shifted start. When we study collection indices, distinguishing the item count from the last index will matter even more."
+        },
+        {
+          "type": "output_prediction",
+          "id": "extremo_incluido",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{1}; i <= 3; ++i) {\n        std::cout << i;\n    }\n    std::cout << \":End\";\n    return 0;\n}\n",
+          "answers": [
+            "123:End"
+          ],
+          "explanation": "Equality lets the body run with 3; the check at 4 ends the loop."
+        },
+        {
+          "type": "output_prediction",
+          "id": "extremo_excluido",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{1}; i < 3; ++i) {\n        std::cout << i;\n    }\n    std::cout << \":End\";\n    return 0;\n}\n",
+          "answers": [
+            "12:End"
+          ],
+          "explanation": "The body uses 1 and 2. The value 3 no longer satisfies the condition."
+        },
+        {
+          "type": "fill_code",
+          "id": "limite_sin_extra",
+          "question": "Enter only < or <= to display 0, 1, 2, and 3, with no other numbers.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{0}; i ___ 4; ++i) {\n        std::cout << i;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "<"
+          ],
+          "explanation": "The endpoint 4 must be excluded."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zero, one, and several iterations"
+        },
+        {
+          "type": "output_prediction",
+          "id": "for_cero",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{5}; i < 2; ++i) {\n        std::cout << \"X\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "End"
+          ],
+          "explanation": "5<2 is false from the first check."
+        },
+        {
+          "type": "output_prediction",
+          "id": "for_una",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{4}; i <= 4; ++i) {\n        std::cout << \"X\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "XEnd"
+          ],
+          "explanation": "Equality at the start allows one iteration; the update makes the next condition false."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "pruebas_recorrido",
+          "question": "A program must display one notice per requested job, with a valid job count from 0 to 6. Which set tests no jobs, the minimum nonzero case, and repetition?",
+          "options": [
+            "Counts of 0, 1, and 4.",
+            "Counts of 4, 4, and 4.",
+            "Only a count of 6."
+          ],
+          "correctIndex": 0,
+          "explanation": "The cases with 0, 1, and several repetitions distinguish behaviors that repeating the same value does not test."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Different step sizes"
+        },
+        {
+          "type": "paragraph",
+          "text": "The step does not have to be one. If i starts at 1 and increases by 2, the values are 1, 3, 5, and so on. A limit can become false without the counter ever equaling the endpoint. Therefore, checking whether the counter remains below or above a boundary usually describes a loop better than requiring exact equality with a number the step might skip."
+        },
+        {
+          "type": "paragraph",
+          "text": "In a countdown, the step and comparison must work together. Subtracting one while the condition requires i>=2 leaves i at 1 when the loop ends. Increasing i under the same condition does not bring it closer to the exit. Choosing for does not, by itself, correct the wrong direction."
+        },
+        {
+          "type": "output_prediction",
+          "id": "pasos_de_dos",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{1}; i < 8; i += 2) {\n        std::cout << i << \";\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "1;3;5;7;End"
+          ],
+          "explanation": "After 7, the counter becomes 9; it does not have to equal 8 for 9<8 to be false."
+        },
+        {
+          "type": "output_prediction",
+          "id": "for_descendente",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{5}; i >= 2; --i) {\n        std::cout << i << \";\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "5;4;3;2;End"
+          ],
+          "explanation": "The decrement moves the counter toward the endpoint excluded after 2."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "salto_extremo",
+          "question": "Analyze without running: i starts at 0, increases by 2, and repeats while i!=5. What is wrong with that exit condition?",
+          "options": [
+            "It exits at 4, because that is the last body value before 5.",
+            "The step never reaches 5; equality does not describe the end of this sequence.",
+            "It exits at 6 because != means the same as being below the limit here."
+          ],
+          "correctIndex": 1,
+          "explanation": "The generated values are even. Comparing against a loop boundary expresses the intention without depending on reaching 5."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Control state and scope"
+        },
+        {
+          "type": "paragraph",
+          "text": "A counter declared in the for header belongs to that structure and its body. It cannot be used by that name afterward. If we need to inspect the final state outside, we can declare the counter before the loop and use it in the header. This is a choice about scope and usage, not just how the code looks."
+        },
+        {
+          "type": "paragraph",
+          "text": "A simple loop is easier to read if its update happens in one place. Adding another ++i inside the body while keeping the one in the header advances twice per iteration. If we want steps of two, writing i+=2 in the header communicates that intention clearly. Do not mistake a readability recommendation for a language restriction."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contador_externo",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int i{2};\n    for (; i < 5; ++i) {\n        std::cout << i << \":\";\n    }\n    std::cout << \"Final=\" << i;\n    return 0;\n}\n",
+          "answers": [
+            "2:3:4:Final=5"
+          ],
+          "explanation": "The declaration outside the loop leaves i available afterward. Its final state comes from the last update."
+        },
+        {
+          "type": "output_prediction",
+          "id": "doble_avance_observable",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int i{0}; i < 6; ++i) {\n        std::cout << i << \":\";\n        ++i;\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "0:2:4:End"
+          ],
+          "explanation": "Each iteration increments i in the body, then again in the header. The program is valid, but that double increment must match the requirement."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "contador_fuera",
+          "question": "int i was declared in a for header. After the loop, the program writes std::cout << i; without another declaration of i. What goes wrong?",
+          "options": [
+            "i remains available and holds the last value displayed by the body.",
+            "i belongs to the scope of the for loop and is no longer available afterward.",
+            "i remains available and holds the value that made the condition false."
+          ],
+          "correctIndex": 1,
+          "explanation": "The declaration's scope ends with the for statement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rebuild and verify"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "encabezado_por_objetivo",
+          "question": "Complete the starting value, exclusive endpoint, and increment operator to display 2, 3, and 4. Enter only a number in each of the first two blanks and only the operator in the third.",
+          "template": "#include <iostream>\n\nint main() {\n    for (int i{[]}; i < []; []i) {\n        std::cout << i;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "2",
+            "5",
+            "++"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Before continuing, list the values used by the body and explain which check is the first one to be false. In the lab, you can compare for and while while keeping the same initial value, condition, and step; equivalence also requires preserving the order of the actions."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int i{1}; i <= 4; ++i) {\n        std::cout << \"Station \" << i << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reviewing the loop header"
+        },
+        {
+          "type": "note",
+          "text": "The construction starts at 2, uses the condition i<5, and updates with ++i. The body runs with 2, 3, and 4. The value 5 appears only in the check that ends the loop; it is not printed by the body."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the lab solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare your version after converting the loop. Criteria: display Station 1 through Station 4, one line per workstation, without visiting 0 or 5. With while, you must explicitly preserve initialization, the check before the body, and the update after printing."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int i{1};\n    while (i <= 4) {\n        std::cout << \"Station \" << i << \"\\n\";\n        ++i;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The first false condition checks i=5. Here i was declared before while and remains in that scope; in the original for loop, it belongs to the header's scope. The two programs are equivalent in the lines they print, even though the name's later availability differs. Moving ++i before printing changes the workstations shown."
+        }
+      ]
+    }
+  ]
+}
