@@ -1,0 +1,262 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__extremos_sin_inventar_datos",
+  "title": "Finding Extreme Values Without Inventing Data",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The minimum needs a real data point"
+        },
+        {
+          "type": "paragraph",
+          "text": "The smallest and largest elements describe values that actually occur in a collection. They do not exist in an empty collection. For a nonempty collection, we can initialize menor and mayor with the first element and update them as we visit other elements. We do not choose zero by habit: zero may not be present and could produce the wrong result when all values are positive or negative."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{7, 3, 9};\n    if (datos.empty()) {\n        std::cout << \"No extreme values\";\n    } else {\n        int menor = datos.at(0);\n        int mayor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) {\n                menor = valor;\n            }\n            if (valor > mayor) {\n                mayor = valor;\n            }\n        }\n        std::cout << menor << \" \" << mayor;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Both summaries begin with actual values from the collection. Visiting the first element again does not change them; using the same body for all elements keeps the traversal simple."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The property maintained at every step"
+        },
+        {
+          "type": "paragraph",
+          "text": "After each visit, menor is the minimum of the elements seen so far and mayor is their maximum. If the new value is smaller than the previous minimum, it replaces it; otherwise, that minimum remains correct. The same reasoning applies to the maximum, using the opposite comparison."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{5, 2, 8, 2};\n    int menor = datos.at(0);\n    int mayor = datos.at(0);\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n        if (valor > mayor) { mayor = valor; }\n    }\n    std::cout << menor << \":\" << mayor;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "2:8"
+          ],
+          "explanation": "Repeated twos do not change the minimum; eight is the largest value."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "menor equals three and the current value is six. What should happen when searching for the minimum?",
+          "options": [
+            "Keep three.",
+            "Add the two values.",
+            "Always replace it with six."
+          ],
+          "correctIndex": 0,
+          "explanation": "This visit does not offer a value smaller than the minimum already found."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zero does not replace an extreme value"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 7};\n    int menor = 0;\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n    }\n    std::cout << menor;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "This is an incorrect way to find the minimum of these data: it invents zero as the starting value."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which case reveals why initializing mayor to zero may be incorrect?",
+          "options": [
+            "Only long names.",
+            "All values are negative.",
+            "A collection containing positive values greater than zero."
+          ],
+          "correctIndex": 1,
+          "explanation": "Zero could remain the maximum even though it is not a value in the collection."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the index digit needed to initialize mayor using the first element of this nonempty collection.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{-4, -7};\n    int mayor = datos.at(___);\n    for (int valor : datos) {\n        if (valor > mayor) { mayor = valor; }\n    }\n    std::cout << mayor;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "The first element exists, so it provides a real initial maximum even when every value is negative."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Negative numbers and a single value"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{-8, -2, -5};\n    int menor = datos.at(0);\n    int mayor = datos.at(0);\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n        if (valor > mayor) { mayor = valor; }\n    }\n    std::cout << menor << \" \" << mayor;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "-8 -2"
+          ],
+          "explanation": "The largest negative number is the one closest to zero; we do not invent a maximum of zero."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{6};\n    int menor = datos.at(0);\n    int mayor = datos.at(0);\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n        if (valor > mayor) { mayor = valor; }\n    }\n    std::cout << menor << \" \" << mayor;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "6 6"
+          ],
+          "explanation": "With just one element, that value is both the minimum and the maximum."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "All the data values are five. What is the relationship between the minimum and the maximum?",
+          "options": [
+            "The maximum is the number of elements.",
+            "Both equal five.",
+            "The minimum must be zero."
+          ],
+          "correctIndex": 1,
+          "explanation": "Extremes summarize values, not positions or numbers of visits."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "No extreme value is different from zero"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    if (datos.empty()) {\n        std::cout << \"No extreme values\";\n    } else {\n        int menor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) { menor = valor; }\n        }\n        std::cout << menor;\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "No extreme values"
+          ],
+          "explanation": "The empty branch is selected before accessing the first position."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "An empty collection and a collection containing {0}…",
+          "options": [
+            "Cannot be represented.",
+            "Both have a default minimum of zero.",
+            "Are different: the first has no minimum, while the second has a minimum of zero."
+          ],
+          "correctIndex": 2,
+          "explanation": "We do not invent values to stand in for missing data."
+        },
+        {
+          "type": "paragraph",
+          "text": "The nonempty branch gives menor and mayor a clear scope: they exist only when the collection has elements. We do not try to use these names afterward to represent a result that might never have been computed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An extreme value versus its position"
+        },
+        {
+          "type": "paragraph",
+          "text": "Finding the smallest value does not yet tell us where it appeared. If we also need its first position, we traverse indices and change the stored position only when the value is strictly smaller than the previous best. A tie does not replace the first match. Each access remains protected by a nonempty collection and the condition i < size()."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{6, 2, 2};\n    std::size_t posicion = 0;\n    for (std::size_t i = 1; i < datos.size(); ++i) {\n        if (datos[i] < datos[posicion]) {\n            posicion = i;\n        }\n    }\n    std::cout << posicion << \":\" << datos[posicion];\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "1:2"
+          ],
+          "explanation": "The equal value at index two leaves the first position of the minimum unchanged."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "If posicion were also replaced when values are equal, what would change with repeated minima?",
+          "options": [
+            "The last occurrence would be kept instead of the first.",
+            "The minimum value would cease to exist.",
+            "The size would increase."
+          ],
+          "correctIndex": 0,
+          "explanation": "The tie-breaking rule determines which position represents the extreme value."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build and test cases that expose mistakes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a report for {4, 9, 2}: print Minimum: 2 and Maximum: 9 on separate lines. For an empty collection, print No data. Repeat with {0}, {-6}, {-7, -3, -5}, {5, 5}, and {8, 2, 8}. Write the expected results before running the program and explain how the initial extremes are chosen without assuming zero belongs to the data."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "As a follow-up, add the first position of the minimum only inside the nonempty branch. Use a collection with a repeated minimum to check the tie-breaking rule. We will not reorder the data to solve this lab."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution and review of references"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 9, 2};\n    if (datos.empty()) {\n        std::cout << \"No data\";\n    } else {\n        int menor = datos.at(0);\n        int mayor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) { menor = valor; }\n            if (valor > mayor) { mayor = valor; }\n        }\n        std::cout << \"Minimum: \" << menor << \"\\nMaximum: \" << mayor;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 7};\n    int anterior = datos.at(0);\n    for (auto& valor : datos) { valor += 2; }\n    int menor = datos.at(0);\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n    }\n    std::cout << anterior << \" \" << menor;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "3 5"
+          ],
+          "explanation": "The earlier copy retains three; the minimum is computed from the collection after its elements have been changed."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does a case containing only negative numbers check?",
+          "options": [
+            "That the maximum starts from a real element instead of an invented zero.",
+            "That indices are negative.",
+            "That the whole collection must be converted to text."
+          ],
+          "correctIndex": 0,
+          "explanation": "Test cases are chosen to challenge the justification for the initial state."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lab criteria: initialize the extremes from a real element inside the nonempty branch, keep the source collection unchanged, and find both extremes for positive, negative, and equal values; the version that reports a position must follow its tie-breaking rule."
+        }
+      ]
+    }
+  ]
+}

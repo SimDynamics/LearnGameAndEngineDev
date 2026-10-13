@@ -1,0 +1,266 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__media_y_cantidad_de_datos",
+  "title": "Calculer la moyenne lorsque des données existent",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le total divisé par le nombre d'éléments"
+        },
+        {
+          "type": "paragraph",
+          "text": "La moyenne arithmétique est la somme des valeurs divisée par leur nombre. Le dénominateur n'est pas le dernier indice : un vecteur de quatre éléments a une taille de quatre et un dernier indice de trois. Ce n'est pas non plus le nombre de valeurs distinctes : chaque observation compte, même lorsqu'une valeur se répète."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifions d'abord que des données existent. Si la collection est vide, cette formule ne définit pas de moyenne, car le dénominateur serait zéro. Nous affichons un message signalant l'absence de moyenne. Pour conserver les fractions, convertissons les quantités en double avant la division."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5};\n    if (datos.empty()) {\n        std::cout << \"Aucune moyenne\";\n    } else {\n        int suma = 0;\n        for (int valor : datos) { suma += valor; }\n        double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n        std::cout << media;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ici, sept divisé par deux donne 3.5. La conversion précède la division. Nous garderons de petites sommes entières : double ne rend pas sûr un débordement déjà survenu en additionnant dans un int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Trois résumés différents"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 6, 6};\n    int suma = 0;\n    for (int valor : datos) { suma += valor; }\n    double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n    std::cout << datos.size() << \" \" << suma << \" \" << media;\n    return 0;\n}\n",
+          "question": "La collection contient les données affichées. Écris la taille, la somme et la moyenne dans l'ordre utilisé par cout.",
+          "answers": [
+            "3 15 5"
+          ],
+          "explanation": "Trois observations totalisent quinze et leur moyenne vaut cinq. Les deux occurrences de six comptent."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Une collection contient {1, 1, 7}. Quel est le dénominateur de sa moyenne ?",
+          "options": [
+            "Deux valeurs distinctes.",
+            "Le dernier indice, deux.",
+            "Trois éléments."
+          ],
+          "correctIndex": 2,
+          "explanation": "La moyenne prend en compte toutes les observations, même répétées."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le type vers lequel nous convertissons la somme : il doit être identique au type déclaré pour media.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4};\n    int suma = 0;\n    for (int valor : datos) { suma += valor; }\n    double media = static_cast<___>(suma) / static_cast<double>(datos.size());\n    std::cout << media;\n    return 0;\n}\n",
+          "answers": [
+            "double"
+          ],
+          "explanation": "La conversion du numérateur en double a lieu avant la division."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zéro comme donnée et absence de données"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0};\n    if (datos.empty()) {\n        std::cout << \"Aucune moyenne\";\n    } else {\n        double suma = 0.0;\n        for (int valor : datos) { suma += valor; }\n        std::cout << suma / static_cast<double>(datos.size());\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Une observation de valeur zéro a une moyenne nulle ; le dénominateur vaut un."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    if (datos.empty()) {\n        std::cout << \"Aucune moyenne\";\n    } else {\n        double suma = 0.0;\n        for (int valor : datos) { suma += valor; }\n        std::cout << suma / static_cast<double>(datos.size());\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "Aucune moyenne"
+          ],
+          "explanation": "La branche du cas vide évite de calculer un quotient avec un dénominateur nul."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pourquoi n'attribuons-nous pas par défaut une moyenne nulle à une collection vide ?",
+          "options": [
+            "Parce que les observations de valeur zéro sont exclues du comptage.",
+            "Parce que l'absence de données n'équivaut pas à une moyenne valide égale à zéro.",
+            "Parce que calculer une moyenne exige au moins deux observations."
+          ],
+          "correctIndex": 1,
+          "explanation": "Chaque observation compte, même si elle vaut zéro. La collection {0} comporte une observation et sa moyenne est zéro ; la collection vide n'a aucune observation ni dénominateur positif. Le message Aucune moyenne conserve cette différence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valeurs négatives et conversion des tailles"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{-4, -1};\n    int suma = 0;\n    for (int valor : datos) { suma += valor; }\n    double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n    std::cout << media;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "-2.5"
+          ],
+          "explanation": "Convertir avant la division conserve le signe ainsi que la partie fractionnaire du total négatif."
+        },
+        {
+          "type": "paragraph",
+          "text": "size() renvoie une taille non signée. Nous ne mélangerons pas directement une somme négative int avec cette taille dans une division entière : les conversions entre types pourraient changer le sens du calcul. Convertir explicitement les deux quantités en double clarifie ici la représentation voulue."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu veux conserver une moyenne fractionnaire. Quelle suite d'opérations préserve l'information ?",
+          "options": [
+            "Convertir les quantités en double avant de diviser et vérifier qu'il existe des données.",
+            "Changer uniquement le nom du résultat pour qu'il évoque un nombre décimal.",
+            "Diviser deux entiers, puis convertir le quotient."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le moment de la conversion est important et ne remplace pas la vérification du cas vide."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mesures déjà représentées en double"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour des mesures fractionnaires, nous pouvons employer std::vector<double> et un accumulateur double dès le départ. Les valeurs et leur somme restent de précision finie. Nous choisissons des données simples pour rendre le parcours et la moyenne faciles à comprendre ; une sortie courte ne garantit pas l'exactitude de toutes les mesures possibles."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<double> medidas{1.5, 2.5, 5.0};\n    double suma = 0.0;\n    for (double medida : medidas) { suma += medida; }\n    std::cout << suma / static_cast<double>(medidas.size());\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Les trois mesures totalisent neuf ; leur moyenne vaut trois."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Une moyenne égale à trois a été affichée comme 3 par cout. Que cela prouve-t-il sur son type ?",
+          "options": [
+            "Que le résultat est forcément de type int.",
+            "Seulement le format affiché ; il peut toujours être de type double.",
+            "Qu'il y a eu trois visites."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le texte affiché ne révèle à lui seul ni le type ni le nombre d'observations."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La moyenne d'un sous-ensemble"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la question demande la moyenne des valeurs sélectionnées, le dénominateur est leur nombre, pas la taille de la collection d'origine. Il peut n'y avoir aucune valeur sélectionnée même lorsque la collection d'origine contient des éléments. Il faut vérifier ce deuxième cas vide avant de diviser."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 8};\n    double suma = 0.0;\n    int cantidad = 0;\n    for (int valor : datos) {\n        if (valor >= 4) {\n            suma += valor;\n            ++cantidad;\n        }\n    }\n    if (cantidad == 0) {\n        std::cout << \"Aucune valeur sélectionnée\";\n    } else {\n        std::cout << suma / cantidad;\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "6"
+          ],
+          "explanation": "On additionne quatre et huit, puis on divise par les deux observations sélectionnées, pas par les trois données initiales."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La collection d'origine contient trois valeurs, mais aucune ne respecte la condition. Quelle réponse convient à la moyenne des valeurs sélectionnées ?",
+          "options": [
+            "Diviser zéro par trois et appeler ce résultat la moyenne des valeurs sélectionnées.",
+            "Inventer une valeur sélectionnée.",
+            "Indiquer qu'aucune valeur n'a été sélectionnée, sans diviser par zéro."
+          ],
+          "correctIndex": 2,
+          "explanation": "Une collection d'origine non vide ne garantit pas un sous-ensemble non vide."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire et comparer des cas de test"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un rapport de moyenne pour {1, 4, 7} : il doit afficher Moyenne : 4. Pour {}, affiche Aucune donnée. Vérifie aussi {5}, {1, 2}, {-3, -1} et {0, 0} : leurs moyennes sont respectivement cinq, 1.5, -2 et zéro. Comme deuxième question, calcule la moyenne des valeurs supérieures à deux et teste un cas où aucune n'est sélectionnée."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construis ici le programme demandé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris ce que représente chaque dénominateur. Une moyenne qui semble correcte dans un cas dont le quotient est entier ne prouve pas que tu conserves les fractions ; le cas {1, 2} vérifie justement ce point."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence et révision des transformations"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Aucune donnée\";\n    } else {\n        int suma = 0;\n        for (int valor : datos) { suma += valor; }\n        double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n        std::cout << \"Moyenne : \" << media;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 4};\n    for (auto& valor : datos) { valor += 1; }\n    double suma = 0.0;\n    for (int valor : datos) { suma += valor; }\n    std::cout << suma / static_cast<double>(datos.size());\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "4"
+          ],
+          "explanation": "La moyenne est calculée après avoir transformé les données en trois et cinq."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que vérifie la répétition de l'atelier avec une seule observation ?",
+          "options": [
+            "Qu'il faut toujours arrondir.",
+            "Qu'il faut diviser par l'indice zéro.",
+            "Que la moyenne correspond à cette valeur et que le dénominateur vaut un."
+          ],
+          "correctIndex": 2,
+          "explanation": "Une seule donnée teste un cas différent du vide et des collections à plusieurs valeurs."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de l'atelier : vérifier que l'ensemble dont on veut la moyenne n'est pas vide, utiliser son nombre d'observations comme dénominateur et conserver les fractions en convertissant avant de diviser ; ne pas confondre le sous-ensemble sélectionné avec la collection d'origine."
+        }
+      ]
+    }
+  ]
+}

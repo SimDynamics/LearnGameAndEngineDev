@@ -1,0 +1,262 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__extremos_sin_inventar_datos",
+  "title": "Trouver les valeurs extrêmes sans inventer de données",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le minimum exige une donnée réelle"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les plus petites et les plus grandes valeurs décrivent des éléments qui existent dans la collection. Elles n'existent pas si celle-ci est vide. Pour une collection non vide, nous pouvons initialiser menor et mayor avec le premier élément, puis les actualiser à chaque visite. Nous ne choisissons pas zéro par habitude : il peut être absent et fausser le résultat lorsque toutes les données sont positives ou négatives."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{7, 3, 9};\n    if (datos.empty()) {\n        std::cout << \"Aucun extrême\";\n    } else {\n        int menor = datos.at(0);\n        int mayor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) {\n                menor = valor;\n            }\n            if (valor > mayor) {\n                mayor = valor;\n            }\n        }\n        std::cout << menor << \" \" << mayor;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les deux résumés commencent avec de véritables valeurs de la collection. Repasser sur le premier élément ne les modifie pas ; parcourir tous les éléments avec le même corps simplifie la boucle."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La propriété conservée à chaque étape"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après chaque visite, menor représente le minimum des éléments déjà parcourus et mayor leur maximum. Si la nouvelle valeur est inférieure au minimum précédent, elle le remplace ; sinon, le minimum reste correct. Le même raisonnement s'applique au maximum en inversant la comparaison."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{5, 2, 8, 2};\n    int menor = datos.at(0);\n    int mayor = datos.at(0);\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n        if (valor > mayor) { mayor = valor; }\n    }\n    std::cout << menor << \":\" << mayor;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "2:8"
+          ],
+          "explanation": "Les deux occurrences de deux ne modifient pas le minimum ; huit est la plus grande valeur."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "menor vaut trois et la valeur actuelle vaut six. Que faut-il faire lorsque l'on cherche le minimum ?",
+          "options": [
+            "Conserver trois.",
+            "Additionner les deux valeurs.",
+            "Toujours le remplacer par six."
+          ],
+          "correctIndex": 0,
+          "explanation": "Cette visite ne fournit pas de valeur inférieure au minimum déjà obtenu."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zéro ne remplace pas une valeur extrême"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 7};\n    int menor = 0;\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n    }\n    std::cout << menor;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Cette version calcule incorrectement le minimum des données : elle invente zéro comme valeur de départ."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel cas montre pourquoi initialiser mayor à zéro peut être incorrect ?",
+          "options": [
+            "Seulement des noms longs.",
+            "Toutes les valeurs sont négatives.",
+            "Une collection contenant des valeurs positives supérieures à zéro."
+          ],
+          "correctIndex": 1,
+          "explanation": "Zéro pourrait rester le maximum alors qu'il n'est pas une donnée de la collection."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le chiffre de l'indice qui initialise mayor avec le premier élément de cette collection non vide.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{-4, -7};\n    int mayor = datos.at(___);\n    for (int valor : datos) {\n        if (valor > mayor) { mayor = valor; }\n    }\n    std::cout << mayor;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Le premier élément existe et fournit un maximum initial réel, même lorsque toutes les données sont négatives."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valeurs négatives et élément unique"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{-8, -2, -5};\n    int menor = datos.at(0);\n    int mayor = datos.at(0);\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n        if (valor > mayor) { mayor = valor; }\n    }\n    std::cout << menor << \" \" << mayor;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "-8 -2"
+          ],
+          "explanation": "Le plus grand nombre négatif est le plus proche de zéro ; nous n'inventons pas un maximum nul."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{6};\n    int menor = datos.at(0);\n    int mayor = datos.at(0);\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n        if (valor > mayor) { mayor = valor; }\n    }\n    std::cout << menor << \" \" << mayor;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "6 6"
+          ],
+          "explanation": "Avec un seul élément, cette valeur est à la fois le minimum et le maximum."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Toutes les données valent cinq. Quelle relation existe entre le minimum et le maximum ?",
+          "options": [
+            "Le maximum sera le nombre d'éléments.",
+            "Les deux valent cinq.",
+            "Le minimum doit être zéro."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les extrêmes résument des valeurs, pas des positions ni des nombres de visites."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'absence de valeurs extrêmes est différente de zéro"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    if (datos.empty()) {\n        std::cout << \"Aucun extrême\";\n    } else {\n        int menor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) { menor = valor; }\n        }\n        std::cout << menor;\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "Aucun extrême"
+          ],
+          "explanation": "La branche du cas vide est choisie avant toute lecture de la première position."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La collection vide et la collection {0}…",
+          "options": [
+            "Ne peuvent pas être représentées.",
+            "Ont toutes deux un minimum nul par défaut.",
+            "Sont différentes : la première n'a pas de minimum et la deuxième a un minimum égal à zéro."
+          ],
+          "correctIndex": 2,
+          "explanation": "Nous n'inventons pas de valeurs pour remplacer une absence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le bloc de la branche non vide donne une portée claire à menor et mayor : ils n'existent que lorsque la collection contient des éléments. Nous n'essayons pas d'utiliser ces noms ensuite pour représenter un résultat qui n'a peut-être jamais été calculé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La valeur extrême et sa position"
+        },
+        {
+          "type": "paragraph",
+          "text": "Trouver la plus petite valeur ne nous dit pas encore où elle est apparue. Si nous avons aussi besoin de sa première position, parcourons les indices et ne modifions la position mémorisée que lorsque la valeur est strictement inférieure à la meilleure précédente. Une égalité ne remplace pas la première occurrence. Chaque accès reste protégé par une collection non vide et par i < size()."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{6, 2, 2};\n    std::size_t posicion = 0;\n    for (std::size_t i = 1; i < datos.size(); ++i) {\n        if (datos[i] < datos[posicion]) {\n            posicion = i;\n        }\n    }\n    std::cout << posicion << \":\" << datos[posicion];\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "1:2"
+          ],
+          "explanation": "L'égalité à l'indice deux conserve la première position du minimum."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Si posicion était aussi remplacé en cas d'égalité, que changerait-on pour des minimums répétés ?",
+          "options": [
+            "On conserverait la dernière occurrence au lieu de la première.",
+            "La valeur minimale cesserait d'exister.",
+            "La taille augmenterait."
+          ],
+          "correctIndex": 0,
+          "explanation": "La règle de départage détermine quelle position représente la valeur extrême."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire et tester des cas révélateurs d'erreurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un rapport pour {4, 9, 2} : affiche Minimum : 2 et Maximum : 9 sur deux lignes distinctes. Pour une collection vide, affiche Aucune donnée. Recommence avec {0}, {-6}, {-7, -3, -5}, {5, 5} et {8, 2, 8}. Écris les résultats attendus avant l'exécution et justifie comment initialiser les extrêmes sans supposer que zéro fait partie des données."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construis ici le programme demandé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour prolonger l'exercice, ajoute la première position du minimum uniquement dans la branche non vide. Utilise une collection où le minimum est répété pour vérifier la règle de départage. Nous ne changerons pas l'ordre des données pour résoudre cet atelier."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence et révision des références"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 9, 2};\n    if (datos.empty()) {\n        std::cout << \"Aucune donnée\";\n    } else {\n        int menor = datos.at(0);\n        int mayor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) { menor = valor; }\n            if (valor > mayor) { mayor = valor; }\n        }\n        std::cout << \"Minimum : \" << menor << \"\\nMaximum : \" << mayor;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 7};\n    int anterior = datos.at(0);\n    for (auto& valor : datos) { valor += 2; }\n    int menor = datos.at(0);\n    for (int valor : datos) {\n        if (valor < menor) { menor = valor; }\n    }\n    std::cout << anterior << \" \" << menor;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "3 5"
+          ],
+          "explanation": "La copie précédente conserve trois ; le minimum est calculé sur la collection déjà transformée."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que vérifie le cas où toutes les valeurs sont négatives ?",
+          "options": [
+            "Que le maximum provient d'un élément réel et non d'un zéro inventé.",
+            "Que les indices sont négatifs.",
+            "Qu'il faut convertir toute la collection en texte."
+          ],
+          "correctIndex": 0,
+          "explanation": "Les cas sont choisis pour mettre à l'épreuve la justification de l'état initial."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de l'atelier : initialiser les extrêmes avec une donnée réelle dans la branche non vide, conserver la collection d'origine et calculer les deux extrêmes pour des valeurs positives, négatives ou égales ; la variante affichant la position doit respecter sa règle de départage."
+        }
+      ]
+    }
+  ]
+}

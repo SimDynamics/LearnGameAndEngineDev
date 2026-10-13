@@ -1,0 +1,266 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__media_y_cantidad_de_datos",
+  "title": "Calculating the Mean When Data Exist",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Total divided by the number of elements"
+        },
+        {
+          "type": "paragraph",
+          "text": "The arithmetic mean is the sum of the values divided by the number of values. The denominator is not the last index: a four-element vector has size four and last index three. Nor is it the number of distinct values: every observation counts, even if the same magnitude occurs more than once."
+        },
+        {
+          "type": "paragraph",
+          "text": "First, check whether data exist. If the collection is empty, this formula does not define a mean because the denominator would be zero. We display a message indicating that no mean is available. To preserve fractional results, convert the quantities to double before dividing."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5};\n    if (datos.empty()) {\n        std::cout << \"No mean\";\n    } else {\n        int suma = 0;\n        for (int valor : datos) { suma += valor; }\n        double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n        std::cout << media;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Here, seven divided by two produces 3.5. Conversion happens before division. We will keep integer sums small; double does not make an overflow that already happened while adding into an int safe."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Three different summaries"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 6, 6};\n    int suma = 0;\n    for (int valor : datos) { suma += valor; }\n    double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n    std::cout << datos.size() << \" \" << suma << \" \" << media;\n    return 0;\n}\n",
+          "question": "The collection contains the values shown. Enter the size, sum, and mean in the order used by cout.",
+          "answers": [
+            "3 15 5"
+          ],
+          "explanation": "Three observations add up to fifteen and have a mean of five. Both occurrences of six count."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A collection contains {1, 1, 7}. What is the denominator of its mean?",
+          "options": [
+            "Two distinct values.",
+            "The last index, two.",
+            "Three elements."
+          ],
+          "correctIndex": 2,
+          "explanation": "The mean includes every observation, including repeated values."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the type to which we convert the sum: it must match the declared type of media.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4};\n    int suma = 0;\n    for (int valor : datos) { suma += valor; }\n    double media = static_cast<___>(suma) / static_cast<double>(datos.size());\n    std::cout << media;\n    return 0;\n}\n",
+          "answers": [
+            "double"
+          ],
+          "explanation": "Converting the numerator to double takes place before division."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zero as data versus no data"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0};\n    if (datos.empty()) {\n        std::cout << \"No mean\";\n    } else {\n        double suma = 0.0;\n        for (int valor : datos) { suma += valor; }\n        std::cout << suma / static_cast<double>(datos.size());\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "One observation with value zero has a mean of zero; the denominator is one."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    if (datos.empty()) {\n        std::cout << \"No mean\";\n    } else {\n        double suma = 0.0;\n        for (int valor : datos) { suma += valor; }\n        std::cout << suma / static_cast<double>(datos.size());\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "No mean"
+          ],
+          "explanation": "The empty branch avoids calculating a quotient with a zero denominator."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Why don't we assign a mean of zero to an empty collection by default?",
+          "options": [
+            "Because observations equal to zero are excluded from the data count.",
+            "Because having no data is not equivalent to a valid mean of zero.",
+            "Because calculating a mean requires at least two observations."
+          ],
+          "correctIndex": 1,
+          "explanation": "Every observation counts, even if it is zero. The collection {0} has one observation and a mean of zero; an empty collection has no observations and no positive denominator. The No mean message preserves that distinction."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Negative values and size conversions"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{-4, -1};\n    int suma = 0;\n    for (int valor : datos) { suma += valor; }\n    double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n    std::cout << media;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "-2.5"
+          ],
+          "explanation": "Converting before dividing preserves both the sign and the fractional part of a negative total."
+        },
+        {
+          "type": "paragraph",
+          "text": "size() returns an unsigned size. We will not directly mix a negative int sum with that size in integer division: conversions between types could change the calculation's meaning. Explicitly converting both quantities to double makes the intended representation clear in this formula."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You want a fractional mean. Which sequence preserves the information?",
+          "options": [
+            "Convert the quantities to double before division and check that data exist.",
+            "Change only the result's name to decimal.",
+            "Divide two integers and convert the quotient afterward."
+          ],
+          "correctIndex": 0,
+          "explanation": "The timing of the conversion matters and does not replace checking for an empty collection."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Measurements already represented as double"
+        },
+        {
+          "type": "paragraph",
+          "text": "For fractional measurements, we can use std::vector<double> and a double accumulator from the start. The values and their sum still have finite precision. We choose simple data so the traversal and mean are easy to reason about; short displayed output does not guarantee exactness for every measurement."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<double> medidas{1.5, 2.5, 5.0};\n    double suma = 0.0;\n    for (double medida : medidas) { suma += medida; }\n    std::cout << suma / static_cast<double>(medidas.size());\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "3"
+          ],
+          "explanation": "The three measurements add up to nine, so their mean is three."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A mean equal to three appeared as 3 in cout. What does this demonstrate about its type?",
+          "options": [
+            "That the result must have type int.",
+            "Only how the value is displayed; it may still have type double.",
+            "That there were three visits."
+          ],
+          "correctIndex": 1,
+          "explanation": "The displayed text alone reveals neither the type nor the number of observations."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The mean of a subset"
+        },
+        {
+          "type": "paragraph",
+          "text": "If the question asks for the mean of selected values, the denominator is the number of selected values, not the size of the original collection. No values may be selected even when the original collection contains elements. We must check that second empty case before division."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 8};\n    double suma = 0.0;\n    int cantidad = 0;\n    for (int valor : datos) {\n        if (valor >= 4) {\n            suma += valor;\n            ++cantidad;\n        }\n    }\n    if (cantidad == 0) {\n        std::cout << \"No selected values\";\n    } else {\n        std::cout << suma / cantidad;\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "6"
+          ],
+          "explanation": "Four and eight are added and divided by the two selected observations, not by the three original values."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The original collection contains three values, but none meets the condition. What is the correct response for the selected mean?",
+          "options": [
+            "Divide zero by three and call it the selected mean.",
+            "Invent a selected value.",
+            "Report that there are no selected values, without dividing by zero."
+          ],
+          "correctIndex": 2,
+          "explanation": "A nonempty source does not guarantee a nonempty subset."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build and compare test cases"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a mean report for {1, 4, 7}: it must display Mean: 4. For {}, display No data. Also check {5}, {1, 2}, {-3, -1}, and {0, 0}: their means are five, 1.5, -2, and zero, respectively. As a second question, calculate the mean of values greater than two and test a case in which none is selected."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write down what each denominator represents. A mean that appears correct in a case with an exact integer quotient does not prove you preserved fractions; the case {1, 2} tests that requirement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution and review of transformations"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"No data\";\n    } else {\n        int suma = 0;\n        for (int valor : datos) { suma += valor; }\n        double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n        std::cout << \"Mean: \" << media;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 4};\n    for (auto& valor : datos) { valor += 1; }\n    double suma = 0.0;\n    for (int valor : datos) { suma += valor; }\n    std::cout << suma / static_cast<double>(datos.size());\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "4"
+          ],
+          "explanation": "The mean is calculated after transforming the data to three and five."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does repeating the lab with a single observation verify?",
+          "options": [
+            "That rounding is always necessary.",
+            "That we must divide by index zero.",
+            "That the mean equals that value and the denominator is one."
+          ],
+          "correctIndex": 2,
+          "explanation": "One data point tests a case different from both an empty collection and several data points."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lab criteria: check that the set whose mean is requested is not empty, use its number of observations as the denominator, and preserve fractions by converting before division; do not confuse the selected subset with the original collection."
+        }
+      ]
+    }
+  ]
+}
