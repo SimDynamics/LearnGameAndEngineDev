@@ -1,0 +1,234 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__comparaciones_y_condiciones",
+  "title": "Comparaisons et conditions booléennes",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une comparaison répond à une question"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une expression peut aussi produire une valeur bool. Une comparaison comme temperatura < 0 indique si une relation est vraie ou fausse pour les valeurs actuelles. < signifie inférieur à, > supérieur à, <= inférieur ou égal à, et >= supérieur ou égal à. == teste l’égalité, tandis que != teste la différence. Chaque comparaison produit true ou false ; elle ne modifie pas ses opérandes par elle-même."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int temperatura = 7;\n    const bool bajo_cero = temperatura < 0;\n    std::cout << bajo_cero;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme affiche 0 : la condition est false. Avec le format de sortie par défaut, cout affiche false sous la forme 0 et true sous la forme 1. La valeur conservée reste de type bool. Le nom bajo_cero exprime la signification de la question et permet de réutiliser sa réponse."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis les trois réponses affichées, séparées par des espaces.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int disponibles = 9;\n    const int necesarios = 6;\n    std::cout << (disponibles > necesarios) << \" \";\n    std::cout << (disponibles == necesarios) << \" \";\n    std::cout << (disponibles != necesarios);\n    return 0;\n}\n",
+          "answers": [
+            "1 0 1"
+          ],
+          "explanation": "9 est supérieur à 6, n’est pas égal à 6 et est bien différent de 6. Chaque réponse s’affiche comme 1 ou 0."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel est le type du résultat de cantidad <= limite lorsque les deux données sont de type int ?",
+          "options": [
+            "int, parce que les données sont entières.",
+            "double, parce qu’il y a deux opérandes.",
+            "bool, parce que le résultat est une réponse vraie ou fausse."
+          ],
+          "correctIndex": 2,
+          "explanation": "L’opérateur de comparaison détermine le type de son résultat : bool."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L’égalité compte à la frontière"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un conteneur accepte au maximum 20 pièces, une quantité de 20 doit être acceptée. cantidad <= 20 inclut l’égalité à cette frontière ; cantidad < 20 l’exclut. On ne découvre pas la différence en testant seulement une valeur très petite. Teste la valeur juste avant la frontière, la frontière elle-même et la suivante : 19, 20 et 21."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les expressions « au maximum » et « au moins » demandent de décider ce qui se passe en cas d’égalité. « Moins de 20 » s’écrit avec <, tandis que « 20 ou moins » s’écrit avec <=. « Plus de 20 » utilise > et « 20 ou plus » utilise >=. Ne choisis pas l’opérateur par souvenir d’un autre exercice : traduis la consigne actuelle en comparaison."
+        },
+        {
+          "type": "fill_code",
+          "question": "L’appareil de mesure accepte au maximum 12 échantillons, y compris 12. Complète uniquement l’opérateur de comparaison.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int muestras = 12;\n    const bool aceptable = muestras ___ 12;\n    std::cout << aceptable;\n    return 0;\n}\n",
+          "answers": [
+            "<="
+          ],
+          "explanation": "<= inclut l’égalité : 12 <= 12 vaut true et s’affiche sous la forme 1."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La règle exige au moins 8 enregistrements. Quelle condition inclut la bonne frontière ?",
+          "options": [
+            "registros >= 8",
+            "registros <= 8",
+            "registros > 8"
+          ],
+          "correctIndex": 0,
+          "explanation": "Au moins 8 accepte 8 et toutes les quantités supérieures."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer n’est pas affecter"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rappelle-toi la différence vue dans l’unité précédente : ocupados = 6 enregistre une valeur et modifie l’état ; ocupados == 6 pose une question sur la valeur actuelle. L’opérateur d’égalité comporte deux signes égal. Une comparaison ne maintient pas deux objets égaux à l’avenir et ne modifie pas la donnée pour que la réponse soit true."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ocupados = 4;\n    const bool lleno = ocupados == 6;\n    std::cout << ocupados << \" \" << lleno;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 4 0. lleno est une réponse calculée avec l’état initial. Si ocupados change ensuite, lleno conserve la réponse avec laquelle il a été initialisé ; la comparaison ne se réexécute pas automatiquement. Il faudrait évaluer de nouveau l’expression pour obtenir une autre réponse."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Observe le moment de chaque comparaison et prédis les trois valeurs affichées.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int nivel = 2;\n    const bool antes = nivel == 3;\n    nivel = 3;\n    const bool despues = nivel == 3;\n    std::cout << antes << \" \" << despues << \" \" << nivel;\n    return 0;\n}\n",
+          "answers": [
+            "0 1 3"
+          ],
+          "explanation": "La première comparaison se produit lorsque nivel vaut 2. L’affectation le fait passer à 3 et la seconde comparaison produit true."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète les deux comparaisons : coincide doit être true uniquement lorsque observado et esperado sont égaux ; distinto doit être true lorsque leurs valeurs diffèrent. Écris un seul opérateur par case.",
+          "template": "#include <iostream>\n\nint main() {\n    const int esperado = 5;\n    const int observado = 7;\n    const bool coincide = observado [] esperado;\n    const bool distinto = observado [] esperado;\n    std::cout << coincide << \" \" << distinto;\n    return 0;\n}\n",
+          "answers": [
+            "==",
+            "!="
+          ],
+          "answerAlternatives": [
+            [
+              "=="
+            ],
+            [
+              "!=",
+              "not_eq"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : une frontière et deux questions"
+        },
+        {
+          "type": "note",
+          "text": "Dans l’activité précédente, == produit false et != produit true. Il n’y a eu aucune affectation à observado ni à esperado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les données sont déjà déclarées. Le programme demande si l’humidité est inférieure à 40 et si elle est exactement égale à 40. Prédis la sortie pour la valeur initiale 38 et vérifie-la. Modifie ensuite humedad à 39, 40 et 41, en exécutant une fois pour chaque cas. Conserve les deux questions et note quelles réponses changent lorsque tu franchis la frontière."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int humedad = 38;\n    const int minimo = 40;\n    const bool por_debajo = humedad < minimo;\n    const bool justo_en_minimo = humedad == minimo;\n    std::cout << por_debajo << \" \" << justo_en_minimo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Lorsque humedad vaut 40, quelles réponses sont affichées ?",
+          "options": [
+            "0 0",
+            "1 1",
+            "0 1"
+          ],
+          "correctIndex": 2,
+          "explanation": "40 n’est pas inférieur à 40, mais lui est égal. Les deux questions ne sont pas interchangeables."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel test permettrait de voir la différence entre < et <= lorsque minimo vaut 40 ?",
+          "options": [
+            "Changer le nom de l’objet humedad.",
+            "Tester humedad égal à 40.",
+            "Tester uniquement humedad égal à 10."
+          ],
+          "correctIndex": 1,
+          "explanation": "Tester la valeur de la frontière distingue une condition stricte d’une condition incluant l’égalité."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revoir la copie, l’état et la sortie"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis la ligne de sortie complète après la modification de destino.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int origen = 5;\n    int destino = origen;\n    destino = 8;\n    const bool cambio = destino != origen;\n    std::cout << \"Changement : \" << cambio << \" \" << origen << \" \" << destino;\n    return 0;\n}\n",
+          "answers": [
+            "Changement : 1 5 8"
+          ],
+          "explanation": "destino était une copie, pas un lien vers origen. Il vaut maintenant 8, origen reste à 5 et la comparaison de différence donne true."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La règle autorise exactement 3 accompagnants, sans accepter une autre quantité. Quelle comparaison traduit cette règle ?",
+          "options": [
+            "acompanantes = 3",
+            "acompanantes == 3",
+            "acompanantes >= 3"
+          ],
+          "correctIndex": 1,
+          "explanation": "== vérifie si la quantité actuelle vaut exactement 3. = effectue une affectation et >= accepte aussi les quantités supérieures."
+        },
+        {
+          "type": "note",
+          "text": "Pour une condition, précise le sens de true, celui de false et ce qui se passe en cas d’égalité. Dans ces activités, nous comparons de petites quantités de type int. Ces exercices n’établissent pas de règle générale pour comparer l’égalité exacte d’approximations à virgule flottante."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparaison après le laboratoire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les deux réponses du laboratoire, dans l’ordre d’affichage, sont 1 0 pour humedad égal à 38 et 39 ; 0 1 pour 40 ; et 0 0 pour 41. La référence conserve les deux questions : être en dessous du seuil et être exactement au minimum. Une réponse false à la première question ne prouve pas à elle seule que la valeur soit égale au minimum."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int humedad = 38;\n    const int minimo = 40;\n    const bool por_debajo = humedad < minimo;\n    const bool justo_en_minimo = humedad == minimo;\n    std::cout << por_debajo << \" \" << justo_en_minimo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie que seule l’égalité produit true à la seconde question et que le franchissement de la frontière modifie la première. Ne change pas les questions pour imposer une sortie attendue. Les comparaisons n’affectent pas de nouvelles valeurs à humedad ou minimo ; la sortie permet d’observer leurs réponses bool."
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir prédit et exécuté tes essais. L’éditeur ne note pas automatiquement ces sorties : compare-les aux critères et explique la première différence. Garde ta version si elle satisfait aux mêmes exigences."
+        }
+      ]
+    }
+  ]
+}

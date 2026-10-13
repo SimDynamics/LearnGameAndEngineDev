@@ -1,0 +1,208 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__division_y_resto",
+  "title": "Division, Remainders, and Valid Data",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Operand types determine the kind of division"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the previous unit, you saw that 7 / 2 and 7.0 / 2 produce results of different types. Now use that distinction to choose the right calculation. If both operands are int, / performs integer division: it obtains the quotient and discards the fractional part by truncating toward zero. With positive operands, 11 / 4 produces 2. If at least one operand is double, 11.0 / 4 produces 2.75."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int entero = 11 / 4;\n    const double fraccion = 11.0 / 4;\n    const double despues = 11 / 4;\n    std::cout << entero << \" \" << fraccion << \" \" << despues;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 2 2.75 2. For despues, integer division has already produced 2 before the result is converted to double to initialize the object. Changing only the destination type cannot restore a discarded fraction. If you need double division and the values are int, convert an operand before dividing, for example static_cast<double>(cantidad) / grupos."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict both results, with one space between them.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int distancia = 9;\n    const int tramos = 4;\n    const double primero = distancia / tramos;\n    const double segundo = static_cast<double>(distancia) / tramos;\n    std::cout << primero << \" \" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "2 2.25"
+          ],
+          "explanation": "primero receives the integer quotient 2. For segundo, conversion happens before /, so the result is 2.25."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The remainder is what does not fill a group"
+        },
+        {
+          "type": "paragraph",
+          "text": "The % operator gives the remainder of integer division. In 17 / 5, there are 3 complete groups and 17 % 5 leaves 2 items: 17 = 3 * 5 + 2. / and % answer different questions about the same data. % requires integer operands; it cannot be used with double. % has the same precedence as * and /, above + and -. If you combine those operations, use parentheses to group the calculation required by the task."
+        },
+        {
+          "type": "paragraph",
+          "text": "In this lesson, quantities are nonnegative integers and group sizes are positive integers. In this domain, the remainder is between 0 and size - 1. A remainder of 0 means the quantity can be divided evenly into groups. This interpretation as leftover items depends on the chosen domain; we are not defining how to group negative quantities."
+        },
+        {
+          "type": "output_prediction",
+          "question": "There are 29 tokens and each tray holds 6. Enter the quotient and remainder displayed by the program.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 29;\n    const int por_bandeja = 6;\n    std::cout << fichas / por_bandeja << \" \" << fichas % por_bandeja;\n    return 0;\n}\n",
+          "answers": [
+            "4 5"
+          ],
+          "explanation": "Four trays hold 24 tokens, leaving 5. The expression 4 * 6 + 5 reconstructs the original 29 tokens."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "With a nonnegative quantity and groups of size 4, which remainders are possible?",
+          "options": [
+            "0, 1, 2, and 3",
+            "Any number greater than 4",
+            "1, 2, 3, and 4"
+          ],
+          "correctIndex": 0,
+          "explanation": "If 4 items remained, they would make another complete group. The remainder can be 0 and is always less than 4."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose the operator according to the question"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int piezas = 23;\n    const int capacidad = 4;\n    const int cajas_completas = piezas / capacidad;\n    const int sobrantes = piezas % capacidad;\n    std::cout << \"Boxes: \" << cajas_completas << \"\\n\";\n    std::cout << \"Leftovers: \" << sobrantes;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This report shows 5 complete boxes and 3 leftover pieces. It does not calculate how many boxes are needed to store every piece: that question must also account for a partially filled box. Before programming, be precise about what each result means."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Fill in the operators to report how many complete groups can be formed and how many items are left outside those groups. Enter one operator per blank, according to the purpose of each result.",
+          "template": "#include <iostream>\n\nint main() {\n    const int cantidad = 31;\n    const int capacidad = 5;\n    const int grupos_completos = cantidad [] capacidad;\n    const int sobrantes = cantidad [] capacidad;\n    std::cout << grupos_completos << \" \" << sobrantes;\n    return 0;\n}\n",
+          "answers": [
+            "/",
+            "%"
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What verifies that 6 groups and 1 leftover item correspond to 31 items with capacity 5?",
+          "options": [
+            "6 * 5 + 1 = 31",
+            "31 * 5 = 6 + 1",
+            "6 + 1 = 31"
+          ],
+          "correctIndex": 0,
+          "explanation": "Each group represents 5 items; leftover items are added to the grouped total."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: complete hours and remaining minutes"
+        },
+        {
+          "type": "note",
+          "text": "In the previous exercise, / produces 6 and % produces 1. The names of the results helped you choose each operation before calculating."
+        },
+        {
+          "type": "paragraph",
+          "text": "The program receives its data through declared constants: total_minutos is 137, and an hour contains 60 minutes. Predict the report and run it. Then change only total_minutos to 127 and predict again. Finally, try 0 and 60. Keep the number of minutes between 0 and 600, and the divisor at 60. The required format displays ordinary numbers, without a leading zero before a single-digit minute value."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n    std::cout << horas << \" h \" << minutos << \" min\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "After changing total_minutos to 127, which report follows the required format?",
+          "options": [
+            "2 h 7 min",
+            "2 h 07 min",
+            "2 h 67 min"
+          ],
+          "correctIndex": 0,
+          "explanation": "Two hours use 120 minutes, leaving 7. The program has no instruction to add a leading zero to that number."
+        },
+        {
+          "type": "paragraph",
+          "text": "The cases 0 and 60 help test a remainder of 0. Changing one piece of data at a time makes differences easier to explain. For any minute count within the chosen domain, you can reconstruct the total as hours * 60 + minutes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An operation also requires valid data"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before applying / or % to integers, the divisor must be nonzero. Division or remainder with a zero divisor has no valid result for us to predict. Successful compilation does not guarantee the runtime values are suitable. For now, every program declares positive divisors; later we will use decisions to reject invalid data before calculating."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A report uses capacidad as the divisor when forming boxes. Besides the condition on the quantity, what must you verify?",
+          "options": [
+            "That capacidad has a short name.",
+            "That capacidad is positive in this grouping model.",
+            "That the output has at least two lines."
+          ],
+          "correctIndex": 1,
+          "explanation": "The model needs boxes with positive capacity, which also guarantees a nonzero divisor."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Review parentheses and integer division. Predict the output.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int registrados = 8;\n    const int nuevos = 3;\n    const int pares_completos = (registrados + nuevos) / 2;\n    std::cout << pares_completos;\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "explanation": "The grouped addition produces 11. Integer division by 2 counts 5 complete pairs."
+        },
+        {
+          "type": "note",
+          "text": "Integer division truncates toward zero; it does not round to the nearest integer. The exercises use small values whose representation and results fit in int, without assuming that int has the same range on every platform."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab follow-up comparison"
+        },
+        {
+          "type": "paragraph",
+          "text": "The complete lab results are 2 h 17 min for 137, 2 h 7 min for 127, 0 h 0 min for 0, and 1 h 0 min for 60. The reference calculates complete hours and remaining minutes using the same positive divisor 60; it does not add leading zeros for display."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n    std::cout << horas << \" h \" << minutos << \" min\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "For every total between 0 and 600, check two properties: the remainder is between 0 and 59, and hours * 60 + minutes reconstructs the total. The upper endpoint 600 must produce 10 h 0 min. These checks explain why two different operations are needed and why the divisor must remain positive."
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after predicting and running your tests. The editor does not automatically grade these outputs: compare them with the criteria and explain the first discrepancy. Keep your version if it has the same behavior."
+        }
+      ]
+    }
+  ]
+}

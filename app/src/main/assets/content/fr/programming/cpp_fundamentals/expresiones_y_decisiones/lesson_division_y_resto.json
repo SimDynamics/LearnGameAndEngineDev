@@ -1,0 +1,208 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__division_y_resto",
+  "title": "Division, reste et données valides",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le type des opérandes détermine la division"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans l’unité précédente, tu as vu que 7 / 2 et 7.0 / 2 produisent des résultats de types différents. Utilise maintenant cette distinction pour choisir le calcul. Si les deux opérandes sont de type int, / effectue une division entière : le quotient est obtenu en supprimant la partie fractionnaire par troncature vers zéro. Avec des opérandes positifs, 11 / 4 produit 2. Si au moins un opérande est de type double, 11.0 / 4 produit 2.75."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int entero = 11 / 4;\n    const double fraccion = 11.0 / 4;\n    const double despues = 11 / 4;\n    std::cout << entero << \" \" << fraccion << \" \" << despues;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 2 2.75 2. Pour despues, la division entière a déjà produit 2 avant la conversion en double utilisée pour initialiser l’objet. Modifier seulement le type de destination ne permet pas de récupérer une fraction perdue. Si tu as besoin d’une division en double alors que les données sont de type int, convertis un opérande avant de diviser, par exemple static_cast<double>(cantidad) / grupos."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis les deux résultats en laissant un espace entre eux.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int distancia = 9;\n    const int tramos = 4;\n    const double primero = distancia / tramos;\n    const double segundo = static_cast<double>(distancia) / tramos;\n    std::cout << primero << \" \" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "2 2.25"
+          ],
+          "explanation": "primero reçoit le quotient entier 2. Pour segundo, la conversion a lieu avant /, ce qui donne 2.25."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le reste conserve ce qui ne remplit pas un groupe"
+        },
+        {
+          "type": "paragraph",
+          "text": "L’opérateur % donne le reste d’une division entière. Avec 17 / 5, on forme 3 groupes complets et 17 % 5 laisse 2 éléments : 17 = 3 * 5 + 2. / et % répondent à des questions différentes sur les mêmes données. % exige des opérandes entiers ; il ne s’utilise pas avec double. % possède la même priorité que * et /, supérieure à celle de + et -. Si tu combines ces opérations, utilise des parenthèses pour regrouper le calcul demandé."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans cette leçon, les quantités sont des entiers non négatifs et la taille d’un groupe est un entier positif. Dans ce domaine, le reste est compris entre 0 et taille - 1. Un reste nul signifie que la quantité se répartit exactement en groupes. Cette interprétation en éléments restants dépend du domaine choisi ; nous ne définissons pas ici le partage de quantités négatives."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Il y a 29 jetons et chaque plateau peut en contenir 6. Écris le quotient et le reste affichés par le programme.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 29;\n    const int por_bandeja = 6;\n    std::cout << fichas / por_bandeja << \" \" << fichas % por_bandeja;\n    return 0;\n}\n",
+          "answers": [
+            "4 5"
+          ],
+          "explanation": "Quatre plateaux contiennent 24 jetons et il en reste 5. L’expression 4 * 6 + 5 reconstitue les 29 jetons."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Avec une quantité non négative et des groupes de taille 4, quels restes sont possibles ?",
+          "options": [
+            "0, 1, 2 et 3",
+            "N’importe quel nombre supérieur à 4",
+            "1, 2, 3 et 4"
+          ],
+          "correctIndex": 0,
+          "explanation": "S’il restait 4 éléments, ils formeraient un autre groupe complet. Le reste peut être égal à 0 et reste toujours inférieur à 4."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir l’opérateur selon la question"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int piezas = 23;\n    const int capacidad = 4;\n    const int cajas_completas = piezas / capacidad;\n    const int sobrantes = piezas % capacidad;\n    std::cout << \"Boîtes : \" << cajas_completas << \"\\n\";\n    std::cout << \"Restantes : \" << sobrantes;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce rapport montre 5 boîtes pleines et 3 pièces restantes. Il ne calcule pas le nombre total de boîtes nécessaires pour ranger toutes les pièces : cette question doit également tenir compte d’une boîte incomplète. Avant de programmer, précise le sens de chaque résultat."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète les opérateurs pour indiquer combien de groupes complets on peut former et combien d’éléments restent en dehors de ces groupes. Écris un seul opérateur par case selon le rôle de chaque résultat.",
+          "template": "#include <iostream>\n\nint main() {\n    const int cantidad = 31;\n    const int capacidad = 5;\n    const int grupos_completos = cantidad [] capacidad;\n    const int sobrantes = cantidad [] capacidad;\n    std::cout << grupos_completos << \" \" << sobrantes;\n    return 0;\n}\n",
+          "answers": [
+            "/",
+            "%"
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Qu’est-ce qui vérifie que 6 groupes et 1 élément restant correspondent à 31 éléments avec une capacité de 5 ?",
+          "options": [
+            "6 * 5 + 1 = 31",
+            "31 * 5 = 6 + 1",
+            "6 + 1 = 31"
+          ],
+          "correctIndex": 0,
+          "explanation": "Chaque groupe contient 5 éléments ; les éléments restants s’ajoutent au total regroupé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : heures complètes et minutes restantes"
+        },
+        {
+          "type": "note",
+          "text": "Dans l’activité précédente, / donne 6 et % donne 1. Les noms des résultats permettaient de choisir les opérations avant de calculer."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme reçoit ses données par des constantes déclarées : total_minutos vaut 137 et une heure contient 60 minutes. Prédis le rapport puis exécute le programme. Modifie ensuite uniquement total_minutos à 127 et recommence ta prédiction. Enfin, essaie 0 et 60. Garde un nombre de minutes compris entre 0 et 600 et un diviseur égal à 60. Le format demandé affiche les nombres ordinaires, sans ajouter de zéro devant une valeur de minutes à un seul chiffre."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n    std::cout << horas << \" h \" << minutos << \" min\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Après avoir changé total_minutos à 127, quel rapport respecte ce format ?",
+          "options": [
+            "2 h 7 min",
+            "2 h 07 min",
+            "2 h 67 min"
+          ],
+          "correctIndex": 0,
+          "explanation": "Deux heures représentent 120 minutes et il reste 7 minutes. Le programme ne contient aucune instruction ajoutant un zéro devant cette valeur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les cas 0 et 60 permettent de vérifier un reste nul. Modifier une seule donnée à la fois facilite l’explication des différences. Pour tout nombre de minutes du domaine choisi, tu peux reconstituer le total par heures * 60 + minutes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une opération exige aussi des données valides"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant d’effectuer / ou % avec des entiers, le diviseur doit être différent de zéro. Une division ou un calcul de reste avec un diviseur nul ne donne aucun résultat valide à prédire. Le fait qu’un programme compile ne garantit pas que les valeurs conviennent au moment de l’exécution. Pour l’instant, chaque programme déclare des diviseurs positifs ; plus tard, nous utiliserons des décisions pour rejeter les données invalides avant le calcul."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un rapport utilise capacidad comme diviseur pour former des boîtes. Que faut-il vérifier en plus de la condition sur la quantité ?",
+          "options": [
+            "Que capacidad ait un nom court.",
+            "Que capacidad soit positive dans ce modèle de répartition.",
+            "Que la sortie comporte au moins deux lignes."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le modèle impose des boîtes de capacité positive ; le diviseur ne peut donc pas être nul."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Revois les parenthèses et la division entière. Prédis la sortie.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int registrados = 8;\n    const int nuevos = 3;\n    const int pares_completos = (registrados + nuevos) / 2;\n    std::cout << pares_completos;\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "explanation": "L’addition entre parenthèses donne 11. La division entière par 2 compte 5 paires complètes."
+        },
+        {
+          "type": "note",
+          "text": "La division entière tronque vers zéro ; elle n’arrondit pas à l’entier le plus proche. Les exercices utilisent de petites valeurs représentables et des résultats qui tiennent dans int, sans supposer que la plage de int soit identique sur toutes les plateformes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparaison après le laboratoire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les résultats complets du laboratoire sont 2 h 17 min pour 137, 2 h 7 min pour 127, 0 h 0 min pour 0 et 1 h 0 min pour 60. La référence calcule les heures complètes et les minutes restantes avec le même diviseur positif 60 ; elle n’ajoute pas de zéros devant les nombres affichés."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int total_minutos = 137;\n    const int minutos_por_hora = 60;\n    const int horas = total_minutos / minutos_por_hora;\n    const int minutos = total_minutos % minutos_por_hora;\n    std::cout << horas << \" h \" << minutos << \" min\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour chaque total entre 0 et 600, vérifie deux propriétés : le reste est compris entre 0 et 59, et heures * 60 + minutes permet de retrouver le total. À la limite supérieure, 600 doit produire 10 h 0 min. Ces vérifications expliquent pourquoi deux opérations différentes sont nécessaires et pourquoi le diviseur doit rester positif."
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir prédit et exécuté tes essais. L’éditeur ne note pas automatiquement ces sorties : compare-les aux critères et explique la première différence. Garde ta version si elle présente le même comportement."
+        }
+      ]
+    }
+  ]
+}
