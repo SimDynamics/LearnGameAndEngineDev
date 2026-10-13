@@ -1,0 +1,394 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida",
+  "title": "Reading Data from Specified Input",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Data entering the program"
+        },
+        {
+          "type": "paragraph",
+          "text": "So far, we have defined values directly in the code. Another option is to read data supplied to the program. std::cin is the standard input stream, available through <iostream>. The expression std::cin >> cantidad; requests a value from the stream and stores it in cantidad. Here, >> indicates extraction from the stream into the variable; << is still used for output."
+        },
+        {
+          "type": "note",
+          "text": "In this lesson, we analyze code with inputs specified in the problem statement and practice actual input in the lab. Enter all the text in Prepared Input before running: cin reads data in the order supplied. Each run reads its own input from the beginning. You do not type during execution; with empty input, cin immediately encounters the end of the available data instead of waiting for the keyboard."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    std::cin >> cantidad;\n    std::cout << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "If the input is 8, a successful read replaces the initial zero with eight and the output is 8. The quantity is not computed from its previous value: it is received from the input."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A prompt is part of the output"
+        },
+        {
+          "type": "paragraph",
+          "text": "A prompt is a message telling the user what data is expected. Printing that message does not read anything: cin performs the reading. Nor does cin automatically print the input received. When predicting output, we distinguish the input specified by the task from the characters sent to cout by the program."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "The input is 12. Write only the output produced by cout, without echoing the input an extra time.",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Quantity: \";\n    int cantidad = 0;\n    std::cin >> cantidad;\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "Quantity: 12"
+          ],
+          "explanation": "The first cout prints the prompt; cin receives 12; the final cout displays the value read."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the operator that reads the integer from cin into cajas.",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n    std::cin ___ cajas;\n    std::cout << cajas;\n    return 0;\n}\n",
+          "answers": [
+            ">>"
+          ],
+          "explanation": ">> extracts input; << is used for output."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The destination type guides input"
+        },
+        {
+          "type": "paragraph",
+          "text": "The variable receiving data has a type. When reading into an int, the stream tries to interpret an integer. When reading into a double, it tries to interpret a number that may have a fractional part. When reading into a std::string, it obtains text up to a whitespace separator. Extraction does not guess our intention beyond these rules."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "The input is 2.5. What does the program print?",
+          "code": "#include <iostream>\n\nint main() {\n    double metros = 0.0;\n    std::cin >> metros;\n    std::cout << \"Meters: \" << metros;\n    return 0;\n}\n",
+          "answers": [
+            "Meters: 2.5"
+          ],
+          "explanation": "The input is successfully read into a double with value 2.5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The supplied value is a length of 1.75. Which variable can read it without losing its fractional part?",
+          "options": [
+            "double longitud = 0.0;",
+            "int longitud = 0;",
+            "bool longitud = false;"
+          ],
+          "correctIndex": 0,
+          "explanation": "The destination type double can interpret a fractional length."
+        },
+        {
+          "type": "paragraph",
+          "text": "In console examples, you commonly press Enter to submit the line you typed. That detail of the environment does not mean the line break is automatically stored as part of the value read. A stream can also receive data from a file or another source."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Text separated by whitespace"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::cin >> nombre; reads one word into a string, skipping leading whitespace. Each word obtained this way is a text token. Spaces, tabs, and line breaks separate tokens. Given the input Ana Maria, a single extraction into a std::string gets Ana; Maria remains available for a later extraction. Reading a whole line including its spaces requires other operations, which we will study later."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "The input is Ana Maria. Write the exact output.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string primera;\n    std::string segunda;\n    std::cin >> primera >> segunda;\n    std::cout << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "Ana:Maria"
+          ],
+          "explanation": "Two extractions receive two tokens. cout adds the output separator :."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "The input is three spaces, North, two spaces, and 6. What is printed?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona;\n    int cantidad = 0;\n    std::cin >> zona >> cantidad;\n    std::cout << zona << \" \" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "North 6"
+          ],
+          "explanation": "Leading spaces are skipped; North is read as text and 6 as an integer."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The input is Sector West, and cin >> zona performs a single extraction into a std::string. What text does zona receive?",
+          "options": [
+            "Sector West",
+            "Sector",
+            "An empty string because there is a space."
+          ],
+          "correctIndex": 1,
+          "explanation": "Extracting a string receives one token; the space ends the first one."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Multiple extractions and a character"
+        },
+        {
+          "type": "paragraph",
+          "text": "In std::cin >> zona >> cantidad;, extractions occur in that order: text first, then the integer. Tokens may be supplied on the same line or on different lines. With char, the usual extraction skips leading whitespace and receives one character. That can be useful for reading a simple code after a number."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "The input is 4B. What is printed?",
+          "code": "#include <iostream>\n\nint main() {\n    int numero = 0;\n    char zona = '?';\n    std::cin >> numero >> zona;\n    std::cout << zona << \"-\" << numero;\n    return 0;\n}\n",
+          "answers": [
+            "B-4"
+          ],
+          "explanation": "First, 4 is read as an integer; then B is read as a character, even though there is no intervening space."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Lia is supplied on one line and 5 on the next. What does cout display?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int unidades = 0;\n    std::cin >> nombre >> unidades;\n    unidades += 2;\n    std::cout << nombre << \" \" << unidades;\n    return 0;\n}\n",
+          "answers": [
+            "Lia 7"
+          ],
+          "explanation": "Input establishes five units, and the subsequent update adds two to that state."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Not every input meets expectations"
+        },
+        {
+          "type": "paragraph",
+          "text": "If an integer is requested but the word many arrives, that extraction does not supply the expected integer. Do not use the result as though reading had succeeded. Nor should you assume the initial value always remains unchanged after failure: the stream has a state that must be checked. We will learn how to check it and decide what to do when we introduce control flow and validation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Furthermore, reading an integer does not verify that the entire input consists of exactly one integer. Given 8.5, an extraction into int may read 8 and leave .5 unconsumed. A program must specify which format it accepts and check what it needs, rather than claiming it correctly interpreted a measurement of eight and a half."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You must read a whole-number quantity, but the input is many. Which conclusion is valid?",
+          "options": [
+            "Reading must be considered successful because the variable was initialized to zero.",
+            "The expected integer was not obtained; the failure must be detected and handled before the result is used.",
+            "cin converts any word into an equivalent count."
+          ],
+          "correctIndex": 1,
+          "explanation": "The destination type does not guarantee the input has the expected format, and an initializer is not a substitute for checking the result of an extraction."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Reading into int from 8.5 obtains an integer prefix. What does that NOT establish about the complete input?",
+          "options": [
+            "That all input was consumed and accepted in the required format.",
+            "That the int type has names.",
+            "That the code can include iostream."
+          ],
+          "correctIndex": 0,
+          "explanation": "Successfully extracting a prefix does not prove that the remaining data meets the specification."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Guided lab: read, process, and display"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running, identify the two tokens in Prepared Input: Rita and 4. Predict what each extraction stores, what cajas += 3 changes, and which characters cout prints. Run the program and compare with Rita: 7. Without changing the code, modify only the input to Leo 2 and verify Leo: 5. Repeat with a newline between the name and number: both separators work for these two tokens."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre >> cajas;\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n",
+          "initialStandardInput": "Rita 4"
+        },
+        {
+          "type": "paragraph",
+          "text": "Run it again without changing the data: it must produce the same output because the input is supplied anew from the beginning. The text in Prepared Input is sent to cin; it is not part of the source code and does not automatically appear in the output. Distinguish compilation diagnostics, program output, and runtime errors. This program assumes a single-word name and a number of boxes between zero and twenty; adding three stays within a small int. This is a precondition of the exercise, not a check implemented by the program: testing Rita 4 and Leo 2 does not show that it handles empty or malformed input."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Actual input and a review of its stages"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre >> cajas;\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "With input Rita 4, the extraction assigns nombre and cajas; the quantity is then processed and the program displays Rita: 7. The final reference keeps a simulation with values defined in the code: those definitions replace only the reading stage. The next question compares that version with the cin lab. The program shown assumes a single-word name and cajas between zero and twenty; a version accepting other inputs must check the stream, because the initial zero in cajas does not certify a successful read."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "If a program defines nombre and cajas in the source code instead of reading them with cin, which part can be checked directly?",
+          "options": [
+            "That a person was able to enter data through cin inside the app.",
+            "The processing and output for those data.",
+            "That all invalid inputs are handled correctly."
+          ],
+          "correctIndex": 1,
+          "explanation": "The simulation has known starting data; it cannot replace a real input test or error validation."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "The input is 6. Review copying and state: what is printed?",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n    std::cin >> cajas;\n    int recibidas = cajas;\n    cajas += 1;\n    std::cout << recibidas << \" \" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "6 7"
+          ],
+          "explanation": "The extraction reads six; the copy keeps six before the variable is incremented to seven."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparison reference: processing with fixed data"
+        },
+        {
+          "type": "note",
+          "text": "This comparison retains the simulation with predefined values. Use it to distinguish reading, processing, and displaying; a later exercise requires building a different program from its requirements."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lab correctness criteria: cin obtains nombre and cajas from Prepared Input; with Rita 4 it displays Rita: 7, and with Leo 2 it displays Leo: 5, preserving the processing and format. The preceding page shows the code. The comparison below sets nombre to \"Rita\" and cajas to 4: it reproduces the calculation and output but neither reads input nor demonstrates that part of the exercise."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre{\"Rita\"};\n    int cajas{4};\n    cajas = cajas + 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Here, the definitions replace only the stage of receiving the data. To change the test case in this simulation, you must edit the code; in the input lab, you keep the code and edit Prepared Input. Compare both approaches for Rita 4 and Leo 2, explaining where each value comes from, which operation transforms it, and which parts of the output cout decides."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build your own program from three inputs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a program that receives, in order, a single-word label, a number of packages, and a number of loose pieces. Each package contains five pieces. The number of packages is in 0..20, and the number of loose pieces in 0..4. This exercise assumes exactly those three valid inputs; it is not yet an input validator. All calculations fit in int within this domain."
+        },
+        {
+          "type": "paragraph",
+          "text": "Read all three values with cin; calculate the total from those inputs. Display LABEL: TOTAL, with a colon and a space and no additional prompt. Prepared Input Iris 4 2 should yield Iris: 22. Do not hard-code Iris, four, or two as program values. The editor provides only the headers and main: decide which variables to use, their types, input order, calculation, and output."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Build the input, calculation, and output from the requirements.\n    return 0;\n}\n",
+          "initialStandardInput": "Iris 4 2"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running, write down which token will go into each variable and the expected output. Keep the code unchanged while testing different inputs: Leo 0 4 must produce Leo: 4; Vera 3 1, Vera: 16; Sol 20 4, Sol: 104. Also place the three tokens on separate lines and rerun without changing the input. Reading, calculation, and formatting must remain correct."
+        },
+        {
+          "type": "note",
+          "text": "The reference appears after your attempt. Passing these valid test cases does not show that the program detects missing data, words in place of integers, or extra suffixes. Checking the stream and accepting a complete input format will be developed later."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Follow-up reference: read rather than substitute input"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: three extractions into suitable types and in the specified order; no case-specific quantity or label hard-coded; total calculated as five pieces per package plus loose pieces; the input text preserved; output containing a colon and a space. The reference produces Iris: 22 for the initial input. Other implementations satisfying the same contract are valid."
+        },
+        {
+          "type": "paragraph",
+          "text": "The number five expresses a rule of the problem, not data obtained from the sample input. Replacing the inputs with constants loses the reading step even if the first output looks right. To change the case, edit Prepared Input while keeping the program unchanged. Initializing to zero helps describe the starting state, but does not certify that an extraction succeeded."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__regla_y_datos_de_entrada",
+          "question": "When the input changes to Vera 3 1, what must remain unchanged in a program satisfying the requirements?",
+          "options": [
+            "The label Iris and result 22, because they were in the first case.",
+            "The value four in paquetes, regardless of cin.",
+            "The rule of five pieces per package and the output format, using the three new input values."
+          ],
+          "correctIndex": 2,
+          "explanation": "Reading supplies new data; the program retains its rule and formatting. The new output is Vera: 16."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review input, copying, and updates"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__copia_despues_de_lectura",
+          "language": "cpp",
+          "question": "The input contains Kiro and 3 on the first line, then 1 on the second. Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    int originales{paquetes};\n    paquetes += 1;\n    std::cout << nombre << ' ' << total << ' ' << originales << ' ' << paquetes;\n    return 0;\n}\n",
+          "answers": [
+            "Kiro 16 3 4"
+          ],
+          "explanation": "The total was calculated from three packages and one loose piece. originales retains three; then paquetes changes to four. Neither the copy nor the previously calculated total updates automatically."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__repetir_desde_la_entrada",
+          "question": "You run the reference twice with the same three valid inputs, without editing either code or input. Why do the outputs match?",
+          "options": [
+            "Each run receives the input from the beginning and recalculates the total.",
+            "The second run skips cin and reuses the previous run's local variables.",
+            "cout reads the input and decides which value to print."
+          ],
+          "correctIndex": 0,
+          "explanation": "Local variables are created anew; Prepared Input is supplied to each run from the beginning."
+        },
+        {
+          "type": "paragraph",
+          "text": "Follow-up review: return to the minimal editor and build the program with another label before looking at the reference. Transfer task: explicitly change the rule to four pieces per package and the range of loose pieces to 0..3. Design a case that distinguishes the two rules, one with zero packages, and one at the maximum; predict the output from the input before running."
+        }
+      ]
+    }
+  ]
+}

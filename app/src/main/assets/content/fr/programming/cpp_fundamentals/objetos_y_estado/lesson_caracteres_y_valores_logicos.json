@@ -1,0 +1,309 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos",
+  "title": "Caractères et valeurs logiques",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un symbole et une séquence ne sont pas la même chose"
+        },
+        {
+          "type": "paragraph",
+          "text": "char permet de conserver une unité de caractère. Nous utiliserons des symboles simples, comme des lettres latines sans accent, des chiffres et des signes : char pasillo = 'D'; conserve D. Un littéral de caractère est entouré d’apostrophes. Le texte \"D\" est entouré de guillemets doubles et peut initialiser une std::string. Les deux peuvent s’afficher de la même manière, mais leurs types et leurs fonctions diffèrent."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    char pasillo = 'D';\n    std::string etiqueta = \"D\";\n    std::cout << pasillo << \" \" << etiqueta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le symbole D identifie une allée ; la chaîne peut s’allonger pour la décrire avec davantage de texte. À lui seul, char ne représente pas n’importe quel symbole de n’importe quel système d’écriture : certains caractères et émojis nécessitent plusieurs unités. Pour conserver du texte général, nous utilisons std::string ; nous étudierons plus tard les détails d’encodage."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Écris uniquement un littéral de caractère représentant la lettre K.",
+          "code": "#include <iostream>\n\nint main() {\n    char fila = ___;\n    std::cout << fila;\n    return 0;\n}\n",
+          "answers": [
+            "'K'"
+          ],
+          "explanation": "Les apostrophes délimitent le littéral de caractère ; elles ne sont pas affichées."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le symbole d’un chiffre n’est pas une quantité"
+        },
+        {
+          "type": "paragraph",
+          "text": "char marca = '5'; conserve le symbole 5, utile sur une étiquette. int cantidad = 5; conserve une quantité que l’on peut compter. L’affichage habituel montre 5 dans les deux cas. Le choix de la représentation dépend de ce que nous voulons faire : conserver un symbole ou effectuer un calcul numérique, pas seulement de ce qui apparaît à l’écran."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    char marca = '8';\n    int cantidad = 8;\n    std::cout << marca << \" \" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "8 8"
+          ],
+          "explanation": "Une même apparence à l’écran peut provenir de types différents. marca conserve un caractère, tandis que cantidad conserve un entier."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dans ces exemples, une ligne est identifiée par la seule lettre R. Quelle déclaration exprime cela ?",
+          "options": [
+            "bool fila = false;",
+            "int fila = 0;",
+            "char fila = 'R';"
+          ],
+          "correctIndex": 2,
+          "explanation": "char conserve le symbole choisi. Un entier ou une valeur logique aurait un autre rôle."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle est la différence entre '5' et 5 ?",
+          "options": [
+            "Ils sont indiscernables, puisqu’ils peuvent tous deux afficher 5.",
+            "Le second est toujours du texte.",
+            "Le premier est un littéral de caractère, le second un littéral entier."
+          ],
+          "correctIndex": 2,
+          "explanation": "La syntaxe détermine le type du littéral ; l’apparence de la sortie ne suffit pas à les distinguer."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les séparateurs aussi peuvent être des caractères"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un espace peut s’écrire ' ' et un saut de ligne '\\n'. Chacun de ces littéraux contient une unité de caractère, même si la séquence d’échappement du saut de ligne s’écrit avec deux signes dans le code. La sortie l’interprète comme un saut de ligne, pas comme une barre oblique inverse suivie de n. On peut aussi affecter un nouveau symbole à une variable char."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    char marca = 'A';\n    std::cout << marca << '\\n';\n    marca = 'B';\n    std::cout << marca;\n    return 0;\n}\n",
+          "answers": [
+            "A\nB"
+          ],
+          "explanation": "La première sortie affiche A puis un saut de ligne. L’affectation remplace la marque par B pour la seconde sortie."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète uniquement les littéraux de caractère pour afficher X, un espace, puis Y.",
+          "template": "#include <iostream>\n\nint main() {\n    char primera = [];\n    char segunda = [];\n    std::cout << primera << ' ' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "'X'",
+            "'Y'"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution et texte extensible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les littéraux précédents sont 'X' et 'Y'. L’espace de sortie figure explicitement entre les variables. Nous pouvons ajouter un caractère à la fin d’une chaîne : mensaje += '!'; conserve la séquence précédente et lui ajoute le nouveau signe."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string mensaje = \"Prêt\";\n    char signo = '!';\n    mensaje += signo;\n    std::cout << mensaje;\n    return 0;\n}\n",
+          "answers": [
+            "Prêt!"
+          ],
+          "explanation": "+= ajoute le caractère à la chaîne et conserve le texte résultant dans mensaje."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu veux conserver une étiquette pouvant contenir plusieurs mots. Quel type répond à ce besoin ?",
+          "options": [
+            "std::string",
+            "char",
+            "int"
+          ],
+          "correctIndex": 0,
+          "explanation": "std::string représente une séquence de caractères. Les exemples avec char conservent chacun une seule unité."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une donnée qui n’a que deux valeurs possibles"
+        },
+        {
+          "type": "paragraph",
+          "text": "bool est le type des valeurs logiques. Il possède les valeurs true et false, que l’on interprète comme vrai et faux. Ce sont des mots du langage, pas du texte entre guillemets. Par exemple, bool disponible = true; conserve un indicateur affirmant que quelque chose est disponible. Pour le moment, nous affectons directement ces valeurs ; dans l’unité suivante, nous apprendrons à les obtenir par comparaison et à les utiliser pour prendre des décisions."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    bool disponible = true;\n    bool pendiente = false;\n    std::cout << disponible << \" \" << pendiente;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le format normal utilisé ici, cout affiche un bool sous la forme 1 pour true et 0 pour false. Cela ne transforme pas la donnée en compteur. Un indicateur décrit une condition à deux possibilités ; une quantité d’éléments peut prendre beaucoup de valeurs différentes."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Une marque indique si une vérification est encore en attente. Quel type représente directement ces deux possibilités ?",
+          "options": [
+            "std::string avec un code composé de nombreux chiffres",
+            "Un nom sans variable",
+            "bool"
+          ],
+          "correctIndex": 2,
+          "explanation": "bool possède true et false. Le nombre de vérifications, si l’on voulait les compter, serait une donnée différente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Type, état et copie d’un indicateur"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    bool disponible = true;\n    bool registro = disponible;\n    disponible = false;\n    std::cout << registro << \" \" << disponible;\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "registro copie true avant la modification. disponible passe ensuite à false ; les objets restent indépendants."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le littéral logique indiquant que la vérification n’est pas encore terminée.",
+          "code": "#include <iostream>\n\nint main() {\n    bool terminada = ___;\n    std::cout << terminada;\n    return 0;\n}\n",
+          "answers": [
+            "false"
+          ],
+          "explanation": "false est la valeur logique fausse ; dans le format habituel, elle s’affiche sous la forme 0."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Qu’est-ce qui distingue true de \"true\" dans le code ?",
+          "options": [
+            "Ce sont deux valeurs bool, car ils contiennent les mêmes lettres.",
+            "Ce sont deux chaînes qui conservent le mot true.",
+            "true est une valeur logique ; \"true\" est un littéral de texte."
+          ],
+          "correctIndex": 2,
+          "explanation": "Les guillemets changent la catégorie du littéral, et pas seulement son apparence."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    auto listo = true;\n    listo = false;\n    std::cout << listo;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "auto déduit bool à partir de true. L’affectation change la valeur en false sans changer le type."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construis un registre de symboles et d’indicateurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le laboratoire, représente une allée par le caractère C et un indicateur appelé abierta valant true. La sortie doit afficher Allée : C sur une ligne puis Ouverte : 1 sur la suivante. Modifie ensuite les deux valeurs en D et false : la sortie doit devenir Allée : D et Ouverte : 0. Explique pourquoi chaque donnée utilise un type différent."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Écris ton programme ici.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cet exercice n’exige ni comparaison ni décision : nous pratiquons la représentation et l’affectation. Écris les bons littéraux et vérifie le format de sortie en te rappelant ce qui a été appris sur les lignes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution et choix de représentation"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    char pasillo = 'C';\n    bool abierta = true;\n    std::cout << \"Allée : \" << pasillo << '\\n';\n    std::cout << \"Ouverte : \" << abierta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le caractère conserve un identifiant ; le bool conserve une possibilité parmi deux. La sortie rend visibles leurs rôles. Ajouter des guillemets à true le transformerait en texte et ce ne serait plus le même littéral logique."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Nous avons quatre portes et souhaitons conserver à la fois leur nombre et le fait que l’entrée est autorisée. Quelle paire exprime ces données ?",
+          "options": [
+            "bool cantidad = true; et int habilitada = 4;",
+            "int cantidad = 4; et bool habilitada = true;",
+            "bool cantidad = true; et char habilitada = '4';"
+          ],
+          "correctIndex": 1,
+          "explanation": "Une quantité et un indicateur ont des significations différentes et exigent des représentations adaptées."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    char inicial = 'M';\n    std::string nombre = \"Module\";\n    bool preparado = false;\n    std::cout << nombre << \" \" << inicial << \" \" << preparado;\n    return 0;\n}\n",
+          "answers": [
+            "Module M 0"
+          ],
+          "explanation": "Une chaîne, un caractère et une valeur logique sont combinés sans confondre leurs types."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence : un caractère et un indicateur"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et vérifié ton essai. La référence présente une implémentation possible ; les critères permettent de reconnaître d’autres solutions correctes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. pasillo représente le seul caractère C et abierta représente la valeur logique true. La première sortie comprend deux lignes : Allée : C et Ouverte : 1. En modifiant les valeurs en D et false, on obtient Allée : D et Ouverte : 0. Utilise char et bool, ou une représentation équivalente qui conserve ces significations ; dans cet exercice, garde l’affichage logique par défaut : 1 pour true et 0 pour false."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    char pasillo{'C'};\n    bool abierta{true};\n    std::cout << \"Allée : \" << pasillo << '\\n';\n    std::cout << \"Ouverte : \" << abierta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les apostrophes constituent un littéral de caractère ; true constitue la valeur logique. Modifie uniquement les valeurs initiales en 'D' et false pour vérifier la seconde version. Aucune décision n’est nécessaire : cout affiche les valeurs conservées selon leurs types."
+        }
+      ]
+    }
+  ]
+}

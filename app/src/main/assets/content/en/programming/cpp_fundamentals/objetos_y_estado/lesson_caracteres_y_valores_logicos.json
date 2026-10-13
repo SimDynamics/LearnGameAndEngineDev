@@ -1,0 +1,309 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__caracteres_y_valores_logicos",
+  "title": "Characters and Boolean Values",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One symbol is not the same as a sequence"
+        },
+        {
+          "type": "paragraph",
+          "text": "char can store a single character unit. We will use simple symbols such as unaccented Latin letters, digits, and punctuation: char pasillo = 'D'; stores D. A character literal uses single quotes. The text \"D\" uses double quotes and can initialize a std::string. They may look identical when printed, but have different types and purposes."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    char pasillo = 'D';\n    std::string etiqueta = \"D\";\n    std::cout << pasillo << \" \" << etiqueta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The symbol D identifies an aisle; the string can grow to describe it with more text. By itself, char cannot represent every symbol from every writing system: some characters and emojis require multiple units. For general text, we use std::string and will explore encoding details later."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Enter only a character literal representing the letter K.",
+          "code": "#include <iostream>\n\nint main() {\n    char fila = ___;\n    std::cout << fila;\n    return 0;\n}\n",
+          "answers": [
+            "'K'"
+          ],
+          "explanation": "Single quotes delimit the character literal; the quotes are not printed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The symbol for a digit is not a quantity"
+        },
+        {
+          "type": "paragraph",
+          "text": "char marca = '5'; stores the symbol 5, useful for a label. int cantidad = 5; stores a quantity we can count. The usual output displays 5 in both cases. Choosing a representation depends on whether we want to store a symbol or calculate with a number, not merely on what appears on screen."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output, without including quotation marks from the code.",
+          "code": "#include <iostream>\n\nint main() {\n    char marca = '8';\n    int cantidad = 8;\n    std::cout << marca << \" \" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "8 8"
+          ],
+          "explanation": "The same output appearance can come from different types. marca stores a character, while cantidad stores an integer."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In these examples, one letter R identifies a row. Which declaration represents that?",
+          "options": [
+            "bool fila = false;",
+            "int fila = 0;",
+            "char fila = 'R';"
+          ],
+          "correctIndex": 2,
+          "explanation": "char stores the chosen symbol. An integer or a Boolean would play a different role."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What is the difference between '5' and 5?",
+          "options": [
+            "They cannot be distinguished because both can print 5.",
+            "The second is always text.",
+            "The first is a character literal and the second is an integer literal."
+          ],
+          "correctIndex": 2,
+          "explanation": "Syntax determines the literal's type; the final appearance alone does not distinguish them."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separators can be characters, too"
+        },
+        {
+          "type": "paragraph",
+          "text": "A space can be written as ' '; a newline can be written as '\\n'. These literals contain one character unit, even though the newline escape is written with two symbols in code. Output interprets it as a line break, not as a backslash followed by n. A char variable can also receive a new symbol by assignment."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output, without including quotation marks from the code.",
+          "code": "#include <iostream>\n\nint main() {\n    char marca = 'A';\n    std::cout << marca << '\\n';\n    marca = 'B';\n    std::cout << marca;\n    return 0;\n}\n",
+          "answers": [
+            "A\nB"
+          ],
+          "explanation": "The first output writes A and a newline. The assignment changes the marker to B for the second output."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Fill in only the character literals needed to print X, a space, and Y.",
+          "template": "#include <iostream>\n\nint main() {\n    char primera = [];\n    char segunda = [];\n    std::cout << primera << ' ' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "'X'",
+            "'Y'"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution and expandable text"
+        },
+        {
+          "type": "paragraph",
+          "text": "The preceding literals are 'X' and 'Y'. The output space appears explicitly between the variables. We can append a character to a string: mensaje += '!'; keeps the preceding sequence and adds the new symbol."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output, without including quotation marks from the code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string mensaje = \"Ready\";\n    char signo = '!';\n    mensaje += signo;\n    std::cout << mensaje;\n    return 0;\n}\n",
+          "answers": [
+            "Ready!"
+          ],
+          "explanation": "+= appends the character to the string and stores the resulting text in mensaje."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You need to store a label that may contain several words. Which type meets this need?",
+          "options": [
+            "std::string",
+            "char",
+            "int"
+          ],
+          "correctIndex": 0,
+          "explanation": "std::string represents a sequence of characters. The char examples each store one unit."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A value with only two possibilities"
+        },
+        {
+          "type": "paragraph",
+          "text": "bool is the type for logical values. It has the values true and false, which mean true and false in ordinary language. They are language keywords, not quoted text. For example, bool disponible = true; stores a flag indicating that something is available. For now, we assign these values directly; in the next unit, we will learn how comparisons produce them and how to use them to make decisions."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    bool disponible = true;\n    bool pendiente = false;\n    std::cout << disponible << \" \" << pendiente;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the normal format used here, cout displays a bool as 1 for true and 0 for false. That does not turn the value into a counter. A flag describes one of two possibilities; a count of items can have many different values."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A flag indicates whether a review is pending. Which type directly represents those two possibilities?",
+          "options": [
+            "std::string containing a many-digit code",
+            "A name without a variable",
+            "bool"
+          ],
+          "correctIndex": 2,
+          "explanation": "bool has the values true and false. The number of reviews would be a separate piece of data if we needed to count them."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Type, state, and copying a flag"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output, without including quotation marks from the code.",
+          "code": "#include <iostream>\n\nint main() {\n    bool disponible = true;\n    bool registro = disponible;\n    disponible = false;\n    std::cout << registro << \" \" << disponible;\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "registro copies true before the change. disponible then becomes false; the objects remain independent."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the logical literal indicating that the review is not yet finished.",
+          "code": "#include <iostream>\n\nint main() {\n    bool terminada = ___;\n    std::cout << terminada;\n    return 0;\n}\n",
+          "answers": [
+            "false"
+          ],
+          "explanation": "false is the false logical value; in the default output format, it appears as 0."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What distinguishes true from \"true\" in the code?",
+          "options": [
+            "Both are bool values because they contain the same letters.",
+            "Both are strings that store the word true.",
+            "true is a logical value; \"true\" is a string literal."
+          ],
+          "correctIndex": 2,
+          "explanation": "Quotation marks change the kind of literal, not just its appearance."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output, without including quotation marks from the code.",
+          "code": "#include <iostream>\n\nint main() {\n    auto listo = true;\n    listo = false;\n    std::cout << listo;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "auto deduces bool from true. Assignment changes the value to false without changing its type."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a record of symbols and flags"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lab, represent an aisle using the character C and a flag named abierta with value true. Display Aisle: C on one line and Open: 1 on the next. Then change both values to D and false: the output should become Aisle: D and Open: 0. Explain why each piece of data uses a different type."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Write your program here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This experiment needs no comparison or decision: we are practicing representation and assignment. Write the correct literals and check the output format, recalling what you learned about lines."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution and choice of representation"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    char pasillo = 'C';\n    bool abierta = true;\n    std::cout << \"Aisle: \" << pasillo << '\\n';\n    std::cout << \"Open: \" << abierta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The character stores an identifier; the bool stores one of two possibilities. The output communicates their roles. Putting quotes around true would make it text rather than the same logical literal."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "There are four doors. We need to store both their number and whether the entrance is enabled. Which pair represents those pieces of data?",
+          "options": [
+            "bool cantidad = true; and int habilitada = 4;",
+            "int cantidad = 4; and bool habilitada = true;",
+            "bool cantidad = true; and char habilitada = '4';"
+          ],
+          "correctIndex": 1,
+          "explanation": "A count and a flag have different meanings and need suitable representations."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output, without including quotation marks from the code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    char inicial = 'M';\n    std::string nombre = \"Module\";\n    bool preparado = false;\n    std::cout << nombre << \" \" << inicial << \" \" << preparado;\n    return 0;\n}\n",
+          "answers": [
+            "Module M 0"
+          ],
+          "explanation": "A string, a character, and a logical value are combined without confusing their types."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution: A character and a flag"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and testing your own attempt. The reference presents one possible implementation; the criteria also allow other correct solutions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. pasillo represents the single character C and abierta represents the logical value true. The first output has two lines: Aisle: C and Open: 1. Changing their values to D and false produces Aisle: D and Open: 0. Use char and bool, or an equivalent representation that preserves these meanings; for this experiment, keep the default Boolean formatting: 1 for true and 0 for false."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    char pasillo{'C'};\n    bool abierta{true};\n    std::cout << \"Aisle: \" << pasillo << '\\n';\n    std::cout << \"Open: \" << abierta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Single quotes form a character literal; true forms the logical value. Change only the initial values to 'D' and false to test the second version. No decision is needed: cout prints the stored values according to their types."
+        }
+      ]
+    }
+  ]
+}

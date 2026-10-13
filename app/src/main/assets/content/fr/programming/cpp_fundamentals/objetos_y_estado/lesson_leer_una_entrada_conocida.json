@@ -1,0 +1,394 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida",
+  "title": "Lire des données avec une entrée spécifiée",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les données qui arrivent au programme"
+        },
+        {
+          "type": "paragraph",
+          "text": "Jusqu’à présent, nous avons défini les valeurs dans le code lui-même. Une autre possibilité consiste à lire les données fournies au programme. std::cin est le flux d’entrée standard, disponible avec <iostream>. L’expression std::cin >> cantidad; demande la lecture d’une valeur et son stockage dans cantidad. Ici, le symbole >> indique une extraction du flux vers la variable ; << reste utilisé pour la sortie."
+        },
+        {
+          "type": "note",
+          "text": "Dans cette leçon, nous analysons du code avec une entrée précisée dans l’énoncé, puis nous pratiquons la lecture réelle dans le laboratoire. Saisis tout le texte dans Entrée préparée avant l’exécution : cin lit les données dans l’ordre où elles sont fournies. Chaque exécution lit sa propre entrée depuis le début. On ne saisit rien pendant l’exécution ; avec une entrée vide, cin rencontre immédiatement la fin des données disponibles sans attendre le clavier."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad = 0;\n    std::cin >> cantidad;\n    std::cout << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si l’entrée contient 8, une lecture réussie remplace le zéro initial par huit et la sortie affiche 8. Ici, la quantité n’est pas calculée à partir de l’ancienne valeur : elle provient de l’entrée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une invite fait partie de la sortie"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une invite est un message indiquant quelle donnée est attendue. Afficher ce message ne lit rien : cin effectue la lecture. Il n’affiche pas non plus automatiquement la donnée reçue. Dans nos prédictions, nous distinguons l’entrée indiquée par l’énoncé des caractères que le programme transmet à cout."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "L’entrée fournie est 12. Écris uniquement la sortie produite par cout, sans recopier l’entrée une fois de plus.",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Quantité : \";\n    int cantidad = 0;\n    std::cin >> cantidad;\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "Quantité : 12"
+          ],
+          "explanation": "Le premier cout affiche l’invite ; cin reçoit 12 ; le dernier cout affiche la valeur lue."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement l’opérateur qui lit l’entier depuis cin vers cajas.",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n    std::cin ___ cajas;\n    std::cout << cajas;\n    return 0;\n}\n",
+          "answers": [
+            ">>"
+          ],
+          "explanation": ">> effectue l’extraction ; << correspond à la sortie."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le type de destination guide la lecture"
+        },
+        {
+          "type": "paragraph",
+          "text": "La variable qui reçoit une donnée possède un type. Lors d’une lecture vers int, le flux tente d’interpréter un entier. Vers double, il tente d’interpréter un nombre pouvant comporter une partie fractionnaire. Vers std::string, il obtient du texte jusqu’à un séparateur d’espace blanc. Au-delà de ces règles, l’extraction ne devine pas notre intention."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "L’entrée fournie est 2.5. Qu’affiche le programme ?",
+          "code": "#include <iostream>\n\nint main() {\n    double metros = 0.0;\n    std::cin >> metros;\n    std::cout << \"Mètres : \" << metros;\n    return 0;\n}\n",
+          "answers": [
+            "Mètres : 2.5"
+          ],
+          "explanation": "La lecture conserve une valeur double valide égale à 2.5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La donnée fournie est une longueur de 1.75. Quelle variable permet de la lire en conservant sa partie fractionnaire ?",
+          "options": [
+            "double longitud = 0.0;",
+            "int longitud = 0;",
+            "bool longitud = false;"
+          ],
+          "correctIndex": 0,
+          "explanation": "Le type de destination double permet d’interpréter cette longueur décimale."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans les exemples de console, on appuie souvent sur Entrée pour transmettre la ligne saisie. Ce détail de l’environnement ne signifie pas que le saut de ligne est automatiquement enregistré comme partie de la valeur lue. Un flux peut aussi recevoir ses données depuis un fichier ou une autre source."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Du texte séparé par des espaces"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::cin >> nombre; lit un mot dans une chaîne en ignorant les espaces initiaux. Chaque mot obtenu ainsi est un jeton de texte. Les espaces, tabulations et sauts de ligne séparent les jetons. Avec l’entrée Ana Maria, une seule extraction vers std::string reçoit Ana ; Maria reste disponible pour une extraction suivante. Lire une ligne entière avec ses espaces nécessite d’autres opérations que nous étudierons plus tard."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "L’entrée fournie est Ana Maria. Écris la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string primera;\n    std::string segunda;\n    std::cin >> primera >> segunda;\n    std::cout << primera << \":\" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "Ana:Maria"
+          ],
+          "explanation": "Deux extractions reçoivent deux jetons. Le séparateur de sortie : est ajouté par cout."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "L’entrée contient trois espaces, Nord, deux espaces et 6. Qu’affiche le programme ?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona;\n    int cantidad = 0;\n    std::cin >> zona >> cantidad;\n    std::cout << zona << \" \" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "Nord 6"
+          ],
+          "explanation": "Les espaces initiaux sont ignorés ; Nord est lu comme du texte et 6 comme un entier."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "L’entrée est Secteur Ouest et une seule extraction cin >> zona est exécutée vers std::string. Quel texte reçoit zona ?",
+          "options": [
+            "Secteur Ouest",
+            "Secteur",
+            "Une chaîne vide, car il existe un espace."
+          ],
+          "correctIndex": 1,
+          "explanation": "L’extraction d’une string reçoit un jeton ; l’espace termine le premier."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Plusieurs extractions et un caractère"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans std::cin >> zona >> cantidad;, les extractions ont lieu dans cet ordre : le texte d’abord, puis l’entier. Les jetons peuvent se trouver sur la même ligne ou sur des lignes différentes. Avec char, l’extraction habituelle ignore les espaces initiaux et reçoit un caractère. Cela peut servir à lire un code simple après un nombre."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "L’entrée fournie est 4B. Qu’affiche le programme ?",
+          "code": "#include <iostream>\n\nint main() {\n    int numero = 0;\n    char zona = '?';\n    std::cin >> numero >> zona;\n    std::cout << zona << \"-\" << numero;\n    return 0;\n}\n",
+          "answers": [
+            "B-4"
+          ],
+          "explanation": "On lit d’abord 4 comme entier, puis B comme caractère, même sans espace entre les deux."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "L’entrée contient Lia sur une ligne et 5 sur la suivante. Qu’affiche cout ?",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int unidades = 0;\n    std::cin >> nombre >> unidades;\n    unidades += 2;\n    std::cout << nombre << \" \" << unidades;\n    return 0;\n}\n",
+          "answers": [
+            "Lia 7"
+          ],
+          "explanation": "L’entrée établit cinq unités, puis la mise à jour augmente cette valeur de deux."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Toutes les entrées ne correspondent pas aux attentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un entier est demandé, mais que le mot beaucoup arrive, l’extraction ne fournit pas l’entier attendu. Il ne faut pas exploiter le résultat comme si la lecture avait réussi. Il ne faut pas non plus supposer que la valeur initiale reste toujours inchangée en cas d’échec : le flux possède un état qu’il faut vérifier. Nous apprendrons à le contrôler et à choisir une réponse en abordant les décisions et la validation."
+        },
+        {
+          "type": "paragraph",
+          "text": "De plus, lire un entier ne vérifie pas que toute l’entrée se compose exactement d’un entier. Avec 8.5, une extraction vers int peut lire 8 et laisser .5 non consommé. Le programme doit préciser le format accepté et vérifier les conditions nécessaires, plutôt que d’affirmer avoir correctement interprété une mesure de huit et demi."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu dois lire une quantité entière, mais l’entrée fournie est beaucoup. Quelle conclusion est valable ?",
+          "options": [
+            "La lecture doit être considérée comme valide, puisque la variable était initialisée à zéro.",
+            "L’entier attendu n’a pas été obtenu ; il faut détecter et traiter l’échec avant d’utiliser le résultat.",
+            "cin convertit n’importe quel mot en une quantité équivalente."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le type ne garantit pas que l’entrée respecte le format attendu, et une initialisation ne remplace pas la vérification du résultat de la lecture."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Lire vers int à partir de 8.5 obtient un préfixe entier. Que cela ne permet-il PAS de conclure sur l’entrée complète ?",
+          "options": [
+            "Que toute l’entrée a été consommée et acceptée dans le format requis.",
+            "Que le type int possède des noms.",
+            "Que le code puisse inclure iostream."
+          ],
+          "correctIndex": 0,
+          "explanation": "Réussir à extraire un préfixe ne prouve pas que les données restantes respectent la spécification."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire guidé : lire, traiter et afficher"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant l’exécution, repère les deux jetons de l’Entrée préparée : Rita et 4. Prédis ce que stocke chaque extraction, ce que modifie cajas += 3 et les caractères produits par cout. Exécute et compare avec Rita: 7. Sans modifier le code, remplace uniquement l’entrée par Leo 2 et vérifie Leo: 5. Recommence en séparant le nom et le nombre par un saut de ligne : l’extraction de ces deux jetons accepte les deux séparateurs."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre >> cajas;\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n",
+          "initialStandardInput": "Rita 4"
+        },
+        {
+          "type": "paragraph",
+          "text": "Relance le programme sans modifier les données : il doit reproduire la même sortie, car l’entrée est fournie depuis le début à chaque exécution. Le texte d’Entrée préparée est transmis à cin ; il n’appartient pas au code et n’apparaît pas automatiquement dans la sortie. Distingue les diagnostics de compilation, la sortie du programme et les erreurs d’exécution. Ce programme suppose un nom d’un seul mot et un nombre de boîtes compris entre zéro et vingt ; ajouter trois reste dans un petit int. C’est une précondition de l’activité, pas une vérification effectuée par le programme : tester Rita 4 et Leo 2 ne prouve pas la gestion d’une entrée vide ou incorrecte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lecture réelle et retour sur ses étapes"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int cajas = 0;\n    std::cin >> nombre >> cajas;\n    cajas += 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec l’entrée Rita 4, la lecture initialise nombre et cajas ; la quantité est ensuite traitée et le résultat affiché est Rita: 7. La référence finale conserve une simulation où les valeurs sont définies dans le code : ces définitions ne remplacent que l’étape de lecture. La question suivante compare cette version au laboratoire utilisant cin. Le programme présenté suppose un nom d’un seul mot et cajas entre zéro et vingt ; une version acceptant d’autres entrées doit vérifier le flux, car le zéro initial de cajas ne prouve pas une lecture correcte."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Si un programme définit nombre et cajas directement dans le code sans utiliser cin, quelle partie peut-il vérifier directement ?",
+          "options": [
+            "Qu’une personne a pu saisir des données avec cin dans l’application.",
+            "Le traitement et la sortie pour ces données.",
+            "Que toute entrée invalide est correctement gérée."
+          ],
+          "correctIndex": 1,
+          "explanation": "La simulation possède des données initiales connues ; elle ne remplace ni un test de lecture réelle ni la validation des erreurs."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "L’entrée fournie est 6. Revois la copie et l’état : qu’affiche le programme ?",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 0;\n    std::cin >> cajas;\n    int recibidas = cajas;\n    cajas += 1;\n    std::cout << recibidas << \" \" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "6 7"
+          ],
+          "explanation": "La lecture donne six ; la copie conserve six avant que la variable n’augmente à sept."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence comparative : traitement de données fixées"
+        },
+        {
+          "type": "note",
+          "text": "La comparaison suivante conserve la simulation avec des valeurs fixées. Utilise-la pour distinguer lecture, traitement et présentation ; une activité ultérieure demandera de construire un autre programme à partir de ses exigences."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction du laboratoire : cin obtient nombre et cajas depuis Entrée préparée ; avec Rita 4, il affiche Rita: 7, et avec Leo 2, Leo: 5, en conservant le traitement et le format. La page précédente montre son code. La comparaison suivante fixe nombre à \"Rita\" et cajas à 4 : elle reproduit le calcul et la sortie, mais n’effectue aucune lecture et ne valide donc pas cette partie de l’exercice."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre{\"Rita\"};\n    int cajas{4};\n    cajas = cajas + 3;\n    std::cout << nombre << \": \" << cajas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ici, les définitions remplacent seulement l’étape de réception des données. Pour changer de cas dans cette simulation, il faut modifier le code ; dans le laboratoire de lecture, tu conserves le code et modifies Entrée préparée. Compare les deux démarches pour Rita 4 et Leo 2 et explique d’où vient chaque valeur, quelle opération la transforme et quelle partie de la sortie est décidée par cout."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire son propre programme à partir de trois données"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un programme qui reçoit, dans cet ordre, une étiquette d’un seul mot, une quantité de paquets et une quantité de pièces isolées. Chaque paquet contient cinq pièces. Le nombre de paquets appartient à 0..20 et celui de pièces isolées à 0..4. Cette activité suppose exactement ces trois données valides ; elle ne constitue pas encore un vérificateur d’entrée. Tous les calculs tiennent dans un int pour ce domaine."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lis les trois données depuis cin ; le total doit être calculé à partir de celles-ci. Affiche ÉTIQUETTE: TOTAL, avec deux-points et un espace, sans invite supplémentaire. Avec Entrée préparée Iris 4 2, on obtient Iris: 22. Ne fixe pas Iris, quatre ou deux comme valeurs dans le programme. L’éditeur fournit seulement les en-têtes et main : à toi de choisir les variables, leurs types, l’ordre de lecture, le calcul et la sortie."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construis la lecture, le calcul et l'affichage selon la consigne.\n    return 0;\n}\n",
+          "initialStandardInput": "Iris 4 2"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant l’exécution, note quel jeton ira dans chaque variable et quelle sortie tu prévois. Conserve le code quand tu changes l’entrée : Leo 0 4 doit produire Leo: 4 ; Vera 3 1, Vera: 16 ; Sol 20 4, Sol: 104. Répartis aussi les trois jetons sur plusieurs lignes et répète l’exécution sans modifier l’entrée. La lecture, le calcul et le format doivent être préservés."
+        },
+        {
+          "type": "note",
+          "text": "La référence se trouve après ta tentative. Réussir ces cas valides ne prouve pas la détection de données manquantes, de mots là où des entiers sont attendus, ou d’un suffixe supplémentaire. La vérification du flux et l’acceptation d’un format complet seront étudiées plus tard."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : lire sans substituer les données"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    std::cout << nombre << \": \" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : trois extractions vers des types appropriés et dans l’ordre indiqué ; aucune quantité propre au cas ni étiquette fixée dans le code ; total calculé comme cinq pièces par paquet plus les pièces isolées ; texte lu conservé ; sortie avec deux-points et un espace. La référence produit Iris: 22 avec l’entrée initiale. Toute autre organisation respectant le même contrat convient."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le cinq exprime une règle du problème, pas une donnée reçue de l’exemple. Remplacer les entrées par des constantes supprime la lecture, même si la première sortie est identique. Pour changer de cas, modifie Entrée préparée en conservant le programme. L’initialisation à zéro aide à décrire l’état initial, mais ne prouve pas qu’une extraction a réussi."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__regla_y_datos_de_entrada",
+          "question": "Lorsque l’entrée devient Vera 3 1, qu’est-ce qui doit rester inchangé dans un programme conforme à la consigne ?",
+          "options": [
+            "L’étiquette Iris et le résultat 22, car ils figurent dans le premier cas.",
+            "La valeur quatre dans la variable paquetes, indépendamment de cin.",
+            "La règle de cinq pièces par paquet et le format de sortie, en utilisant les trois nouvelles données."
+          ],
+          "correctIndex": 2,
+          "explanation": "La lecture apporte d’autres données ; le programme conserve la règle et le format. La nouvelle sortie est Vera: 16."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver lecture, copie et mise à jour"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__copia_despues_de_lectura",
+          "language": "cpp",
+          "question": "L’entrée contient Kiro et 3 sur la première ligne, puis 1 sur la suivante. Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre;\n    int paquetes{0};\n    int sueltas{0};\n    std::cin >> nombre >> paquetes >> sueltas;\n    int total{(5 * paquetes) + sueltas};\n    int originales{paquetes};\n    paquetes += 1;\n    std::cout << nombre << ' ' << total << ' ' << originales << ' ' << paquetes;\n    return 0;\n}\n",
+          "answers": [
+            "Kiro 16 3 4"
+          ],
+          "explanation": "Le total a été calculé avec trois paquets et une pièce isolée. originales conserve trois ; paquetes passe ensuite à quatre. Ni la copie ni le total déjà calculé ne se mettent à jour automatiquement."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__objetos_y_estado__leer_una_entrada_conocida__repetir_desde_la_entrada",
+          "question": "Tu exécutes deux fois la référence avec les trois mêmes données valides, sans modifier ni le code ni l’entrée. Pourquoi les sorties coïncident-elles ?",
+          "options": [
+            "Chaque exécution reçoit les données depuis le début et recalcule le total.",
+            "La seconde exécution ignore cin et réutilise les variables locales de la précédente.",
+            "cout lit l’entrée et décide quelle valeur afficher."
+          ],
+          "correctIndex": 0,
+          "explanation": "Les variables locales sont recréées ; Entrée préparée est fournie à chaque exécution depuis le début."
+        },
+        {
+          "type": "paragraph",
+          "text": "Exercice de révision : retourne à l’éditeur minimal et construis le programme avec une autre étiquette avant de regarder la référence. Transfert : change explicitement la règle à quatre pièces par paquet et le domaine des pièces isolées à 0..3. Imagine un cas distinguant les deux règles, un cas avec zéro paquet et un autre au maximum ; prédis la sortie à partir des données avant l’exécution."
+        }
+      ]
+    }
+  ]
+}
