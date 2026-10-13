@@ -1,0 +1,240 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__objetos_valores_y_tipos",
+  "title": "Objects, Values, and Types",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A place to store a piece of data"
+        },
+        {
+          "type": "paragraph",
+          "text": "A station has six helmets available. If the program needs to use this quantity several times, it can store it in an object. Here, an object means a region of memory associated with data; we are not yet talking about classes or object-oriented programming. Its type determines what kinds of values and operations the object supports."
+        },
+        {
+          "type": "paragraph",
+          "text": "A variable gives that object a name. In int cascos = 6, int indicates the integer type, cascos is the name chosen for the variable, and 6 is its initial value. An integer represents a quantity without a fractional part, within a finite range. Using cascos later lets us access the stored value without repeating the number in every statement."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cascos = 6;\n    std::cout << cascos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 6. The output statement receives the value of the variable: it does not print the name cascos. The name belongs to the code we read; the value is the data the program works with."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguishing name, type, and value"
+        },
+        {
+          "type": "paragraph",
+          "text": "Think of a box with a label. The label cascos lets us identify it; the designation int tells us what it can contain; 6 is its current content. This comparison helps us follow programs, but does not mean we must draw the exact physical storage. Each object exists according to its type's rules."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In int visitantes = 14;, what does visitantes represent?",
+          "options": [
+            "The initial numerical value.",
+            "The name used to refer to the object.",
+            "The object's type."
+          ],
+          "correctIndex": 1,
+          "explanation": "int is the type, visitantes is the name, and 14 is the initial value."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the integer type used for quantities in this lesson, this time to store nine bicycles.",
+          "code": "#include <iostream>\n\nint main() {\n    ___ bicicletas = 9;\n    std::cout << bicicletas;\n    return 0;\n}\n",
+          "answers": [
+            "int",
+            "signed",
+            "signed int",
+            "int signed"
+          ],
+          "explanation": "int represents integer values; the definition stores 9 under the name bicicletas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including quotation marks from the code.",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 12;\n    std::cout << \"boxes: \" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "boxes: 12"
+          ],
+          "explanation": "The part inside quotation marks is fixed text; cajas outside quotation marks supplies the stored number."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reading data does not change it"
+        },
+        {
+          "type": "paragraph",
+          "text": "The same variable can appear several times as output data. Reading its value does not erase or reduce it. In the following program, no statement changes what botellas contains."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including quotation marks from the code.",
+          "code": "#include <iostream>\n\nint main() {\n    int botellas = 4;\n    std::cout << botellas << \" / \" << botellas;\n    return 0;\n}\n",
+          "answers": [
+            "4 / 4"
+          ],
+          "explanation": "Both reads observe the same value. Sending it to output does not change the variable."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Write the two output lines, preserving the newline between them.",
+          "code": "#include <iostream>\n\nint main() {\n    int saldo = 8;\n    std::cout << \"balance\" << \"\\n\" << saldo;\n    return 0;\n}\n",
+          "answers": [
+            "balance\n8"
+          ],
+          "explanation": "The string literal prints a written label; the variable prints its value."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Why do two reads of the same variable produce the same value when nothing changes it?",
+          "options": [
+            "Every output statement creates a different variable.",
+            "The second output statement retrieves text from the first message.",
+            "The value is preserved between statements."
+          ],
+          "correctIndex": 2,
+          "explanation": "Memory retains the data; cout receives its value rather than somehow replaying an earlier output."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choosing a representation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Not all data represents whole-number quantities. A length of 1.25 meters requires a numerical representation that supports fractions; a label such as Sector 4 is text, even though it contains a digit; a yes-or-no response can be represented by a Boolean value. We will study these representations in the coming lessons. Choosing a type starts with understanding what the data means, not just looking for digits."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A program must add up the number of tables in two rooms. What representation fits the number of tables?",
+          "options": [
+            "Text that says tables.",
+            "A character containing the first letter of the name.",
+            "An integer that counts the tables."
+          ],
+          "correctIndex": 2,
+          "explanation": "Counting complete objects requires a whole-number quantity; text may describe it but does not serve the same purpose."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A box identifier is 0042, and its two leading zeros must be preserved. What do we need to represent?",
+          "options": [
+            "A text label.",
+            "The result of a division.",
+            "A quantity to be added."
+          ],
+          "correctIndex": 0,
+          "explanation": "0042 is an identifier. Preserving its characters matters more than treating it as a quantity."
+        },
+        {
+          "type": "note",
+          "text": "A type restricts the operations and values that are possible. It does not, by itself, verify that the data correctly describes the real world: a negative integer can be legal in C++ yet make no sense as a number of tables."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build before comparing"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lab, use the requirements to write a program that stores the number of keys in a workshop and displays Keys: 7. Use a variable named llaves with the value 7. Then change only its initial value to 11: the message should become Keys: 11 without changing the output statement. Predict both results before running the program."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Write your program here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Check the fixed text, the value, and the space between them separately. If the message does not change when the variable changes, check whether you printed a fixed number or the variable name inside quotation marks. The lab preserves your latest code draft when you reopen the lesson. If you want to compare several versions, save a separate copy of each one outside the editor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One solution and a new reading"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int llaves = 7;\n    std::cout << \"Keys: \" << llaves;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The variable stores the data, and the output statement uses it. Changing 7 to 11 in its definition changes its initial content; the same output statement still expresses the same purpose."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Recall what you learned about lines: what are the two exact output lines?",
+          "code": "#include <iostream>\n\nint main() {\n    int estantes = 3;\n    std::cout << \"Zone A\\n\";\n    std::cout << estantes << \" shelves\";\n    return 0;\n}\n",
+          "answers": [
+            "Zone A\n3 shelves"
+          ],
+          "explanation": "The first statement produces text and a newline. The second combines a value with explanatory text."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the name that must be read to print 13.",
+          "code": "#include <iostream>\n\nint main() {\n    int paquetes = 13;\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "paquetes"
+          ],
+          "explanation": "The name accesses the object's value; \"paquetes\" in quotation marks would print fixed text."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution: Number of keys"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and checking your own attempt. The reference shows one possible implementation; the criteria help you recognize other correct solutions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: the variable is named llaves and stores the integer 7; the output statement uses that variable. The output must be Keys: 7, with a space after the colon. Changing only its initial value to 11 must make the same statement produce Keys: 11. Equivalent forms of declaration and output are acceptable if they meet these conditions. In this reference, int llaves{7}; creates and initializes the integer llaves with the value 7, just like int llaves = 7; for this data."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int llaves{7};\n    std::cout << \"Keys: \" << llaves;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Keys: is fixed text; llaves supplies the current value. Change {7} to {11} without changing the output statement. Always printing the literal 7 or the string \"llaves\" does not satisfy the experiment, even if the first output looks correct."
+        }
+      ]
+    }
+  ]
+}

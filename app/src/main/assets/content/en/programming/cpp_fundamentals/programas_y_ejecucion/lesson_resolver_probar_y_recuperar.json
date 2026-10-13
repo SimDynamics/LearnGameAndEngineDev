@@ -1,0 +1,218 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__resolver_probar_y_recuperar",
+  "title": "Solve, Test, and Recall What You Learned",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A new requirement"
+        },
+        {
+          "type": "paragraph",
+          "text": "We will build a notice for a station: it must display exactly two lines, Station open and Access from the north. First state the expected output; then decide how to produce it using the instructions you know. The program does not need to read data or perform calculations. A small solution is appropriate because the problem is small too."
+        },
+        {
+          "type": "paragraph",
+          "text": "Writing the expected output before writing code helps distinguish what we want from what we actually write. When the two differ, we can identify the difference precisely: incorrect text, a missing separator, or a different order. A vague impression that the program \"looks right\" cannot do that."
+        },
+        {
+          "type": "fill_code",
+          "id": "literal_informe",
+          "question": "Write a single string literal, with double quotation marks and a newline escape, that displays Station open and Access from the north on two lines. Do not add a final newline.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "\"Station open\\nAccess from the north\""
+          ],
+          "explanation": "The newline escape separates the two lines within a single string literal."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "evidencia_aviso",
+          "question": "What should you compare to check this notice?",
+          "options": [
+            "The observed output against the two required lines and their order.",
+            "Only whether a comment describes the goal.",
+            "Only the number of lines in the source code."
+          ],
+          "correctIndex": 0,
+          "explanation": "The success criterion concerns the visible result: content, separation, and order."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Guided comparison with another version"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall the required output from the previous page and examine another way of producing it. This guided check connects different code structures with the same behavior. Next, you will build a new notice yourself in the lab."
+        },
+        {
+          "type": "output_prediction",
+          "id": "aviso_por_partes",
+          "question": "Predict the output. Write what appears, without the code's quotation marks; preserve spaces and line breaks between parts of the message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Station\" << \" open\\n\";\n    std::cout << \"Access from the north\";\n    return 0;\n}\n",
+          "answers": [
+            "Station open\nAccess from the north"
+          ],
+          "explanation": "The pieces of the first text retain their space; the escape sequence starts the second line."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dos_soluciones",
+          "question": "Two programs organize their insertions differently but produce exactly the required notice. What criterion lets us accept both solutions for this task?",
+          "options": [
+            "Accept only the program that reproduces the model solution's code.",
+            "Accept both because they produce the same required output.",
+            "Accept both even if they omit spaces required by the specification."
+          ],
+          "correctIndex": 1,
+          "explanation": "A task may have several correct implementations. Comparing their behavior lets us recognize them."
+        },
+        {
+          "type": "paragraph",
+          "text": "Having several valid solutions does not mean every difference is irrelevant. Here the task specifies a particular output; later we can also compare readability, ease of modification, and testing. Equivalence is defined with respect to a particular property, not how similar the code looks."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall symbols and context"
+        },
+        {
+          "type": "output_prediction",
+          "id": "recuperar_comentarios",
+          "question": "Predict the output. Preserve the separator and the spaces around it exactly as produced by the program; the source code's formatting is not part of the message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    // Show a separator between areas.\n    std::cout << \"East\" << \" | \" << \"West\";\n    return 0;\n}\n",
+          "answers": [
+            "East | West"
+          ],
+          "explanation": "The comment explains the intent; the middle string literal produces the separator and its surrounding spaces."
+        },
+        {
+          "type": "output_prediction",
+          "id": "recuperar_comillas",
+          "question": "Predict the output. Include the quotation marks that appear in the message and represent its internal newline; omit the quotation marks that only delimit the literal.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Code: \\\"A7\\\"\\nEnd\";\n    return 0;\n}\n",
+          "answers": [
+            "Code: \"A7\"\nEnd"
+          ],
+          "explanation": "The escaped quotation marks are part of the data, and the newline puts End on another line."
+        },
+        {
+          "type": "fill_code",
+          "id": "recuperar_punto_coma",
+          "question": "Complete only the statement terminator, without changing its message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Box 8\"___\n    return 0;\n}\n",
+          "answers": [
+            ";"
+          ],
+          "explanation": "We restore the terminator of an output statement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build independently in the lab"
+        },
+        {
+          "type": "paragraph",
+          "text": "Use the lab to create a card with three lines: Workshop, Shift B, and Material ready. Before writing code, note the expected output outside the editor. Complete the body of main, use the elements you have practiced, and decide where to insert newlines. Compile, compare the output with your prediction, and correct specific differences."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Write the instructions for the card here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "The lab lets you write several solutions. This task is checked by observing the output; the code does not receive an automatic grade. After testing one correct version, change the shift to C without modifying the other lines and check what stays the same."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cambio_localizado",
+          "question": "You change the message Shift B to Shift C and keep the other insertions. What should change on the card?",
+          "options": [
+            "Only the displayed shift.",
+            "The shift and the text on the other two lines.",
+            "The shift and the separation between all three lines."
+          ],
+          "correctIndex": 0,
+          "explanation": "Changing one piece of data in the message does not require changing the program structure."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose how to investigate a failure"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_compilacion",
+          "question": "The tool rejects the program before executing it. What should you do first?",
+          "options": [
+            "Assume compiling and running are exactly the same thing.",
+            "Read the diagnostic and check the syntax and names near the indicated location.",
+            "Compare only output messages that have not been produced."
+          ],
+          "correctIndex": 1,
+          "explanation": "We first need a valid version that can be built; then we can compare its behavior."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_logica",
+          "question": "The program compiles and runs, but two words appear together when there should be a space. What should you check?",
+          "options": [
+            "The spacing between statements in the source file.",
+            "Whether each statement is on a different source-code line.",
+            "The characters inserted as a separator in the output."
+          ],
+          "correctIndex": 2,
+          "explanation": "The separator must be among the inserted characters; spaces in the code outside string literals do not produce it."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before continuing, explain in your own words which part makes the output facility available, where execution begins, how the message is supplied, and how to verify it. If you can copy the example but cannot change it to produce different output, revisit the construction activities. In the next units we will recall these ideas as programs begin to include data and decisions."
+        },
+        {
+          "type": "note",
+          "text": "Primary source for this unit: program construction and execution (Stroustrup, 2024, chapters 0–1). The explanations, examples, and exercises in this course were written for this learning path."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the lab solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "Review this after creating and testing your card. Criteria: three lines containing Workshop, Shift B, and Material ready; after changing the shift, only the second line becomes Shift C. Newlines must remain in place, and the other two lines must not change."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Workshop\\n\";\n    std::cout << \"Shift B\\n\";\n    std::cout << \"Material ready\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "For the second test, change only B to C inside the second string literal. You can also combine the card into a single literal containing two newline escapes. Check the requirement against the output characters; you do not need to copy this reference's code structure exactly. If your version fails, first identify the line or separator that differs, then change only what explains that difference."
+        }
+      ]
+    }
+  ]
+}

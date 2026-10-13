@@ -1,0 +1,218 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__resolver_probar_y_recuperar",
+  "title": "Résoudre, tester et réutiliser les acquis",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une nouvelle exigence"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous allons créer une annonce pour une gare : elle doit afficher exactement deux lignes, Station ouverte et Accès par le nord. Formule d'abord la sortie attendue, puis décide comment la produire avec les instructions connues. Le programme n'a besoin ni de lire des données ni de faire des calculs. Une solution simple convient, puisque le problème est lui aussi simple."
+        },
+        {
+          "type": "paragraph",
+          "text": "Écrire la sortie attendue avant le code aide à distinguer notre intention de ce que nous finissons par programmer. S'il existe une différence, nous pouvons la décrire précisément : texte incorrect, séparateur manquant ou ordre différent. Une impression vague selon laquelle le programme « a l'air correct » ne suffit pas."
+        },
+        {
+          "type": "fill_code",
+          "id": "literal_informe",
+          "question": "Écris un seul littéral de chaîne, avec ses guillemets doubles et la séquence d'échappement de saut de ligne, pour afficher Station ouverte et Accès par le nord sur deux lignes. N'ajoute pas de saut final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "\"Station ouverte\\nAccès par le nord\""
+          ],
+          "explanation": "La séquence d'échappement sépare les deux lignes à l'intérieur d'un seul littéral."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "evidencia_aviso",
+          "question": "Que faut-il comparer pour vérifier cette annonce ?",
+          "options": [
+            "La sortie observée aux deux lignes exigées et à leur ordre.",
+            "Seulement la présence d'un commentaire décrivant l'objectif.",
+            "Seulement le nombre de lignes du code source."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le critère de réussite concerne le résultat visible : le contenu, la séparation et l'ordre."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer pas à pas une autre version"
+        },
+        {
+          "type": "paragraph",
+          "text": "Retrouve la sortie exigée à la page précédente et observe une autre façon de la produire. Cette vérification guidée permet de relier des organisations différentes du code à un même comportement. Ensuite, tu construiras toi-même une nouvelle annonce dans le laboratoire."
+        },
+        {
+          "type": "output_prediction",
+          "id": "aviso_por_partes",
+          "question": "Prédis la sortie. Écris ce qui apparaît sans les guillemets du code ; conserve les espaces et les sauts de ligne entre les parties du message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Station\" << \" ouverte\\n\";\n    std::cout << \"Accès par le nord\";\n    return 0;\n}\n",
+          "answers": [
+            "Station ouverte\nAccès par le nord"
+          ],
+          "explanation": "Les parties du premier texte conservent leur espace ; la séquence d'échappement commence la deuxième ligne."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "dos_soluciones",
+          "question": "Deux programmes organisent leurs insertions différemment, mais produisent exactement l'annonce demandée. Quel critère permet d'accepter les deux solutions pour cette tâche ?",
+          "options": [
+            "Accepter seulement celui qui reproduit le code de la solution modèle.",
+            "Accepter les deux parce qu'ils produisent la même sortie exigée.",
+            "Accepter les deux même s'ils omettent des espaces demandés."
+          ],
+          "correctIndex": 1,
+          "explanation": "Une tâche peut admettre plusieurs solutions correctes. La comparaison du comportement permet de le reconnaître."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'existence de plusieurs solutions valides ne signifie pas que toutes les différences sont sans importance. Ici, une sortie précise est exigée ; nous pourrons ensuite comparer la lisibilité, la facilité de modification et les tests. L'équivalence se définit par rapport à une propriété donnée, pas par la simple ressemblance du code."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver les symboles et leur contexte"
+        },
+        {
+          "type": "output_prediction",
+          "id": "recuperar_comentarios",
+          "question": "Prédis la sortie. Conserve le séparateur et ses espaces exactement tels que le programme les produit ; la mise en forme du code source ne fait pas partie du message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    // Affiche un séparateur entre les zones.\n    std::cout << \"Est\" << \" | \" << \"Ouest\";\n    return 0;\n}\n",
+          "answers": [
+            "Est | Ouest"
+          ],
+          "explanation": "Le commentaire explique l'intention ; le littéral central produit le séparateur et les espaces qui l'entourent."
+        },
+        {
+          "type": "output_prediction",
+          "id": "recuperar_comillas",
+          "question": "Prédis la sortie. Inclus les guillemets du message et représente son saut de ligne interne ; omets les guillemets qui ne servent qu'à délimiter le littéral.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Code : \\\"A7\\\"\\nFin\";\n    return 0;\n}\n",
+          "answers": [
+            "Code : \"A7\"\nFin"
+          ],
+          "explanation": "Les guillemets échappés font partie des données et le saut de ligne place Fin sur une autre ligne."
+        },
+        {
+          "type": "fill_code",
+          "id": "recuperar_punto_coma",
+          "question": "Complète uniquement le terminateur de l'instruction, sans modifier son message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Boîte 8\"___\n    return 0;\n}\n",
+          "answers": [
+            ";"
+          ],
+          "explanation": "Nous rétablissons le terminateur d'une instruction d'affichage."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire de façon autonome dans le laboratoire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Utilise le laboratoire pour créer une fiche de trois lignes : Atelier, Équipe B et Matériel préparé. Avant de programmer, note cette sortie attendue en dehors de l'éditeur. Complète le corps de main, utilise les éléments que tu as pratiqués et décide où insérer les sauts de ligne. Compile, compare la sortie à ta prédiction et corrige les différences précises."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Écris ici les instructions de la fiche.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Le laboratoire te permet d'écrire plusieurs solutions. Cette tâche se vérifie en observant la sortie ; le code n'est pas noté automatiquement. Après avoir testé une version correcte, remplace l'équipe B par l'équipe C sans modifier les autres lignes et vérifie ce qui reste identique."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cambio_localizado",
+          "question": "Tu remplaces le message Équipe B par Équipe C et conserves les autres insertions. Que doit-il changer sur la fiche ?",
+          "options": [
+            "Uniquement l'équipe affichée.",
+            "L'équipe et le texte des deux autres lignes.",
+            "L'équipe et la séparation entre les trois lignes."
+          ],
+          "correctIndex": 0,
+          "explanation": "Changer une donnée du message n'exige pas de modifier la structure du programme."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir comment examiner une erreur"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_compilacion",
+          "question": "L'outil rejette le programme avant de l'exécuter. Quelle est la première action appropriée ?",
+          "options": [
+            "Supposer que compiler et exécuter sont exactement la même opération.",
+            "Lire le diagnostic et vérifier la syntaxe et les noms dans le contexte indiqué.",
+            "Comparer uniquement des messages de sortie qui n'ont pas été produits."
+          ],
+          "correctIndex": 1,
+          "explanation": "Il faut d'abord obtenir une version valide pouvant être construite ; ensuite, nous pourrons comparer son comportement."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_logica",
+          "question": "Le programme se compile et s'exécute, mais deux mots sont collés alors qu'un espace était nécessaire. Que faut-il vérifier ?",
+          "options": [
+            "L'espacement entre les instructions dans le fichier source.",
+            "Le fait que chaque instruction se trouve sur une ligne différente du code source.",
+            "Les caractères insérés comme séparateur dans la sortie."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le séparateur doit faire partie des caractères insérés ; les espaces du code hors des littéraux ne le produisent pas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de continuer, explique avec tes propres mots quel élément donne accès à l'outil de sortie, où l'exécution commence, comment le message est fourni et comment le vérifier. Si tu sais copier l'exemple sans pouvoir le modifier pour produire une autre sortie, reviens aux exercices de construction. Dans les unités suivantes, nous réutiliserons ces notions lorsque les programmes intégreront des données et des décisions."
+        },
+        {
+          "type": "note",
+          "text": "Source principale de cette unité : construction et exécution des programmes (Stroustrup, 2024, chapitres 0–1). Les explications, exemples et exercices de ce cours ont été rédigés pour ce parcours."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la solution du laboratoire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consulte cette référence après avoir créé et testé ta fiche. Critères : trois lignes affichant Atelier, Équipe B et Matériel préparé ; après avoir changé l'équipe, seule la deuxième ligne devient Équipe C. Les sauts de ligne doivent être conservés et les deux autres lignes doivent rester identiques."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Atelier\\n\";\n    std::cout << \"Équipe B\\n\";\n    std::cout << \"Matériel préparé\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour le deuxième essai, remplace uniquement B par C dans le deuxième littéral. Tu peux aussi regrouper toute la fiche dans un seul littéral contenant deux séquences d'échappement de saut de ligne. La consigne se vérifie en observant les caractères produits ; tu n'es pas obligé de copier exactement l'organisation du code de cette référence. Si ton programme échoue, repère d'abord la ligne ou le séparateur différent et ne change que ce qui explique cette différence."
+        }
+      ]
+    }
+  ]
+}

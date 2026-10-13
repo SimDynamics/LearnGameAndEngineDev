@@ -1,0 +1,240 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__objetos_valores_y_tipos",
+  "title": "Objets, valeurs et types",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un emplacement pour conserver une donnée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une station dispose de six casques. Si le programme doit réutiliser plusieurs fois cette quantité, il peut la conserver dans un objet. Ici, objet désigne une zone de mémoire associée à une donnée ; nous ne parlons pas encore des classes ni de la programmation orientée objet. Le type indique les catégories de valeurs et d'opérations que cet objet accepte."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une variable donne un nom à cet objet. Dans int cascos = 6, int indique le type entier, cascos est le nom choisi pour la variable et 6 est sa valeur initiale. Un entier représente une quantité sans partie fractionnaire, dans une plage finie. Écrire ensuite cascos permet de retrouver la valeur conservée sans répéter le nombre dans chaque instruction."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cascos = 6;\n    std::cout << cascos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 6. L'instruction d'affichage reçoit la valeur de la variable : elle n'imprime pas le nom cascos. Le nom appartient au code que nous lisons ; la valeur est la donnée que le programme utilise."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguer nom, type et valeur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagine une boîte portant une étiquette. L'étiquette cascos permet de l'identifier ; l'indication int précise ce qu'elle peut contenir ; 6 est son contenu actuel. Cette comparaison aide à suivre le programme, mais ne signifie pas qu'il faut dessiner l'organisation physique exacte de la mémoire. Chaque objet existe selon les règles de son type."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dans int visitantes = 14;, que représente visitantes ?",
+          "options": [
+            "La valeur numérique initiale.",
+            "Le nom qui permet de désigner l'objet.",
+            "Le type de l'objet."
+          ],
+          "correctIndex": 1,
+          "explanation": "int est le type, visitantes est le nom et 14 est la valeur initiale."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le type entier utilisé pour les quantités dans cette leçon, afin de conserver neuf vélos.",
+          "code": "#include <iostream>\n\nint main() {\n    ___ bicicletas = 9;\n    std::cout << bicicletas;\n    return 0;\n}\n",
+          "answers": [
+            "int",
+            "signed",
+            "signed int",
+            "int signed"
+          ],
+          "explanation": "int représente des valeurs entières ; la définition conserve 9 sous le nom bicicletas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis exactement la sortie, sans écrire les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 12;\n    std::cout << \"boîtes : \" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "boîtes : 12"
+          ],
+          "explanation": "La partie entre guillemets est un texte fixe ; cajas, hors des guillemets, fournit le nombre conservé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire une donnée ne la modifie pas"
+        },
+        {
+          "type": "paragraph",
+          "text": "La même variable peut apparaître plusieurs fois comme donnée de sortie. Lire sa valeur ne l'efface pas et ne la réduit pas. Dans le programme suivant, aucune instruction ne modifie le contenu de botellas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis exactement la sortie, sans écrire les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    int botellas = 4;\n    std::cout << botellas << \" / \" << botellas;\n    return 0;\n}\n",
+          "answers": [
+            "4 / 4"
+          ],
+          "explanation": "Les deux lectures observent la même valeur. L'affichage ne modifie pas la variable."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Écris les deux lignes de sortie en conservant le saut de ligne qui les sépare.",
+          "code": "#include <iostream>\n\nint main() {\n    int saldo = 8;\n    std::cout << \"solde\" << \"\\n\" << saldo;\n    return 0;\n}\n",
+          "answers": [
+            "solde\n8"
+          ],
+          "explanation": "Le littéral affiche une étiquette écrite ; la variable affiche sa valeur."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pourquoi les deux lectures d'une variable donnent-elles la même valeur si rien ne la modifie ?",
+          "options": [
+            "Chaque affichage crée une variable différente.",
+            "Le deuxième affichage récupère le texte du premier message.",
+            "La valeur est conservée entre les instructions."
+          ],
+          "correctIndex": 2,
+          "explanation": "La mémoire conserve la donnée ; cout reçoit sa valeur, il ne reproduit pas mystérieusement la sortie précédente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir une représentation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Toutes les données ne sont pas des quantités entières. Une longueur de 1,25 mètre a besoin d'une représentation numérique prenant en charge les fractions ; une étiquette comme Secteur 4 est du texte, même si elle contient un chiffre ; une réponse oui ou non peut être représentée par une valeur booléenne. Nous étudierons ces représentations dans les prochaines leçons. Choisir un type commence par comprendre le sens de la donnée, pas seulement par regarder si elle contient des chiffres."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un programme doit additionner le nombre de tables dans deux salles. Quelle représentation convient pour la quantité de tables ?",
+          "options": [
+            "Du texte qui dit tables.",
+            "Un caractère contenant la première lettre du nom.",
+            "Un entier qui compte les tables."
+          ],
+          "correctIndex": 2,
+          "explanation": "Compter des objets entiers exige une quantité entière ; du texte peut la décrire, mais ne remplit pas la même fonction."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le code d'une boîte est 0042 et il faut conserver les deux zéros initiaux. Que devons-nous représenter ?",
+          "options": [
+            "Une étiquette textuelle.",
+            "Un résultat de division.",
+            "Une quantité à additionner."
+          ],
+          "correctIndex": 0,
+          "explanation": "0042 est un identifiant. Conserver ses caractères importe davantage que l'interpréter comme une quantité."
+        },
+        {
+          "type": "note",
+          "text": "Un type limite les opérations et les valeurs possibles. Il ne garantit pas à lui seul que la donnée décrit correctement le monde réel : un entier négatif peut être autorisé en C++ sans avoir de sens comme nombre de tables."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire avant de comparer"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le laboratoire, écris à partir de la consigne un programme qui conserve le nombre de clés d'un atelier et affiche Clés : 7. Utilise une variable nommée llaves avec la valeur 7. Puis change uniquement sa valeur initiale en 11 : le message doit devenir Clés : 11 sans modifier l'instruction d'affichage. Prédis les deux résultats avant d'exécuter le programme."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Écris ici ton programme.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie séparément le texte fixe, la valeur et l'espace qui les sépare. Si le message ne change pas quand tu modifies la variable, regarde si tu as imprimé un nombre fixe ou le nom entre guillemets. Le laboratoire conserve ton dernier brouillon de code lorsque tu rouvres la leçon. Pour comparer plusieurs versions, garde aussi une copie de chacune hors de l'éditeur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une solution et une nouvelle lecture"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int llaves = 7;\n    std::cout << \"Clés : \" << llaves;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La variable conserve la donnée et l'instruction d'affichage l'utilise. Remplacer 7 par 11 dans sa définition change son contenu initial ; la même instruction d'affichage conserve le même objectif."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Souviens-toi des sauts de ligne : quelles sont les deux lignes exactes de sortie ?",
+          "code": "#include <iostream>\n\nint main() {\n    int estantes = 3;\n    std::cout << \"Zone A\\n\";\n    std::cout << estantes << \" étagères\";\n    return 0;\n}\n",
+          "answers": [
+            "Zone A\n3 étagères"
+          ],
+          "explanation": "La première instruction produit du texte et un saut de ligne. La seconde associe une valeur à un texte explicatif."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le nom qui doit être lu pour afficher 13.",
+          "code": "#include <iostream>\n\nint main() {\n    int paquetes = 13;\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "paquetes"
+          ],
+          "explanation": "Le nom permet d'accéder à la valeur de l'objet ; \"paquetes\" entre guillemets afficherait un texte fixe."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence : nombre de clés"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et vérifié ta propre tentative. La référence présente une implémentation possible ; les critères permettent de reconnaître d'autres solutions correctes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : la variable porte le nom llaves et conserve l'entier 7 ; l'instruction d'affichage utilise cette variable. La sortie doit être Clés : 7, avec un espace après les deux-points. Modifier seulement la valeur initiale en 11 doit produire Clés : 11 avec la même instruction. Des formes équivalentes de définition et d'affichage sont admises si elles respectent ces conditions. Ici, int llaves{7}; crée et initialise l'entier llaves avec la valeur 7, tout comme int llaves = 7; pour cette donnée."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int llaves{7};\n    std::cout << \"Clés : \" << llaves;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Clés : est du texte fixe ; llaves fournit sa valeur actuelle. Remplace {7} par {11} sans modifier l'instruction d'affichage. Toujours afficher le littéral 7 ou le texte \"llaves\" ne respecte pas l'expérience, même si la première sortie semble correcte."
+        }
+      ]
+    }
+  ]
+}
