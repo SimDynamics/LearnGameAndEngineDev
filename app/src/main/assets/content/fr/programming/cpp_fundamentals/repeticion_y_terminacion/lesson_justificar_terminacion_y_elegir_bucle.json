@@ -1,0 +1,228 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__justificar_terminacion_y_elegir_bucle",
+  "title": "Justifier la terminaison et choisir une boucle",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compter les cas ou attendre une condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une boucle for avec un début, une borne et un pas visibles exprime généralement un parcours régulier. Une boucle while indique plutôt que le travail se poursuit jusqu'à ce que l'état satisfasse une condition. Les deux permettent d'exprimer de nombreux procédés identiques : choisis la forme qui rend la progression et la règle de sortie compréhensibles. Ne transforme pas une préférence de style en règle selon laquelle while servirait uniquement aux entrées ou for uniquement au comptage."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour justifier la terminaison, identifie une quantité qui se rapproche d'une limite et ne peut pas changer indéfiniment dans le domaine du problème. Dans un petit compte à rebours, quedan diminue jusqu'à zéro ; lorsque l'on divise successivement par deux un entier positif, la quantité diminue jusqu'à zéro. La condition doit exclure l'état final. Les limites de représentation du type font aussi partie du raisonnement. La mise à jour cantidad /= 2 du programme suivant équivaut ici à cantidad = cantidad / 2 : elle calcule le quotient entier et le stocke dans le même objet. Avec cantidad positif et un diviseur fixe de 2, le quotient est tronqué vers zéro et inférieur à la quantité précédente. Cette opération n'utilise pas de diviseur variable et ne tente aucune division par zéro."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{10};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n    }\n    std::cout << pasos << \":\" << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La suite des quantités après chaque mise à jour est 5, 2, 1, 0. La division est entière : diviser 1 par 2 donne 0. Aucune division par zéro n'a lieu : le diviseur reste 2. Ce procédé n'exige pas de connaître à l'avance le nombre d'étapes ; ce sont les changements d'état qui le déterminent."
+        },
+        {
+          "type": "output_prediction",
+          "id": "reducir_otra_cantidad",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{7};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n    }\n    std::cout << pasos << \":\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "3:0"
+          ],
+          "explanation": "Les mises à jour produisent 3, 1 et 0 : trois étapes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cas limites et domaine valide"
+        },
+        {
+          "type": "output_prediction",
+          "id": "reduccion_desde_uno",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{1};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n    }\n    std::cout << pasos << \":\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "1:0"
+          ],
+          "explanation": "Une seule étape suffit pour transformer 1 en 0 par division entière."
+        },
+        {
+          "type": "output_prediction",
+          "id": "reduccion_desde_cero",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n    }\n    std::cout << pasos << \":\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "0:0"
+          ],
+          "explanation": "La première condition est fausse ; aucune division ni incrémentation n'a lieu."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une boucle qui se termine n'accepte pas nécessairement le bon domaine de données. Si l'exigence n'accepte que les quantités de 0 à 20, une entrée négative doit recevoir un diagnostic ; il ne suffit pas que la condition du while l'ignore. Distingue la validation des données du contrôle de la répétition."
+        },
+        {
+          "type": "output_prediction",
+          "id": "dominio_antes_del_bucle",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{-2};\n    if (cantidad < 0 || cantidad > 20) {\n        std::cout << \"Donnée invalide\";\n    } else {\n        int pasos{0};\n        while (cantidad > 0) {\n            cantidad /= 2;\n            ++pasos;\n        }\n        std::cout << pasos;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Donnée invalide"
+          ],
+          "explanation": "La validation rejette la valeur avant le début du procédé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Progression et règle de sortie doivent être compatibles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tout changement ne représente pas une progression vers la sortie. Si n commence à 1 et augmente de deux à chaque fois, la condition n!=4 ne rencontre jamais exactement 4. Pour parcourir des valeurs inférieures à une borne, n<4 exprime mieux la limite que l'exigence d'atteindre une valeur par égalité. Conserve de petites valeurs et analyse le procédé avant de l'exécuter ; ne teste pas une boucle non terminante dans l'atelier."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "igualdad_incompatible",
+          "question": "Analyse sans exécuter : n commence à 1 et le procédé ajoute 2 tant que n!=4. Quel défaut révèle la suite initiale 1, 3, 5, 7 ?",
+          "options": [
+            "Le pas saute la valeur exigée et ne permet pas de justifier une sortie.",
+            "La première valeur supérieure à 4 rend n!=4 faux.",
+            "Le parcours se termine à 3, dernière valeur inférieure à 4."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le critère de sortie doit être compatible avec la suite des états. Il ne faut pas dépendre d'un débordement."
+        },
+        {
+          "type": "output_prediction",
+          "id": "frontera_en_lugar_igualdad",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{1};\n    while (n < 4) {\n        std::cout << n << \";\";\n        n += 2;\n    }\n    std::cout << \"Final=\" << n;\n    return 0;\n}\n",
+          "answers": [
+            "1;3;Final=5"
+          ],
+          "explanation": "Avec 5, n<4 est faux, même si le parcours n'a jamais pris exactement la valeur 4."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "no_usar_desbordamiento",
+          "question": "Un parcours incrémente un int sans petite borne justifiable. Pourquoi ne faut-il pas affirmer qu'il se terminera lorsque le débordement rendra la valeur négative ?",
+          "options": [
+            "Un int signé revient toujours à une valeur négative et peut continuer sans risque.",
+            "La limite n'affecte que l'affichage, pas le calcul du int suivant.",
+            "Le débordement d'un entier signé ne garantit pas un retour sûr à une valeur négative."
+          ],
+          "correctIndex": 2,
+          "explanation": "La justification de la terminaison doit rester dans les valeurs représentables. Nous n'exécutons pas d'exemples provoquant un débordement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Quand le corps doit agir avant la vérification"
+        },
+        {
+          "type": "paragraph",
+          "text": "do { corps } while (condition); évalue la condition après le corps. Celui-ci s'exécute au moins une fois lorsque le programme atteint cette structure. Cette forme peut exprimer un procédé où une première action est obligatoire avant de décider de répéter. Elle ne remplace pas automatiquement while : déplacer la vérification modifie le comportement si la condition initiale est fausse. Le point-virgule après while(condition) fait partie de la syntaxe de do-while."
+        },
+        {
+          "type": "output_prediction",
+          "id": "do_con_condicion_inicial_falsa",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{3};\n    do {\n        std::cout << n << \";\";\n        ++n;\n    } while (n < 3);\n    std::cout << \"Final=\" << n;\n    return 0;\n}\n",
+          "answers": [
+            "3;Final=4"
+          ],
+          "explanation": "Le corps s'exécute avant la première vérification, qui trouve déjà 4<3 faux."
+        },
+        {
+          "type": "output_prediction",
+          "id": "while_mismo_estado",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{3};\n    while (n < 3) {\n        std::cout << n << \";\";\n        ++n;\n    }\n    std::cout << \"Final=\" << n;\n    return 0;\n}\n",
+          "answers": [
+            "Final=3"
+          ],
+          "explanation": "Vérifier avant le corps fait ignorer même la première action."
+        },
+        {
+          "type": "fill_code",
+          "id": "do_condicion_despues",
+          "question": "Complète seulement le mot-clé qui permet de vérifier la condition après le corps.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{1};\n    do {\n        std::cout << n;\n        ++n;\n    } ___ (n < 3);\n    return 0;\n}\n",
+          "answers": [
+            "while"
+          ],
+          "explanation": "La syntaxe do-corps-while vérifie la condition à la fin de chaque exécution du corps."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir et vérifier de façon indépendante"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "procedimiento_cero_casos",
+          "question": "L'exigence permet de n'avoir aucun travail en attente. Aucune préparation ne doit avoir lieu si tout est déjà terminé. Où doit se trouver la première vérification ?",
+          "options": [
+            "Toujours après le corps, avec do-while.",
+            "Avant le corps, avec while ou une boucle for appropriée.",
+            "Après avoir obligatoirement affiché le premier travail."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le cas zéro fait partie des exigences, donc la structure doit pouvoir ignorer entièrement le corps."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans l'atelier, ajoute un compteur d'étapes et affiche cantidad après chaque mise à jour. Teste 0, 1, 8 et 13, en prévoyant d'abord les sorties. Ne change pas le diviseur 2. Compare les nombres d'étapes pour 8 et 13 : des données différentes n'impliquent pas nécessairement un nombre différent d'étapes. Conserve des quantités initiales entre 0 et 20."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int cantidad{13};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        std::cout << cantidad << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la solution de l'atelier"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare après avoir prévu et exécuté les quatre cas. Critères : toujours diviser par 2 ; afficher cantidad après chaque mise à jour ; augmenter pasos exactement une fois par mise à jour ; conserver zéro étape lorsque la quantité initiale vaut zéro. Le nombre final appartient à l'affichage situé après la boucle."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{13};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n        std::cout << cantidad << \";\";\n    }\n    std::cout << \"Fin;Étapes=\" << pasos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sorties de cette référence : départ 0 → Fin;Étapes=0 ; départ 1 → 0;Fin;Étapes=1 ; départ 8 → 4;2;1;0;Fin;Étapes=4 ; départ 13 → 6;3;1;0;Fin;Étapes=4. Le diviseur fixe n'est jamais nul. Avec des entiers positifs, chaque nouvelle quantité est inférieure à la précédente et reste non négative ; cette diminution et la vérification avant le corps justifient la terminaison dans le domaine indiqué."
+        }
+      ]
+    }
+  ]
+}

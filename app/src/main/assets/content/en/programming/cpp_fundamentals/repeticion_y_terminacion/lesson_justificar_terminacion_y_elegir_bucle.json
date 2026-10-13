@@ -1,0 +1,228 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__justificar_terminacion_y_elegir_bucle",
+  "title": "Justifying Termination and Choosing a Loop",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Count cases or wait for a condition"
+        },
+        {
+          "type": "paragraph",
+          "text": "A for loop with a visible start, bound, and step usually communicates a regular traversal. A while loop usually communicates that work continues until the state satisfies a condition. Both can express many of the same procedures: choose the form that makes the progress rule and exit rule clear. Do not turn a style preference into a rule that while is only for input or for is only for counting."
+        },
+        {
+          "type": "paragraph",
+          "text": "To justify termination, identify a quantity that moves toward an endpoint and cannot keep changing indefinitely within the problem's domain. In a small countdown, quedan decreases toward zero; when repeatedly halving a positive integer, the quantity decreases toward zero. The condition must reject the final state. The type's representable limits are part of this reasoning too. The update cantidad /= 2 in the next program is equivalent here to cantidad = cantidad / 2: it computes the integer quotient and stores it in the same object. With a positive cantidad and a fixed divisor of 2, the quotient is truncated toward zero and is smaller than the previous quantity. This operation does not use a variable divisor or attempt division by zero."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{10};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n    }\n    std::cout << pasos << \":\" << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The sequence of quantities after each update is 5, 2, 1, 0. This is integer division: dividing 1 by 2 gives 0. Division by zero never occurs because the divisor stays at 2. The procedure does not require knowing the number of steps in advance; changes in state determine it."
+        },
+        {
+          "type": "output_prediction",
+          "id": "reducir_otra_cantidad",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{7};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n    }\n    std::cout << pasos << \":\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "3:0"
+          ],
+          "explanation": "The updates produce 3, 1, and 0: three steps."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Boundary cases and valid range"
+        },
+        {
+          "type": "output_prediction",
+          "id": "reduccion_desde_uno",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{1};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n    }\n    std::cout << pasos << \":\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "1:0"
+          ],
+          "explanation": "A single step turns 1 into 0 through integer division."
+        },
+        {
+          "type": "output_prediction",
+          "id": "reduccion_desde_cero",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n    }\n    std::cout << pasos << \":\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "0:0"
+          ],
+          "explanation": "The first condition is false, so no division or increment takes place."
+        },
+        {
+          "type": "paragraph",
+          "text": "A terminating loop does not necessarily accept the correct range of inputs. If the requirement only accepts quantities from 0 through 20, a negative input needs a diagnostic; it is not enough for the while condition to skip it. Distinguish validating input data from controlling repetition."
+        },
+        {
+          "type": "output_prediction",
+          "id": "dominio_antes_del_bucle",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{-2};\n    if (cantidad < 0 || cantidad > 20) {\n        std::cout << \"Invalid data\";\n    } else {\n        int pasos{0};\n        while (cantidad > 0) {\n            cantidad /= 2;\n            ++pasos;\n        }\n        std::cout << pasos;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Invalid data"
+          ],
+          "explanation": "Validation rejects the value before the procedure begins."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Progress and the exit rule must be compatible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Not every change is progress toward an exit. If n starts at 1 and increases by two, a condition n!=4 never encounters exactly 4. To visit values below a boundary, n<4 expresses the boundary better than requiring an exact equality. Keep values small and analyze the procedure before executing it; do not test a nonterminating loop in the lab."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "igualdad_incompatible",
+          "question": "Analyze without running: n starts at 1 and the procedure adds 2 while n!=4. What flaw does the initial sequence 1, 3, 5, 7 reveal?",
+          "options": [
+            "The step skips the required value and gives no justification for termination.",
+            "The first value greater than 4 makes n!=4 false.",
+            "The loop ends at 3 because it is the last value below 4."
+          ],
+          "correctIndex": 0,
+          "explanation": "The exit criterion must be compatible with the sequence of states. Do not rely on overflow."
+        },
+        {
+          "type": "output_prediction",
+          "id": "frontera_en_lugar_igualdad",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{1};\n    while (n < 4) {\n        std::cout << n << \";\";\n        n += 2;\n    }\n    std::cout << \"Final=\" << n;\n    return 0;\n}\n",
+          "answers": [
+            "1;3;Final=5"
+          ],
+          "explanation": "At 5, n<4 is false even though the loop never used exactly 4."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "no_usar_desbordamiento",
+          "question": "A loop increments an int without a justified small bound. Why must you not claim it will terminate when overflow makes the value negative?",
+          "options": [
+            "A signed int always wraps to a negative value and then safely continues.",
+            "The limit affects only printing, not calculation of the next int.",
+            "Signed overflow does not guarantee safe wraparound."
+          ],
+          "correctIndex": 2,
+          "explanation": "A termination argument must stay within representable values. We do not execute examples that cause overflow here."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "When the body must run before a check"
+        },
+        {
+          "type": "paragraph",
+          "text": "do { body } while (condition); evaluates the condition after the body. The body runs at least once when execution reaches the construct. It can express a procedure with a required first action, followed by a decision about whether to repeat. It is not an automatic replacement for while: moving the check changes behavior when the initial condition is false. The semicolon after while(condition) is part of do-while syntax."
+        },
+        {
+          "type": "output_prediction",
+          "id": "do_con_condicion_inicial_falsa",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{3};\n    do {\n        std::cout << n << \";\";\n        ++n;\n    } while (n < 3);\n    std::cout << \"Final=\" << n;\n    return 0;\n}\n",
+          "answers": [
+            "3;Final=4"
+          ],
+          "explanation": "The body runs before the first condition check, which already finds 4<3 false."
+        },
+        {
+          "type": "output_prediction",
+          "id": "while_mismo_estado",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{3};\n    while (n < 3) {\n        std::cout << n << \";\";\n        ++n;\n    }\n    std::cout << \"Final=\" << n;\n    return 0;\n}\n",
+          "answers": [
+            "Final=3"
+          ],
+          "explanation": "Checking before the body skips even the first action."
+        },
+        {
+          "type": "fill_code",
+          "id": "do_condicion_despues",
+          "question": "Fill in only the keyword that checks the condition after the body.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{1};\n    do {\n        std::cout << n;\n        ++n;\n    } ___ (n < 3);\n    return 0;\n}\n",
+          "answers": [
+            "while"
+          ],
+          "explanation": "The do-body-while syntax checks the condition at the end of each body execution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose and verify independently"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "procedimiento_cero_casos",
+          "question": "The requirement allows zero pending jobs. No preparation action must occur when the work is already complete. Where should the first condition check take place?",
+          "options": [
+            "Always after the body, using do-while.",
+            "Before the body, using while or an appropriate for loop.",
+            "After printing the first job unconditionally."
+          ],
+          "correctIndex": 1,
+          "explanation": "Zero cases are allowed, so the construct must be able to skip the entire body."
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lab, add a step counter and display cantidad after every update. Test 0, 1, 8, and 13, making predictions first. Do not change the divisor 2. Compare the step counts for 8 and 13: different inputs do not necessarily require different numbers of steps. Keep initial quantities between 0 and 20."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int cantidad{13};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        std::cout << cantidad << \";\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the lab solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare after predicting and running all four cases. Criteria: always divide by 2; display cantidad after each update; increment pasos exactly once per update; preserve a count of zero steps when the initial quantity is zero. The final count belongs in the output after the loop."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{13};\n    int pasos{0};\n    while (cantidad > 0) {\n        cantidad /= 2;\n        ++pasos;\n        std::cout << cantidad << \";\";\n    }\n    std::cout << \"End;Steps=\" << pasos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Outputs from this reference: initial 0 → End;Steps=0; initial 1 → 0;End;Steps=1; initial 8 → 4;2;1;0;End;Steps=4; initial 13 → 6;3;1;0;End;Steps=4. The fixed divisor is never zero. With positive integers, each new quantity is smaller than the previous one and remains nonnegative; this decrease and the condition before the body justify termination throughout the stated range."
+        }
+      ]
+    }
+  ]
+}

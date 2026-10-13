@@ -1,0 +1,219 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__despacho_y_recuperacion_de_recorridos",
+  "title": "Building an Order Dispatcher and Reviewing Loops",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "From requirements to program state"
+        },
+        {
+          "type": "paragraph",
+          "text": "A dispatch terminal receives orders numbered from 1 through ultimo, with ultimo between 0 and 8. Each odd-numbered order requires 2 boxes; each even-numbered order requires 1. We need to display the quantity for each order and, at the end, the number of orders and total number of boxes. This new problem combines traversal, classification, and two summaries; correct output must satisfy the complete requirement."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before programming, solve the cases ultimo=0, ultimo=1, and ultimo=4 by hand. Decide which objects represent the current order, the number processed, and the boxes accumulated. Identify what should reset for each order and what must persist throughout the process. The zero case must produce a valid summary without inventing an order."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "estado_persistente_del_despacho",
+          "question": "Which state must be preserved across orders to produce the final total?",
+          "options": [
+            "The current order's contribution, replaced on every iteration.",
+            "A total of zero redeclared inside every iteration.",
+            "The box accumulator, declared before the loop."
+          ],
+          "correctIndex": 2,
+          "explanation": "The summary combines contributions from several cases and must persist for the entire loop."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "plan_de_pruebas_despacho",
+          "question": "Which set tests no orders, the first case, both order types, and the allowed maximum?",
+          "options": [
+            "ultimo equal to 1, 2, 4, and 8.",
+            "ultimo equal to 0, 1, 4, and 7.",
+            "ultimo equal to 0, 1, 4, and 8."
+          ],
+          "correctIndex": 2,
+          "explanation": "These tests exercise different behaviors, including zero and the upper boundary."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build before comparing against a solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "The initial lab contains a loop through order numbers from 1 to the last one. Complete the box selection and the two summaries yourself. Print the summary after the loop. Keep ultimo between 0 and 8, and do not reuse the box accumulator as the order counter. Check the cases you solved by hand before moving on to the code-reading exercises."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        std::cout << \"Order \" << pedido << \"\\n\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Verify a construction through its behavior"
+        },
+        {
+          "type": "output_prediction",
+          "id": "despacho_otro_limite",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{5};\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << pedidos << \":\" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "5:8"
+          ],
+          "explanation": "The five contributions are 2, 1, 2, 1, and 2. There are five orders and eight boxes."
+        },
+        {
+          "type": "output_prediction",
+          "id": "despacho_cero",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        if (pedido % 2 != 0) {\n            cajas += 2;\n        } else {\n            cajas += 1;\n        }\n    }\n    std::cout << \"Boxes=\" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "Boxes=0"
+          ],
+          "explanation": "The initial condition is false, so the accumulator retains its initial value of zero."
+        },
+        {
+          "type": "fill_code",
+          "id": "aporte_par",
+          "question": "Fill in only the number of boxes contributed by an even-numbered order, according to the requirement.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas{0};\n    for (int pedido{1}; pedido <= 6; ++pedido) {\n        if (pedido % 2 != 0) {\n            cajas += 2;\n        } else {\n            cajas += ___;\n        }\n    }\n    std::cout << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "explanation": "Each even-numbered order contributes one box. The order number determines the category, not how much is added."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review errors in programs that are still valid C++"
+        },
+        {
+          "type": "output_prediction",
+          "id": "reiniciar_acumulador_error_logico",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{1}; aporte <= 3; ++aporte) {\n        total = 0;\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Resetting total on every iteration destroys the earlier contributions. The program compiles, but it does not add all contributions."
+        },
+        {
+          "type": "output_prediction",
+          "id": "copiar_no_seguir_estado",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    int copia{total};\n    for (int n{1}; n <= 3; ++n) {\n        total += n;\n    }\n    std::cout << total << \":\" << copia;\n    return 0;\n}\n",
+          "answers": [
+            "6:0"
+          ],
+          "explanation": "copia received the initial value of total; it does not track subsequent changes."
+        },
+        {
+          "type": "output_prediction",
+          "id": "division_entera_en_recorrido",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 4; ++n) {\n        suma += n / 2;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "The integer quotients are 0, 1, 1, and 2. The program is not adding halves represented as double values."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "compilar_no_basta",
+          "question": "Your dispatch program compiles and terminates, but resets the total number of boxes at the beginning of each order. What verification is missing?",
+          "options": [
+            "Check only one order and assume the other cases are the same.",
+            "Compare several orders against the results calculated by hand.",
+            "Accept the total because the program compiles without errors."
+          ],
+          "correctIndex": 1,
+          "explanation": "Compiling, terminating, and solving the problem correctly are separate properties. A case with several contributions reveals the reset."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall and transfer these ideas to a board"
+        },
+        {
+          "type": "paragraph",
+          "text": "A second task gives a different meaning to the same techniques: visit the cells of a board with 3 rows and 2 columns, numbered from 0, and count only the cells whose row differs from the column. Before reading the exercise, list the pairs on paper. Do not depend on recognizing the word 'dispatch': determine what is traversed, what is accepted, and what is summarized."
+        },
+        {
+          "type": "output_prediction",
+          "id": "tablero_seleccionado",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int fila{0}; fila < 3; ++fila) {\n        for (int columna{0}; columna < 2; ++columna) {\n            if (fila != columna) {\n                ++cantidad;\n            }\n        }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "The six pairs include two equal diagonal positions, (0,0) and (1,1). The other four are accepted."
+        },
+        {
+          "type": "output_prediction",
+          "id": "recuperar_corte_y_suma",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not type quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 7; ++n) {\n        if (n == 4) {\n            break;\n        }\n        if (n == 2) {\n            continue;\n        }\n        suma += n;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "The program includes 1, skips 2, includes 3, and stops before 4."
+        },
+        {
+          "type": "paragraph",
+          "text": "To review what you have learned, explain without looking at examples how you would justify initialization, visiting cases, updating state, preserving the summary, and exiting. Return to an earlier exercise with a different limit and predict the result before running it. Fluency requires recalling these ideas later: collections and functions will demand them again in problems whose data are no longer presented as a simple count."
+        },
+        {
+          "type": "note",
+          "text": "The conceptual foundation is computation, selection, and iteration (Stroustrup, 2024, ch. 3). This unit develops original examples and retrieves earlier concepts. The semantics of for, continue, break, and switch are cross-checked against the public C++ working draft (Working draft: Programming languages — C++, n.d., sections [stmt.for], [stmt.cont], [stmt.break], and [stmt.switch])."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the lab solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare after building your own version. Criteria: one line showing boxes for every order; two persistent summaries; a contribution of 2 for odd-numbered orders and 1 for even-numbered orders; a zero case with no fictitious orders. The branches may be organized differently as long as all these behaviors are preserved."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        std::cout << \"Order \" << pedido << \": \" << aporte << \" box(es)\\n\";\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << \"Orders=\" << pedidos << \";Boxes=\" << cajas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "For ultimo=0, 1, 4, and 8, the respective summaries are 0 orders and 0 boxes, 1 and 2, 4 and 6, and 8 and 12. In the case of 4, individual contributions are 2, 1, 2, and 1. Check every line as well as the summary: a correct total may hide incorrect contributions that cancel each other out. Keeping only the final contribution does not replace an accumulator either. After comparing, keep a copy of your attempt and rebuild the program in the editor without referring to the solution. Explain why each object is declared where it is."
+        }
+      ]
+    }
+  ]
+}

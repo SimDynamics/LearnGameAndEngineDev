@@ -1,0 +1,219 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__despacho_y_recuperacion_de_recorridos",
+  "title": "Construire un système de préparation et réviser les parcours",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Des exigences à l'état du programme"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un terminal de préparation reçoit des commandes numérotées de 1 à ultimo, avec ultimo compris entre 0 et 8. Chaque commande de numéro impair nécessite 2 boîtes ; chaque commande de numéro pair en nécessite 1. Nous devons afficher la quantité de chaque commande et, à la fin, le nombre de commandes et le total de boîtes. Ce nouveau problème combine parcours, classification et deux résumés ; une sortie correcte doit respecter l'ensemble des exigences."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de programmer, résous à la main les cas ultimo=0, ultimo=1 et ultimo=4. Détermine quels objets représentent la commande actuelle, le nombre de commandes traitées et le total de boîtes. Repère ce qui doit être réinitialisé pour chaque commande et ce qui doit être conservé pendant tout le procédé. Le cas zéro doit produire un résumé valide sans inventer de commande."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "estado_persistente_del_despacho",
+          "question": "Quel état faut-il conserver d'une commande à l'autre pour produire le total final ?",
+          "options": [
+            "La contribution de la commande actuelle, remplacée à chaque itération.",
+            "Un total nul déclaré à nouveau à chaque itération.",
+            "L'accumulateur de boîtes, déclaré avant la boucle."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le résumé combine les contributions de plusieurs cas et doit persister pendant tout le parcours."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "plan_de_pruebas_despacho",
+          "question": "Quel ensemble vérifie l'absence de commandes, le premier cas, les deux types et la borne supérieure autorisée ?",
+          "options": [
+            "ultimo égal à 1, 2, 4 et 8.",
+            "ultimo égal à 0, 1, 4 et 7.",
+            "ultimo égal à 0, 1, 4 et 8."
+          ],
+          "correctIndex": 2,
+          "explanation": "Ces tests exercent des comportements différents, y compris zéro et la borne supérieure."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire avant de comparer à une solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'atelier initial contient un parcours des numéros de commande de 1 jusqu'au dernier. Complète toi-même le choix du nombre de boîtes et les deux résumés. Affiche le résumé après la boucle. Garde ultimo entre 0 et 8 et ne réutilise pas l'accumulateur de boîtes comme compteur de commandes. Vérifie les cas résolus à la main avant de passer aux exercices de lecture."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        std::cout << \"Commande \" << pedido << \"\\n\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier une construction par son comportement"
+        },
+        {
+          "type": "output_prediction",
+          "id": "despacho_otro_limite",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{5};\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << pedidos << \":\" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "5:8"
+          ],
+          "explanation": "Les cinq contributions sont 2, 1, 2, 1 et 2. Il y a cinq commandes et huit boîtes."
+        },
+        {
+          "type": "output_prediction",
+          "id": "despacho_cero",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        if (pedido % 2 != 0) {\n            cajas += 2;\n        } else {\n            cajas += 1;\n        }\n    }\n    std::cout << \"Boîtes=\" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "Boîtes=0"
+          ],
+          "explanation": "La condition initiale est fausse et l'accumulateur conserve sa valeur initiale nulle."
+        },
+        {
+          "type": "fill_code",
+          "id": "aporte_par",
+          "question": "Complète uniquement le nombre de boîtes apportées par une commande de numéro pair, selon l'exigence.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas{0};\n    for (int pedido{1}; pedido <= 6; ++pedido) {\n        if (pedido % 2 != 0) {\n            cajas += 2;\n        } else {\n            cajas += ___;\n        }\n    }\n    std::cout << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "explanation": "Chaque commande de numéro pair apporte une boîte. Le numéro de commande détermine la catégorie, et non la quantité ajoutée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Examiner les erreurs d'un code pourtant valide"
+        },
+        {
+          "type": "output_prediction",
+          "id": "reiniciar_acumulador_error_logico",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{1}; aporte <= 3; ++aporte) {\n        total = 0;\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Remettre total à zéro à chaque itération détruit les contributions précédentes. Le programme compile, mais n'additionne pas toutes les contributions."
+        },
+        {
+          "type": "output_prediction",
+          "id": "copiar_no_seguir_estado",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    int copia{total};\n    for (int n{1}; n <= 3; ++n) {\n        total += n;\n    }\n    std::cout << total << \":\" << copia;\n    return 0;\n}\n",
+          "answers": [
+            "6:0"
+          ],
+          "explanation": "copia a reçu la valeur initiale de total ; il ne suit pas ses modifications ultérieures."
+        },
+        {
+          "type": "output_prediction",
+          "id": "division_entera_en_recorrido",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 4; ++n) {\n        suma += n / 2;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Les quotients entiers sont 0, 1, 1 et 2. On n'additionne pas des moitiés représentées par des valeurs double."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "compilar_no_basta",
+          "question": "Ton programme de préparation compile et se termine, mais remet à zéro le total de boîtes au début de chaque commande. Quelle vérification manque ?",
+          "options": [
+            "Vérifier uniquement une commande et généraliser à toutes les autres.",
+            "Comparer plusieurs commandes aux résultats calculés à la main.",
+            "Accepter le total puisque le programme compile sans erreur."
+          ],
+          "correctIndex": 1,
+          "explanation": "Compiler, se terminer et résoudre correctement le problème sont des propriétés distinctes. Un cas avec plusieurs contributions révèle la réinitialisation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver et transférer ces acquis à une grille"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une deuxième tâche donne un autre sens aux mêmes techniques : parcourir les cases d'une grille de 3 lignes et 2 colonnes, numérotées à partir de 0, et compter seulement les cases dont la ligne diffère de la colonne. Avant de lire l'exercice, énumère les paires sur papier. Ne te repose pas sur la reconnaissance du mot « préparation » : cherche ce que l'on parcourt, ce qui est accepté et ce qui est résumé."
+        },
+        {
+          "type": "output_prediction",
+          "id": "tablero_seleccionado",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int fila{0}; fila < 3; ++fila) {\n        for (int columna{0}; columna < 2; ++columna) {\n            if (fila != columna) {\n                ++cantidad;\n            }\n        }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Les six paires comportent deux positions diagonales égales : (0,0) et (1,1). Les quatre autres sont acceptées."
+        },
+        {
+          "type": "output_prediction",
+          "id": "recuperar_corte_y_suma",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 7; ++n) {\n        if (n == 4) {\n            break;\n        }\n        if (n == 2) {\n            continue;\n        }\n        suma += n;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Le programme inclut 1, ignore 2, inclut 3 et s'arrête avant 4."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour revoir les acquis, explique sans regarder les exemples comment tu justifierais l'initialisation, la visite des cas, la mise à jour, la conservation du résumé et la sortie. Reprends une construction précédente avec une autre limite et prévois le résultat avant l'exécution. La maîtrise exige de retrouver ces notions plus tard : les collections et les fonctions les mobiliseront de nouveau dans des problèmes où les données ne se présentent plus comme un simple comptage."
+        },
+        {
+          "type": "note",
+          "text": "Les notions de base sont le calcul, la sélection et l'itération (Stroustrup, 2024, chap. 3). Cette unité développe des exemples originaux et réactive des notions antérieures. La sémantique de for, continue, break et switch est comparée au projet public de la norme C++ (Working draft: Programming languages — C++, s. d., sections [stmt.for], [stmt.cont], [stmt.break] et [stmt.switch])."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la solution de l'atelier"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare après avoir construit ta propre version. Critères : une ligne indiquant les boîtes pour chaque commande ; deux résumés persistants ; une contribution de 2 pour les commandes impaires et de 1 pour les paires ; un cas zéro sans commande fictive. Les branches peuvent être organisées différemment si tous ces comportements sont respectés."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int ultimo{4};\n    int pedidos{0};\n    int cajas{0};\n    for (int pedido{1}; pedido <= ultimo; ++pedido) {\n        int aporte{1};\n        if (pedido % 2 != 0) {\n            aporte = 2;\n        }\n        std::cout << \"Commande \" << pedido << \": \" << aporte << \" boîte(s)\\n\";\n        ++pedidos;\n        cajas += aporte;\n    }\n    std::cout << \"Commandes=\" << pedidos << \";Boîtes=\" << cajas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour ultimo=0, 1, 4 et 8, les résumés sont respectivement 0 commande et 0 boîte, 1 et 2, 4 et 6, puis 8 et 12. Dans le cas 4, les contributions individuelles sont 2, 1, 2 et 1. Vérifie chaque ligne ainsi que le résumé : un total correct peut masquer des contributions erronées qui se compensent. Conserver uniquement la dernière contribution ne remplace pas non plus l'accumulateur. Après comparaison, conserve une copie de ta tentative et reconstruis le programme dans l'éditeur sans consulter la référence. Explique pourquoi chaque objet est déclaré à cet endroit."
+        }
+      ]
+    }
+  ]
+}
