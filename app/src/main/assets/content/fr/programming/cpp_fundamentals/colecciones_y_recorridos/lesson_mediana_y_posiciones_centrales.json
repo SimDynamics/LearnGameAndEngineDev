@@ -1,0 +1,313 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__mediana_y_posiciones_centrales",
+  "title": "Médiane et positions centrales",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un résumé différent de la moyenne"
+        },
+        {
+          "type": "paragraph",
+          "text": "La médiane se détermine à partir des valeurs triées. Nous utiliserons la convention habituelle : avec un nombre impair de données, c'est la valeur centrale ; avec un nombre pair, c'est la moyenne des deux valeurs centrales. Le centre est défini par les positions dans l'ordre trié, même si plusieurs valeurs sont identiques. En présence de répétitions, cela ne signifie pas qu'il doive y avoir exactement autant de valeurs strictement inférieures que supérieures."
+        },
+        {
+          "type": "paragraph",
+          "text": "La moyenne arithmétique additionne les valeurs ; la médiane situe le centre de la collection triée. Avec {1, 2, 12}, la moyenne est cinq et la médiane est deux. Aucun de ces résumés ne remplace automatiquement l'autre : ils répondent à des questions différentes."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pour trouver la médiane avec cette méthode, quelle préparation est nécessaire ?",
+          "options": [
+            "Lire directement l'élément central dans l'ordre d'arrivée.",
+            "Trier les valeurs ou une copie de celles-ci.",
+            "Toujours additionner puis diviser par la taille."
+          ],
+          "correctIndex": 1,
+          "explanation": "La position centrale doit correspondre à l'ordre des valeurs, pas à une séquence quelconque."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le centre d'un nombre impair de valeurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour une taille impaire positive, size() / 2 donne l'indice central : avec cinq éléments, le quotient entier vaut deux et laisse deux positions de chaque côté. Cette division entière est ici volontaire : nous voulons un indice, pas une mesure fractionnaire."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{8, 1, 6, 3, 5};\n    std::sort(datos.begin(), datos.end());\n    auto centro = datos.size() / 2;\n    std::cout << centro << \":\" << datos.at(centro);\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "2:5"
+          ],
+          "explanation": "L'ordre trié est un, trois, cinq, six, huit ; l'indice central deux contient cinq."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dans une collection triée de trois éléments, quel est l'indice central ?",
+          "options": [
+            "2",
+            "1",
+            "0"
+          ],
+          "correctIndex": 1,
+          "explanation": "Il existe une position de chaque côté de l'indice un."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le chiffre du diviseur permettant de trouver l'indice central pour toute taille impaire positive, pas seulement les trois valeurs de cet exemple.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 7, 9};\n    auto centro = datos.size() / ___;\n    std::cout << datos.at(centro);\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Le quotient entier de la taille par deux donne l'indice central lorsque la taille est impaire."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un nombre pair comporte deux positions centrales"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec quatre éléments triés, les indices centraux sont un et deux. Si centro = size() / 2, ce sont centro - 1 et centro. Choisir seulement datos[centro] donne la valeur centrale supérieure, pas la médiane selon notre convention. Pour {1, 4, 8, 9}, la médiane vaut six, même si cette valeur n'apparaît pas dans la collection."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{10, 2, 6, 4};\n    std::sort(datos.begin(), datos.end());\n    auto centro = datos.size() / 2;\n    double mediana = (static_cast<double>(datos.at(centro - 1)) + datos.at(centro)) / 2.0;\n    std::cout << mediana;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "5"
+          ],
+          "explanation": "Les deux valeurs centrales triées sont quatre et six ; leur moyenne vaut cinq."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Avec les données triées {2, 3, 8, 12}, quelles valeurs interviennent dans la médiane ?",
+          "options": [
+            "Deux et douze.",
+            "Trois et huit.",
+            "Seulement huit."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les deux valeurs centrales se trouvent aux indices un et deux."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver la fraction pour un centre pair"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{7, 2};\n    std::sort(datos.begin(), datos.end());\n    auto centro = datos.size() / 2;\n    double mediana = (static_cast<double>(datos.at(centro - 1)) + datos.at(centro)) / 2.0;\n    std::cout << mediana;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "4.5"
+          ],
+          "explanation": "Avec deux observations, les deux valeurs sont centrales ; leur moyenne peut être fractionnaire."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous convertissons une valeur en double avant de les additionner ; ainsi, l'addition dans cette expression s'effectue elle aussi en double. Diviser par 2.0 conserve la partie fractionnaire. Nous n'utilisons pas une somme int susceptible de déborder en espérant qu'une conversion ultérieure la corrige. Ici, nous travaillons avec de petites quantités ou des mesures, pas avec des sommes d'argent qui demanderaient une autre représentation."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète uniquement le type de conversion, identique au type de mediana, et le chiffre du diviseur décimal.",
+          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4};\n    auto centro = datos.size() / 2;\n    double mediana = (static_cast<[]>(datos.at(centro - 1)) + datos.at(centro)) / [].0;\n    std::cout << mediana;\n    return 0;\n}\n",
+          "answers": [
+            "double",
+            "2"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Parité et domaine des indices"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'exercice précédent utilise double et le chiffre deux, donnant 2.5. Pour distinguer les tailles impaires et paires, nous utilisons size() % 2 : un reste non nul indique une taille impaire. Il faut d'abord vérifier que la collection n'est pas vide. Si sa taille positive est paire, elle vaut au moins deux ; centro vaut donc au moins un et centro - 1 existe. Si la taille est impaire, centro se trouve toujours dans le domaine valide."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{9, 2, 5};\n    if (datos.empty()) {\n        std::cout << \"Aucune médiane\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << mediana;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que faut-il vérifier avant tout accès à un élément central ?",
+          "options": [
+            "Que la première valeur est positive.",
+            "Que toutes les valeurs sont différentes.",
+            "Qu'il existe des éléments."
+          ],
+          "correctIndex": 2,
+          "explanation": "Une collection vide n'a aucune position centrale et aucune médiane définie par cette méthode."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zéro, un et valeurs répétées"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{0};\n    if (datos.empty()) {\n        std::cout << \"Aucune médiane\";\n    } else {\n        std::sort(datos.begin(), datos.end());\n        std::cout << datos.at(datos.size() / 2);\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Une seule observation de valeur zéro a une médiane nulle, contrairement à une collection sans données."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{3, 3, 3, 8, 9};\n    std::sort(datos.begin(), datos.end());\n    std::cout << datos.at(datos.size() / 2);\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "3"
+          ],
+          "explanation": "La valeur centrale selon les positions reste trois, même s'il n'y a pas deux valeurs strictement plus petites."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un vecteur vide doit produire…",
+          "options": [
+            "Un accès à l'indice zéro.",
+            "Un message indiquant l'absence de médiane, sans accéder au centre.",
+            "Une médiane nulle inventée."
+          ],
+          "correctIndex": 1,
+          "explanation": "L'absence de données doit être représentée explicitement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Moyenne et médiane face à une valeur éloignée"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{1, 2, 15};\n    double suma = 0.0;\n    for (int valor : datos) { suma += valor; }\n    double media = suma / static_cast<double>(datos.size());\n    auto ordenados = datos;\n    std::sort(ordenados.begin(), ordenados.end());\n    double mediana = ordenados.at(ordenados.size() / 2);\n    std::cout << media << \" \" << mediana;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "6 2"
+          ],
+          "explanation": "La valeur quinze influence la somme, mais le centre trié des trois observations reste deux."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La moyenne et la médiane valent toutes deux quatre dans un exemple. Que cela démontre-t-il ?",
+          "options": [
+            "Que sort ne s'est pas exécuté.",
+            "Qu'il s'agit toujours de la même opération.",
+            "Qu'elles coïncident dans ce cas ; d'autres données peuvent donner des résultats différents."
+          ],
+          "correctIndex": 2,
+          "explanation": "Des résultats identiques n'effacent pas la différence entre leurs définitions."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une médiane pour les deux parités"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un calcul général de médiane avec une copie triée. Pour {6, 1, 4}, affiche Médiane : 4. Pour {1, 6, 2, 9}, affiche Médiane : 4. Pour {}, affiche Aucune donnée. Vérifie aussi {5}, {2, 7}, {-5, -1}, {3, 3, 8} et {4, 4, 4, 4}. Détermine d'abord quelle branche s'applique et quels indices seront utilisés."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Construis ici le programme demandé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserve un tableau de tests avec la collection, l'ordre trié obtenu, la taille, les indices centraux et la médiane prévue. Ces éléments justifient chaque accès au lieu de montrer seulement que le programme se termine."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution avec absence de données et ordre préservé"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{6, 1, 4};\n    if (datos.empty()) {\n        std::cout << \"Aucune donnée\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Médiane : \" << mediana;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pourquoi faut-il tester une collection de taille paire avec deux valeurs centrales différentes ?",
+          "options": [
+            "Parce que les collections de taille impaire ne peuvent pas être triées.",
+            "Parce que cela permet de distinguer la médiane convenue du choix de la seule valeur centrale supérieure.",
+            "Parce que cela oblige à modifier les valeurs d'origine."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le cas choisi doit réellement vérifier la définition que nous voulons implémenter."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Révision sans trier l'original"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> original{8, 1, 3};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    double mediana = ordenados.at(ordenados.size() / 2);\n    original.at(0) = 10;\n    std::cout << mediana << \" \" << ordenados.at(2) << \" \" << original.at(0);\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "3 8 10"
+          ],
+          "explanation": "La médiane mémorisée et la copie triée conservent leur état précédent ; modifier l'original ne les recalcule pas."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que faut-il expliquer sur le centre en présence de valeurs répétées ?",
+          "options": [
+            "Qu'il faut supprimer les répétitions avant le calcul.",
+            "Qu'il est défini par les positions dans la collection triée, avec une convention explicite pour les tailles paires.",
+            "Que la moitié des valeurs doit toujours être strictement inférieure."
+          ],
+          "correctIndex": 1,
+          "explanation": "Supprimer les observations répétées modifierait les données du problème."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de l'atelier : distinguer l'absence de données et les tailles impaires et paires ; justifier les indices centraux selon l'ordre des valeurs ; calculer la moyenne des deux valeurs centrales en conservant la fraction ; ne supprimer aucune observation répétée et ne pas modifier l'original."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,304 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__ordenar_y_conservar_el_original",
+  "title": "Trier tout en conservant les données d'origine",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Trier modifie l'ordre des éléments"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::sort trie les éléments de l'intervalle indiqué. Pour un vecteur numérique, nous utilisons std::sort(datos.begin(), datos.end()); et incluons <algorithm>. L'ordre par défaut est croissant : aucun élément suivant n'est inférieur au précédent. Cette opération modifie le vecteur et ne crée pas automatiquement une copie triée."
+        },
+        {
+          "type": "paragraph",
+          "text": "begin() et end() fournissent les positions de bibliothèque délimitant le parcours : du début inclus jusqu'à la fin exclue. Elles diffèrent des indices affichés sous forme de nombres. end() se trouve après le dernier élément ; ce n'est pas une valeur à lire. Pour utiliser cet appel complet, nous n'avons pas encore besoin de manipuler ces positions nous-mêmes."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{7, 2, 5};\n    std::sort(datos.begin(), datos.end());\n    for (int valor : datos) { std::cout << valor << \";\"; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 2;5;7;. La collection contient toujours trois valeurs ; seul leur ordre a changé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Répétitions et taille"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{4, 1, 4, 2};\n    std::sort(datos.begin(), datos.end());\n    for (int valor : datos) { std::cout << valor << \";\"; }\n    std::cout << \"N=\" << datos.size();\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "1;2;4;4;N=4"
+          ],
+          "explanation": "Le tri conserve les deux occurrences de quatre et le nombre d'éléments."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que fait sort avec les valeurs répétées ?",
+          "options": [
+            "Il les conserve en les plaçant dans l'ordre trié.",
+            "Il les transforme en indices.",
+            "Il supprime automatiquement toutes les occurrences sauf une."
+          ],
+          "correctIndex": 0,
+          "explanation": "Trier et supprimer les répétitions sont deux tâches différentes."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le nom de l'opération de tri utilisée dans l'exemple précédent.",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{3, 1};\n    std::___(datos.begin(), datos.end());\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "answers": [
+            "sort"
+          ],
+          "explanation": "sort trie l'intervalle complet indiqué par begin et end."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Collection vide, élément unique et données déjà triées"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    std::sort(datos.begin(), datos.end());\n    std::cout << datos.size() << \" \" << datos.empty();\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "0 1"
+          ],
+          "explanation": "Un intervalle vide peut être trié et reste vide ; aucun élément n'est consulté."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{6};\n    std::sort(datos.begin(), datos.end());\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "6"
+          ],
+          "explanation": "Une valeur unique reste inchangée."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu tries {1, 2, 2, 8}, qui est déjà en ordre croissant. Quelle propriété peux-tu attendre ?",
+          "options": [
+            "La collection conserve les mêmes valeurs et reste triée.",
+            "Elle doit devenir {8, 2, 2, 1}.",
+            "Elle doit perdre les valeurs répétées."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un nouveau tri n'exige aucun changement visible lorsque la collection respecte déjà l'ordre demandé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'ordre d'origine peut être une information"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si les données représentent des séances dans leur ordre d'arrivée, trier le vecteur change la valeur associée à la première séance. Pour conserver cette information, crée une copie et trie-la. std::vector<int> ordenados = original; conserve dans un autre objet les valeurs présentes à ce moment-là."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> original{8, 2, 5};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::cout << original.at(0) << \" \" << ordenados.at(0);\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "8 2"
+          ],
+          "explanation": "auto déduit une autre collection par valeur ; son tri ne modifie pas original."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le rapport doit conserver l'ordre des mesures et aussi afficher les valeurs triées. Quel choix répond aux deux besoins ?",
+          "options": [
+            "Trier l'original et supposer qu'il représente encore l'ordre d'arrivée.",
+            "Renommer original en cronologico après l'avoir trié.",
+            "Trier une copie et conserver l'original."
+          ],
+          "correctIndex": 2,
+          "explanation": "Changer le nom d'un objet ne rétablit pas l'information modifiée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Texte et règles de comparaison"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les chaînes peuvent aussi être triées. La comparaison par défaut est lexicographique : elle compare les caractères et, lorsque deux chaînes ont le même préfixe, la plus courte vient d'abord. Dans ces exemples, nous utilisons des lettres latines minuscules sans accents. Cela ne signifie pas que cette comparaison respecte les règles d'un classement linguistique français avec accents et majuscules."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n\nint main() {\n    std::vector<std::string> palabras{\"chien\", \"chat\", \"chats\", \"chat\"};\n    std::sort(palabras.begin(), palabras.end());\n    for (const auto& palabra : palabras) { std::cout << palabra << \";\"; }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "chat;chat;chats;chien;"
+          ],
+          "explanation": "Les deux occurrences de chat précèdent chats, qui partage leur préfixe mais est plus long ; chats précède chien."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu tries les étiquettes textuelles « 10 » et « 2 ». Quelle règle la comparaison de chaînes utilise-t-elle ?",
+          "options": [
+            "La longueur du nom de la variable.",
+            "Toujours la valeur numérique que les textes semblent représenter.",
+            "Leurs caractères, sans conversion automatique en quantités."
+          ],
+          "correctIndex": 2,
+          "explanation": "La représentation choisie détermine les opérations : un texte ressemblant à un nombre reste du texte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Afficher les valeurs distinctes sans effacer les données"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après le tri, les occurrences égales sont adjacentes. Pour présenter chaque valeur une seule fois, on affiche la première, puis uniquement celles qui diffèrent de la précédente. Dans i == 0 || datos[i] != datos[i - 1], l'évaluation en court-circuit de || évite de consulter i - 1 lorsque i vaut zéro. Cet affichage ne supprime aucun élément du vecteur."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{5, 2, 5, 2, 7};\n    std::sort(datos.begin(), datos.end());\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        if (i == 0 || datos[i] != datos[i - 1]) {\n            std::cout << datos[i] << \";\";\n        }\n    }\n    std::cout << \"N=\" << datos.size();\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "2;5;7;N=5"
+          ],
+          "explanation": "Trois valeurs distinctes sont affichées ; le vecteur contient toujours cinq éléments."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Qu'est-ce qui protège l'accès datos[i - 1] lors de l'affichage de la première valeur ?",
+          "options": [
+            "La première condition vraie arrête l'évaluation de ||.",
+            "sort autorise tous les indices.",
+            "Le vecteur crée une position -1."
+          ],
+          "correctIndex": 0,
+          "explanation": "La protection dépend de l'ordre d'évaluation et du court-circuit de la condition."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compter les valeurs distinctes est une autre question"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{3, 3, 1, 3};\n    std::sort(datos.begin(), datos.end());\n    int distintos = 0;\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        if (i == 0 || datos[i] != datos[i - 1]) { ++distintos; }\n    }\n    std::cout << datos.size() << \" \" << distintos;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "4 2"
+          ],
+          "explanation": "Il y a quatre observations mais seulement deux valeurs distinctes."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Avec un vecteur vide, combien de valeurs distinctes ce parcours produit-il ?",
+          "options": [
+            "Zéro, car aucune visite n'a lieu.",
+            "Une, à cause de la condition i == 0.",
+            "Une valeur zéro inventée."
+          ],
+          "correctIndex": 0,
+          "explanation": "La condition du corps n'est jamais évaluée lorsque la boucle ne visite aucun élément."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète uniquement les noms des deux opérations qui délimitent l'intervalle complet.",
+          "template": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{8, 1};\n    std::sort(datos.[](), datos.[]());\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "answers": [
+            "begin",
+            "end"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire en conservant deux ordres"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis une copie triée de {6, 2, 6, 1}. Affiche Original :6;2;6;1; et Triés :1;2;6;6; sur deux lignes. Ajoute une troisième ligne, Distincts :3. Recommence avec {}, {4} et {5, 5} : ces collections contiennent respectivement zéro, une et deux observations, mais zéro, une et une valeur distincte."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construis ici le programme demandé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour transférer ces acquis, utilise les étiquettes {\"b2\", \"a1\", \"b2\"} avec <string>. Explique quelle information conserve l'original et pourquoi l'affichage des valeurs distinctes ne modifie pas sa taille."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence et révision de la recherche"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original{6, 2, 6, 1};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::cout << \"Original :\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\nTriés :\";\n    for (int valor : ordenados) { std::cout << valor << \";\"; }\n    int distintos = 0;\n    for (std::size_t i = 0; i < ordenados.size(); ++i) {\n        if (i == 0 || ordenados[i] != ordenados[i - 1]) { ++distintos; }\n    }\n    std::cout << \"\\nDistincts :\" << distintos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{9, 3, 7};\n    std::sort(datos.begin(), datos.end());\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == 9) { posicion = i; }\n    }\n    if (posicion < datos.size()) { std::cout << posicion; }\n    else { std::cout << \"Absent\"; }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "2"
+          ],
+          "explanation": "La position trouvée correspond à l'ordre actuel ; neuf était en première position avant le tri."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que faut-il préciser lorsque l'on indique un indice après un tri ?",
+          "options": [
+            "Il décrit la collection dans son ordre actuel.",
+            "Il est toujours égal à la valeur trouvée.",
+            "Il correspond nécessairement à la position d'arrivée initiale."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un indice désigne une position dans une séquence donnée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de l'atelier : trier une copie par valeur, conserver l'ordre initial et toutes les observations répétées, compter les valeurs distinctes sans les supprimer et protéger l'accès à l'élément précédent ; les mêmes critères s'appliquent aux étiquettes textuelles."
+        }
+      ]
+    }
+  ]
+}

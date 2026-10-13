@@ -1,0 +1,304 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__ordenar_y_conservar_el_original",
+  "title": "Sorting While Preserving the Original Data",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Sorting changes the sequence"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::sort sorts the elements in the specified range. For a numeric vector, we write std::sort(datos.begin(), datos.end()); and include <algorithm>. The default order is ascending: no later element is smaller than its predecessor. The operation modifies the vector; it does not automatically create a sorted copy."
+        },
+        {
+          "type": "paragraph",
+          "text": "begin() and end() provide library positions delimiting the range: from the beginning (included) to the end (excluded). They differ from the indices we display as numbers. end() is past the last element; it is not a value to read. We do not yet need to manipulate these positions ourselves to use this complete call."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{7, 2, 5};\n    std::sort(datos.begin(), datos.end());\n    for (int valor : datos) { std::cout << valor << \";\"; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 2;5;7;. The collection still has three values; only their order changed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Duplicates and size"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{4, 1, 4, 2};\n    std::sort(datos.begin(), datos.end());\n    for (int valor : datos) { std::cout << valor << \";\"; }\n    std::cout << \"N=\" << datos.size();\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "1;2;4;4;N=4"
+          ],
+          "explanation": "Sorting keeps both occurrences of four and preserves the number of elements."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does sort do with duplicate values?",
+          "options": [
+            "It keeps them, placing them in sorted order.",
+            "It converts them into indices.",
+            "It automatically deletes all but one."
+          ],
+          "correctIndex": 0,
+          "explanation": "Sorting and removing duplicates are different tasks."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the name of the sorting operation used in the previous example.",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{3, 1};\n    std::___(datos.begin(), datos.end());\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "answers": [
+            "sort"
+          ],
+          "explanation": "sort orders the entire range specified by begin and end."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Empty, single-element, and already-sorted collections"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos;\n    std::sort(datos.begin(), datos.end());\n    std::cout << datos.size() << \" \" << datos.empty();\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "0 1"
+          ],
+          "explanation": "An empty range can be sorted and remains empty; no element is accessed."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{6};\n    std::sort(datos.begin(), datos.end());\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "6"
+          ],
+          "explanation": "A single value stays the same."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You sort {1, 2, 2, 8}, which is already in ascending order. What can you expect?",
+          "options": [
+            "It keeps the same values and remains sorted.",
+            "It must become {8, 2, 2, 1}.",
+            "It must lose the duplicates."
+          ],
+          "correctIndex": 0,
+          "explanation": "Sorting again need not visibly change a collection that is already sorted."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The original order may carry information"
+        },
+        {
+          "type": "paragraph",
+          "text": "If the data represent sessions in arrival order, sorting the vector changes which value belongs to the first session. To preserve that information, make a copy and sort the copy. std::vector<int> ordenados = original; preserves the values at that moment in another object."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> original{8, 2, 5};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::cout << original.at(0) << \" \" << ordenados.at(0);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "8 2"
+          ],
+          "explanation": "auto deduces a separate collection by value; sorting it does not modify original."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The report must preserve measurement order and also show sorted values. Which choice meets both needs?",
+          "options": [
+            "Sort the original and assume it still represents arrival order.",
+            "Rename original to cronologico after sorting it.",
+            "Sort a copy and keep the original."
+          ],
+          "correctIndex": 2,
+          "explanation": "Renaming an object does not restore the information you changed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Text and comparison rules"
+        },
+        {
+          "type": "paragraph",
+          "text": "Strings can also be sorted. The default comparison is lexicographical: it compares characters, and when strings share a prefix, the shorter string comes first. These examples use lowercase Latin letters without accents. We do not claim this comparison follows language-specific collation rules for accented or uppercase text."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n\nint main() {\n    std::vector<std::string> palabras{\"dog\", \"cat\", \"cats\", \"cat\"};\n    std::sort(palabras.begin(), palabras.end());\n    for (const auto& palabra : palabras) { std::cout << palabra << \";\"; }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "cat;cat;cats;dog;"
+          ],
+          "explanation": "Both occurrences of cat come before cats, which shares their prefix but is longer; cats sorts before dog."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You sort the text labels \"10\" and \"2\". Which rule does string comparison use?",
+          "options": [
+            "The length of the variable's name.",
+            "Always the magnitude of the numbers they appear to represent.",
+            "Their characters, without automatically converting them to quantities."
+          ],
+          "correctIndex": 2,
+          "explanation": "The chosen representation determines the operations: numeric-looking text remains text."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Display distinct values without deleting data"
+        },
+        {
+          "type": "paragraph",
+          "text": "After sorting, equal values are adjacent. To display each value only once, print the first and then only those that differ from their predecessor. In i == 0 || datos[i] != datos[i - 1], short-circuit evaluation of || avoids examining i - 1 when i is zero. This display does not remove elements from the vector."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{5, 2, 5, 2, 7};\n    std::sort(datos.begin(), datos.end());\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        if (i == 0 || datos[i] != datos[i - 1]) {\n            std::cout << datos[i] << \";\";\n        }\n    }\n    std::cout << \"N=\" << datos.size();\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "2;5;7;N=5"
+          ],
+          "explanation": "Three distinct values are displayed; the vector still contains five elements."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What protects the access datos[i - 1] when displaying the first value?",
+          "options": [
+            "The first true condition stops the evaluation of ||.",
+            "sort makes every subscript valid.",
+            "The vector creates a position -1."
+          ],
+          "correctIndex": 0,
+          "explanation": "This protection depends on the order of evaluation and short-circuit behavior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Counting distinct values is a separate question"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{3, 3, 1, 3};\n    std::sort(datos.begin(), datos.end());\n    int distintos = 0;\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        if (i == 0 || datos[i] != datos[i - 1]) { ++distintos; }\n    }\n    std::cout << datos.size() << \" \" << distintos;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "4 2"
+          ],
+          "explanation": "There are four observations but only two distinct values."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "With an empty vector, how many distinct values does this traversal produce?",
+          "options": [
+            "Zero, because there are no visits.",
+            "One because of the condition i == 0.",
+            "An invented value of zero."
+          ],
+          "correctIndex": 0,
+          "explanation": "The body condition is never evaluated if the loop visits no elements."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Fill in only the names of the two operations that delimit the full range.",
+          "template": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{8, 1};\n    std::sort(datos.[](), datos.[]());\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "answers": [
+            "begin",
+            "end"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a program preserving two orders"
+        },
+        {
+          "type": "paragraph",
+          "text": "Make a sorted copy of {6, 2, 6, 1}. Display Original:6;2;6;1; and Sorted:1;2;6;6; on separate lines. Add a third line, Distinct:3. Repeat with {}, {4}, and {5, 5}: these contain zero, one, and two observations, respectively, but have zero, one, and one distinct values."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "For further practice, use the labels {\"b2\", \"a1\", \"b2\"} with <string>. Explain what information the original preserves and why displaying distinct values does not change its size."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution and review of searching"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original{6, 2, 6, 1};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::cout << \"Original:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\nSorted:\";\n    for (int valor : ordenados) { std::cout << valor << \";\"; }\n    int distintos = 0;\n    for (std::size_t i = 0; i < ordenados.size(); ++i) {\n        if (i == 0 || ordenados[i] != ordenados[i - 1]) { ++distintos; }\n    }\n    std::cout << \"\\nDistinct:\" << distintos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{9, 3, 7};\n    std::sort(datos.begin(), datos.end());\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == 9) { posicion = i; }\n    }\n    if (posicion < datos.size()) { std::cout << posicion; }\n    else { std::cout << \"Absent\"; }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "2"
+          ],
+          "explanation": "The found position belongs to the current order; nine was first before sorting."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "When reporting an index after sorting, what must you say about it?",
+          "options": [
+            "It describes the collection in its current order.",
+            "It is always the value that was found.",
+            "It must be the original arrival position."
+          ],
+          "correctIndex": 0,
+          "explanation": "An index describes a position in a particular sequence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lab criteria: sort a copy by value, preserve the original sequence and all repeated observations, count distinct values without deleting them, and protect access to the previous neighbor; the same rules must hold for text labels."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,313 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__mediana_y_posiciones_centrales",
+  "title": "Median and Middle Positions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A different summary from the mean"
+        },
+        {
+          "type": "paragraph",
+          "text": "The median is obtained from sorted values. We will use the usual convention: with an odd number of data points, it is the middle value; with an even number, it is the mean of the two middle values. The center is defined by positions in the sorted order, even when values are repeated. When repetitions occur, this does not mean there must be exactly as many strictly smaller values as strictly larger ones."
+        },
+        {
+          "type": "paragraph",
+          "text": "The arithmetic mean adds magnitudes; the median locates the center of a sorted collection. For {1, 2, 12}, the mean is five and the median is two. Neither summary automatically replaces the other: each answers a different question."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "To find the median using this method, what preparation is needed?",
+          "options": [
+            "Simply read the middle element in arrival order.",
+            "Sort the values or a copy of them.",
+            "Always add the values and divide by the size."
+          ],
+          "correctIndex": 1,
+          "explanation": "The middle position must belong to the order by value, not just any sequence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The center of an odd number of values"
+        },
+        {
+          "type": "paragraph",
+          "text": "For an odd, positive size, size() / 2 gives the middle index: with five elements, integer division yields two, leaving two positions on either side. Here integer division is intentional: we need an index, not a fractional measurement."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{8, 1, 6, 3, 5};\n    std::sort(datos.begin(), datos.end());\n    auto centro = datos.size() / 2;\n    std::cout << centro << \":\" << datos.at(centro);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "2:5"
+          ],
+          "explanation": "The sorted order is one, three, five, six, eight; the middle index two contains five."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In a sorted collection of three elements, which index is the middle one?",
+          "options": [
+            "2",
+            "1",
+            "0"
+          ],
+          "correctIndex": 1,
+          "explanation": "There is one position on either side of index one."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the divisor digit that locates the middle index for any positive odd size, not only the three values in this example.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 7, 9};\n    auto centro = datos.size() / ___;\n    std::cout << datos.at(centro);\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Integer division of the size by two gives the middle index for an odd size."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An even number of values has two middle positions"
+        },
+        {
+          "type": "paragraph",
+          "text": "With four sorted elements, the middle indices are one and two. If centro = size() / 2, those indices are centro - 1 and centro. Choosing only datos[centro] gives the upper middle value, not the median under our convention. For {1, 4, 8, 9}, the median is six, even though that value does not appear in the collection."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{10, 2, 6, 4};\n    std::sort(datos.begin(), datos.end());\n    auto centro = datos.size() / 2;\n    double mediana = (static_cast<double>(datos.at(centro - 1)) + datos.at(centro)) / 2.0;\n    std::cout << mediana;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "5"
+          ],
+          "explanation": "The sorted middle values are four and six; their mean is five."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "For the sorted data {2, 3, 8, 12}, which values contribute to the median?",
+          "options": [
+            "Two and twelve.",
+            "Three and eight.",
+            "Only eight."
+          ],
+          "correctIndex": 1,
+          "explanation": "The two middle values occupy indices one and two."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Keep the fractional result for an even center"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{7, 2};\n    std::sort(datos.begin(), datos.end());\n    auto centro = datos.size() / 2;\n    double mediana = (static_cast<double>(datos.at(centro - 1)) + datos.at(centro)) / 2.0;\n    std::cout << mediana;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "4.5"
+          ],
+          "explanation": "With two data points, both are middle values; their mean can be fractional."
+        },
+        {
+          "type": "paragraph",
+          "text": "We convert one value to double before adding them, so the addition in this expression is also performed in double. Dividing by 2.0 preserves the fractional part. We do not use an int sum that might overflow and expect a later conversion to repair it. In these exercises we use small quantities or measurements, not money that would require another representation."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Fill in only the conversion type, which must match the type of mediana, and the divisor digit before the decimal point.",
+          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4};\n    auto centro = datos.size() / 2;\n    double mediana = (static_cast<[]>(datos.at(centro - 1)) + datos.at(centro)) / [].0;\n    std::cout << mediana;\n    return 0;\n}\n",
+          "answers": [
+            "double",
+            "2"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Parity and valid index ranges"
+        },
+        {
+          "type": "paragraph",
+          "text": "The previous fill-in exercise uses double and the digit two, producing 2.5. To distinguish odd and even counts, use size() % 2: a nonzero remainder indicates an odd size. First check that the collection is not empty. If the positive size is even, it is at least two, so centro is at least one and centro - 1 exists. If the size is odd, centro is always within bounds."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{9, 2, 5};\n    if (datos.empty()) {\n        std::cout << \"No median\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << mediana;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What must be checked before any middle element is accessed?",
+          "options": [
+            "That the first value is positive.",
+            "That all values are different.",
+            "That elements exist."
+          ],
+          "correctIndex": 2,
+          "explanation": "An empty collection has no middle positions and no median defined by this method."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zero, one, and repeated values"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{0};\n    if (datos.empty()) {\n        std::cout << \"No median\";\n    } else {\n        std::sort(datos.begin(), datos.end());\n        std::cout << datos.at(datos.size() / 2);\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "A single zero has a median of zero, unlike a collection with no data."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{3, 3, 3, 8, 9};\n    std::sort(datos.begin(), datos.end());\n    std::cout << datos.at(datos.size() / 2);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "3"
+          ],
+          "explanation": "The positional middle value is still three even though there are not two strictly smaller values."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "An empty vector must produce…",
+          "options": [
+            "An access to index zero.",
+            "A message indicating that no median exists, without accessing the center.",
+            "An invented median of zero."
+          ],
+          "correctIndex": 1,
+          "explanation": "The absence of data must be represented explicitly."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mean and median in the presence of an outlier"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{1, 2, 15};\n    double suma = 0.0;\n    for (int valor : datos) { suma += valor; }\n    double media = suma / static_cast<double>(datos.size());\n    auto ordenados = datos;\n    std::sort(ordenados.begin(), ordenados.end());\n    double mediana = ordenados.at(ordenados.size() / 2);\n    std::cout << media << \" \" << mediana;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "6 2"
+          ],
+          "explanation": "The value fifteen affects the sum, but the sorted center of three values remains two."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The mean and median both came out to four in one example. What does this prove?",
+          "options": [
+            "That sort did not run.",
+            "That they are always the same operation.",
+            "That they happened to agree in that case; other data may give different results."
+          ],
+          "correctIndex": 2,
+          "explanation": "Matching results do not erase the difference between their definitions."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a median for both count types"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a general median calculation using a sorted copy. For {6, 1, 4}, display Median: 4. For {1, 6, 2, 9}, display Median: 4. For {}, display No data. Also check {5}, {2, 7}, {-5, -1}, {3, 3, 8}, and {4, 4, 4, 4}. Determine which branch applies and which indices will be used before running each test."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Keep a test table with the collection, resulting sorted order, size, middle indices, and expected median. This evidence justifies every access rather than merely showing that the program finished."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution preserving order and representing absence"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{6, 1, 4};\n    if (datos.empty()) {\n        std::cout << \"No data\";\n    } else {\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Median: \" << mediana;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Why is an even-sized collection with different middle values a necessary test?",
+          "options": [
+            "Because odd-sized collections cannot be sorted.",
+            "Because it distinguishes the agreed-upon median from selecting only the upper middle value.",
+            "Because it forces you to modify the original values."
+          ],
+          "correctIndex": 1,
+          "explanation": "The test case must exercise the definition we intend to implement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review without sorting the original"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> original{8, 1, 3};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    double mediana = ordenados.at(ordenados.size() / 2);\n    original.at(0) = 10;\n    std::cout << mediana << \" \" << ordenados.at(2) << \" \" << original.at(0);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "3 8 10"
+          ],
+          "explanation": "The stored median and sorted copy preserve their previous state; changing the original does not recalculate them."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What should your explanation say about the middle in the presence of duplicates?",
+          "options": [
+            "That duplicates must be removed before calculating.",
+            "That it is defined by positions in the sorted collection, with the even-count convention made explicit.",
+            "That half the values must always be strictly smaller."
+          ],
+          "correctIndex": 1,
+          "explanation": "Removing repeated observations would change the data involved in the question."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lab criteria: distinguish missing data, odd and even counts; justify the middle indices in value order; average both middle values while preserving fractions; do not remove repeated observations or modify the original."
+        }
+      ]
+    }
+  ]
+}
