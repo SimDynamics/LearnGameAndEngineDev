@@ -1,0 +1,236 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__declarar_e_inicializar",
+  "title": "Declaring and Initializing Safely",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Give data an initial value"
+        },
+        {
+          "type": "paragraph",
+          "text": "A declaration introduces a name and its type. In the small programs of this unit, int filas = 5; is also a definition: it creates the object filas and establishes its initial value. It does more than announce that the name exists. Initialization is the term for this first preparation of the value."
+        },
+        {
+          "type": "paragraph",
+          "text": "A semicolon terminates the declaration. The declaration must appear before the name is used. In these examples, variables are defined inside main and are called local variables. In C++, the compiler does not look ahead to a later definition to guess what a local variable should mean in an earlier statement."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int filas = 5;\n    std::cout << filas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Write only the initial value to create a variable that starts with eight shifts.",
+          "code": "#include <iostream>\n\nint main() {\n    int turnos = ___;\n    std::cout << turnos;\n    return 0;\n}\n",
+          "answers": [
+            "8"
+          ],
+          "explanation": "8 is the initializer. The variable exists with this value before it is displayed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Do not read an uninitialized quantity"
+        },
+        {
+          "type": "paragraph",
+          "text": "Writing int filas; creates a local integer variable, but does not give it an initial value that we can safely read. Do not assume it contains zero or that the compiler will fill it in for you. Reading it this way has no result we can promise. The program may even compile: a tool accepting code does not make this read correct."
+        },
+        {
+          "type": "note",
+          "text": "We will not run code that reads uninitialized local variables. The solution is to establish a value before using it, not to experiment until a plausible number seems to appear."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You must initially display zero requests. Which definition prepares a valid value for that first output?",
+          "options": [
+            "int solicitudes;",
+            "int solicitudes = 0;",
+            "std::cout << solicitudes;"
+          ],
+          "correctIndex": 1,
+          "explanation": "The second definition provides an initial value. The first does not let us assume zero, and the third does not define the object."
+        },
+        {
+          "type": "order_code",
+          "question": "Arrange this program so that it displays 10 using a variable defined before it is read.",
+          "fragments": [
+            "    std::cout << boletos;",
+            "}\n",
+            "#include <iostream>\n\nint main() {",
+            "    return 0;",
+            "    int boletos = 10;"
+          ],
+          "correctOrder": [
+            2,
+            4,
+            0,
+            3,
+            1
+          ],
+          "explanation": "First main opens, then boletos is defined, its value is read, and finally the function ends."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Using braces to express initialization"
+        },
+        {
+          "type": "paragraph",
+          "text": "int filas{5}; and int filas = 5; both create an integer with the value 5. Braces provide a useful safeguard: they reject conversions that could lose information. For example, int filas{5.8}; does not express an exact integer; the compiler must report the invalid conversion. This is not a way to round 5.8. We will study the difference between integers and fractional numbers before deciding how to handle such a quantity."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int filas{5};\n    std::cout << filas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What intention does int asientos{0}; express?",
+          "options": [
+            "Leave the value for the compiler to choose.",
+            "Create text containing 0.",
+            "Create an integer initialized with the value zero."
+          ],
+          "correctIndex": 2,
+          "explanation": "The initializer 0 is explicitly written and fits in an integer."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Fill in both initializers to start with three floors and twelve windows.",
+          "template": "#include <iostream>\n\nint main() {\n    int pisos{[]};\n    int ventanas{[]};\n    std::cout << pisos << \" \" << ventanas;\n    return 0;\n}\n",
+          "answers": [
+            "3",
+            "12"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Why the previous solution works"
+        },
+        {
+          "type": "paragraph",
+          "text": "The initializers are 3 and 12, in that order. Each variable has its own definition and its own value. The braces do not connect the two quantities. The output is 3 12."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The requirement says a storage area starts empty. Why is it justified to initialize cantidad to zero?",
+          "options": [
+            "Because the initial value must represent the starting situation described by the task.",
+            "Because every integer variable automatically starts at zero.",
+            "Because zero is always the final quantity."
+          ],
+          "correctIndex": 0,
+          "explanation": "Initialization must describe the initial state. It does not guarantee the final state of a program that later changes the variable."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "The initial quantity is four. Write only the digit that completes the brace initializer.",
+          "code": "#include <iostream>\n\nint main() {\n    int tramos{___};\n    std::cout << tramos;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "The digit 4 establishes the initial value; the complete definition creates tramos and ends with a semicolon."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build independently"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write a program with two initial quantities: cajas = 4 and sobres = 9. It must display Boxes: 4 on the first line and Envelopes: 9 on the second. Decide how to write the definitions and the output statements. Then change the quantities to 0 and 2, respectively, without rewriting the output text. Check both versions against the expected results."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Write your program here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running the program, check that each name has been defined and has an initial value. If a compilation error occurs, locate the first diagnostic and compare the actual code against this requirement. Do not compile a different file from the one you just edited."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare without confusing style and meaning"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas{4};\n    int sobres = 9;\n    std::cout << \"Boxes: \" << cajas << \"\\n\";\n    std::cout << \"Envelopes: \" << sobres;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "For these small integers, both notations establish safe values. What matters is that both pieces of data are initialized before they are first read. Braces offer protection against conversions that could lose information, such as converting 5.8 to int as you saw earlier; they do not expand the type's range."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Recall type, value, and formatting: write both lines of output.",
+          "code": "#include <iostream>\n\nint main() {\n    int nivel{2};\n    std::cout << \"level=\" << nivel << \"\\n\";\n    std::cout << \"Ready\";\n    return 0;\n}\n",
+          "answers": [
+            "level=2\nReady"
+          ],
+          "explanation": "The definition establishes 2; the text level= and the newline come from string literals."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The program compiled, but you forgot to initialize a local variable that you read later. What conclusion is justified?",
+          "options": [
+            "You must give it a value before reading it; compiling is not enough.",
+            "Assigning a value after the first read and output is sufficient.",
+            "Successful compilation guarantees the initial value required by the task."
+          ],
+          "correctIndex": 0,
+          "explanation": "The code needs a real initialization. A comment communicates intent, but does not change the object."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution: Two quantities with initial values"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and checking your attempt. The reference shows one possible implementation; the criteria help you recognize other correct solutions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: each object must be defined with its value before use. The first version displays two lines, Boxes: 4 and Envelopes: 9. The second, changing only the initial values to 0 and 2, displays Boxes: 0 and Envelopes: 2. Keep names associated with the data, spaces after the colons, and the line break; no single valid initialization syntax is required. In the reference below, single quotation marks delimit a one-character literal: '\\n' represents the newline character. The previously practiced form \"\\n\" is a string literal containing that newline. Both forms separate the messages in the same way (Stroustrup, 2024, sections 1.2 and 2.2). The lesson on characters will cover the char type and these quotation marks in more detail."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas{4};\n    int sobres{9};\n    std::cout << \"Boxes: \" << cajas << '\\n';\n    std::cout << \"Envelopes: \" << sobres;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The definitions appear before the values of cajas and sobres are read. The newline after the first output separates the messages. Zero is a defined initial value; it does not, by itself, represent an uninitialized object."
+        }
+      ]
+    }
+  ]
+}

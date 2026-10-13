@@ -1,0 +1,325 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__estado_asignacion_y_copia",
+  "title": "Suivre l'état : affectation et copie",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Donner une nouvelle valeur à un objet existant"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une donnée peut changer après sa préparation initiale. int reservas = 4; définit et initialise un objet. L'instruction suivante, reservas = 7;, attribue une nouvelle valeur à cet objet. Elle ne redéclare pas la variable et ne crée pas une autre boîte : elle remplace son contenu."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int reservas = 4;\n    std::cout << reservas << \"\\n\";\n    reservas = 7;\n    std::cout << reservas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie montre deux instants : d'abord 4, puis 7. Pour comprendre un programme, suis les instructions dans l'ordre et demande-toi quelle valeur chaque variable conserve juste avant son utilisation. Cet ensemble de valeurs fait partie de l'état du programme."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La partie droite utilise la valeur actuelle"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans reservas = reservas + 2;, la partie droite utilise la valeur déjà présente. Si elle valait 4, reservas + 2 produit 6 ; l'affectation conserve ensuite 6. Ce n'est pas une affirmation mathématique selon laquelle un nombre serait égal à lui-même plus deux : = demande de stocker le nouveau résultat. Cette instruction ne répète pas non plus l'opération indéfiniment."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis exactement la sortie, sans inclure les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    int reservas = 7;\n    reservas = reservas + 3;\n    std::cout << reservas;\n    return 0;\n}\n",
+          "answers": [
+            "10"
+          ],
+          "explanation": "La partie droite utilise la valeur actuelle 7, lui ajoute 3, puis conserve 10."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis exactement la sortie, sans inclure les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    int agua = 9;\n    std::cout << agua << \" \";\n    agua = agua - 3;\n    std::cout << agua;\n    return 0;\n}\n",
+          "answers": [
+            "9 6"
+          ],
+          "explanation": "Le premier affichage lit 9. Ensuite, le programme conserve 6 unités et la lecture suivante observe 6."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dans cajas = cajas + 5;, cajas valait 2. Dans quel ordre les opérations sont-elles effectuées ?",
+          "options": [
+            "Créer une deuxième variable nommée cajas.",
+            "Conserver 5 puis ajouter 2.",
+            "Lire 2, calculer 2 + 5, puis stocker 7 dans cajas."
+          ],
+          "correctIndex": 2,
+          "explanation": "Une affectation utilise l'ancienne valeur pour calculer sa partie droite, puis modifie l'objet indiqué à gauche."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copier ne crée pas de lien permanent"
+        },
+        {
+          "type": "paragraph",
+          "text": "int copia = original; crée une autre variable initialisée avec une copie de la valeur actuelle. Si original vaut 6, les deux variables contiennent 6 à cet instant. Modifier original ensuite ne met pas copia à jour : ce sont deux objets différents. Ce n'est pas la même chose qu'afficher deux fois une seule variable."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int original = 6;\n    int copia = original;\n    original = 10;\n    std::cout << original << \" \" << copia;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 10 6. La variable nommée copia conserve la valeur reçue lors de son initialisation. Pour lui donner ensuite la valeur actuelle de original, il faudrait une autre affectation explicite : copia = original;."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis exactement la sortie, sans inclure les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    int salida = 5;\n    int registro = salida;\n    salida = 8;\n    registro = registro + 1;\n    std::cout << salida << \" \" << registro;\n    return 0;\n}\n",
+          "answers": [
+            "8 6"
+          ],
+          "explanation": "registro commence avec 5 puis passe à 6 ; salida passe séparément à 8."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Après avoir copié cantidad dans anterior, tu modifies cantidad. Quelle valeur anterior conserve-t-elle si tu ne lui attribues plus rien ?",
+          "options": [
+            "La valeur reçue lors de la copie.",
+            "Le nom cantidad sous forme de texte.",
+            "Toujours la valeur la plus récente de cantidad."
+          ],
+          "correctIndex": 0,
+          "explanation": "La copie conserve une valeur, pas une instruction destinée à maintenir les deux variables synchronisées."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un tableau pour suivre chaque étape"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour int a = 2; int b = a; a = a + 3; b = a;, les étapes sont les suivantes : a existe avec 2 ; b est créée avec 2 ; a passe à 5 tandis que b reste à 2 ; enfin, b reçoit 5. Écris chaque ligne du tableau après l'exécution d'une instruction. Ne saute pas directement à l'état final si une étape te paraît difficile."
+        },
+        {
+          "type": "order_code",
+          "question": "Remets les actions dans l'ordre pour conserver d'abord la valeur 3 dans anterior, puis afficher 8 3.",
+          "fragments": [
+            "    actual = actual + 5;",
+            "    std::cout << actual << \" \" << anterior;",
+            "    int anterior = actual;",
+            "#include <iostream>\n\nint main() {",
+            "    int actual = 3;",
+            "    return 0;\n}"
+          ],
+          "correctOrder": [
+            3,
+            4,
+            2,
+            0,
+            1,
+            5
+          ],
+          "explanation": "anterior est initialisée avant la modification de actual. Cet ordre conserve 3 et permet d'afficher 8 3."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement l'opérateur qui augmente invitados de quatre à partir de sa valeur actuelle.",
+          "code": "#include <iostream>\n\nint main() {\n    int invitados = 6;\n    invitados = invitados ___ 4;\n    std::cout << invitados;\n    return 0;\n}\n",
+          "answers": [
+            "+"
+          ],
+          "explanation": "On lit la valeur actuelle 6, on calcule 10, puis on stocke le résultat."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis exactement la sortie, sans inclure les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    int plazas = 7;\n    int informe = plazas;\n    plazas = 2;\n    informe = plazas;\n    std::cout << plazas << \" \" << informe;\n    return 0;\n}\n",
+          "answers": [
+            "2 2"
+          ],
+          "explanation": "La dernière affectation met informe à jour avec la nouvelle valeur ; sa copie initiale n'est donc plus sa valeur finale."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mises à jour compactes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour un entier, cantidad += 3; signifie ajouter trois à sa valeur et conserver le résultat dans cette variable. cantidad -= 2; signifie soustraire deux. ++cantidad; l'augmente de un, et --cantidad; la diminue de un. Ici, nous utilisons l'incrémentation et la décrémentation comme instructions distinctes ; nous ne les combinons pas encore avec d'autres opérations au sein d'une expression."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int pasos = 2;\n    pasos += 3;\n    ++pasos;\n    std::cout << pasos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'état passe de 2 à 5, puis à 6. La notation compacte rend visible l'intention de mettre à jour la valeur. Garde de petites quantités pour ces expériences : un entier a une plage de valeurs finie et il ne faut pas supposer qu'une augmentation sans limite produit toujours un nombre valide."
+        },
+        {
+          "type": "drag_fill_code",
+          "question": "Complète le programme pour commencer avec 10, soustraire trois et afficher le résultat.",
+          "template": "#include <iostream>\n\nint main() {\n    int saldo = [];\n    saldo [] 3;\n    std::cout << saldo;\n    return 0;\n}\n",
+          "choices": [
+            "-=",
+            "10",
+            "+="
+          ],
+          "correctOrder": [
+            1,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier la modification"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'exercice précédent utilise 10 et -= : l'état final est 7. Aucune donnée extérieure n'est lue ; toutes les informations se trouvent dans les instructions du programme."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis exactement la sortie, sans inclure les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    int puntos = 1;\n    ++puntos;\n    puntos += 4;\n    --puntos;\n    std::cout << puntos;\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "explanation": "Les valeurs successives sont 1, 2, 6 et 5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle écriture exprime directement l'augmentation de un de l'entier turnos ?",
+          "options": [
+            "turnos = 1;",
+            "int turnos = 1;",
+            "++turnos;"
+          ],
+          "correctIndex": 2,
+          "explanation": "++turnos augmente de un la valeur existante. turnos = 1 la remplace par un ; int turnos = 1 définit une variable, ce n'est pas une mise à jour de l'objet existant."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète les opérateurs dans les parties droites pour doubler 4, puis réduire le résultat de deux.",
+          "template": "#include <iostream>\n\nint main() {\n    int cantidad = 4;\n    cantidad = cantidad [] 2;\n    cantidad = cantidad [] 2;\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "*",
+            "-"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire et justifier l'ordre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les opérateurs de l'exercice précédent étaient * et - : les états sont 4, 8 et 6. Dans le laboratoire, crée un registre des entrées dans une salle : aforo commence à 5 ; anterior reçoit une copie ; aforo augmente de 3 ; puis Avant : 5 et Maintenant : 8 s'affichent sur des lignes distinctes. Essaie ensuite de copier dans anterior après l'augmentation et prédis quel message changera."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Écris ici ton programme.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris un tableau d'état pour les deux versions. Explique à quel moment anterior reçoit sa valeur ; n'accepte pas comme explication que « le programme le sait ». C'est l'ordre des instructions du code qui doit déterminer ce moment."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution et révision"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int aforo = 5;\n    int anterior = aforo;\n    aforo += 3;\n    std::cout << \"Avant : \" << anterior << \"\\n\";\n    std::cout << \"Maintenant : \" << aforo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copier avant l'augmentation conserve un instantané de l'état initial. Copier après conserverait 8 et produirait Avant : 8. Le nom anterior ne décrit qu'une intention : l'ordre réel des instructions doit lui donner raison. L'exercice suivant utilise cajas *= 3 : cela multiplie la valeur actuelle de cajas par trois et conserve le résultat dans cajas. Ici, cette opération équivaut à cajas = cajas * 3. Le symbole * représente la multiplication, tandis que *= associe ce calcul à la mise à jour du même objet ; cela ne modifie pas les copies déjà effectuées."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis exactement la sortie, sans inclure les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 2;\n    std::cout << \"A: \" << cajas << \"\\n\";\n    cajas *= 3;\n    std::cout << \"B: \" << cajas;\n    return 0;\n}\n",
+          "answers": [
+            "A: 2\nB: 6"
+          ],
+          "explanation": "La sortie montre différents états dans l'ordre. Multiplier et affecter produit 6."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un commentaire indique que l'ancienne valeur est 4, mais le code réalise la copie après l'affectation de 9. Qu'est-ce qui détermine la sortie ?",
+          "options": [
+            "La copie reçoit 4 parce que le commentaire fixe cette valeur attendue.",
+            "La copie reçoit 9 ; le moment de la copie doit correspondre à l'intention.",
+            "La copie reçoit 4 parce que le nom anterior conserve l'historique."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les commentaires ne sont pas exécutés ; un nom ou un commentaire ne peut pas remplacer une mise à jour correcte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence : préserver l'état précédent"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et vérifié ton programme. La référence présente une implémentation possible ; les critères permettent de reconnaître d'autres solutions correctes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : avant l'augmentation, aforo vaut 5 et anterior reçoit une copie de cette valeur. La première version affiche Avant : 5 et Maintenant : 8 sur des lignes distinctes. Si anterior est définie après l'augmentation, elle affiche Avant : 8 et Maintenant : 8. Le tableau doit expliquer le moment de la copie ; anterior ne reste pas liée aux futures valeurs de aforo."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int aforo{5};\n    int anterior{aforo};\n    aforo = aforo + 3;\n    std::cout << \"Avant : \" << anterior << '\\n';\n    std::cout << \"Maintenant : \" << aforo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après la définition de aforo : aforo=5. Après la copie : aforo=5, anterior=5. Après l'augmentation : aforo=8, anterior=5. Pour la deuxième version, déplace la définition de anterior sous aforo = aforo + 3; afin qu'elle copie 8. Modifier seulement l'étiquette Avant ne permet pas d'expliquer ni de modifier l'état conservé."
+        }
+      ]
+    }
+  ]
+}

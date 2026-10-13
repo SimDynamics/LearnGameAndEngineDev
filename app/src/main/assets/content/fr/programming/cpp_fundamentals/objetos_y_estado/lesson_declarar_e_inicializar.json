@@ -1,0 +1,236 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__declarar_e_inicializar",
+  "title": "Déclarer et initialiser en toute sécurité",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Donner une valeur à une donnée dès sa création"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une déclaration introduit un nom et son type. Dans les petits programmes de cette unité, int filas = 5; est aussi une définition : elle crée l'objet filas et établit sa valeur initiale. Il ne s'agit pas seulement d'annoncer que le nom existe. Le terme initialisation désigne cette première préparation de la valeur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le point-virgule termine la déclaration. Celle-ci doit précéder l'utilisation du nom. Dans ces exemples, les variables sont définies dans main : on les appelle des variables locales. En C++, le compilateur ne cherche pas une définition plus loin pour deviner ce qu'une variable locale devrait signifier dans une instruction antérieure."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int filas = 5;\n    std::cout << filas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Écris uniquement la valeur initiale pour créer une variable qui commence avec huit créneaux.",
+          "code": "#include <iostream>\n\nint main() {\n    int turnos = ___;\n    std::cout << turnos;\n    return 0;\n}\n",
+          "answers": [
+            "8"
+          ],
+          "explanation": "8 est l'initialiseur. La variable existe avec cette valeur avant d'être affichée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ne pas lire une quantité non initialisée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écrire int filas; crée une variable entière locale sans lui donner une valeur initiale que nous puissions lire en toute sécurité. Ne suppose pas qu'elle contient zéro ou que le compilateur la complétera pour toi. Une telle lecture n'a aucun résultat que nous puissions garantir. Le programme peut même se compiler : le fait qu'un outil accepte le code ne rend pas cette lecture correcte."
+        },
+        {
+          "type": "note",
+          "text": "Nous n'exécuterons pas de code qui lit des variables locales non initialisées. La correction consiste à définir une valeur avant l'utilisation, et non à recommencer jusqu'à obtenir un nombre plausible."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu dois initialement afficher zéro demande. Quelle définition prépare une valeur valide pour ce premier affichage ?",
+          "options": [
+            "int solicitudes;",
+            "int solicitudes = 0;",
+            "std::cout << solicitudes;"
+          ],
+          "correctIndex": 1,
+          "explanation": "La deuxième définition donne une valeur initiale. La première ne permet pas de supposer zéro, et la troisième ne définit pas l'objet."
+        },
+        {
+          "type": "order_code",
+          "question": "Remets ce programme dans l'ordre pour qu'il affiche 10 avec une variable définie avant sa lecture.",
+          "fragments": [
+            "    std::cout << boletos;",
+            "}\n",
+            "#include <iostream>\n\nint main() {",
+            "    return 0;",
+            "    int boletos = 10;"
+          ],
+          "correctOrder": [
+            2,
+            4,
+            0,
+            3,
+            1
+          ],
+          "explanation": "On ouvre d'abord main, on définit boletos, on lit ensuite sa valeur, puis on termine la fonction."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Utiliser des accolades pour initialiser"
+        },
+        {
+          "type": "paragraph",
+          "text": "int filas{5}; et int filas = 5; créent tous deux un entier de valeur 5. Les accolades offrent une protection utile : elles rejettent les conversions susceptibles de perdre de l'information. Par exemple, int filas{5.8}; n'exprime pas un entier exact : le compilateur doit signaler la conversion non autorisée. Ce n'est pas une façon d'arrondir 5.8. Nous étudierons la différence entre entiers et nombres fractionnaires avant de décider comment traiter cette quantité."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int filas{5};\n    std::cout << filas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle intention exprime int asientos{0}; ?",
+          "options": [
+            "Laisser le compilateur choisir la valeur.",
+            "Créer un texte contenant 0.",
+            "Créer un entier initialisé à zéro."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'initialiseur 0 est écrit explicitement et peut être représenté par un entier."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète les deux initialiseurs pour commencer avec trois étages et douze fenêtres.",
+          "template": "#include <iostream>\n\nint main() {\n    int pisos{[]};\n    int ventanas{[]};\n    std::cout << pisos << \" \" << ventanas;\n    return 0;\n}\n",
+          "answers": [
+            "3",
+            "12"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pourquoi la solution précédente fonctionne"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les initialiseurs sont 3 et 12, dans cet ordre. Chaque variable possède sa propre définition et sa propre valeur. Les accolades ne relient pas les deux quantités. La sortie est 3 12."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La consigne précise qu'un entrepôt commence vide. Pourquoi est-il justifié d'initialiser cantidad à zéro ?",
+          "options": [
+            "Parce que la valeur initiale doit correspondre à la situation de départ décrite dans la consigne.",
+            "Parce que toute variable entière commence automatiquement à zéro.",
+            "Parce que zéro est toujours la quantité finale."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'initialisation doit décrire l'état de départ. Elle ne garantit pas l'état final d'un programme qui modifie ensuite la variable."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "La quantité initiale est quatre. Écris uniquement le chiffre qui complète l'initialisation avec accolades.",
+          "code": "#include <iostream>\n\nint main() {\n    int tramos{___};\n    std::cout << tramos;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Le chiffre 4 fixe la valeur initiale ; la définition complète crée tramos et se termine par un point-virgule."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire de façon autonome"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris un programme avec deux quantités initiales : cajas = 4 et sobres = 9. Il doit afficher Boîtes : 4 sur la première ligne et Enveloppes : 9 sur la deuxième. Décide toi-même comment écrire les définitions et les instructions d'affichage. Ensuite, change les quantités en 0 et 2 respectivement, sans réécrire le texte de sortie. Vérifie les deux versions en les comparant aux résultats attendus."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Écris ici ton programme.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant d'exécuter le programme, vérifie que chaque nom a été défini et possède une valeur initiale. S'il y a une erreur de compilation, trouve le premier diagnostic et compare le code réel avec cette vérification. Ne compile pas un fichier différent de celui que tu viens de modifier."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer sans confondre style et signification"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas{4};\n    int sobres = 9;\n    std::cout << \"Boîtes : \" << cajas << \"\\n\";\n    std::cout << \"Enveloppes : \" << sobres;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour ces petits entiers, les deux notations établissent des valeurs sûres. L'essentiel est que les deux données soient initialisées avant leur première lecture. Les accolades protègent contre les conversions qui pourraient perdre de l'information, comme celle de 5.8 en int vue plus tôt ; elles n'agrandissent pas la plage de valeurs du type."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Retrouve les notions de type, de valeur et de mise en forme : écris les deux lignes de sortie.",
+          "code": "#include <iostream>\n\nint main() {\n    int nivel{2};\n    std::cout << \"niveau=\" << nivel << \"\\n\";\n    std::cout << \"Prêt\";\n    return 0;\n}\n",
+          "answers": [
+            "niveau=2\nPrêt"
+          ],
+          "explanation": "La définition établit la valeur 2 ; le texte niveau= et le saut de ligne proviennent des littéraux."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le programme a été compilé, mais tu as oublié d'initialiser une variable locale qui sera lue plus tard. Quelle conclusion faut-il en tirer ?",
+          "options": [
+            "Il faut établir sa valeur avant de la lire ; la compilation ne suffit pas.",
+            "Il suffit de lui attribuer une valeur après la première lecture et le premier affichage.",
+            "Une compilation réussie garantit la valeur initiale demandée par la tâche."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le code a besoin d'une vraie initialisation. Un commentaire explique une intention, mais ne modifie pas l'objet."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence : deux quantités initialisées"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et vérifié ton programme. La référence présente une implémentation possible ; les critères permettent de reconnaître d'autres solutions correctes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : chaque objet doit être défini avec sa valeur avant utilisation. La première version affiche deux lignes : Boîtes : 4 et Enveloppes : 9. La deuxième, en remplaçant uniquement les valeurs initiales par 0 et 2, affiche Boîtes : 0 et Enveloppes : 2. Conserve les noms associés aux données, les espaces après les deux-points et le saut de ligne ; une seule syntaxe d'initialisation n'est pas imposée. Dans la référence suivante, les apostrophes délimitent un littéral contenant un caractère : '\\n' représente le caractère de saut de ligne. La forme \"\\n\", déjà étudiée, est un littéral de chaîne contenant ce saut de ligne. Les deux façons de l'insérer séparent les messages de la même manière (Stroustrup, 2024, sections 1.2 et 2.2). La leçon sur les caractères approfondira le type char et l'emploi de ces guillemets."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas{4};\n    int sobres{9};\n    std::cout << \"Boîtes : \" << cajas << '\\n';\n    std::cout << \"Enveloppes : \" << sobres;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les définitions apparaissent avant les lectures de cajas et sobres. Le saut de ligne après le premier affichage sépare les messages. Zéro est une valeur initiale définie : cela ne signifie pas qu'un objet est non initialisé."
+        }
+      ]
+    }
+  ]
+}
