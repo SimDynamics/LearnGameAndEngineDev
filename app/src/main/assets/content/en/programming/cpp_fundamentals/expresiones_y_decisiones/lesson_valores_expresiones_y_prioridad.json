@@ -1,0 +1,228 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__valores_expresiones_y_prioridad",
+  "title": "Values, Expressions, and Operator Precedence",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "From known data to a new value"
+        },
+        {
+          "type": "paragraph",
+          "text": "You can already declare objects and give them values. An expression lets you obtain another value from them. In 6 * 4, the operator * multiplies two operands and produces 24. In tarjetas * por_tarjeta, the names supply the values held by their objects at that moment. The result of an expression can initialize an object, appear on the right side of an assignment, or be sent to output."
+        },
+        {
+          "type": "paragraph",
+          "text": "For the numerical types we know, const int and const double declare objects whose values remain fixed after initialization: they cannot be reassigned later. const bool imposes the same restriction on a true or false value. We will use const for data and results that should not change during a run. To compare different data, you can change their initializers in the code and run it again; each run creates a new object. This explanation concerns the types already introduced."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int tarjetas = 6;\n    const int por_tarjeta = 4;\n    const int total = tarjetas * por_tarjeta;\n    std::cout << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The expression tarjetas * por_tarjeta yields a value. The full declaration creates total with that value. The semicolon ends the declaration. An expression and the statement containing it play different roles: calculating a result and placing it among the actions performed by the program."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the output of this seating arrangement program. Enter only the displayed result.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int mesas = 3;\n    const int sillas_por_mesa = 4;\n    const int sillas_sueltas = 2;\n    const int total = mesas * sillas_por_mesa + sillas_sueltas;\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "14"
+          ],
+          "explanation": "First there are 12 chairs at the tables; then 2 separate chairs are added."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In the declaration const int total = cajas * piezas;, which part calculates the value used to initialize total?",
+          "options": [
+            "const int",
+            "The semicolon",
+            "cajas * piezas"
+          ],
+          "correctIndex": 2,
+          "explanation": "The operands and operator form the expression that produces the value."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Grouping changes the question"
+        },
+        {
+          "type": "paragraph",
+          "text": "In an arithmetic expression, * and / have higher precedence than + and -. Therefore 2 + 5 * 3 is interpreted as 2 + (5 * 3) and produces 17. To add before multiplying, write (2 + 5) * 3, which produces 21. Parentheses express the grouping required by the problem; they are not decoration."
+        },
+        {
+          "type": "paragraph",
+          "text": "Among additions and subtractions at the same precedence level, grouping is from left to right. 18 - 5 - 4 means (18 - 5) - 4 and produces 9. By contrast, 18 - (5 - 4) produces 17. This grouping rule is called associativity. It describes which operands belong to each operator; it is not a general promise about the evaluation order of every C++ expression."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What value does 6 + 2 * 5 produce?",
+          "options": [
+            "30",
+            "16",
+            "40"
+          ],
+          "correctIndex": 1,
+          "explanation": "Multiplication produces 10, then addition gives 16. Obtaining 40 would require (6 + 2) * 5."
+        },
+        {
+          "type": "drag_fill_code",
+          "question": "Each package contains 3 pieces, and there are 4 large and 2 small packages. Fill in the two operators to add the packages first and then multiply.",
+          "template": "#include <iostream>\n\nint main() {\n    const int grandes = 4;\n    const int pequenos = 2;\n    const int piezas_por_paquete = 3;\n    const int piezas = (grandes [] pequenos) [] piezas_por_paquete;\n    std::cout << piezas;\n    return 0;\n}\n",
+          "choices": [
+            "*",
+            "-",
+            "+",
+            "/"
+          ],
+          "correctOrder": [
+            2,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Read the expression using the current state"
+        },
+        {
+          "type": "note",
+          "text": "In the preceding exercise, + adds the 6 packages inside the parentheses, and * produces 18 pieces. Without that grouping, grandes + pequenos * piezas_por_paquete would describe a different calculation and produce 10."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall assignment from the preceding unit: puntos = puntos + 3 reads the current value of puntos, calculates the sum, and stores the result in the same object. It does not claim a permanent mathematical equality. Following statements observe the new state; an earlier copy retains its own value."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Follow the statements in order. Write the two numbers separated by one space.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int puntos = 5;\n    puntos = puntos + 3;\n    const int antes = puntos;\n    puntos = puntos * 2;\n    std::cout << antes << \" \" << puntos;\n    return 0;\n}\n",
+          "answers": [
+            "8 16"
+          ],
+          "explanation": "The first assignment leaves 8. antes copies that 8. The second assignment changes puntos to 16 without changing antes."
+        },
+        {
+          "type": "order_code",
+          "question": "Order the program: first the inclusion and opening of main, then the declarations according to their dependencies, and finally the output and closing.",
+          "fragments": [
+            "    const int total = base + extra;",
+            "    std::cout << total;\n    return 0;\n}",
+            "#include <iostream>\n\nint main() {",
+            "    const int extra = base * 2;",
+            "    const int base = 3;"
+          ],
+          "correctOrder": [
+            2,
+            4,
+            3,
+            0,
+            1
+          ],
+          "explanation": "base must exist before extra can be calculated; both must exist before total is calculated. The program displays 9."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: explain what you are counting"
+        },
+        {
+          "type": "paragraph",
+          "text": "The values are declared in the program: there are 4 envelopes, 3 tokens per envelope, and 2 loose tokens. Calculate the total before running. Run the program to compare with your prediction. Then change only the expression for total to (sobres + sueltas) * fichas_por_sobre and predict again. The values have not changed, but the grouping has."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int sobres = 4;\n    const int fichas_por_sobre = 3;\n    const int sueltas = 2;\n    const int total = sobres * fichas_por_sobre + sueltas;\n    std::cout << \"Tokens: \" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare the two outputs with the meaning of each piece of data. sueltas counts tokens, not envelopes: adding it to sobres and multiplying everything by fichas_por_sobre changes the model. Then restore the expression that correctly counts the tokens. The compiler may accept both expressions; the requirement determines which solves the task."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "With the original data, which comparison explains the experiment?",
+          "options": [
+            "The original displays 14; the modified version displays 18 and treats loose tokens as envelopes.",
+            "Both expressions display 14 because parentheses never change addition.",
+            "The original cannot compile because it mixes names and numbers."
+          ],
+          "correctIndex": 0,
+          "explanation": "4 * 3 + 2 produces 14. (4 + 2) * 3 produces 18 and counts something different."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review and justify before running"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Recall literals, names, and precedence. Write the complete line displayed.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int reservas = 5;\n    const int nuevas = 4;\n    const int total = reservas + nuevas * 2;\n    std::cout << \"total \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "total 13"
+          ],
+          "explanation": "The literal prints the word total. The variable total supplies 13: first 4 * 2, then 5 + 8."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The requirement says: 'Add the 8 registered items and the 3 new ones, then double that sum.' Which expression represents it?",
+          "options": [
+            "8 + 3 * 2",
+            "(8 + 3) * 2",
+            "8 * (3 + 2)"
+          ],
+          "correctIndex": 1,
+          "explanation": "The complete sum must be an operand of the multiplication. Parentheses make that requirement explicit."
+        },
+        {
+          "type": "note",
+          "text": "To solve an expression, identify the meaning and type of each piece of data, group the operators, and calculate using the current state. We use small integers with representable results here. The fact that an expression compiles is no reason to ignore type limits or what the data means."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Follow-up comparison from the lab"
+        },
+        {
+          "type": "paragraph",
+          "text": "With the original data, the correct count displays Tokens: 14. The alternative grouping displays Tokens: 18: it treats the two loose tokens as though they were envelopes. Restoring the model should return 14. The following reference preserves the original requirement, not the grouping used to observe the error."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int sobres = 4;\n    const int fichas_por_sobre = 3;\n    const int sueltas = 2;\n    const int total = sobres * fichas_por_sobre + sueltas;\n    std::cout << \"Tokens: \" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Check both the value and its meaning: sobres * fichas_por_sobre counts the packaged tokens, and sueltas is added just once. With 0 envelopes, 3 tokens per envelope, and 2 loose tokens, there must be 2 tokens. With 4 envelopes, 3 each, and 0 loose tokens, there must be 12. Keep values small and representable; successful compilation does not distinguish between these models."
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison only after predicting and running your tests. The editor does not grade these outputs automatically: compare them with the criteria and explain the first difference. Keep your version if it meets the same requirements."
+        }
+      ]
+    }
+  ]
+}

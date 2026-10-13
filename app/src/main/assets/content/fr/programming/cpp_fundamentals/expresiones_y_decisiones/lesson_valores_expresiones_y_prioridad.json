@@ -1,0 +1,228 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__valores_expresiones_y_prioridad",
+  "title": "Valeurs, expressions et priorité des opérateurs",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Des données connues à une nouvelle valeur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu sais déjà déclarer des objets et leur donner des valeurs. Une expression permet d’en obtenir une autre. Dans 6 * 4, l’opérateur * multiplie deux opérandes et produit 24. Dans tarjetas * por_tarjeta, les noms fournissent les valeurs conservées par leurs objets à cet instant. Le résultat d’une expression peut initialiser un objet, figurer à droite d’une affectation ou être envoyé vers la sortie."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour les types numériques déjà étudiés, const int et const double déclarent des objets dont la valeur reste fixe après l’initialisation : aucune nouvelle affectation n’est autorisée. const bool impose la même restriction à une valeur true ou false. Nous utiliserons const pour les données et résultats qui ne doivent pas changer pendant une exécution. Pour comparer d’autres données, tu peux modifier leur initialiseur dans le code et relancer le programme ; chaque exécution crée un nouvel objet. Cette explication concerne les types déjà connus."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int tarjetas = 6;\n    const int por_tarjeta = 4;\n    const int total = tarjetas * por_tarjeta;\n    std::cout << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "L’expression tarjetas * por_tarjeta produit une valeur. La déclaration complète crée total avec cette valeur. Le point-virgule termine la déclaration. Une expression et l’instruction qui la contient ont des rôles différents : calculer un résultat et l’intégrer aux actions du programme."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis la sortie de ce programme de répartition des sièges. Écris uniquement le résultat affiché.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int mesas = 3;\n    const int sillas_por_mesa = 4;\n    const int sillas_sueltas = 2;\n    const int total = mesas * sillas_por_mesa + sillas_sueltas;\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "14"
+          ],
+          "explanation": "Les tables disposent d’abord de 12 chaises, auxquelles s’ajoutent les 2 chaises isolées."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dans la déclaration const int total = cajas * piezas;, quelle partie calcule la valeur utilisée pour initialiser total ?",
+          "options": [
+            "const int",
+            "Le point-virgule",
+            "cajas * piezas"
+          ],
+          "correctIndex": 2,
+          "explanation": "Les opérandes et l’opérateur forment l’expression qui produit la valeur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le regroupement change la question"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans une expression arithmétique, * et / ont priorité sur + et -. Ainsi, 2 + 5 * 3 s’interprète comme 2 + (5 * 3) et produit 17. Pour additionner avant de multiplier, on écrit (2 + 5) * 3, ce qui produit 21. Les parenthèses permettent d’exprimer le regroupement nécessaire au problème ; ce ne sont pas des décorations."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entre additions et soustractions de même priorité, le regroupement s’effectue de gauche à droite. 18 - 5 - 4 signifie (18 - 5) - 4 et produit 9. En revanche, 18 - (5 - 4) produit 17. Cette règle de regroupement s’appelle l’associativité. Elle décrit quels opérandes appartiennent à chaque opérateur ; elle ne garantit pas l’ordre d’évaluation de toutes les expressions C++."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle valeur produit 6 + 2 * 5 ?",
+          "options": [
+            "30",
+            "16",
+            "40"
+          ],
+          "correctIndex": 1,
+          "explanation": "La multiplication donne 10, puis l’addition donne 16. Pour obtenir 40, il faudrait écrire (6 + 2) * 5."
+        },
+        {
+          "type": "drag_fill_code",
+          "question": "Chaque paquet contient 3 pièces ; il y a 4 grands paquets et 2 petits. Complète les deux opérateurs pour additionner d’abord les paquets, puis multiplier.",
+          "template": "#include <iostream>\n\nint main() {\n    const int grandes = 4;\n    const int pequenos = 2;\n    const int piezas_por_paquete = 3;\n    const int piezas = (grandes [] pequenos) [] piezas_por_paquete;\n    std::cout << piezas;\n    return 0;\n}\n",
+          "choices": [
+            "*",
+            "-",
+            "+",
+            "/"
+          ],
+          "correctOrder": [
+            2,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire l’expression avec l’état du moment"
+        },
+        {
+          "type": "note",
+          "text": "Dans l’exercice précédent, + additionne les 6 paquets entre parenthèses et * donne 18 pièces. Sans ce regroupement, grandes + pequenos * piezas_por_paquete décrirait un autre calcul, qui produirait 10."
+        },
+        {
+          "type": "paragraph",
+          "text": "Rappelle-toi l’affectation de l’unité précédente : puntos = puntos + 3 lit la valeur actuelle de puntos, calcule la somme et conserve le résultat dans le même objet. Elle n’affirme pas une égalité mathématique permanente. Les instructions suivantes observent le nouvel état ; une copie antérieure conserve sa propre valeur."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Suis les instructions dans l’ordre. Écris les deux nombres séparés par un espace.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int puntos = 5;\n    puntos = puntos + 3;\n    const int antes = puntos;\n    puntos = puntos * 2;\n    std::cout << antes << \" \" << puntos;\n    return 0;\n}\n",
+          "answers": [
+            "8 16"
+          ],
+          "explanation": "La première affectation laisse 8. antes copie ce 8. La seconde affectation fait passer puntos à 16 sans modifier antes."
+        },
+        {
+          "type": "order_code",
+          "question": "Remets le programme dans l’ordre : d’abord l’inclusion et l’ouverture de main, puis les déclarations selon leurs dépendances, enfin la sortie et la fermeture.",
+          "fragments": [
+            "    const int total = base + extra;",
+            "    std::cout << total;\n    return 0;\n}",
+            "#include <iostream>\n\nint main() {",
+            "    const int extra = base * 2;",
+            "    const int base = 3;"
+          ],
+          "correctOrder": [
+            2,
+            4,
+            3,
+            0,
+            1
+          ],
+          "explanation": "base doit exister pour calculer extra ; les deux doivent exister pour calculer total. Le programme affiche 9."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : expliquer ce que l’on compte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les données sont déclarées dans le programme : il y a 4 enveloppes, 3 jetons par enveloppe et 2 jetons isolés. Avant l’exécution, calcule la quantité totale. Lance le programme pour comparer avec ta prédiction. Change ensuite uniquement l’expression de total en (sobres + sueltas) * fichas_por_sobre et prédis de nouveau. Les données n’ont pas changé, mais leur regroupement, si."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int sobres = 4;\n    const int fichas_por_sobre = 3;\n    const int sueltas = 2;\n    const int total = sobres * fichas_por_sobre + sueltas;\n    std::cout << \"Jetons : \" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare les deux sorties avec la signification de chaque donnée. sueltas compte les jetons, et non les enveloppes : l’ajouter à sobres puis multiplier le tout par fichas_por_sobre modifie le modèle. Rétablis ensuite l’expression qui compte correctement les jetons. Le compilateur peut accepter les deux expressions ; c’est la consigne qui détermine laquelle résout le problème."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Avec les données initiales, quelle comparaison explique l’expérience ?",
+          "options": [
+            "La version initiale affiche 14 ; la version modifiée affiche 18 et traite les jetons isolés comme des enveloppes.",
+            "Les deux expressions affichent 14, car les parenthèses ne changent jamais une addition.",
+            "La version initiale ne peut pas compiler, car elle mélange des noms et des nombres."
+          ],
+          "correctIndex": 0,
+          "explanation": "4 * 3 + 2 produit 14. (4 + 2) * 3 produit 18 et compte une autre quantité."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver et justifier avant d’exécuter"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Retrouve les littéraux, les noms et les priorités. Écris la ligne complète affichée.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int reservas = 5;\n    const int nuevas = 4;\n    const int total = reservas + nuevas * 2;\n    std::cout << \"total \" << total;\n    return 0;\n}\n",
+          "answers": [
+            "total 13"
+          ],
+          "explanation": "Le littéral affiche le mot total. La variable total fournit 13 : d’abord 4 * 2, puis 5 + 8."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La consigne dit : « Additionne les 8 éléments enregistrés et les 3 nouveaux, puis double cette somme. » Quelle expression la représente ?",
+          "options": [
+            "8 + 3 * 2",
+            "(8 + 3) * 2",
+            "8 * (3 + 2)"
+          ],
+          "correctIndex": 1,
+          "explanation": "La somme complète doit être un opérande de la multiplication. Les parenthèses rendent cette exigence explicite."
+        },
+        {
+          "type": "note",
+          "text": "Pour résoudre une expression, repère la signification et le type des données, regroupe les opérateurs et calcule avec l’état actuel. Ici, nous utilisons de petits entiers et des résultats représentables. Le fait qu’une expression compile ne permet pas d’ignorer les limites du type ni la signification des données."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparaison après le laboratoire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec les données initiales, le comptage correct affiche Jetons : 14. Le regroupement alternatif affiche Jetons : 18 : il traite les deux jetons isolés comme des enveloppes. Rétablir le modèle doit redonner 14. La référence suivante respecte la consigne initiale, et non le regroupement employé pour mettre l’erreur en évidence."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int sobres = 4;\n    const int fichas_por_sobre = 3;\n    const int sueltas = 2;\n    const int total = sobres * fichas_por_sobre + sueltas;\n    std::cout << \"Jetons : \" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie à la fois la valeur et sa signification : sobres * fichas_por_sobre compte les jetons emballés et sueltas ne s’ajoute qu’une fois. Avec 0 enveloppe, 3 jetons par enveloppe et 2 jetons isolés, il doit rester 2 jetons. Avec 4 enveloppes, 3 par enveloppe et aucun jeton isolé, on doit obtenir 12. Garde de petites valeurs représentables ; une compilation réussie ne distingue pas ces modèles."
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir prédit et exécuté tes tests. L’éditeur ne note pas automatiquement ces sorties : confronte-les aux critères et explique la première différence. Conserve ta version si elle respecte le même comportement."
+        }
+      ]
+    }
+  ]
+}
