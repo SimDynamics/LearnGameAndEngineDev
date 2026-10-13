@@ -1,0 +1,193 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_leer",
+  "title": "Const References for Reading Data",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Read the original object without copying it in full"
+        },
+        {
+          "type": "paragraph",
+          "text": "Passing an int by value is a simple way to receive a small piece of data. A string or vector, however, can contain many elements. If a function only needs to inspect them, it need not create a full copy. A const std::string& texto parameter is a reference to the object supplied by the caller: the function reads it through that name and cannot modify it through this const parameter."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nbool tiene_texto(const std::string& texto) {\n    return !texto.empty();\n}\n\nint main() {\n    const std::string etiqueta = \"panel\";\n    std::cout << tiene_texto(etiqueta);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "empty() asks whether the string is empty. ! reverses the answer; the program displays 1. & in the declaration indicates a reference, and const prevents modifying the object through it. The call retains its usual form: tiene_texto(etiqueta). The bool result is returned by value."
+        },
+        {
+          "type": "output_prediction",
+          "question": "The function compares two strings without modifying them. Predict its answer.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nbool coincide(const std::string& observado, const std::string& esperado) {\n    return observado == esperado;\n}\n\nint main() {\n    const std::string observado = \"route\";\n    const std::string esperado = \"routes\";\n    std::cout << coincide(observado, esperado);\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "The strings are different. The references let the function read them, and the comparison returns false."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A traversal can read a vector through a const reference"
+        },
+        {
+          "type": "paragraph",
+          "text": "const std::vector<int>& datos lets the function inspect the original vector without copying the container. Inside for (int valor : datos), however, valor is a small copy of the current element. These are separate decisions: how the function receives the container and how the loop reads each element."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {2, 4, 3};\n    std::cout << sumar(datos);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The function returns 9, and the vector retains its elements. These addition exercises permit up to 8 elements, each between 0 and 20, so the sum cannot exceed 160. An empty vector produces 0 because the accumulator begins at zero and the loop body does not run."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Count the elements strictly greater than the limit. Predict the result.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_superiores(const std::vector<int>& datos, int limite) {\n    int cuenta = 0;\n    for (int valor : datos) {\n        if (valor > limite) {\n            ++cuenta;\n        }\n    }\n    return cuenta;\n}\n\nint main() {\n    const std::vector<int> datos = {1, 6, 3, 6};\n    std::cout << contar_superiores(datos, 3);\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Both values of 6 exceed 3. The element equal to the limit is not counted."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "const expresses read-only intent"
+        },
+        {
+          "type": "paragraph",
+          "text": "const on a reference parameter restricts what the function can do through that parameter. It does not make every other name in the program const. The interface communicates that the calculation inspects the data and returns an answer without changing the data through that reference."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complete the parameter so the function reads the original vector without copying it or allowing modification through datos. Enter const in the first blank and & in the second.",
+          "template": "#include <iostream>\n#include <vector>\n\nbool tiene_datos([] std::vector<int>[] datos) {\n    return !datos.empty();\n}\n\nint main() {\n    const std::vector<int> datos = {4, 7};\n    std::cout << tiene_datos(datos);\n    return 0;\n}\n",
+          "answers": [
+            "const",
+            "&"
+          ]
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which parameter expresses reading the original vector while also preventing modification through that parameter?",
+          "options": [
+            "std::vector<int>& datos",
+            "std::vector<int> datos",
+            "const std::vector<int>& datos"
+          ],
+          "correctIndex": 2,
+          "explanation": "Here, std::vector<int> receives a copy; std::vector<int>& allows modification of the original. const std::vector<int>& expresses reading the original without copying the entire collection."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: add the values without changing the collection"
+        },
+        {
+          "type": "note",
+          "text": "The preceding signature is const std::vector<int>& datos. The function receives a read-only reference and returns bool; it needs no copy of the vector."
+        },
+        {
+          "type": "paragraph",
+          "text": "The declared collection is {5, 0, 3}. Predict the total and the element count, then run the program. Next try {} and {2, 4, 6, 8}. Keep at most 8 elements between 0 and 20. Notice that main can use the collection after the call because the calculation does not modify it. To test the permitted maximum, use eight elements equal to 20 and calculate the expected sum before running."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {5, 0, 3};\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elements: \" << datos.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which report corresponds to an empty vector in this program?",
+          "options": [
+            "Total: 0\nElements: 0",
+            "Total: 0\nElements: 1",
+            "There is no result for an empty collection."
+          ],
+          "correctIndex": 0,
+          "explanation": "The accumulator initially equal to zero is returned without visiting elements; size() is also zero."
+        },
+        {
+          "type": "paragraph",
+          "text": "The number of elements and their values form part of the calculation's input. Receiving them through a const reference does not automatically validate their range; the caller must satisfy the limits established for these activities."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose between passing by value and a read-only reference"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A function inspects a string label and must preserve it. It does not need an independent copy. Which parameter communicates that purpose?",
+          "options": [
+            "const std::string& etiqueta",
+            "std::string& etiqueta",
+            "int etiqueta"
+          ],
+          "correctIndex": 0,
+          "explanation": "A const reference reads the original string without allowing modification through that parameter."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Recall empty strings, calls, and branch selection.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nbool tiene_texto(const std::string& texto) {\n    return !texto.empty();\n}\n\nint main() {\n    const std::string etiqueta = \"\";\n    if (tiene_texto(etiqueta)) {\n        std::cout << etiqueta;\n    } else {\n        std::cout << \"No label\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "No label"
+          ],
+          "explanation": "empty() is true, its negation returns false, and main chooses the notice."
+        },
+        {
+          "type": "note",
+          "text": "We return results by value and use const references for inputs that are only read. A reference is a connection to an object, not a new string or vector containing identical elements."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later reference: Read the collection at its permitted boundary"
+        },
+        {
+          "type": "note",
+          "text": "Compare only after completing the lab and recording your predicted results. The reference presents one possible organization; the criteria also recognize other implementations satisfying the same contracts."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: With {5,0,3}, the output is Total: 8 and Elements: 3; with {}, Total: 0 and Elements: 0; with {2,4,6,8}, Total: 20 and Elements: 4. The boundary case in this reference, eight values of 20, gives Total: 160 and Elements: 8. sumar must inspect the data without changing any element or the size, and express read-only access through a const reference. The input domain remains at most eight values between 0 and 20."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint sumar(const std::vector<int>& datos) {\n    int total = 0;\n    for (int valor : datos) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::vector<int> datos = {20, 20, 20, 20, 20, 20, 20, 20};\n    const int total = sumar(datos);\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Elements: \" << datos.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The total starts at zero even when there is no loop body to execute. const on the parameter communicates read-only permission; it does not by itself prove that the input satisfies its range. Inspect the vector after the call as well as its sum and size. Other ways to add the values are valid if they preserve the collection and the contract."
+        }
+      ]
+    }
+  ]
+}

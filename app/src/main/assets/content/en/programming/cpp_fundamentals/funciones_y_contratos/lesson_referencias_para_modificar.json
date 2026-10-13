@@ -1,0 +1,540 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar",
+  "title": "References for Modifying State",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modify the caller's object"
+        },
+        {
+          "type": "paragraph",
+          "text": "An int& nivel parameter refers to the object supplied by the argument. Assigning to nivel changes that same object, not a copy. The function can return void because its observable result is a change of state. That purpose should be clear from its name and interface."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid aumentar_nivel(int& nivel) {\n    nivel = nivel + 2;\n}\n\nint main() {\n    int nivel = 5;\n    aumentar_nivel(nivel);\n    std::cout << nivel;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 7. The parameter's reference was bound to nivel in main. There was no assignment of a returned result: the function changed the object directly. For these increment exercises, keep the initial level between 0 and 20 so the result, up to 22, remains representable."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Compare a copy with modification through a reference. Predict both output lines.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint preparar_copia(int dato) {\n    dato = 0;\n    return dato;\n}\n\nvoid poner_cero(int& dato) {\n    dato = 0;\n}\n\nint main() {\n    int original = 7;\n    const int copia = preparar_copia(original);\n    std::cout << original << \" \" << copia << \"\\n\";\n    poner_cero(original);\n    std::cout << original;\n    return 0;\n}\n",
+          "answers": [
+            "7 0\n0"
+          ],
+          "explanation": "The first function changes its copy and returns 0. The second refers to original and modifies it."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The argument must allow modification"
+        },
+        {
+          "type": "paragraph",
+          "text": "A modifiable reference requires a suitable object of the correct type that can be changed. A literal such as 3 is not a variable in which the caller wants to retain a change. A const object does not grant permission to modify it either. The parameter declaration communicates that distinction before the body runs."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "For void aumentar_nivel(int& nivel), main declares int actual = 3;. Which call supplies that modifiable object?",
+          "options": [
+            "aumentar_nivel(\"actual\");",
+            "aumentar_nivel(3);",
+            "aumentar_nivel(actual);"
+          ],
+          "correctIndex": 2,
+          "explanation": "actual names a modifiable int object. The parameter can bind to it."
+        },
+        {
+          "type": "fill_code",
+          "question": "Fill in only the reference symbol so the function changes the int provided by the caller.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid reiniciar(int___ contador) {\n    contador = 0;\n}\n\nint main() {\n    int contador = 9;\n    reiniciar(contador);\n    std::cout << contador;\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ],
+          "explanation": "int& refers to the contador object in main. The assignment leaves it at 0."
+        },
+        {
+          "type": "note",
+          "text": "A const reference supports reading; a non-const reference can permit changes. Use the permissions the task requires rather than deciding solely from the size of the data."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modify a collection without going outside its elements"
+        },
+        {
+          "type": "paragraph",
+          "text": "A function can receive std::vector<int>& to modify the original vector. In a for (int& valor : datos) traversal, valor is a reference to the current element. If the loop used int valor, it would change only a local copy. The following calculation replaces negative values with zero and preserves the others."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-3, 5, -1};\n    quitar_negativos(datos);\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The program prints 0, 5, and 0 on separate lines. The traversal visits only existing elements and does not change the vector's size. It need not calculate indices or access a position in an empty collection. An empty vector simply skips the loop body."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the elements after applying an upper bound of 6.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid limitar_altos(std::vector<int>& datos, int limite) {\n    for (int& valor : datos) {\n        if (valor > limite) {\n            valor = limite;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {3, 9, 6};\n    limitar_altos(datos, 6);\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "3\n6\n6"
+          ],
+          "explanation": "Only 9 exceeds the limit and is replaced with 6. The element equal to the limit is preserved."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Observe the state after a call"
+        },
+        {
+          "type": "paragraph",
+          "text": "The declared collection is {-2, 4, -1, 6}. Predict its elements after quitar_negativos, then run the program. Next try an empty vector, one without negative values, and {-12, 0, 12}. Use up to 8 elements between -12 and 12. The requirement is to change every negative value to zero without modifying nonnegative values or the number of elements."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-2, 4, -1, 6};\n    quitar_negativos(datos);\n    std::cout << \"Elements: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "If you change only for (int& valor : datos) to for (int valor : datos) inside the function, what happens to the original negative elements?",
+          "options": [
+            "They still change because the vector is passed by reference.",
+            "They remain unchanged: assignment changes the loop's local copies.",
+            "They disappear and the vector becomes shorter."
+          ],
+          "correctIndex": 1,
+          "explanation": "The reference to the container and the reference to an element are separate choices. Without & on valor, a copy is modified."
+        },
+        {
+          "type": "paragraph",
+          "text": "As a variation, change the loop from for (int& valor : datos) to for (int valor : datos). Check the output with the original data, then restore int&. The variant has defined behavior, and its output reveals that it no longer meets the requirement to modify the vector."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Communicate which data may change"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "One function only counts elements; another must replace negative values. Which interfaces express, respectively, reading and modifying the original vector?",
+          "options": [
+            "The first uses const std::vector<int>& and the second uses std::vector<int>&.",
+            "Both use std::vector<int> by value.",
+            "The first uses std::vector<int>& and the second uses const std::vector<int>&."
+          ],
+          "correctIndex": 0,
+          "explanation": "The first has permission to read and the second permission to modify, without copying the container."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Recall by-value and reference parameters used together in one call.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid fijar(int& destino, int nuevo) {\n    destino = nuevo;\n    nuevo = nuevo + 1;\n    std::cout << \"Local: \" << nuevo << \"\\n\";\n}\n\nint main() {\n    int destino = 2;\n    const int origen = 8;\n    fijar(destino, origen);\n    std::cout << destino << \" \" << origen;\n    return 0;\n}\n",
+          "answers": [
+            "Local: 9\n8 8"
+          ],
+          "explanation": "destino is modified through a reference. nuevo is a copy of origen: changing that local copy does not change origen."
+        },
+        {
+          "type": "note",
+          "text": "Before a call, check the permissions of its parameters. Afterward, observe which objects may have changed. Prefer returning a value when the goal is to compute a result, and use modifiable references when changing state is part of the purpose."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later reference: Modify only the intended elements"
+        },
+        {
+          "type": "note",
+          "text": "Compare after completing the lab and recording your predictions. The reference presents one possible organization; other implementations meeting the same contracts are also acceptable."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: With {-2,4,-1,6}, the resulting state is {0,4,0,6} and size remains 4. The reference uses {-12,0,12}, retains three elements, and produces {0,0,12}. An empty vector retains size zero with no element lines; a collection without negatives stays unchanged. Temporarily changing int& valor to int valor in the loop leaves the original vector's negatives unchanged: this is a well-defined comparison, but it fails the transformation requirement. Restore the reference afterward."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-12, 0, 12};\n    quitar_negativos(datos);\n    std::cout << \"Elements: \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The parameter binds to the original vector, and each int& valor binds to its current element. Zero is assigned only to negative values; no element is removed or reordered. The variant with int valor changes a local copy, so {-2,4,-1,6} still displays those four original values. Use up to eight elements between -12 and 12 and compare state, order, and size."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two names do not guarantee two objects"
+        },
+        {
+          "type": "paragraph",
+          "text": "So far you have modified one object or the elements of a collection. A function can also receive two modifiable references. Its parameters have different names, but that does not guarantee that they refer to different objects: the caller may supply the same int in both argument positions."
+        },
+        {
+          "type": "paragraph",
+          "text": "You can also declare a local reference: in int& vista = zona;, vista binds to the object zona when initialized. It is not another int holding a copy. Using vista lets you read or modify that same object. The binding is established at initialization; subsequent assignment does not change it."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int zona = 4;\n    int otra = -2;\n    int& vista = zona;\n    vista = otra;\n    otra = 6;\n    std::cout << zona << ' ' << vista << ' ' << otra;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is -2 -2 6. vista = otra; copies the value from otra into zona; it does not make vista start referring to otra. When otra changes to 6, zona retains -2, and vista still names zona. Distinguish the object a name refers to from the value that object holds at each moment."
+        },
+        {
+          "type": "note",
+          "text": "A reference must be initialized with the object to which it binds. Here, all referenced objects remain alive while the references are used. To trace state, identify which object each reference names and what value it holds after each assignment."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a swap without being given the algorithm"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build void intercambiar with two int& parameters. Both arguments must be modifiable int objects, with initial values from -12 through 12, including both endpoints. The function neither prints nor returns a value. Its job is to leave the first object holding the second object's previous value and the second object holding the first object's previous value."
+        },
+        {
+          "type": "paragraph",
+          "text": "The contract permits both arguments to name the same object. In that case, swapping must preserve its value. Calling the function twice in succession with the same pair of objects must restore their original values. No path should depend on quantities being positive or on their values being different."
+        },
+        {
+          "type": "paragraph",
+          "text": "In main, declare two int objects initialized to 8 and -3. Print Before: 8 -3, call your function, and print After: -3 8 on the next line. Keep one space after each label and between the values. Output belongs in main. Decide which previous value must be preserved before overwriting an object: losing it would make the second part of the contract impossible."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Define intercambiar outside main and add your tests.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running, write the expected states for (7, 2), (4, 4), (-5, -1), (0, 6), and (-12, 12). Add a call passing the same object twice, and two consecutive calls with two distinct objects. Record the state after each call; write the two arguments as object names, with no increments or other operations inside the call."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: each object's previous value is transferred to the other, values remain in the domain, the same-object case preserves its value, two calls restore the state, and the function does not print. An equivalent solution is valid if it satisfies these properties. Passing only the equal-values case is not enough: that case may conceal an incorrect implementation."
+        },
+        {
+          "type": "note",
+          "text": "The editor provides neither a function signature nor a body for the swap. Build and test your solution before reading the reference. Keep your attempt and explain which information would no longer be available after the first modification."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later reference: Preserve the previous value"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare only after your attempt. This reference uses different data, 2 and -9. A local int object saves the first object's previous value before that object changes. The local copy is not a reference: later changes to the original object do not change the saved value."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int izquierda = 2;\n    int derecha = -9;\n    std::cout << \"Before: \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << \"After: \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << \"Two calls: \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, izquierda);\n    std::cout << \"Same object: \" << izquierda;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The program displays Before: 2 -9, After: -9 2, Two calls: 2 -9, and Same object: 2, in that order on separate lines. anterior holds the value still needed by the last assignment. Without preserving it, reading primero again after modifying it would give its current value instead of the value it held upon entry."
+        },
+        {
+          "type": "paragraph",
+          "text": "When both parameters refer to the same object, anterior copies its single value; the first assignment copies that value back to the object, and the last assignment preserves it. That case need not be excluded. Two separate objects with equal values also retain their values, but they remain two distinct objects."
+        },
+        {
+          "type": "paragraph",
+          "text": "For the original test cases, (7, 2) becomes (2, 7); (4, 4) becomes (4, 4); (-5, -1) becomes (-1, -5); (0, 6) becomes (6, 0); and (-12, 12) becomes (12, -12). Also test a single shared object and restoration after two calls. Do not replace your implementation if it meets the contract and passes the same tests."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A well-defined attempt that loses information"
+        },
+        {
+          "type": "paragraph",
+          "text": "The following function performs two assignments in a defined order. Compiling and terminating does not mean it implements swapping correctly. Trace which value is available for each read, then compare the resulting state against the contract; do not confuse this algorithmic error with undefined behavior."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__perdida_del_valor_anterior",
+          "question": "Predict both lines. The first call uses two distinct objects; the second passes one object twice.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intento_directo(int& primero, int& segundo) {\n    primero = segundo;\n    segundo = primero;\n}\n\nint main() {\n    int uno = -4;\n    int dos = 7;\n    intento_directo(uno, dos);\n    std::cout << uno << ' ' << dos << '\\n';\n    int unico = -2;\n    intento_directo(unico, unico);\n    std::cout << unico << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "7 7\n-2"
+          ],
+          "explanation": "The first assignment copies 7 into uno. The second reads the already-modified uno and copies 7 into dos; the original -4 was not preserved. With unico as both arguments, both assignments copy its own value and it stays at -2. A case that fails to expose the defect does not make the function correct."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__caso_que_detecta_intercambio_ingenuo",
+          "question": "Which test distinguishes the previous direct attempt from a correct swap?",
+          "options": [
+            "Two objects initially holding 3 and -1.",
+            "Two objects initially holding 5 and 5.",
+            "A single object passed in both argument positions."
+          ],
+          "correctIndex": 0,
+          "explanation": "Two different values reveal that one previous value was lost. With equal values or a single object, the direct attempt happens to preserve the expected state, so those tests do not detect the defect."
+        },
+        {
+          "type": "paragraph",
+          "text": "Return to your function and explain which read needs a previous value and which can use the current value. In the reference, anterior is a local object holding a copy throughout this call. It is not global state or a persistent value between calls."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The same body with different permissions"
+        },
+        {
+          "type": "paragraph",
+          "text": "In this comparison, intercambiar_copias takes two ints by value and changes only its local parameters. intercambiar takes two int& references and can modify the caller's objects. The calls are separate statements; neither function prints, and main observes the state after each one."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__intercambio_por_valor_y_por_referencia",
+          "question": "Predict all three lines. Distinguish which objects each call modifies and what reversing the argument names in the last call does.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar_copias(int primero, int segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int izquierda = 3;\n    int derecha = -8;\n    intercambiar_copias(izquierda, derecha);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    intercambiar(derecha, izquierda);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "3 -8\n-8 3\n3 -8"
+          ],
+          "explanation": "The by-value version swaps its own copies, so main retains 3 and -8. The by-reference version modifies main's objects, leaving them at -8 and 3. The last call swaps those same objects with reversed argument names, restoring 3 and -8."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__permisos_para_dos_objetos",
+          "question": "A function must swap two distinct modifiable objects in main without assigning a returned value. Which parameter list permits that contract for different values?",
+          "options": [
+            "int primero, int segundo",
+            "int& primero, int segundo",
+            "int& primero, int& segundo"
+          ],
+          "correctIndex": 2,
+          "explanation": "Both objects require modification permission. Passing by value supplies copies; with just one reference, only one original object can be changed through the parameters. Two references can satisfy both parts of the contract."
+        },
+        {
+          "type": "note",
+          "text": "A modifiable int argument can bind to each reference. Literals and const objects do not provide those permissions. The numeric value alone does not determine pass-by-value or pass-by-reference: the parameter list communicates that choice."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Equal values and shared identity"
+        },
+        {
+          "type": "paragraph",
+          "text": "Two declarations, int uno = 4; and int dos = 4;, create two distinct objects even though their values match. By contrast, passing unico in both argument positions lets two parameters name one object. Multiple references to the same object are called aliases."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__dos_objetos_iguales_frente_a_alias",
+          "question": "Both tests begin with value 4. Predict both lines by tracing the two separate assignments in each call.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid escribir_dos(int& primero, int& segundo) {\n    primero = 7;\n    segundo = -2;\n}\n\nint main() {\n    int uno = 4;\n    int dos = 4;\n    escribir_dos(uno, dos);\n    std::cout << uno << ' ' << dos << '\\n';\n    int unico = 4;\n    escribir_dos(unico, unico);\n    std::cout << unico << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "7 -2\n-2"
+          ],
+          "explanation": "With two distinct objects, the first assignment leaves uno at 7 and the second leaves dos at -2. With unico passed twice, both parameters refer to one object: it is set first to 7 and then to -2. Equal initial values do not imply that objects are identical."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__igualdad_no_implica_identidad",
+          "question": "main declares int x = 5; and int y = 5;. What does x == y correctly establish about those objects?",
+          "options": [
+            "Every assignment to x will also change y.",
+            "Their values are equal; they remain two distinct objects.",
+            "Passing x and y as two references is the same as passing x twice."
+          ],
+          "correctIndex": 1,
+          "explanation": "Comparing int values tests equality of values. Each declaration creates its own object; sharing a value does not link later changes. Two references to x, however, would allow a change to the same object to be observed through both names."
+        },
+        {
+          "type": "paragraph",
+          "text": "Now recall the local reference introduced earlier. In the next question, vista is initialized with primero. Later assignments can change values, but they cannot rebind vista to another object."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__asignacion_no_reenlaza_la_referencia",
+          "question": "Predict the final line. Track the object named by vista from initialization onward, even as its values change.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primero = 6;\n    int segundo = -4;\n    int& vista = primero;\n    vista = segundo;\n    segundo = 10;\n    intercambiar(vista, segundo);\n    std::cout << primero << ' ' << vista << ' ' << segundo << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "10 10 -4"
+          ],
+          "explanation": "vista = segundo copies -4 into primero. Next segundo changes to 10, without changing vista's binding. intercambiar(vista, segundo) swaps primero and segundo: primero becomes 10 and segundo becomes -4. vista still names primero, so it also displays 10."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build with multiple names for the same objects"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rebuild intercambiar from the minimal editor and write a main that tests object identity, not merely two values. Declare reserva initialized to 10 and usado to -4. Initialize vista_reserva as an int& bound to reserva and vista_usado as an int& bound to usado. Initialize a third reference, vista_doble, also bound to reserva; do not declare int copies for those three views."
+        },
+        {
+          "type": "paragraph",
+          "text": "First call intercambiar with vista_reserva and vista_usado and display Distinct: -4 10. Then call it with vista_reserva and vista_doble and display Shared: -4 10. Finally call it again with vista_reserva and vista_usado and display Restored: 10 -4. Each report shows the objects reserva and usado, in that order on its own line. The function does not print; main displays the state after each call."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Rebuild intercambiar, the objects, references, and calls.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: the views must name the original objects rather than copy them; the shared-object call preserves its single object without changing usado; the other two calls restore the previous values; no assignment changes a reference's binding. Keep initial values between -12 and 12. Then choose other inputs, including zero or two equal values, and calculate the expected results before running."
+        },
+        {
+          "type": "note",
+          "text": "Attempt and test before reading the next reference. If helpful, draw the two objects and write beside each one all the names that refer to it. Count objects, not merely names or coinciding values."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference for the construction with aliases"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference uses -8 and 1, different from the original attempt. vista_reserva and vista_doble bind to reserva; vista_usado binds to usado. These additional names do not add three more int objects to the state being swapped."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int reserva = -8;\n    int usado = 1;\n    int& vista_reserva = reserva;\n    int& vista_usado = usado;\n    int& vista_doble = reserva;\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Distinct: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_doble);\n    std::cout << \"Shared: \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Restored: \" << reserva << ' ' << usado << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The lines are Distinct: 1 -8, Shared: 1 -8, and Restored: -8 1. The second call has two parameters but modifies only reserva, which retains its value in this swap. The third call swaps both distinct objects again and restores their initial values."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare object identity, state after every call, and preservation of the two values in addition to the output. An equivalent implementation is valid if it respects permissions, does not print from intercambiar, and satisfies both the two-object and shared-object cases. The local object that preserves the earlier value need not be named anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall the contract and object identity"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__asignacion_mediante_parametro_no_reenlaza",
+          "question": "An int& primero parameter binds to izquierda, and another int& segundo binds to derecha. The function executes primero = segundo;. What happens to primero's binding?",
+          "options": [
+            "It still refers to izquierda, which receives derecha's current value.",
+            "It starts referring to derecha and can no longer modify izquierda.",
+            "It binds to both objects, so future changes to either are shared."
+          ],
+          "correctIndex": 0,
+          "explanation": "Assignment changes the value of the referenced object; it does not initialize the reference again or bind it to another object. If izquierda and derecha are the same object, the assignment copies its own value."
+        },
+        {
+          "type": "paragraph",
+          "text": "In another session, rebuild the swap without looking at its body and choose your tests before executing. Include two distinct values, two objects with equal values, the same object passed twice, and two calls that restore state. Explain which case detects loss of the previous value and why the other cases are still necessary to fully test the contract."
+        },
+        {
+          "type": "paragraph",
+          "text": "Then revisit reading versus modification: an int result returned by value does not assign itself to the caller; a const reference permits inspection; a modifiable reference permits changing the object to which it is bound. For a small calculation, returning a value is often enough. This swap must preserve changes in two objects, so its purpose justifies both modification permissions."
+        },
+        {
+          "type": "note",
+          "text": "The supporting reading covers pass-by-reference and its comparison with pass-by-value (Stroustrup, 2024, sections 7.4.5–7.4.6). The swap implementation with a local copy adapts the book's pass-by-reference example to int and these activities' domain. Cases involving identity, aliases, and later review allow the contract to be checked and each object's changes to be traced."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall const-reference reading versus copying a value"
+        },
+        {
+          "type": "paragraph",
+          "text": "const int copia = primera; creates an independent object holding the value primera has when initialized. const int& vista = primera; initializes a read-only reference bound to primera. In the second declaration, const prevents assignment through vista; it does not make primera itself const or capture a snapshot of its value. If another permitted route modifies primera, vista observes its later state. The objects and reference remain in the same scope in these examples."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__copia_const_y_referencia_const_tras_intercambiar",
+          "question": "Predict all four values. copia and vista are initialized before the swap: distinguish an independent object from a read-only reference.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primera = 9;\n    int segunda = 0;\n    const int copia = primera;\n    const int& vista = primera;\n    intercambiar(primera, segunda);\n    std::cout << copia << ' ' << vista << ' '\n              << primera << ' ' << segunda << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "9 0 0 9"
+          ],
+          "explanation": "copia keeps the 9 received on initialization. vista still refers to primera, which the swap leaves at 0. segunda receives primera's earlier 9. Nothing is assigned through vista; the modification occurs through the int& parameter bound to primera."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__permiso_const_no_congela_otras_vias",
+          "question": "vista is declared const int& and names a modifiable int object in main. What does that const prohibit?",
+          "options": [
+            "Modifying the object through any other name in the program.",
+            "A later read through vista observing a change in the object.",
+            "Assigning to the object through the name vista."
+          ],
+          "correctIndex": 2,
+          "explanation": "const restricts modification through that reference. main or a reference with permission can still modify the object. An independent copy preserves its initial value; a read-only reference continues to observe the object to which it was bound."
+        },
+        {
+          "type": "paragraph",
+          "text": "When reviewing the swap, record separately which names are copies, which names refer to the same object, and which permit modifications. Read-only permission and preserving an earlier value are different decisions: the body of intercambiar needs a local copy to retain that value, not a const reference that would still observe the object after it changes."
+        }
+      ]
+    }
+  ]
+}

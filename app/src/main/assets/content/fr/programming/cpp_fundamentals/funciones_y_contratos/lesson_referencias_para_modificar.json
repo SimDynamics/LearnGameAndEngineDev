@@ -1,0 +1,540 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar",
+  "title": "Références permettant de modifier l'état",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modifier l'objet de l'appelant"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un paramètre int& nivel se réfère à l'objet fourni par l'argument. Une affectation à nivel modifie ce même objet, pas une copie. La fonction peut renvoyer void, car son résultat observable est le changement d'état. Cette intention doit être claire dans son nom et dans son interface."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid aumentar_nivel(int& nivel) {\n    nivel = nivel + 2;\n}\n\nint main() {\n    int nivel = 5;\n    aumentar_nivel(nivel);\n    std::cout << nivel;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 7. La référence du paramètre a été liée à nivel dans main. Aucun résultat renvoyé n'a été affecté : la fonction a directement modifié l'objet. Pour les exercices d'incrémentation, garde le niveau initial entre 0 et 20 ; le résultat, au plus 22, reste ainsi représentable."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Compare une copie et une modification par référence. Prévois les deux lignes de sortie.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint preparar_copia(int dato) {\n    dato = 0;\n    return dato;\n}\n\nvoid poner_cero(int& dato) {\n    dato = 0;\n}\n\nint main() {\n    int original = 7;\n    const int copia = preparar_copia(original);\n    std::cout << original << \" \" << copia << \"\\n\";\n    poner_cero(original);\n    std::cout << original;\n    return 0;\n}\n",
+          "answers": [
+            "7 0\n0"
+          ],
+          "explanation": "La première fonction modifie sa copie et renvoie 0. La deuxième se réfère à original et le modifie."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'argument doit autoriser la modification"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une référence modifiable exige un objet du bon type, qui puisse être modifié. Un littéral comme 3 n'est pas une variable dans laquelle l'appelant souhaite conserver un changement. Un objet const n'autorise pas non plus sa modification. La déclaration du paramètre exprime cette différence avant l'exécution du corps."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pour void aumentar_nivel(int& nivel), main déclare int actual = 3;. Quel appel fournit cet objet modifiable ?",
+          "options": [
+            "aumentar_nivel(\"actual\");",
+            "aumentar_nivel(3);",
+            "aumentar_nivel(actual);"
+          ],
+          "correctIndex": 2,
+          "explanation": "actual désigne un objet int modifiable. Le paramètre peut être lié à cet objet."
+        },
+        {
+          "type": "fill_code",
+          "question": "Complète uniquement le symbole de référence pour que la fonction modifie le int fourni par l'appelant.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid reiniciar(int___ contador) {\n    contador = 0;\n}\n\nint main() {\n    int contador = 9;\n    reiniciar(contador);\n    std::cout << contador;\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ],
+          "explanation": "int& se réfère à contador dans main. L'affectation lui donne la valeur 0."
+        },
+        {
+          "type": "note",
+          "text": "Une référence const permet la lecture ; une référence sans const peut autoriser des changements. Utilise les permissions nécessaires à la tâche sans te fonder uniquement sur la taille des données."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modifier une collection sans dépasser ses éléments"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une fonction peut recevoir std::vector<int>& afin de modifier le vecteur d'origine. Dans un parcours for (int& valor : datos), valor est une référence à l'élément actuel. Avec int valor, la boucle ne modifierait qu'une copie locale. Le calcul suivant remplace les valeurs négatives par zéro et conserve les autres."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-3, 5, -1};\n    quitar_negativos(datos);\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme affiche 0, 5 et 0 sur des lignes distinctes. Le parcours ne visite que les éléments existants et ne change pas la taille du vecteur. Il n'a pas besoin de calculer les indices ni d'accéder à une position d'une collection vide. Avec un vecteur vide, le corps ne s'exécute pas."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prévois les éléments après application d'une borne supérieure égale à 6.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid limitar_altos(std::vector<int>& datos, int limite) {\n    for (int& valor : datos) {\n        if (valor > limite) {\n            valor = limite;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {3, 9, 6};\n    limitar_altos(datos, 6);\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "3\n6\n6"
+          ],
+          "explanation": "Seul 9 dépasse la borne et devient 6. L'élément égal à la limite est conservé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Atelier : observer l'état après un appel"
+        },
+        {
+          "type": "paragraph",
+          "text": "La collection déclarée est {-2, 4, -1, 6}. Prévois ses éléments après quitar_negativos, puis exécute le programme. Teste ensuite un vecteur vide, un vecteur sans valeurs négatives et {-12, 0, 12}. Utilise au plus 8 éléments compris entre -12 et 12. Il faut remplacer chaque valeur négative par zéro sans modifier les valeurs non négatives ni le nombre d'éléments."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-2, 4, -1, 6};\n    quitar_negativos(datos);\n    std::cout << \"Éléments : \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Si tu remplaces seulement for (int& valor : datos) par for (int valor : datos) dans la fonction, que deviennent les éléments négatifs d'origine ?",
+          "options": [
+            "Ils changent quand même parce que le vecteur est passé par référence.",
+            "Ils restent inchangés : l'affectation ne modifie que les copies locales du parcours.",
+            "Ils disparaissent et le vecteur devient plus court."
+          ],
+          "correctIndex": 1,
+          "explanation": "La référence au conteneur et celle à un élément sont deux décisions distinctes. Sans & sur valor, on modifie une copie."
+        },
+        {
+          "type": "paragraph",
+          "text": "Comme variante, remplace le parcours for (int& valor : datos) par for (int valor : datos). Vérifie la sortie avec les données initiales, puis rétablis int&. Le comportement de cette variante est défini ; sa sortie révèle qu'elle ne respecte plus l'exigence de modification du vecteur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Indiquer quelles données peuvent changer"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Une fonction compte seulement les éléments, tandis qu'une autre doit remplacer les valeurs négatives. Quelles interfaces expriment respectivement la lecture et la modification du vecteur d'origine ?",
+          "options": [
+            "La première utilise const std::vector<int>& et la deuxième std::vector<int>&.",
+            "Les deux utilisent std::vector<int> par valeur.",
+            "La première utilise std::vector<int>& et la deuxième const std::vector<int>&."
+          ],
+          "correctIndex": 0,
+          "explanation": "La première autorise la lecture, la deuxième la modification, sans copier le conteneur."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Révise le passage par valeur et par référence dans un même appel.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid fijar(int& destino, int nuevo) {\n    destino = nuevo;\n    nuevo = nuevo + 1;\n    std::cout << \"Local : \" << nuevo << \"\\n\";\n}\n\nint main() {\n    int destino = 2;\n    const int origen = 8;\n    fijar(destino, origen);\n    std::cout << destino << \" \" << origen;\n    return 0;\n}\n",
+          "answers": [
+            "Local : 9\n8 8"
+          ],
+          "explanation": "destino est modifié par référence. nuevo est une copie de origen : son incrémentation locale ne modifie pas origen."
+        },
+        {
+          "type": "note",
+          "text": "Avant un appel, vérifie les permissions de ses paramètres. Ensuite, observe quels objets ont pu changer. Préfère renvoyer une valeur lorsque l'objectif est un calcul et utilise des références modifiables lorsque changer l'état fait partie de la tâche."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : modifier uniquement les éléments prévus"
+        },
+        {
+          "type": "note",
+          "text": "Compare après avoir réalisé l'atelier et noté tes prévisions. La référence présente une organisation possible ; d'autres implémentations qui respectent les mêmes contrats sont aussi acceptables."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : avec {-2,4,-1,6}, le nouvel état est {0,4,0,6} et la taille reste 4. La référence utilise {-12,0,12}, conserve trois éléments et produit {0,0,12}. Un vecteur vide garde une taille nulle sans lignes d'éléments ; une collection sans valeurs négatives reste inchangée. Remplacer temporairement int& valor par int valor dans la boucle laisse les valeurs négatives du vecteur intactes : la comparaison est bien définie, mais ne satisfait pas la transformation. Rétablis ensuite la référence."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nvoid quitar_negativos(std::vector<int>& datos) {\n    for (int& valor : datos) {\n        if (valor < 0) {\n            valor = 0;\n        }\n    }\n}\n\nint main() {\n    std::vector<int> datos = {-12, 0, 12};\n    quitar_negativos(datos);\n    std::cout << \"Éléments : \" << datos.size() << \"\\n\";\n    for (int valor : datos) {\n        std::cout << valor << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le paramètre est lié au vecteur d'origine et chaque int& valor à l'élément courant. On affecte zéro uniquement aux valeurs négatives ; aucun élément n'est supprimé ni réordonné. La variante avec int valor modifie une copie locale, donc {-2,4,-1,6} affiche encore les quatre valeurs initiales. Utilise au plus huit éléments entre -12 et 12 et compare l'état, l'ordre et la taille."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux noms ne garantissent pas deux objets"
+        },
+        {
+          "type": "paragraph",
+          "text": "Jusqu'ici, tu as modifié un objet ou les éléments d'une collection. Une fonction peut également recevoir deux références modifiables. Leurs paramètres ont des noms différents, mais cela ne garantit pas qu'ils désignent deux objets distincts : l'appelant peut fournir le même int aux deux positions."
+        },
+        {
+          "type": "paragraph",
+          "text": "On peut aussi déclarer une référence locale : dans int& vista = zona;, vista est liée à l'objet zona lors de son initialisation. Ce n'est pas un autre int contenant une copie. Utiliser vista permet de lire ou de modifier cet objet. Le lien est établi lors de l'initialisation ; une affectation ultérieure ne le modifie pas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int zona = 4;\n    int otra = -2;\n    int& vista = zona;\n    vista = otra;\n    otra = 6;\n    std::cout << zona << ' ' << vista << ' ' << otra;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est -2 -2 6. vista = otra; copie la valeur de otra dans zona ; cela ne change pas l'objet auquel vista est liée. Quand otra devient 6, zona conserve -2 et vista continue de désigner zona. Distingue l'objet qu'un nom désigne de la valeur que cet objet contient à chaque instant."
+        },
+        {
+          "type": "note",
+          "text": "Une référence doit être initialisée avec l'objet auquel elle est liée. Ici, tous les objets référencés continuent d'exister pendant l'utilisation des références. Pour suivre l'état, repère quel objet chaque référence désigne et la valeur de cet objet après chaque affectation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un échange sans recevoir l'algorithme"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis void intercambiar avec deux paramètres int&. Les arguments doivent être des objets int modifiables, de valeurs initiales comprises entre -12 et 12, bornes incluses. La fonction n'affiche rien et ne renvoie aucune valeur. Elle doit laisser le premier objet avec l'ancienne valeur du deuxième et le deuxième objet avec l'ancienne valeur du premier."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le contrat autorise les deux arguments à désigner le même objet. Dans ce cas, l'échange doit conserver sa valeur. Deux appels successifs avec les mêmes deux objets doivent rétablir leurs valeurs d'origine. Aucun chemin ne doit dépendre du signe des valeurs ni de leur différence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, déclare deux objets int initialisés à 8 et -3. Affiche Avant : 8 -3, appelle ta fonction, puis affiche Après : -3 8 sur la ligne suivante. Conserve un espace après chaque étiquette et entre les valeurs. L'affichage appartient à main. Décide quelle ancienne valeur tu dois conserver avant de remplacer celle d'un objet : la perdre empêcherait de respecter la seconde partie du contrat."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Définis intercambiar hors de main et ajoute tes tests.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant d'exécuter, écris les états prévus pour (7, 2), (4, 4), (-5, -1), (0, 6) et (-12, 12). Ajoute un appel fournissant deux fois le même objet, puis deux appels successifs avec deux objets distincts. Note l'état après chaque appel ; les deux arguments doivent être des noms d'objets, sans incrémentation ni autre opération dans l'appel."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : l'ancienne valeur de chaque objet passe dans l'autre, les valeurs restent dans le domaine, le cas d'un objet partagé conserve sa valeur, deux appels rétablissent l'état, et la fonction n'affiche rien. Une solution équivalente est valable si elle respecte ces propriétés. Tester seulement des valeurs égales ne suffit pas : ce cas peut masquer une implémentation incorrecte."
+        },
+        {
+          "type": "note",
+          "text": "L'éditeur ne fournit ni signature ni corps pour l'échange. Construis et teste avant de consulter la référence. Conserve ton essai et explique quelle information disparaîtrait après la première modification."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : conserver l'ancienne valeur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare après ton essai. Cette référence utilise d'autres données, 2 et -9. Un objet local de type int sauvegarde l'ancienne valeur du premier objet avant sa modification. Cette copie locale n'est pas une référence : les changements ultérieurs de l'objet d'origine ne modifient pas la valeur sauvegardée."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int izquierda = 2;\n    int derecha = -9;\n    std::cout << \"Avant : \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << \"Après : \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << \"Deux appels : \" << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, izquierda);\n    std::cout << \"Même objet : \" << izquierda;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme affiche Avant : 2 -9, Après : -9 2, Deux appels : 2 -9 et Même objet : 2, dans cet ordre et sur des lignes distinctes. anterior garde la valeur encore nécessaire à la dernière affectation. Sans cette sauvegarde, relire primero après l'avoir modifié donnerait sa valeur actuelle au lieu de sa valeur initiale."
+        },
+        {
+          "type": "paragraph",
+          "text": "Quand les deux paramètres se réfèrent au même objet, anterior copie son unique valeur ; la première affectation recopie cette valeur dans l'objet et la dernière la conserve. Il n'est pas nécessaire d'exclure ce cas. Deux objets distincts ayant la même valeur conservent eux aussi leur valeur, mais ils restent deux objets différents."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour les cas de l'essai, (7, 2) devient (2, 7) ; (4, 4) devient (4, 4) ; (-5, -1) devient (-1, -5) ; (0, 6) devient (6, 0) ; et (-12, 12) devient (12, -12). Vérifie également l'objet partagé et le retour à l'état initial après deux appels. Ne remplace pas ta solution si elle respecte le contrat et réussit les mêmes tests."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une tentative au comportement défini qui perd une information"
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction suivante effectue deux affectations dans un ordre défini. Compiler et se terminer ne signifie pas qu'elle réalise correctement l'échange. Suis la valeur disponible à chaque lecture, puis compare l'état obtenu au contrat ; ne confonds pas cette erreur d'algorithme avec un comportement indéfini."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__perdida_del_valor_anterior",
+          "question": "Prévois les deux lignes. Le premier appel utilise deux objets distincts ; le deuxième fournit deux fois le même objet.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intento_directo(int& primero, int& segundo) {\n    primero = segundo;\n    segundo = primero;\n}\n\nint main() {\n    int uno = -4;\n    int dos = 7;\n    intento_directo(uno, dos);\n    std::cout << uno << ' ' << dos << '\\n';\n    int unico = -2;\n    intento_directo(unico, unico);\n    std::cout << unico << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "7 7\n-2"
+          ],
+          "explanation": "La première affectation copie 7 dans uno. La deuxième lit uno déjà modifié et copie 7 dans dos ; la valeur initiale -4 n'a pas été conservée. Avec unico comme les deux arguments, les affectations recopient la valeur de cet objet, qui reste à -2. Un test ne révélant pas le défaut ne rend pas la fonction correcte."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__caso_que_detecta_intercambio_ingenuo",
+          "question": "Quel test permet de distinguer la tentative directe précédente d'un échange correct ?",
+          "options": [
+            "Deux objets ayant initialement les valeurs 3 et -1.",
+            "Deux objets ayant initialement les valeurs 5 et 5.",
+            "Un seul objet passé aux deux positions d'argument."
+          ],
+          "correctIndex": 0,
+          "explanation": "Deux valeurs différentes montrent qu'une ancienne valeur a été perdue. Avec deux valeurs égales ou un seul objet, la tentative directe conserve par hasard l'état attendu ; ces tests ne détectent donc pas l'erreur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reviens à ta fonction et explique quelle lecture nécessite une ancienne valeur et laquelle peut utiliser la valeur actuelle. Dans la référence, anterior est un objet local conservant une copie pendant cet appel. Il ne s'agit ni d'un état global ni d'une donnée persistante entre les appels."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le même corps avec des permissions différentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans cette comparaison, intercambiar_copias reçoit deux int par valeur et ne modifie que ses paramètres locaux. intercambiar reçoit deux références int& et peut modifier les objets de l'appelant. Les appels sont des instructions séparées ; les fonctions n'affichent rien et main observe l'état après chacune."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__intercambio_por_valor_y_por_referencia",
+          "question": "Prévois les trois lignes. Distingue les objets modifiés par chaque appel et l'effet de l'inversion des noms des arguments dans le dernier.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar_copias(int primero, int segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int izquierda = 3;\n    int derecha = -8;\n    intercambiar_copias(izquierda, derecha);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    intercambiar(izquierda, derecha);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    intercambiar(derecha, izquierda);\n    std::cout << izquierda << ' ' << derecha << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "3 -8\n-8 3\n3 -8"
+          ],
+          "explanation": "La version par valeur échange ses copies et main conserve 3 et -8. La version par référence modifie les objets de main et les laisse à -8 et 3. Le dernier appel échange à nouveau ces deux objets, avec les noms des arguments inversés, et rétablit 3 et -8."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__permisos_para_dos_objetos",
+          "question": "Une fonction doit échanger les valeurs de deux objets distincts et modifiables de main, sans affectation d'un résultat renvoyé. Quelle liste de paramètres permet ce contrat pour des valeurs différentes ?",
+          "options": [
+            "int primero, int segundo",
+            "int& primero, int segundo",
+            "int& primero, int& segundo"
+          ],
+          "correctIndex": 2,
+          "explanation": "Les deux objets nécessitent une permission de modification. Le passage par valeur fournit des copies ; avec une seule référence, un seul objet d'origine peut être modifié par ces paramètres. Deux références permettent de respecter les deux parties du contrat."
+        },
+        {
+          "type": "note",
+          "text": "Un argument int modifiable permet de lier chaque référence. Les littéraux et les objets const n'accordent pas cette permission. La valeur numérique ne détermine pas le passage par valeur ou par référence : c'est la liste des paramètres qui l'indique."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valeurs égales et identité partagée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Deux déclarations, int uno = 4; et int dos = 4;, créent deux objets distincts même si leurs valeurs sont égales. En revanche, un appel qui fournit unico aux deux positions permet à deux paramètres de désigner un seul objet. Plusieurs références au même objet sont appelées des alias."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__dos_objetos_iguales_frente_a_alias",
+          "question": "Les deux essais commencent avec la valeur 4. Prévois les deux lignes en suivant séparément les deux affectations de chaque appel.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid escribir_dos(int& primero, int& segundo) {\n    primero = 7;\n    segundo = -2;\n}\n\nint main() {\n    int uno = 4;\n    int dos = 4;\n    escribir_dos(uno, dos);\n    std::cout << uno << ' ' << dos << '\\n';\n    int unico = 4;\n    escribir_dos(unico, unico);\n    std::cout << unico << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "7 -2\n-2"
+          ],
+          "explanation": "Avec deux objets différents, la première affectation donne 7 à uno et la deuxième -2 à dos. Quand unico est passé deux fois, les paramètres se réfèrent au même objet : on y écrit d'abord 7, puis -2. Des valeurs initiales égales ne signifient pas que les objets sont identiques."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__igualdad_no_implica_identidad",
+          "question": "main déclare int x = 5; et int y = 5;. Que prouve exactement x == y au sujet de ces objets ?",
+          "options": [
+            "Toute affectation à x modifiera aussi y.",
+            "Leurs valeurs sont égales ; ils restent deux objets distincts.",
+            "Passer x et y à deux références équivaut à passer deux fois x."
+          ],
+          "correctIndex": 1,
+          "explanation": "La comparaison int vérifie les valeurs. Chaque déclaration crée son propre objet ; des valeurs égales ne lient pas leurs modifications. Deux références à x permettraient, elles, d'observer le changement du même objet par deux noms."
+        },
+        {
+          "type": "paragraph",
+          "text": "Rappelle maintenant la référence locale du passage précédent. Dans la question suivante, vista est initialisée avec primero ; des affectations ultérieures peuvent modifier les valeurs, mais ne peuvent pas lier vista à un autre objet."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__asignacion_no_reenlaza_la_referencia",
+          "question": "Prévois la ligne finale. Suis l'objet désigné par vista depuis son initialisation, même lorsque ses valeurs changent.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primero = 6;\n    int segundo = -4;\n    int& vista = primero;\n    vista = segundo;\n    segundo = 10;\n    intercambiar(vista, segundo);\n    std::cout << primero << ' ' << vista << ' ' << segundo << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "10 10 -4"
+          ],
+          "explanation": "vista = segundo copie -4 dans primero. Puis segundo devient 10, sans changer le lien de vista. intercambiar(vista, segundo) échange les objets primero et segundo : primero devient 10 et segundo -4. vista continue de désigner primero ; elle affiche donc aussi 10."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire avec plusieurs noms pour les mêmes objets"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconstruis intercambiar à partir de l'éditeur minimal et prépare un main permettant de vérifier l'identité des objets, pas seulement deux valeurs. Déclare reserva initialisé à 10 et usado à -4. Initialise vista_reserva comme une référence int& à reserva et vista_usado comme une référence int& à usado. Initialise une troisième référence, vista_doble, également liée à reserva ; ne déclare pas de copies int pour ces trois vues."
+        },
+        {
+          "type": "paragraph",
+          "text": "Appelle d'abord intercambiar avec vista_reserva et vista_usado, puis affiche Distincts : -4 10. Appelle-le ensuite avec vista_reserva et vista_doble, puis affiche Partagé : -4 10. Enfin, appelle-le à nouveau avec vista_reserva et vista_usado, puis affiche Restauré : 10 -4. Chaque rapport affiche les objets reserva et usado, dans cet ordre et sur sa propre ligne. Les fonctions n'affichent rien ; main présente l'état après chaque appel."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Reconstruis intercambiar, les objets, les références et les appels.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : les vues doivent désigner les objets initiaux sans les copier ; l'appel avec un objet partagé conserve cet objet et ne modifie pas usado ; les deux autres appels rétablissent les valeurs précédentes ; aucune affectation ne change le lien d'une référence. Garde les valeurs initiales entre -12 et 12. Choisis ensuite d'autres données, y compris zéro ou deux valeurs égales, et calcule le résultat attendu avant l'exécution."
+        },
+        {
+          "type": "note",
+          "text": "Essaie et vérifie avant de consulter la référence suivante. Si cela t'aide, dessine les deux objets et écris à côté de chacun tous les noms qui le désignent. Compte les objets, et pas seulement les noms ou les valeurs identiques."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence pour la construction avec alias"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence utilise -8 et 1, des données différentes de l'essai. vista_reserva et vista_doble sont liées à reserva ; vista_usado est liée à usado. Ces noms supplémentaires n'ajoutent pas trois autres objets int à l'état échangé."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int reserva = -8;\n    int usado = 1;\n    int& vista_reserva = reserva;\n    int& vista_usado = usado;\n    int& vista_doble = reserva;\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Distincts : \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_doble);\n    std::cout << \"Partagé : \" << reserva << ' ' << usado << '\\n';\n    intercambiar(vista_reserva, vista_usado);\n    std::cout << \"Restauré : \" << reserva << ' ' << usado << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les lignes sont Distincts : 1 -8, Partagé : 1 -8 et Restauré : -8 1. Le deuxième appel a deux paramètres, mais ne modifie que reserva, qui conserve sa valeur lors de cet échange. Le troisième appel échange de nouveau les deux objets distincts et rétablit leurs valeurs initiales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare l'identité des objets, l'état après chaque appel et la conservation des deux valeurs, en plus de la sortie. Une implémentation équivalente est valable si elle respecte les permissions, n'affiche rien depuis intercambiar et réussit les cas de deux objets et d'un objet partagé. L'objet local qui conserve l'ancienne valeur ne doit pas obligatoirement s'appeler anterior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver le contrat et l'identité des objets"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__asignacion_mediante_parametro_no_reenlaza",
+          "question": "Un paramètre int& primero est lié à izquierda, et un autre int& segundo à derecha. La fonction exécute primero = segundo;. Que devient le lien de primero ?",
+          "options": [
+            "Il reste lié à izquierda, qui reçoit la valeur actuelle de derecha.",
+            "Il se lie désormais à derecha et ne permet plus de modifier izquierda.",
+            "Il se lie aux deux objets, dont les modifications futures sont partagées."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'affectation modifie la valeur de l'objet référencé ; elle ne réinitialise pas la référence et ne la lie pas à un autre objet. Si izquierda et derecha sont le même objet, cette affectation recopie sa propre valeur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une autre séance, reconstruis l'échange sans regarder son corps et choisis les tests avant de l'exécuter. Prévois deux valeurs différentes, deux objets de valeurs égales, le même objet fourni deux fois et deux appels rétablissant l'état. Explique quel test détecte la perte de l'ancienne valeur et pourquoi les autres sont nécessaires à la vérification complète du contrat."
+        },
+        {
+          "type": "paragraph",
+          "text": "Revois ensuite la comparaison entre lecture et modification : un résultat int renvoyé par valeur ne s'affecte pas lui-même chez l'appelant ; une référence const permet de consulter un objet ; une référence modifiable permet de changer l'objet auquel elle est liée. Pour un petit calcul, renvoyer une valeur suffit souvent. Cet échange doit conserver des modifications dans deux objets : son objectif justifie donc les deux permissions de modification."
+        },
+        {
+          "type": "note",
+          "text": "La lecture complémentaire traite le passage par référence et sa comparaison avec le passage par valeur (Stroustrup, 2024, sections 7.4.5–7.4.6). L'implémentation de l'échange avec une copie locale adapte l'exemple du livre au type int et au domaine de ces activités. Les cas d'identité, d'alias et de révision permettent de vérifier ce contrat et de suivre les modifications de chaque objet."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revoir la lecture par référence const et la copie d'une valeur"
+        },
+        {
+          "type": "paragraph",
+          "text": "const int copia = primera; crée un objet indépendant contenant la valeur de primera lors de son initialisation. const int& vista = primera; initialise une référence de lecture à l'objet primera. Dans la deuxième déclaration, const empêche d'affecter par vista ; il ne rend pas l'objet primera lui-même constant et ne crée pas de copie instantanée de sa valeur. Si une autre voie autorisée modifie primera, vista lit son état ultérieur. Tous les objets et la référence restent dans la même portée dans ces exemples."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__copia_const_y_referencia_const_tras_intercambiar",
+          "question": "Prévois les quatre valeurs. copia et vista sont initialisées avant l'échange : distingue l'objet indépendant de la référence en lecture seule.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid intercambiar(int& primero, int& segundo) {\n    const int anterior = primero;\n    primero = segundo;\n    segundo = anterior;\n}\n\nint main() {\n    int primera = 9;\n    int segunda = 0;\n    const int copia = primera;\n    const int& vista = primera;\n    intercambiar(primera, segunda);\n    std::cout << copia << ' ' << vista << ' '\n              << primera << ' ' << segunda << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "9 0 0 9"
+          ],
+          "explanation": "copia conserve le 9 reçu lors de son initialisation. vista reste liée à primera, que l'échange fait passer à 0. segunda reçoit l'ancien 9 de primera. Aucune affectation n'a lieu par vista : la modification passe par le paramètre int& lié à primera."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__referencias_para_modificar__permiso_const_no_congela_otras_vias",
+          "question": "vista est déclarée const int& et désigne un objet int modifiable dans main. Qu'interdit ce const ?",
+          "options": [
+            "Modifier l'objet par tout autre nom du programme.",
+            "Qu'une lecture ultérieure par vista observe une modification de l'objet.",
+            "Affecter une valeur à l'objet par le nom vista."
+          ],
+          "correctIndex": 2,
+          "explanation": "const restreint la modification à travers cette référence. main ou une référence autorisée peuvent encore modifier l'objet. Une copie indépendante conserve la valeur initiale ; une référence de lecture observe toujours l'objet auquel elle a été liée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsque tu révises l'échange, distingue les noms qui sont des copies, ceux qui désignent le même objet et ceux qui permettent de le modifier. La permission de lecture et la conservation d'une ancienne valeur sont deux choix différents : le corps de intercambiar a besoin d'une copie locale pour préserver cette valeur, pas d'une référence const qui continuerait d'observer l'objet après sa modification."
+        }
+      ]
+    }
+  ]
+}
