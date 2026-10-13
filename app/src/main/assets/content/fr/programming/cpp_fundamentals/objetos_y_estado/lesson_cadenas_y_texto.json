@@ -1,0 +1,312 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__cadenas_y_texto",
+  "title": "Conserver et construire du texte",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une donnée peut aussi être du texte"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::string est un type de la bibliothèque standard permettant de conserver une séquence de caractères. Pour l’utiliser, ajoute #include <string> ; nous conservons aussi <iostream> puisque nous produisons une sortie. Ces en-têtes donnent accès à des ressources différentes. Le préfixe std:: indique que le nom appartient à la bibliothèque standard."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans std::string zona = \"Nord\";, zona est une variable et \"Nord\" est le littéral qui lui fournit sa valeur initiale. Les guillemets délimitent le littéral dans le code ; ils ne font pas partie des caractères conservés ni de la sortie."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona = \"Nord\";\n    std::cout << zona;\n    return 0;\n}\n"
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le type de la bibliothèque qui permet de conserver l’étiquette Porte A.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    ___ etiqueta = \"Porte A\";\n    std::cout << etiqueta;\n    return 0;\n}\n",
+          "answers": [
+            "std::string"
+          ],
+          "explanation": "std::string représente une séquence de caractères ; <string> rend ce type disponible."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une chaîne vide est un état valide"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::string etiqueta; initialise une chaîne vide : elle ne contient aucun caractère. Cette garantie est différente du cas de int cantidad; lorsque cantidad est une variable entière locale non initialisée. Tu peux aussi écrire std::string etiqueta = \"\"; pour montrer explicitement l’intention de commencer sans texte. Une chaîne vide ne signifie pas que la variable n’existe pas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string etiqueta;\n    std::cout << \"[\" << etiqueta << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[]"
+          ],
+          "explanation": "La chaîne est initialisée vide. Les deux crochets proviennent des littéraux affichés."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que signifie std::string mensaje = \"\"; ?",
+          "options": [
+            "Il existe une variable de texte dont la valeur contient zéro caractère.",
+            "Le nom mensaje n’a pas été défini.",
+            "Sa lecture doit afficher un nombre aléatoire."
+          ],
+          "correctIndex": 0,
+          "explanation": "L’objet existe et sa valeur est la chaîne vide, ce qui est valide pour std::string."
+        },
+        {
+          "type": "note",
+          "text": "La valeur initiale dépend du type. Ne suppose pas qu’un int local non initialisé est vide parce qu’un std::string l’est."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Affecter et copier du texte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une chaîne peut recevoir un nouveau texte par affectation : zona = \"Sud\";. Elle peut aussi servir à initialiser une autre chaîne. Comme pour les entiers déjà étudiés, la copie est indépendante. Une instruction ultérieure doit modifier explicitement la copie si l’on veut qu’elle conserve un nouveau texte."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona = \"Nord\";\n    std::string registro = zona;\n    zona = \"Sud\";\n    std::cout << registro << \" / \" << zona;\n    return 0;\n}\n",
+          "answers": [
+            "Nord / Sud"
+          ],
+          "explanation": "registro a reçu une copie de Nord ; modifier zona ne change pas registro."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Écris uniquement un littéral de chaîne pour affecter le mot Fermé à la variable estado.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string estado = \"Ouvert\";\n    estado = ___;\n    std::cout << estado;\n    return 0;\n}\n",
+          "answers": [
+            "\"Fermé\""
+          ],
+          "explanation": "Les guillemets doubles forment un littéral de chaîne ; l’affectation remplace la valeur précédente."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Qu’est-ce qui change lorsqu’on affecte \"Sud\" à une variable std::string ?",
+          "options": [
+            "L’identifiant est automatiquement renommé Sud.",
+            "Le type devient numérique.",
+            "La valeur du texte conservé."
+          ],
+          "correctIndex": 2,
+          "explanation": "L’objet garde son type et son nom ; c’est la séquence de caractères enregistrée qui change."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Concaténer n’est pas additionner des quantités"
+        },
+        {
+          "type": "paragraph",
+          "text": "Concaténer, c’est construire une chaîne en plaçant une séquence à la suite d’une autre. Avec des variables std::string, l’opérateur + effectue cette opération : primera + segunda réunit leurs caractères dans l’ordre. Il n’ajoute aucun espace automatiquement. Pour obtenir un espace, il faut l’écrire explicitement dans le texte. La concaténation crée un résultat ; elle ne modifie pas les variables qui sont seulement lues."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string sala = \"Salle\";\n    std::string numero = \"2\";\n    std::string nombre = sala + \" \" + numero;\n    std::cout << nombre;\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"Porte\";\n    std::string b = \"B\";\n    std::cout << a + b << \"\\n\" << a + \" \" + b;\n    return 0;\n}\n",
+          "answers": [
+            "PorteB\nPorte B"
+          ],
+          "explanation": "La première concaténation n’ajoute aucun séparateur ; la seconde ajoute explicitement un espace."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète uniquement les deux littéraux pour afficher Secteur Ouest, avec un espace entre les mots.",
+          "template": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string primera = [];\n    std::string segunda = [];\n    std::cout << primera + \" \" + segunda;\n    return 0;\n}\n",
+          "answers": [
+            "\"Secteur\"",
+            "\"Ouest\""
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La solution et le texte qui ressemble à un nombre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les littéraux précédents sont \"Secteur\" et \"Ouest\". L’expression insère le séparateur une seule fois. Observe que \"2\" est du texte et que 2 est un entier : des signes visuellement semblables peuvent représenter des données aux rôles différents."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"12\";\n    std::string b = \"3\";\n    int x = 12;\n    int y = 3;\n    std::cout << a + b << \"\\n\" << x + y;\n    return 0;\n}\n",
+          "answers": [
+            "123\n15"
+          ],
+          "explanation": "Les chaînes sont concaténées, tandis que les entiers sont additionnés. Le texte n’est pas automatiquement interprété comme une quantité numérique."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Deux étiquettes textuelles contiennent \"04\" et \"2\". Que produit leur concaténation dans cet ordre ?",
+          "options": [
+            "\"042\"",
+            "Une quantité entière valant 42",
+            "\"6\""
+          ],
+          "correctIndex": 0,
+          "explanation": "La concaténation conserve les caractères, y compris le zéro initial ; elle n’additionne pas les nombres."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le nom à lire pour afficher la valeur conservée dans cartel.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string cartel = \"Entrée\";\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "cartel"
+          ],
+          "explanation": "cartel lit la valeur ; \"cartel\" afficherait les lettres du nom de variable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ajouter du texte à l’état existant"
+        },
+        {
+          "type": "paragraph",
+          "text": "cartel += \" ouvert\"; ajoute un suffixe et enregistre le résultat dans cartel. Avec les chaînes, += signifie ajouter des caractères au texte actuel, et non une quantité numérique. Il faut inclure l’espace initial du suffixe pour séparer les mots. N’utilise pas + en supposant que toute paire de littéraux entre guillemets fonctionne comme avec std::string : nos calculs font intervenir au moins un objet std::string."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string cartel = \"Atelier\";\n    std::string anterior = cartel;\n    cartel += \" ouvert\";\n    std::cout << anterior << \"\\n\" << cartel;\n    return 0;\n}\n",
+          "answers": [
+            "Atelier\nAtelier ouvert"
+          ],
+          "explanation": "anterior conserve le texte initial ; += modifie cartel en lui ajoutant le suffixe."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Qu’est-ce qui dépend de la présence de l’espace dans \" ouvert\" ?",
+          "options": [
+            "L’espace que cout insère toujours entre deux chaînes.",
+            "La séparation visible entre Atelier et ouvert.",
+            "La séparation entre les instructions du fichier source."
+          ],
+          "correctIndex": 1,
+          "explanation": "La concaténation n’insère pas d’espaces absents de ses opérandes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construis une étiquette à partir de données"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le laboratoire, crée deux variables textuelles : edificio = \"Salle\" et codigo = \"04\". Construis-en une troisième, etiqueta, qui réunit les valeurs avec un trait d’union : Salle-04. Affiche l’étiquette. Lors d’une deuxième exécution, remplace uniquement le littéral initial de codigo par \"07\" et vérifie que seule cette partie de la sortie change. Rétablis ensuite le littéral initial \"04\" puis, dans une exploration distincte, affecte \"07\" à codigo après la construction de etiqueta mais avant son affichage : prédis si l’étiquette déjà construite se mettra à jour toute seule."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Écris ton programme ici.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La seconde exploration reprend une idée sur l’état : un résultat enregistré est une valeur obtenue à un moment donné, pas une formule qui s’exécute automatiquement à chaque modification de ses opérandes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution et prédiction cumulative"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio = \"Salle\";\n    std::string codigo = \"04\";\n    std::string etiqueta = edificio + \"-\" + codigo;\n    std::cout << etiqueta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Modifier le code avant de construire l’étiquette change le résultat. Le modifier après laisse etiqueta inchangée ; pour la mettre à jour, une nouvelle affectation doit reconstruire le texte."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Zone\";\n    std::string codigo = \"1\";\n    std::string etiqueta = nombre + codigo;\n    codigo = \"2\";\n    std::cout << etiqueta << \" \" << codigo;\n    return 0;\n}\n",
+          "answers": [
+            "Zone1 2"
+          ],
+          "explanation": "etiqueta a reçu Zone1 avant le changement. codigo contient désormais 2, mais etiqueta n’est pas recalculée."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un code doit conserver la forme 0015 à l’affichage. Quelle déclaration correspond le mieux à cette tâche ?",
+          "options": [
+            "std::string codigo = \"0015\";",
+            "int codigo = 15;",
+            "double codigo = 15.0;"
+          ],
+          "correctIndex": 0,
+          "explanation": "La tâche exige de conserver une séquence et son format, et pas seulement une grandeur numérique."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence : construire et conserver une étiquette"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et vérifié ta propre tentative. La référence présente une implémentation possible ; les critères permettent de reconnaître d’autres solutions correctes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. edificio et codigo sont des textes ; etiqueta réunit leurs valeurs avec un trait d’union et produit Salle-04. Si codigo vaut initialement \"07\", le résultat est Salle-07. Si codigo passe à \"07\" après la construction de etiqueta, l’étiquette enregistrée reste Salle-04 jusqu’à ce qu’une nouvelle concaténation lui soit affectée. Conserve le zéro initial et la distinction entre texte et nombre."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio{\"Salle\"};\n    std::string codigo{\"04\"};\n    std::string etiqueta{edificio + \"-\" + codigo};\n    std::cout << etiqueta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste d’abord la version de référence, puis remplace seulement le littéral initial de codigo par \"07\". Pour explorer l’état, rétablis \"04\" et insère codigo = \"07\"; après la définition de etiqueta et avant son affichage : la sortie reste Salle-04. Pour la mettre à jour, tu dois exécuter à nouveau etiqueta = edificio + \"-\" + codigo; après le changement."
+        }
+      ]
+    }
+  ]
+}

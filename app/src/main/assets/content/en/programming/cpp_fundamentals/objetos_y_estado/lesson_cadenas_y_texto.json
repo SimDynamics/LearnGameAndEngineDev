@@ -1,0 +1,312 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__cadenas_y_texto",
+  "title": "Storing and Building Text",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Data can also be text"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::string is a type from the standard library for storing a sequence of characters. To use it, add #include <string>; we still include <iostream> because we also produce output. These headers provide different facilities. The prefix std:: indicates that the name belongs to the standard library."
+        },
+        {
+          "type": "paragraph",
+          "text": "In std::string zona = \"North\";, zona is a variable, and \"North\" is the literal that supplies its initial value. The quotation marks delimit the literal in the code; they are not part of the characters stored or printed."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona = \"North\";\n    std::cout << zona;\n    return 0;\n}\n"
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the standard-library type needed to store the label Door A.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    ___ etiqueta = \"Door A\";\n    std::cout << etiqueta;\n    return 0;\n}\n",
+          "answers": [
+            "std::string"
+          ],
+          "explanation": "std::string represents a sequence of characters; <string> makes this type available."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Empty text is a valid state"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::string etiqueta; initializes a string to empty: it contains no characters. This guarantee differs from int cantidad; when cantidad is an uninitialized local integer variable. You can also write std::string etiqueta = \"\"; to make it clear that the string starts empty. Empty does not mean the variable does not exist."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including the quotation marks from the code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string etiqueta;\n    std::cout << \"[\" << etiqueta << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[]"
+          ],
+          "explanation": "The string starts empty. Both square brackets come from the output literals."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does std::string mensaje = \"\"; mean?",
+          "options": [
+            "A text variable exists and its value contains zero characters.",
+            "The name mensaje has not been defined.",
+            "Reading the variable must produce a random number."
+          ],
+          "correctIndex": 0,
+          "explanation": "The object exists and its value is the empty string, which is valid for std::string."
+        },
+        {
+          "type": "note",
+          "text": "Initial values depend on the type. Do not assume that an uninitialized local int starts empty just because a std::string does."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Assigning and copying text"
+        },
+        {
+          "type": "paragraph",
+          "text": "A string can receive new text through assignment: zona = \"South\";. Another string can also be initialized from its value. As with the integers we studied earlier, the copy is independent. A later statement must explicitly update the copy if we want it to contain the new text."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including the quotation marks from the code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string zona = \"North\";\n    std::string registro = zona;\n    zona = \"South\";\n    std::cout << registro << \" / \" << zona;\n    return 0;\n}\n",
+          "answers": [
+            "North / South"
+          ],
+          "explanation": "registro received a copy of North; changing zona does not change registro."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Write only a string literal that assigns the word Closed to the variable estado.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string estado = \"Open\";\n    estado = ___;\n    std::cout << estado;\n    return 0;\n}\n",
+          "answers": [
+            "\"Closed\""
+          ],
+          "explanation": "Double quotation marks form a string literal; assignment replaces the previous value."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What changes when \"South\" is assigned to a std::string variable?",
+          "options": [
+            "The identifier is automatically renamed South.",
+            "The type is converted into a number.",
+            "The stored text value."
+          ],
+          "correctIndex": 2,
+          "explanation": "The object keeps its type and name; the stored sequence of characters changes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Concatenation does not add quantities"
+        },
+        {
+          "type": "paragraph",
+          "text": "Concatenating means building a string by placing one sequence after another. With std::string variables, + performs this operation: primera + segunda combines their characters in order. It does not insert spaces automatically. If we want a space, we must explicitly include it in the text. Concatenation creates a result; it does not change the variables that are only read."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string sala = \"Room\";\n    std::string numero = \"2\";\n    std::string nombre = sala + \" \" + numero;\n    std::cout << nombre;\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including the quotation marks from the code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"Door\";\n    std::string b = \"B\";\n    std::cout << a + b << \"\\n\" << a + \" \" + b;\n    return 0;\n}\n",
+          "answers": [
+            "DoorB\nDoor B"
+          ],
+          "explanation": "The first concatenation adds no separator; the second adds an explicit space."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Fill in only the two string literals to produce Sector West, with a space between the words.",
+          "template": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string primera = [];\n    std::string segunda = [];\n    std::cout << primera + \" \" + segunda;\n    return 0;\n}\n",
+          "answers": [
+            "\"Sector\"",
+            "\"West\""
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The solution and text that looks like a number"
+        },
+        {
+          "type": "paragraph",
+          "text": "The preceding literals are \"Sector\" and \"West\". The expression inserts the separator exactly once. Notice that \"2\" is text while 2 is an integer: similar-looking symbols can represent data with different roles."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including the quotation marks from the code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string a = \"12\";\n    std::string b = \"3\";\n    int x = 12;\n    int y = 3;\n    std::cout << a + b << \"\\n\" << x + y;\n    return 0;\n}\n",
+          "answers": [
+            "123\n15"
+          ],
+          "explanation": "The strings are concatenated; the integers are added. Text is not automatically interpreted as a numeric quantity."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Two text labels contain \"04\" and \"2\". What does concatenating them in that order produce?",
+          "options": [
+            "\"042\"",
+            "An integer with value 42",
+            "\"6\""
+          ],
+          "correctIndex": 0,
+          "explanation": "Concatenation preserves the characters, including the leading zero; it does not add numbers."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the name that must be read to print the value stored in cartel.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string cartel = \"Entrance\";\n    std::cout << ___;\n    return 0;\n}\n",
+          "answers": [
+            "cartel"
+          ],
+          "explanation": "cartel reads the value; \"cartel\" would print the letters of the variable name."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Appending text to the existing state"
+        },
+        {
+          "type": "paragraph",
+          "text": "cartel += \" open\"; appends a suffix and stores the result in cartel. For strings, += means adding characters to the current text, not adding a numeric quantity. We must include the leading space in the suffix to separate the words. Do not assume + behaves the same for every pair of quoted literals as it does for std::string: our calculations involve at least one std::string object."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including the quotation marks from the code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string cartel = \"Workshop\";\n    std::string anterior = cartel;\n    cartel += \" open\";\n    std::cout << anterior << \"\\n\" << cartel;\n    return 0;\n}\n",
+          "answers": [
+            "Workshop\nWorkshop open"
+          ],
+          "explanation": "anterior retains the original text; += changes cartel by appending the suffix."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What relies on writing the space in \" open\"?",
+          "options": [
+            "The space cout always inserts between two strings.",
+            "The visible separation between Workshop and open.",
+            "The space between statements in the source file."
+          ],
+          "correctIndex": 1,
+          "explanation": "Concatenation does not insert spaces that are absent from its operands."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a label from data"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lab, create two text variables: edificio = \"Classroom\" and codigo = \"04\". Build a third one, etiqueta, combining their values with a hyphen: Classroom-04. Print the label. On a second run, change only the initial literal of codigo to \"07\" and check that only this part of the output changes. Next, restore the initial literal \"04\" and, as a separate experiment, assign \"07\" to codigo after constructing etiqueta but before printing it: predict whether the already-built label updates automatically."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Write your program here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The second experiment revisits an idea about state: a stored result is a value obtained at a particular moment, not a formula that reruns automatically whenever its operands change."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution and a cumulative prediction"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio = \"Classroom\";\n    std::string codigo = \"04\";\n    std::string etiqueta = edificio + \"-\" + codigo;\n    std::cout << etiqueta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Changing the code before constructing the label changes the result. Changing it afterward leaves etiqueta unchanged; a new assignment must rebuild the text if we want to update it."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including the quotation marks from the code.",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string nombre = \"Area\";\n    std::string codigo = \"1\";\n    std::string etiqueta = nombre + codigo;\n    codigo = \"2\";\n    std::cout << etiqueta << \" \" << codigo;\n    return 0;\n}\n",
+          "answers": [
+            "Area1 2"
+          ],
+          "explanation": "etiqueta received Area1 before the change. codigo now holds 2, but etiqueta is not recalculated."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A code must preserve the format 0015 when printed. Which declaration best meets that requirement?",
+          "options": [
+            "std::string codigo = \"0015\";",
+            "int codigo = 15;",
+            "double codigo = 15.0;"
+          ],
+          "correctIndex": 0,
+          "explanation": "The task requires preserving a sequence and its format, not just a numeric magnitude."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution: Build and preserve a label"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and checking your own attempt. The reference shows one possible implementation; the criteria help identify other correct solutions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. edificio and codigo are text; etiqueta combines them with a hyphen and produces Classroom-04. If codigo is initially defined as \"07\", the result is Classroom-07. If codigo changes to \"07\" after etiqueta is built, the stored label keeps Classroom-04 until another concatenation is assigned to it. Preserve the leading zero and the distinction between text and numbers."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string edificio{\"Classroom\"};\n    std::string codigo{\"04\"};\n    std::string etiqueta{edificio + \"-\" + codigo};\n    std::cout << etiqueta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "First test the reference version, then change only the initial literal of codigo to \"07\". For the state experiment, restore \"04\" and insert codigo = \"07\"; after defining etiqueta but before printing it: the output remains Classroom-04. To update it, you must run etiqueta = edificio + \"-\" + codigo; again after the change."
+        }
+      ]
+    }
+  ]
+}
