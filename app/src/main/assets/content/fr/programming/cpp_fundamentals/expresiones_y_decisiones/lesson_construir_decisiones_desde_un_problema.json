@@ -1,0 +1,167 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__construir_decisiones_desde_un_problema",
+  "title": "Construire des décisions à partir d'un problème",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un nouveau problème : préparer des groupes de jetons"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un programme qui répartit des jetons en groupes. Les données sont déclarées dans le code : fichas est une quantité entière, capacidad est le nombre de jetons par groupe et acepta_sobrantes est de type bool. Une quantité valide va de 0 à 30 et une capacité valide de 1 à 6, bornes incluses. Aucune entrée au clavier n'est lue."
+        },
+        {
+          "type": "paragraph",
+          "text": "Voici les exigences observables, par ordre de priorité. Si l'une des valeurs est hors de son intervalle valide, affiche Données invalides. Avec des données valides et zéro jeton, affiche Aucun travail. Avec une quantité positive de jetons et une répartition exacte, affiche Groupes : suivi d'un espace et du nombre de groupes complets. S'il reste des jetons et que acepta_sobrantes vaut true, affiche cette ligne de groupes et une seconde ligne, Restes : suivie d'un espace et du nombre de jetons restants. S'il reste des jetons et que acepta_sobrantes vaut false, affiche Répartition en attente."
+        },
+        {
+          "type": "paragraph",
+          "text": "N'affiche aucun message supplémentaire. Les données invalides ne doivent produire que l'avertissement, sans effectuer les calculs de répartition. Choisis toi-même les conditions et la manière d'organiser les possibilités. Tu peux résoudre ce problème avec les types, opérations et décisions de cette unité ; aucune boucle ni fonction auxiliaire n'est nécessaire."
+        },
+        {
+          "type": "note",
+          "text": "Avant d'écrire du code, explique avec tes propres mots quelles données sont valides et quelle question distingue chaque résultat. L'énoncé précise le comportement ; ton programme doit construire la structure de décision."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Préparer les résultats attendus"
+        },
+        {
+          "type": "paragraph",
+          "text": "Commence avec fichas égal à 14, capacidad égal à 4 et acepta_sobrantes à true : deux lignes doivent apparaître, Groupes : 3 et Restes : 2. Modifier seulement acepta_sobrantes en false doit produire Répartition en attente. Avec 12 jetons et une capacité de 4, la sortie doit être Groupes : 3, quelle que soit la valeur de acepta_sobrantes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie aussi zéro jeton avec une capacité de 4 : Aucun travail. À la borne supérieure, 30 jetons et une capacité de 6 doivent produire Groupes : 5. Les cas de -1 ou 31 jetons avec une capacité de 4, et de 12 jetons avec une capacité de 0 ou de 7, doivent produire Données invalides. Ajoute le cas de zéro jeton avec une capacité de 0 : les données invalides ont priorité sur l'absence de travail."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un nouveau test utilise 10 jetons, une capacité de 3 et acepta_sobrantes à false. Quelle sortie l'énoncé exige-t-il ?",
+          "options": [
+            "Données invalides",
+            "Groupes : 3",
+            "Répartition en attente"
+          ],
+          "correctIndex": 2,
+          "explanation": "Les données sont valides, il reste un jeton et le mode choisi n'accepte pas de restes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ces cas constituent un point de départ. Ajoute une quantité inférieure à une capacité valide et prévois ce qui arrive au nombre de groupes complets et aux restes. Ne déduis pas le résultat attendu de la sortie de ton programme : déduis-le d'abord des règles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire librement ta solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'éditeur ne contient que la structure du programme. Déclare les trois données avec les valeurs initiales 14, 4 et true, puis écris les instructions nécessaires pour respecter les exigences. Ne copie pas encore une solution de référence. Avant l'exécution, suis le chemin de décision avec une capacité nulle et vérifie qu'il n'atteint ni la division ni le calcul du reste. Exécute ensuite les cas préparés, en modifiant les valeurs initiales entre les essais."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Quand une sortie diffère, repère la première condition ou instruction qui ne correspond pas à ta prévision. Corrige une cause et répète le test. Vérifie ensuite que la correction conserve aussi les autres résultats. La page suivante propose une référence avec d'autres données ; consulte-la seulement après avoir construit et testé ta version."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer après avoir construit"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette version utilise d'autres données : 18 jetons, une capacité de 5 et l'autorisation de laisser des restes. Suis ses chemins et compare-les à ta solution. Deux programmes peuvent organiser leurs blocs différemment tout en respectant les mêmes exigences. Vérifie où les calculs sur des données invalides sont évités et à quel moment chaque message apparaît."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int capacidad = 5;\n    const bool acepta_sobrantes = true;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Données invalides\";\n    } else if (fichas == 0) {\n        std::cout << \"Aucun travail\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Groupes : \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Groupes : \" << grupos << \"\\n\";\n            std::cout << \"Restes : \" << sobrantes;\n        } else {\n            std::cout << \"Répartition en attente\";\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Un autre cas utilise 20 jetons, une capacité de 6 et n'accepte pas de restes. Prévois la sortie de cette version.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 20;\n    int capacidad = 6;\n    const bool acepta_sobrantes = false;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Données invalides\";\n    } else if (fichas == 0) {\n        std::cout << \"Aucun travail\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Groupes : \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Groupes : \" << grupos << \"\\n\";\n            std::cout << \"Restes : \" << sobrantes;\n        } else {\n            std::cout << \"Répartition en attente\";\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Répartition en attente"
+          ],
+          "explanation": "Les données sont valides, il reste 2 jetons et ce mode n'accepte pas de restes. Le quotient n'est pas affiché séparément sur ce chemin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer une règle sans étapes imposées"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reviens à ton programme et modifie l'exigence : une quantité valide commence maintenant à 1 ; zéro jeton doit donc être rejeté. Détermine quelle partie modifier et quels cas pourraient révéler une modification incomplète. Conserve les capacités valides de 1 à 6 et les autres résultats. Formule le résultat attendu avant d'exécuter."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel cas distingue directement le domaine initial du nouveau, sans ajouter une autre cause de rejet ?",
+          "options": [
+            "31 jetons avec une capacité de 4.",
+            "Zéro jeton avec une capacité de 4.",
+            "Zéro jeton avec une capacité de 0."
+          ],
+          "correctIndex": 1,
+          "explanation": "Avec une capacité valide, zéro produisait auparavant Aucun travail et doit maintenant produire Données invalides. Les autres cas étaient déjà rejetés."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un test avec zéro jeton et une capacité nulle affiche Aucun travail. Quelle exigence initiale cela enfreint-il ?",
+          "options": [
+            "Chaque bool doit être affiché sous forme de texte.",
+            "Le rejet des données invalides doit être prioritaire.",
+            "Il doit toujours y avoir au moins un groupe complet."
+          ],
+          "correctIndex": 1,
+          "explanation": "Une capacité nulle est invalide et ne doit produire que Données invalides. Une quantité nulle ne doit pas masquer ce rejet."
+        },
+        {
+          "type": "note",
+          "text": "Construire librement ne consiste pas seulement à modifier les données d'une solution fournie : choisis des expressions, organise les possibilités et compare les résultats. Conserve une explication de chaque cas et de la première cause trouvée lorsqu'un test échoue."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer le changement de domaine après l'essai"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec la nouvelle exigence, l'intervalle des jetons commence à 1 : zéro jeton avec une capacité de 4 doit produire Données invalides. Le cas d'un jeton, d'une capacité de 4 et de l'acceptation des restes produit Groupes : 0 et Restes : 1 sur deux lignes ; 30 jetons avec une capacité de 6 produisent toujours Groupes : 5. Les données invalides restent prioritaires et n'atteignent ni / ni %."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int capacidad = 5;\n    const bool acepta_sobrantes = true;\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Données invalides\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Groupes : \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Groupes : \" << grupos << \"\\n\";\n            std::cout << \"Restes : \" << sobrantes;\n        } else {\n            std::cout << \"Répartition en attente\";\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence modifie la borne inférieure et supprime la branche Aucun travail, désormais inaccessible avec des données acceptées. Les autres calculs et décisions sont conservés. Teste 0, 1 et 30 avec des capacités valides, et une capacité nulle avec des quantités valides et invalides. Une autre structure peut aussi respecter ces critères ; il n'est pas nécessaire de copier cette organisation."
+        }
+      ]
+    }
+  ]
+}

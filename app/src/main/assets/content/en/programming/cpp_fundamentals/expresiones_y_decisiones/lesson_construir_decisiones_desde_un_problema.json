@@ -1,0 +1,167 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__construir_decisiones_desde_un_problema",
+  "title": "Building Decisions from a Problem",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A new problem: preparing groups of tokens"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a program that prepares tokens in groups. Its data are declared in the code: fichas is an integer quantity, capacidad is the number of tokens per group, and acepta_sobrantes is a bool. A valid quantity ranges from 0 to 30, and a valid capacity ranges from 1 to 6, including both endpoints. No keyboard input is read."
+        },
+        {
+          "type": "paragraph",
+          "text": "These are the observable requirements, in order of priority. If either value is outside its valid range, display Invalid data. With valid data and zero tokens, display No work. With a positive number of tokens and an exact division, display Groups: followed by a space and the number of complete groups. If tokens remain and acepta_sobrantes is true, display that group-count line and a second line, Leftovers: followed by a space and the number left over. If tokens remain and acepta_sobrantes is false, display Grouping pending."
+        },
+        {
+          "type": "paragraph",
+          "text": "Do not display any additional messages. Invalid data must produce only the warning, without evaluating the division calculations. Choose the conditions and how to organize the alternatives yourself. You can solve this with the types, operations, and decisions studied in this unit; loops and helper functions are not needed."
+        },
+        {
+          "type": "note",
+          "text": "Before writing code, explain in your own words which data are valid and which question distinguishes each outcome. The problem statement specifies the behavior; your program must build the decision structure."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prepare the expected results"
+        },
+        {
+          "type": "paragraph",
+          "text": "Start with fichas equal to 14, capacidad equal to 4, and acepta_sobrantes set to true: the output should be Groups: 3 and Leftovers: 2 on two lines. Changing only acepta_sobrantes to false should produce Grouping pending. With 12 tokens and a capacity of 4, the output should be Groups: 3, regardless of the value of acepta_sobrantes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Also check zero tokens with a capacity of 4: No work. At the upper boundary, 30 tokens and a capacity of 6 should produce Groups: 5. Cases with -1 or 31 tokens and a capacity of 4, and 12 tokens with a capacity of 0 or 7, should produce Invalid data. Include zero tokens with a capacity of 0: invalid data take precedence over having no work."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A new test uses 10 tokens, a capacity of 3, and acepta_sobrantes set to false. What output does the requirement demand?",
+          "options": [
+            "Invalid data",
+            "Groups: 3",
+            "Grouping pending"
+          ],
+          "correctIndex": 2,
+          "explanation": "The data are valid, one token remains, and the selected mode does not accept leftovers."
+        },
+        {
+          "type": "paragraph",
+          "text": "These cases are a starting point. Add a quantity smaller than a valid capacity and predict what happens to the complete groups and leftovers. Do not derive the expected result from your program's output; derive it from the rules first."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build your own solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "The editor contains only the program skeleton. Declare all three values using the initial case of 14, 4, and true, then write the statements needed to meet the requirements. Do not copy a reference solution yet. Before running it, trace your decision path with a capacity of zero and verify that it never reaches division or remainder. Then run your prepared cases, changing the initializers between runs."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "When an output differs, locate the first condition or statement that fails to match your prediction. Correct one cause and repeat the case. Then check that the fix also preserves the other results. The next page offers a reference using different data; visit it only after you have built and tested your version."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare after building your solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "This version uses different data: 18 tokens, capacity 5, and permission to leave leftovers. Trace its paths and compare it with your solution. Two programs can organize their blocks differently while meeting the same requirements. Check where it avoids calculations with invalid data and when it reaches each message."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int capacidad = 5;\n    const bool acepta_sobrantes = true;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Invalid data\";\n    } else if (fichas == 0) {\n        std::cout << \"No work\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Groups: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Groups: \" << grupos << \"\\n\";\n            std::cout << \"Leftovers: \" << sobrantes;\n        } else {\n            std::cout << \"Grouping pending\";\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Another case uses 20 tokens, capacity 6, and does not accept leftovers. Predict the output of this version.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 20;\n    int capacidad = 6;\n    const bool acepta_sobrantes = false;\n    if ((fichas < 0) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Invalid data\";\n    } else if (fichas == 0) {\n        std::cout << \"No work\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Groups: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Groups: \" << grupos << \"\\n\";\n            std::cout << \"Leftovers: \" << sobrantes;\n        } else {\n            std::cout << \"Grouping pending\";\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Grouping pending"
+          ],
+          "explanation": "The data are valid, 2 tokens remain, and this mode does not accept leftovers. The quotient is not displayed separately on this path."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer a rule without prescribed steps"
+        },
+        {
+          "type": "paragraph",
+          "text": "Return to your program and change the requirement: a valid quantity now starts at 1, so zero tokens must be rejected. Decide which part to change and which cases could reveal an incomplete modification. Keep valid capacity between 1 and 6 and preserve the other outcomes. State the expected result before running the program."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which case directly distinguishes the original range from the new one without adding another reason for rejection?",
+          "options": [
+            "31 tokens with capacity 4.",
+            "Zero tokens with capacity 4.",
+            "Zero tokens with capacity 0."
+          ],
+          "correctIndex": 1,
+          "explanation": "With a valid capacity, zero previously produced No work and must now produce Invalid data. The other cases were already rejected."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A test with zero tokens and zero capacity displays No work. Which original requirement does this violate?",
+          "options": [
+            "Every bool must be displayed as text.",
+            "Rejecting invalid data must take priority.",
+            "There must always be at least one complete group."
+          ],
+          "correctIndex": 1,
+          "explanation": "A capacity of zero is invalid and must produce only Invalid data. Zero tokens must not hide that rejection."
+        },
+        {
+          "type": "note",
+          "text": "Building your own solution is more than changing the data in a provided program: choose expressions, organize alternatives, and compare outcomes. Keep an explanation of each case and the first cause you identify when a test fails."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the changed range after attempting it"
+        },
+        {
+          "type": "paragraph",
+          "text": "Under the new requirement, the token range starts at 1: zero tokens with capacity 4 must produce Invalid data. The case of 1 token, capacity 4, and acceptance of leftovers produces Groups: 0 and Leftovers: 1 on two lines; 30 tokens with capacity 6 still produces Groups: 5. Invalid data still take priority and never reach / or %."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int fichas = 18;\n    int capacidad = 5;\n    const bool acepta_sobrantes = true;\n    if ((fichas < 1) || (fichas > 30) || (capacidad < 1) || (capacidad > 6)) {\n        std::cout << \"Invalid data\";\n    } else {\n        const int grupos = fichas / capacidad;\n        const int sobrantes = fichas % capacidad;\n        if (sobrantes == 0) {\n            std::cout << \"Groups: \" << grupos;\n        } else if (acepta_sobrantes) {\n            std::cout << \"Groups: \" << grupos << \"\\n\";\n            std::cout << \"Leftovers: \" << sobrantes;\n        } else {\n            std::cout << \"Grouping pending\";\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This reference changes the lower-bound check and removes the No work branch, which is no longer reachable with accepted data. It retains the other calculations and decisions. Test 0, 1, and 30 with valid capacities, and capacity 0 with both valid and invalid quantities. A different structure may also meet these criteria; you do not need to copy this organization."
+        }
+      ]
+    }
+  ]
+}

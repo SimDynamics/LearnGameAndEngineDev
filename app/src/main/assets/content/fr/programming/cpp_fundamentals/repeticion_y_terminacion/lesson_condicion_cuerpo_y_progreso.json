@@ -1,0 +1,222 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__condicion_cuerpo_y_progreso",
+  "title": "Répéter : condition, corps et progression",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ce qui change lorsqu'on répète une action"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une décision exécute une possibilité selon une condition. Une boucle permet de vérifier à nouveau une condition et de répéter une action. Pour préparer plusieurs postes de travail, nul besoin de copier une instruction pour chacun : on peut décrire comment passer d'un poste au suivant et quand s'arrêter. Écrire moins de code est utile, mais le changement fondamental est que le programme coordonne une suite d'états."
+        },
+        {
+          "type": "paragraph",
+          "text": "La forme while (condition) { corps } vérifie la condition avant d'entrer dans le corps. Si elle est vraie, le corps s'exécute, puis la condition est vérifiée à nouveau ; si elle est fausse, l'exécution continue après la boucle. La condition n'est pas une décision prise une fois pour toutes : elle est réévaluée avec l'état présent à cet instant."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int puesto{2};\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 1;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La première vérification utilise puesto=2. Le corps affiche 2: et fait passer puesto à 3. Les vérifications suivantes utilisent 3, 4, puis 5. À 5, la condition est fausse et le corps ne s'exécute plus. Le programme atteint la sortie Fin. L'état final du compteur n'est pas la dernière valeur affichée : la dernière mise à jour a eu lieu après l'affichage de 4."
+        },
+        {
+          "type": "output_prediction",
+          "id": "while_otro_inicio",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{3};\n    while (n < 6) {\n        std::cout << n << \";\";\n        n = n + 1;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "3;4;5;Fin"
+          ],
+          "explanation": "Le corps s'exécute avec 3, 4 et 5 ; la vérification avec 6 provoque la sortie de la boucle."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le corps peut ne jamais s'exécuter"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comme la condition est vérifiée d'abord, rien ne garantit que le corps s'exécute au moins une fois. Chaque exécution du corps s'appelle une itération. Si l'état initial rend déjà la condition fausse, la boucle effectue zéro itération. Ce comportement est défini et souvent nécessaire : une liste vide ou une tâche déjà terminée n'exige aucune action artificielle."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour raisonner, écris l'état avant la première vérification et évalue la condition. On appelle trace ce suivi, étape par étape, des états et des instructions exécutées. Ne commence pas en imaginant que le corps s'exécute. Tu peux ainsi distinguer zéro, une ou plusieurs itérations. Ces trois situations révèlent des erreurs qu'un long parcours peut cacher."
+        },
+        {
+          "type": "output_prediction",
+          "id": "while_cero",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{7};\n    while (n < 7) {\n        std::cout << \"Travail\";\n        n = n + 1;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Fin"
+          ],
+          "explanation": "La première condition, 7<7, est fausse. Tout le corps est ignoré."
+        },
+        {
+          "type": "output_prediction",
+          "id": "while_una",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{8};\n    while (n < 9) {\n        std::cout << n << \":\";\n        n = n + 1;\n    }\n    std::cout << n;\n    return 0;\n}\n",
+          "answers": [
+            "8:9"
+          ],
+          "explanation": "8 est affiché une fois, puis n passe à 9 et la boucle s'arrête."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "primer_paso_traza",
+          "question": "Avant de tracer while (saldo > 0), que dois-tu connaître ?",
+          "options": [
+            "La valeur initiale de saldo au moment de vérifier la condition.",
+            "Le solde final que tu souhaites obtenir après le parcours.",
+            "Le nombre d'itérations, même sans connaître le solde initial."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'entrée dans le corps dépend de l'état, pas de l'apparence du code."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La mise à jour fait partie du procédé"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une boucle utile nécessite un lien entre son état et son critère de sortie. Dans un parcours croissant, le compteur augmente vers une limite ; dans un compte à rebours, il diminue vers une autre. Il ne suffit pas d'ajouter n'importe quelle modification : celle-ci doit rapprocher d'un état qui rend la condition fausse, ou il doit exister une autre sortie explicite que l'on peut justifier."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu peux utiliser ++n comme raccourci de n=n+1 lorsque l'incrémentation constitue une instruction indépendante. Ici, nous ne combinerons pas incrémentation et lecture du même objet dans des expressions compliquées. Séparer les étapes permet de voir clairement quelle valeur chaque action utilise. Les exemples du cours emploient de petites valeurs représentables par int."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cuenta_descendente",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int quedan{4};\n    while (quedan > 1) {\n        std::cout << quedan << \" \";\n        --quedan;\n    }\n    std::cout << \"Reste=\" << quedan;\n    return 0;\n}\n",
+          "answers": [
+            "4 3 2 Reste=1"
+          ],
+          "explanation": "Le corps s'exécute avec 4, 3 et 2 ; lorsque la valeur atteint 1, le critère de sortie est satisfait."
+        },
+        {
+          "type": "fill_code",
+          "id": "actualizacion_unica",
+          "question": "Écris uniquement l'opérateur d'incrémentation qui fait avancer n d'une unité à chaque itération.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{0};\n    while (n < 3) {\n        std::cout << n;\n        ___n;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "++"
+          ],
+          "explanation": "++n modifie l'état avant la vérification suivante."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "actualizacion_ausente",
+          "question": "Sans l'exécuter, examine while (n < 3) { std::cout << n; } avec n=0 et aucune autre modification. Qu'est-ce qui empêche de justifier la sortie de la boucle ?",
+          "options": [
+            "Vérifier n<3 suffit pour rapprocher n de la limite du parcours.",
+            "Afficher n revient à le modifier pour l'itération suivante.",
+            "n reste égal à 0 et la condition demeure vraie."
+          ],
+          "correctIndex": 2,
+          "explanation": "Afficher du texte ne modifie pas le compteur. Le même état rend la condition vraie à chaque nouvelle vérification."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Regrouper les instructions du corps"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les accolades permettent à plusieurs instructions de former le corps de la boucle. Sans bloc, while ne contrôle qu'une seule instruction. Par exemple, séparer visuellement un affichage et une mise à jour ne prouve pas que les deux appartiennent au corps. L'indentation aide à lire, mais la structure du C++ dépend des instructions et des accolades."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour examiner une boucle, repère quatre éléments : l'état initial, la vérification, les actions du corps et la progression. Suis les accolades avant de te fier à l'indentation. Une erreur de regroupement peut laisser la mise à jour hors du corps ou répéter une action qui ne devait se produire qu'une fois. N'exécute pas une version dont tu ne peux pas expliquer la terminaison ; corrige d'abord sa structure."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "agrupar_dos_acciones",
+          "question": "Tu veux afficher n et l'augmenter à chaque itération. Quelle structure place les deux actions dans le corps ?",
+          "options": [
+            "while (n<4) { std::cout<<n; ++n; }",
+            "while (n<4); std::cout<<n; ++n;",
+            "while (n<4) std::cout<<n; ++n;"
+          ],
+          "correctIndex": 0,
+          "explanation": "Le bloc entre accolades comprend l'affichage et la progression. Dans la deuxième forme, le corps de while est une instruction vide ; dans la troisième, seul l'affichage est répété. Dans les deux formes incorrectes, ++n est hors du corps et ne fait pas progresser n à chaque itération."
+        },
+        {
+          "type": "output_prediction",
+          "id": "estado_despues_del_cuerpo",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int nivel{1};\n    while (nivel < 4) {\n        ++nivel;\n        std::cout << nivel << \":\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "2:3:4:Fin"
+          ],
+          "explanation": "La mise à jour précède l'affichage. La première vérification utilise 1, mais la première valeur affichée est 2."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Expérimenter avec des limites connues"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prévois la sortie de l'atelier, puis vérifie-la. Change seulement la valeur initiale en 0, puis en 5, tout en gardant la limite à 5. Compare les situations où le corps est ignoré et le nombre de ses exécutions. Ensuite, rétablis la valeur initiale à 0, change le pas pour avancer de deux unités et retrace le parcours avant d'exécuter. Utilise des valeurs initiales de 0 à 5 et de petits pas positifs."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int puesto{1};\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 1;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Note à chaque itération la valeur vérifiée, la valeur affichée et la valeur après la mise à jour. Cette trace aide à trouver la cause d'une différence ; exécuter plusieurs fois sans prévoir le résultat apporte moins d'informations."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la solution de l'atelier"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare cette version après avoir établi tes traces. Critères : puesto<5 est vérifié avant tout affichage ; seules les valeurs acceptées par cette condition sont affichées ; le pas de deux s'exécute à chaque itération, et Fin apparaît une seule fois, en dehors de la boucle."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int puesto{0};\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 2;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec un départ à 0 et un pas de 1, on obtient 0:1:2:3:4:Fin ; avec un départ à 5, le corps ne s'exécute pas et on obtient Fin. Avec un départ à 0 et un pas de 2, cette référence produit 0:2:4:Fin et termine avec puesto égal à 6. Il n'est pas nécessaire d'atteindre exactement 5 : 6 rend déjà la condition fausse. Une mise à jour hors du corps ne respecte pas la progression requise."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__condicion_cuerpo_y_progreso",
+  "title": "Repeating: Condition, Body, and Progress",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "What changes when we repeat"
+        },
+        {
+          "type": "paragraph",
+          "text": "A decision executes one alternative according to a condition. A loop allows us to check a condition again and repeat an action. If we want to prepare several workstations, we do not need to copy a statement for each one: we can describe how to move from one workstation to the next and when to stop. Saving typing is useful, but the fundamental change is that the program coordinates a sequence of states."
+        },
+        {
+          "type": "paragraph",
+          "text": "The form while (condition) { body } checks the condition before entering the body. If the condition is true, it executes the body and then checks again; if it is false, execution continues after the loop. The condition is not a decision made once and kept forever: it is evaluated again using the state that exists at that moment."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int puesto{2};\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 1;\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The first check uses puesto=2. The body displays 2: and changes puesto to 3. The following checks use 3, 4, and finally 5. At 5 the condition is false, so the body no longer runs. The program reaches the output End. The counter's final state is not the last value displayed: the final update took place after displaying 4."
+        },
+        {
+          "type": "output_prediction",
+          "id": "while_otro_inicio",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{3};\n    while (n < 6) {\n        std::cout << n << \";\";\n        n = n + 1;\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "3;4;5;End"
+          ],
+          "explanation": "The body uses 3, 4, and 5; the check at 6 causes the loop to end."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "There may be no repetition before the body"
+        },
+        {
+          "type": "paragraph",
+          "text": "Because the condition is checked first, there is no promise that the body will run even once. Each execution of the body is called an iteration. If the initial state already makes the condition false, the loop has zero iterations. This behavior is defined and often necessary: an empty list or an already completed job does not require a made-up action."
+        },
+        {
+          "type": "paragraph",
+          "text": "To reason through the loop, write down the state before the first check and evaluate the condition. We call this step-by-step tracking of states and executed statements a trace. Do not begin by imagining that the body runs. This lets you distinguish zero, one, and several iterations. These three situations expose errors that a long-running case can hide."
+        },
+        {
+          "type": "output_prediction",
+          "id": "while_cero",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{7};\n    while (n < 7) {\n        std::cout << \"Work\";\n        n = n + 1;\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "End"
+          ],
+          "explanation": "The first condition, 7<7, is false. The entire body is skipped."
+        },
+        {
+          "type": "output_prediction",
+          "id": "while_una",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{8};\n    while (n < 9) {\n        std::cout << n << \":\";\n        n = n + 1;\n    }\n    std::cout << n;\n    return 0;\n}\n",
+          "answers": [
+            "8:9"
+          ],
+          "explanation": "8 is displayed once, then the value changes to 9 and the loop ends."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "primer_paso_traza",
+          "question": "Before tracing while (saldo > 0), what do you need to know?",
+          "options": [
+            "The initial value of saldo when the condition is checked.",
+            "The final balance you want to obtain after the loop.",
+            "The number of iterations, even without knowing the initial balance."
+          ],
+          "correctIndex": 0,
+          "explanation": "Whether the body runs depends on the state, not on how the code looks."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Updating the state is part of the procedure"
+        },
+        {
+          "type": "paragraph",
+          "text": "A useful loop needs a relationship between its state and its exit condition. In an ascending sequence, the counter increases toward a limit; in a countdown, it decreases toward another limit. Adding just any change is not enough: it must bring us closer to a state that makes the condition false, or there must be another explicit exit that we can justify."
+        },
+        {
+          "type": "paragraph",
+          "text": "You can use ++n as shorthand for n=n+1 when the increment is a separate statement. Here we will not combine incrementing and reading the same object in complicated expressions. Keeping steps separate makes it clear which value each action uses. The course examples work with small values that fit in int."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cuenta_descendente",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int quedan{4};\n    while (quedan > 1) {\n        std::cout << quedan << \" \";\n        --quedan;\n    }\n    std::cout << \"Remaining=\" << quedan;\n    return 0;\n}\n",
+          "answers": [
+            "4 3 2 Remaining=1"
+          ],
+          "explanation": "The body runs with 4, 3, and 2; reaching 1 satisfies the exit criterion."
+        },
+        {
+          "type": "fill_code",
+          "id": "actualizacion_unica",
+          "question": "Enter only the increment operator that advances n by one on every iteration.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{0};\n    while (n < 3) {\n        std::cout << n;\n        ___n;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "++"
+          ],
+          "explanation": "++n changes the state before the next condition check."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "actualizacion_ausente",
+          "question": "Without running it, consider while (n < 3) { std::cout << n; } with n=0 and no other changes. What prevents us from showing that the loop will end?",
+          "options": [
+            "Checking n<3 is enough to move n toward the loop's limit.",
+            "Displaying n counts as changing it for the next iteration.",
+            "n stays at 0 and the condition remains true."
+          ],
+          "correctIndex": 2,
+          "explanation": "Printing text does not change the counter. The same state makes the condition true again and again."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Group statements inside the body"
+        },
+        {
+          "type": "paragraph",
+          "text": "Braces allow several statements to form the loop body. Without a block, while controls only one statement. For example, visually separating an output statement from an update does not prove that both belong to the body. Indentation helps readers, but C++ structure is determined by statements and braces."
+        },
+        {
+          "type": "paragraph",
+          "text": "When reviewing a loop, identify four elements: the initial state, the condition check, the body's actions, and progress. Follow the braces before trusting indentation. A grouping error can leave the update outside the body or repeat an action that should happen only once. Do not run a version whose termination you cannot explain; correct its structure first."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "agrupar_dos_acciones",
+          "question": "You want to display n and increment it on each iteration. Which structure includes both actions in the body?",
+          "options": [
+            "while (n<4) { std::cout<<n; ++n; }",
+            "while (n<4); std::cout<<n; ++n;",
+            "while (n<4) std::cout<<n; ++n;"
+          ],
+          "correctIndex": 0,
+          "explanation": "The braced block includes both the output and the update. In the second form, the while body is an empty statement; in the third, only the output is repeated. In both incorrect forms, ++n is outside the loop body and cannot advance n on every iteration."
+        },
+        {
+          "type": "output_prediction",
+          "id": "estado_despues_del_cuerpo",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int nivel{1};\n    while (nivel < 4) {\n        ++nivel;\n        std::cout << nivel << \":\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "2:3:4:End"
+          ],
+          "explanation": "The update happens before the output. The first check uses 1, but the first displayed value is 2."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Experiment with known limits"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predict the lab output and then check it. Change only the initial value to 0 and then to 5, keeping the limit at 5. Compare when the body is skipped and how many times it runs. Next restore the initial value to 0, change the step size to two, and trace again before running. Use initial values between 0 and 5 and small positive steps."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int puesto{1};\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 1;\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Record the value checked, the value displayed, and the value after the update on every iteration. That trace helps you locate the cause of a difference; running repeatedly without a prediction provides less information."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the lab solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare this version after making your traces. Criteria: puesto<5 is checked before printing; only values allowed by that condition are displayed; the increment by two runs on every iteration, and End is printed just once, outside the loop."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int puesto{0};\n    while (puesto < 5) {\n        std::cout << puesto << \":\";\n        puesto = puesto + 2;\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "With initial value 0 and increment 1, the result is 0:1:2:3:4:End; with initial value 5, the body is skipped and the result is End. With initial value 0 and increment 2, this reference produces 0:2:4:End and finishes with puesto equal to 6. Reaching exactly 5 is not necessary: 6 already makes the condition false. An update outside the body does not provide the required progress."
+        }
+      ]
+    }
+  ]
+}
