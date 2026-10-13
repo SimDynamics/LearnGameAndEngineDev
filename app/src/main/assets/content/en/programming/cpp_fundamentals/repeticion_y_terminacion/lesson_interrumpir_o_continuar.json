@@ -1,0 +1,224 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__interrumpir_o_continuar",
+  "title": "Stopping a Loop or Continuing to the Next Case",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two different changes in control flow"
+        },
+        {
+          "type": "paragraph",
+          "text": "In this lesson's examples, break terminates the loop that contains it. continue skips the rest of the current iteration's body and moves to the point where the loop prepares or checks the next iteration. It does not mean ending the entire program. Use each statement when it expresses a specific rule, not to hide a loop whose behavior you cannot explain."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 6; ++n) {\n        if (n == 4) {\n            break;\n        }\n        std::cout << n << \":\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "When the value reaches 4, break runs before the body prints anything for that value. Execution leaves the for loop and reaches End. A condition in the loop header and an early exit can coexist: the loop stops at whichever exit rule is encountered first."
+        },
+        {
+          "type": "output_prediction",
+          "id": "corte_antes_de_mostrar",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{2}; n <= 7; ++n) {\n        if (n == 5) {\n            break;\n        }\n        std::cout << n << \";\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "2;3;4;End"
+          ],
+          "explanation": "Case 5 triggers the exit before it is printed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Where you break matters"
+        },
+        {
+          "type": "output_prediction",
+          "id": "corte_despues_de_mostrar",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{2}; n <= 7; ++n) {\n        std::cout << n << \";\";\n        if (n == 5) {\n            break;\n        }\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "2;3;4;5;End"
+          ],
+          "explanation": "Case 5 is printed before the break condition is checked."
+        },
+        {
+          "type": "output_prediction",
+          "id": "corte_en_primer_caso",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{8}; n <= 10; ++n) {\n        if (n > 6) {\n            break;\n        }\n        suma += n;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "The first iteration reaches break before adding any contribution."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "salida_posterior_al_break",
+          "question": "A break exits the only loop in main. After the loop there is a text output and return 0. What normally happens next?",
+          "options": [
+            "The output after the loop runs, followed by return 0.",
+            "The loop automatically returns to its first case.",
+            "The program ends at break and always skips the rest of main."
+          ],
+          "correctIndex": 0,
+          "explanation": "break transfers control to the statement following the loop it exits."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "continue in a for loop"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a for loop, continue proceeds to the header's update and then checks the condition again. This lets us reject a case without removing the counter's advancement. Output before continue has already happened; output after it is skipped. Do not interpret continue as erasing the entire iteration from the execution history."
+        },
+        {
+          "type": "output_prediction",
+          "id": "omitir_un_caso",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        if (n == 3) {\n            continue;\n        }\n        std::cout << n << \":\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "1:2:4:5:End"
+          ],
+          "explanation": "With 3, the output is skipped, but the header increments the counter to 4."
+        },
+        {
+          "type": "output_prediction",
+          "id": "accion_antes_continue",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 3; ++n) {\n        std::cout << \"A\" << n;\n        if (n == 2) {\n            continue;\n        }\n        std::cout << \"B\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "A1BA2A3BEnd"
+          ],
+          "explanation": "Output A2 occurs before continue; only B is skipped in that case."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contar_despues_filtro",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int n{1}; n <= 6; ++n) {\n        if (n % 2 == 0) {\n            continue;\n        }\n        ++cantidad;\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Even values are skipped. The counter increases for 1, 3, and 5."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "continue in a while loop"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a while loop, continue returns directly to the condition check. There is no hidden update step. If you put the update at the end of the body, an earlier continue can skip it. Examine every path that returns to the condition. One simple alternative is to advance before a path that may continue; another is to use if to execute only the accepted action and then advance after the decision."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "continue_salta_avance",
+          "question": "Analyze without running: n=1; while(n<=3){ if(n==2){continue;} ++n; }. Why can we not establish that this loop terminates?",
+          "options": [
+            "When n reaches 2, continue skips ++n and the condition is checked again with 2.",
+            "The condition n<=3 changes n.",
+            "continue always adds one, even in a while loop."
+          ],
+          "correctIndex": 0,
+          "explanation": "while provides no implicit increment. The continue path leaves the state unchanged."
+        },
+        {
+          "type": "output_prediction",
+          "id": "avance_antes_continue",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{0};\n    while (n < 4) {\n        ++n;\n        if (n == 2) {\n            continue;\n        }\n        std::cout << n << \":\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "1:3:4:End"
+          ],
+          "explanation": "The update has already happened when continue is reached. The next condition check uses that state."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose the statement according to the goal"
+        },
+        {
+          "type": "fill_code",
+          "id": "rechazar_sin_terminar",
+          "question": "The loop must print all numbers from 1 to 5 except 4 and continue after rejecting that case. Fill in only the keyword.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        if (n == 4) {\n            ___;\n        }\n        std::cout << n;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "continue"
+          ],
+          "explanation": "continue skips the rest of that body's execution and allows the loop to visit 5. break would prevent reaching 5."
+        },
+        {
+          "type": "fill_code",
+          "id": "terminar_al_limite",
+          "question": "The loop must stop completely before processing 4. Fill in only the keyword.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 8; ++n) {\n        if (n == 4) {\n            ___;\n        }\n        std::cout << n;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "break"
+          ],
+          "explanation": "break exits the loop before printing 4; continue would move on to 5."
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lab, first skip case 3 without ending the loop. Then make another version that stops before case 3. Predict and compare both outputs. Keep the small limit; the task is to explain the change in control flow, not to test how many iterations your device supports."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        std::cout << n << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the lab solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "After building both versions, distinguish skipping a case from ending the loop. Criteria: the version with continue displays 1, 2, 4, and 5; the version with break displays only 1 and 2. Each number occupies one line; 3 is never shown."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        if (n == 3) {\n            continue;\n        }\n        std::cout << n << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        if (n == 3) {\n            break;\n        }\n        std::cout << n << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the for loop, continue moves to the ++n update before the next condition check; break exits the loop. Placing the decision after cout would also print 3 and would not meet the task. When converting to while, make sure the continue path does not skip a necessary update."
+        }
+      ]
+    }
+  ]
+}

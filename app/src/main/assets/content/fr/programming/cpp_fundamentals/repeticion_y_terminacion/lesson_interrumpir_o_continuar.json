@@ -1,0 +1,224 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__interrumpir_o_continuar",
+  "title": "Interrompre le parcours ou passer au cas suivant",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux changements de contrôle différents"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans les exemples de cette leçon, break termine la boucle qui le contient. continue ignore le reste du corps de l'itération actuelle et passe au point où la boucle prépare ou vérifie l'itération suivante. Cela ne signifie pas terminer tout le programme. Utilise chaque instruction lorsqu'elle exprime une règle précise, et non pour masquer un parcours que tu ne peux pas expliquer."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 6; ++n) {\n        if (n == 4) {\n            break;\n        }\n        std::cout << n << \":\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsque la valeur atteint 4, break s'exécute avant l'affichage dans le corps pour cette valeur. On quitte le for et on atteint Fin. Une condition dans l'en-tête et une sortie anticipée peuvent coexister : le parcours se termine dès que la première règle de sortie est rencontrée."
+        },
+        {
+          "type": "output_prediction",
+          "id": "corte_antes_de_mostrar",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{2}; n <= 7; ++n) {\n        if (n == 5) {\n            break;\n        }\n        std::cout << n << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "2;3;4;Fin"
+          ],
+          "explanation": "Le cas 5 déclenche la sortie avant d'être affiché."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'emplacement de break compte"
+        },
+        {
+          "type": "output_prediction",
+          "id": "corte_despues_de_mostrar",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{2}; n <= 7; ++n) {\n        std::cout << n << \";\";\n        if (n == 5) {\n            break;\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "2;3;4;5;Fin"
+          ],
+          "explanation": "Le cas 5 est affiché avant la vérification de la condition de sortie."
+        },
+        {
+          "type": "output_prediction",
+          "id": "corte_en_primer_caso",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{8}; n <= 10; ++n) {\n        if (n > 6) {\n            break;\n        }\n        suma += n;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "La première itération atteint break avant d'ajouter la moindre contribution."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "salida_posterior_al_break",
+          "question": "Un break quitte l'unique boucle de main. Après la boucle, il y a un affichage et return 0. Que se passe-t-il normalement ensuite ?",
+          "options": [
+            "L'affichage après la boucle s'exécute, suivi de return 0.",
+            "La boucle revient automatiquement à son premier cas.",
+            "Le programme se termine au break et ignore toujours la suite de main."
+          ],
+          "correctIndex": 0,
+          "explanation": "break transfère le contrôle à l'instruction qui suit la boucle quittée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "continue dans une boucle for"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans une boucle for, continue passe à la mise à jour de l'en-tête, puis vérifie de nouveau la condition. On peut ainsi rejeter un cas sans supprimer l'avancement du compteur. Un affichage placé avant continue a déjà eu lieu ; un affichage placé après est ignoré. N'interprète pas continue comme l'effacement de toute l'itération de l'historique d'exécution."
+        },
+        {
+          "type": "output_prediction",
+          "id": "omitir_un_caso",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        if (n == 3) {\n            continue;\n        }\n        std::cout << n << \":\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "1:2:4:5:Fin"
+          ],
+          "explanation": "Avec 3, l'affichage est ignoré, mais l'en-tête augmente le compteur à 4."
+        },
+        {
+          "type": "output_prediction",
+          "id": "accion_antes_continue",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 3; ++n) {\n        std::cout << \"A\" << n;\n        if (n == 2) {\n            continue;\n        }\n        std::cout << \"B\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "A1BA2A3BFin"
+          ],
+          "explanation": "L'affichage A2 précède continue ; seul B est ignoré dans ce cas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contar_despues_filtro",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int n{1}; n <= 6; ++n) {\n        if (n % 2 == 0) {\n            continue;\n        }\n        ++cantidad;\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Les valeurs paires sont ignorées. Le compteur augmente pour 1, 3 et 5."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "continue dans une boucle while"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans une boucle while, continue revient directement à la vérification de la condition. Il n'existe pas de mise à jour implicite. Si tu places la mise à jour à la fin du corps, un continue antérieur peut la faire sauter. Examine chaque chemin qui revient à la condition. Une solution simple consiste à avancer avant un chemin susceptible de continuer ; une autre consiste à utiliser if pour n'exécuter que l'action acceptée, puis à avancer après la décision."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "continue_salta_avance",
+          "question": "Analyse sans exécuter : n=1; while(n<=3){ if(n==2){continue;} ++n; }. Pourquoi ne peut-on pas justifier la terminaison ?",
+          "options": [
+            "Lorsque n atteint 2, continue évite ++n et la condition est vérifiée de nouveau avec 2.",
+            "La condition n<=3 modifie n.",
+            "continue ajoute toujours une unité, même dans une boucle while."
+          ],
+          "correctIndex": 0,
+          "explanation": "while n'ajoute aucun incrément implicite. Le chemin de continue conserve le même état."
+        },
+        {
+          "type": "output_prediction",
+          "id": "avance_antes_continue",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{0};\n    while (n < 4) {\n        ++n;\n        if (n == 2) {\n            continue;\n        }\n        std::cout << n << \":\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "1:3:4:Fin"
+          ],
+          "explanation": "La mise à jour a déjà eu lieu au moment d'atteindre continue. La prochaine vérification utilise cet état."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir l'instruction selon l'objectif"
+        },
+        {
+          "type": "fill_code",
+          "id": "rechazar_sin_terminar",
+          "question": "La boucle doit afficher tous les nombres de 1 à 5 sauf 4 et poursuivre après ce rejet. Complète uniquement le mot-clé.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        if (n == 4) {\n            ___;\n        }\n        std::cout << n;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "continue"
+          ],
+          "explanation": "continue ignore le reste du corps et permet de passer à 5. break empêcherait d'atteindre 5."
+        },
+        {
+          "type": "fill_code",
+          "id": "terminar_al_limite",
+          "question": "La boucle doit s'arrêter complètement avant de traiter 4. Complète uniquement le mot-clé.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 8; ++n) {\n        if (n == 4) {\n            ___;\n        }\n        std::cout << n;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "break"
+          ],
+          "explanation": "break quitte le parcours avant d'afficher 4 ; continue passerait au cas 5."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans l'atelier, commence par ignorer le cas 3 sans terminer le parcours. Crée ensuite une autre version qui s'arrête avant le cas 3. Prévois et compare les deux sorties. Garde une petite limite ; l'objectif est d'expliquer le changement de contrôle, pas de tester le nombre d'itérations supportées par ton appareil."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        std::cout << n << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la solution de l'atelier"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après avoir réalisé tes deux versions, distingue le fait d'ignorer un cas de celui de terminer le parcours. Critères : la version avec continue affiche 1, 2, 4 et 5 ; la version avec break n'affiche que 1 et 2. Chaque nombre apparaît sur une ligne ; 3 n'est jamais affiché."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        if (n == 3) {\n            continue;\n        }\n        std::cout << n << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 5; ++n) {\n        if (n == 3) {\n            break;\n        }\n        std::cout << n << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le for, continue passe à la mise à jour ++n avant de revérifier la condition ; break quitte la boucle. Placer la décision après cout afficherait également 3 et ne respecterait pas l'exercice. Lors d'une conversion en while, veille à ce que le chemin de continue n'ignore pas la mise à jour nécessaire."
+        }
+      ]
+    }
+  ]
+}

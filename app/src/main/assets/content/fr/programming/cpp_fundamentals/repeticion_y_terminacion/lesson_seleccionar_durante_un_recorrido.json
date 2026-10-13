@@ -1,0 +1,201 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__seleccionar_durante_un_recorrido",
+  "title": "Sélectionner et résumer pendant un parcours",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La décision s'applique à chaque cas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une boucle et une décision répondent à des questions différentes : la boucle détermine les cas parcourus ; le if détermine ce que nous faisons du cas actuel. Pour réserver les postes pairs de 1 à 6, nous parcourons d'abord tous les numéros, puis vérifions si le numéro actuel respecte la règle. Le compteur de la boucle avance même lorsqu'un poste est refusé."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int puesto{1}; puesto <= 6; ++puesto) {\n        if (puesto % 2 == 0) {\n            std::cout << puesto << \":\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le corps du for est parcouru six fois ; l'affichage dans le if s'exécute trois fois. Le nombre de visites n'est pas celui des cas acceptés. Le reste puesto%2 est nul lorsque puesto est divisible par 2. Le diviseur est la constante non nulle 2 ; les données sont de petits entiers."
+        },
+        {
+          "type": "output_prediction",
+          "id": "filtrar_multiplos_tres",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{2}; n <= 8; ++n) {\n        if (n % 3 == 0) {\n            std::cout << n << \";\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "3;6;Fin"
+          ],
+          "explanation": "Tous les nombres de 2 à 8 sont parcourus ; seuls 3 et 6 donnent un reste nul lors de la division par 3."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compter les cas acceptés et additionner leurs contributions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour compter les cas acceptés, augmente un compteur dans la branche d'acceptation. Pour additionner leurs valeurs, ajoute la valeur actuelle à un autre objet. Si tu as besoin des deux réponses, conserve les deux résumés. C'est l'objectif qui détermine la quantité à accumuler, et non le simple fait que tous les objets soient de type int."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cantidad_y_suma_filtradas",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    int suma{0};\n    for (int n{1}; n <= 7; ++n) {\n        if (n % 2 != 0) {\n            ++cantidad;\n            suma += n;\n        }\n    }\n    std::cout << cantidad << \":\" << suma;\n    return 0;\n}\n",
+          "answers": [
+            "4:16"
+          ],
+          "explanation": "Les valeurs acceptées sont 1, 3, 5 et 7 : quatre cas dont la somme vaut 16."
+        },
+        {
+          "type": "output_prediction",
+          "id": "ningun_aceptado",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int n{1}; n < 4; ++n) {\n        if (n > 9) {\n            ++cantidad;\n        }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "La boucle compte trois itérations, mais aucune ne satisfait la condition de sélection."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "contador_en_sitio_equivocado",
+          "question": "Tu veux compter uniquement les postes divisibles par 3. Tu places ++aceptados après le if, mais à l'intérieur du for. Que compte cette position ?",
+          "options": [
+            "Tous les postes parcourus, même s'ils ne respectent pas la règle.",
+            "Le dernier numéro divisible par 3.",
+            "Uniquement les multiples de 3."
+          ],
+          "correctIndex": 0,
+          "explanation": "Une instruction hors de la branche s'exécute même lorsque la condition est fausse."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un affichage par cas et un résumé à la fin"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un affichage à l'intérieur de la boucle décrit des états intermédiaires. Un affichage après la boucle décrit le résultat une fois tous les cas traités. Ne déplace pas une instruction simplement pour son apparence : détermine d'abord si elle doit s'exécuter à chaque cas ou une seule fois à la fin. Un else peut classer les cas rejetés par la première condition."
+        },
+        {
+          "type": "output_prediction",
+          "id": "clasificar_casos",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{3}; n <= 5; ++n) {\n        if (n < 5) {\n            std::cout << \"R\" << n << \";\";\n        } else {\n            std::cout << \"L\" << n << \";\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "R3;R4;L5;Fin"
+          ],
+          "explanation": "La condition est réévaluée : 3 et 4 empruntent la première branche, tandis que 5 passe par else."
+        },
+        {
+          "type": "output_prediction",
+          "id": "resumen_fuera",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 4; ++n) {\n        if (n >= 3) {\n            suma += n;\n        }\n    }\n    std::cout << \"Total=\" << suma;\n    return 0;\n}\n",
+          "answers": [
+            "Total=7"
+          ],
+          "explanation": "Seuls 3 et 4 sont ajoutés. L'affichage après la boucle s'exécute une seule fois."
+        },
+        {
+          "type": "fill_code",
+          "id": "condicion_de_filtro",
+          "question": "Complète le diviseur positif pour accepter uniquement les multiples de 4. Écris seulement le nombre.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int n{1}; n <= 9; ++n) {\n        if (n % ___ == 0) {\n            ++cantidad;\n        }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "La règle n%4==0 accepte 4 et 8 dans cet intervalle."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Progresser sur tous les chemins"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si tu utilises while, examine tous les chemins qui peuvent revenir à la vérification de la condition. Une mise à jour placée dans le if peut laisser le compteur inchangé lorsque la sélection est fausse. Pour parcourir tous les postes, l'avancement doit se produire après l'ensemble de la décision. Un programme qui se bloque sur un cas rejeté ne peut pas être vérifié en testant seulement des cas acceptés."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "avance_solo_aceptados",
+          "question": "Analyse sans exécuter : n commence à 1 ; while(n<=4) contient if(n%2==0){ ++n; }. Il n'y a aucune autre mise à jour. Que se passe-t-il pour le premier cas ?",
+          "options": [
+            "Aucun cas n'est accepté, donc le while se termine immédiatement.",
+            "Le cas rejeté est ignoré et on passe à 2 sans autre mise à jour.",
+            "1 est rejeté et n reste égal à 1 : il n'y a aucune progression."
+          ],
+          "correctIndex": 2,
+          "explanation": "La branche fausse n'exécute pas ++n. La progression doit aussi être justifiée sur les chemins de rejet."
+        },
+        {
+          "type": "output_prediction",
+          "id": "avance_despues_clasificar",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{1};\n    int aceptados{0};\n    while (n <= 5) {\n        if (n % 2 == 0) {\n            ++aceptados;\n        }\n        ++n;\n    }\n    std::cout << aceptados << \":\" << n;\n    return 0;\n}\n",
+          "answers": [
+            "2:6"
+          ],
+          "explanation": "La boucle parcourt 1, 2, 3, 4 et 5 ; elle accepte 2 et 4 ; tous les chemins avancent jusqu'à 6."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Atelier de classification"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce programme parcourt des pièces dont le poids va de 1 à 6. Ajoute deux résumés : le nombre de pièces dont le poids est au moins 4 et la somme de leurs poids. Affiche les deux après la boucle. Avant l'exécution, écris les résultats attendus. Recommence avec une limite supérieure de 3 : certains cas sont parcourus, mais aucun n'est accepté. Conserve la mise à jour de la boucle en dehors de la branche."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int peso{1}; peso <= 6; ++peso) {\n        if (peso >= 4) {\n            std::cout << \"Acceptée \" << peso << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la solution de l'atelier"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare après avoir construit tes résumés. Critères : parcourir tous les poids de l'intervalle ; n'accepter que ceux d'au moins 4 ; augmenter le nombre de cas et ajouter le poids seulement lorsqu'un cas est accepté ; afficher le résumé une seule fois hors de la boucle. L'avancement ne doit pas dépendre de l'acceptation."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    int suma{0};\n    for (int peso{1}; peso <= 6; ++peso) {\n        if (peso >= 4) {\n            std::cout << \"Acceptée \" << peso << \"\\n\";\n            ++cantidad;\n            suma += peso;\n        }\n    }\n    std::cout << \"Nombre=\" << cantidad << \";Poids=\" << suma;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec une limite supérieure de 6, le programme affiche 4, 5 et 6, puis le résumé Nombre=3;Poids=15. Avec une limite supérieure de 3, il parcourt trois poids, mais n'affiche aucune ligne d'acceptation et le résumé vaut Nombre=0;Poids=0. Ce cas distingue le nombre de visites du nombre de cas acceptés. Le zéro ne représente pas un poids inventé : il résume l'absence de données acceptées."
+        }
+      ]
+    }
+  ]
+}

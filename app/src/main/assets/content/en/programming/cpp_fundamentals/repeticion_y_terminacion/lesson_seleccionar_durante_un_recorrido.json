@@ -1,0 +1,201 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__seleccionar_durante_un_recorrido",
+  "title": "Selecting and Summarizing During a Loop",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The decision applies to each case"
+        },
+        {
+          "type": "paragraph",
+          "text": "A loop and a decision answer different questions: the loop determines which cases we visit; the if determines what we do with the current case. To reserve even-numbered workstations from 1 through 6, we first visit all the numbers and then check whether the current number meets the rule. The loop counter advances even when we reject a workstation."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int puesto{1}; puesto <= 6; ++puesto) {\n        if (puesto % 2 == 0) {\n            std::cout << puesto << \":\";\n        }\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The for body is visited six times; the output inside the if runs three times. The number of visits and the number of accepted cases are not the same. The remainder puesto%2 is zero when puesto is divisible by 2. The divisor is the nonzero constant 2; the data are small integers."
+        },
+        {
+          "type": "output_prediction",
+          "id": "filtrar_multiplos_tres",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{2}; n <= 8; ++n) {\n        if (n % 3 == 0) {\n            std::cout << n << \";\";\n        }\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "3;6;End"
+          ],
+          "explanation": "All values from 2 through 8 are visited; only 3 and 6 have a remainder of zero when divided by 3."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Count accepted cases and add their contributions"
+        },
+        {
+          "type": "paragraph",
+          "text": "To count accepted cases, increment a counter inside the acceptance branch. To add their values, add the current value to another object. If you need both answers, keep both summaries. The goal determines which quantity to accumulate, not the fact that all the objects have type int."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cantidad_y_suma_filtradas",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    int suma{0};\n    for (int n{1}; n <= 7; ++n) {\n        if (n % 2 != 0) {\n            ++cantidad;\n            suma += n;\n        }\n    }\n    std::cout << cantidad << \":\" << suma;\n    return 0;\n}\n",
+          "answers": [
+            "4:16"
+          ],
+          "explanation": "The accepted values are 1, 3, 5, and 7: four cases with a sum of 16."
+        },
+        {
+          "type": "output_prediction",
+          "id": "ningun_aceptado",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int n{1}; n < 4; ++n) {\n        if (n > 9) {\n            ++cantidad;\n        }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "The loop has three iterations, but none of them meets the selection condition."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "contador_en_sitio_equivocado",
+          "question": "You want to count only workstations divisible by 3. You place ++aceptados after the if, but still inside the for. What does that position count?",
+          "options": [
+            "Every workstation visited, even if it does not meet the rule.",
+            "The last number divisible by 3.",
+            "Only multiples of 3."
+          ],
+          "correctIndex": 0,
+          "explanation": "An instruction outside the branch also runs when the condition is false."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One output per case and one summary at the end"
+        },
+        {
+          "type": "paragraph",
+          "text": "Output inside the loop describes intermediate states. Output after the loop describes the result once every case has been included. Do not move a statement just because of how it looks: first decide whether it should run for each case or only once at the end. An else can classify cases rejected by the first condition."
+        },
+        {
+          "type": "output_prediction",
+          "id": "clasificar_casos",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{3}; n <= 5; ++n) {\n        if (n < 5) {\n            std::cout << \"R\" << n << \";\";\n        } else {\n            std::cout << \"L\" << n << \";\";\n        }\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "R3;R4;L5;End"
+          ],
+          "explanation": "The condition is reevaluated: 3 and 4 follow the first branch, while 5 follows else."
+        },
+        {
+          "type": "output_prediction",
+          "id": "resumen_fuera",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int suma{0};\n    for (int n{1}; n <= 4; ++n) {\n        if (n >= 3) {\n            suma += n;\n        }\n    }\n    std::cout << \"Total=\" << suma;\n    return 0;\n}\n",
+          "answers": [
+            "Total=7"
+          ],
+          "explanation": "Only 3 and 4 are added. The output after the loop runs just once."
+        },
+        {
+          "type": "fill_code",
+          "id": "condicion_de_filtro",
+          "question": "Fill in the positive divisor to accept only multiples of 4. Enter just the number.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    for (int n{1}; n <= 9; ++n) {\n        if (n % ___ == 0) {\n            ++cantidad;\n        }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "The rule n%4==0 accepts 4 and 8 in this range."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Progress along every path"
+        },
+        {
+          "type": "paragraph",
+          "text": "If you use while, examine every path that can return to the condition check. An update inside the if can leave the counter unchanged when the selection is false. To visit every workstation, advancement must happen after the entire decision. A program that gets stuck on a rejected case cannot be checked by testing only cases that are accepted."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "avance_solo_aceptados",
+          "question": "Analyze without running: n starts at 1; while(n<=4) contains if(n%2==0){ ++n; }. There is no other update. What happens on the first case?",
+          "options": [
+            "No cases are accepted, so while ends immediately.",
+            "The rejected case is skipped and execution moves to 2 without another update.",
+            "1 is rejected and n stays at 1: there is no progress."
+          ],
+          "correctIndex": 2,
+          "explanation": "The false branch does not execute ++n. Progress must also be justified along rejected paths."
+        },
+        {
+          "type": "output_prediction",
+          "id": "avance_despues_clasificar",
+          "question": "Predict the output. Preserve spaces and internal line breaks; do not enter quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int n{1};\n    int aceptados{0};\n    while (n <= 5) {\n        if (n % 2 == 0) {\n            ++aceptados;\n        }\n        ++n;\n    }\n    std::cout << aceptados << \":\" << n;\n    return 0;\n}\n",
+          "answers": [
+            "2:6"
+          ],
+          "explanation": "The loop visits 1, 2, 3, 4, and 5; it accepts 2 and 4; every path advances, ending at 6."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Classification lab"
+        },
+        {
+          "type": "paragraph",
+          "text": "This program visits items weighing between 1 and 6. Add two summaries: the number of items whose weight is at least 4, and the sum of their weights. Display both after the loop. Before running, write down your expected results. Repeat with an upper limit of 3: some cases are visited, but none is accepted. Keep the loop's update outside the branch."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int peso{1}; peso <= 6; ++peso) {\n        if (peso >= 4) {\n            std::cout << \"Accepted \" << peso << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the lab solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare after building your summaries. Criteria: visit every weight in the range; accept only weights of at least 4; increment the count and add the weight only when accepted; display the summary exactly once outside the loop. Advancement must not depend on acceptance."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cantidad{0};\n    int suma{0};\n    for (int peso{1}; peso <= 6; ++peso) {\n        if (peso >= 4) {\n            std::cout << \"Accepted \" << peso << \"\\n\";\n            ++cantidad;\n            suma += peso;\n        }\n    }\n    std::cout << \"Count=\" << cantidad << \";Weight=\" << suma;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "With an upper limit of 6, the program displays 4, 5, and 6 and the summary Count=3;Weight=15. With an upper limit of 3, it visits three weights, but prints no acceptance line and the summary is Count=0;Weight=0. This case distinguishes counting visits from counting accepted cases. The zero state does not stand for an invented weight: it summarizes having accepted no data."
+        }
+      ]
+    }
+  ]
+}
