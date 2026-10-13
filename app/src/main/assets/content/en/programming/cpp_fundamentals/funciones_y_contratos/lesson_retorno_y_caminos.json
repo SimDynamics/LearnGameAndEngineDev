@@ -1,0 +1,204 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__retorno_y_caminos",
+  "title": "Return and Paths Through a Function",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "return ends the current call"
+        },
+        {
+          "type": "paragraph",
+          "text": "return provides a value and ends execution of the current function call. The program continues at the place where its result was being used. A return inside a helper function does not end main. Any later statements in that same function are skipped for the call that has already returned."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint mayor(int a, int b) {\n    if (a >= b) {\n        return a;\n    }\n    return b;\n}\n\nint main() {\n    const int elegido = mayor(6, 4);\n    std::cout << elegido << \"\\n\";\n    std::cout << \"Main continues\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The function returns 6 from its first branch and does not reach return b for that call. main receives the value, displays it, and continues with its next output statement. When a is smaller than b, the if is skipped and return b covers the other path."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the returned value and the message printed afterward.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint menor(int a, int b) {\n    if (a <= b) {\n        return a;\n    }\n    return b;\n}\n\nint main() {\n    std::cout << menor(8, 3) << \"\\n\";\n    std::cout << \"Afterward\";\n    return 0;\n}\n",
+          "answers": [
+            "3\nAfterward"
+          ],
+          "explanation": "8 <= 3 is false. Execution reaches return b, where b equals 3; then main continues its sequence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Every path requiring a result must return one"
+        },
+        {
+          "type": "paragraph",
+          "text": "A function declared to return a value must provide an appropriate value on every path that ends normally. Having a return inside an if does not guarantee coverage of inputs for which that if is false. main has a special termination rule; that rule must not be extended to every int function."
+        },
+        {
+          "type": "fill_code",
+          "question": "The function classifies values from -10 to 10: it returns 1 for positive values and 0 otherwise. Fill in only the keyword that returns the result on the remaining path.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint es_positivo(int valor) {\n    if (valor > 0) {\n        return 1;\n    }\n    ___ 0;\n}\n\nint main() {\n    std::cout << es_positivo(0);\n    return 0;\n}\n",
+          "answers": [
+            "return"
+          ],
+          "explanation": "The path for zero needs return 0. Printing through cout does not replace returning a result."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A function promises a result for an integer input. What review checks all its paths?",
+          "options": [
+            "Follow every possible branch and verify which value it returns before exiting.",
+            "Test only an input that makes the first if true.",
+            "Count the braces without following the conditions."
+          ],
+          "correctIndex": 0,
+          "explanation": "The result must also be defined on paths that do not satisfy the first condition."
+        },
+        {
+          "type": "note",
+          "text": "Do not execute a value-returning function whose path reaches the end without returning a value. Complete its paths before predicting output."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "void represents an action with no returned result"
+        },
+        {
+          "type": "paragraph",
+          "text": "void indicates that a function does not return a value that can be used in an expression. It can perform an action, such as printing a message. Call it as a statement. In a void function, return; ends the call without a value, and reaching its closing brace also ends the call normally."
+        },
+        {
+          "type": "output_prediction",
+          "question": "This action skips the notice when there are no pending items. Predict the output.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid mostrar_pendientes(int cantidad) {\n    if (cantidad == 0) {\n        return;\n    }\n    std::cout << \"Pending: \" << cantidad << \"\\n\";\n}\n\nint main() {\n    mostrar_pendientes(0);\n    mostrar_pendientes(3);\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "Pending: 3\nEnd"
+          ],
+          "explanation": "The first call returns without printing. The second displays the notice, and main then prints End."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which use is valid for a void function called mostrar_pendientes?",
+          "options": [
+            "int resultado = mostrar_pendientes(3);",
+            "mostrar_pendientes(3) + 1;",
+            "mostrar_pendientes(3);"
+          ],
+          "correctIndex": 2,
+          "explanation": "The call performs an action; it does not provide a value to initialize an int or to add."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A bool answer is returned too"
+        },
+        {
+          "type": "paragraph",
+          "text": "A function can answer a question with bool. It can directly return the result of a comparison or logical combination. The name then describes the rule, and main can use the answer in its own if. The calculation need not print a message to be useful."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict which message main selects.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool cabe(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= capacidad);\n}\n\nint main() {\n    if (cabe(5, 4)) {\n        std::cout << \"Fits\";\n    } else {\n        std::cout << \"Does not fit\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Does not fit"
+          ],
+          "explanation": "The function returns false because 5 exceeds capacity 4. main selects the corresponding message."
+        },
+        {
+          "type": "drag_fill_code",
+          "question": "This function must return bool. Fill in the type and the keyword that returns the comparison.",
+          "template": "#include <iostream>\n\n[] igual(int observado, int esperado) {\n    [] observado == esperado;\n}\n\nint main() {\n    const bool coincide = igual(4, 4);\n    std::cout << coincide;\n    return 0;\n}\n",
+          "choices": [
+            "return",
+            "void",
+            "bool",
+            "if"
+          ],
+          "correctOrder": [
+            2,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: limit a result with complete return paths"
+        },
+        {
+          "type": "note",
+          "text": "In the previous activity, bool is the result type, and return provides the comparison's value. The program displays 1 only because main sends that answer to cout."
+        },
+        {
+          "type": "paragraph",
+          "text": "The function restricts a level to the interval from 2 to 6: below the interval it returns 2, above it returns 6, and within the interval it preserves the input. Test values are declared in the code. Predict the initial case with nivel equal to 7; run the program and test 1, 2, 4, and 6. Each case must return a result, including equality at either endpoint. Keep nivel between -10 and 10."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint limitar(int nivel) {\n    if (nivel < 2) {\n        return 2;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nint main() {\n    const int nivel = 7;\n    std::cout << limitar(nivel);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What result does limitar(2) return?",
+          "options": [
+            "2",
+            "1",
+            "6"
+          ],
+          "correctIndex": 0,
+          "explanation": "2 is neither below nor above the interval. The input argument is returned unchanged."
+        },
+        {
+          "type": "paragraph",
+          "text": "Match 1 with the first return, 7 with the second, and 2/4/6 with the last. One return can cover many values, and a boundary case can take the same path as interior values. What matters is the promised result for each input."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later reference: Results on all paths"
+        },
+        {
+          "type": "note",
+          "text": "Compare after completing the lab and writing down your predicted results. The reference offers one possible organization; the criteria also recognize other implementations that meet the same contracts."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: Inputs 7, 1, 2, 4, and 6 must return 6, 2, 2, 4, and 6, respectively. This reference displays them in that order as 6 2 2 4 6. Values below 2 are limited to 2, values above 6 to 6, and the endpoints are preserved along with interior values. Every path must return an int; keep inputs between -10 and 10."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint limitar(int nivel) {\n    if (nivel < 2) {\n        return 2;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nint main() {\n    std::cout << limitar(7) << \" \" << limitar(1) << \" \" << limitar(2)\n              << \" \" << limitar(4) << \" \" << limitar(6);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The first if covers values below 2; the second covers values above 6; the final return covers the full interval, including its endpoints. Other correct organizations are possible, but they must not omit a return or turn a valid boundary into a different result. A list of test cases helps distinguish the execution paths from the text of the function."
+        }
+      ]
+    }
+  ]
+}

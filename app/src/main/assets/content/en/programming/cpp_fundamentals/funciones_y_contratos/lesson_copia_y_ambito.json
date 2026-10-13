@@ -1,0 +1,213 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__copia_y_ambito",
+  "title": "Pass-by-Value Parameters and Scope",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "By value: a parameter receives a copy"
+        },
+        {
+          "type": "paragraph",
+          "text": "In int aumentar(int total), the parameter total is a local object for that call, initialized with the argument's value. Changing the parameter changes the local copy, without changing the object that supplied the argument. A function can return a result different from the original data without modifying the caller."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint aumentar(int total) {\n    total = total + 2;\n    return total;\n}\n\nint main() {\n    int cantidad = 4;\n    const int propuesta = aumentar(cantidad);\n    std::cout << cantidad << \" \" << propuesta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 4 6. The argument supplied 4; total changed to 6 inside aumentar, and that value was returned. No assignment was made to cantidad. To retain the change in main, you can write cantidad = aumentar(cantidad);: this assignment is an explicit choice made by the caller."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the result and the state of the original value.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint ajustar(int nivel) {\n    nivel = nivel * 2;\n    return nivel - 1;\n}\n\nint main() {\n    int nivel = 3;\n    const int resultado = ajustar(nivel);\n    std::cout << resultado << \" \" << nivel;\n    return 0;\n}\n",
+          "answers": [
+            "5 3"
+          ],
+          "explanation": "The local parameter becomes 6 and the function returns 5. The nivel variable in main remains 3."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Every call has its own local objects"
+        },
+        {
+          "type": "paragraph",
+          "text": "The parameters and ordinary local variables in these examples are created for each call. They do not automatically retain the state of an earlier call. Each call receives its arguments again and runs its body with its own local objects. Two functions can also use a parameter named cantidad without those objects being the same."
+        },
+        {
+          "type": "output_prediction",
+          "question": "The arguments range from 0 to 10. Trace both calls and predict their results.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint contar_pasos(int repeticiones) {\n    int cuenta = 0;\n    for (int paso = 0; paso < repeticiones; ++paso) {\n        ++cuenta;\n    }\n    return cuenta;\n}\n\nint main() {\n    const int primera = contar_pasos(3);\n    const int segunda = contar_pasos(1);\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "3 1"
+          ],
+          "explanation": "cuenta starts at zero for each call. The second call does not continue from the first call's value of 3."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does contar_pasos need in order to repeat a different number of times on another call?",
+          "options": [
+            "A new argument for repeticiones.",
+            "The previous call's hidden state.",
+            "A different name for every local variable."
+          ],
+          "correctIndex": 0,
+          "explanation": "The interface supplies the value that controls the traversal on that call."
+        },
+        {
+          "type": "note",
+          "text": "There are no modifiable global variables or persistent local variables here. Required data enter through parameters and results leave through return."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Scope: where a name can be used"
+        },
+        {
+          "type": "paragraph",
+          "text": "Scope is the region of the program text in which a name is available. A parameter belongs to its function. A name declared inside a block can be used from its declaration to the end of that block, including within its nested blocks. A name declared inside an if block is not available outside that block."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint preparar(int base) {\n    int salida = 0;\n    if (base > 0) {\n        const int parcial = base + 2;\n        salida = parcial;\n    }\n    return salida;\n}\n\nint main() {\n    std::cout << preparar(4);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "salida is declared in the function's block and can be returned at the end. parcial is used only inside the branch that declares it. The assignment copies its value into salida before that block ends. There is no need to extend parcial's scope to return the result."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Where can the name parcial from the example be used?",
+          "options": [
+            "In any function in the program.",
+            "Within the block that declares it, starting at its declaration.",
+            "Only in main."
+          ],
+          "correctIndex": 1,
+          "explanation": "Its scope is bounded by the if block. main does not share preparar's local objects."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "If both main and a helper function have a local object named nivel, what distinguishes them?",
+          "options": [
+            "They share one object because their names are identical.",
+            "The object in main changes when that name is used in the helper.",
+            "Their scopes: they are different local objects."
+          ],
+          "correctIndex": 2,
+          "explanation": "The same name in separate scopes does not combine objects or share their state."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: a proposed value and an explicit update"
+        },
+        {
+          "type": "paragraph",
+          "text": "estado starts at 3 in main. The first call calculates a proposed value; the second is used in an assignment that updates estado. Predict both lines before running. Then try starting estado at 0 and 8. Keep its initial value between 0 and 20. Explain exactly which statement changes the object in main."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint siguiente(int actual) {\n    const int nuevo = actual + 1;\n    return nuevo;\n}\n\nint main() {\n    int estado = 3;\n    const int propuesta = siguiente(estado);\n    std::cout << estado << \" \" << propuesta << \"\\n\";\n    estado = siguiente(estado);\n    std::cout << estado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which statement changes estado in the initial program?",
+          "options": [
+            "return nuevo; by itself modifies any argument.",
+            "estado = siguiente(estado);",
+            "The declaration of parameter actual."
+          ],
+          "correctIndex": 1,
+          "explanation": "The return supplies a value; the caller's assignment stores it in estado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Add a second estado = siguiente(estado); statement before the final output. Predict the new final state and run the program. Each call receives the current value of estado, which may differ from the value passed to the first call. Then restore the initial program."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rebuild a function and its use"
+        },
+        {
+          "type": "order_code",
+          "question": "Arrange the program: include directive and complete function definition, beginning of main, initial value, a call depending on that value, and output with the closing code.",
+          "fragments": [
+            "    const int fin = elevar(inicio);",
+            "#include <iostream>\n\nint elevar(int valor) {\n    return valor + 4;\n}\n\nint main() {",
+            "    std::cout << fin;\n    return 0;\n}",
+            "    const int inicio = 2;"
+          ],
+          "correctOrder": [
+            1,
+            3,
+            0,
+            2
+          ],
+          "explanation": "elevar is defined before its call. inicio must exist before it can supply a value, and fin before its result 6 can be displayed."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A function takes an int by value and returns another int. Its call runs, but the program discards the result. What can preserve a change to the original object?",
+          "options": [
+            "The presence of a return statement inside the function.",
+            "Giving the parameter and argument the same name.",
+            "Nothing about passing by value alone; an explicit assignment of the result or another means of modification is needed."
+          ],
+          "correctIndex": 2,
+          "explanation": "Passing by value works with a copy. Returning a value does not automatically assign it to the argument."
+        },
+        {
+          "type": "note",
+          "text": "Keep names local when only one calculation needs them. A narrow scope makes it easier to see which statements can use and change each value. This unit's free functions are defined outside other functions."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later reference: Make two updates explicit"
+        },
+        {
+          "type": "note",
+          "text": "Compare only after completing the lab and recording your predicted results. The reference offers one possible organization; the criteria also recognize other implementations meeting the same contracts."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: In the initial program with estado=3, the first line is 3 4 and the final state is 4. The reference adds the requested second assignment, making the final state 5 while the first line stays 3 4. With initial values 0 and 8, the first line is 0 1 or 8 9; the initial program ends at 1 or 9, while two assignments end at 2 or 10. Keep the initial value between 0 and 20."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint siguiente(int actual) {\n    const int nuevo = actual + 1;\n    return nuevo;\n}\n\nint main() {\n    int estado = 3;\n    const int propuesta = siguiente(estado);\n    std::cout << estado << \" \" << propuesta << \"\\n\";\n    estado = siguiente(estado);\n    estado = siguiente(estado);\n    std::cout << estado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "siguiente receives a copy and returns the proposed value; calculating it does not change estado. Each statement estado = siguiente(estado); does assign the returned value in main, and the next call receives that updated state. The result is retained because of the explicit assignment, not because a by-value parameter remains linked to the caller's object."
+        }
+      ]
+    }
+  ]
+}

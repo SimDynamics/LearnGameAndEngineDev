@@ -1,0 +1,204 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__retorno_y_caminos",
+  "title": "Retour et chemins d'une fonction",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "return termine l'appel en cours"
+        },
+        {
+          "type": "paragraph",
+          "text": "return renvoie une valeur et termine l'exécution de l'appel en cours. Le programme reprend à l'endroit où le résultat était utilisé. Un return situé dans une fonction auxiliaire ne termine pas main. Les instructions suivantes de cette même fonction ne s'exécutent pas pour l'appel qui s'est déjà terminé."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint mayor(int a, int b) {\n    if (a >= b) {\n        return a;\n    }\n    return b;\n}\n\nint main() {\n    const int elegido = mayor(6, 4);\n    std::cout << elegido << \"\\n\";\n    std::cout << \"Main continue\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction renvoie 6 depuis sa première branche et n'atteint pas return b pour ce cas. main reçoit la valeur, l'affiche et poursuit avec l'instruction d'affichage suivante. Lorsque a est inférieur à b, le if est ignoré et return b couvre l'autre chemin."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prévois la valeur renvoyée et le message affiché ensuite.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint menor(int a, int b) {\n    if (a <= b) {\n        return a;\n    }\n    return b;\n}\n\nint main() {\n    std::cout << menor(8, 3) << \"\\n\";\n    std::cout << \"Ensuite\";\n    return 0;\n}\n",
+          "answers": [
+            "3\nEnsuite"
+          ],
+          "explanation": "8 <= 3 est faux. L'exécution atteint return b, où b vaut 3 ; main poursuit ensuite sa séquence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Chaque chemin exigeant un résultat doit en renvoyer un"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une fonction déclarée pour renvoyer une valeur doit fournir une valeur appropriée sur tout chemin qui se termine normalement. Un return à l'intérieur d'un if ne garantit pas que les données pour lesquelles ce if est faux soient couvertes. main possède une règle spéciale de terminaison ; elle ne s'étend pas à toutes les fonctions int."
+        },
+        {
+          "type": "fill_code",
+          "question": "La fonction classe les valeurs de -10 à 10 : elle renvoie 1 pour les valeurs positives et 0 pour les autres. Complète uniquement le mot-clé qui renvoie le résultat du chemin restant.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint es_positivo(int valor) {\n    if (valor > 0) {\n        return 1;\n    }\n    ___ 0;\n}\n\nint main() {\n    std::cout << es_positivo(0);\n    return 0;\n}\n",
+          "answers": [
+            "return"
+          ],
+          "explanation": "Le chemin correspondant à zéro exige return 0. Afficher avec cout ne remplace pas une valeur renvoyée."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Une fonction promet un résultat pour une donnée entière. Quelle vérification couvre tous ses chemins ?",
+          "options": [
+            "Suivre chaque branche possible et vérifier quelle valeur elle renvoie avant de se terminer.",
+            "Tester uniquement une donnée pour laquelle le premier if est vrai.",
+            "Compter les accolades sans suivre les conditions."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le résultat doit aussi être défini sur les chemins qui ne satisfont pas la première condition."
+        },
+        {
+          "type": "note",
+          "text": "N'exécute pas une fonction qui doit renvoyer une valeur lorsque son parcours atteint la fin sans la renvoyer. Complète les chemins avant de prévoir une sortie."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "void représente une action sans valeur de retour"
+        },
+        {
+          "type": "paragraph",
+          "text": "void indique qu'une fonction ne renvoie pas de valeur utilisable dans une expression. Elle peut effectuer une action, par exemple afficher un message. L'appel s'écrit comme une instruction. Dans une fonction void, return; termine l'appel sans valeur ; atteindre l'accolade finale termine également l'appel normalement."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Cette action n'affiche pas d'avis s'il n'y a rien en attente. Prévois la sortie.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nvoid mostrar_pendientes(int cantidad) {\n    if (cantidad == 0) {\n        return;\n    }\n    std::cout << \"En attente : \" << cantidad << \"\\n\";\n}\n\nint main() {\n    mostrar_pendientes(0);\n    mostrar_pendientes(3);\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "En attente : 3\nFin"
+          ],
+          "explanation": "Le premier appel revient sans afficher. Le deuxième affiche l'avis, puis main affiche Fin."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel usage convient à une fonction void nommée mostrar_pendientes ?",
+          "options": [
+            "int resultado = mostrar_pendientes(3);",
+            "mostrar_pendientes(3) + 1;",
+            "mostrar_pendientes(3);"
+          ],
+          "correctIndex": 2,
+          "explanation": "L'appel effectue une action ; il ne fournit aucune valeur pour initialiser un int ou effectuer une addition."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une réponse bool est également renvoyée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une fonction peut répondre à une question avec bool. Elle peut renvoyer directement le résultat d'une comparaison ou d'une combinaison logique. Son nom décrit alors la règle et main peut utiliser la réponse dans son propre if. Le calcul n'a pas besoin d'afficher un message pour être utile."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prévois quel message main choisit.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool cabe(int cantidad, int capacidad) {\n    return (cantidad >= 0) && (cantidad <= capacidad);\n}\n\nint main() {\n    if (cabe(5, 4)) {\n        std::cout << \"Possible\";\n    } else {\n        std::cout << \"Impossible\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Impossible"
+          ],
+          "explanation": "La fonction renvoie false parce que 5 dépasse la capacité 4. main choisit le message correspondant."
+        },
+        {
+          "type": "drag_fill_code",
+          "question": "Cette fonction doit renvoyer bool. Complète le type et le mot-clé qui renvoie la comparaison.",
+          "template": "#include <iostream>\n\n[] igual(int observado, int esperado) {\n    [] observado == esperado;\n}\n\nint main() {\n    const bool coincide = igual(4, 4);\n    std::cout << coincide;\n    return 0;\n}\n",
+          "choices": [
+            "return",
+            "void",
+            "bool",
+            "if"
+          ],
+          "correctOrder": [
+            2,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Atelier : limiter un résultat avec tous les chemins couverts"
+        },
+        {
+          "type": "note",
+          "text": "Dans l'activité précédente, bool est le type du résultat et return fournit la valeur de la comparaison. Le programme affiche 1 uniquement parce que main transmet la réponse à cout."
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction limite un niveau à l'intervalle de 2 à 6 : en dessous, elle renvoie 2 ; au-dessus, elle renvoie 6 ; dans l'intervalle, elle conserve la donnée. Les valeurs des tests sont déclarées. Prévois le cas initial avec nivel égal à 7 ; exécute puis teste 1, 2, 4 et 6. Chaque cas doit renvoyer un résultat, y compris les valeurs égales aux bornes. Garde nivel entre -10 et 10."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint limitar(int nivel) {\n    if (nivel < 2) {\n        return 2;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nint main() {\n    const int nivel = 7;\n    std::cout << limitar(nivel);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel résultat correspond à limitar(2) ?",
+          "options": [
+            "2",
+            "1",
+            "6"
+          ],
+          "correctIndex": 0,
+          "explanation": "2 n'est ni inférieur ni supérieur à l'intervalle. La donnée de l'appel est renvoyée sans changement."
+        },
+        {
+          "type": "paragraph",
+          "text": "Associe 1 au premier return, 7 au deuxième et 2/4/6 au dernier. Un même return peut couvrir de nombreuses valeurs, et une donnée égale à une borne peut emprunter le même chemin qu'une donnée intérieure. L'essentiel est de fournir le résultat promis pour chaque entrée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : des résultats sur tous les chemins"
+        },
+        {
+          "type": "note",
+          "text": "Compare après avoir réalisé l'atelier et noté tes résultats prévus. La référence présente une organisation possible ; les critères reconnaissent aussi d'autres implémentations conformes aux mêmes contrats."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : les valeurs 7, 1, 2, 4 et 6 doivent renvoyer respectivement 6, 2, 2, 4 et 6. La référence les affiche dans cet ordre : 6 2 2 4 6. Les données inférieures à 2 sont limitées à 2, celles supérieures à 6 à 6, et les bornes elles-mêmes sont conservées, comme les valeurs intérieures. Chaque chemin doit renvoyer un int ; garde les données entre -10 et 10."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint limitar(int nivel) {\n    if (nivel < 2) {\n        return 2;\n    }\n    if (nivel > 6) {\n        return 6;\n    }\n    return nivel;\n}\n\nint main() {\n    std::cout << limitar(7) << \" \" << limitar(1) << \" \" << limitar(2)\n              << \" \" << limitar(4) << \" \" << limitar(6);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le premier if couvre les données inférieures à 2, le deuxième celles supérieures à 6 et le dernier return couvre tout l'intervalle, bornes comprises. D'autres organisations correctes sont possibles, mais elles ne doivent pas oublier un retour ni transformer une borne valide en un autre résultat. Une liste de tests permet de distinguer les chemins d'exécution du texte de la fonction."
+        }
+      ]
+    }
+  ]
+}
