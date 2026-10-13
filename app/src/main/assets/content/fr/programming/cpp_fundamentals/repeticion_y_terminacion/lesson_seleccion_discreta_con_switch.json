@@ -1,0 +1,367 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__seleccion_discreta_con_switch",
+  "title": "Choisir entre des valeurs discrètes avec switch",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une sélection par égalité"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsqu'une décision compare une même catégorie à plusieurs valeurs constantes, switch peut exprimer directement cette sélection. Dans ces premiers exemples, la catégorie est de type int ou char. Un case marque le point où le contrôle est transféré si sa valeur correspond ; default reçoit les valeurs qui ne correspondent à aucun case. N'utilise pas switch pour des intervalles, des conditions avec && ou des chaînes std::string : conserve if pour ces règles (Stroustrup, 2024, sections 3.4.1.2–3.4.1.3)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{2};\n    switch (opcion) {\n    case 1:\n        std::cout << \"Enregistrer\";\n        break;\n    case 2:\n        std::cout << \"Afficher\";\n        break;\n    default:\n        std::cout << \"Inconnue\";\n        break;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec opcion égal à 2, l'exécution entre dans case 2 et affiche Afficher. break termine le switch. Le programme continue après ses accolades. Les étiquettes ne sont pas des questions if évaluées successivement : le point d'entrée est d'abord sélectionné, puis les instructions accessibles depuis ce point sont exécutées."
+        },
+        {
+          "type": "output_prediction",
+          "id": "opcion_distinta",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{1};\n    switch (opcion) {\n    case 1: std::cout << \"Ouvrir\"; break;\n    case 2: std::cout << \"Fermer\"; break;\n    default: std::cout << \"Autre\"; break;\n    }\n    std::cout << \":Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Ouvrir:Fin"
+          ],
+          "explanation": "L'exécution entre dans case 1 et son break mène à l'affichage situé après le switch."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valeurs imprévues et absence de default"
+        },
+        {
+          "type": "output_prediction",
+          "id": "opcion_desconocida",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{9};\n    switch (opcion) {\n    case 1: std::cout << \"A\"; break;\n    case 2: std::cout << \"B\"; break;\n    default: std::cout << \"?\"; break;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "?Fin"
+          ],
+          "explanation": "Aucun case ne correspond ; default fournit une réponse explicite."
+        },
+        {
+          "type": "output_prediction",
+          "id": "sin_coincidencia_sin_default",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{3};\n    switch (opcion) {\n    case 1: std::cout << \"A\"; break;\n    case 2: std::cout << \"B\"; break;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Fin"
+          ],
+          "explanation": "Sans correspondance ni default, aucune instruction du corps de switch n'est exécutée."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cuando_if_es_directo",
+          "question": "Tu dois vérifier si peso est compris entre 4 et 9, bornes incluses. Quelle construction exprime directement cette condition ?",
+          "options": [
+            "if (peso >= 4 && peso <= 9)",
+            "switch (peso >= 4 && peso <= 9) avec un case pour chaque poids",
+            "case peso >= 4 && peso <= 9: dans n'importe quelle fonction"
+          ],
+          "correctIndex": 0,
+          "explanation": "if reçoit la condition de l'intervalle. Les case désignent des valeurs constantes de sélection, et non des conditions d'intervalle."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les étiquettes n'arrêtent pas l'exécution"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si l'exécution atteint la fin des instructions d'un case sans break ni autre transfert de contrôle, elle continue vers les instructions suivantes, même si elles se trouvent sous une autre étiquette. On appelle cela le passage au cas suivant, ou fallthrough. La valeur de la catégorie ne change pas lorsque l'exécution traverse une autre étiquette. Pour des possibilités exclusives, place une sortie explicite à la fin de chaque action (Stroustrup, 2024, section 3.4.1.3)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "caida_controlada",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{1};\n    switch (opcion) {\n    case 1: std::cout << \"A\";\n    case 2: std::cout << \"B\"; break;\n    default: std::cout << \"C\"; break;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "ABFin"
+          ],
+          "explanation": "L'exécution entre dans case 1 ; sans break, elle atteint l'affichage B. Le break suivant empêche l'affichage de C."
+        },
+        {
+          "type": "output_prediction",
+          "id": "entra_en_segundo",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{2};\n    switch (opcion) {\n    case 1: std::cout << \"A\";\n    case 2: std::cout << \"B\"; break;\n    default: std::cout << \"C\"; break;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "B"
+          ],
+          "explanation": "L'exécution entre directement dans case 2 ; les instructions précédentes ne sont pas exécutées."
+        },
+        {
+          "type": "fill_code",
+          "id": "cerrar_alternativa",
+          "question": "Chaque possibilité doit afficher uniquement son propre résultat. Complète le mot-clé manquant.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{1};\n    switch (opcion) {\n    case 1: std::cout << \"A\"; ___;\n    case 2: std::cout << \"B\"; break;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "break"
+          ],
+          "explanation": "break termine le switch avant d'atteindre les instructions du deuxième cas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Regrouper des étiquettes et sélectionner des caractères"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu peux placer plusieurs étiquettes successives avant une même action pour partager explicitement la réponse. Chaque case utilise une valeur constante, et deux case d'un même switch ne peuvent pas porter la même valeur. Avec char, écris les littéraux de caractère entre apostrophes ; \"g\" serait un littéral de chaîne différent. Ne dépends pas de codes numériques particuliers pour les caractères."
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_etiquetas_una_accion",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    switch (comando) {\n    case 'G':\n    case 'g':\n        std::cout << \"Enregistrer\";\n        break;\n    case 'm':\n        std::cout << \"Afficher\";\n        break;\n    default:\n        std::cout << \"Inconnu\";\n        break;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Enregistrer"
+          ],
+          "explanation": "Les étiquettes G et g partagent la même action, sans autre action exécutée entre elles."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "etiquetas_duplicadas",
+          "question": "Deux étiquettes case 2: apparaissent dans le même switch. Quel est le problème ?",
+          "options": [
+            "Le deuxième case est ignoré et le programme reste valide.",
+            "Une même valeur ne peut pas étiqueter deux case dans ce switch.",
+            "Les deux case sont vérifiés dans l'ordre, comme deux if indépendants."
+          ],
+          "correctIndex": 1,
+          "explanation": "Chaque valeur de sélection doit désigner un point d'entrée sans étiquette dupliquée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un switch dans une boucle"
+        },
+        {
+          "type": "paragraph",
+          "text": "break quitte la boucle ou le switch le plus interne qui le contient. Si le switch se trouve dans un for et que break est dans le switch, ce break termine le switch, pas le for qui l'entoure. Cette règle dépend de l'imbrication, non de l'alignement visuel des instructions (Working draft: Programming languages — C++, s. d., section [stmt.break])."
+        },
+        {
+          "type": "output_prediction",
+          "id": "break_solo_switch",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 3; ++n) {\n        switch (n) {\n        case 2: std::cout << \"B\"; break;\n        default: std::cout << \"A\"; break;\n        }\n        std::cout << n << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "A1;B2;A3;Fin"
+          ],
+          "explanation": "Chaque break termine uniquement le switch. L'affichage qui suit et la mise à jour du for s'exécutent toujours."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transforme l'atelier en un sélecteur de commandes char. Conserve la première ligne Commande= suivie du caractère testé. Dans le switch, g doit afficher Enregistré, m doit afficher Affiché et tout autre caractère doit afficher Inconnu, chaque message sur sa propre ligne. Teste chaque possibilité séparément en modifiant la constante initiale. Chaque action doit être exclusive et Fin doit apparaître sur la ligne suivante après le switch dans tous les cas."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    std::cout << \"Commande=\" << comando << \"\\n\";\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la construction de l'atelier"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consulte cette référence après avoir construit le sélecteur. Critères : g produit Enregistré, m produit Affiché et tout autre caractère produit Inconnu ; chaque test exécute une seule possibilité et atteint Fin après le switch."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    std::cout << \"Commande=\" << comando << \"\\n\";\n    switch (comando) {\n        case 'g':\n            std::cout << \"Enregistré\\n\";\n            break;\n        case 'm':\n            std::cout << \"Affiché\\n\";\n            break;\n        default:\n            std::cout << \"Inconnu\\n\";\n            break;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste g, m et x en modifiant seulement comando. La première ligne permet d'identifier le cas testé. Enlever break après Enregistré ferait aussi exécuter Affiché et violerait l'exclusivité. Ici, default couvre tous les caractères sans correspondance ; ce n'est pas une action supplémentaire exécutée systématiquement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Quand le passage au cas suivant est intentionnel"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le sélecteur précédent, les actions étaient exclusives : retirer un break enfreignait la règle. Considère maintenant une règle différente. La commande 1 doit préparer, puis vérifier ; la commande 2 doit vérifier directement. On peut placer la vérification dans le deuxième cas et laisser le premier y parvenir après la préparation. Cet enchaînement est intentionnel, car il représente deux étapes exigées par le problème. Il ne transforme pas la commande 1 en commande 2."
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris [[fallthrough]]; pour indiquer que cet enchaînement est intentionnel. C'est un attribut : une annotation du programme qui exprime notre intention au compilateur (Stroustrup, 2024, section 3.4.1.3). Ici, il accompagne une instruction vide, d'où le point-virgule. Il n'effectue aucune opération et ne saute pas vers une autre étiquette ; l'exécution continue parce qu'aucun break ne l'arrête. Dans ce cas simple, on le place après la dernière action du premier cas et avant le case ou default suivant du même switch (Working draft: Programming languages — C++, s. d., section [dcl.attr.fallthrough])."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int orden{1};\n    switch (orden) {\n    case 1:\n        std::cout << \"Préparer;\";\n        [[fallthrough]];\n    case 2:\n        std::cout << \"Vérifier;\";\n        break;\n    default:\n        std::cout << \"Inconnue;\";\n        break;\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec orden égal à 1, la sortie est Préparer;Vérifier;Fin. La sélection initiale entre dans case 1. Ensuite, la vérification est atteinte même si l'étiquette case 2 ne correspond pas à la valeur 1. Le break de cette deuxième étape termine le switch. Avec orden égal à 2, l'exécution entre directement dans la vérification, sans préparation. Cela diffère de deux étiquettes vides regroupées : ici, la première entrée effectue une action supplémentaire avant de partager la deuxième étape."
+        },
+        {
+          "type": "output_prediction",
+          "id": "fallthrough_no_cambia_categoria",
+          "question": "Prévois toute la sortie. Observe aussi la valeur de orden après le switch : passer au cas suivant ne la modifie pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int orden{1};\n    switch (orden) {\n    case 1:\n        std::cout << \"P\";\n        [[fallthrough]];\n    case 2:\n        std::cout << \"R\";\n        break;\n    default:\n        std::cout << \"?\";\n        break;\n    }\n    std::cout << \":\" << orden;\n    return 0;\n}\n",
+          "answers": [
+            "PR:1"
+          ],
+          "explanation": "La préparation commence dans case 1 et atteint la vérification du case 2. Aucune instruction n'affecte une autre valeur à orden, qui reste égal à 1. L'étiquette marque un point d'entrée et non une nouvelle comparaison empêchant de continuer."
+        },
+        {
+          "type": "note",
+          "text": "Choisis selon l'exigence : break pour terminer une possibilité ; [[fallthrough]]; pour documenter un enchaînement voulu. Ajouter l'attribut à un passage accidentel ne corrige pas le comportement. Le compilateur peut signaler des passages non annotés ; l'absence d'avertissement ne prouve pas que la règle du problème est respectée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Exprimer l'intention au bon endroit"
+        },
+        {
+          "type": "fill_code",
+          "id": "declarar_caida_intencional",
+          "question": "La commande 1 doit préparer et vérifier ; la commande 2 doit seulement vérifier. Complète uniquement l'attribut qui indique un passage intentionnel au cas suivant. Le point-virgule est déjà écrit.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int orden{1};\n    switch (orden) {\n    case 1:\n        std::cout << \"Préparer;\";\n        ___;\n    case 2:\n        std::cout << \"Vérifier;\";\n        break;\n    default:\n        std::cout << \"Inconnue;\";\n        break;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "[[fallthrough]]"
+          ],
+          "explanation": "[[fallthrough]]; déclare l'enchaînement prévu entre les deux étapes. break empêcherait de vérifier après avoir préparé. L'annotation s'écrit avec deux crochets ouvrants et deux crochets fermants."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "ubicacion_fallthrough",
+          "question": "Dans ces cas d'exécution directe, où placer [[fallthrough]]; pour passer de la préparation à la vérification ?",
+          "options": [
+            "Après la préparation et juste avant le case de vérification du même switch.",
+            "Après la fermeture du switch, avant d'afficher Fin.",
+            "À la fin du dernier cas, même si seule la fermeture du switch suit.",
+            "Avant l'instruction qui affiche Préparer, sans le point-virgule de l'attribut."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'attribut accompagne une instruction vide et la prochaine instruction exécutée doit porter une étiquette case ou default du même switch. Il ne s'applique pas à l'affichage Préparer et ne s'emploie pas hors du switch. Sans cas suivant auquel continuer, l'annotation n'est pas valide."
+        },
+        {
+          "type": "output_prediction",
+          "id": "fallthrough_en_recorrido",
+          "question": "Rappelle la portée de break. Prévois la sortie et distingue l'entrée directe dans case 2 du passage depuis case 1.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int orden{1}; orden <= 2; ++orden) {\n        switch (orden) {\n        case 1:\n            std::cout << \"P\";\n            [[fallthrough]];\n        case 2:\n            std::cout << \"R\";\n            break;\n        default:\n            std::cout << \"?\";\n            break;\n        }\n        std::cout << orden << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "PR1;R2;Fin"
+          ],
+          "explanation": "La première itération effectue P et R ; la deuxième entre directement dans R. Chaque break termine seulement le switch, donc le numéro de commande est affiché et le for continue. L'enchaînement ne répète pas le parcours et n'exécute pas les instructions antérieures au point d'entrée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une étape partagée avec un résumé"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une station répète la même commande repeticiones fois, de 0 à 4. La commande 1 réalise une préparation et une vérification à chaque itération. La commande 2 réalise seulement une vérification. Toute autre valeur entière de orden est comptée comme inconnue, sans préparation ni vérification. Les données sont déjà définies dans le code ; aucune entrée n'est à lire. Avant de programmer, calcule les nombres de préparations, de vérifications et de commandes inconnues pour les couples (orden,repeticiones) (1,3), (2,3), (9,3) et (1,0)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis la boucle et les trois compteurs à partir de cet éditeur minimal. Utilise un switch à chaque itération : dans case 1, effectue la préparation et déclare le passage avec [[fallthrough]]; la vérification ne doit apparaître qu'une fois, dans case 2. Termine cette étape et la possibilité inconnue avec break. Affiche uniquement un résumé après la boucle, au format exact Préparations=3;Vérifications=3;Inconnues=0 pour le cas initial. Détermine où déclarer chaque objet pour conserver les résultats de toutes les itérations."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int orden{1};\n    int repeticiones{3};\n    // Construis la boucle, la sélection et le résumé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie séparément les trois règles et le cas sans itération. Avec la commande 2 et trois répétitions, le résumé doit avoir zéro préparation, trois vérifications et zéro inconnue. Avec la commande 9 et trois répétitions : zéro, zéro et trois. Avec zéro répétition, les trois compteurs doivent rester à zéro pour toute commande. Teste aussi une et quatre répétitions ainsi que les commandes -1 et 0. Conserve ta tentative avant de consulter la référence. L'atelier n'évalue pas automatiquement le programme : compare sa sortie aux exigences et explique la première différence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer l'étape partagée et retrouver son intention"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consulte cette implémentation après avoir construit et vérifié ta tentative. Les compteurs sont initialisés une seule fois avant la boucle. La première étape ajoute une préparation et continue vers l'unique instruction de vérification. La commande 2 entre directement dans cette vérification ; default conserve une raison distincte dans le troisième compteur."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int orden{1};\n    int repeticiones{3};\n    int preparaciones{0};\n    int revisiones{0};\n    int desconocidas{0};\n    for (int vuelta{0}; vuelta < repeticiones; ++vuelta) {\n        switch (orden) {\n        case 1:\n            ++preparaciones;\n            [[fallthrough]];\n        case 2:\n            ++revisiones;\n            break;\n        default:\n            ++desconocidas;\n            break;\n        }\n    }\n    std::cout << \"Préparations=\" << preparaciones\n              << \";Vérifications=\" << revisiones\n              << \";Inconnues=\" << desconocidas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour (1,3), (2,3), (9,3) et (1,0), les trois totaux sont respectivement (3,3,0), (0,3,0), (0,0,3) et (0,0,0). Avec une répétition, la commande 1 apporte (1,1,0) ; avec quatre, elle apporte (4,4,0). Toute autre commande, dont -1 et 0, augmente seulement le nombre d'inconnues. Un break après la préparation ferait perdre les vérifications de la commande 1. Réinitialiser les compteurs dans la boucle ferait perdre les itérations précédentes. Le domaine de repeticiones fait partie de l'exigence ; cette référence ne valide pas de données externes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "retirar_atributo_no_repara_regla",
+          "question": "Tu retires uniquement la ligne [[fallthrough]]; de la référence, sans toucher aux autres instructions. Qu'est-ce qui change pour orden égal à 1 ?",
+          "options": [
+            "Le programme continue à préparer et vérifier ; seule l'annotation explicite de cette intention disparaît.",
+            "La vérification ne s'effectue plus, car l'attribut était l'instruction qui sautait vers case 2.",
+            "orden prend la valeur 2 et ensuite seule la vérification s'effectue."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le passage au cas suivant se produit parce que l'exécution continue sans break. L'attribut documente cette intention et peut influencer les avertissements du compilateur, mais ne change ni l'exécution ni orden. Pour rendre les possibilités exclusives, il faudrait modifier le contrôle avec break et vérifier que cette nouvelle règle est bien souhaitée."
+        },
+        {
+          "type": "output_prediction",
+          "id": "transferir_caida_a_ordenes_distintas",
+          "question": "Les commandes changent maintenant à chaque itération : 1, 2 et 3. Prévois le résumé avant l'exécution et explique quelle commande contribue à chaque compteur.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int preparaciones{0};\n    int revisiones{0};\n    int desconocidas{0};\n    for (int orden{1}; orden <= 3; ++orden) {\n        switch (orden) {\n        case 1:\n            ++preparaciones;\n            [[fallthrough]];\n        case 2:\n            ++revisiones;\n            break;\n        default:\n            ++desconocidas;\n            break;\n        }\n    }\n    std::cout << preparaciones << \":\" << revisiones << \":\" << desconocidas;\n    return 0;\n}\n",
+          "answers": [
+            "1:2:1"
+          ],
+          "explanation": "La commande 1 prépare et vérifie ; la commande 2 vérifie seulement ; la commande 3 augmente seulement les inconnues. Chaque break termine le switch et permet l'itération suivante. L'étape partagée n'exige pas que toutes les itérations commencent sous la même étiquette."
+        },
+        {
+          "type": "note",
+          "text": "Le livre distingue le passage accidentel de l'intention explicite grâce à [[fallthrough]]; (Stroustrup, 2024, section 3.4.1.3). Pour préciser son emplacement et le point-virgule, la section [dcl.attr.fallthrough] du projet public a aussi été consultée (Working draft: Programming languages — C++, s. d.). Les consignes, programmes et cas de cette extension sont originaux ; les références complètes se trouvent à la fin du cours."
+        }
+      ]
+    }
+  ]
+}

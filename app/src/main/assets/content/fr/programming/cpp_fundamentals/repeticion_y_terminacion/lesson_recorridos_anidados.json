@@ -1,0 +1,397 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__recorridos_anidados",
+  "title": "Boucles imbriquées : une dimension dans une autre",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un parcours intérieur complet pour chaque cas extérieur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une boucle peut en contenir une autre. Dans une grille de deux lignes et trois colonnes, la boucle extérieure choisit une ligne et la boucle intérieure parcourt toutes les colonnes de cette ligne. La déclaration du compteur intérieur est exécutée à nouveau chaque fois que son for est atteint. Ainsi, chaque nouvelle ligne recommence à la première colonne."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{1}; fila <= 2; ++fila) {\n        for (int columna{1}; columna <= 3; ++columna) {\n            std::cout << fila << \",\" << columna << \";\";\n        }\n        std::cout << \"|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'ordre est 1,1 ; 1,2 ; 1,3 ; puis 2,1 ; 2,2 ; 2,3. L'affichage | se trouve après la boucle intérieure et dans la boucle extérieure : il apparaît à la fin de chaque ligne. L'état extérieur reste inchangé pendant tout le parcours intérieur. On n'augmente pas fila à chaque colonne."
+        },
+        {
+          "type": "output_prediction",
+          "id": "pares_otras_dimensiones",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 2; ++fila) {\n        for (int columna{2}; columna < 4; ++columna) {\n            std::cout << fila << \",\" << columna << \";\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "0,2;0,3;1,2;1,3;Fin"
+          ],
+          "explanation": "Pour chaque ligne, le parcours des colonnes 2 et 3 recommence depuis le début."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Où chaque action s'exécute"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compte une exécution du corps intérieur pour chaque paire visitée. Compte une exécution d'une instruction placée après la boucle intérieure pour chaque ligne visitée. Un affichage hors des deux boucles s'exécute une seule fois, à la fin de tout le parcours. Lorsque les bornes intérieures sont constantes et indépendantes de la ligne, le nombre de paires est le nombre de lignes multiplié par celui des colonnes ; cette multiplication ne s'applique pas sans vérification si une borne dépend de la ligne."
+        },
+        {
+          "type": "output_prediction",
+          "id": "marcadores_por_fila",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{1}; fila <= 3; ++fila) {\n        std::cout << \"L\" << fila << \":\";\n        for (int columna{1}; columna <= 2; ++columna) {\n            std::cout << columna;\n        }\n        std::cout << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "L1:12;L2:12;L3:12;Fin"
+          ],
+          "explanation": "Le préfixe et le séparateur apparaissent une fois par ligne ; les nombres apparaissent une fois par colonne."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contar_parejas",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int parejas{0};\n    for (int fila{0}; fila < 3; ++fila) {\n        for (int columna{0}; columna < 4; ++columna) {\n            ++parejas;\n        }\n    }\n    std::cout << parejas;\n    return 0;\n}\n",
+          "answers": [
+            "12"
+          ],
+          "explanation": "On compte 3 parcours intérieurs de 4 cas chacun."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "incremento_fuera_interior",
+          "question": "Dans le programme précédent, tu déplaces ++parejas après le for intérieur, tout en le gardant dans le corps extérieur. Que compte-t-il maintenant ?",
+          "options": [
+            "Les trois lignes visitées.",
+            "Les quatre colonnes de la dernière ligne.",
+            "Les douze paires ligne-colonne."
+          ],
+          "correctIndex": 0,
+          "explanation": "La position d'une mise à jour détermine sa fréquence d'exécution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dimensions vides et bornes dépendantes"
+        },
+        {
+          "type": "output_prediction",
+          "id": "interior_vacio",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{1}; fila <= 2; ++fila) {\n        for (int columna{0}; columna < 0; ++columna) {\n            std::cout << columna;\n        }\n        std::cout << \"L\" << fila << \";\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "L1;L2;Fin"
+          ],
+          "explanation": "La boucle intérieure compte zéro itération pour chaque ligne ; les actions extérieures s'exécutent tout de même."
+        },
+        {
+          "type": "output_prediction",
+          "id": "exterior_vacio",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 0; ++fila) {\n        for (int columna{1}; columna <= 2; ++columna) {\n            std::cout << columna;\n        }\n        std::cout << \"Ligne\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "Fin"
+          ],
+          "explanation": "Sans entrer dans la boucle extérieure, on n'atteint ni l'initialisation ni le corps de la boucle intérieure."
+        },
+        {
+          "type": "output_prediction",
+          "id": "limite_depende_fila",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int parejas{0};\n    for (int fila{1}; fila <= 3; ++fila) {\n        for (int columna{1}; columna <= fila; ++columna) {\n            ++parejas;\n        }\n    }\n    std::cout << parejas;\n    return 0;\n}\n",
+          "answers": [
+            "6"
+          ],
+          "explanation": "Les parcours intérieurs comptent 1, 2 et 3 cas, soit un total de 6."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réinitialiser le compteur intérieur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si tu déclares le compteur intérieur avant les deux boucles sans le réinitialiser au début de chaque ligne, la première ligne peut l'épuiser. Les lignes suivantes trouvent alors un compteur déjà au-delà de la limite. Le programme peut compiler et se terminer correctement, tout en parcourant moins de paires que demandé. Reconstitue l'état au début de chaque ligne pour vérifier que le parcours commence au bon endroit."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contador_sin_reinicio",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int columna{1};\n    for (int fila{1}; fila <= 2; ++fila) {\n        while (columna <= 2) {\n            std::cout << fila << \",\" << columna << \";\";\n            ++columna;\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "1,1;1,2;Fin"
+          ],
+          "explanation": "À la fin de la première ligne, columna vaut 3. La condition intérieure est donc déjà fausse pour la deuxième ligne."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "restaurar_recorrido_interior",
+          "question": "Tu veux parcourir les colonnes 1 et 2 de chaque ligne avec une boucle while intérieure. Où faut-il exécuter columna=1; ?",
+          "options": [
+            "Après la fin des deux boucles.",
+            "Une seule fois avant la boucle extérieure.",
+            "Dans le corps extérieur, avant de vérifier le while intérieur de cette ligne."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'initialisation doit se répéter pour chaque nouveau parcours intérieur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "break concerne la boucle la plus intérieure"
+        },
+        {
+          "type": "output_prediction",
+          "id": "break_interior",
+          "question": "Prévois la sortie. Respecte les espaces et les sauts de ligne internes ; n'écris pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{1}; fila <= 2; ++fila) {\n        for (int columna{1}; columna <= 3; ++columna) {\n            if (columna == 2) {\n                break;\n            }\n            std::cout << fila << \",\" << columna << \";\";\n        }\n        std::cout << \"|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "answers": [
+            "1,1;|2,1;|Fin"
+          ],
+          "explanation": "Chaque break termine le parcours intérieur. La ligne suivante est toujours parcourue."
+        },
+        {
+          "type": "fill_code",
+          "id": "completar_extremo_interior",
+          "question": "Le parcours doit visiter les colonnes 0, 1 et 2 pour chaque ligne. Complète uniquement la borne supérieure exclue.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 2; ++fila) {\n        for (int columna{0}; columna < ___; ++columna) {\n            std::cout << fila << \",\" << columna << \";\";\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Avec columna<3, on visite 0, 1 et 2 ; 3 est la première valeur exclue."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Atelier : représenter une grille en texte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prévois la sortie, puis exécute le programme. Ajoute un saut de ligne après chaque ligne de la grille et garde un marqueur Fin en dehors des deux parcours. Passe à 3 lignes et 2 colonnes, puis à 2 lignes et 0 colonne. Explique pourquoi, dans ce dernier cas, la fin de ligne est encore exécutée deux fois. Garde les dimensions entre 0 et 4 ; tu n'as pas besoin de dessiner une interface graphique pour vérifier l'ordre des paires."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 2; ++fila) {\n        for (int columna{0}; columna < 3; ++columna) {\n            std::cout << \"(\" << fila << \",\" << columna << \")\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la solution de l'atelier"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare après avoir établi tes traces. Critères : visiter chaque paire ligne-colonne exactement une fois, réinitialiser columna à chaque ligne, insérer un saut de ligne à la fin de chaque ligne et afficher Fin uniquement après les deux boucles. Ne supprime pas l'action de fin de ligne lorsqu'une ligne n'a aucune colonne."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 3; ++fila) {\n        for (int columna{0}; columna < 2; ++columna) {\n            std::cout << \"(\" << fila << \",\" << columna << \")\";\n        }\n        std::cout << \"\\n\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec trois lignes et deux colonnes, on obtient les lignes (0,0)(0,1), (1,0)(1,1) et (2,0)(2,1), puis Fin. Avec deux lignes et zéro colonne, chaque corps extérieur ajoute son saut de ligne : deux lignes vides précèdent Fin. Avec zéro ligne, aucune action de fin de ligne n'est exécutée et seul Fin apparaît. Les lignes vides ont une cause dans le code ; elles ne représentent pas des paires inexistantes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un contrôle pour chaque équipe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un atelier prépare des équipes et des outils numérotés à partir de 1. Les données préparées sont déjà valides : equipos est un nombre entier d'équipes de 0 à 3 et herramientas un nombre entier d'outils de 0 à 4. Cette tâche ne comporte ni saisie ni validation de données externes. Traite les équipes dans l'ordre ; pour chaque équipe, considère tous les outils dans l'ordre. Un outil n'est contrôlé que si son numéro ne dépasse pas celui de l'équipe."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour chaque contrôle, affiche Contrôle=e:o sur sa propre ligne, en remplaçant e par le numéro de l'équipe et o par celui de l'outil. À la fin de chaque équipe, affiche Équipe=e;Vérifiés=c sur une autre ligne, même si elle n'a aucun outil ; c compte uniquement les contrôles de cette équipe. Après toutes les équipes, affiche Total=t une seule fois, sans saut final ; t compte tous les contrôles. S'il n'y a aucune équipe, seul le total apparaît. N'affiche pas de ligne de contrôle pour un outil qui ne respecte pas la règle."
+        },
+        {
+          "type": "paragraph",
+          "text": "Commence avec 3 équipes et 2 outils. Avant l'exécution, prépare une trace avec l'équipe, l'outil considéré, la décision, les contrôles de cette équipe et le total général. Détermine où créer ou réinitialiser chaque état : l'un doit décrire l'équipe actuelle, l'autre conserver ce qui a été réuni pour toutes les équipes. Écris le programme depuis cet éditeur minimal. Vérifie aussi les couples (equipos,herramientas) (0,2), (2,0), (1,1) et (3,4) ; calcule d'abord leurs sorties complètes. Justifie pourquoi les deux boucles se terminent même lorsqu'un outil n'est pas contrôlé."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construis ici le programme à partir des exigences.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Construis et teste avant de continuer. La référence suivante utilise d'autres données pour comparer les exigences et l'emplacement des états. L'atelier n'évalue pas automatiquement ton programme."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer les contrôles construits à une autre exécution"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lis cette référence après ta tentative. Elle utilise 2 équipes et 3 outils, tout en conservant la même règle. Ton programme n'a pas besoin d'avoir la même organisation : compare la suite des contrôles, la ligne de clôture de chaque équipe et le total."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int equipos{2};\n    int herramientas{3};\n    int total{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        int revisadas{0};\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if (herramienta <= equipo) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Contrôle=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Équipe=\" << equipo << \";Vérifiés=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le compteur revisadas commence à zéro pour chaque équipe ; total ne commence qu'une seule fois avant leur traitement. Le compteur d'outil avance, que l'outil soit contrôlé ou écarté, puis recommence à 1 pour l'équipe suivante. La ligne de clôture appartient à l'équipe, donc elle suit l'examen de ses outils ; le total appartient au procédé complet, donc il apparaît après toutes les équipes. Tu peux utiliser while à la place de for si tu conserves ces mises à jour et réinitialisations."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec ces données, l'équipe 1 contrôle uniquement l'outil 1 et se termine avec un contrôle ; l'équipe 2 contrôle les outils 1 et 2 et se termine avec deux. Le total vaut 3. Pour (0,2), seul Total=0 doit apparaître ; pour (2,0), deux lignes de clôture avec Vérifiés=0 précèdent Total=0. Pour (1,1), il y a un contrôle, une clôture et Total=1. Pour (3,4), les clôtures indiquent 1, 2 et 3 et le total vaut 6. Compare chaque ligne : un total correct ne prouve pas à lui seul quels outils ont été contrôlés ni que le compteur local a été réinitialisé."
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque compteur de boucle commence à 1, augmente de 1 et quitte sa condition après avoir dépassé une limite fixe. La boucle intérieure visite au plus quatre outils par équipe ; l'extérieure traite au plus trois équipes. Même si la sélection est fausse, le compteur avance. Au maximum douze paires sont considérées ; aucun compteur de contrôles ni aucune somme ne s'approche de la limite de représentation de int. Sans équipe, la boucle intérieure n'est jamais atteinte ; sans outil, les clôtures des équipes existantes apparaissent tout de même."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver ce que décrit chaque compteur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce programme vise la première règle avec 2 équipes et 2 outils. Avant de l'exécuter, suis ses changements d'état et prévois ce qu'il affiche réellement ; ne remplace pas sa sortie par celle que tu souhaites. Vérifie ensuite chaque clôture en fonction des contrôles de l'équipe. Si tu découvres un problème, formule une hypothèse sur la durée de vie de l'état et une seule modification pour le corriger. Note-les en commentaires dans ton éditeur précédent, puis teste la correction avec plusieurs équipes."
+        },
+        {
+          "type": "output_prediction",
+          "id": "u4_anidados_revisadas_conserva_otro_equipo",
+          "question": "Prévois la sortie complète de ce programme. Respecte les sauts de ligne internes et n'en ajoute pas après Total.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int equipos{2};\n    int herramientas{2};\n    int total{0};\n    int revisadas{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if (herramienta <= equipo) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Contrôle=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Équipe=\" << equipo << \";Vérifiés=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Contrôle=1:1\nÉquipe=1;Vérifiés=1\nContrôle=2:1\nContrôle=2:2\nÉquipe=2;Vérifiés=3\nTotal=3"
+          ],
+          "explanation": "revisadas est créé une seule fois, avant la boucle extérieure, et conserve le contrôle de la première équipe. La deuxième clôture indique 3, alors que cette équipe a effectué seulement deux contrôles. total=3 décrit bien les deux équipes. Réinitialise uniquement le compteur local au début de chaque équipe ; ne remets pas à zéro le total général et ne modifie pas une sélection qui respecte déjà la règle.",
+          "outputComparison": "exact"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "u4_anidados_visitar_no_es_revisar",
+          "question": "Dans ton programme correct de la première règle, utilise 2 équipes et 4 outils. Compte une visite pour chaque paire équipe-outil considérée, même sans ligne Contrôle. Quelle relation la trace doit-elle montrer ?",
+          "options": [
+            "Il y a 3 visites et 3 contrôles.",
+            "Il y a 8 visites et 3 contrôles.",
+            "Il y a 8 visites et 8 contrôles."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les quatre outils sont considérés pour chacune des deux équipes : huit visites. Seuls l'outil 1 de l'équipe 1 et les outils 1 et 2 de l'équipe 2 sont contrôlés : trois contrôles. Compter les visites et les cas acceptés exige de placer les mises à jour à des endroits différents."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un essai avec une seule équipe ne permet pas de détecter un compteur local qui n'est jamais remis à zéro entre équipes. Garde au moins un test avec plusieurs équipes et un autre avec des outils dont certains échouent à la sélection. Recommence aussi sans outil : les clôtures existent encore, mais les deux compteurs de contrôles doivent rester à zéro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer le parcours à une autre règle"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'atelier change de règle : un outil est désormais contrôlé lorsque la somme de son numéro et du numéro de l'équipe est paire. Cette règle remplace la précédente ; il ne faut pas satisfaire les deux. Conserve equipos entre 0 et 3, herramientas entre 0 et 4, la numérotation à partir de 1 et tous les formats de sortie. Les données préparées restent valides. Seules les paires acceptées changent, pas les outils considérés ni le moment de clôture de chaque équipe."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis cette version dans un autre éditeur minimal, sans copier le programme précédent. Commence avec 2 équipes et 4 outils. Détermine comment exprimer la nouvelle sélection avec les opérations déjà étudiées. Prépare d'abord une trace séparant les paires considérées des contrôles ; choisis au moins une paire dont l'acceptation change par rapport à la première règle. Justifie l'emplacement des deux compteurs et la progression lorsqu'un outil est rejeté."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie (0,3), (2,0), (1,1), (1,4), (2,4) et le maximum (3,4). Avant l'exécution, écris les lignes de contrôle, chaque clôture et le total attendus. Si deux exécutions ont le même total, compare aussi les paires et les résumés par équipe : il ne suffit pas de conserver un chiffre final qui coïncide par hasard."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construis ici le programme à partir des exigences.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Construis ta solution et réalise les tests avant de consulter la deuxième référence. Il n'est pas nécessaire d'introduire des fonctions, des collections ou de nouveaux modes d'entrée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la nouvelle règle et reconstruire"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence utilise 3 équipes et 3 outils, différents des données initiales du deuxième essai. Pour toute paire du domaine, la somme des numéros est comprise entre 2 et 7 ; son reste après division par 2 permet de déterminer si elle est paire à l'aide d'opérations entières sûres."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int equipos{3};\n    int herramientas{3};\n    int total{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        int revisadas{0};\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if ((equipo + herramienta) % 2 == 0) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Contrôle=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Équipe=\" << equipo << \";Vérifiés=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de toute implémentation équivalente : chaque paire est considérée dans l'ordre requis ; une ligne Contrôle apparaît exactement pour une paire dont la somme est paire ; revisadas commence à zéro pour chaque équipe ; total conserve tous les cas acceptés ; chaque équipe possède une clôture même sans outil ; seul le total final n'est pas suivi d'un saut de ligne. La progression des boucles ne dépend pas de l'acceptation de la paire. Une version avec while doit aussi réinitialiser le premier numéro d'outil pour chaque équipe."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans cette référence, l'équipe 1 contrôle les outils 1 et 3, l'équipe 2 contrôle l'outil 2 et l'équipe 3 contrôle les outils 1 et 3 : clôtures 2, 1 et 2, avec Total=5. Pour (0,3), seul Total=0 apparaît ; pour (2,0), les deux clôtures à zéro précèdent Total=0. Avec (3,4), les deux règles produisent un total de 6, mais les clôtures diffèrent : 1, 2, 3 pour la première et 2, 2, 2 pour la nouvelle. Vérifier chaque paire et chaque clôture évite de prendre ce total identique pour une preuve suffisante."
+        },
+        {
+          "type": "output_prediction",
+          "id": "u4_anidados_paridad_equipo_sin_revision",
+          "question": "Cette variante applique la règle de somme paire à 2 équipes et 1 outil. Prévois toute la sortie, y compris les clôtures d'équipes sans contrôle ; n'ajoute pas de saut final.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int equipos{2};\n    int herramientas{1};\n    int total{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        int revisadas{0};\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if ((equipo + herramienta) % 2 == 0) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Contrôle=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Équipe=\" << equipo << \";Vérifiés=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Contrôle=1:1\nÉquipe=1;Vérifiés=1\nÉquipe=2;Vérifiés=0\nTotal=1"
+          ],
+          "explanation": "La paire (1,1) a une somme paire et est contrôlée ; (2,1) a une somme impaire et est rejetée. Les deux équipes sont parcourues et clôturées. Une équipe sans contrôle reste une équipe existante.",
+          "outputComparison": "exact"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après la comparaison, reviens plus tard à l'éditeur minimal et reconstruis une des règles avec un autre cas valide choisi par toi. Avant l'exécution, explique quel état change pour chaque paire, lequel est remis à zéro par équipe et lequel n'est initialisé qu'une seule fois. Si le résultat diffère, utilise la première ligne différente pour déterminer si l'erreur vient du parcours, de la sélection, du compteur local ou du total ; ne modifie pas tout à la fois."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette extension repose sur la sélection et l'itération, notamment while, les blocs et for (Stroustrup, 2024, sections 3.4.1–3.4.2). Les consignes, domaines, programmes et cas de test sont originaux ; ils combinent ces notions pour construire et vérifier des boucles imbriquées."
+        }
+      ]
+    }
+  ]
+}

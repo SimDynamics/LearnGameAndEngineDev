@@ -1,0 +1,397 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__recorridos_anidados",
+  "title": "Nested Loops: One Dimension Within Another",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A complete inner loop for every outer case"
+        },
+        {
+          "type": "paragraph",
+          "text": "One loop can contain another. In a grid with two rows and three columns, the outer loop chooses a row and the inner loop visits all columns in that row. The declaration of the inner counter runs again each time execution reaches its for loop. That is why each new row starts again at the first column."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{1}; fila <= 2; ++fila) {\n        for (int columna{1}; columna <= 3; ++columna) {\n            std::cout << fila << \",\" << columna << \";\";\n        }\n        std::cout << \"|\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The order is 1,1; 1,2; 1,3; followed by 2,1; 2,2; 2,3;. The | output is after the inner loop but still inside the outer one: it appears at the end of every row. The outer state stays the same throughout the entire inner loop. We do not increment fila for every column."
+        },
+        {
+          "type": "output_prediction",
+          "id": "pares_otras_dimensiones",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 2; ++fila) {\n        for (int columna{2}; columna < 4; ++columna) {\n            std::cout << fila << \",\" << columna << \";\";\n        }\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "0,2;0,3;1,2;1,3;End"
+          ],
+          "explanation": "For each row, the inner loop visits columns 2 and 3 from the beginning."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Where each action runs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Count one inner-body execution for every pair visited. Count one execution of a statement after the inner loop for each row visited. Output outside both loops runs just once, after the entire traversal. When inner bounds are constant and independent of the row, the number of pairs is the number of rows times the number of columns; that multiplication does not hold without examining bounds that depend on the row."
+        },
+        {
+          "type": "output_prediction",
+          "id": "marcadores_por_fila",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{1}; fila <= 3; ++fila) {\n        std::cout << \"R\" << fila << \":\";\n        for (int columna{1}; columna <= 2; ++columna) {\n            std::cout << columna;\n        }\n        std::cout << \";\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "R1:12;R2:12;R3:12;End"
+          ],
+          "explanation": "The prefix and separator appear once per row; the numbers appear once per column."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contar_parejas",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int parejas{0};\n    for (int fila{0}; fila < 3; ++fila) {\n        for (int columna{0}; columna < 4; ++columna) {\n            ++parejas;\n        }\n    }\n    std::cout << parejas;\n    return 0;\n}\n",
+          "answers": [
+            "12"
+          ],
+          "explanation": "The program counts 3 inner traversals of 4 cases each."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "incremento_fuera_interior",
+          "question": "In the previous program, you move ++parejas after the inner for, keeping it inside the outer loop. What does it count now?",
+          "options": [
+            "The three rows visited.",
+            "The four columns of the last row.",
+            "The twelve row-column pairs."
+          ],
+          "correctIndex": 0,
+          "explanation": "The location of an update determines how often it runs."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Empty dimensions and dependent bounds"
+        },
+        {
+          "type": "output_prediction",
+          "id": "interior_vacio",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{1}; fila <= 2; ++fila) {\n        for (int columna{0}; columna < 0; ++columna) {\n            std::cout << columna;\n        }\n        std::cout << \"R\" << fila << \";\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "R1;R2;End"
+          ],
+          "explanation": "The inner loop has zero iterations in each row; the outer actions still run."
+        },
+        {
+          "type": "output_prediction",
+          "id": "exterior_vacio",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 0; ++fila) {\n        for (int columna{1}; columna <= 2; ++columna) {\n            std::cout << columna;\n        }\n        std::cout << \"Row\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "End"
+          ],
+          "explanation": "If execution never enters the outer loop, it never reaches the inner loop's initialization or body."
+        },
+        {
+          "type": "output_prediction",
+          "id": "limite_depende_fila",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int parejas{0};\n    for (int fila{1}; fila <= 3; ++fila) {\n        for (int columna{1}; columna <= fila; ++columna) {\n            ++parejas;\n        }\n    }\n    std::cout << parejas;\n    return 0;\n}\n",
+          "answers": [
+            "6"
+          ],
+          "explanation": "The inner traversals have 1, 2, and 3 cases, for a total of 6."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Resetting the inner counter"
+        },
+        {
+          "type": "paragraph",
+          "text": "If you declare the inner counter before both loops and do not reset it at the beginning of each row, the first row may exhaust it. Later rows will find a counter already beyond its limit. The program may compile and terminate perfectly well but visit fewer pairs than required. Reconstruct the state at the beginning of each row to check whether the loop starts at the correct position."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contador_sin_reinicio",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int columna{1};\n    for (int fila{1}; fila <= 2; ++fila) {\n        while (columna <= 2) {\n            std::cout << fila << \",\" << columna << \";\";\n            ++columna;\n        }\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "1,1;1,2;End"
+          ],
+          "explanation": "At the end of the first row, columna is 3. On the second row, its inner condition is already false."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "restaurar_recorrido_interior",
+          "question": "You want to visit columns 1 and 2 in every row using an inner while loop. Where should columna=1; run?",
+          "options": [
+            "After both loops have finished.",
+            "Only before starting the outer loop.",
+            "Inside the outer body, before checking that row's inner while loop."
+          ],
+          "correctIndex": 2,
+          "explanation": "Initialization must be repeated for every new inner traversal."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A break applies to the innermost loop"
+        },
+        {
+          "type": "output_prediction",
+          "id": "break_interior",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{1}; fila <= 2; ++fila) {\n        for (int columna{1}; columna <= 3; ++columna) {\n            if (columna == 2) {\n                break;\n            }\n            std::cout << fila << \",\" << columna << \";\";\n        }\n        std::cout << \"|\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "1,1;|2,1;|End"
+          ],
+          "explanation": "Each break ends the inner traversal. The next row is still visited."
+        },
+        {
+          "type": "fill_code",
+          "id": "completar_extremo_interior",
+          "question": "The loop must visit columns 0, 1, and 2 in every row. Fill in only the exclusive upper bound.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 2; ++fila) {\n        for (int columna{0}; columna < ___; ++columna) {\n            std::cout << fila << \",\" << columna << \";\";\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "With columna<3, the body visits 0, 1, and 2; 3 is the first excluded case."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Text-grid lab"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predict the output, then run it. Add a line break after each row and keep an End marker outside both loops. Change the dimensions to 3 rows and 2 columns, then to 2 rows and 0 columns. Explain why the final case still executes the end-of-row action twice. Keep dimensions between 0 and 4; you do not need to draw a graphical interface to verify the order of the pairs."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 2; ++fila) {\n        for (int columna{0}; columna < 3; ++columna) {\n            std::cout << \"(\" << fila << \",\" << columna << \")\";\n        }\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the lab solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare after making your traces. Criteria: visit each row-column pair exactly once, restart the column counter on every row, insert a line break at the end of each row, and display End only after both loops. Do not omit the end-of-row action when the row has no columns."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int fila{0}; fila < 3; ++fila) {\n        for (int columna{0}; columna < 2; ++columna) {\n            std::cout << \"(\" << fila << \",\" << columna << \")\";\n        }\n        std::cout << \"\\n\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "With three rows and two columns, the output lines are (0,0)(0,1), (1,0)(1,1), and (2,0)(2,1), followed by End. With two rows and zero columns, each outer body adds its line break: there are two empty lines before End. With zero rows, no end-of-row action runs and only End appears. The empty lines have a cause in the code; they are not nonexistent pairs."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a per-team inspection"
+        },
+        {
+          "type": "paragraph",
+          "text": "A workshop prepares teams and tools numbered from 1. The prepared data are already valid: equipos is an integer count from 0 to 3, and herramientas is an integer count from 0 to 4. This task has no external input or data validation. Process teams in order; for each team consider all tools in order. A tool is inspected only when its number is no greater than the team number."
+        },
+        {
+          "type": "paragraph",
+          "text": "For each inspection, print Review=t:k on its own line, replacing t with the team number and k with the tool number. At the end of each team, print Team=t;Reviewed=c on another line, even if the team has no tools; c counts only that team's inspections. After all teams, print Total=n just once, with no final line break; n counts all inspections. If there are no teams, only the total appears. Do not print an inspection line for a tool that fails the rule."
+        },
+        {
+          "type": "paragraph",
+          "text": "Start with 3 teams and 2 tools. Before running, prepare a trace with team, tool considered, decision, inspections for that team, and overall total. Decide where to create or reset each state: one describes the current team and the other preserves everything accumulated across teams. Write the program from this minimal editor. Also check (equipos,herramientas) equal to (0,2), (2,0), (1,1), and (3,4); calculate their complete outputs first. Explain why both loops terminate even when a tool is not inspected."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Build the program from the requirements.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Build and test before continuing. The later reference uses different data to compare the requirements and the placement of state. The lab does not automatically grade your program."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare your inspection program against another run"
+        },
+        {
+          "type": "paragraph",
+          "text": "Read this reference after attempting the exercise. It uses 2 teams and 3 tools, but keeps the same rule. Your program's organization does not have to match: compare the inspection sequence, each team's closing line, and the total."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int equipos{2};\n    int herramientas{3};\n    int total{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        int revisadas{0};\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if (herramienta <= equipo) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Review=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Team=\" << equipo << \";Reviewed=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The revisadas counter starts at zero for every team; total starts just once, before processing the teams. The tool counter advances whether a tool is inspected or rejected, and starts again at 1 for the next team. The closing line belongs to a team, so it follows consideration of all its tools; the overall total belongs to the whole procedure, so it appears after all teams. You may use while instead of for if you preserve these updates and resets."
+        },
+        {
+          "type": "paragraph",
+          "text": "With these data, team 1 inspects only tool 1 and closes with one inspection; team 2 inspects tools 1 and 2 and closes with two. The total is 3. For (0,2), only Total=0 must appear; for (2,0), both closing lines with Reviewed=0 precede Total=0. For (1,1), there is one inspection, one closing line, and Total=1. For (3,4), the closing counts are 1, 2, and 3, and the total is 6. Compare every line: a correct total does not, by itself, prove which tools were inspected or that the local counter was reset."
+        },
+        {
+          "type": "paragraph",
+          "text": "Each loop counter starts at 1, increases by 1, and leaves its condition after exceeding a fixed limit. The inner loop visits at most four tools per team; the outer loop visits at most three teams. Even if the selection is false, the counter advances. At most twelve pairs are considered; no inspection counter or sum of numbers approaches the representable limit of int. With no teams, the inner loop is never reached; with no tools, the closing lines for existing teams still appear."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall what each counter describes"
+        },
+        {
+          "type": "paragraph",
+          "text": "This program aims to follow the first rule, using 2 teams and 2 tools. Before running, trace its state changes and predict what it actually prints; do not replace that output with what you wish it printed. Then compare each team's closing line against that team's inspections. If you find a violation, form a hypothesis about how long a piece of state should persist, and choose one change to fix it. Record the hypothesis and change in comments in your earlier editor and test the modification with several teams."
+        },
+        {
+          "type": "output_prediction",
+          "id": "u4_anidados_revisadas_conserva_otro_equipo",
+          "question": "Predict the complete output of this program. Preserve internal line breaks and do not add a line break after Total.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int equipos{2};\n    int herramientas{2};\n    int total{0};\n    int revisadas{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if (herramienta <= equipo) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Review=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Team=\" << equipo << \";Reviewed=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Review=1:1\nTeam=1;Reviewed=1\nReview=2:1\nReview=2:2\nTeam=2;Reviewed=3\nTotal=3"
+          ],
+          "explanation": "revisadas is created only once, before the outer loop, so it keeps the first team's inspection. The second closing line prints 3, although that team performed only two inspections. total=3 does describe both teams. Reset only the local counter at the start of each team; do not erase the overall total or change a selection rule that already works.",
+          "outputComparison": "exact"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "u4_anidados_visitar_no_es_revisar",
+          "question": "In your correct implementation of the first rule, use 2 teams and 4 tools. Count one visit for every team-tool pair considered, even if it produces no Review line. What relationship should the trace show?",
+          "options": [
+            "There are 3 visits and 3 inspections.",
+            "There are 8 visits and 3 inspections.",
+            "There are 8 visits and 8 inspections."
+          ],
+          "correctIndex": 1,
+          "explanation": "Four tools are considered for each of two teams: eight visits. Only tool 1 of team 1 and tools 1 and 2 of team 2 are inspected: three inspections. Counting visits and accepted cases requires placing updates in different locations."
+        },
+        {
+          "type": "paragraph",
+          "text": "A single-team case cannot reveal a local counter that is never reset between teams. Keep at least one test with several teams and another with tools that fail the selection. Also repeat the no-tools case: the closing lines still exist, but both inspection counters must stay at zero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer the loop to a different rule"
+        },
+        {
+          "type": "paragraph",
+          "text": "The workshop changes the rule: now a tool is inspected when the sum of its number and the team number is even. This replaces the earlier rule; both are not required together. Keep equipos between 0 and 3, herramientas between 0 and 4, numbering from 1, and all output formats. The prepared data remain valid. Change only which pairs are accepted, not which tools are considered or when each team closes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Build this version in another minimal editor without copying the previous program. Start with 2 teams and 4 tools. Decide how to express the new selection using operations already studied. First prepare a trace that separates considered pairs from inspections; choose at least one pair whose acceptance changes compared with the first rule. Explain the placement of both counters and how the loop advances when a tool is rejected."
+        },
+        {
+          "type": "paragraph",
+          "text": "Check (0,3), (2,0), (1,1), (1,4), (2,4), and the maximum (3,4). Before running, write down each inspection line, each closing line, and the total. If two runs have the same total, compare their pairs and per-team summaries too: preserving a final number that matches by coincidence is not enough."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Build the program from the requirements.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Complete your implementation and tests before consulting the second reference. There is no need to introduce functions, collections, or new kinds of input."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the transferred rule and rebuild"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference uses 3 teams and 3 tools, different from the initial data of the second attempt. For any pair in the allowed range, the sum of their numbers is between 2 and 7; the remainder when divided by 2 safely determines whether that sum is even using integer arithmetic."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int equipos{3};\n    int herramientas{3};\n    int total{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        int revisadas{0};\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if ((equipo + herramienta) % 2 == 0) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Review=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Team=\" << equipo << \";Reviewed=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria for any equivalent implementation: every pair is considered in the required order; a Review line appears exactly when the pair's sum is even; revisadas starts at zero for each team; total preserves all accepted cases; every team has a closing line even when there are no tools; only the final total has no trailing line break. Loop advancement does not depend on accepting the pair. A while implementation must also reset the starting tool number for every team."
+        },
+        {
+          "type": "paragraph",
+          "text": "In this reference, team 1 inspects tools 1 and 3, team 2 inspects tool 2, and team 3 inspects tools 1 and 3: closing counts 2, 1, and 2, with Total=5. For (0,3), only Total=0 appears; for (2,0), the two zero-count closing lines appear before Total=0. With (3,4), both rules produce a total of 6, but their per-team counts differ: 1, 2, 3 for the first and 2, 2, 2 for the new rule. Checking every pair and closing line prevents accepting that shared total as sufficient evidence."
+        },
+        {
+          "type": "output_prediction",
+          "id": "u4_anidados_paridad_equipo_sin_revision",
+          "question": "This version uses the even-sum rule with 2 teams and 1 tool. Predict the entire output, including closing lines for teams that inspect nothing; do not add a final line break.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int equipos{2};\n    int herramientas{1};\n    int total{0};\n    for (int equipo{1}; equipo <= equipos; ++equipo) {\n        int revisadas{0};\n        for (int herramienta{1}; herramienta <= herramientas; ++herramienta) {\n            if ((equipo + herramienta) % 2 == 0) {\n                ++revisadas;\n                ++total;\n                std::cout << \"Review=\" << equipo << \":\" << herramienta << \"\\n\";\n            }\n        }\n        std::cout << \"Team=\" << equipo << \";Reviewed=\" << revisadas << \"\\n\";\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "Review=1:1\nTeam=1;Reviewed=1\nTeam=2;Reviewed=0\nTotal=1"
+          ],
+          "explanation": "Pair (1,1) has an even sum and is inspected; (2,1) has an odd sum and is rejected. Both teams are visited and receive closing lines. No inspections does not mean no team.",
+          "outputComparison": "exact"
+        },
+        {
+          "type": "paragraph",
+          "text": "After comparing, return later to the minimal editor and rebuild one of the rules using another valid case of your choice. Before running, explain which state changes per pair, which resets per team, and which is initialized just once. If your result differs, use the first differing line to decide whether the traversal, selection, local counter, or overall total failed; do not change all those parts at once."
+        },
+        {
+          "type": "paragraph",
+          "text": "This extension builds on selection and iteration, including while, blocks, and for (Stroustrup, 2024, sections 3.4.1–3.4.2). The instructions, domains, programs, and test cases are original; they combine these ideas to build and verify nested loops."
+        }
+      ]
+    }
+  ]
+}

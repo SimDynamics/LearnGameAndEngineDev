@@ -1,0 +1,367 @@
+{
+  "id": "cpp_fundamentals__repeticion_y_terminacion__seleccion_discreta_con_switch",
+  "title": "Choosing Among Discrete Values with switch",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Selecting by equality"
+        },
+        {
+          "type": "paragraph",
+          "text": "When a decision compares the same category against several constant values, switch can express that selection directly. In these first examples, the category has type int or char. A case marks the point where control transfers when its value matches; default handles values that match no case. Do not use switch for ranges, conditions with &&, or std::string strings: keep if for those rules (Stroustrup, 2024, sections 3.4.1.2–3.4.1.3)."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{2};\n    switch (opcion) {\n    case 1:\n        std::cout << \"Save\";\n        break;\n    case 2:\n        std::cout << \"Show\";\n        break;\n    default:\n        std::cout << \"Unknown\";\n        break;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "With opcion equal to 2, execution enters case 2 and prints Show. break ends the switch. The program continues after its closing brace. Labels are not if questions evaluated one after another: first the entry point is selected, and then execution follows the statements reachable from it."
+        },
+        {
+          "type": "output_prediction",
+          "id": "opcion_distinta",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{1};\n    switch (opcion) {\n    case 1: std::cout << \"Open\"; break;\n    case 2: std::cout << \"Close\"; break;\n    default: std::cout << \"Other\"; break;\n    }\n    std::cout << \":End\";\n    return 0;\n}\n",
+          "answers": [
+            "Open:End"
+          ],
+          "explanation": "Execution enters case 1, and its break leads to the output after the switch."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Unexpected values and the absence of default"
+        },
+        {
+          "type": "output_prediction",
+          "id": "opcion_desconocida",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{9};\n    switch (opcion) {\n    case 1: std::cout << \"A\"; break;\n    case 2: std::cout << \"B\"; break;\n    default: std::cout << \"?\"; break;\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "?End"
+          ],
+          "explanation": "No case matches, so default provides an explicit response."
+        },
+        {
+          "type": "output_prediction",
+          "id": "sin_coincidencia_sin_default",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{3};\n    switch (opcion) {\n    case 1: std::cout << \"A\"; break;\n    case 2: std::cout << \"B\"; break;\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "End"
+          ],
+          "explanation": "With no matching case and no default, no statement inside the switch body executes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cuando_if_es_directo",
+          "question": "You must check whether peso is between 4 and 9, including the endpoints. Which construct expresses that condition directly?",
+          "options": [
+            "if (peso >= 4 && peso <= 9)",
+            "switch (peso >= 4 && peso <= 9) with a case for every weight",
+            "case peso >= 4 && peso <= 9: inside any function"
+          ],
+          "correctIndex": 0,
+          "explanation": "if takes the range condition. case labels represent constant selection values, not range conditions."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Labels do not stop execution"
+        },
+        {
+          "type": "paragraph",
+          "text": "If execution reaches the end of a case's statements without break or another transfer of control, it continues into the statements that follow, even if they are under another label. This is called fallthrough. The category's value does not change when execution passes another label. For mutually exclusive alternatives, explicitly leave the switch after each action (Stroustrup, 2024, section 3.4.1.3)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "caida_controlada",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{1};\n    switch (opcion) {\n    case 1: std::cout << \"A\";\n    case 2: std::cout << \"B\"; break;\n    default: std::cout << \"C\"; break;\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "ABEnd"
+          ],
+          "explanation": "Execution enters case 1; without break, it reaches the B output. The following break prevents C from being printed."
+        },
+        {
+          "type": "output_prediction",
+          "id": "entra_en_segundo",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{2};\n    switch (opcion) {\n    case 1: std::cout << \"A\";\n    case 2: std::cout << \"B\"; break;\n    default: std::cout << \"C\"; break;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "B"
+          ],
+          "explanation": "Execution enters directly at case 2; earlier statements do not run."
+        },
+        {
+          "type": "fill_code",
+          "id": "cerrar_alternativa",
+          "question": "Each alternative must print only its own output. Fill in the missing keyword.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int opcion{1};\n    switch (opcion) {\n    case 1: std::cout << \"A\"; ___;\n    case 2: std::cout << \"B\"; break;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "break"
+          ],
+          "explanation": "break ends the switch before execution reaches the second case's statements."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Group labels and select characters"
+        },
+        {
+          "type": "paragraph",
+          "text": "You can place several consecutive labels before the same action to explicitly share a response. Each case uses a constant value, and two cases in the same switch cannot have the same value. For char, use single quotes around character literals; \"g\" would be a different, string literal. Do not rely on any particular numeric encoding of characters."
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_etiquetas_una_accion",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    switch (comando) {\n    case 'G':\n    case 'g':\n        std::cout << \"Save\";\n        break;\n    case 'm':\n        std::cout << \"Show\";\n        break;\n    default:\n        std::cout << \"Unknown\";\n        break;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Save"
+          ],
+          "explanation": "The G and g labels share the same action without performing any different action between them."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "etiquetas_duplicadas",
+          "question": "The same switch contains two case 2: labels. What is the problem?",
+          "options": [
+            "The second case is ignored and the program remains valid.",
+            "The same value cannot label two cases in that switch.",
+            "Both cases are checked in order as though they were independent if statements."
+          ],
+          "correctIndex": 1,
+          "explanation": "Each selected value must identify an entry point without duplicate labels."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A switch inside a loop"
+        },
+        {
+          "type": "paragraph",
+          "text": "break exits the innermost loop or switch that contains it. If a switch is inside a for loop and break is inside the switch, that break ends the switch; it does not end the surrounding for loop. Read this rule through the nesting, not visual alignment (Working draft: Programming languages — C++, n.d., section [stmt.break])."
+        },
+        {
+          "type": "output_prediction",
+          "id": "break_solo_switch",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not include quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int n{1}; n <= 3; ++n) {\n        switch (n) {\n        case 2: std::cout << \"B\"; break;\n        default: std::cout << \"A\"; break;\n        }\n        std::cout << n << \";\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "A1;B2;A3;End"
+          ],
+          "explanation": "Each break ends only the switch. The output afterward and the for loop's update still run."
+        },
+        {
+          "type": "paragraph",
+          "text": "Turn the lab into a char command selector. Keep the first line Command= followed by the tested character. Inside the switch, g must print Saved, m must print Shown, and any other character must print Unknown, each message on its own line. Test each alternative separately by changing the initial constant. Every action must be exclusive, and End must appear on the next line after the switch in every case."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    std::cout << \"Command=\" << comando << \"\\n\";\n    std::cout << \"End\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the lab solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consult this after building the selector. Criteria: g produces Saved, m produces Shown, and any other character produces Unknown; each test runs exactly one alternative and reaches End after the switch."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    char comando{'g'};\n    std::cout << \"Command=\" << comando << \"\\n\";\n    switch (comando) {\n        case 'g':\n            std::cout << \"Saved\\n\";\n            break;\n        case 'm':\n            std::cout << \"Shown\\n\";\n            break;\n        default:\n            std::cout << \"Unknown\\n\";\n            break;\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Test g, m, and x by changing only comando. The first line identifies the case being tested. Removing break after Saved would also execute Shown and violate exclusivity. Here default covers any unmatched character; it is not an additional action that always runs."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "When continuing into the next case is intentional"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the previous selector, the actions were exclusive: removing break broke the rule. Now consider a different rule. Command 1 must prepare and then review; command 2 must review directly. We can put the review in the second case and let the first reach it after preparing. That fallthrough is intentional because it represents two stages required by the problem. It does not turn command 1 into command 2."
+        },
+        {
+          "type": "paragraph",
+          "text": "Write [[fallthrough]]; to indicate that the continuation is intentional. It is an attribute, an annotation that communicates our intention to the compiler (Stroustrup, 2024, section 3.4.1.3). Here it accompanies a null statement, so it ends with a semicolon. It performs no operation and does not jump to another label; execution continues because there is no break to stop it. In this simple use, it is placed after the first case's last action and before the next case or default of the same switch (Working draft: Programming languages — C++, n.d., section [dcl.attr.fallthrough])."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int orden{1};\n    switch (orden) {\n    case 1:\n        std::cout << \"Prepare;\";\n        [[fallthrough]];\n    case 2:\n        std::cout << \"Review;\";\n        break;\n    default:\n        std::cout << \"Unknown;\";\n        break;\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "With orden equal to 1, the program displays Prepare;Review;End. Initial selection enters case 1. Execution then reaches the review, even though the case 2 label does not match value 1. The break at the second stage does end the switch. With orden equal to 2, execution enters the review directly without preparing. This differs from grouping two empty labels: here the first entry performs an additional action before sharing the second stage."
+        },
+        {
+          "type": "output_prediction",
+          "id": "fallthrough_no_cambia_categoria",
+          "question": "Predict the entire output. Also observe orden after the switch: falling through does not change its value.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int orden{1};\n    switch (orden) {\n    case 1:\n        std::cout << \"P\";\n        [[fallthrough]];\n    case 2:\n        std::cout << \"R\";\n        break;\n    default:\n        std::cout << \"?\";\n        break;\n    }\n    std::cout << \":\" << orden;\n    return 0;\n}\n",
+          "answers": [
+            "PR:1"
+          ],
+          "explanation": "The program prepares from case 1 and reaches the review in case 2. No statement assigns a new value to orden, which remains 1. A label marks an entry point, not a new comparison that prevents execution from continuing."
+        },
+        {
+          "type": "note",
+          "text": "Choose according to the requirement: break to end an alternative; [[fallthrough]]; to document an intended continuation. Adding the attribute to accidental fallthrough does not fix the behavior. The compiler may warn about fallthrough without this annotation; the absence of a warning does not prove that the program follows the problem's rule."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Express the intention in the right place"
+        },
+        {
+          "type": "fill_code",
+          "id": "declarar_caida_intencional",
+          "question": "Command 1 must prepare and review; command 2 must only review. Fill in just the attribute that declares the fallthrough intentional. The semicolon is already supplied.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int orden{1};\n    switch (orden) {\n    case 1:\n        std::cout << \"Prepare;\";\n        ___;\n    case 2:\n        std::cout << \"Review;\";\n        break;\n    default:\n        std::cout << \"Unknown;\";\n        break;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "[[fallthrough]]"
+          ],
+          "explanation": "[[fallthrough]]; declares the intended continuation between the two stages. break would prevent reviewing after preparing. The annotation uses two opening and two closing square brackets."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "ubicacion_fallthrough",
+          "question": "In these directly executed cases, where should you write [[fallthrough]]; to continue from preparing to reviewing?",
+          "options": [
+            "After preparing, immediately before the review case in the same switch.",
+            "After the closing brace of the switch, before printing End.",
+            "At the end of the last case, even if only the closing brace of the switch follows.",
+            "Before the statement printing Prepare, without the attribute's semicolon."
+          ],
+          "correctIndex": 0,
+          "explanation": "The attribute annotates a null statement, and the next statement to execute must have a case or default label in the same switch. It does not apply to the Prepare output and cannot be used outside the switch. The annotation is invalid without a later case to continue into."
+        },
+        {
+          "type": "output_prediction",
+          "id": "fallthrough_en_recorrido",
+          "question": "Recall the scope of break. Predict the output and distinguish entering case 2 directly from reaching it through case 1.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    for (int orden{1}; orden <= 2; ++orden) {\n        switch (orden) {\n        case 1:\n            std::cout << \"P\";\n            [[fallthrough]];\n        case 2:\n            std::cout << \"R\";\n            break;\n        default:\n            std::cout << \"?\";\n            break;\n        }\n        std::cout << orden << \";\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "answers": [
+            "PR1;R2;End"
+          ],
+          "explanation": "The first iteration runs P and R; the second enters R directly. Each break ends only the switch, so the order number is printed and the for loop continues. Fallthrough does not repeat the loop or run statements preceding its entry point."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a shared stage with a summary"
+        },
+        {
+          "type": "paragraph",
+          "text": "A station repeats the same command repeticiones times, from 0 to 4. Command 1 performs one preparation and one review per iteration. Command 2 performs only a review. Any other integer orden counts as unknown, without preparing or reviewing. The data are already set in the code; you do not need to read input. Before programming, calculate the numbers of preparations, reviews, and unknown commands for (orden,repeticiones) equal to (1,3), (2,3), (9,3), and (1,0)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Build the loop and all three counters from this minimal editor. Use a switch on each iteration: in case 1, perform the preparation and declare fallthrough with [[fallthrough]]; the review must appear only once, in case 2. End that stage and the unknown alternative with break. Print just one summary after the loop, in the exact format Preparations=3;Reviews=3;Unknown=0 for the initial case. Decide where to declare each object so the summary retains results from all iterations."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int orden{1};\n    int repeticiones{3};\n    // Build the loop, selection, and summary.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Check the three rules separately, as well as the zero-iteration case. With command 2 and three repetitions, the summary must show zero preparations, three reviews, and zero unknown commands. With command 9 and three repetitions: zero, zero, and three. With zero repetitions, all three counters must remain zero for any command. Also test one and four repetitions, as well as commands -1 and 0. Keep your attempt before consulting the reference. The lab does not automatically grade the program: compare its output against the requirements and explain the first difference."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the shared stage and recall its purpose"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consult this implementation after building and checking your attempt. The counters are initialized only once before the loop. The first stage adds one preparation and continues to the only review statement. Command 2 enters that review directly; default preserves a separate reason in the third counter."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int orden{1};\n    int repeticiones{3};\n    int preparaciones{0};\n    int revisiones{0};\n    int desconocidas{0};\n    for (int vuelta{0}; vuelta < repeticiones; ++vuelta) {\n        switch (orden) {\n        case 1:\n            ++preparaciones;\n            [[fallthrough]];\n        case 2:\n            ++revisiones;\n            break;\n        default:\n            ++desconocidas;\n            break;\n        }\n    }\n    std::cout << \"Preparations=\" << preparaciones\n              << \";Reviews=\" << revisiones\n              << \";Unknown=\" << desconocidas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "For (1,3), (2,3), (9,3), and (1,0), the three totals are respectively (3,3,0), (0,3,0), (0,0,3), and (0,0,0). With one repetition, command 1 contributes (1,1,0); with four, it contributes (4,4,0). Any other command, including -1 and 0, increases only the unknown count. A break after preparation would lose the reviews for command 1. Reinitializing counters inside the loop would lose previous iterations. The repeticiones range is part of the requirement; this reference does not validate external data."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "retirar_atributo_no_repara_regla",
+          "question": "You remove only the [[fallthrough]]; line from the reference, leaving all other statements unchanged. What changes when orden is 1?",
+          "options": [
+            "The program still prepares and reviews; only the explicit annotation of that intention is lost.",
+            "The review no longer happens because the attribute was the instruction that jumped to case 2.",
+            "orden changes to 2, so only review happens from then on."
+          ],
+          "correctIndex": 0,
+          "explanation": "Fallthrough happens because execution continues without break. The attribute documents that intention and may affect compiler warnings, but changes neither execution nor orden. To make an exclusive alternative, you would need to change the control flow with break and verify whether that matches the desired rule."
+        },
+        {
+          "type": "output_prediction",
+          "id": "transferir_caida_a_ordenes_distintas",
+          "question": "Now the commands change between iterations: 1, 2, and 3. Predict the summary before running the program; explain which command contributes to each counter.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int preparaciones{0};\n    int revisiones{0};\n    int desconocidas{0};\n    for (int orden{1}; orden <= 3; ++orden) {\n        switch (orden) {\n        case 1:\n            ++preparaciones;\n            [[fallthrough]];\n        case 2:\n            ++revisiones;\n            break;\n        default:\n            ++desconocidas;\n            break;\n        }\n    }\n    std::cout << preparaciones << \":\" << revisiones << \":\" << desconocidas;\n    return 0;\n}\n",
+          "answers": [
+            "1:2:1"
+          ],
+          "explanation": "Command 1 prepares and reviews; command 2 only reviews; command 3 only increases the unknown count. Each break ends the switch and allows the next iteration. Sharing the stage does not require every iteration to begin at the same label."
+        },
+        {
+          "type": "note",
+          "text": "The book distinguishes accidental fallthrough from explicitly intended fallthrough using [[fallthrough]]; (Stroustrup, 2024, section 3.4.1.3). To clarify its placement and semicolon, we also consulted section [dcl.attr.fallthrough] of the public working draft (Working draft: Programming languages — C++, n.d.). The instructions, programs, and cases in this extension are original; complete references appear at the end of the course."
+        }
+      ]
+    }
+  ]
+}
