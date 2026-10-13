@@ -1,0 +1,196 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__nombrar_calculos_y_llamar",
+  "title": "Naming Calculations and Calling Functions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Give a calculation a name"
+        },
+        {
+          "type": "paragraph",
+          "text": "You can already calculate, make decisions, and traverse data. A function groups instructions under a name to represent a calculation or an action. Its definition states what it is called, which data it receives, and what result it returns. Its body contains the instructions executed when another part of the program calls it. Writing the definition does not execute the body in advance."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint doble(int cantidad) {\n    return cantidad * 2;\n}\n\nint main() {\n    const int fichas = 7;\n    const int resultado = doble(fichas);\n    std::cout << resultado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "In int doble(int cantidad), the first int is the result type. doble is the function name. int cantidad declares a parameter: the data that the body works with on each call. doble(fichas) is a call; fichas provides the argument, here 7. return gives the result 14 back to the caller. main uses it to initialize resultado and then displays it."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In the call doble(fichas), what role does fichas play?",
+          "options": [
+            "It is the argument that supplies a value for the parameter.",
+            "It is the function's name.",
+            "It is a return statement."
+          ],
+          "correctIndex": 0,
+          "explanation": "The argument belongs to the call; the parameter cantidad belongs to the definition."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A call produces a value you can use"
+        },
+        {
+          "type": "paragraph",
+          "text": "A call to a function returning int can appear wherever an int value is needed: in an initialization, sum, comparison, or output. Parentheses are part of the call. Writing only the function name does not request its calculation. Arguments go inside the parentheses and must correspond to the parameters."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the output. This function receives quantities from 0 through 20 and adds a fixed reserve.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint con_reserva(int cantidad) {\n    return cantidad + 3;\n}\n\nint main() {\n    const int preparado = con_reserva(4);\n    const int total = preparado + con_reserva(2);\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "12"
+          ],
+          "explanation": "The first call returns 7. The second returns 5. Adding both results gives 12."
+        },
+        {
+          "type": "fill_code",
+          "question": "Fill in only the name used to call the defined function. The parentheses and argument are already supplied.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint por_tres(int cantidad) {\n    return cantidad * 3;\n}\n\nint main() {\n    const int total = ___(5);\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "por_tres"
+          ],
+          "explanation": "por_tres(5) performs the calculation with argument 5 and returns 15."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two parameters represent two pieces of data"
+        },
+        {
+          "type": "paragraph",
+          "text": "A function can receive multiple parameters separated by commas. Arguments are matched to them by position. In a call such as restantes(total, usados), the first argument supplies the total and the second supplies the used amount; the names in main do not have to match the parameter names."
+        },
+        {
+          "type": "output_prediction",
+          "question": "The function calculates what remains. Predict the number displayed for these data.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint restantes(int total, int usados) {\n    return total - usados;\n}\n\nint main() {\n    const int disponibles = 14;\n    const int retiradas = 5;\n    std::cout << restantes(disponibles, retiradas);\n    return 0;\n}\n",
+          "answers": [
+            "9"
+          ],
+          "explanation": "The first argument initializes total to 14, and the second initializes usados to 5. The result is 14 - 5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "restantes requires two values: first the total and then the used amount. Which call expresses 12 available and 4 used?",
+          "options": [
+            "restantes(12)",
+            "restantes(12, 4)",
+            "restantes(4, 12)"
+          ],
+          "correctIndex": 1,
+          "explanation": "Position matches each argument to its parameter. Reversing them would change the calculation."
+        },
+        {
+          "type": "note",
+          "text": "The examples use small quantities and representable calculations. When changing quantities in this lesson, keep them between 0 and 20; in restantes, usados must not exceed total. We will formalize these requirements as contracts later."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: reuse a rule in several cases"
+        },
+        {
+          "type": "paragraph",
+          "text": "The data are declared in main. A practice box needs cantidad * 2 + 1 dividers. Predict the two results for quantities 3 and 5; run the program to compare. Then change only the first argument to 0 and later to 8. Keep quantities between 0 and 20. If the common rule changes, change the function rather than each call separately."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint separadores(int cantidad) {\n    return cantidad * 2 + 1;\n}\n\nint main() {\n    const int primera = separadores(3);\n    const int segunda = separadores(5);\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "If you change only the first call to separadores(0), what output do you get?",
+          "options": [
+            "1 11",
+            "0 11",
+            "1 1"
+          ],
+          "correctIndex": 0,
+          "explanation": "The first call calculates 0 * 2 + 1. The second still has argument 5 and returns 11."
+        },
+        {
+          "type": "paragraph",
+          "text": "Now change the body to return cantidad * 2 + 2; and predict both results before running. This change affects every subsequent call because it changes the defined rule. Restore + 1 and explain which information each call needed to produce its result."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall the difference between calculating and displaying"
+        },
+        {
+          "type": "output_prediction",
+          "question": "This function contains no output statement. Predict what main does display.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint triple(int valor) {\n    return valor * 3;\n}\n\nint main() {\n    const int calculado = triple(4);\n    std::cout << \"Result: \" << calculado;\n    return 0;\n}\n",
+          "answers": [
+            "Result: 12"
+          ],
+          "explanation": "The function returns 12; main decides to display that value and its accompanying text."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What concrete advantage comes from separating a small calculation with a clear name?",
+          "options": [
+            "Getting screen output even when the function only returns a value.",
+            "Avoiding the need to define its valid domain because it is outside main.",
+            "Calling it with different data and checking its result separately."
+          ],
+          "correctIndex": 2,
+          "explanation": "Separation clarifies the purpose and makes the calculation reusable and testable. Its valid domain still matters."
+        },
+        {
+          "type": "note",
+          "text": "When reading a call, identify the function being used, the value supplied by each argument, and what happens to the result. Then follow the sequence in main, just as in previous units."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later reference: One rule used by several calls"
+        },
+        {
+          "type": "note",
+          "text": "Compare only after completing the lab and recording your predicted results. The reference presents one possible organization; the criteria also recognize other implementations that satisfy the same contracts."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: With the original +1 rule, calls for 3 and 5 return 7 and 11. Changing only the first argument to 0 or 8 produces 1 11 or 17 11. Changing the body to +2 raises every result by one: with 3 and 5 the output is 8 12, as in this reference; if you kept the first argument at 8 from the earlier experiment, the output is 18 12. Restore +1 and keep quantities between 0 and 20."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint separadores(int cantidad) {\n    return cantidad * 2 + 2;\n}\n\nint main() {\n    const int primera = separadores(3);\n    const int segunda = separadores(5);\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference shows an experiment changing a shared rule, with arguments 3 and 5. Each call supplies its own quantity and receives a result calculated with the current body. We do not patch each call's output independently or preserve a result from before the rule changed. Other implementations are valid if one function expresses the calculation and the calls demonstrate the required cases."
+        }
+      ]
+    }
+  ]
+}

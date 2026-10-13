@@ -1,0 +1,420 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas",
+  "title": "Déclarations et types des appels de fonctions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Connaître l'interface avant l'appel"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour reconnaître un appel, le compilateur doit avoir vu une déclaration de la fonction. Une définition avec un corps est aussi une déclaration, ce qui permettait d'appeler les fonctions précédentes depuis main. Une déclaration sans corps se termine par un point-virgule et indique le nom, le type du résultat et les types des paramètres. Le corps peut apparaître plus loin."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint diferencia(int primero, int segundo);\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n\nint diferencia(int primero, int segundo) {\n    return primero - segundo;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La déclaration permet de reconnaître diferencia(9, 2) avant de rencontrer son corps. La définition qui suit fournit les instructions et renvoie 7. Les deux décrivent la même fonction et doivent être cohérentes. La déclaration n'est pas un appel et son point-virgule ne remplace pas la définition nécessaire pour effectuer le calcul."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Qu'est-ce qui distingue la définition d'une fonction d'une déclaration sans corps ?",
+          "options": [
+            "La définition contient un corps avec ses instructions.",
+            "La définition est l'expression qui appelle la fonction avec des données.",
+            "La définition énumère seulement des types et se termine par un point-virgule."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le corps fournit l'implémentation. Une déclaration sans corps indique comment utiliser la fonction."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les types décrivent ce que l'appel doit fournir"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'interface int combinar(int cajas, int piezas) indique deux paramètres int et un résultat int. Le seul nom n'explique pas entièrement le sens des données : des noms et des exigences clairs complètent les types. Un appel doit fournir le nombre prévu d'arguments et des données appropriées à chaque position."
+        },
+        {
+          "type": "fill_code",
+          "question": "Complète le type de résultat dans la déclaration. La définition renvoie int et doit correspondre.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n___ combinar(int cajas, int piezas);\n\nint main() {\n    std::cout << combinar(3, 4);\n    return 0;\n}\n\nint combinar(int cajas, int piezas) {\n    return cajas * piezas;\n}\n",
+          "answers": [
+            "int",
+            "signed",
+            "signed int",
+            "int signed"
+          ],
+          "explanation": "La déclaration et la définition indiquent toutes deux un résultat int."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pour l'interface int combinar(int cajas, int piezas), quel appel fournit exactement deux arguments int ?",
+          "options": [
+            "combinar(3, 4)",
+            "combinar(3)",
+            "combinar(\"3\", \"4\")"
+          ],
+          "correctIndex": 0,
+          "explanation": "3 et 4 sont des littéraux int. Des chaînes entre guillemets ne sont pas automatiquement interprétées comme ces entiers."
+        },
+        {
+          "type": "note",
+          "text": "Les fonctions de cette page utilisent des quantités comprises entre 0 et 20 ; leurs produits ne dépassent pas 400. Une interface avec int ne garantit pas que toute multiplication de valeurs int soit représentable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une conversion peut avoir lieu à l'entrée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Passer un argument par valeur initialise le paramètre à partir de cette valeur. Si les types diffèrent et qu'une conversion autorisée existe, celle-ci peut se produire avant l'exécution du corps. Rappelle l'exemple des conversions de l'unité 2 : un double avec une partie fractionnaire ne devient pas un int en conservant cette fraction. Il est préférable que l'appel exprime le type nécessaire au calcul."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prévois les deux résultats. La première fonction reçoit int, la seconde double.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint doble_entero(int valor) {\n    return valor * 2;\n}\n\ndouble doble_real(double valor) {\n    return valor * 2;\n}\n\nint main() {\n    const double dato = 3.5;\n    const int entero = doble_entero(static_cast<int>(dato));\n    const double real = doble_real(dato);\n    std::cout << entero << \" \" << real;\n    return 0;\n}\n",
+          "answers": [
+            "6 7"
+          ],
+          "explanation": "La conversion explicite transmet 3 au paramètre int, qui produit 6. Le paramètre double conserve 3.5 et produit 7."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Une fonction reçoit int. Qu'est-ce qui peut retrouver la fraction si l'argument a déjà été converti de 3.5 en 3 ?",
+          "options": [
+            "Changer le nom du paramètre.",
+            "Déclarer en double l'objet recevant le résultat final.",
+            "Rien dans la destination ne peut retrouver cette fraction : il faut choisir le type approprié avant le calcul."
+          ],
+          "correctIndex": 2,
+          "explanation": "La perte est survenue avant le corps. Un objet double recevant le résultat n'obtient que la valeur déjà calculée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le même nom avec des paramètres différents"
+        },
+        {
+          "type": "paragraph",
+          "text": "C++ permet de définir plusieurs fonctions de même nom lorsque leurs paramètres les distinguent. On appelle cela la surcharge. Ici, il existe un calcul de moitié pour int et un autre pour double. Les appels emploient exactement ces types : le choix est donc sans ambiguïté. Changer seulement le type de résultat ne distingue pas deux fonctions ayant les mêmes paramètres."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint mitad(int cantidad) {\n    return cantidad / 2;\n}\n\ndouble mitad(double cantidad) {\n    return cantidad / 2;\n}\n\nint main() {\n    std::cout << mitad(5) << \" \" << mitad(5.0);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 2 2.5. Le littéral 5 est de type int et 5.0 de type double ; chaque appel choisit la fonction correspondante. Le type du résultat est déterminé après ce choix. Dans cette introduction, nous ne combinerons pas les surcharges avec des conversions pouvant offrir plusieurs choix possibles."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Utilise le type de chaque argument pour prévoir la sortie.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint mitad(int cantidad) {\n    return cantidad / 2;\n}\n\ndouble mitad(double cantidad) {\n    return cantidad / 2;\n}\n\nint main() {\n    const int a = 9;\n    const double b = 9.0;\n    std::cout << mitad(a) << \" \" << mitad(b);\n    return 0;\n}\n",
+          "answers": [
+            "4 4.5"
+          ],
+          "explanation": "L'argument int choisit la division entière ; le double choisit la division qui conserve la fraction."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Atelier : réorganiser sans modifier l'interface"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme déclare dias_completos avant main et le définit après. horas est initialisé à 53 et une journée de pratique compte 8 heures. Prévois le résultat, exécute le programme, puis teste horas égal à 0, 8 et 16. Garde horas entre 0 et 120. Déplace ensuite la définition complète avant main et supprime la déclaration séparée ; vérifie que le même appel donne le même résultat."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint dias_completos(int horas);\n\nint main() {\n    const int horas = 53;\n    std::cout << dias_completos(horas);\n    return 0;\n}\n\nint dias_completos(int horas) {\n    return horas / 8;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que faut-il conserver lorsqu'on remplace la déclaration par une définition placée avant main ?",
+          "options": [
+            "Le nom et les types, mais on peut laisser le corps sans calcul.",
+            "Le nom, les types de l'appel et le corps qui réalise le calcul.",
+            "Seulement le corps, même si les types de l'appel sont modifiés."
+          ],
+          "correctIndex": 1,
+          "explanation": "Une définition antérieure déclare déjà l'interface et fournit son corps. Les fonctions libres de cette unité sont définies en dehors de main."
+        },
+        {
+          "type": "note",
+          "text": "Tu peux organiser le code avec des déclarations préalables ou des définitions placées avant les appels. Une interface claire indique ce qu'il faut savoir pour utiliser une fonction sans devoir relire tous les détails de son corps à chaque fois."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : définir avant d'appeler"
+        },
+        {
+          "type": "note",
+          "text": "Compare après avoir réalisé l'atelier et noté tes résultats prévus. La référence présente une organisation possible ; les critères reconnaissent aussi d'autres implémentations qui respectent les mêmes contrats."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : dias_completos reçoit un nombre d'heures int entre 0 et 120 et renvoie le quotient entier de la division par 8. Avec 53, il renvoie 6 ; avec 0, 8 et 16, il renvoie 0, 1 et 2. La réorganisation doit conserver le nom, les types, la règle et l'appel : définir la fonction avant main permet de supprimer la déclaration isolée. L'organisation initiale, avec déclaration préalable et définition ultérieure, reste valide."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint dias_completos(int horas) {\n    return horas / 8;\n}\n\nint main() {\n    const int horas = 53;\n    std::cout << dias_completos(horas);\n    return 0;\n}\n\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ici, la définition complète précède l'appel. Son en-tête conserve la même interface que la déclaration précédente. Ne laisse pas deux définitions de la fonction lorsque tu la déplaces. Change seulement horas pour vérifier les cas indiqués et compare avec la version initiale ; réorganiser le code ne change pas le résultat attendu."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Atelier : une interface, deux fichiers source"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sépare maintenant l'exemple de diferencia de la première page. Sélectionne chaque fichier et identifie sa responsabilité : diferencia.h déclare l'interface, diferencia.cpp fournit la définition et main.cpp l'utilise. Prévois le résultat de diferencia(9, 2) et exécute le projet avec les deux fichiers .cpp sélectionnés. L'en-tête est inclus depuis les fichiers source ; ne le sélectionne pas comme troisième fichier source. Le résultat attendu est 7."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "diferencia.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_DIFERENCIA_H\n#define CPP_FUNDAMENTALS_DIFERENCIA_H\n\nint diferencia(int primero, int segundo);\n\n#endif\n"
+            },
+            {
+              "path": "diferencia.cpp",
+              "initialCode": "#include \"diferencia.h\"\n\nint diferencia(int primero, int segundo) {\n    return primero - segundo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "diferencia.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Modifie seulement le corps de diferencia.cpp : remplace la soustraction par une addition, sans toucher à l'interface ni à l'appel. Prévois et vérifie 11. Passe à un autre fichier, puis reviens à l'implémentation : ta modification doit être conservée. Une nouvelle exécution doit utiliser le corps actuel. Rétablis la soustraction pour les tests suivants ; change aussi l'orientation de l'écran ou rouvre l'atelier et vérifie que le projet conserve ses fichiers et modifications."
+        },
+        {
+          "type": "paragraph",
+          "text": "Effectue une modification par test et rétablis-la ensuite. Sélectionne d'abord seulement main.cpp : l'en-tête reste visible et l'appel peut être compilé, mais l'édition de liens échoue parce que la définition apportée par diferencia.cpp manque. Rétablis les deux fichiers source. Puis change uniquement le type de résultat de la définition en double, en conservant int dans diferencia.h : comme l'implémentation inclut l'interface, le compilateur signale cette incohérence dans diferencia.cpp. Aucun résultat valide ne peut être exécuté."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ajoute de nouveau #include \"diferencia.h\" dans main.cpp et exécute avec la soustraction rétablie : la garde d'inclusion évite de répéter son contenu dans ce fichier source et le résultat reste 7. Pour examiner un échec antérieur à l'édition de liens, modifie temporairement le nom de l'en-tête dans un #include : sa lecture échoue pendant la compilation. Associe chaque diagnostic au fichier, à la ligne et à l'étape concernés ; une déclaration visible ne garantit pas qu'une définition sera liée."
+        },
+        {
+          "type": "note",
+          "text": "Le projet contient une seule définition de main. L'en-tête fournit des déclarations aux fichiers qui l'incluent. Les deux fichiers .cpp sont compilés et l'éditeur de liens réunit leurs définitions dans un programme. Après modification d'un en-tête ou d'une implémentation, exécute à nouveau pour vérifier le comportement du code actualisé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire deux partages avec un même nom"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un atelier partage du matériel équitablement entre quatre personnes. Les pièces sont indivisibles : chaque personne reçoit le même nombre entier de pièces et les pièces restantes ne font pas partie de ce partage. Une longueur de ruban peut être fractionnée : chaque personne reçoit un quart de la mesure. Ces deux questions liées peuvent utiliser le même nom de fonction, por_persona, avec des types différents."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis por_persona avec un paramètre int et un résultat int, puis une autre por_persona avec un paramètre double et un résultat double. La première reçoit un nombre de pièces de 0 à 20. La deuxième reçoit une longueur en mètres de 0 à 20 ; pour ces tests, utilise uniquement des multiples de 0.5. Les deux fonctions renvoient la part d'une personne, n'affichent rien et ne modifient pas les arguments de l'appelant. Nous travaillerons seulement avec des arguments dont le type correspond exactement au paramètre choisi, sans conversions ambiguës."
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris les deux déclarations avant main et leurs définitions après. Dans main, déclare 7 pièces en int et 7.0 mètres en double ; appelle les deux fonctions avec ces objets. Affiche deux lignes : Pièces : 1 et Mètres : 1.75. Garde un espace après chaque étiquette et termine chaque ligne par un saut. Les résultats doivent provenir des appels et ne pas être remplacés par ces nombres fixes."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construis les déclarations, les appels et les définitions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant l'exécution, prévois les résultats pour 0 pièce et 0.0 mètre ; 3 et 3.0 ; 4 et 4.0 ; 20 et 20.0. Vérifie aussi 0.5 mètre et une seule pièce. Pour chaque appel, note le type de l'argument, la fonction attendue et la part obtenue. Explique pourquoi un partage peut laisser des pièces de côté alors que l'autre conserve une fraction. Garde les données dans le domaine indiqué : ces fonctions ne valident pas des entrées arbitraires."
+        },
+        {
+          "type": "note",
+          "text": "L'éditeur ne fournit ni déclarations ni corps. Consulte la référence après avoir construit et testé. Le nombre quatre exprime la règle du partage ; sept n'appartient qu'au premier cas. Utilise les données déclarées dans main pour vérifier chaque appel."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : les interfaces et les deux calculs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence utilise d'autres données : 9 pièces et 9.5 mètres. Elle déclare les deux interfaces avant les appels et conserve la même signature dans chaque définition ultérieure. Le partage indivisible donne des pièces entières ; le partage fractionnable conserve la fraction de la mesure."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    const int piezas = 9;\n    const double metros = 9.5;\n    std::cout << \"Pièces : \" << por_persona(piezas) << '\\n';\n    std::cout << \"Mètres : \" << por_persona(metros) << '\\n';\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 4;\n}\n\ndouble por_persona(double metros) {\n    return metros / 4.0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence affiche Pièces : 2 et Mètres : 2.375 sur deux lignes. Critères : un même nom, des paramètres qui permettent de distinguer les fonctions, des déclarations et définitions cohérentes, un calcul approprié à chaque type et l'affichage dans main. Il ne suffit pas d'écrire deux noms différents ou de ne changer que le type de retour avec la même liste de paramètres. D'autres implémentations conviennent si elles respectent ces interfaces et comportements."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour les cas du premier atelier : 0 et 0.0 donnent 0 et 0 ; 3 et 3.0 donnent 0 et 0.75 ; 4 et 4.0 donnent 1 et 1 ; 20 et 20.0 donnent 5 et 5. Une pièce donne zéro pièce entière par personne ; 0.5 mètre donne 0.125 mètre. Des résultats identiques ne suffisent pas à distinguer les fonctions : teste aussi les cas qui conservent une fraction."
+        },
+        {
+          "type": "paragraph",
+          "text": "La division entière utilise de petites quantités non négatives et un diviseur non nul. Pour les mesures choisies, diviser par quatre conserve des fractions représentables exactement en double ; ces exemples ne prétendent pas que toute mesure décimale soit exacte. Les arguments de l'appelant conservent leur valeur. Changer les données de test ne change pas la règle de quatre personnes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver l'argument avant d'examiner la destination"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas__argumento_y_destino_del_reparto",
+          "language": "cpp",
+          "question": "Prévois la sortie exacte. Les deux objets recevant les résultats sont de type double ; identifie aussi le type de chaque argument.",
+          "code": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    const int piezas = 11;\n    const double metros = 11.0;\n    double desde_piezas = por_persona(piezas);\n    double desde_metros = por_persona(metros);\n    std::cout << desde_piezas << ':' << desde_metros;\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 4;\n}\n\ndouble por_persona(double metros) {\n    return metros / 4.0;\n}\n",
+          "answers": [
+            "2:2.75"
+          ],
+          "explanation": "piezas est de type int et sélectionne la fonction int : 11/4 donne 2. Ce résultat initialise ensuite desde_piezas en double. metros est de type double et sélectionne le calcul fractionnable, qui renvoie 2.75. Le type de l'objet destinataire ne peut pas retrouver la fraction que le calcul entier n'a pas produite."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans ces appels, l'argument correspond exactement à l'un des types de paramètre. On sélectionne d'abord la fonction appelée et on exécute son calcul ; le résultat initialise ensuite l'objet destinataire. Déclarer cet objet en double ne transforme pas à lui seul un appel avec un argument int en l'autre surcharge. La valeur numérique ne décide pas non plus du type : 4 et 4.0 représentent quatre avec des types différents."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas__resultados_iguales_y_sobrecarga",
+          "question": "por_persona(4) et por_persona(4.0) produisent toutes deux un. Que permet de conclure cette égalité, en conservant les deux fonctions ?",
+          "options": [
+            "Le même corps a été sélectionné, car deux valeurs égales ont le même type.",
+            "Les deux fonctions donnent le même résultat dans ce cas, mais les types des arguments sélectionnent toujours des corps différents.",
+            "Modifier une règle de partage ne peut affecter aucun autre cas."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le résultat un coïncide pour ce cas. Les arguments int et double sélectionnent toujours deux fonctions différentes. Un test qui conserve une fraction permet de mieux distinguer leurs contrats."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reviens à ton programme avec sept pièces : conserve le type int pour l'argument et change seulement l'objet qui reçoit le résultat en double. Prévois ce qui reste inchangé avant d'exécuter. Ajoute ensuite un autre appel avec une mesure double de 7.0. Note séparément l'argument, le paramètre, le résultat de la fonction et le type de l'objet destinataire ; ne change pas les deux étapes en même temps."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer le partage à huit personnes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis maintenant un partage pour huit personnes. Conserve por_persona, les deux interfaces et leurs domaines : pièces int entre 0 et 20 ; mètres double entre 0 et 20, en multiples de 0.5. Les pièces restent indivisibles et la mesure reste fractionnable. Décide quelles déclarations sont conservées et quelles règles des corps doivent être modifiées. L'affichage appartient toujours à main."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'éditeur contient de nouveau uniquement la structure minimale. Reconstruis les déclarations, les définitions et les appels, ou adapte consciemment ta solution précédente. Commence avec 11 pièces en int et 11.0 mètres en double. Stocke les deux résultats dans des objets double et affiche Pièces : 1 et Mètres : 1.375 sur deux lignes terminées chacune par un saut. Conserve le type de chaque argument ; les objets destinataires ne choisissent pas la règle."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construis les interfaces, les deux partages et leurs tests.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prépare et prévois les couples 0 et 0.0 ; 7 et 7.0 ; 8 et 8.0 ; 20 et 20.0. Ajoute une pièce et 0.5 mètre. Pour distinguer cette version de la précédente, conserve au moins un cas dont la part change en passant de quatre à huit personnes. Vérifie également que les arguments conservent leur valeur après les appels."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : les deux fonctions appliquent la nouvelle règle, les déclarations correspondent aux définitions, les appels reçoivent les types exacts attendus et les résultats sont calculés. Modifier seulement une étiquette de sortie ou le type de l'objet destinataire ne change pas le nombre de participants. Chaque test reste dans le domaine indiqué ; il n'est pas nécessaire d'ajouter une nouvelle politique d'erreurs."
+        },
+        {
+          "type": "note",
+          "text": "Essaie et vérifie avant de consulter la référence suivante. Ces deux ateliers sont indépendants : la version pour huit personnes ne modifie pas automatiquement le programme écrit pour quatre personnes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence du transfert à consulter après la construction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence utilise d'autres données : 13 pièces et 13.5 mètres. Les deux déclarations conservent leurs types ; les corps appliquent la nouvelle règle. main reçoit les deux résultats dans des objets double sans convertir au préalable l'argument int."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    const int piezas = 13;\n    const double metros = 13.5;\n    double parte_piezas = por_persona(piezas);\n    double parte_metros = por_persona(metros);\n    std::cout << \"Pièces : \" << parte_piezas << '\\n';\n    std::cout << \"Mètres : \" << parte_metros << '\\n';\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 8;\n}\n\ndouble por_persona(double metros) {\n    return metros / 8.0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est Pièces : 1 et Mètres : 1.6875. Pour les tests de transfert : 0 et 0.0 donnent 0 et 0 ; 7 et 7.0 donnent 0 et 0.875 ; 8 et 8.0 donnent 1 et 1 ; 20 et 20.0 donnent 2 et 2.5. Une pièce produit zéro pièce entière ; 0.5 mètre donne 0.0625 mètre. Compare la fonction choisie et le calcul effectué, en plus de la sortie."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : règle de huit dans les deux corps, même nom avec paramètres différents, interface visible avant les appels et arguments inchangés. Avec ces petites données, la part entière ne dépasse pas 2 et la mesure ne dépasse pas 2.5. Aucun diviseur n'est nul. Une autre organisation du code peut être correcte si elle respecte les déclarations, les types et tous les résultats."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas__tipo_del_objeto_argumento_tras_inicializar",
+          "language": "cpp",
+          "question": "Ce programme conserve la règle de huit personnes. Prévois la sortie : les deux objets arguments sont initialisés avec le littéral 10, mais leurs déclarations sont différentes.",
+          "code": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    int piezas = 10;\n    double metros = 10;\n    double primera = por_persona(piezas);\n    double segunda = por_persona(metros);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 8;\n}\n\ndouble por_persona(double metros) {\n    return metros / 8.0;\n}\n",
+          "answers": [
+            "1:1.25"
+          ],
+          "explanation": "piezas est déclaré int et appelle por_persona(int), qui renvoie 1. metros est déclaré double ; l'initialisation convertit dix vers ce type, puis l'appel choisit por_persona(double), qui renvoie 1.25. Les deux objets destinataires sont double, mais ne déterminent pas ce choix."
+        },
+        {
+          "type": "paragraph",
+          "text": "Révision ultérieure : sans consulter les corps, explique quelle partie indique comment appeler la fonction, laquelle réalise le partage et pourquoi le choix dépend du type de l'argument. Reconstruis une des versions depuis l'éditeur minimal et choisis des données qui distinguent un résultat identique d'un partage fractionnaire. Prévois d'abord le résultat d'après le problème, puis compare-le à ton programme."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,420 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas",
+  "title": "Declarations and Types of Function Calls",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Know the interface before calling"
+        },
+        {
+          "type": "paragraph",
+          "text": "To recognize a call, the compiler must already have seen a declaration of the function. A definition with a body is also a declaration, which is why we could call earlier functions from main. A declaration without a body ends with a semicolon and communicates the name, result type, and parameter types. The body can appear later."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint diferencia(int primero, int segundo);\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n\nint diferencia(int primero, int segundo) {\n    return primero - segundo;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The declaration makes diferencia(9, 2) recognizable before the body appears. The later definition supplies the instructions and returns 7. Both describe the same function and must agree. A declaration is not a call, and its semicolon does not replace the need for a definition to carry out the calculation."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What distinguishes a function definition from a declaration without a body?",
+          "options": [
+            "The definition contains a body with its instructions.",
+            "The definition is the expression that calls the function with data.",
+            "The definition lists only types and ends in a semicolon."
+          ],
+          "correctIndex": 0,
+          "explanation": "The body provides the implementation. A declaration without a body describes how the function can be used."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Types describe what a call must supply"
+        },
+        {
+          "type": "paragraph",
+          "text": "The interface int combinar(int cajas, int piezas) specifies two int parameters and an int result. The name alone cannot fully explain what the data mean, so clear names and requirements complement the types. A call must supply the expected number of arguments and suitable data in each position."
+        },
+        {
+          "type": "fill_code",
+          "question": "Fill in the result type in the declaration. The definition returns int and must agree with it.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n___ combinar(int cajas, int piezas);\n\nint main() {\n    std::cout << combinar(3, 4);\n    return 0;\n}\n\nint combinar(int cajas, int piezas) {\n    return cajas * piezas;\n}\n",
+          "answers": [
+            "int",
+            "signed",
+            "signed int",
+            "int signed"
+          ],
+          "explanation": "The declaration and definition both describe an int result."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "For the interface int combinar(int cajas, int piezas), which call supplies exactly two int arguments?",
+          "options": [
+            "combinar(3, 4)",
+            "combinar(3)",
+            "combinar(\"3\", \"4\")"
+          ],
+          "correctIndex": 0,
+          "explanation": "3 and 4 are int literals. Quoted strings are not automatically interpreted as those integers."
+        },
+        {
+          "type": "note",
+          "text": "The functions on this page use quantities from 0 through 20; their products are no greater than 400. An interface using int does not assert that multiplying any two possible int values is representable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A conversion can occur upon entry"
+        },
+        {
+          "type": "paragraph",
+          "text": "Passing an argument by value initializes the parameter from that value. If the types differ and an allowed conversion exists, that conversion can occur before the body runs. Recall the U2 conversions example: a double with a fractional part cannot become an int while retaining the fraction. A call should express the type needed by its calculation."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict both results. The first function receives int and the second receives double.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint doble_entero(int valor) {\n    return valor * 2;\n}\n\ndouble doble_real(double valor) {\n    return valor * 2;\n}\n\nint main() {\n    const double dato = 3.5;\n    const int entero = doble_entero(static_cast<int>(dato));\n    const double real = doble_real(dato);\n    std::cout << entero << \" \" << real;\n    return 0;\n}\n",
+          "answers": [
+            "6 7"
+          ],
+          "explanation": "The explicit conversion passes 3 to the int parameter, which produces 6. The double parameter retains 3.5 and produces 7."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A function receives int. What can restore the fraction if an argument has already been converted from 3.5 to 3?",
+          "options": [
+            "Changing the parameter's name.",
+            "Declaring the object receiving the final result as double.",
+            "Nothing at the destination restores that fraction: the appropriate type must be chosen before the calculation."
+          ],
+          "correctIndex": 2,
+          "explanation": "The loss happened before the body. A double destination receives only the result already calculated."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The same name with different parameters"
+        },
+        {
+          "type": "paragraph",
+          "text": "C++ lets us define several functions with the same name when their parameters distinguish them. This is called overloading. Here there is one half calculation for int and another for double. The calls use those exact types, so the choice is unambiguous. Changing only the result type does not distinguish two functions with identical parameter lists."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint mitad(int cantidad) {\n    return cantidad / 2;\n}\n\ndouble mitad(double cantidad) {\n    return cantidad / 2;\n}\n\nint main() {\n    std::cout << mitad(5) << \" \" << mitad(5.0);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 2 2.5. The literal 5 has type int and 5.0 has type double; each call selects the corresponding function. The result type is determined after that choice. In this introduction, we will not combine overloads with conversions that could offer several possible selections."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Use each argument's type to predict the output.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint mitad(int cantidad) {\n    return cantidad / 2;\n}\n\ndouble mitad(double cantidad) {\n    return cantidad / 2;\n}\n\nint main() {\n    const int a = 9;\n    const double b = 9.0;\n    std::cout << mitad(a) << \" \" << mitad(b);\n    return 0;\n}\n",
+          "answers": [
+            "4 4.5"
+          ],
+          "explanation": "An int argument selects integer division; a double argument selects division that retains fractions."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: reorganize without changing the interface"
+        },
+        {
+          "type": "paragraph",
+          "text": "The program declares dias_completos before main and defines it afterward. horas starts at 53, and a practice day contains 8 hours. Predict the result, run it, and test horas equal to 0, 8, and 16. Keep horas between 0 and 120. Then move the complete definition before main and remove the separate declaration; verify that the same call produces the same result."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint dias_completos(int horas);\n\nint main() {\n    const int horas = 53;\n    std::cout << dias_completos(horas);\n    return 0;\n}\n\nint dias_completos(int horas) {\n    return horas / 8;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What must remain intact when you replace the declaration with a definition before main?",
+          "options": [
+            "The name and types, but the body can be left without any calculation.",
+            "The name, call types, and body that performs the calculation.",
+            "Only the body, even if the call types change."
+          ],
+          "correctIndex": 1,
+          "explanation": "An earlier definition declares the interface and provides its body. The free functions in this unit are defined outside main."
+        },
+        {
+          "type": "note",
+          "text": "You can organize the code with earlier declarations or with definitions appearing before calls. A clear interface tells you what you need to use a function without studying all the details of its body every time."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later reference: Define before calling"
+        },
+        {
+          "type": "note",
+          "text": "Compare only after completing the lab and recording your predicted results. The reference presents one possible organization; the criteria recognize other implementations that meet the same contracts."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: dias_completos receives an int number of hours from 0 through 120 and returns the integer quotient after division by 8. It returns 6 for 53 and 0, 1, 2 for 0, 8, 16. Reorganization must preserve the name, types, rule, and call: defining the function before main lets you remove the separate declaration. The original arrangement, with a preceding declaration and later definition, is valid too."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint dias_completos(int horas) {\n    return horas / 8;\n}\n\nint main() {\n    const int horas = 53;\n    std::cout << dias_completos(horas);\n    return 0;\n}\n\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Here the full definition appears before the call. Its heading preserves the same interface as the earlier declaration. Do not leave two definitions of the function when moving it. Change only horas to check the specified cases and compare with the original version; rearranging code does not change the promised result."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: One interface, two source files"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now split the diferencia example from the first page. Select each file and identify its responsibility: diferencia.h declares the interface, diferencia.cpp supplies the definition, and main.cpp uses it. Predict the result of diferencia(9, 2) and run the project with both .cpp files selected. The header is included by source files; do not select it as a third source file. You should see 7."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "diferencia.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_DIFERENCIA_H\n#define CPP_FUNDAMENTALS_DIFERENCIA_H\n\nint diferencia(int primero, int segundo);\n\n#endif\n"
+            },
+            {
+              "path": "diferencia.cpp",
+              "initialCode": "#include \"diferencia.h\"\n\nint diferencia(int primero, int segundo) {\n    return primero - segundo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"diferencia.h\"\n#include <iostream>\n\nint main() {\n    std::cout << diferencia(9, 2);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "diferencia.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Change only the body in diferencia.cpp: replace subtraction with addition without touching the interface or call. Predict and verify 11. Switch to another file and back to the implementation: your edit should be retained. Running again must use the current body. Restore subtraction for later tests; also rotate the screen or reopen the lab and verify that the project retains its files and edits."
+        },
+        {
+          "type": "paragraph",
+          "text": "Make one change per test, then restore it. First select only main.cpp: the header is still visible and the call can compile, but linking fails because the definition supplied by diferencia.cpp is missing. Restore both sources. Then change only the definition's result type to double while keeping int in diferencia.h: since the implementation includes the interface, the compiler diagnoses that mismatch in diferencia.cpp. No valid result can be executed."
+        },
+        {
+          "type": "paragraph",
+          "text": "Add #include \"diferencia.h\" to main.cpp again and run with subtraction restored: the include guard prevents its contents from being repeated within that source, and the result remains 7. To examine a failure before linking, temporarily change the header name in an #include: reading that file fails during compilation. Relate each diagnostic to its file, line, and stage; a visible declaration does not guarantee a linked definition."
+        },
+        {
+          "type": "note",
+          "text": "The project has only one definition of main. The header supplies declarations to each file including it. Both .cpp files are compiled, and the linker combines their definitions into a program. After changing a header or implementation, run again to verify the behavior of the updated code."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build two divisions under one name"
+        },
+        {
+          "type": "paragraph",
+          "text": "A workshop divides supplies equally among four people. Pieces are indivisible: everyone receives the same whole number of pieces and any leftovers are not included in that distribution. A length of ribbon can be divided into fractions: everyone receives a quarter of the measurement. These related questions can use the same function name, por_persona, with different types."
+        },
+        {
+          "type": "paragraph",
+          "text": "Define por_persona with an int parameter and int result, and another por_persona with a double parameter and double result. The first receives a number of pieces from 0 through 20. The second receives a length in meters from 0 through 20; for these tests, use only multiples of 0.5. Both return one person's share, do not print anything, and do not modify the caller's arguments. We will use only arguments whose types match their intended parameters exactly, without ambiguous conversions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Write both declarations before main and their definitions after it. In main, declare 7 pieces as int and 7.0 meters as double; call both functions with those objects. Print two lines: Pieces: 1 and Meters: 1.75. Keep one space after each label and terminate each line with a newline. The results must come from the calls, not be replaced by those fixed numbers."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Build the declarations, calls, and definitions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running, predict results for 0 pieces and 0.0 meters; 3 and 3.0; 4 and 4.0; 20 and 20.0. Also check 0.5 meters and a single piece. For each call, record the argument type, selected function, and expected share. Explain why one division leaves pieces unused while the other preserves a fraction. Keep inputs within the domain: these functions are not validators for arbitrary inputs."
+        },
+        {
+          "type": "note",
+          "text": "The editor does not supply declarations or bodies. Consult the reference after building and testing. The number four expresses the distribution rule; seven belongs only to the initial case. Use the data declared in main to check each call."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later reference: Interfaces and both calculations"
+        },
+        {
+          "type": "paragraph",
+          "text": "This reference uses different data: 9 pieces and 9.5 meters. It declares both interfaces before the calls and preserves each signature when defining its body afterward. The indivisible distribution gives whole pieces; the divisible one preserves the fraction of the measurement."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    const int piezas = 9;\n    const double metros = 9.5;\n    std::cout << \"Pieces: \" << por_persona(piezas) << '\\n';\n    std::cout << \"Meters: \" << por_persona(metros) << '\\n';\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 4;\n}\n\ndouble por_persona(double metros) {\n    return metros / 4.0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference displays Pieces: 2 and Meters: 2.375 on separate lines. Criteria: same name, distinguishable parameters, matching declarations and definitions, calculation appropriate to each type, and output in main. Writing two different function names or changing only the result type for the same parameter list is not enough. Other implementations are valid if they satisfy these interfaces and behaviors."
+        },
+        {
+          "type": "paragraph",
+          "text": "For the original lab cases: 0 and 0.0 give 0 and 0; 3 and 3.0 give 0 and 0.75; 4 and 4.0 give 1 and 1; 20 and 20.0 give 5 and 5. One piece gives zero complete pieces per person; 0.5 meters gives 0.125 meters. Cases with equal results do not sufficiently distinguish the functions: also include cases that retain a fraction."
+        },
+        {
+          "type": "paragraph",
+          "text": "Integer division uses small nonnegative quantities and a nonzero divisor. With the chosen measurements, dividing by four preserves fractions exactly representable in double; these tests do not assert that every decimal measurement is exact. The caller's arguments keep their original values. Changing test data does not change the rule for four people."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall the argument before looking at the destination"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas__argumento_y_destino_del_reparto",
+          "language": "cpp",
+          "question": "Predict the exact output. Both receiving objects have type double; also identify each call's argument type.",
+          "code": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    const int piezas = 11;\n    const double metros = 11.0;\n    double desde_piezas = por_persona(piezas);\n    double desde_metros = por_persona(metros);\n    std::cout << desde_piezas << ':' << desde_metros;\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 4;\n}\n\ndouble por_persona(double metros) {\n    return metros / 4.0;\n}\n",
+          "answers": [
+            "2:2.75"
+          ],
+          "explanation": "piezas has type int and selects the int function: 11/4 produces 2. That result then initializes desde_piezas as double. metros has type double and selects the fractional calculation, which returns 2.75. The destination object's type cannot recover a fraction that integer division did not produce."
+        },
+        {
+          "type": "paragraph",
+          "text": "In these calls, an argument exactly matches one of the parameter types. First the call selects the function and performs its calculation; afterward the result initializes the destination object. Declaring that object as double does not, by itself, turn a call with an int argument into the other overload. The numeric value does not determine the type either: 4 and 4.0 represent four with different types."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas__resultados_iguales_y_sobrecarga",
+          "question": "por_persona(4) and por_persona(4.0) both produce one. What can we conclude from that match, given that both functions remain defined?",
+          "options": [
+            "The same body was selected because equal values have equal types.",
+            "The functions happen to give the same result here; the argument types still select different bodies.",
+            "Changing the division rule could not affect any other case."
+          ],
+          "correctIndex": 1,
+          "explanation": "The result one agrees for these inputs. The int and double arguments still select two different functions. A case with a fractional result offers another test of their contracts."
+        },
+        {
+          "type": "paragraph",
+          "text": "Return to your program with seven pieces: keep the argument as int and change only the receiving object to double. Predict what stays the same before running. Then add another call using a double measurement of 7.0. Record the argument, parameter, function result, and receiver type separately; do not change both steps at once."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer the distribution to eight people"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now build a division for eight people. Preserve por_persona, both interfaces, and their domains: int pieces from 0 through 20 and double meters from 0 through 20 in multiples of 0.5. Pieces are still indivisible, while the measurement remains divisible. Decide which declarations stay the same and which rules in the function bodies need to change. Presentation still belongs to main."
+        },
+        {
+          "type": "paragraph",
+          "text": "The editor again contains only the minimal structure. Rebuild the declarations, definitions, and calls, or consciously adapt your earlier solution. Start with 11 pieces as int and 11.0 meters as double. Store both results in double objects and display Pieces: 1 and Meters: 1.375 on two lines, each ending with a newline. Preserve each argument's type; the receiving objects do not choose the rule."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Build both interfaces, divisions, and their tests.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Design and predict the pairs 0 and 0.0; 7 and 7.0; 8 and 8.0; 20 and 20.0. Add one piece and 0.5 meters. To distinguish this version from the previous one, include at least one case whose share changes when moving from four people to eight. Also check that the caller's arguments retain their values after the calls."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: both functions apply the new rule, declarations agree with their definitions, calls receive the intended exact argument types, and results are calculated. Changing only an output label or the receiver type does not change the number of participants. Every case remains in the stated domain; no new error policy is needed."
+        },
+        {
+          "type": "note",
+          "text": "Attempt and test before reading the next reference. These two labs are independent: the eight-person version does not automatically modify the program you wrote for four people."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference for the transfer, after building"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference uses different data: 13 pieces and 13.5 meters. Both declarations retain their types; the function bodies apply the new division rule. main receives both results in double objects without first converting the int argument."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    const int piezas = 13;\n    const double metros = 13.5;\n    double parte_piezas = por_persona(piezas);\n    double parte_metros = por_persona(metros);\n    std::cout << \"Pieces: \" << parte_piezas << '\\n';\n    std::cout << \"Meters: \" << parte_metros << '\\n';\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 8;\n}\n\ndouble por_persona(double metros) {\n    return metros / 8.0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is Pieces: 1 and Meters: 1.6875. For the transfer tests: 0 and 0.0 give 0 and 0; 7 and 7.0 give 0 and 0.875; 8 and 8.0 give 1 and 1; 20 and 20.0 give 2 and 2.5. One piece yields zero whole pieces; 0.5 meters yields 0.0625 meters. Compare both the function selected and its calculation, as well as the output."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: division by eight in both bodies, the same name with different parameters, a visible interface before calls, and unchanged arguments. With these small data, the integer share is at most 2 and the measurement share at most 2.5. Neither divisor is zero. A different code organization can be correct if it respects the declarations, types, and all the results."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__declaraciones_y_firmas__tipo_del_objeto_argumento_tras_inicializar",
+          "language": "cpp",
+          "question": "This program keeps the eight-person rule. Predict the output: both argument objects are initialized with the literal 10 but have different declarations.",
+          "code": "#include <iostream>\n\nint por_persona(int piezas);\ndouble por_persona(double metros);\n\nint main() {\n    int piezas = 10;\n    double metros = 10;\n    double primera = por_persona(piezas);\n    double segunda = por_persona(metros);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n\nint por_persona(int piezas) {\n    return piezas / 8;\n}\n\ndouble por_persona(double metros) {\n    return metros / 8.0;\n}\n",
+          "answers": [
+            "1:1.25"
+          ],
+          "explanation": "piezas is declared int and calls por_persona(int), which returns 1. metros is declared double; initialization converts ten to that type, and the later call selects por_persona(double), which returns 1.25. Both receivers are double, but they do not determine that selection."
+        },
+        {
+          "type": "paragraph",
+          "text": "Later review: Without inspecting the bodies, explain which part communicates how to call the function, which part carries out the division, and why selection follows the argument type. Rebuild one version from the minimal editor and choose data that distinguish a matching result from a fractional share. Predict the result from the problem before comparing it with your program."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,196 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__nombrar_calculos_y_llamar",
+  "title": "Nommer des calculs et appeler des fonctions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Donner un nom à un calcul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu sais déjà calculer, prendre des décisions et parcourir des données. Une fonction rassemble des instructions sous un nom pour représenter un calcul ou une action. Sa définition indique son nom, les données qu'elle reçoit et le résultat qu'elle fournit. Son corps contient les instructions exécutées lorsqu'une autre partie du programme l'appelle. Écrire la définition n'exécute pas le corps à l'avance."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint doble(int cantidad) {\n    return cantidad * 2;\n}\n\nint main() {\n    const int fichas = 7;\n    const int resultado = doble(fichas);\n    std::cout << resultado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans int doble(int cantidad), le premier int est le type du résultat. doble est le nom de la fonction. int cantidad déclare un paramètre : la donnée avec laquelle son corps travaille à chaque appel. doble(fichas) est un appel ; fichas fournit l'argument, ici 7. return renvoie le résultat 14 à l'appelant. main l'utilise pour initialiser resultado, puis l'affiche."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dans l'appel doble(fichas), quel rôle joue fichas ?",
+          "options": [
+            "C'est l'argument qui fournit une valeur au paramètre.",
+            "C'est le nom de la fonction.",
+            "C'est une instruction return."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'argument appartient à l'appel ; le paramètre cantidad appartient à la définition."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un appel produit une valeur utilisable"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un appel à une fonction qui renvoie int peut apparaître partout où une valeur int est nécessaire : dans une initialisation, une addition, une comparaison ou un affichage. Les parenthèses font partie de l'appel. Écrire seulement le nom de la fonction ne demande pas d'effectuer son calcul. Les arguments sont placés entre parenthèses et doivent correspondre aux paramètres."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prévois la sortie. Cette fonction reçoit des quantités comprises entre 0 et 20 et ajoute une réserve fixe.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint con_reserva(int cantidad) {\n    return cantidad + 3;\n}\n\nint main() {\n    const int preparado = con_reserva(4);\n    const int total = preparado + con_reserva(2);\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "12"
+          ],
+          "explanation": "Le premier appel renvoie 7. Le deuxième renvoie 5. La somme des deux résultats donne 12."
+        },
+        {
+          "type": "fill_code",
+          "question": "Complète uniquement le nom pour appeler la fonction définie. Les parenthèses et l'argument sont déjà écrits.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint por_tres(int cantidad) {\n    return cantidad * 3;\n}\n\nint main() {\n    const int total = ___(5);\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "por_tres"
+          ],
+          "explanation": "por_tres(5) effectue le calcul avec l'argument 5 et renvoie 15."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux paramètres représentent deux données"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une fonction peut recevoir plusieurs paramètres séparés par des virgules. Les arguments leur correspondent selon leur position. Dans un appel tel que restantes(total, usados), le premier argument fournit le total et le deuxième la quantité utilisée ; les noms écrits dans main ne doivent pas nécessairement être identiques aux noms des paramètres."
+        },
+        {
+          "type": "output_prediction",
+          "question": "La fonction calcule ce qui reste. Pour ces données, prévois le nombre affiché.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint restantes(int total, int usados) {\n    return total - usados;\n}\n\nint main() {\n    const int disponibles = 14;\n    const int retiradas = 5;\n    std::cout << restantes(disponibles, retiradas);\n    return 0;\n}\n",
+          "answers": [
+            "9"
+          ],
+          "explanation": "Le premier argument initialise total à 14 et le deuxième usados à 5. Le résultat est 14 - 5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "restantes reçoit deux données : d'abord le total, puis la quantité utilisée. Quel appel exprime 12 unités disponibles et 4 utilisées ?",
+          "options": [
+            "restantes(12)",
+            "restantes(12, 4)",
+            "restantes(4, 12)"
+          ],
+          "correctIndex": 1,
+          "explanation": "La position associe chaque argument à son paramètre. Les inverser modifierait le calcul."
+        },
+        {
+          "type": "note",
+          "text": "Les exemples utilisent de petites quantités et des calculs représentables. Lorsque tu modifies les quantités de cette leçon, garde-les entre 0 et 20 ; dans restantes, usados ne doit pas dépasser total. Nous formaliserons plus tard ces exigences comme des contrats."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Atelier : réutiliser une règle dans plusieurs cas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les données sont déclarées dans main. Une boîte d'exercice nécessite cantidad * 2 + 1 séparateurs. Prévois les deux résultats pour les quantités 3 et 5, puis exécute le programme pour vérifier. Change ensuite uniquement le premier argument en 0, puis en 8. Garde les quantités entre 0 et 20. Si la règle commune change, c'est la fonction qu'il faut modifier, pas chaque appel séparément."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint separadores(int cantidad) {\n    return cantidad * 2 + 1;\n}\n\nint main() {\n    const int primera = separadores(3);\n    const int segunda = separadores(5);\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Si tu remplaces uniquement le premier appel par separadores(0), quelle sortie obtiens-tu ?",
+          "options": [
+            "1 11",
+            "0 11",
+            "1 1"
+          ],
+          "correctIndex": 0,
+          "explanation": "Le premier appel calcule 0 * 2 + 1. Le deuxième conserve l'argument 5 et renvoie 11."
+        },
+        {
+          "type": "paragraph",
+          "text": "Modifie maintenant le corps en return cantidad * 2 + 2; et prévois les deux résultats avant d'exécuter. Ce changement concerne tous les appels suivants, car il modifie la règle définie. Rétablis + 1 et explique quelles informations étaient nécessaires à chaque appel pour produire son résultat."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver la différence entre calculer et afficher"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Cette fonction ne contient aucune instruction d'affichage. Prévois ce que main affiche.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint triple(int valor) {\n    return valor * 3;\n}\n\nint main() {\n    const int calculado = triple(4);\n    std::cout << \"Résultat : \" << calculado;\n    return 0;\n}\n",
+          "answers": [
+            "Résultat : 12"
+          ],
+          "explanation": "La fonction renvoie 12 ; main décide d'afficher cette valeur et le texte qui l'accompagne."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel avantage concret apporte le fait de donner un nom clair à un petit calcul distinct ?",
+          "options": [
+            "Obtenir un affichage même si la fonction renvoie seulement une valeur.",
+            "Éviter de définir son domaine valide puisqu'elle est en dehors de main.",
+            "L'appeler avec des données différentes et vérifier son résultat séparément."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cette séparation clarifie l'objectif et permet de réutiliser et de tester le calcul. Son domaine valide reste nécessaire."
+        },
+        {
+          "type": "note",
+          "text": "Lorsque tu lis un appel, repère la fonction utilisée, les valeurs fournies par chaque argument et l'utilisation du résultat. Suis ensuite la séquence de main, comme dans les unités précédentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : une règle utilisée par plusieurs appels"
+        },
+        {
+          "type": "note",
+          "text": "Compare uniquement après avoir réalisé l'atelier et noté les résultats prévus. La référence présente une organisation possible ; les critères reconnaissent aussi d'autres implémentations qui respectent les mêmes contrats."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : avec la règle initiale +1, les appels pour 3 et 5 renvoient 7 et 11. Si seul le premier argument devient 0 ou 8, les sorties sont 1 11 ou 17 11. Modifier le corps en +2 augmente chaque résultat de un : avec 3 et 5, on obtient 8 12, comme dans cette référence ; si tu as conservé le premier argument 8 de l'expérience précédente, on obtient 18 12. Rétablis +1 et respecte les quantités de 0 à 20."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint separadores(int cantidad) {\n    return cantidad * 2 + 2;\n}\n\nint main() {\n    const int primera = separadores(3);\n    const int segunda = separadores(5);\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence montre l'expérience consistant à modifier une règle commune avec les arguments 3 et 5. Chaque appel fournit sa propre quantité et reçoit un résultat calculé à partir du corps actuel. On ne corrige pas séparément la sortie de chaque appel et on ne conserve pas un résultat antérieur au changement de règle. D'autres implémentations sont valides si une seule fonction exprime le calcul et si ses appels présentent les cas demandés."
+        }
+      ]
+    }
+  ]
+}
