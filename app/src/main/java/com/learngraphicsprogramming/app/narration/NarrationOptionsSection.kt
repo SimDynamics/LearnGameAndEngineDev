@@ -360,8 +360,9 @@ class NarrationOptionsSection(private val activity: Activity) {
     private fun size(bytes: Long) = s(R.string.narration_size_mib, bytes / 1_048_576.0)
     private fun sectionHeading(titleRes: Int) = LinearLayout(activity).apply {
         orientation = LinearLayout.VERTICAL
-        setPadding(0, dp(14), 0, dp(6))
-        if (titleRes != R.string.narration_section_general) {
+        val firstSection = titleRes == R.string.narration_section_general
+        setPadding(0, if (firstSection) 0 else dp(14), 0, dp(6))
+        if (!firstSection) {
             addView(View(activity).apply {
                 setBackgroundColor(Color.rgb(76, 79, 87))
                 layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
@@ -370,7 +371,7 @@ class NarrationOptionsSection(private val activity: Activity) {
         addView(text(s(titleRes), 18f).apply {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setTextColor(Color.WHITE)
-            setPadding(0, dp(12), 0, dp(6))
+            setPadding(0, if (firstSection) 0 else dp(12), 0, dp(6))
         })
     }
     private fun text(value: String, size: Float) = TextView(activity).apply {
