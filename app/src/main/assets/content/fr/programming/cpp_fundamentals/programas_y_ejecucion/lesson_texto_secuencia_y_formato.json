@@ -1,0 +1,309 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato",
+  "title": "Texte, séquence et mise en forme de la sortie",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le programme n'invente pas de séparateurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque instruction d'affichage fournit les caractères qui lui sont transmis. Si nous affichons \"Côté\" puis \"Nord\", les deux textes se suivent sans séparation : CôtéNord. Le fait de placer les instructions sur des lignes différentes du fichier ne crée pas de lignes distinctes dans la sortie. Le code source et le résultat visible sont deux représentations différentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un espace écrit dans un littéral de chaîne fait partie de son contenu. Par exemple, pour séparer deux mots, au moins une insertion doit fournir cet espace. Tu peux aussi enchaîner plusieurs insertions avec std::cout << \"Salle\" << \" \" << \"centrale\";. L'ordre est important et chaque élément joue un rôle observable."
+        },
+        {
+          "type": "output_prediction",
+          "id": "sin_espacio",
+          "question": "Prédis la sortie. Écris uniquement les caractères envoyés par le programme ; distingue les lignes qui séparent les instructions du contenu des littéraux de chaîne.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Roche\";\n    std::cout << \"Bleue\";\n    return 0;\n}\n",
+          "answers": [
+            "RocheBleue"
+          ],
+          "explanation": "La deuxième instruction continue là où la première s'est arrêtée ; elle n'ajoute aucun séparateur."
+        },
+        {
+          "type": "output_prediction",
+          "id": "espacio_interno",
+          "question": "Prédis la sortie. Écris le texte produit en conservant les espaces que le programme insère dans le message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Route\" << \" \" << \"Sud\";\n    return 0;\n}\n",
+          "answers": [
+            "Route Sud"
+          ],
+          "explanation": "L'insertion centrale fournit l'espace entre les mots."
+        },
+        {
+          "type": "output_prediction",
+          "id": "signo_interno",
+          "question": "Prédis la sortie. Écris les parties du message dans l'ordre d'exécution et conserve le signe de ponctuation inséré entre elles.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"A\" << \":\" << \"B\";\n    return 0;\n}\n",
+          "answers": [
+            "A:B"
+          ],
+          "explanation": "Les trois littéraux fournissent, dans l'ordre, A, deux-points, puis B."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un saut de ligne écrit dans le texte"
+        },
+        {
+          "type": "paragraph",
+          "text": "La séquence d'échappement \\n représente un saut de ligne à l'intérieur d'un littéral de chaîne C++. Elle est composée de deux caractères dans le code source, une barre oblique inverse et n, qui décrivent un caractère de contrôle dans le texte. Un changement de ligne dans le fichier source n'est pas la même chose qu'un saut de ligne envoyé à la sortie. La position de \\n détermine où commence la ligne suivante du message."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Rez-de-chaussée\\nÉtage supérieur\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans cet exemple, un saut de ligne sépare deux parties du littéral. La sortie comporte deux lignes. Le compilateur interprète la séquence d'échappement dans le littéral ; la sortie ne contient pas les caractères barre oblique inverse et n. Pour ces prédictions, écris le contenu visible, avec les sauts de ligne internes lorsqu'il y en a ; un saut final n'est pas exigé dans la réponse."
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_lineas",
+          "question": "Prédis la sortie. Écris ce qui apparaît sans les guillemets du code ; conserve les espaces et les sauts de ligne entre les parties du message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Entrée\\nSortie\";\n    return 0;\n}\n",
+          "answers": [
+            "Entrée\nSortie"
+          ],
+          "explanation": "La séquence d'échappement entre les mots commence une nouvelle ligne."
+        },
+        {
+          "type": "output_prediction",
+          "id": "salto_en_otra_instruccion",
+          "question": "Prédis la sortie. Écris ce qui apparaît sans les guillemets du code ; conserve les espaces et les sauts de ligne entre les parties du message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Rouge\";\n    std::cout << \"\\nVert\";\n    return 0;\n}\n",
+          "answers": [
+            "Rouge\nVert"
+          ],
+          "explanation": "La deuxième insertion commence par envoyer un saut de ligne, puis affiche Vert."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "fuente_vs_salida",
+          "question": "Deux instructions apparaissent sur des lignes différentes du code source, sans \\n dans leurs textes. Que peut-on en conclure pour la sortie ?",
+          "options": [
+            "Cela ne garantit aucun saut de ligne : la sortie dépend des caractères insérés.",
+            "Chaque texte apparaîtra sur une ligne différente.",
+            "Le programme ne peut pas être compilé."
+          ],
+          "correctIndex": 0,
+          "explanation": "Les lignes du code source facilitent la lecture du programme ; ce sont les caractères envoyés qui déterminent la mise en forme de la sortie."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Représenter les guillemets et les barres obliques inverses"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si le message doit contenir un guillemet double, un guillemet non échappé terminerait le littéral de chaîne. La notation \\\" représente un guillemet inclus dans le texte. De même, \\\\ représente une barre oblique inverse dans le message. Le caractère qui commence une séquence d'échappement et le caractère obtenu jouent deux rôles différents : l'un appartient à l'écriture du code, l'autre aux données produites."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Nom : \\\"Luna\\\"\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Il ne faut pas ajouter des guillemets autour de toute la réponse. On les écrit dans la réponse uniquement lorsque le programme lui-même les produit comme contenu. Cette distinction permet de séparer la notation qui délimite le texte des caractères qui le composent. Lire ces deux niveaux sera utile plus tard pour les chemins, les messages et les données."
+        },
+        {
+          "type": "output_prediction",
+          "id": "comillas_en_mensaje",
+          "question": "Prédis la sortie. Oublie les guillemets qui délimitent le littéral, mais conserve ceux que le programme produit dans le message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"État : \\\"Prêt\\\"\";\n    return 0;\n}\n",
+          "answers": [
+            "État : \"Prêt\""
+          ],
+          "explanation": "Les guillemets échappés font partie du contenu affiché."
+        },
+        {
+          "type": "output_prediction",
+          "id": "barra_en_mensaje",
+          "question": "Prédis la sortie. Écris les caractères du message après avoir interprété l'échappement de la barre oblique inverse dans le littéral.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Niveau\\\\Un\";\n    return 0;\n}\n",
+          "answers": [
+            "Niveau\\Un"
+          ],
+          "explanation": "Deux barres obliques inverses dans le littéral représentent une seule barre dans le message."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "escape_no_literal",
+          "question": "Dans un littéral valide, que représente \\n ?",
+          "options": [
+            "Un saut de ligne.",
+            "Un espace séparant deux mots de la sortie.",
+            "Les deux caractères visibles, barre oblique inverse et n."
+          ],
+          "correctIndex": 0,
+          "explanation": "Dans le littéral, cette séquence d'échappement représente un caractère de saut de ligne."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Commentaires et lisibilité"
+        },
+        {
+          "type": "paragraph",
+          "text": "En dehors d'un littéral de chaîne, // commence un commentaire qui s'étend jusqu'à la fin de la ligne. Ce commentaire transmet une information à la personne qui lit le programme ; ce n'est pas une instruction d'affichage. À l'intérieur d'un littéral, les deux mêmes signes font partie du contenu. Le rôle d'un symbole dépend de l'endroit où il apparaît."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un commentaire utile peut expliquer l'intention ou une décision qui n'est pas évidente. Répéter « affiche du texte » à côté de chaque instruction apporte peu. Si un commentaire décrit un résultat différent du code, le compilateur ne corrige pas cette contradiction : le programme exécute le code. Voilà pourquoi, lorsqu'on modifie un programme, on vérifie aussi les explications laissées aux autres."
+        },
+        {
+          "type": "output_prediction",
+          "id": "comentario_no_salida",
+          "question": "Prédis la sortie. Écris uniquement le texte affiché et conserve l'espace contenu dans le littéral ; distingue ce contenu du commentaire.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    // Le message identifie la deuxième zone.\n    std::cout << \"Zone B\";\n    return 0;\n}\n",
+          "answers": [
+            "Zone B"
+          ],
+          "explanation": "La ligne qui commence par // est un commentaire ; elle n'est pas envoyée à std::cout."
+        },
+        {
+          "type": "output_prediction",
+          "id": "barras_en_literal",
+          "question": "Prédis la sortie. Écris les caractères affichés ; interprète les signes selon qu'ils se trouvent à l'intérieur ou à l'extérieur du littéral.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"A//B\";\n    return 0;\n}\n",
+          "answers": [
+            "A//B"
+          ],
+          "explanation": "Les deux barres obliques se trouvent dans le littéral et font donc partie du contenu."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "comentario_contradictorio",
+          "question": "Le commentaire dit « Affiche Nord », mais l'instruction envoie \"Sud\" à std::cout. Que voit-on à l'écran ?",
+          "options": [
+            "NordSud",
+            "Sud",
+            "Nord"
+          ],
+          "correctIndex": 1,
+          "explanation": "Le commentaire ne modifie pas l'instruction. Il faut corriger la contradiction lorsque l'on relit le programme."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Produire et ordonner des messages"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "literal_y_operador",
+          "question": "Écris l'opérateur d'insertion dans le premier emplacement et le littéral exact \"Chargement prêt\" dans le second.",
+          "template": "#include <iostream>\nint main() {\n    std::cout [] [];\n    return 0;\n}",
+          "answers": [
+            "<<",
+            "\"Chargement prêt\""
+          ]
+        },
+        {
+          "type": "order_code",
+          "id": "orden_mensajes",
+          "question": "Remets ces éléments dans l'ordre pour afficher Étape un, puis Étape deux sur des lignes distinctes.",
+          "fragments": [
+            "    std::cout << \"Étape deux\";",
+            "    return 0;\n}",
+            "#include <iostream>\nint main() {",
+            "    std::cout << \"Étape un\\n\";"
+          ],
+          "correctOrder": [
+            2,
+            3,
+            0,
+            1
+          ],
+          "explanation": "Le saut de ligne fait partie de la première insertion, et la deuxième vient ensuite."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier la construction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après avoir répondu : l'opérateur qui introduit le littéral est <<, et le littéral délimité par des guillemets fournit Chargement prêt. Dans l'ordre demandé, l'instruction Étape un doit s'exécuter avant celle de Étape deux. Pense à vérifier la sortie, pas seulement que le code se compile."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Expérience : un court rapport"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prédis la sortie du programme du laboratoire, puis exécute-le. Modifie-le pour produire trois lignes : Rapport, Zone est et Fin. Change d'abord les textes, puis décide où placer les sauts de ligne. Tu peux utiliser une seule insertion contenant plusieurs séquences d'échappement ou plusieurs instructions. Compare les deux versions : l'organisation du code peut varier, mais la sortie exigée doit rester identique."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Résumé\\nZone ouest\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Vérifie que chaque ligne contient le texte prévu et que les caractères \\n ne s'affichent pas littéralement dans le message. Note ta prédiction avant d'exécuter le programme : l'observation permettra ainsi de tester une hypothèse."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer les solutions du laboratoire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare les deux versions après les avoir construites. Elles doivent toutes deux afficher Rapport, Zone est et Fin dans cet ordre, sur trois lignes, sans barres obliques inverses visibles ni espaces supplémentaires. Tu peux ajouter ou non un saut de ligne après Fin : la consigne ne fixe pas ce dernier caractère. En revanche, un saut de ligne est obligatoire entre les lignes."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Rapport\\nZone est\\nFin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Rapport\\n\";\n    std::cout << \"Zone est\\n\";\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La première version regroupe les caractères dans un seul littéral ; la seconde les répartit entre trois instructions. Les caractères envoyés à cout sont les mêmes. Répartir une instruction sur plusieurs lignes du fichier source ne crée pas automatiquement des sauts de ligne dans le résultat."
+        }
+      ]
+    }
+  ]
+}

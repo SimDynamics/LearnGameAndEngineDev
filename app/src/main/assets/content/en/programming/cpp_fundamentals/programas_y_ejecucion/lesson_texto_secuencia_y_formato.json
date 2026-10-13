@@ -1,0 +1,309 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__texto_secuencia_y_formato",
+  "title": "Text, Sequence, and Output Formatting",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The program does not invent separators"
+        },
+        {
+          "type": "paragraph",
+          "text": "Each output statement contributes the characters it is given. If we display \"Side\" and then \"North\", the texts run together: SideNorth. Placing the statements on different lines in the file does not create separate lines in the output. The source code and the visible result are different representations."
+        },
+        {
+          "type": "paragraph",
+          "text": "A space written inside a string literal is part of its content. For example, separating two words requires at least one insertion to supply that space. You can also chain several insertions using std::cout << \"Room\" << \" \" << \"Central\";. Order matters, and every piece has an observable role."
+        },
+        {
+          "type": "output_prediction",
+          "id": "sin_espacio",
+          "question": "Predict the output. Write only the characters the program sends to output; distinguish the separation of statements from the content of string literals.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Rock\";\n    std::cout << \"Blue\";\n    return 0;\n}\n",
+          "answers": [
+            "RockBlue"
+          ],
+          "explanation": "The second statement continues where the first one stopped; it adds no separator."
+        },
+        {
+          "type": "output_prediction",
+          "id": "espacio_interno",
+          "question": "Predict the output. Write the resulting text and preserve the spaces inserted inside the message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Route\" << \" \" << \"South\";\n    return 0;\n}\n",
+          "answers": [
+            "Route South"
+          ],
+          "explanation": "The middle insertion supplies the space between the words."
+        },
+        {
+          "type": "output_prediction",
+          "id": "signo_interno",
+          "question": "Predict the output. Write the parts of the message in execution order and preserve the punctuation inserted between them.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"A\" << \":\" << \"B\";\n    return 0;\n}\n",
+          "answers": [
+            "A:B"
+          ],
+          "explanation": "The three string literals contribute A, a colon, and B, in that order."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A newline written inside the text"
+        },
+        {
+          "type": "paragraph",
+          "text": "The escape sequence \\n represents a newline inside a C++ string literal. It consists of two characters in the source code, a backslash and n, which describe a control character in the text. A line break in the source file is not the same as a newline sent to output. The position of \\n determines where the next line of the message begins."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Ground floor\\nUpper floor\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "In this example, a newline separates two parts of the string literal. The output has two lines. The compiler interprets the escape sequence inside the literal; the output does not contain the backslash and n characters. For these predictions, write the visible content, including internal newlines when present; the answer field does not require a final newline."
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_lineas",
+          "question": "Predict the output. Write what appears, without the quotation marks from the code; preserve the spaces and line breaks between parts of the message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Entrance\\nExit\";\n    return 0;\n}\n",
+          "answers": [
+            "Entrance\nExit"
+          ],
+          "explanation": "The escape sequence between the words starts a new line."
+        },
+        {
+          "type": "output_prediction",
+          "id": "salto_en_otra_instruccion",
+          "question": "Predict the output. Write what appears, without the quotation marks from the code; preserve the spaces and line breaks between parts of the message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Red\";\n    std::cout << \"\\nGreen\";\n    return 0;\n}\n",
+          "answers": [
+            "Red\nGreen"
+          ],
+          "explanation": "The second insertion begins by sending a newline, then displays Green."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "fuente_vs_salida",
+          "question": "Two statements appear on different lines of source code, without \\n in their text. What does this guarantee about the output?",
+          "options": [
+            "It does not guarantee a newline: the output depends on the inserted characters.",
+            "Each text will appear on a separate line.",
+            "The program cannot compile."
+          ],
+          "correctIndex": 0,
+          "explanation": "Lines in source code make the program easier to read; the characters sent to output control its formatting."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Representing quotation marks and backslashes"
+        },
+        {
+          "type": "paragraph",
+          "text": "If you need a double quotation mark as part of the message, an unescaped quotation mark would end the string literal. The notation \\\" represents a quotation mark included in that text. Similarly, \\\\ represents one backslash in the message. The character that begins an escape sequence and the resulting character have different roles: one belongs to the source-code notation, the other to the data produced."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Name: \\\"Luna\\\"\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Do not add quotation marks around the entire output answer. Include them in the answer only when the program itself produces them as content. This distinction separates the notation that delimits text from the characters that make up the text. Reading both layers will be useful later when working with paths, messages, and data."
+        },
+        {
+          "type": "output_prediction",
+          "id": "comillas_en_mensaje",
+          "question": "Predict the output. Omit the quotation marks delimiting the string literal, but keep the quotation marks the program produces inside the message.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Status: \\\"Ready\\\"\";\n    return 0;\n}\n",
+          "answers": [
+            "Status: \"Ready\""
+          ],
+          "explanation": "The escaped quotation marks are part of the displayed content."
+        },
+        {
+          "type": "output_prediction",
+          "id": "barra_en_mensaje",
+          "question": "Predict the output. Write the message characters after interpreting the string literal's backslash escape sequence.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Level\\\\One\";\n    return 0;\n}\n",
+          "answers": [
+            "Level\\One"
+          ],
+          "explanation": "Two backslashes in the string literal represent one backslash in the message."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "escape_no_literal",
+          "question": "In a valid string literal, what does \\n represent?",
+          "options": [
+            "A newline.",
+            "A space separating two words in the output.",
+            "The two visible characters backslash and n."
+          ],
+          "correctIndex": 0,
+          "explanation": "Inside the string literal, this escape sequence represents a newline character."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comments and readability"
+        },
+        {
+          "type": "paragraph",
+          "text": "Outside a string literal, // begins a comment that continues to the end of that line. The comment communicates something to a person reading the program and is not an output statement. Inside a string literal, the same two symbols are part of its content. The role of a symbol depends on its context."
+        },
+        {
+          "type": "paragraph",
+          "text": "A useful comment can explain the intent or a decision that is not obvious. Repeating \"displays text\" next to every output statement adds little. If a comment describes a result that contradicts the code, the compiler does not resolve the contradiction: the program executes the code. That is why we also review the explanations left for others when modifying a program."
+        },
+        {
+          "type": "output_prediction",
+          "id": "comentario_no_salida",
+          "question": "Predict the output. Write only the text displayed by the program, preserving the space inside the string literal; distinguish that content from the comment.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    // The message identifies the second area.\n    std::cout << \"Zone B\";\n    return 0;\n}\n",
+          "answers": [
+            "Zone B"
+          ],
+          "explanation": "The line beginning with // is a comment; it is not sent to std::cout."
+        },
+        {
+          "type": "output_prediction",
+          "id": "barras_en_literal",
+          "question": "Predict the output. Write the displayed characters, interpreting the symbols according to whether they appear inside or outside the string literal.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"A//B\";\n    return 0;\n}\n",
+          "answers": [
+            "A//B"
+          ],
+          "explanation": "The two slashes are inside the string literal and therefore part of its content."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "comentario_contradictorio",
+          "question": "The comment says \"Displays North\", but the statement sends \"South\" to std::cout. What is displayed?",
+          "options": [
+            "NorthSouth",
+            "South",
+            "North"
+          ],
+          "correctIndex": 1,
+          "explanation": "The comment does not change the statement. The contradiction should be corrected when reviewing the program."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Producing and ordering messages"
+        },
+        {
+          "type": "inline_fill_code",
+          "id": "literal_y_operador",
+          "question": "Write the insertion operator in the first blank and the exact string literal \"Load ready\" in the second blank.",
+          "template": "#include <iostream>\nint main() {\n    std::cout [] [];\n    return 0;\n}",
+          "answers": [
+            "<<",
+            "\"Load ready\""
+          ]
+        },
+        {
+          "type": "order_code",
+          "id": "orden_mensajes",
+          "question": "Arrange these pieces to display Step one and then Step two on separate lines.",
+          "fragments": [
+            "    std::cout << \"Step two\";",
+            "    return 0;\n}",
+            "#include <iostream>\nint main() {",
+            "    std::cout << \"Step one\\n\";"
+          ],
+          "correctOrder": [
+            2,
+            3,
+            0,
+            1
+          ],
+          "explanation": "The newline belongs to the first insertion, and the second one comes afterward."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check the assembled program"
+        },
+        {
+          "type": "paragraph",
+          "text": "After answering: the operator introducing the string literal is <<, and the literal delimited by quotation marks supplies Load ready. In the required order, the Step one statement must execute before the Step two statement. Remember to check the output, not merely whether the code compiles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A short report experiment"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predict the lab program's output and run it. Modify the program to produce three lines: Report, East zone, and End. First change the text; then decide where the newlines should appear. You can use one insertion containing several escape sequences or several statements. Compare both versions: the organization of the code may vary, but the required output must stay the same."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Summary\\nWest zone\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Check that each line has the expected text and that the characters \\n do not appear literally in the message. Write down your prediction before running the program so the observation tests a hypothesis."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the lab solutions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare your two versions after building them. Both must display Report, East zone, and End, in that order, on three lines, without visible backslashes or additional spaces. You may include or omit a newline after End: the task does not specify that final character. A newline between the lines is required."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Report\\nEast zone\\nEnd\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Report\\n\";\n    std::cout << \"East zone\\n\";\n    std::cout << \"End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The first version groups the characters into one string literal; the second divides them among three statements. The characters sent to cout are the same. Splitting a statement across several lines of the source file does not, by itself, add newlines to the output."
+        }
+      ]
+    }
+  ]
+}

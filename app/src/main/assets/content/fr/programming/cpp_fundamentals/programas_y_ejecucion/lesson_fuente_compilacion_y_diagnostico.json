@@ -1,0 +1,216 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__fuente_compilacion_y_diagnostico",
+  "title": "Du code source à l'exécution",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le rôle de chaque outil"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le texte C++ que nous écrivons est le code source. Un compilateur l'analyse et le traduit sous une forme qui permet de construire un programme exécutable. L'éditeur de liens assemble les parties nécessaires, y compris celles des bibliothèques utilisées. Le résultat est ensuite exécuté. Un bouton peut coordonner plusieurs étapes : le fait de voir un seul bouton ne signifie pas qu'écrire, compiler et exécuter constituent la même opération."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un éditeur aide à modifier le texte. La coloration syntaxique peut en faciliter la lecture, mais ne prouve pas que le code est valide ni qu'il résout le problème. Une bibliothèque fournit des outils réutilisables : <iostream> permet d'utiliser des flux d'entrée et de sortie comme std::cout. Nous utilisons cet outil déjà disponible pour afficher du texte, plutôt que de reconstruire tous ses mécanismes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "editor_compilador",
+          "question": "Tu as écrit un fichier dans un éditeur, mais tu n'as pas encore construit le programme. Que possèdes-tu à ce stade ?",
+          "options": [
+            "Du code source qui doit encore être analysé et compilé pour construire le programme.",
+            "La sortie finale du programme.",
+            "Une preuve que tous les résultats sont corrects."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le fichier contient la description écrite en C++ ; il faut encore construire puis exécuter le programme pour observer son comportement."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "funcion_enlazador",
+          "question": "Quel est le rôle de l'éditeur de liens dans le modèle étudié ?",
+          "options": [
+            "Assembler les parties nécessaires pour former l'exécutable.",
+            "Traduire chaque fichier source en une partie du programme.",
+            "Exécuter le programme et recueillir sa sortie textuelle."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'éditeur de liens assemble les parties du programme ; il ne définit pas l'objectif ni ne valide toutes les exigences."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les détails de syntaxe ont un sens"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le compilateur applique les règles du langage, pas une interprétation approximative de notre intention. std::cout et std::Cout sont deux noms différents. Un littéral de chaîne exige ses guillemets fermants, et une instruction d'affichage exige son terminateur. Lorsqu'un élément manque, un symbole situé plus loin peut sembler être à l'origine de l'erreur. Un diagnostic est donc un indice à comparer avec le code qui l'entoure."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si le point-virgule qui précède return est omis, le compilateur peut désigner la ligne de return : c'est là qu'il découvre que l'instruction précédente ne s'est pas terminée comme prévu. Il ne faut pas modifier aveuglément la ligne signalée ni mémoriser un message d'erreur précis. Différents outils peuvent décrire le même problème de façons différentes. Nous cherchons la cause et effectuons une modification justifiée."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "falta_terminador",
+          "question": "Il manque le ; à la fin de l'instruction d'affichage qui précède return. Le diagnostic désigne return. Que faut-il examiner en premier ?",
+          "options": [
+            "La fin de l'instruction précédente et le code voisin.",
+            "Changer le texte du littéral parce qu'il précède le diagnostic.",
+            "Supprimer return parce que le diagnostic désigne cette ligne."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'endroit où un problème est détecté n'est pas toujours celui où il a commencé."
+        },
+        {
+          "type": "fill_code",
+          "id": "reparar_operador",
+          "question": "L'instruction suivante doit afficher Poste 4. Remplace l'emplacement vide par l'opérateur d'insertion correct.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout ___ \"Poste 4\";\n    return 0;\n}\n",
+          "answers": [
+            "<<"
+          ],
+          "explanation": "Les deux signes << forment l'opérateur qui insère le texte dans le flux."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compiler ne suffit pas à vérifier l'objectif"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un programme peut être valide en C++ et produire un résultat différent de celui demandé. Si nous voulions afficher \"Commande reçue\" mais avions écrit \"Commande annulée\", le compilateur reconnaîtrait les deux littéraux comme du texte valide. Pour détecter la différence, il faut comparer l'exécution avec l'exigence. C'est une première forme d'erreur logique : les opérations ont un sens, mais ne résolvent pas notre tâche."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une erreur de compilation empêche de construire correctement cette version ; une erreur d'édition de liens survient lors de l'assemblage des parties. D'autres problèmes n'apparaissent qu'à l'exécution ou lors de l'examen des résultats. Dans cette unité, nous travaillerons surtout sur la syntaxe et les messages, mais nous conserverons cette distinction lorsque nous apprendrons les entrées, les calculs et les décisions. Il n'est pas nécessaire de provoquer des erreurs dangereuses pour comprendre que ces étapes ont des responsabilités différentes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mensaje_equivocado",
+          "question": "L'exigence est d'afficher Commande reçue. Le programme se compile, mais affiche Commande annulée. Que faut-il encore corriger ?",
+          "options": [
+            "Changer uniquement le commentaire décrivant le message attendu.",
+            "Modifier le littéral exécuté pour afficher le message exigé.",
+            "Accepter le résultat puisque la compilation a réussi."
+          ],
+          "correctIndex": 1,
+          "explanation": "Une syntaxe valide ne garantit pas que le texte correspond à la tâche."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mayuscula_nombre",
+          "question": "Nous utilisons std::cout, mais avons écrit std::Cout par erreur. Quelle correction est justifiée ?",
+          "options": [
+            "Conserver la modification : l'ordinateur interprète les deux noms de la même façon.",
+            "Modifier les mots du message.",
+            "Rétablir l'écriture exacte std::cout."
+          ],
+          "correctIndex": 2,
+          "explanation": "C++ distingue les identifiants selon leurs caractères, y compris les majuscules et les minuscules."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modifier une chose et observer"
+        },
+        {
+          "type": "paragraph",
+          "text": "Partir d'une petite version qui fonctionne déjà facilite l'analyse d'un échec. Prédis sa sortie, exécute-la et conserve une copie. Ensuite, ne change qu'un seul élément, dans un but précis. Si le résultat change de manière inattendue, tu sais quelle modification examiner. Une fois la version correcte rétablie, tu peux essayer une autre modification sans mélanger plusieurs causes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans ce laboratoire, commence par supprimer uniquement le ; de l'instruction d'affichage. Observe le diagnostic, puis rétablis ce caractère. Ensuite, remplace uniquement le message par Vérification terminée et relance le programme. Le premier changement examine une règle de syntaxe ; le second examine le lien entre un littéral et la sortie. Ce sont deux expériences qui répondent à des questions différentes."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Vérification initiale\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_controlada",
+          "question": "Si tu modifies en même temps le nom main, les guillemets et le texte, pourquoi est-il plus difficile de comprendre le premier échec ?",
+          "options": [
+            "Parce que le nouveau texte du message explique tous les diagnostics.",
+            "Parce qu'il faut distinguer les effets de plusieurs modifications.",
+            "Parce qu'il suffit d'attribuer l'échec à la dernière modification dont tu te souviens."
+          ],
+          "correctIndex": 1,
+          "explanation": "Isoler les modifications aide à relier une cause à un effet ; ce n'est pas une interdiction du langage."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconstruire la structure sans l'exemple"
+        },
+        {
+          "type": "drag_fill_code",
+          "id": "piezas_estructura",
+          "question": "Complète le programme qui doit afficher Vérification prête. Chaque étiquette ne peut être utilisée qu'une fois au maximum.",
+          "template": "#include <iostream>\nint []() {\n    std::cout [] \"Vérification prête\"[]\n    return 0;\n}",
+          "choices": [
+            "main",
+            "<<",
+            ";",
+            "Main",
+            "<"
+          ],
+          "correctOrder": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier la structure"
+        },
+        {
+          "type": "note",
+          "text": "Solution après l'exercice : main reste le point d'entrée ; << insère le littéral et ; termine l'instruction. Les choix incorrects modifient le nom ou l'opérateur. Compiler et comparer la sortie avec l'exigence restent deux vérifications distinctes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la solution du laboratoire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après les deux expériences, voici une référence pour la version réparée. Critères : l'outil accepte le code source et l'exécution affiche Vérification terminée ; main, les guillemets et le terminateur de l'instruction d'affichage conservent leur rôle."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Vérification terminée\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsque nous avons supprimé le point-virgule, nous attendions un échec de construction, pas une sortie différente. Le diagnostic exact dépend de l'outil et peut désigner l'élément suivant dans le code. Rétablir le point-virgule restaure la syntaxe valide. Remplacer uniquement Vérification initiale par Vérification terminée conserve une instruction valide, mais change le message affiché. Ces résultats répondent à deux questions différentes."
+        }
+      ]
+    }
+  ]
+}

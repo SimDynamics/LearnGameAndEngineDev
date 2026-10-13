@@ -1,0 +1,216 @@
+{
+  "id": "cpp_fundamentals__programas_y_ejecucion__fuente_compilacion_y_diagnostico",
+  "title": "From Source Code to Execution",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "What each tool does"
+        },
+        {
+          "type": "paragraph",
+          "text": "The C++ text we write is source code. A compiler analyzes it and translates it into a form that can be used to build an executable program. The linker combines the required parts, including parts from libraries we use. The result is then executed. A single button may coordinate several stages; seeing one button does not mean that writing, compiling, and running are the same operation."
+        },
+        {
+          "type": "paragraph",
+          "text": "An editor helps us modify text. Syntax highlighting can make code easier to read, but it does not prove that the code is valid or solves the problem. A library provides reusable facilities: <iostream> gives us access to input and output streams such as std::cout. We use this ready-made facility to display text rather than building all its mechanisms from scratch."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "editor_compilador",
+          "question": "You have written a file in an editor but have not yet built the program. What do you have at this point?",
+          "options": [
+            "Source code that still needs to be analyzed and built.",
+            "The program's final output.",
+            "Proof that all results are correct."
+          ],
+          "correctIndex": 0,
+          "explanation": "The file contains the description written in C++; we still need to build and run it to observe its behavior."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "funcion_enlazador",
+          "question": "What is the linker's role in the model we have studied?",
+          "options": [
+            "Combine the required parts to form the executable.",
+            "Translate each source file into a part of the program.",
+            "Run the program and capture its text output."
+          ],
+          "correctIndex": 0,
+          "explanation": "The linker combines parts of the program; it does not establish the intended behavior or validate every requirement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Syntax details matter"
+        },
+        {
+          "type": "paragraph",
+          "text": "The compiler follows the rules of the language, not an approximate interpretation of our intentions. std::cout and std::Cout are different names. A string literal needs its closing quotation marks, and an output statement needs a terminator. When one part is missing, a later symbol may seem to be where the error occurred. That is why a diagnostic is a clue that we must compare against the surrounding code."
+        },
+        {
+          "type": "paragraph",
+          "text": "If the semicolon before return is omitted, the compiler may point to the return line: that is where it discovers that the previous statement did not end as expected. We should not indiscriminately change the reported line or memorize a specific error message. Different tools can describe the same problem differently. We look for the cause and make a justified change."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "falta_terminador",
+          "question": "The output statement before return is missing its ;. The diagnostic points to return. What should you inspect first?",
+          "options": [
+            "The end of the preceding statement and the nearby context.",
+            "Change the text in the string literal because it comes before the diagnostic.",
+            "Remove return because the diagnostic points to that line."
+          ],
+          "correctIndex": 0,
+          "explanation": "The location where a problem is detected is not always where it began."
+        },
+        {
+          "type": "fill_code",
+          "id": "reparar_operador",
+          "question": "The following statement must display Station 4. Replace the blank with the correct insertion operator.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout ___ \"Station 4\";\n    return 0;\n}\n",
+          "answers": [
+            "<<"
+          ],
+          "explanation": "Two << symbols form the operator that inserts text into the stream."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compiling does not fully verify the intended behavior"
+        },
+        {
+          "type": "paragraph",
+          "text": "A program may be valid C++ yet produce a result different from the one requested. If we wanted to display \"Order received\" but wrote \"Order canceled\", the compiler would recognize both as valid string literals. Finding that difference requires comparing the program's output with the requirement. This is an early example of a logic error: the operations are meaningful, but they do not solve our task as intended."
+        },
+        {
+          "type": "paragraph",
+          "text": "A compilation error prevents that version from being built correctly; a linking error occurs when combining its parts. Other problems only become apparent when the program runs or its results are examined. In this unit we mostly work with syntax and messages, but we will keep that distinction in mind when learning input, calculations, and decisions. We do not need to provoke dangerous errors to understand that the different stages have different responsibilities."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mensaje_equivocado",
+          "question": "The requirement is to display Order received. The program compiles but displays Order canceled. What still needs to be corrected?",
+          "options": [
+            "Change only the comment describing the expected message.",
+            "Change the string literal that is executed so it displays the required message.",
+            "Accept the result because compilation succeeded."
+          ],
+          "correctIndex": 1,
+          "explanation": "Valid syntax does not guarantee that the text matches the task."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mayuscula_nombre",
+          "question": "We use std::cout, but accidentally write std::Cout. Which correction is justified?",
+          "options": [
+            "Keep the change: the computer interprets both names in the same way.",
+            "Change the words in the message.",
+            "Restore the exact spelling std::cout."
+          ],
+          "correctIndex": 2,
+          "explanation": "C++ distinguishes identifiers by their characters, including uppercase and lowercase letters."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Change one thing and observe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Working from a small version that already runs makes failures easier to interpret. Predict its output, run it, and keep a copy. Then make a single change for a specific reason. If the result changes unexpectedly, you know which modification to investigate. Once you restore the working version, you can try another change without mixing several possible causes."
+        },
+        {
+          "type": "paragraph",
+          "text": "In this lab, first remove only the ; from the output statement. Observe the diagnostic and restore the character. Then change only the message to Review complete and run the program again. The first change tests a syntax rule; the second tests the relationship between a string literal and the output. These experiments answer different questions."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    std::cout << \"Initial review\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_controlada",
+          "question": "If you change the name main, the quotation marks, and the text all at once, why is the first failure harder to understand?",
+          "options": [
+            "Because the new message text explains any diagnostic.",
+            "Because you must distinguish the effects of several modifications.",
+            "Because you can simply blame the last change you remember."
+          ],
+          "correctIndex": 1,
+          "explanation": "Separating changes helps connect a cause to an effect; it is not a restriction imposed by the language."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rebuild the structure without the example"
+        },
+        {
+          "type": "drag_fill_code",
+          "id": "piezas_estructura",
+          "question": "Complete the program that must display Review ready. Each tile may be used at most once.",
+          "template": "#include <iostream>\nint []() {\n    std::cout [] \"Review ready\"[]\n    return 0;\n}",
+          "choices": [
+            "main",
+            "<<",
+            ";",
+            "Main",
+            "<"
+          ],
+          "correctOrder": [
+            0,
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check the structure"
+        },
+        {
+          "type": "note",
+          "text": "Solution after the exercise: main remains the entry point; << inserts the string literal, and ; terminates the statement. The distractors alter the name or the operator. Compiling and comparing the output against the requirement are still separate checks."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the lab solution"
+        },
+        {
+          "type": "paragraph",
+          "text": "After both experiments, this is a reference for the repaired version. Criteria: the tool accepts the source, and running the program displays Review complete; main, the quotation marks, and the output statement's terminator keep their respective roles."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << \"Review complete\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "When the semicolon was removed, the expected result was a failure to build, not different output. The exact diagnostic can vary depending on the tool and may point to the next element in the source. Restoring the semicolon restores valid syntax. Changing only Initial review to Review complete preserves a valid statement while changing the executed message. These results answer two different questions."
+        }
+      ]
+    }
+  ]
+}
