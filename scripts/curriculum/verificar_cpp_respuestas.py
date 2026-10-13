@@ -82,6 +82,8 @@ def published(location: tuple[str, int, int]) -> tuple[dict, dict]:
 def structural_audit(baseline: str) -> dict:
     """Whole JSON equality after removing only approved optional fields or revisions."""
     inline_contracts = {**INLINE, **INLINE_REUSE}
+    revisions = (curricular_contract.MULTIPLE_CHOICE_DISTRACTOR_REVISIONS
+                 | curricular_contract.FILL_CODE_REVISIONS)
     current = {path.relative_to(ROOT).as_posix(): path for path in CONTENT.rglob("*.json")}
     previous = set(git("ls-tree", "-r", "--name-only", baseline, "--", CONTENT_REL)
                    .decode("utf-8").splitlines())
@@ -100,12 +102,12 @@ def structural_audit(baseline: str) -> dict:
                 blocks_count += 1
                 location = (short, page, block)
                 old_item = old["pages"][page - 1]["blocks"][block - 1]
-                if location in curricular_contract.MULTIPLE_CHOICE_DISTRACTOR_REVISIONS and item != old_item:
+                if location in revisions and item != old_item:
                     if not curricular_contract.preserves_previous_exercise(relative, page - 1, block - 1, old_item, item):
                         raise ValueError(f"Revisión curricular distinta de la aprobada: {location}")
                     data["blocks"][block - 1] = old_item
                     editorial.append({"path": short, "page": page, "block": block,
-                                      "fields": [field for field in ("options", "explanation")
+                                      "fields": [field for field in ("options", "answers", "question", "explanation", "code")
                                                  if item.get(field) != old_item.get(field)]})
                 if location in PREDICTIONS:
                     if item.get("outputComparison") != "exact":

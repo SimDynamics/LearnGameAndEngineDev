@@ -213,6 +213,35 @@ MULTIPLE_CHOICE_DISTRACTOR_REVISIONS = {
         "Sólo los resultados de caracteres del dominio establecido se convierten aquí a char. Una marca de fin se conserva como marca. Convertir previamente a char no valida un int arbitrario ni garantiza conservar EOF.",
     ),
 }
+# Rellenos revisados: ampliaciones y consignas precisas; sólo estos campos.
+FILL_CODE_REVISIONS = {
+    ("objetos_y_estado/lesson_objetos_valores_y_tipos.json", 2, 4): {
+        "question": "Completa sólo el tipo entero usado para las cantidades de esta lección, ahora para conservar nueve bicicletas.",
+        "answers": ["int", "signed", "signed int", "int signed"],
+    },
+    ("objetos_y_estado/lesson_enteros_y_aproximaciones.json", 2, 5): {
+        "question": "Entre los dos tipos numéricos estudiados hasta aquí, completa el que conserva 3.5 litros sin convertirlo a entero.",
+    },
+    ("objetos_y_estado/lesson_conversiones_y_deduccion.json", 3, 5): {
+        "question": "Entre los dos tipos numéricos estudiados hasta aquí, completa el que conserva 1.5 en una inicialización con llaves.",
+    },
+    ("objetos_y_estado/lesson_caracteres_y_valores_logicos.json", 6, 3): {
+        "question": "Completa sólo el literal lógico para indicar que la revisión todavía no está terminada.",
+    },
+    ("errores_y_construccion_gradual/lesson_requisitos_casos_y_primera_version.json", 3, 5): {
+        "question": "Escribe un único literal numérico decimal de tipo int o double, sin operaciones ni nombres, que represente exactamente los minutos de preparación para pedidos no vacíos.",
+        "answers": ["3", "3.0"],
+        "explanation": "La preparación es de tres minutos. 3 y 3.0 representan esa cantidad; aquí el cálculo con 3.0 no genera fracción y su retorno int conserva el resultado. Que una cantidad distinta se trunque al mismo entero no satisface el requisito. La contribución por pieza sigue siendo 2*piezas; el pedido vacío retorna antes de sumarla.",
+    },
+    ("datos_propios_y_estado_valido/lesson_operaciones_auxiliares_y_significado_de_igualdad.json", 3, 5): {
+        "question": "Completa sólo el operador de negación que hace != coherente con ==.",
+        "answers": ["!", "not"],
+        "explanation": "Diferentes significa que no se cumple la igualdad completa. ! y su escritura alternativa not niegan el mismo resultado bool; ambas mantienen coherencia con ==.",
+    },
+    ("archivos_y_programa_completo/lesson_etiquetas_y_alcance_de_los_identificadores.json", 2, 4): {
+        "code": "bool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id ___ 3) { return false; }\n    destino = nombres_grupos.at(id);\n    return true;\n}",
+    },
+}
 # Equivalentes C++ verificados para estas consignas concretas. Sólo se permite
 # ampliar answers; el programa, la pregunta, el feedback y la posición se conservan.
 ACCEPTED_ANSWER_EXTENSIONS = {
@@ -364,6 +393,12 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
         return True
     lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
     location = (lesson_path, pn + 1, bn + 1)
+    revision = FILL_CODE_REVISIONS.get(location)
+    if revision is not None and old["type"] == "fill_code":
+        return (
+            current.get("answers", [])[:len(old["answers"])] == old["answers"]
+            and current == dict(old, **revision)
+        )
     if location in EXACT_OUTPUT_LOCATIONS and old["type"] == "output_prediction":
         if current == dict(old, outputComparison="exact"):
             return True

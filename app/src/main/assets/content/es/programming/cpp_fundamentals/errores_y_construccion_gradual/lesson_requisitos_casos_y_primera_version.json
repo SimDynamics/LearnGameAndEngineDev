@@ -111,13 +111,14 @@
         {
           "type": "fill_code",
           "id": "conservar_preparacion",
-          "question": "Completa sólo los minutos de preparación para pedidos no vacíos, según el requisito.",
+          "question": "Escribe un único literal numérico decimal de tipo int o double, sin operaciones ni nombres, que represente exactamente los minutos de preparación para pedidos no vacíos.",
           "language": "cpp",
           "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) { return 0; }\n    return ___ + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(3);\n    return 0;\n}\n",
           "answers": [
-            "3"
+            "3",
+            "3.0"
           ],
-          "explanation": "La preparación es 3; la contribución por pieza se conserva como 2*piezas."
+          "explanation": "La preparación es de tres minutos. 3 y 3.0 representan esa cantidad; aquí el cálculo con 3.0 no genera fracción y su retorno int conserva el resultado. Que una cantidad distinta se trunque al mismo entero no satisface el requisito. La contribución por pieza sigue siendo 2*piezas; el pedido vacío retorna antes de sumarla."
         }
       ]
     },

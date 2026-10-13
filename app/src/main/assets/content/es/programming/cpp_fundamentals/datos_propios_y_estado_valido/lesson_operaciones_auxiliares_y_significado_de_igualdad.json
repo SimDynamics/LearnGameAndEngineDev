@@ -83,12 +83,13 @@
         {
           "type": "fill_code",
           "language": "cpp",
-          "question": "Completa sólo el símbolo de negación que hace != coherente con ==.",
+          "question": "Completa sólo el operador de negación que hace != coherente con ==.",
           "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return ___(a == b); }\n\nint main() {\n    Pedido a{\"A\", 1};\n    Pedido b{\"B\", 1};\n    std::cout << (a != b);\n    return 0;\n}\n",
           "answers": [
-            "!"
+            "!",
+            "not"
           ],
-          "explanation": "Diferentes significa que no se cumple la igualdad completa."
+          "explanation": "Diferentes significa que no se cumple la igualdad completa. ! y su escritura alternativa not niegan el mismo resultado bool; ambas mantienen coherencia con ==."
         }
       ]
     },
