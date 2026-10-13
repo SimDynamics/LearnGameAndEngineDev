@@ -1,0 +1,294 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__indices_y_limites_de_acceso",
+  "title": "Accéder aux éléments dans leurs limites",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une position n'est pas sa valeur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans un vecteur contenant {12, 4, 9}, le premier élément a pour indice zéro, le deuxième un et le troisième deux. Écrire datos[1] accède à l'élément d'indice un, dont la valeur est quatre. Un indice désigne une position ; il n'indique ni le nombre d'éléments ni une recherche de la valeur un."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{12, 4, 9};\n    std::cout << datos[0] << \" \" << datos[1] << \" \" << datos[2];\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dans {6, 10, 3}, quel est l'indice de la valeur dix ?",
+          "options": [
+            "10",
+            "2",
+            "1"
+          ],
+          "correctIndex": 2,
+          "explanation": "La première position a pour indice zéro ; dix est en deuxième position, à l'indice un."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le chiffre de l'indice permettant de lire le troisième élément.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{5, 8, 2};\n    std::cout << datos[___];\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Le troisième élément se trouve à l'indice deux."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "size() est la borne supérieure exclue"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un vecteur a une taille de trois, ses indices valides sont zéro, un et deux. L'indice trois est déjà hors limites. Le domaine commence à zéro et comprend tous les entiers inférieurs à size() ; la taille elle-même est exclue. Dans un vecteur vide, aucun indice n'est valide, pas même zéro."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un vecteur a une taille de quatre. Quelle liste contient exactement ses indices valides ?",
+          "options": [
+            "0, 1, 2, 3",
+            "0, 1, 2, 3, 4",
+            "1, 2, 3, 4"
+          ],
+          "correctIndex": 0,
+          "explanation": "Il y a quatre positions à partir de zéro ; quatre est la borne exclue."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "À quel élément peut-on accéder dans un vecteur vide ?",
+          "options": [
+            "À l'indice zéro.",
+            "À aucun élément.",
+            "À l'indice size()."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un vecteur vide ne contient aucun élément à lire ou à modifier."
+        },
+        {
+          "type": "note",
+          "text": "Nous n'exécuterons pas d'accès hors limites. Pour un std::vector standard, [] exige un indice valide et ne garantit pas de signaler une erreur. Il n'existe aucune sortie sûre d'un accès invalide que nous devrions chercher à découvrir par des essais."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire et modifier un élément"
+        },
+        {
+          "type": "paragraph",
+          "text": "datos[1] = 7; change la valeur d'une position existante. Cette affectation ne crée pas d'élément supplémentaire ; la taille reste identique. Relire datos[1] permet d'observer la nouvelle valeur. Comme pour une variable individuelle, la mise à jour dépend de l'objet indiqué à gauche."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> cajas{2, 5, 8};\n    int copia = cajas[1];\n    cajas[1] += 3;\n    std::cout << copia << \" \" << cajas[1] << \" \" << cajas.size();\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "5 8 3"
+          ],
+          "explanation": "copia conserve cinq ; la deuxième position passe à huit sans modifier la taille."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le chiffre de l'indice pour doubler la première valeur, tout en conservant trois éléments.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 6, 9};\n    datos[___] *= 2;\n    std::cout << datos[0] << \" \" << datos.size();\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "L'indice zéro existe déjà. La mise à jour transforme quatre en huit."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un vecteur à deux éléments reçoit push_back(7). Quelle différence avec l'affectation de sept à l'indice un ?",
+          "options": [
+            "L'affectation recherche toutes les occurrences de sept.",
+            "push_back ajoute une troisième position ; l'affectation modifie la deuxième, déjà existante.",
+            "Les deux opérations augmentent toujours la taille."
+          ],
+          "correctIndex": 1,
+          "explanation": "Ajouter et remplacer sont deux opérations différentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "at() ajoute une vérification des limites"
+        },
+        {
+          "type": "paragraph",
+          "text": "datos.at(1) accède lui aussi à l'élément d'indice un, mais vérifie les limites. Si l'indice n'existe pas, il signale une erreur en lançant une exception ; nous apprendrons plus tard à gérer les exceptions. La forme standard [] ne garantit pas cette vérification. Le support PPP du livre peut remplacer vector par une version vérifiée (Stroustrup, 2024, section 3.6.3) : ici nous utilisons std::vector standard et gardons tous les accès valides."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{6, 3};\n    datos.at(1) = 8;\n    std::cout << datos[1] << \" \" << datos.at(0);\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "8 6"
+          ],
+          "explanation": "Les deux opérations accèdent à des positions valides du même vecteur."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle proposition décrit correctement at() et [] pour std::vector ?",
+          "options": [
+            "[] ajoute automatiquement des éléments.",
+            "at() vérifie l'indice ; [] exige que celui-ci soit déjà valide.",
+            "at() autorise n'importe quel indice sans erreur."
+          ],
+          "correctIndex": 1,
+          "explanation": "La vérification des limites ne remplace pas la décision sur ce qu'il faut faire lorsqu'une position n'existe pas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans ces exercices, nous vérifions le domaine valide avant l'accès et utilisons at() lorsque nous voulons un accès vérifié. Il n'est pas nécessaire de provoquer ni d'intercepter une erreur pour apprendre à justifier une position valide."
+        },
+        {
+          "type": "note",
+          "text": "at() vérifie les limites et lance out_of_range si une position n'existe pas. L'unité sur les exceptions expliquera comment signaler cet échec et s'en remettre. Ici nous gardons les indices valides et utilisons des vérifications avant tout accès pour justifier chaque position ; inutile de provoquer un échec pour vérifier les limites."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier l'existence avant d'accéder"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    if (datos.empty()) {\n        std::cout << \"Aucun enregistrement\";\n    } else {\n        std::cout << datos.at(0);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0};\n    if (datos.empty()) {\n        std::cout << \"Aucun enregistrement\";\n    } else {\n        std::cout << \"Premier : \" << datos.at(0);\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "Premier : 0"
+          ],
+          "explanation": "Un élément de valeur zéro existe ; la branche qui le lit est donc valide."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    auto indice = datos.size();\n    if (indice < datos.size()) {\n        std::cout << datos.at(indice);\n    } else {\n        std::cout << \"Indice indisponible\";\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "Indice indisponible"
+          ],
+          "explanation": "La taille est la borne supérieure exclue ; cette position n'est donc pas lue."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ici, auto déduit le type renvoyé par size(), de sorte que la comparaison utilise des types compatibles. Nous apprendrons plus tard à nommer ce type lors du parcours des indices."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le dernier élément exige une collection non vide"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsqu'il y a des éléments, le dernier indice est size() - 1. Lorsqu'il n'y en a pas, soustraire un ne crée pas une position valide. Il faut donc vérifier si la collection est vide avant de calculer et d'utiliser cette position."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 9, 6};\n    if (!datos.empty()) {\n        auto ultimo = datos.size() - 1;\n        std::cout << datos.at(ultimo);\n    } else {\n        std::cout << \"Aucun dernier élément\";\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "6"
+          ],
+          "explanation": "Une taille de trois donne un dernier indice de deux ; la condition protège également le cas vide."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu souhaites accéder au dernier élément de n'importe quelle collection. Quel ordre est sûr ?",
+          "options": [
+            "Accéder d'abord, puis vérifier si la collection est vide.",
+            "Toujours utiliser size() comme indice.",
+            "Vérifier d'abord que la collection n'est pas vide ; dans cette branche, utiliser size() - 1."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'existence d'un élément doit être établie avant de calculer et de lire la dernière position."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire et tester les cas limites"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris un programme avec {3, 7, 2}. S'il y a des éléments, ajoute quatre au premier et affiche Premier : 7 et Dernier : 2 sur deux lignes distinctes. S'il n'y en a pas, affiche Aucune donnée. Teste aussi {5}, qui doit afficher Premier : 9 et Dernier : 9 : dans une collection à un seul élément, les deux positions désignent le même objet."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construis ici le programme demandé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de compiler, note pourquoi chaque position utilisée existe. Teste ensuite le vecteur vide, sans effectuer le moindre accès dans cette branche. Modifier un élément ne doit pas changer size()."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence et copie conservant une ancienne valeur"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 7, 2};\n    if (datos.empty()) {\n        std::cout << \"Aucune donnée\";\n    } else {\n        datos.at(0) += 4;\n        std::cout << \"Premier : \" << datos.at(0) << \"\\n\";\n        std::cout << \"Dernier : \" << datos.at(datos.size() - 1);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{9, 4};\n    int anterior = datos.at(0);\n    datos.at(0) = datos.at(1);\n    std::cout << anterior << \" \" << datos.at(0);\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "9 4"
+          ],
+          "explanation": "La copie anterior a reçu neuf avant le remplacement de la première position."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Avec un seul élément, que se passe-t-il si tu modifies le premier puis lis le dernier ?",
+          "options": [
+            "Une deuxième position est créée.",
+            "Tu vois la modification : c'est la même position.",
+            "Le dernier conserve une copie indépendante."
+          ],
+          "correctIndex": 1,
+          "explanation": "Premier et dernier désignent le même indice zéro lorsque la taille est un."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de l'atelier : modifier une position existante sans augmenter la taille ; vérifier si la collection est vide avant d'y accéder ; considérer premier et dernier comme une seule position avec un unique élément ; comparer toutes les sorties aux cas demandés."
+        }
+      ]
+    }
+  ]
+}

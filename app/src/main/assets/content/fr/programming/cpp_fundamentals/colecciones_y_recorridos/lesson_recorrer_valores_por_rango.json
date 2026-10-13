@@ -1,0 +1,264 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__recorrer_valores_por_rango",
+  "title": "Parcourir une collection par ses valeurs",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une visite pour chaque élément"
+        },
+        {
+          "type": "paragraph",
+          "text": "for (int valor : datos) parcourt les éléments de datos dans leur ordre actuel. À chaque itération, la boucle crée une variable valor initialisée avec une copie de l'élément courant. Les deux-points séparent le nom de cette variable de la collection. Ce n'est ni une condition de comparaison ni un séparateur du for avec compteur."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 2, 7};\n    for (int valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 4;2;7;. Le corps s'exécute trois fois. Il n'est pas nécessaire de calculer les indices pour visiter tous les éléments ; la boucle basée sur un intervalle exprime directement cette intention."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Suivre les visites"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 3, 1};\n    for (int valor : datos) {\n        std::cout << valor << \":\";\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "3:3:1:"
+          ],
+          "explanation": "Chaque élément est visité, y compris les deux occurrences de trois."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Qu'est-ce qui détermine l'ordre d'une boucle basée sur un intervalle ?",
+          "options": [
+            "Un ordre croissant calculé automatiquement.",
+            "Le nom des variables.",
+            "L'ordre actuel des éléments du vecteur."
+          ],
+          "correctIndex": 2,
+          "explanation": "La boucle ne trie pas elle-même les données."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le nom explicite du type des éléments de datos pour déclarer une copie du même type.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 6};\n    for (___ valor : datos) {\n        std::cout << valor;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "int",
+            "signed",
+            "signed int",
+            "int signed"
+          ],
+          "explanation": "Chaque itération utilise une copie d'un élément int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une collection vide ou à un seul élément"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    std::cout << \"Début|\";\n    for (int valor : datos) {\n        std::cout << valor << \"|\";\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "Début|Fin"
+          ],
+          "explanation": "Un vecteur vide provoque zéro visite ; le code situé après la boucle s'exécute tout de même."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0};\n    for (int valor : datos) {\n        std::cout << \"Valeur=\" << valor;\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "Valeur=0"
+          ],
+          "explanation": "Il y a une visite : zéro est une valeur, pas une absence d'élément."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le corps de la boucle ne s'est pas exécuté parce que le vecteur est vide. Faut-il accéder à l'indice zéro pour le vérifier ?",
+          "options": [
+            "Non ; zéro visite représente correctement une collection vide.",
+            "Oui, une première visite doit toujours exister.",
+            "Oui, mais uniquement avec []."
+          ],
+          "correctIndex": 0,
+          "explanation": "Une boucle basée sur un intervalle n'accède pas à un élément inexistant lorsque la collection est vide."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modifier la copie ne change pas le vecteur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans for (int valor : datos), valor est un objet différent de l'élément. L'instruction valor += 1; modifie cette copie pendant l'itération. Elle peut changer ce qui est affiché dans le corps, mais les valeurs de datos restent identiques. À la fin de cette itération, la variable locale n'est plus accessible ; l'itération suivante obtient une nouvelle copie."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5};\n    for (int valor : datos) {\n        valor += 1;\n        std::cout << valor << \",\";\n    }\n    std::cout << \"Original=\" << datos.at(0);\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "3,6,Original=2"
+          ],
+          "explanation": "Les copies augmentées sont affichées ; le premier élément conserve la valeur deux."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu veux augmenter tous les éléments dans le vecteur lui-même. Suffit-il de modifier valor dans for (int valor : datos) ?",
+          "options": [
+            "Oui, car toute variable représente toujours l'original.",
+            "Non : cette forme modifie une copie ; il faut accéder aux éléments pour les modifier.",
+            "Seulement s'il existe deux éléments."
+          ],
+          "correctIndex": 1,
+          "explanation": "Retrouve la différence entre copier une valeur et conserver un accès à l'objet d'origine."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Parcourir les chaînes sans changer leur ordre"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> salas{\"Est\", \"Sud\"};\n    for (std::string sala : salas) {\n        std::cout << \"Salle : \" << sala << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> codigos{\"003\", \"021\"};\n    for (auto codigo : codigos) {\n        std::cout << codigo << \"|\";\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "003|021|"
+          ],
+          "explanation": "auto déduit std::string pour ces copies et conserve les étiquettes."
+        },
+        {
+          "type": "paragraph",
+          "text": "auto peut déduire le type d'une copie à partir de chaque élément, comme il déduit les types dans une définition. Ici, auto valor crée toujours une copie ; auto seul ne change pas le lien avec l'élément."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver les conditions et l'affichage"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5, 4};\n    for (int valor : datos) {\n        if (valor >= 4) {\n            std::cout << valor << \";\";\n        }\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "5;4;"
+          ],
+          "explanation": "Tous les éléments sont parcourus ; la condition détermine quelles visites produisent un affichage."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le programme affiche uniquement les valeurs supérieures à trois. Cela signifie-t-il que le vecteur ne contient plus les autres ?",
+          "options": [
+            "Oui, l'affichage supprime les valeurs qui ne sont pas montrées.",
+            "Uniquement si le vecteur est trié.",
+            "Non, une condition d'affichage ne modifie pas la collection."
+          ],
+          "correctIndex": 2,
+          "explanation": "Lire et afficher les valeurs ne modifie pas les éléments existants."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète uniquement la collection parcourue et le nom de la variable affichée.",
+          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> turnos{1, 4};\n    for (int turno : []) {\n        std::cout << [] << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "turnos",
+            "turno"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un programme selon son intention"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'exercice précédent parcourt turnos et affiche turno à chaque visite. Construis maintenant un programme avec {6, 1, 4} : affiche uniquement les nombres pairs, suivis chacun d'un point-virgule. Le résultat doit être 6;4;. Teste ensuite le vecteur vide et {3} : aucun ne produit de valeur sélectionnée. Ajoute le texte Données: avant la boucle et Fin après, pour montrer qu'un parcours à zéro visite n'arrête pas le programme."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construis ici le programme demandé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dresse un tableau indiquant la valeur de chaque visite et le résultat de sa condition. Ne trie pas la collection pour simplifier la réponse : son ordre d'origine fait également partie de la vérification."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence et révision des copies"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{6, 1, 4};\n    std::cout << \"Données:\";\n    for (int valor : datos) {\n        if (valor % 2 == 0) {\n            std::cout << valor << \";\";\n        }\n    }\n    std::cout << \"Fin\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4};\n    for (auto valor : datos) {\n        valor = 9;\n        std::cout << valor << \" \";\n    }\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "9 4"
+          ],
+          "explanation": "auto sans & déduit une variable par valeur : la modification ne concerne que la copie."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quand une boucle basée sur un intervalle est-elle adaptée ?",
+          "options": [
+            "Quand nous souhaitons trier automatiquement les valeurs.",
+            "Uniquement lorsqu'il y a exactement trois éléments.",
+            "Quand nous voulons parcourir chaque valeur d'une collection sans avoir besoin de sa position."
+          ],
+          "correctIndex": 2,
+          "explanation": "Nous choisissons la forme de la boucle selon les informations dont son corps a besoin."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de l'atelier : parcourir les données dans leur ordre, appliquer la condition à chaque valeur visitée et conserver les éléments d'origine ; maintenir les messages situés avant et après la boucle même si aucune valeur n'est sélectionnée."
+        }
+      ]
+    }
+  ]
+}

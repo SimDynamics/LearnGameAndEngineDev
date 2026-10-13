@@ -1,0 +1,294 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__indices_y_limites_de_acceso",
+  "title": "Accessing Elements Within Their Bounds",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A position is not its value"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a vector containing {12, 4, 9}, the first element has index zero, the second index one, and the third index two. Writing datos[1] accesses the element at index one, whose value is four. An index identifies a position; it does not tell us how many elements there are or search for the value one."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{12, 4, 9};\n    std::cout << datos[0] << \" \" << datos[1] << \" \" << datos[2];\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In {6, 10, 3}, what is the index of the value ten?",
+          "options": [
+            "10",
+            "2",
+            "1"
+          ],
+          "correctIndex": 2,
+          "explanation": "The first position has index zero; ten is in the second position, at index one."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the index digit needed to read the third element.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{5, 8, 2};\n    std::cout << datos[___];\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "The third element is at index two."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "size() is the exclusive upper bound"
+        },
+        {
+          "type": "paragraph",
+          "text": "If a vector has size three, its valid indices are zero, one, and two. Index three is already out of bounds. The range starts at zero and includes every integer less than size(); the size itself is excluded. An empty vector has no valid indices, not even zero."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A vector has size four. Which list contains exactly its valid indices?",
+          "options": [
+            "0, 1, 2, 3",
+            "0, 1, 2, 3, 4",
+            "1, 2, 3, 4"
+          ],
+          "correctIndex": 0,
+          "explanation": "There are four positions starting at zero; four is the excluded upper bound."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which element access is possible in an empty vector?",
+          "options": [
+            "Index zero.",
+            "No element access at all.",
+            "The index size()."
+          ],
+          "correctIndex": 1,
+          "explanation": "An empty vector has no elements to read or modify."
+        },
+        {
+          "type": "note",
+          "text": "We will not run out-of-bounds accesses. For a standard std::vector, [] requires a valid index and does not guarantee an error report. An invalid access has no safe output that we should try to discover experimentally."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Read and modify an element"
+        },
+        {
+          "type": "paragraph",
+          "text": "datos[1] = 7; changes the value at an existing position. It does not create another element; the size stays the same. Reading datos[1] afterward sees the new value. As with a single variable, an update depends on which object appears on the left."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> cajas{2, 5, 8};\n    int copia = cajas[1];\n    cajas[1] += 3;\n    std::cout << copia << \" \" << cajas[1] << \" \" << cajas.size();\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "5 8 3"
+          ],
+          "explanation": "copia keeps the value five; the second position changes to eight without changing the size."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the index digit needed to double the first value while keeping three elements.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 6, 9};\n    datos[___] *= 2;\n    std::cout << datos[0] << \" \" << datos.size();\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Index zero already exists. The update changes four to eight."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A vector with two elements receives push_back(7). How does that differ from assigning seven to index one?",
+          "options": [
+            "Assignment searches for every occurrence of seven.",
+            "push_back adds a third position; assignment changes the existing second position.",
+            "Both actions always increase the size."
+          ],
+          "correctIndex": 1,
+          "explanation": "Appending and replacing are different operations."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "at() adds a bounds check"
+        },
+        {
+          "type": "paragraph",
+          "text": "datos.at(1) also accesses the element at index one, but checks the bounds. If the index does not exist, it signals an error by throwing an exception; we will learn to handle exceptions later. Standard [] does not promise that check. The book's PPP support may replace vector with a checked version (Stroustrup, 2024, section 3.6.3): here we use standard std::vector and keep every access valid."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{6, 3};\n    datos.at(1) = 8;\n    std::cout << datos[1] << \" \" << datos.at(0);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "8 6"
+          ],
+          "explanation": "Both operations access valid positions in the same vector."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which statement correctly describes at() and [] for std::vector?",
+          "options": [
+            "[] automatically adds elements.",
+            "at() checks the index; [] requires it to already be valid.",
+            "at() allows any index without an error."
+          ],
+          "correctIndex": 1,
+          "explanation": "Bounds checking does not replace the decision about what to do when a position does not exist."
+        },
+        {
+          "type": "paragraph",
+          "text": "In these exercises, we check the valid range before accessing an element and use at() when we want checked access. There is no need to trigger or catch an error to learn how to justify a valid position."
+        },
+        {
+          "type": "note",
+          "text": "at() checks the range and throws out_of_range if a position does not exist. The exceptions unit teaches how to report and recover from that failure. Here we keep indices valid and use guards before access to justify every position; we do not need to trigger a failure to check the bounds."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check that an element exists before accessing it"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    if (datos.empty()) {\n        std::cout << \"No records\";\n    } else {\n        std::cout << datos.at(0);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0};\n    if (datos.empty()) {\n        std::cout << \"No records\";\n    } else {\n        std::cout << \"First: \" << datos.at(0);\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "First: 0"
+          ],
+          "explanation": "A zero-valued element exists, so the branch that reads it is valid."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    auto indice = datos.size();\n    if (indice < datos.size()) {\n        std::cout << datos.at(indice);\n    } else {\n        std::cout << \"Index unavailable\";\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "Index unavailable"
+          ],
+          "explanation": "The size is the excluded upper bound, so this position is not read."
+        },
+        {
+          "type": "paragraph",
+          "text": "Here auto deduces the type returned by size(), so the comparison uses compatible types. We will learn later how to name that type when traversing indices."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The last element requires a nonempty collection"
+        },
+        {
+          "type": "paragraph",
+          "text": "If there are elements, the last index is size() - 1. If there are none, subtracting one does not create a valid position. That is why we must check whether the collection is empty before calculating and using that position."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 9, 6};\n    if (!datos.empty()) {\n        auto ultimo = datos.size() - 1;\n        std::cout << datos.at(ultimo);\n    } else {\n        std::cout << \"No last element\";\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "6"
+          ],
+          "explanation": "A size of three gives a last index of two; the condition also protects the empty case."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You want to access the last element of any collection. Which order is safe?",
+          "options": [
+            "Access it first, then check whether the collection is empty.",
+            "Always use size() as the index.",
+            "First check that the collection is not empty; within that branch, use size() - 1."
+          ],
+          "correctIndex": 2,
+          "explanation": "Prove that an element exists before calculating and reading the last position."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build and test boundary cases"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write a program with {3, 7, 2}. If there are elements, add four to the first and display First: 7 and Last: 2 on separate lines. If there are none, display No data. Also test {5}, which should display First: 9 and Last: 9: in a single-element collection, both positions refer to the same object."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before compiling, write down why every accessed position exists. Then test the empty vector without performing any access in that branch. Changing an element must not change size()."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution and a copy that preserves an earlier value"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 7, 2};\n    if (datos.empty()) {\n        std::cout << \"No data\";\n    } else {\n        datos.at(0) += 4;\n        std::cout << \"First: \" << datos.at(0) << \"\\n\";\n        std::cout << \"Last: \" << datos.at(datos.size() - 1);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{9, 4};\n    int anterior = datos.at(0);\n    datos.at(0) = datos.at(1);\n    std::cout << anterior << \" \" << datos.at(0);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "9 4"
+          ],
+          "explanation": "The copy anterior received nine before the first position was replaced."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "With a single element, what happens if you modify the first and then read the last?",
+          "options": [
+            "A second position is created.",
+            "You see the modification: they are the same position.",
+            "The last element keeps an independent copy."
+          ],
+          "correctIndex": 1,
+          "explanation": "First and last refer to the same index zero when the size is one."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lab criteria: modify an existing position without increasing the size; check whether the collection is empty before accessing it; treat first and last as the same position when there is only one element; compare every output against the specified cases."
+        }
+      ]
+    }
+  ]
+}

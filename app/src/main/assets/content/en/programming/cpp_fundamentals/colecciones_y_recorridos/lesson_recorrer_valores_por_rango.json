@@ -1,0 +1,264 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__recorrer_valores_por_rango",
+  "title": "Traversing a Collection by Its Values",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One visit per element"
+        },
+        {
+          "type": "paragraph",
+          "text": "for (int valor : datos) visits the elements of datos in their existing order. On each iteration, it creates a variable valor initialized with a copy of the current element. The colon separates the name of that variable from the collection. It is neither a comparison condition nor a separator from a counter-based for loop."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 2, 7};\n    for (int valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 4;2;7;. The body runs three times. There is no need to calculate indices to visit every element; a range-based loop expresses that intention directly."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Trace the visits"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 3, 1};\n    for (int valor : datos) {\n        std::cout << valor << \":\";\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "3:3:1:"
+          ],
+          "explanation": "Every element is visited, including both occurrences of three."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What determines the order of a range-based loop?",
+          "options": [
+            "An automatically calculated ascending order.",
+            "The names of the variables.",
+            "The current order of the vector's elements."
+          ],
+          "correctIndex": 2,
+          "explanation": "The loop does not sort the data on its own."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the explicit type name of the elements of datos to declare a copy of the same type.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 6};\n    for (___ valor : datos) {\n        std::cout << valor;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "int",
+            "signed",
+            "signed int",
+            "int signed"
+          ],
+          "explanation": "Each iteration uses a copy of an int element."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Empty and single-element collections"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    std::cout << \"Start|\";\n    for (int valor : datos) {\n        std::cout << valor << \"|\";\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "Start|End"
+          ],
+          "explanation": "An empty vector results in zero visits; the code after the loop still runs."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0};\n    for (int valor : datos) {\n        std::cout << \"Value=\" << valor;\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "Value=0"
+          ],
+          "explanation": "There is one visit: zero is a value, not an absence of elements."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The loop body did not run because the vector is empty. Must you access index zero to verify this?",
+          "options": [
+            "No; zero visits correctly represent an empty collection.",
+            "Yes, a first visit must always occur.",
+            "Yes, but only using []."
+          ],
+          "correctIndex": 0,
+          "explanation": "A range-based loop does not access a nonexistent element when the collection is empty."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changing a copy does not change the vector"
+        },
+        {
+          "type": "paragraph",
+          "text": "In for (int valor : datos), valor is a different object from the element. The statement valor += 1; changes that copy during the iteration. It can affect what is printed inside the body, but the values in datos remain unchanged. At the end of the iteration, that local variable is no longer available; the next iteration obtains another copy."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5};\n    for (int valor : datos) {\n        valor += 1;\n        std::cout << valor << \",\";\n    }\n    std::cout << \"Original=\" << datos.at(0);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "3,6,Original=2"
+          ],
+          "explanation": "The incremented copies are printed; the first element remains two."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You want all elements to remain incremented in the vector. Is changing valor in for (int valor : datos) enough?",
+          "options": [
+            "Yes, because every variable always represents the original.",
+            "No: that changes a copy; you must access the elements to modify them.",
+            "Only if there are two elements."
+          ],
+          "correctIndex": 1,
+          "explanation": "Recall the difference between copying a value and retaining access to the original object."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Visit strings without changing their order"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> salas{\"East\", \"South\"};\n    for (std::string sala : salas) {\n        std::cout << \"Room: \" << sala << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> codigos{\"003\", \"021\"};\n    for (auto codigo : codigos) {\n        std::cout << codigo << \"|\";\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "003|021|"
+          ],
+          "explanation": "auto deduces std::string for those copies and preserves the labels."
+        },
+        {
+          "type": "paragraph",
+          "text": "auto can deduce a copy's type from each element, just as it deduced types in a declaration. Here auto valor still makes a copy; using auto alone does not change its relationship with the element."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall conditions and output"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5, 4};\n    for (int valor : datos) {\n        if (valor >= 4) {\n            std::cout << valor << \";\";\n        }\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "5;4;"
+          ],
+          "explanation": "Every element is visited; the condition determines which visits produce output."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The program prints only values greater than three. Does this mean the vector no longer contains the other values?",
+          "options": [
+            "Yes, printing removes values that are not displayed.",
+            "Only if the vector is sorted.",
+            "No, an output condition does not modify the collection."
+          ],
+          "correctIndex": 2,
+          "explanation": "Reading and displaying values does not change existing elements."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Fill in only the collection being traversed and the name of the variable to print.",
+          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> turnos{1, 4};\n    for (int turno : []) {\n        std::cout << [] << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "turnos",
+            "turno"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a program that expresses the intention"
+        },
+        {
+          "type": "paragraph",
+          "text": "The preceding fill-in loop traverses turnos and prints turno on every visit. Now build a program with {6, 1, 4}: print only the even numbers, each followed by a semicolon. The result must be 6;4;. Then test an empty vector and {3}: neither produces any selected data. Add the text Data: before the loop and End after it to make it clear that zero visits do not stop the program."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Make a table showing each visited value and the result of its condition. Do not sort the collection to make the answer easier: its original order is also part of the test."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution and review of copies"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{6, 1, 4};\n    std::cout << \"Data:\";\n    for (int valor : datos) {\n        if (valor % 2 == 0) {\n            std::cout << valor << \";\";\n        }\n    }\n    std::cout << \"End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4};\n    for (auto valor : datos) {\n        valor = 9;\n        std::cout << valor << \" \";\n    }\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "9 4"
+          ],
+          "explanation": "auto without & deduces a by-value variable: the change affects the copy."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "When is a range-based loop appropriate?",
+          "options": [
+            "When we want values to be sorted automatically.",
+            "Only when there are exactly three elements.",
+            "When we want to visit every value of a collection without needing its position."
+          ],
+          "correctIndex": 2,
+          "explanation": "We choose the loop structure according to the information its body needs."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lab criteria: visit the data in their existing order, apply the condition to each visited value, and preserve the original elements; keep the messages before and after the loop visible even if no values are selected."
+        }
+      ]
+    }
+  ]
+}
