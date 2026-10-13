@@ -1,0 +1,248 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__modificar_con_referencias",
+  "title": "Modifying Elements Through References",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Name the element during each visit"
+        },
+        {
+          "type": "paragraph",
+          "text": "To modify the element being visited, the loop variable must refer to that element. for (int& valor : datos) uses a reference: valor names the existing element for that iteration instead of containing an independent copy. The & symbol is part of the declaration and expresses this relationship with the element."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 5};\n    for (int& valor : datos) {\n        valor += 1;\n    }\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The elements become three and six. Updating through the reference changes the object belonging to the vector. Its size does not increase."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The difference must be visible afterward"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 7};\n    for (int valor : datos) {\n        valor *= 2;\n    }\n    for (int& valor : datos) {\n        valor += 3;\n    }\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "7 10"
+          ],
+          "explanation": "The first loop changes only copies; the second adds three to the original elements."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "To leave every element increased by two, which loop declaration matches that intention?",
+          "options": [
+            "Both always leave the same state.",
+            "for (int valor : datos)",
+            "for (int& valor : datos)"
+          ],
+          "correctIndex": 2,
+          "explanation": "A reference lets you change the element that belongs to the collection."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the symbol that preserves access to the original element.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n    for (int___ valor : datos) {\n        valor = 8;\n    }\n    std::cout << datos.at(0);\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ],
+          "explanation": "int& declares a reference, not a copy."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "auto& preserves the reference relationship"
+        },
+        {
+          "type": "paragraph",
+          "text": "for (auto& valor : datos) deduces the element's type and explicitly preserves the reference through &. With this vector of integers, it is equivalent to visiting with int&. Removing & changes the behavior even though auto still deduces int. Choosing auto does not eliminate the decision between making a copy and using a reference."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 3};\n    for (auto& valor : datos) {\n        valor *= 2;\n    }\n    for (auto valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "2;6;"
+          ],
+          "explanation": "The first loop modifies the elements; the second reads copies to print them."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Fill in only the symbol needed to modify the two original strings.",
+          "template": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> etiquetas{\"A\", \"B\"};\n    for (auto[] etiqueta : etiquetas) {\n        etiqueta += \"!\";\n    }\n    std::cout << etiquetas.at(0) << etiquetas.at(1);\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modify a string or only its copy"
+        },
+        {
+          "type": "paragraph",
+          "text": "The previous answer is &: the original strings become A! and B!. A reference is not limited to integer elements; it also lets us operate on a string. If we only want to create a display version, we can modify a copy and preserve the original data."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> nombres{\"Light\", \"Sun\"};\n    for (auto nombre : nombres) {\n        nombre += \"?\";\n        std::cout << nombre << \" \";\n    }\n    std::cout << nombres.at(0);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "Light? Sun? Light"
+          ],
+          "explanation": "The versions ending in ? are display copies; Luz remains in the vector."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You need to permanently append \"-active\" to every label. Which loop would you use?",
+          "options": [
+            "Read size() without visiting any elements.",
+            "auto& etiqueta to update the originals.",
+            "auto etiqueta and assume the name maintains a link."
+          ],
+          "correctIndex": 1,
+          "explanation": "The choice must reflect whether the result remains stored or is only displayed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Read through a const reference"
+        },
+        {
+          "type": "paragraph",
+          "text": "for (const auto& texto : etiquetas) reads through a reference that does not permit modifying the element through texto. const expresses the intention to read only, while & avoids copying each string. We use it when we only need to observe, especially for objects that could be costly to copy. It does not guarantee that no other code can modify the vector."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> etiquetas{\"North\", \"South\"};\n    for (const auto& texto : etiquetas) {\n        std::cout << texto << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In for (const auto& texto : etiquetas), what intention does the declaration express?",
+          "options": [
+            "Read the element through a reference without modifying it via texto.",
+            "Always create a modifiable copy.",
+            "Increase the number of elements."
+          ],
+          "correctIndex": 0,
+          "explanation": "const and & express different decisions: permission to modify and relationship to the element."
+        },
+        {
+          "type": "note",
+          "text": "In this unit, we do not add or remove elements from a vector while traversing it with a range-based loop. Growth can invalidate references to elements and the loop's internal positions. If you need a new collection, build another vector; we will study the details of validity later."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Apply a selective transformation"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{0, 2, 5};\n    for (auto& valor : datos) {\n        if (valor < 3) {\n            valor += 4;\n        }\n    }\n    for (int valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "4;6;5;"
+          ],
+          "explanation": "The decision uses each element's old value and changes only that element when the condition is met."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A reference-based loop runs over an empty vector. What happens?",
+          "options": [
+            "An element is created automatically.",
+            "Index zero must be read in order to stop.",
+            "No visit takes place, and the collection remains empty."
+          ],
+          "correctIndex": 2,
+          "explanation": "References are bound only when there are elements to visit."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build and compare states"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a program with {2, 6, 1}. Using a range-based loop with a reference to each element, increase values less than four by three, then display the collection: 5;6;4;. Repeat with {}, {4}, and {0}; they should produce no values, 4;, and 3;, respectively. Then compare the same program after removing only & from the first loop: explain which changes are no longer stored."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predict both the final output and the vector's state. A correct message inside the loop does not prove that the original data changed; you must examine them after the transformation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution and spaced review"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 6, 1};\n    for (auto& valor : datos) {\n        if (valor < 4) {\n            valor += 3;\n        }\n    }\n    for (const auto& valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n    int copia = datos.at(0);\n    for (auto& valor : datos) {\n        ++valor;\n    }\n    std::cout << copia << \" \" << datos.at(0);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "3 4"
+          ],
+          "explanation": "The earlier copy remains independent even when the element is modified through a reference."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What evidence distinguishes a reference-based transformation from changing copies?",
+          "options": [
+            "Print each value immediately after changing it inside the loop.",
+            "Read the collection after the loop and compare its elements with their starting values.",
+            "Rename valor to original."
+          ],
+          "correctIndex": 1,
+          "explanation": "A local copy can also be changed and display its transformed value inside the loop. To check that a change was stored, read the collection afterward in a case with elements that should change. Renaming valor does not change the relationship expressed by its declaration."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lab criteria: the transformation must remain stored in the vector and affect only values meeting the condition; examine the collection after the loop; explain how the state differs when using copies."
+        }
+      ]
+    }
+  ]
+}

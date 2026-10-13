@@ -1,0 +1,268 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__recorrer_indices_con_seguridad",
+  "title": "Traversing Indices and Justifying Every Access",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "When position matters too"
+        },
+        {
+          "type": "paragraph",
+          "text": "A range-based loop provides each value. If we need to display its position, compare neighbors, or visit only part of the collection, we can use a for loop with an index. The access rule stays the same: before reading datos[i], we must know that i is less than size() and represents a nonnegative position."
+        },
+        {
+          "type": "paragraph",
+          "text": "For the sizes and indices of our vectors we will use std::size_t, available through <cstddef>. It is an unsigned integer type: it represents zero and positive quantities within a finite range. It cannot represent a negative index. Using it here keeps the types consistent with these collections' sizes; that does not make it suitable for every quantity in a program."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{8, 3, 6};\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        std::cout << i << \":\" << datos[i] << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 0:8;1:3;2:6;. The condition is checked before every access. When i reaches three, it is false and the body no longer runs."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The condition protects the body"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{7, 2};\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        std::cout << i << \"=\" << datos.at(i) << \";\";\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "0=7;1=2;"
+          ],
+          "explanation": "There are two valid indices, zero and one."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the comparison operator that requires i to be strictly less than datos.size().",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{3, 5};\n    for (std::size_t i = 0; i ___ datos.size(); ++i) {\n        std::cout << datos[i];\n    }\n    return 0;\n}\n",
+          "answers": [
+            "<"
+          ],
+          "explanation": "< prevents the body from running when i equals size()."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Why does i <= datos.size() fail to protect this access?",
+          "options": [
+            "Because it allows i to equal the size, which is not a valid position.",
+            "Because it always starts at one.",
+            "Because size() changes when read."
+          ],
+          "correctIndex": 0,
+          "explanation": "The upper bound of the valid range is excluded. We do not run the version using <=."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zero and one visit"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos;\n    std::cout << \"[\";\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        std::cout << datos[i];\n    }\n    std::cout << \"]\";\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "[]"
+          ],
+          "explanation": "Zero is not less than zero. No access takes place."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{9};\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        std::cout << i << \":\" << datos[i];\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "0:9"
+          ],
+          "explanation": "The only existing position is zero."
+        },
+        {
+          "type": "paragraph",
+          "text": "We do not habitually store size() in int: a general collection could have a size that does not fit in that type. Our examples keep indices and sizes in an appropriate type and small sums of element values in int when suitable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare neighboring elements without inventing a predecessor"
+        },
+        {
+          "type": "paragraph",
+          "text": "To compare datos[i] with datos[i - 1], we start at i = 1. The previous position zero then exists. The condition i < size() ensures that the current position exists. In an empty collection or a one-element collection there are no neighboring pairs, so the body runs zero times."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{4, 4, 2, 2};\n    int iguales = 0;\n    for (std::size_t i = 1; i < datos.size(); ++i) {\n        if (datos[i] == datos[i - 1]) {\n            ++iguales;\n        }\n    }\n    std::cout << iguales;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "2"
+          ],
+          "explanation": "The pairs at positions 0/1 and 2/3 match. We are not counting globally distinct values."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "With one element, how many neighboring pairs are compared?",
+          "options": [
+            "Two.",
+            "One.",
+            "Zero."
+          ],
+          "correctIndex": 2,
+          "explanation": "A pair requires two positions; starting at one avoids inventing a previous neighbor."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Fill in only the starting digit and the name of the size operation used to compare neighbors.",
+          "template": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{2, 2};\n    int iguales = 0;\n    for (std::size_t i = []; i < datos.[](); ++i) {\n        if (datos[i] == datos[i - 1]) {\n            ++iguales;\n        }\n    }\n    std::cout << iguales;\n    return 0;\n}\n",
+          "answers": [
+            "1",
+            "size"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Traverse backward with a count of remaining elements"
+        },
+        {
+          "type": "paragraph",
+          "text": "The previous solution starts at one and uses size(). To move backward, we will not use i >= 0 as a condition with an unsigned integer: that condition never detects a negative value, and subtracting from zero does not yield the -1 you might expect. We can count the elements remaining: cuenta starts at size(), and only when cuenta > 0 do we access cuenta - 1."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{2, 8, 5};\n    for (std::size_t cuenta = datos.size(); cuenta > 0; --cuenta) {\n        std::cout << datos[cuenta - 1] << \";\";\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "5;8;2;"
+          ],
+          "explanation": "The counts are three, two, and one; their indices are two, one, and zero."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What makes subtracting cuenta - 1 safe inside this body?",
+          "options": [
+            "An unsigned integer can always represent -1.",
+            "Subtracting creates a new vector element.",
+            "The condition cuenta > 0 has already been satisfied."
+          ],
+          "correctIndex": 2,
+          "explanation": "With a positive count, the subtraction identifies an existing index and the count does not exceed the size."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Modify by position"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{1, 4, 6};\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        if (i % 2 == 0) {\n            datos[i] += 2;\n        }\n    }\n    for (int valor : datos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "3;4;8;"
+          ],
+          "explanation": "The condition refers to the index: positions zero and two change, not every even-valued element."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You must increase even values, regardless of their positions. What should the condition inspect?",
+          "options": [
+            "Only size().",
+            "The value datos[i] % 2.",
+            "The index i % 2."
+          ],
+          "correctIndex": 1,
+          "explanation": "Index and value have different meanings even though both are numbers."
+        },
+        {
+          "type": "note",
+          "text": "We do not grow the vector during these traversals. Every example uses a finite collection prepared before the loop, and all accesses remain within its valid range."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a report by position"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a report using {3, 7, 1}: display Session 1: 3, Session 2: 7, and Session 3: 1 on separate lines. The index starts at zero, but the label shown to a person starts at one. Then test {} and {0}: the empty vector displays no sessions; the single zero displays Session 1: 0. Do not access an additional index just to print the last line."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "As a second variation, display only the values in reverse order, separated by semicolons. Explain in writing the first and last positions of both traversals."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution and review of loop conditions"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{3, 7, 1};\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        std::cout << \"Session \" << i + 1 << \": \" << datos[i] << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{5};\n    for (std::size_t cuenta = datos.size(); cuenta > 0; --cuenta) {\n        std::cout << datos.at(cuenta - 1);\n    }\n    std::cout << \"End\";\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "5End"
+          ],
+          "explanation": "A count of one allows index zero; then the loop ends without subtracting from zero inside the body."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What must you preserve when changing a loop condition?",
+          "options": [
+            "That there are always three visits.",
+            "The justification that all used indices exist and that the loop terminates.",
+            "Only the name i."
+          ],
+          "correctIndex": 1,
+          "explanation": "The condition determines which visits are possible and when the traversal ends."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lab criteria: every used index must be within bounds; the human-readable label and index must preserve the specified relationship; an empty vector must produce zero visits; the reverse variation must stop before subtracting from a count of zero."
+        }
+      ]
+    }
+  ]
+}
