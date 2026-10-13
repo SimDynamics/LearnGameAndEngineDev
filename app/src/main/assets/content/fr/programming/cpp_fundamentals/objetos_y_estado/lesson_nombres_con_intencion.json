@@ -1,0 +1,235 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__nombres_con_intencion",
+  "title": "Des noms qui expriment l’intention",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Nommer, c’est aussi expliquer"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un nom permet de retrouver une donnée et d’indiquer ce qu’elle représente. int bicicletas = 7; est plus parlant que int x2 = 7; si la quantité concerne une location. Le compilateur pourrait accepter les deux noms ; la différence tient à ce que comprend la personne qui lit le code. Dans les petits problèmes, des noms courts et précis limitent les confusions entre les données."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous choisirons des noms composés de lettres latines non accentuées, de chiffres et de traits de soulignement, en commençant par une lettre : bicicletas, nivel2, paquetes_recibidos. C’est une convention simple et sûre pour ce cours. C++ accepte d’autres identifiants ; nous n’avons pas besoin de toutes ces possibilités pour exprimer clairement ces programmes."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int paquetes_recibidos = 6;\n    int paquetes_enviados = 2;\n    std::cout << paquetes_recibidos - paquetes_enviados;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Règle du langage ou choix de style"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un identifiant ne peut contenir ni espace à l’intérieur ni signe de soustraction : paquetes nuevos et paquetes-nuevos ne sont pas des identifiants uniques valides. Il ne peut pas non plus commencer par un chiffre. Des mots comme int, return et bool sont réservés par le langage et ne peuvent pas servir de noms de variables. Évite également les noms commençant par un trait de soulignement et ceux de la bibliothèque, pour ne pas entrer en conflit avec des identifiants réservés ou très utilisés."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel nom respecte la convention du cours ?",
+          "options": [
+            "2cajas",
+            "cajas_totales",
+            "cajas totales"
+          ],
+          "correctIndex": 1,
+          "explanation": "cajas_totales commence par une lettre et emploie un trait de soulignement pour séparer les mots."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pourquoi ne peut-on pas utiliser int comme nom de variable ?",
+          "options": [
+            "Il est réservé aux noms de fichiers.",
+            "C’est un mot réservé du langage.",
+            "Il est trop court."
+          ],
+          "correctIndex": 1,
+          "explanation": "int désigne déjà un type du langage : ce nom n’est pas disponible pour désigner une donnée."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Remplace le blanc par l’identifiant cajas_recibidas, écrit exactement comme demandé.",
+          "code": "#include <iostream>\n\nint main() {\n    int ___ = 8;\n    std::cout << cajas_recibidas;\n    return 0;\n}\n",
+          "answers": [
+            "cajas_recibidas"
+          ],
+          "explanation": "L’instruction de sortie utilise le même identifiant que la déclaration, sans espace intérieur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les majuscules font partie du nom"
+        },
+        {
+          "type": "paragraph",
+          "text": "cajas et Cajas sont deux noms différents. Si tu déclares cajas et essaies ensuite de lire Cajas, le compilateur ne peut pas supposer qu’il s’agit de la même chose. Une écriture cohérente aide à distinguer une faute de frappe de deux données réellement distinctes. Il vaut mieux aussi éviter deux variables dont les noms ne diffèrent que par la casse si elles décrivent des choses différentes : des noms plus explicites indiquent mieux leur rôle."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas = 5;\n    std::cout << Cajas; // Erreur intentionnelle : ce nom n'a pas été défini.\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle correction réutilise la variable déjà déclarée dans l’exemple ?",
+          "options": [
+            "Remplacer Cajas par cajas dans l’instruction de sortie.",
+            "Supprimer l’en-tête iostream.",
+            "Mettre Cajas entre guillemets pour afficher la valeur cinq."
+          ],
+          "correctIndex": 0,
+          "explanation": "Lire cajas emploie l’identifiant déclaré. Écrire \"Cajas\" ne ferait qu’afficher ce texte."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 4;\n    std::cout << \"total=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "total=4"
+          ],
+          "explanation": "Le texte fixe et la variable ont des rôles distincts, même s’ils contiennent les mêmes lettres."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir selon le rôle, pas selon la longueur"
+        },
+        {
+          "type": "paragraph",
+          "text": "saldo_pendiente peut être plus utile que saldo s’il existe aussi un saldo_pagado. Un nom trop long complique la lecture ; une abréviation sans contexte oblige à deviner. L’objectif est de décrire suffisamment la donnée. Ne choisis pas un nom qui promet ce que le code ne garantit pas : anterior doit réellement conserver la valeur précédente, et pas simplement porter ce nom."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Deux quantités sont enregistrées : les livres prêtés et les livres rendus. Quelle paire exprime le mieux cette différence ?",
+          "options": [
+            "a et A",
+            "numero et numero2",
+            "libros_prestados et libros_devueltos"
+          ],
+          "correctIndex": 2,
+          "explanation": "Les noms précisent à quelle étape du problème correspond chaque quantité."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "x1 est un nom valide, mais il est peu clair dans un inventaire sans autre contexte. De quel type de problème s’agit-il ?",
+          "options": [
+            "Un manque de clarté pour la personne qui lit.",
+            "Une valeur numérique hors limites.",
+            "Une violation nécessaire de la grammaire du langage."
+          ],
+          "correctIndex": 0,
+          "explanation": "La validité d’un identifiant et son utilité pour comprendre le code sont deux questions différentes."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète avec le nom demandé : six enveloppes sont reçues et cette même quantité est affichée. Utilise sobres_recibidos aux deux endroits.",
+          "template": "#include <iostream>\n\nint main() {\n    int [] = 6;\n    std::cout << [];\n    return 0;\n}\n",
+          "answers": [
+            "sobres_recibidos",
+            "sobres_recibidos"
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Renommer sans modifier le comportement"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le remplissage précédent déclare et lit sobres_recibidos. Dans le laboratoire, le code affiche 7. Renomme a, b et c pour indiquer respectivement cajas_iniciales, cajas_agregadas et cajas_finales. Mets à jour toutes leurs occurrences. La sortie doit rester 7 avant et après : ce changement améliore la lisibilité sans modifier la quantité."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int a = 4;\n    int b = 3;\n    int c = a + b;\n    std::cout << c;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rédige ensuite une phrase décrivant le rôle de chaque variable sans consulter son ancien nom. Si tu as oublié de renommer une occurrence, interprète le diagnostic du compilateur au lieu de créer une variable supplémentaire uniquement pour le faire disparaître."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver le sens d’une séquence"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas_iniciales = 4;\n    int cajas_agregadas = 3;\n    int cajas_finales = cajas_iniciales + cajas_agregadas;\n    std::cout << cajas_finales;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La solution conserve les mêmes opérations et les mêmes données. Les noms rendent visible ce qui est additionné et ce que représente le résultat."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    int inicial = 2;\n    int actualizado = inicial;\n    actualizado += 5;\n    std::cout << inicial << \":\" << actualizado;\n    return 0;\n}\n",
+          "answers": [
+            "2:7"
+          ],
+          "explanation": "Les deux objets sont indépendants. Modifier l’un ne change pas la valeur de l’autre."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que faut-il vérifier après avoir renommé une variable ?",
+          "options": [
+            "La cohérence des références et un comportement qui respecte toujours la consigne.",
+            "Seulement la déclaration : changer le nom n’affecte pas les autres utilisations.",
+            "Seulement la sortie : les diagnostics liés à l’ancien nom n’ont aucune importance."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un renommage cohérent améliore la compréhension tout en préservant le comportement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence : renommer sans modifier le calcul"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et vérifié ta propre solution. La référence présente une implémentation possible ; les critères permettent de reconnaître d’autres solutions correctes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. Les trois noms doivent désigner la quantité initiale, la quantité ajoutée et la quantité finale. Modifie toutes leurs occurrences tout en conservant les valeurs 4 et 3, l’addition et la sortie 7. Renommer ne doit ni introduire de variables supplémentaires, ni changer l’opération, ni afficher une valeur fixe pour masquer une erreur de nom."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int cajas_iniciales{4};\n    int cajas_agregadas{3};\n    int cajas_finales{cajas_iniciales + cajas_agregadas};\n    std::cout << cajas_finales;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "cajas_iniciales conserve ce qui était déjà présent ; cajas_agregadas, ce qui est ajouté ; cajas_finales, le résultat de leur addition. Cette dépendance apparaît dans le code. La sortie 7 vérifie ce cas particulier ; vérifie aussi que chaque utilisation fait référence au nouveau nom correct."
+        }
+      ]
+    }
+  ]
+}

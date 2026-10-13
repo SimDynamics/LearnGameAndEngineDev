@@ -1,0 +1,314 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__enteros_y_aproximaciones",
+  "title": "Entiers et nombres à partie fractionnaire",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux besoins numériques différents"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une boîte contient sept pièces entières : int piezas = 7; représente cette quantité. Une barre mesure 2.5 mètres : double longitud = 2.5; permet de représenter une partie fractionnaire. Le point d’un littéral numérique appartient à la syntaxe du C++ ; on ne le remplace pas par une virgule décimale."
+        },
+        {
+          "type": "paragraph",
+          "text": "double est un type à virgule flottante : il approxime les nombres réels dans une plage finie et avec une précision limitée. Il ne peut représenter exactement ni tous les réels ni tous les nombres décimaux. Certaines valeurs simples, comme 2.5, sont représentées exactement ; beaucoup d’autres, comme 0.1, sont approximées. Choisis le type selon la donnée et les opérations à effectuer."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas = 7;\n    double longitud = 2.5;\n    std::cout << piezas << \" \" << longitud;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Une mesure de longueur peut valoir 1.75 mètre. Quel type présenté ici permet de conserver cette partie fractionnaire ?",
+          "options": [
+            "int",
+            "double",
+            "bool"
+          ],
+          "correctIndex": 1,
+          "explanation": "double permet de représenter des valeurs fractionnaires ; int représente des entiers."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un littéral a lui aussi un type"
+        },
+        {
+          "type": "paragraph",
+          "text": "7 est un littéral entier ; 7.0 est un littéral décimal de type double. Même s’ils désignent la même quantité mathématique, leurs types influencent les opérations. La sortie habituelle peut afficher 7 dans les deux cas : le texte affiché n’indique pas automatiquement le type et ne reproduit pas tous les détails du littéral écrit."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    int entero = 6;\n    double decimal = 6.0;\n    std::cout << entero << \" \" << decimal;\n    return 0;\n}\n",
+          "answers": [
+            "6 6"
+          ],
+          "explanation": "cout affiche les deux valeurs sous la forme 6. Cet affichage ne transforme pas l’objet double en int."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Une variable double affiche 7. Que sait-on de son type ?",
+          "options": [
+            "Elle reste de type double même si la sortie ne montre aucun point décimal.",
+            "Elle devient un int parce que la sortie ne contient pas de partie fractionnaire.",
+            "L’insertion dans cout a transformé l’objet en texte."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le type d’une variable est fixé lors de sa déclaration et ne dépend pas de la présentation de sa valeur à l’écran."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Parmi les deux types numériques étudiés, complète avec celui qui conserve 3.5 litres sans convertir la valeur en entier.",
+          "code": "#include <iostream>\n\nint main() {\n    ___ litros = 3.5;\n    std::cout << litros;\n    return 0;\n}\n",
+          "answers": [
+            "double"
+          ],
+          "explanation": "Le littéral 3.5 possède une partie fractionnaire, conservée dans un double."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Calculer selon les types des opérandes"
+        },
+        {
+          "type": "paragraph",
+          "text": "L’opérateur / effectue une division. Les opérandes sont les valeurs sur lesquelles porte l’opération : dans 7 / 2, ce sont 7 et 2. Avec deux opérandes entiers, le quotient est entier : 7 / 2 produit 3, car la partie fractionnaire est abandonnée. Si un opérande est de type double, 7.0 / 2 produit 3.5. Cette différence apparaît au moment du calcul, avant de stocker ou d’afficher le résultat. Dans ces exemples, le diviseur n’est jamais nul."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << 7 / 2 << \"\\n\";\n    std::cout << 7.0 / 2;\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 9;\n    int grupos = 4;\n    std::cout << total / grupos << \" \" << total / 4.0;\n    return 0;\n}\n",
+          "answers": [
+            "2 2.25"
+          ],
+          "explanation": "Avec des entiers, neuf divisé par quatre produit deux ; avec un opérande double, le résultat est 2.25."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu dois partager une longueur de 7 mètres en deux parties égales en conservant le demi-mètre restant. Quel calcul convient ?",
+          "options": [
+            "Afficher le texte \"7 / 2\"",
+            "7 / 2",
+            "7.0 / 2"
+          ],
+          "correctIndex": 2,
+          "explanation": "7.0 est un opérande double : la division conserve 3.5. Le littéral entre guillemets serait seulement du texte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Enregistrer ensuite ne modifie pas le calcul"
+        },
+        {
+          "type": "paragraph",
+          "text": "double mitad = 7 / 2; effectue d’abord une division entière qui produit 3. L’enregistrer dans un double conserve ce résultat sous forme de nombre à virgule flottante valant 3. La conversion ultérieure ne peut pas récupérer le .5 perdu. Pour conserver la fraction, change le type d’au moins un opérande avant la division."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    double primera = 13 / 2;\n    double segunda = 13.0 / 2;\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "6 6.5"
+          ],
+          "explanation": "La première expression a déjà produit l’entier six avant son stockage dans un double ; la seconde conserve 6.5."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète les types : huit boîtes forment une quantité entière ; 1.5 mètre comporte une partie fractionnaire.",
+          "template": "#include <iostream>\n\nint main() {\n    [] cajas = 8;\n    [] metros = 1.5;\n    std::cout << cajas << \" \" << metros;\n    return 0;\n}\n",
+          "answers": [
+            "int",
+            "double"
+          ],
+          "answerAlternatives": [
+            [
+              "int",
+              "signed",
+              "signed int",
+              "int signed"
+            ],
+            [
+              "double"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire la solution sans effacer la différence"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les types précédents sont int et double. La sortie est 8 1.5. Nous pourrions aussi enregistrer le nombre huit dans un double, mais int indique directement qu’on compte des boîtes entières."
+        },
+        {
+          "type": "paragraph",
+          "text": "L’addition, la soustraction et la multiplication s’écrivent +, - et *. Une opération peut produire une nouvelle valeur sans modifier ses opérandes : calculer ancho * largo ne modifie ni ancho ni largo. Seule une affectation ou une autre mise à jour explicite modifie l’état. Utilise des parenthèses lorsque tu dois préciser quelle partie doit être calculée ensemble."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    double ancho = 1.5;\n    double largo = 2.0;\n    double area = ancho * largo;\n    std::cout << area << \" \" << ancho;\n    return 0;\n}\n",
+          "answers": [
+            "3 1.5"
+          ],
+          "explanation": "La multiplication donne 3 et ancho reste égal à 1.5. Aucune affectation à ancho n’a lieu."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le chiffre de la partie entière du littéral qui permet d’obtenir 4.5 en divisant neuf par deux.",
+          "code": "#include <iostream>\n\nint main() {\n    double cociente = ___.0 / 2;\n    std::cout << cociente;\n    return 0;\n}\n",
+          "answers": [
+            "9"
+          ],
+          "explanation": "Le littéral 9.0 fait intervenir une division à virgule flottante."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Quantité, unité et plage de valeurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un type numérique ne conserve pas une unité physique à lui seul : double distancia = 2.5; ne précise pas s’il s’agit de mètres ou de kilomètres. Le nom et le texte de sortie doivent communiquer cette interprétation. Un type ne peut pas non plus représenter des grandeurs illimitées. Avec int, on parle de dépassement de capacité lorsqu’un résultat mathématique sort de la plage représentable par ce type. À cette étape, nous utiliserons de petites valeurs et des opérations dont les résultats tiennent dans le type, sans expérimenter les dépassements."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un programme enregistre une longueur. Quelle information apporte le message Longueur : 2.5 m en plus du nombre ?",
+          "options": [
+            "Que tout calcul utilisant cette valeur sera exact.",
+            "L’unité dans laquelle il faut interpréter la valeur.",
+            "Que la valeur n’est plus de type double."
+          ],
+          "correctIndex": 1,
+          "explanation": "Une valeur a besoin d’une interprétation ; l’unité indique ce qui est mesuré."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle affirmation à propos de double est correcte ?",
+          "options": [
+            "Il représente exactement tous les décimaux que nous pouvons écrire.",
+            "Il permet des approximations numériques avec une précision et une plage finies.",
+            "Il ne stocke que des nombres inférieurs à dix."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le fait de représenter des fractions ne permet pas de représenter exactement tous les nombres réels."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare toi-même deux calculs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un programme qui enregistre une longueur de 9 mètres et calcule celle de chacune des deux parties égales. La sortie doit être Partie : 4.5 m. Remplace ensuite 9.0 par 8.0 : il doit afficher Partie : 4 m. Avant chaque exécution, note le résultat attendu et explique quel opérande permet la division à virgule flottante."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Écris ton programme ici.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans une exploration séparée, utilise deux opérandes entiers valant 9 et 2 et prédis le quotient. Ne remplace pas le diviseur par zéro. La vérification consiste à comparer le résultat à l’objectif, mais aussi à contrôler que le code compile."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une solution et deux instantanés"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double longitud_metros = 9.0;\n    int partes = 2;\n    double longitud_por_parte = longitud_metros / partes;\n    std::cout << \"Partie : \" << longitud_por_parte << \" m\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "longitud_metros intervient comme opérande double avant la division. Avec 8.0, le résultat serait 4, même si cout n’ajoute pas .0. Le symbole m rend visible l’interprétation du résultat."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte sans recopier les guillemets du code.",
+          "code": "#include <iostream>\n\nint main() {\n    double lectura = 1.5;\n    double anterior = lectura;\n    lectura += 2.0;\n    std::cout << anterior << \" \" << lectura;\n    return 0;\n}\n",
+          "answers": [
+            "1.5 3.5"
+          ],
+          "explanation": "La copie précédente conserve 1.5 ; la variable lectura passe à 3.5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que faut-il vérifier d’abord si l’on attendait 4.5, mais que le programme affiche 4 après 9 / 2 ?",
+          "options": [
+            "S’il suffit d’ajouter .0 au message affiché sans modifier le calcul.",
+            "Si le stockage dans double garantit la récupération de la fraction perdue.",
+            "Si les deux opérandes étaient entiers au moment du calcul."
+          ],
+          "correctIndex": 2,
+          "explanation": "La partie fractionnaire peut être perdue lors d’une division entière, même si le résultat est ensuite stocké dans un double."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence : longueur de chaque partie"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et vérifié ta propre solution. La référence présente une implémentation possible ; les critères permettent de reconnaître d’autres solutions correctes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. Pour 9 mètres répartis en deux parties égales, la sortie est Partie : 4.5 m ; pour 8 mètres, Partie : 4 m. La division doit conserver la partie fractionnaire avant l’enregistrement du résultat. L’exploration séparée avec les opérandes entiers 9 et 2 donne 4 ; ce quotient ne répond pas à l’objectif de deux longueurs égales totalisant 9 mètres. Garde un diviseur non nul et les petites valeurs indiquées."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double longitud{9.0};\n    double parte{longitud / 2.0};\n    std::cout << \"Partie : \" << parte << \" m\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les opérandes de la référence permettent une division avec une partie fractionnaire. Remplace 9.0 par 8.0 pour le second cas. Dans une exploration séparée, remplace le calcul par int longitud{9}; int parte{longitud / 2}; : le résultat 4 provient du quotient entier, pas d’une défaillance de cout ni d’un changement d’unité."
+        }
+      ]
+    }
+  ]
+}

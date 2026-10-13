@@ -1,0 +1,314 @@
+{
+  "id": "cpp_fundamentals__objetos_y_estado__enteros_y_aproximaciones",
+  "title": "Integers and Numbers with Fractional Parts",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two different numerical needs"
+        },
+        {
+          "type": "paragraph",
+          "text": "A box contains seven whole pieces: int piezas = 7; represents that quantity. A bar measures 2.5 meters: double longitud = 2.5; can represent a fractional part. The decimal point in the numeric literal is part of C++ syntax; it must not be replaced with a decimal comma."
+        },
+        {
+          "type": "paragraph",
+          "text": "double is a floating-point type: it approximates real numbers within a finite range and with finite precision. It cannot store every real number or every decimal value exactly. Some simple quantities, such as 2.5, are represented exactly; many others, such as 0.1, are approximated. Choose the type according to the data and the operations you need to perform."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas = 7;\n    double longitud = 2.5;\n    std::cout << piezas << \" \" << longitud;\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A length measurement might be 1.75 meters. Which type covered in this lesson can preserve that fractional part?",
+          "options": [
+            "int",
+            "double",
+            "bool"
+          ],
+          "correctIndex": 1,
+          "explanation": "double supports values with fractional parts; int represents whole numbers."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Literals have types, too"
+        },
+        {
+          "type": "paragraph",
+          "text": "7 is an integer literal; 7.0 is a decimal literal of type double. Although they describe the same mathematical quantity, their types affect the operations performed. Normal output may display both as 7: printed text does not automatically identify a type or preserve every detail of the original literal."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including the quotation marks from the code.",
+          "code": "#include <iostream>\n\nint main() {\n    int entero = 6;\n    double decimal = 6.0;\n    std::cout << entero << \" \" << decimal;\n    return 0;\n}\n",
+          "answers": [
+            "6 6"
+          ],
+          "explanation": "cout displays both values as 6. Their appearance does not turn the double object into an int."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A double variable prints 7. What can we say about its type?",
+          "options": [
+            "It is still double even though the output has no decimal point.",
+            "It became int because the output contains no fractional part.",
+            "Inserting it into cout changed the object into a text value."
+          ],
+          "correctIndex": 0,
+          "explanation": "A variable's type is established when it is declared and does not depend on how its value appears on screen."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Of the two numerical types studied so far, fill in the one that preserves 3.5 liters without converting it to an integer.",
+          "code": "#include <iostream>\n\nint main() {\n    ___ litros = 3.5;\n    std::cout << litros;\n    return 0;\n}\n",
+          "answers": [
+            "double"
+          ],
+          "explanation": "The literal 3.5 has a fractional part, which is preserved by a double."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Calculate according to operand types"
+        },
+        {
+          "type": "paragraph",
+          "text": "The / operator performs division. Operands are the values an operation works with: in 7 / 2, they are 7 and 2. With two integer operands, the quotient is an integer: 7 / 2 yields 3 because the fractional part is discarded. If one operand is double, 7.0 / 2 yields 3.5. The distinction occurs during the calculation, before the result is stored or printed. The divisor is always nonzero in these examples."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    std::cout << 7 / 2 << \"\\n\";\n    std::cout << 7.0 / 2;\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including the quotation marks from the code.",
+          "code": "#include <iostream>\n\nint main() {\n    int total = 9;\n    int grupos = 4;\n    std::cout << total / grupos << \" \" << total / 4.0;\n    return 0;\n}\n",
+          "answers": [
+            "2 2.25"
+          ],
+          "explanation": "With integer operands, nine divided by four yields two; with a double operand, the result is 2.25."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You need to divide a length of 7 meters into two equal parts and preserve the extra half meter. Which calculation does that?",
+          "options": [
+            "Display the text \"7 / 2\"",
+            "7 / 2",
+            "7.0 / 2"
+          ],
+          "correctIndex": 2,
+          "explanation": "7.0 is a double operand, so the division retains 3.5. The quoted literal would only be text."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Storing later does not change the calculation"
+        },
+        {
+          "type": "paragraph",
+          "text": "double mitad = 7 / 2; first performs integer division, which yields 3. Storing it in a double preserves that result as a floating-point value equal to 3. The later conversion cannot restore the discarded .5. To keep the fraction, change the type of at least one operand before dividing."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including the quotation marks from the code.",
+          "code": "#include <iostream>\n\nint main() {\n    double primera = 13 / 2;\n    double segunda = 13.0 / 2;\n    std::cout << primera << \" \" << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "6 6.5"
+          ],
+          "explanation": "The first expression already yielded the integer six before being stored in a double; the second retains 6.5."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Fill in the types: eight boxes form a whole-number quantity; 1.5 meters requires a fractional part.",
+          "template": "#include <iostream>\n\nint main() {\n    [] cajas = 8;\n    [] metros = 1.5;\n    std::cout << cajas << \" \" << metros;\n    return 0;\n}\n",
+          "answers": [
+            "int",
+            "double"
+          ],
+          "answerAlternatives": [
+            [
+              "int",
+              "signed",
+              "signed int",
+              "int signed"
+            ],
+            [
+              "double"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Read the solution without losing the distinction"
+        },
+        {
+          "type": "paragraph",
+          "text": "The preceding types are int and double. The output is 8 1.5. We could also store the count of eight in a double, but int directly communicates that we are counting whole boxes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Addition, subtraction, and multiplication use +, -, and *. An operation can produce a new value without changing its operands: calculating ancho * largo does not change ancho or largo. Only an assignment or another explicit update changes state. Use parentheses when you need to specify which part should be evaluated together."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including the quotation marks from the code.",
+          "code": "#include <iostream>\n\nint main() {\n    double ancho = 1.5;\n    double largo = 2.0;\n    double area = ancho * largo;\n    std::cout << area << \" \" << ancho;\n    return 0;\n}\n",
+          "answers": [
+            "3 1.5"
+          ],
+          "explanation": "The multiplication yields 3, while ancho remains 1.5. No assignment to ancho takes place."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the digit in the whole-number part of the literal that preserves 4.5 when dividing nine by two.",
+          "code": "#include <iostream>\n\nint main() {\n    double cociente = ___.0 / 2;\n    std::cout << cociente;\n    return 0;\n}\n",
+          "answers": [
+            "9"
+          ],
+          "explanation": "The literal 9.0 makes this a floating-point division."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Quantity, unit, and range"
+        },
+        {
+          "type": "paragraph",
+          "text": "A numerical type does not carry a physical unit by itself: double distancia = 2.5; does not say whether the measurement is in meters or kilometers. The name and output text should communicate that meaning. Nor can a type represent unlimited magnitudes. In calculations using int, overflow means a mathematical result outside the range representable by that type. At this stage, we will use small values and operations whose results fit the type, rather than experiment with overflow."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A program stores a length. Beyond the number itself, what does the message Length: 2.5 m communicate?",
+          "options": [
+            "That any calculation using the number will be exact.",
+            "The unit in which the value should be interpreted.",
+            "That the value is no longer a double."
+          ],
+          "correctIndex": 1,
+          "explanation": "A value needs an interpretation; the unit tells us what is being measured."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which statement about double is appropriate?",
+          "options": [
+            "It exactly represents every decimal we can write.",
+            "It allows numerical approximations with finite precision and range.",
+            "It can only store numbers smaller than ten."
+          ],
+          "correctIndex": 1,
+          "explanation": "Its ability to handle fractions does not make it an exact representation of every real number."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare two calculations yourself"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a program that stores a length of 9 meters and calculates the length of each of two equal parts. Its output must be Part: 4.5 m. Then change 9.0 to 8.0: it should display Part: 4 m. Before running each version, write down the expected result and explain which operand enables floating-point division."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Write your program here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "As a separate experiment, use two integer operands with values 9 and 2 and predict the quotient. Do not change the divisor to zero. Checking requires comparing the result with the intended outcome as well as confirming that the code compiles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One solution and two snapshots"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double longitud_metros = 9.0;\n    int partes = 2;\n    double longitud_por_parte = longitud_metros / partes;\n    std::cout << \"Part: \" << longitud_por_parte << \" m\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "longitud_metros is a double operand before division. With 8.0, the result would be 4, even if cout does not append .0. The label m keeps the result's interpretation visible."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output without including the quotation marks from the code.",
+          "code": "#include <iostream>\n\nint main() {\n    double lectura = 1.5;\n    double anterior = lectura;\n    lectura += 2.0;\n    std::cout << anterior << \" \" << lectura;\n    return 0;\n}\n",
+          "answers": [
+            "1.5 3.5"
+          ],
+          "explanation": "The earlier copy retains 1.5; the variable lectura changes to 3.5."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What should you check first if you expected 4.5 but the program displays 4 after evaluating 9 / 2?",
+          "options": [
+            "Whether simply adding .0 to the printed message is enough, without changing the calculation.",
+            "Whether storing the result in double guarantees restoration of the discarded fraction.",
+            "Whether both operands were integers during the calculation."
+          ],
+          "correctIndex": 2,
+          "explanation": "The fractional part may be lost during integer division, even if the result is later stored in a double."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution: Length of each part"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and checking your own attempt. The reference shows one possible implementation; the criteria help identify other correct solutions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. For 9 meters divided into two equal parts, the output is Part: 4.5 m; for 8 meters, it is Part: 4 m. The division must preserve the fractional part before the result is stored. The separate experiment using integer operands 9 and 2 yields 4; that quotient does not meet the goal of two equal lengths adding up to 9 meters. Keep the divisor nonzero and use the indicated small values."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    double longitud{9.0};\n    double parte{longitud / 2.0};\n    std::cout << \"Part: \" << parte << \" m\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference operands allow division with a fractional part. Change 9.0 to 8.0 for the second case. As a separate experiment, replace the calculation with int longitud{9}; int parte{longitud / 2};: the result 4 comes from integer division, not a cout failure or a change of units."
+        }
+      ]
+    }
+  ]
+}
