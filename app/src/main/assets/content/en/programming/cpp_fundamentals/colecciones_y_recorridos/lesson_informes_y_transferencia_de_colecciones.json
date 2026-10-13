@@ -1,0 +1,271 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__informes_y_transferencia_de_colecciones",
+  "title": "Reports and Transfer Using Your Own Data",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose the meaning before choosing a traversal"
+        },
+        {
+          "type": "paragraph",
+          "text": "We will bring the unit together in two different tasks. For both, start by deciding what each value represents, which summaries make sense for an empty collection, and which order you need to preserve. Then choose between traversing by value, reference, or index. Correct output for one example does not replace explaining those decisions or checking other cases."
+        },
+        {
+          "type": "paragraph",
+          "text": "First project: attendance counts for an activity are recorded in session order. Keep at most twenty integers from zero to fifty. The report must show N and Total for any collection. When data exist, it must also show Min, Max, Mean, and Median. When empty, display No sessions for that second part. Sorting a copy lets you compute the median while preserving session order."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A testable specification"
+        },
+        {
+          "type": "paragraph",
+          "text": "For {2, 8, 3, 3}, the requested output has three lines: N=4 Total=16; Min=2 Max=8 Mean=4 Median=3; Order:2;8;3;3;. Semicolons inside Order separate its values; the semicolons separating these three descriptions in this paragraph are not part of the output. For {}, display N=0 Total=0, then No sessions, then Order:, with each message on its own line."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which calculation in this project requires sorting a copy?",
+          "options": [
+            "Necessarily the sum.",
+            "The median.",
+            "The number of elements."
+          ],
+          "correctIndex": 1,
+          "explanation": "The extremes and sum can be calculated by traversal; the median uses the order by value."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "According to this specification, which result does not exist for an empty collection?",
+          "options": [
+            "The mean attendance.",
+            "A total of zero.",
+            "A count of zero."
+          ],
+          "correctIndex": 0,
+          "explanation": "N and total have meaningful empty summaries; the mean, median, and extremes require elements."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build the report independently"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write the complete program from the specification without consulting the reference solution. Check {2, 8, 3, 3}, {}, {0}, {5}, {1, 2}, and {6, 6, 6}. For each case, write down N, total, whether other summaries exist, the middle positions, and the original order before running it. Keep values within the stated bounds so the integer sum stays small."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "As a variant, increase the vector's elements by one using auto& before calculating the report. Predict which summaries change and verify that session order is retained. To recover the previous state, make a copy before transforming the values and display both versions."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One possible solution"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{2, 8, 3, 3};\n    int total = 0;\n    for (int valor : datos) { total += valor; }\n    std::cout << \"N=\" << datos.size() << \" Total=\" << total << \"\\n\";\n    if (datos.empty()) {\n        std::cout << \"No sessions\\n\";\n    } else {\n        int menor = datos.at(0);\n        int mayor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) { menor = valor; }\n            if (valor > mayor) { mayor = valor; }\n        }\n        double media = static_cast<double>(total) / static_cast<double>(datos.size());\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Min=\" << menor << \" Max=\" << mayor << \" Mean=\" << media << \" Median=\" << mediana << \"\\n\";\n    }\n    std::cout << \"Order:\";\n    for (int valor : datos) { std::cout << valor << \";\"; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The sorted copy is used for the middle, while the original data are used for session order. Summaries that require a value are declared within the nonempty branch. Compare your version by its properties and results; it does not need to use exactly the same lines."
+        },
+        {
+          "type": "paragraph",
+          "text": "Numeric-report criteria: obtain size and total for any collection; calculate extremes, mean, and median only when data exist; preserve the original order; respect the even-count middle convention and the required output format. Your implementation does not have to use exactly the same lines as the reference."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall the ideas with a new case"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 3};\n    auto anterior = datos;\n    for (auto& valor : datos) { valor += 2; }\n    int suma = 0;\n    for (int valor : datos) { suma += valor; }\n    double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n    std::cout << anterior.at(0) << \" \" << datos.at(0) << \" \" << media;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "1 3 4"
+          ],
+          "explanation": "The copy retains one; the collection changes to three and five, whose mean is four."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the symbol needed for changes to remain stored in the collection.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 4};\n    for (auto___ valor : datos) { ++valor; }\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ],
+          "explanation": "auto& preserves a reference to each element; auto by value would change only copies."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Your report works with {4} but fails with {}. What needs to be checked?",
+          "options": [
+            "Report zero as the mean and median because the empty total is zero.",
+            "Calculate the center and mean before checking for emptiness, then decide the message.",
+            "Handle missing data before accessing or dividing; do not invent an initial data value."
+          ],
+          "correctIndex": 2,
+          "explanation": "The empty collection has a count and total of zero, but no mean, median, or extremes. The missing-data branch must be chosen before accessing a nonexistent position or dividing by zero. Success with {4} neither tests that branch nor justifies reporting zeros as actual values."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Second project: a catalog of labels"
+        },
+        {
+          "type": "paragraph",
+          "text": "Keep up to twenty labels in std::vector<std::string>, preserving their arrival order. You must report whether \"workshop\" occurs exactly, show its first position if found, and count the number of distinct labels. To count distinct values, sort a copy and compare neighbors while guarding the first position. Preserve duplicates and the original order."
+        },
+        {
+          "type": "paragraph",
+          "text": "For {\"courtyard\", \"workshop\", \"courtyard\", \"room\"}, display First:1 and Distinct:3 on separate lines. For {}, display Not found and Distinct:0. For {\"workshop\", \"workshop\"}, display First:0 and Distinct:1. Equality is exact: \"Workshop\" does not match \"workshop\" in this task."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does the index we must report mean?",
+          "options": [
+            "The number of distinct labels.",
+            "The first position after sorting the copy.",
+            "The first position in the original arrival order."
+          ],
+          "correctIndex": 2,
+          "explanation": "The specification identifies which sequence the position belongs to."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build and transfer the procedure to text"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build the catalog without blanks and verify the three specified cases. Also test {\"room\"}, {\"Workshop\", \"workshop\"}, and {\"workshop\", \"courtyard\", \"workshop\"}. Explain the differences from the attendance project: adding labels is not meaningful, but equality search, order preservation, and counting distinct values are."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "As a variant, collect the labels equal to \"courtyard\" in another vector, preserving their order. Do not append to the vector you are traversing. Check a case with no matches and another with several."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Catalog reference solution"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> etiquetas{\"courtyard\", \"workshop\", \"courtyard\", \"room\"};\n    std::size_t posicion = etiquetas.size();\n    for (std::size_t i = 0; i < etiquetas.size() && posicion == etiquetas.size(); ++i) {\n        if (etiquetas[i] == \"workshop\") { posicion = i; }\n    }\n    if (posicion < etiquetas.size()) { std::cout << \"First:\" << posicion; }\n    else { std::cout << \"Not found\"; }\n    auto ordenadas = etiquetas;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    int distintas = 0;\n    for (std::size_t i = 0; i < ordenadas.size(); ++i) {\n        if (i == 0 || ordenadas[i] != ordenadas[i - 1]) { ++distintas; }\n    }\n    std::cout << \"\\nDistinct:\" << distintas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The search uses the original sequence; neighbor comparisons use the sorted copy. The not-found marker is never used as an index, and || guards access to the preceding element in the first position. Counting does not erase repeated values from either collection."
+        },
+        {
+          "type": "paragraph",
+          "text": "Catalog criteria: search the original sequence using exact equality, report the first position or absence, and count distinct labels using the sorted copy; preserve the number and order of observations and guard every neighbor access."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review how to guard access to neighbors"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{7, 7, 2};\n    std::sort(datos.begin(), datos.end());\n    int distintos = 0;\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        if (i == 0 || datos[i] != datos[i - 1]) { ++distintos; }\n    }\n    std::cout << distintos << \" \" << datos.size();\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "2 3"
+          ],
+          "explanation": "Two distinct values do not remove the three original observations."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which change would break the protection of the first neighbor?",
+          "options": [
+            "Sort a copy.",
+            "Evaluate datos[i - 1] before checking whether i is zero, without another guard.",
+            "Keep i < size()."
+          ],
+          "correctIndex": 1,
+          "explanation": "The justification depends on evaluation order; we do not run the version with invalid access."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What crucial difference exists between the two projects?",
+          "options": [
+            "Text vectors cannot be empty.",
+            "Numeric quantities can never repeat.",
+            "The type and meaning of the data determine which summaries are relevant."
+          ],
+          "correctIndex": 2,
+          "explanation": "A shared structure does not make every operation meaningful for every kind of data."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Return later with your own data"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a later session, build one of the reports from a new requirement without looking at the solutions. Choose different data within the lab limits, record your predictions, and justify each guard. Then practice the other project, alternating numeric values, text, positions, and state. In particular, recall auto versus auto&, copy versus original, size versus index, and absence versus zero."
+        },
+        {
+          "type": "note",
+          "text": "These projects use values defined in code to repeat and compare specific cases. The lab also accepts prepared input and retains its draft code and input when reopened; this does not mean it automatically maintains a collection of versions or external tests. Keep any instructions and cases you want to review. All these projects terminate and access only existing positions."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What evidence demonstrates transfer beyond memorizing a solution?",
+          "options": [
+            "Complete a fixed number of program executions.",
+            "Repeat the same copied output without explaining it.",
+            "Build with new data and context, anticipate boundary cases, and explain why each access and summary is valid."
+          ],
+          "correctIndex": 2,
+          "explanation": "Evidence comes from explained and tested decisions; we do not grade mastery by counting activities."
+        }
+      ]
+    }
+  ]
+}

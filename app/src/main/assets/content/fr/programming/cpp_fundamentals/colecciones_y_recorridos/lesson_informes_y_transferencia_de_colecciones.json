@@ -1,0 +1,271 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__informes_y_transferencia_de_colecciones",
+  "title": "Rapports et transfert avec ses propres données",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir le sens des données avant leur parcours"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous allons réunir les notions de l'unité dans deux tâches différentes. Pour chacune, commence par déterminer ce que représente chaque donnée, quels résumés ont un sens lorsque la collection est vide et quel ordre doit être conservé. Choisis ensuite entre un parcours par valeur, par référence ou par indice. Obtenir une sortie correcte dans un exemple ne dispense pas d'expliquer ces décisions ni de vérifier d'autres cas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Premier projet : les nombres de participants à une activité sont enregistrés dans l'ordre des séances. Conserve au plus vingt entiers de zéro à cinquante. Le rapport doit afficher N et Total pour toute collection. Lorsque des données existent, il doit aussi afficher Min, Max, Moyenne et Médiane. Si la collection est vide, affiche Aucune séance pour cette deuxième partie. Trier une copie permet de calculer la médiane tout en préservant l'ordre des séances."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une spécification vérifiable"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour {2, 8, 3, 3}, la sortie demandée comporte trois lignes : N=4 Total=16 ; Min=2 Max=8 Moyenne=4 Médiane=3 ; Ordre :2;8;3;3;. Les points-virgules de Ordre séparent les valeurs ; ceux qui séparent les trois descriptions dans cette phrase ne font pas partie de la sortie. Avec {}, affiche N=0 Total=0, puis Aucune séance, puis Ordre :, chaque message sur sa propre ligne."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel calcul de ce projet nécessite de trier une copie ?",
+          "options": [
+            "Nécessairement la somme.",
+            "La médiane.",
+            "Le nombre d'éléments."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les extrêmes et la somme peuvent être calculés en parcourant les valeurs ; la médiane utilise l'ordre des valeurs."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Selon cette spécification, quel résultat n'existe pas pour une collection vide ?",
+          "options": [
+            "Une moyenne des participants par séance.",
+            "Un total nul.",
+            "Un nombre d'éléments nul."
+          ],
+          "correctIndex": 0,
+          "explanation": "N et total ont un sens dans le cas vide ; la moyenne, la médiane et les extrêmes exigent des éléments."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire le rapport de manière indépendante"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris le programme complet d'après la spécification, sans consulter la solution qui suit. Vérifie {2, 8, 3, 3}, {}, {0}, {5}, {1, 2} et {6, 6, 6}. Pour chaque cas, écris à l'avance N, le total, l'existence des autres résumés, les positions centrales et l'ordre d'origine. Garde les valeurs dans les limites fixées afin que la somme entière reste petite."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    // Construis ici le programme demandé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comme variante, augmente d'une unité chaque élément du vecteur avec auto& avant de calculer le rapport. Prévois quels résumés changent et vérifie que l'ordre des séances est conservé. Pour retrouver l'état précédent, réalise une copie avant cette transformation et affiche les deux versions."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une solution possible"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    std::vector<int> datos{2, 8, 3, 3};\n    int total = 0;\n    for (int valor : datos) { total += valor; }\n    std::cout << \"N=\" << datos.size() << \" Total=\" << total << \"\\n\";\n    if (datos.empty()) {\n        std::cout << \"Aucune séance\\n\";\n    } else {\n        int menor = datos.at(0);\n        int mayor = datos.at(0);\n        for (int valor : datos) {\n            if (valor < menor) { menor = valor; }\n            if (valor > mayor) { mayor = valor; }\n        }\n        double media = static_cast<double>(total) / static_cast<double>(datos.size());\n        auto ordenados = datos;\n        std::sort(ordenados.begin(), ordenados.end());\n        auto centro = ordenados.size() / 2;\n        double mediana = 0.0;\n        if (ordenados.size() % 2 != 0) {\n            mediana = ordenados.at(centro);\n        } else {\n            mediana = (static_cast<double>(ordenados.at(centro - 1)) + ordenados.at(centro)) / 2.0;\n        }\n        std::cout << \"Min=\" << menor << \" Max=\" << mayor << \" Moyenne=\" << media << \" Médiane=\" << mediana << \"\\n\";\n    }\n    std::cout << \"Ordre :\";\n    for (int valor : datos) { std::cout << valor << \";\"; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La copie triée sert à trouver le centre et les données d'origine à préserver l'ordre des séances. Les résumés qui exigent une donnée sont déclarés dans la branche non vide. Compare ta solution selon ses propriétés et ses résultats ; elle n'a pas besoin d'utiliser exactement les mêmes lignes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères du rapport numérique : calculer la taille et le total pour toute collection ; obtenir les extrêmes, la moyenne et la médiane uniquement lorsque des données existent ; conserver l'ordre initial ; respecter la convention du centre pour une quantité paire et le format demandé. Toutes les lignes de ton implémentation n'ont pas besoin de coïncider avec celles de la référence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réactiver les acquis avec un nouveau cas"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 3};\n    auto anterior = datos;\n    for (auto& valor : datos) { valor += 2; }\n    int suma = 0;\n    for (int valor : datos) { suma += valor; }\n    double media = static_cast<double>(suma) / static_cast<double>(datos.size());\n    std::cout << anterior.at(0) << \" \" << datos.at(0) << \" \" << media;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "1 3 4"
+          ],
+          "explanation": "La copie conserve un ; la collection devient trois et cinq, dont la moyenne vaut quatre."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le symbole nécessaire pour conserver les modifications dans la collection.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 4};\n    for (auto___ valor : datos) { ++valor; }\n    std::cout << datos.at(0) << \" \" << datos.at(1);\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ],
+          "explanation": "auto& garde une référence à chaque élément ; auto par valeur ne modifierait que des copies."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Ton rapport fonctionne avec {4}, mais échoue avec {}. Que faut-il revoir ?",
+          "options": [
+            "Publier zéro comme moyenne et médiane, puisque le total du cas vide est nul.",
+            "Calculer le centre et la moyenne avant de vérifier le cas vide, puis décider du message.",
+            "Traiter l'absence de données avant d'accéder ou de diviser, sans inventer de valeur initiale."
+          ],
+          "correctIndex": 2,
+          "explanation": "Une collection vide a une taille et un total nuls, mais ni moyenne, ni médiane, ni extrêmes. Il faut choisir la branche d'absence avant d'accéder à une position inexistante ou de diviser par zéro. Réussir le cas {4} ne vérifie pas cette branche et ne justifie pas de publier des zéros comme données réelles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deuxième projet : un catalogue d'étiquettes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserve jusqu'à vingt étiquettes dans std::vector<std::string>, dans leur ordre d'arrivée. Tu dois indiquer si la chaîne \"atelier\" apparaît exactement, afficher sa première position si elle existe et compter le nombre d'étiquettes distinctes. Pour compter ces dernières, trie une copie et compare les éléments voisins en protégeant la première position. Conserve les répétitions et l'ordre d'origine."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour {\"cour\", \"atelier\", \"cour\", \"salle\"}, affiche Première :1 et Distinctes :3 sur deux lignes. Pour {}, affiche Non trouvé et Distinctes :0. Pour {\"atelier\", \"atelier\"}, affiche Première :0 et Distinctes :1. L'égalité est exacte : \"Atelier\" ne correspond pas à \"atelier\" dans cet exercice."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que représente l'indice à afficher ?",
+          "options": [
+            "Le nombre d'étiquettes distinctes.",
+            "La première position après avoir trié la copie.",
+            "La première position dans l'ordre d'arrivée initial."
+          ],
+          "correctIndex": 2,
+          "explanation": "La spécification désigne la séquence à laquelle cette position appartient."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire et transférer le procédé au texte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis le catalogue sans trous et vérifie les trois cas demandés. Ajoute {\"salle\"}, {\"Atelier\", \"atelier\"} et {\"atelier\", \"cour\", \"atelier\"}. Explique les différences avec le projet des participants : additionner des étiquettes n'a pas de sens, mais les rechercher par égalité, conserver leur ordre et compter les valeurs distinctes en a un."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Construis ici le programme demandé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comme variante, sélectionne dans un autre vecteur les étiquettes égales à \"cour\", en conservant leur ordre. N'ajoute pas d'éléments au vecteur que tu es en train de parcourir. Teste un cas sans correspondance et un autre avec plusieurs."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution du catalogue"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> etiquetas{\"cour\", \"atelier\", \"cour\", \"salle\"};\n    std::size_t posicion = etiquetas.size();\n    for (std::size_t i = 0; i < etiquetas.size() && posicion == etiquetas.size(); ++i) {\n        if (etiquetas[i] == \"atelier\") { posicion = i; }\n    }\n    if (posicion < etiquetas.size()) { std::cout << \"Première :\" << posicion; }\n    else { std::cout << \"Non trouvé\"; }\n    auto ordenadas = etiquetas;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    int distintas = 0;\n    for (std::size_t i = 0; i < ordenadas.size(); ++i) {\n        if (i == 0 || ordenadas[i] != ordenadas[i - 1]) { ++distintas; }\n    }\n    std::cout << \"\\nDistinctes :\" << distintas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La recherche utilise la séquence d'origine ; la comparaison des voisins utilise la copie triée. Le marqueur d'absence n'est jamais utilisé comme indice, et || protège l'accès à l'élément précédent pour la première position. Le comptage ne supprime les répétitions d'aucune collection."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères du catalogue : rechercher dans la séquence d'origine avec une égalité exacte, afficher la première position ou l'absence et compter les étiquettes distinctes sur la copie triée ; conserver la quantité et l'ordre des observations et protéger chaque accès au voisin précédent."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réviser la protection des éléments voisins"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{7, 7, 2};\n    std::sort(datos.begin(), datos.end());\n    int distintos = 0;\n    for (std::size_t i = 0; i < datos.size(); ++i) {\n        if (i == 0 || datos[i] != datos[i - 1]) { ++distintos; }\n    }\n    std::cout << distintos << \" \" << datos.size();\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "2 3"
+          ],
+          "explanation": "Deux valeurs distinctes ne suppriment pas les trois observations d'origine."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle modification supprimerait la protection du premier voisin ?",
+          "options": [
+            "Trier une copie.",
+            "Évaluer datos[i - 1] avant de vérifier si i vaut zéro, sans autre protection.",
+            "Conserver i < size()."
+          ],
+          "correctIndex": 1,
+          "explanation": "La justification dépend de l'ordre d'évaluation ; nous n'exécutons pas la version qui réalise un accès invalide."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle différence essentielle existe entre les deux projets ?",
+          "options": [
+            "Les vecteurs de texte ne peuvent pas être vides.",
+            "Les quantités numériques ne peuvent jamais se répéter.",
+            "Le type et le sens des données déterminent les résumés pertinents."
+          ],
+          "correctIndex": 2,
+          "explanation": "Une structure commune ne rend pas toutes les opérations pertinentes pour tous les types de données."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revenir plus tard avec ses propres données"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une prochaine séance, construis l'un des rapports à partir d'une nouvelle consigne sans regarder les solutions. Choisis d'autres données dans les limites de l'atelier, note tes prévisions et justifie les protections. Vérifie ensuite l'autre projet en alternant valeurs numériques, texte, positions et état. Réactive particulièrement auto et auto&, copie et original, taille et indice, absence et zéro."
+        },
+        {
+          "type": "note",
+          "text": "Ces projets utilisent des valeurs définies dans le code afin de répéter et comparer des cas précis. L'atelier accepte aussi des entrées préparées et conserve son brouillon de code et ses entrées lorsqu'on le rouvre ; cela ne signifie pas qu'il conserve automatiquement une collection de versions ou de tests externes. Garde les consignes et les cas que tu souhaites réviser. Tous ces projets se terminent et n'accèdent qu'à des positions existantes."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle preuve montre un transfert des acquis au-delà du souvenir d'une solution ?",
+          "options": [
+            "Effectuer un nombre fixe d'exécutions.",
+            "Répéter la même sortie copiée sans la justifier.",
+            "Construire avec de nouvelles données et un autre contexte, anticiper les cas limites et expliquer pourquoi chaque accès et chaque résumé sont valides."
+          ],
+          "correctIndex": 2,
+          "explanation": "La preuve repose sur des choix expliqués et vérifiés ; nous n'évaluons pas la maîtrise en comptant les activités."
+        }
+      ]
+    }
+  ]
+}

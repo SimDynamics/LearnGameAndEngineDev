@@ -1,0 +1,343 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates",
+  "title": "Counting Frequencies and Preserving Ties",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An observation, a distinct value, and its frequency"
+        },
+        {
+          "type": "paragraph",
+          "text": "A value's frequency is the number of observations equal to it in the entire collection. In {4, -2, 4, 4, -2}, there are five observations, two distinct values, a frequency of three for 4, and a frequency of two for -2. We do not count only matching neighbors in arrival order: both occurrences of -2 belong to the same value even though they are separated."
+        },
+        {
+          "type": "paragraph",
+          "text": "Values are data, not positions. We can compare negative integers, zero, or very large values without using them as indices or adding them together. These projects have at most twenty observations; the counters count observations and therefore never exceed twenty. We will not calculate a sum of the integer values."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__mc_1",
+          "question": "In {5, 1, 5, 1, 5}, what correctly describes the frequency of 5?",
+          "options": [
+            "One, because no run of adjacent fives lasts more than one observation.",
+            "Three, because all its occurrences are counted.",
+            "Two, because the collection contains two distinct values."
+          ],
+          "correctIndex": 1,
+          "explanation": "Frequency answers how many observations have that value; adjacency and distinct-value count answer different questions."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__mc_2",
+          "question": "You must report the frequency of -7 in a vector. Which choice respects that value's meaning?",
+          "options": [
+            "Use -7 as an index into a counting table.",
+            "Count every negative observation as an occurrence of -7.",
+            "Compare it for equality with each observation."
+          ],
+          "correctIndex": 2,
+          "explanation": "A value can be compared even when it cannot serve as an index. Changing it would change the report's question."
+        },
+        {
+          "type": "paragraph",
+          "text": "To group equal occurrences, we will sort a copy. This places equal values together while preserving the original observation order in the original vector. The table follows the ascending order of values, whereas the Original line preserves arrival order. This is an explicit presentation choice, not a removal of duplicates."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A group ends before its exclusive boundary"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a sorted copy, a group is a contiguous region of equal values. We describe it using [start, end): start is included and end is excluded. For example, in {-4, -4, 2, 2, 2, 9}, the group of twos occupies [2, 5); its frequency is end - start, which is three. end points to the first element of the next group or to the end of the collection; it does not belong to the current group. In the code, these positions are named inicio and fin."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_3",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> ordenados{-8, 3, 3, 3, 3, 10};\n    std::size_t inicio = 1;\n    std::size_t fin = 5;\n    std::cout << \"Value:\" << ordenados[inicio]\n              << \"\\nFrequency:\" << fin - inicio\n              << \"\\nHas next:\" << (fin < ordenados.size());\n    return 0;\n}\n",
+          "question": "Predict all three output lines. fin is the group's excluded upper bound.",
+          "answers": [
+            "Value:3\nFrequency:4\nHas next:1"
+          ],
+          "explanation": "The included positions are 1, 2, 3, and 4. Position 5 exists, but its value belongs to the next group."
+        },
+        {
+          "type": "paragraph",
+          "text": "To extend a group, you may read ordenados[fin] only if fin < ordenados.size(). The condition fin < ordenados.size() && ordenados[fin] == ordenados[inicio] combines that guard with the equality check; their order matters. inicio must also be within the collection. If fin reaches size(), the final group is complete without an element at index fin. After counting and displaying the group, set the next inicio to fin so the traversal advances."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__mc_4",
+          "question": "The last group occupies [3, 6) in a collection of size six. What can you do when reporting it?",
+          "options": [
+            "Read ordenados[6] to confirm its value.",
+            "Report its frequency of three using a value inside the group, then end the traversal.",
+            "Reduce fin to five so that it is an existing index."
+          ],
+          "correctIndex": 1,
+          "explanation": "The excluded boundary may equal size(). The length is still 6 - 3; reducing it would omit an observation."
+        },
+        {
+          "type": "paragraph",
+          "text": "We will use std::size_t for positions and counts obtained from size(); its header is <cstddef>, already used in earlier traversals. In an empty collection, no group starts: we do not read the first element and the count summaries stay at zero. With one observation, there is one group with frequency one."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build the numeric frequency table from the specification"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build the complete program with std::vector<int> original{-3, 8, -3, 0, 8, -3, 0}. The contract allows any int value and up to twenty observations: values are only compared and displayed. Sort a copy and print one row per group, followed by N, Distinct, Sum, and the original sequence. Sum is the sum of frequencies, not the sum of values. Do not delete observations or use their values as subscripts."
+        },
+        {
+          "type": "paragraph",
+          "text": "The output starts with Frequencies: and then has rows [-3]=3, [0]=2, and [8]=2, each on its own line. These are followed by N:7, Distinct:3, Sum:7, and Original:-3;8;-3;0;8;-3;0;, each on a separate line. End every line with a newline. Square brackets enclose values; semicolons separate observations in the original sequence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running, write down each group's [start, end) boundaries in the sorted copy. Then build the traversal without looking at the later reference. Each iteration must report exactly one group and advance inicio to the first observation not yet counted. You may organize variables differently if you justify the same boundaries and results."
+        },
+        {
+          "type": "paragraph",
+          "text": "Repeat with {}, {7}, {-1, -1, -1}, and {4, -1}. For an empty collection, only the header and summaries N:0, Distinct:0, Sum:0, and Original: with no values are displayed. With {-1, -1, -1}, there is one group of frequency three. With {4, -1}, there are two groups of frequency one. Predict every line; the check must include the final group, not only the first."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Build the frequency report described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Also check {2, 2, 5, 5, 5}: its last group reaches the end of the copy. It must be reported once without reading an element at index size(). A permutation of the same observations changes the Original line but preserves the frequency table."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A reference solution with different observations"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare your implementation against this possibility only after your attempt. The reference uses {6, -2, 6, 9, -2, 6}; the group boundaries must reflect these new values. The original order is displayed at the end, after processing the copy."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original{6, -2, 6, 9, -2, 6};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n    std::cout << \"Frequencies:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n    std::cout << \"N:\" << original.size() << \"\\nDistinct:\" << distintos\n              << \"\\nSum:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The outer loop begins only when inicio is a valid index. fin starts just past the group's first observation; the inner loop includes equal values only while access is valid. Reporting the group before changing inicio preserves the value of the group that just finished. Assigning inicio = fin prevents double-counting its positions and makes the traversal advance, including for the last group."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: one row per distinct value in ascending order, a positive frequency counting every occurrence, N equal to the original size, Distinct equal to the number of rows, and Sum equal to N. The original sequence retains its values, repetitions, and order; the empty case does not invent a row. No access uses an excluded boundary as an index. Equivalent traversals that satisfy these rules are acceptable; the reference text is not required."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__cantidades_distintas",
+          "question": "The report for {0, 0, 0, 8} contains two rows. Which Distinct/Sum pair meets the specification?",
+          "options": [
+            "Distinct:2 and Sum:2.",
+            "Distinct:4 and Sum:2.",
+            "Distinct:2 and Sum:4."
+          ],
+          "correctIndex": 2,
+          "explanation": "Each row represents a distinct value; its frequency counts observations. The two frequencies are three and one."
+        },
+        {
+          "type": "paragraph",
+          "text": "To detect an omitted final group, compare {1, 1, 4} with {1, 1, 4, 4}. The second collection does not add a distinct value, but it increases the final group's frequency and the sum by one observation. A counter that reports a group only upon discovering a different value can miss both final cases without a decision for the end of the collection."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review the count, final group, and adjacent matches"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predict before running. Reason about which positions belong to each group and what information remains in the original vector; then compare the sum of frequencies with the size."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_tabla_nueva",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<int> original{4, -6, 4, 9, -6, -6, 9, 9};\n    auto ordenados = original;\n    std::sort(ordenados.begin(), ordenados.end());\n    std::size_t inicio = 0;\n    std::size_t distintos = 0;\n    std::size_t suma = 0;\n    std::cout << \"Frequencies:\\n\";\n    while (inicio < ordenados.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenados.size() && ordenados[fin] == ordenados[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenados[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintos;\n        suma += frecuencia;\n        inicio = fin;\n    }\n    std::cout << \"N:\" << original.size() << \"\\nDistinct:\" << distintos\n              << \"\\nSum:\" << suma << \"\\nOriginal:\";\n    for (int valor : original) { std::cout << valor << \";\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "question": "Write every line of the report exactly.",
+          "answers": [
+            "Frequencies:\n[-6]=3\n[4]=2\n[9]=3\nN:8\nDistinct:3\nSum:8\nOriginal:4;-6;4;9;-6;-6;9;9;"
+          ],
+          "explanation": "The copy has three groups of lengths three, two, and three. The final one is also reported when fin reaches size(); the original sequence remains unchanged."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__guarda_ultimo",
+          "question": "You want to check whether position fin continues the current group. Which condition order protects the access?",
+          "options": [
+            "First check fin < ordenados.size(); only then compare ordenados[fin] with the group's value.",
+            "First compare ordenados[fin]; then check whether fin is a valid index.",
+            "Check only that the previous group had at least one observation."
+          ],
+          "correctIndex": 0,
+          "explanation": "&& evaluates its second operand only when the first is true. A nonempty group does not make its excluded boundary a valid index."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_vecinos",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> ordenados{-5, -5, 2, 2, 2, 8};\n    std::size_t coincidencias = 0;\n    for (std::size_t i = 1; i < ordenados.size(); ++i) {\n        if (ordenados[i] == ordenados[i - 1]) { ++coincidencias; }\n    }\n    std::cout << \"Same as previous:\" << coincidencias\n              << \"\\nN:\" << ordenados.size() << \"\\n\";\n    return 0;\n}\n",
+          "question": "Predict both output lines. The counter increases only when an observation equals its previous neighbor.",
+          "answers": [
+            "Same as previous:3\nN:6"
+          ],
+          "explanation": "The group of two contributes one adjacent match; the group of three contributes two, and the single observation contributes none. There are six observations in total."
+        },
+        {
+          "type": "paragraph",
+          "text": "This adjacent-match counter is not a frequency table: it omits the first observation in each group. In a group of length m, it finds m - 1 pairs of equal neighbors. To recover each frequency you must count that first observation too; the complete [inicio, fin) interval already includes it. If all observations were different, each would have frequency one, even though the adjacent-match counter would remain zero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer: all labels with the highest frequency"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now build a report for up to twenty labels in std::vector<std::string>. Equality is literal: only identical strings are grouped together. We will use lowercase ASCII letters without accents, and allow an empty string. Sort a copy using the lexicographical comparison already studied; do not compare text by converting it to numbers or confuse a lexicographically larger label with a more frequent one."
+        },
+        {
+          "type": "paragraph",
+          "text": "In addition to the table, N, Distinct, Sum, and Original, display Max frequency and Most frequent: every label whose frequency reaches the maximum, in sorted-copy order, once each. For an empty collection, Max frequency is zero and there are no candidates. If all values occur once, they all reach the maximum of one and must all appear. This is our report's convention; we do not present this treatment of ties as the only possible statistical definition of a mode."
+        },
+        {
+          "type": "paragraph",
+          "text": "You can traverse the frequencies again or retain candidates as you complete groups. In one pass, a greater frequency makes only the previous candidates obsolete; an equal frequency adds the new group without removing ties. To replace those candidates with an empty collection, you can write mayores = std::vector<std::string>{};: this creates an empty vector and assigns it to mayores. It does not empty the original or sorted copy. No invented label should serve as the initial candidate."
+        },
+        {
+          "type": "paragraph",
+          "text": "First case: {\"courtyard\", \"room\", \"courtyard\", \"beacon\", \"room\", \"courtyard\"}. Print Frequencies:, [beacon]=1, [courtyard]=3, [room]=2, Max frequency:3, Most frequent:[courtyard], N:6, Distinct:3, Sum:6, and Original:[courtyard][room][courtyard][beacon][room][courtyard], each on its own line with a final newline. Build from the minimal editor before consulting the reference. Also test {\"river\", \"tower\", \"tower\", \"river\"}, where both values are tied for the maximum; {\"beacon\", \"valley\", \"valley\"}, with the maximum in the last group; and {\"oak\", \"arch\"}, where both appear once."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    // Build the label report with every maximum-frequency candidate.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Complete your predictions with {}, {\"\"}, and {\"\", \"a\", \"\"}. Square brackets make an empty label visible: [] means that one value exists, while Most frequent: without brackets means there are no candidates. Preserve the original order and repetitions and check Sum = N. Explain when candidates are replaced and when ties are kept; an implementation with two passes is also valid if it produces the same report without sorting or changing the original."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution with three labels tied for the maximum"
+        },
+        {
+          "type": "paragraph",
+          "text": "This reference uses different labels and a tie that extends through the last group. Read it after building and checking your report. Selection compares numbers of observations, not the characters in the labels."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"tower\", \"river\", \"river\", \"tower\", \"valley\", \"valley\", \"sun\"};\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frequencies:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Max frequency:\" << maxima << \"\\nMost frequent:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistinct:\" << distintas\n              << \"\\nSum:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Each group is reported once, and its frequency takes part in the comparison. When a greater frequency appears, the reference replaces only mayores and adds the current group; when an equal frequency appears, it adds without deleting existing candidates. This allows several candidates to remain. The sorted copy stays complete during the traversal and the Original line is produced afterward without changing the sequence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: the table contains every distinct value and its frequency; summing those frequencies produces N. Max frequency is the largest frequency when observations exist and zero when empty. Most frequent contains exactly all groups that reach that frequency, once each and in lexicographical order; it includes every value when all frequencies are one. The original vector retains its size, data, order, and repetitions. Empty collections, single observations, a maximum in the last group, and ties distinguish these guarantees; matching the reference's code organization is not required."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__comparar_frecuencia",
+          "question": "For {\"arch\", \"arch\", \"arch\", \"zeta\", \"zeta\"}, which comparison determines the Most frequent candidates?",
+          "options": [
+            "Compare \"zeta\" with \"arch\" and keep only the lexicographically larger label.",
+            "Compare frequencies three and two and keep \"arch\".",
+            "Compare each frequency with the number of distinct values and keep \"zeta\"."
+          ],
+          "correctIndex": 1,
+          "explanation": "The report asks how many observations belong to each label. Lexicographic order organizes the presentation; it does not determine which frequency is larger."
+        },
+        {
+          "type": "paragraph",
+          "text": "As a review, permute the observations from your attempt without adding or removing any. Predict which output lines remain the same and which must change before running. Then remove one occurrence of the most frequent label and check whether the new maximum creates a tie rather than keeping only the previous winner."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review ties, replacements, and the presence of data"
+        },
+        {
+          "type": "paragraph",
+          "text": "Solve the output predictions without executing first. Follow when a higher frequency replaces candidates and when equality keeps them; then check the complete table and original sequence."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_maximo_final",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"barrier\", \"arch\", \"barrier\", \"arch\", \"river\", \"river\", \"river\"};\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frequencies:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Max frequency:\" << maxima << \"\\nMost frequent:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistinct:\" << distintas\n              << \"\\nSum:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "question": "Write the exact report. Do not keep a candidate just because it appeared earlier.",
+          "answers": [
+            "Frequencies:\n[arch]=2\n[barrier]=2\n[river]=3\nMax frequency:3\nMost frequent:[river]\nN:7\nDistinct:3\nSum:7\nOriginal:[barrier][arch][barrier][arch][river][river][river]"
+          ],
+          "explanation": "The first two groups tie at frequency two. The last group has frequency three and replaces those candidates; the total remains seven."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__todos_una_vez",
+          "question": "The collection contains {\"beacon\", \"arch\", \"river\"}, with no repeated labels. What matches our report convention?",
+          "options": [
+            "Max frequency:1 and Most frequent:[arch][beacon][river].",
+            "Max frequency:0 and Most frequent: with no candidates.",
+            "Max frequency:1 and Most frequent:[arch], because it is the first sorted label."
+          ],
+          "correctIndex": 0,
+          "explanation": "All three values reach the maximum frequency of one. Our convention requires every tied value; it does not select one label or confuse a lack of repetition with a lack of data."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__colecciones_y_recorridos__contar_frecuencias_y_conservar_empates__pred_etiqueta_vacia",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <cstddef>\n\nint main() {\n    std::vector<std::string> original{\"\", \"echo\", \"echo\", \"\", \"river\"};\n    auto ordenadas = original;\n    std::sort(ordenadas.begin(), ordenadas.end());\n    std::size_t inicio = 0;\n    std::size_t distintas = 0;\n    std::size_t suma = 0;\n    std::size_t maxima = 0;\n    std::vector<std::string> mayores;\n    std::cout << \"Frequencies:\\n\";\n    while (inicio < ordenadas.size()) {\n        std::size_t fin = inicio + 1;\n        while (fin < ordenadas.size() && ordenadas[fin] == ordenadas[inicio]) {\n            ++fin;\n        }\n        std::size_t frecuencia = fin - inicio;\n        std::cout << \"[\" << ordenadas[inicio] << \"]=\" << frecuencia << \"\\n\";\n        ++distintas;\n        suma += frecuencia;\n        if (frecuencia > maxima) {\n            maxima = frecuencia;\n            mayores = std::vector<std::string>{};\n            mayores.push_back(ordenadas[inicio]);\n        } else if (frecuencia == maxima) {\n            mayores.push_back(ordenadas[inicio]);\n        }\n        inicio = fin;\n    }\n    std::cout << \"Max frequency:\" << maxima << \"\\nMost frequent:\";\n    for (const auto& etiqueta : mayores) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\nN:\" << original.size() << \"\\nDistinct:\" << distintas\n              << \"\\nSum:\" << suma << \"\\nOriginal:\";\n    for (const auto& etiqueta : original) { std::cout << \"[\" << etiqueta << \"]\"; }\n    std::cout << \"\\n\";\n    return 0;\n}\n",
+          "question": "Predict all output lines. Keep the square brackets that distinguish the empty label from the absence of candidates.",
+          "answers": [
+            "Frequencies:\n[]=2\n[echo]=2\n[river]=1\nMax frequency:2\nMost frequent:[][echo]\nN:5\nDistinct:3\nSum:5\nOriginal:[][echo][echo][][river]"
+          ],
+          "explanation": "The empty label and echo are two distinct present values, both with frequency two. River does not reach that maximum; the original has five observations."
+        },
+        {
+          "type": "paragraph",
+          "text": "Return to the numeric-table lab and extend your own table with Max frequency and every int candidate, each appearing once in ascending order. Reuse the frequency comparison learned with labels; do not select by the magnitude of the number. With {4, 1, 4, 2, 1, 2}, predict Max frequency:2 and Most frequent:[1][2][4]; with {1, 1, 5, 9}, Max frequency:2 and Most frequent:[1]; with {}, Max frequency:0 and Most frequent: with no candidates. For a one-pass approach, the empty replacement is now std::vector<int>{}. Preserve the table, Sum = N, and original sequence too. Later, build with your own data without looking at the references, alternating numbers and text: explain which decisions are shared and what each comparison means. Running a single case does not replace checking an empty collection, ties, a maximum in the last group, and preservation."
+        },
+        {
+          "type": "note",
+          "text": "The highest frequency in numeric and text sequences is studied in the supporting exercises (Stroustrup, 2024, ch. 3, exercises 15–16, p. 81). The specifications, data, presentations, and code constructions in this lesson are original and make their tie policy explicit. The sorting operation was checked against the current HTML working draft (Working draft: Programming languages — C++, n.d., section [alg.sorting], sort), which is not a verbatim reproduction of C++23. Here we use sort over the complete range, comparisons, and traversals already taught."
+        }
+      ]
+    }
+  ]
+}
