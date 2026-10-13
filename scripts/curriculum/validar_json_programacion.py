@@ -4,6 +4,7 @@ No compila C++, no modifica archivos y no certifica las respuestas pedagógicas.
 """
 
 import json
+import re
 import subprocess
 from pathlib import Path, PurePosixPath
 
@@ -16,7 +17,7 @@ FIELDS = {
     "note": {"type", "text"},
     "code": {"type", "language", "code"},
     "multiple_choice": {"type", "id", "question", "options", "correctIndex", "explanation"},
-    "fill_code": {"type", "id", "question", "language", "code", "answers", "explanation"},
+    "fill_code": {"type", "id", "question", "language", "code", "answers", "explanation", "answerComparison"},
     "output_prediction": {"type", "id", "question", "language", "code", "answers", "explanation", "outputComparison"},
     "order_code": {"type", "id", "question", "fragments", "correctOrder", "explanation"},
     "drag_fill_code": {"type", "id", "question", "language", "template", "choices", "correctOrder"},
@@ -279,9 +280,138 @@ INLINE_ANSWER_ALTERNATIVES = {
     ("colecciones_y_recorridos/lesson_un_vector_para_una_coleccion.json", 4, 5): [["push_back", "emplace_back"], ["9"]],
     ("colecciones_y_recorridos/lesson_acumular_contar_y_seleccionar.json", 5, 4): [["push_back", "emplace_back"], ["valor"]],
 }
+DECIMAL_LITERAL_LOCATIONS = {
+    ("errores_y_construccion_gradual/lesson_requisitos_casos_y_primera_version.json", 3, 5),
+}
+DECIMAL_LITERAL_MODE = "cpp_decimal_literal_value"
+DECIMAL_LITERAL_MAX_LENGTH = 16_384
+_DECIMAL_DIGITS = r"[0-9](?:'?[0-9])*"
+_DECIMAL_INTEGER = re.compile(r"(?:0|[1-9](?:'?[0-9])*)")
+_DECIMAL_FLOATS = tuple(re.compile(pattern) for pattern in (
+    rf"(?P<whole>{_DECIMAL_DIGITS})\.(?P<fraction>{_DECIMAL_DIGITS})?(?:[eE](?P<exponent>[+-]?{_DECIMAL_DIGITS}))?",
+    rf"\.(?P<fraction>{_DECIMAL_DIGITS})(?:[eE](?P<exponent>[+-]?{_DECIMAL_DIGITS}))?",
+    rf"(?P<whole>{_DECIMAL_DIGITS})[eE](?P<exponent>[+-]?{_DECIMAL_DIGITS})",
+))
+
+
+class DecimalLiteralResourceLimit(ValueError):
+    """Límite técnico del analizador, distinto de una escritura curricular inválida."""
+
+
+def _add_decimal_magnitudes(left, right):
+    digits = []
+    carry = 0
+    for index in range(1, max(len(left), len(right)) + 1):
+        total = carry
+        if index <= len(left):
+            total += ord(left[-index]) - ord("0")
+        if index <= len(right):
+            total += ord(right[-index]) - ord("0")
+        digits.append(str(total % 10))
+        carry = total // 10
+    if carry:
+        digits.append(str(carry))
+    return "".join(reversed(digits))
+
+
+def _subtract_decimal_magnitudes(left, right):
+    """Resta left >= right sin convertir un exponente arbitrario a int."""
+    digits = []
+    borrow = 0
+    for index in range(1, len(left) + 1):
+        digit = ord(left[-index]) - ord("0") - borrow
+        if index <= len(right):
+            digit -= ord(right[-index]) - ord("0")
+        borrow = int(digit < 0)
+        digits.append(str(digit + 10 * borrow))
+    return "".join(reversed(digits)).lstrip("0") or "0"
+
+
+def _adjust_decimal_exponent(exponent, adjustment):
+    exponent = exponent.replace("'", "")
+    negative = exponent.startswith("-")
+    magnitude = exponent.lstrip("+-").lstrip("0") or "0"
+    if magnitude == "0":
+        negative = False
+    other_negative = adjustment < 0
+    other = str(abs(adjustment))
+    if negative == other_negative:
+        result = _add_decimal_magnitudes(magnitude, other)
+    elif (len(magnitude), magnitude) >= (len(other), other):
+        result = _subtract_decimal_magnitudes(magnitude, other)
+    else:
+        result = _subtract_decimal_magnitudes(other, magnitude)
+        negative = other_negative
+    return "-" + result if negative and result != "0" else result
+
+
+def parse_cpp_decimal_literal(value):
+    """Cantidad decimal exacta (coeficiente, exponente), o None fuera del perfil.
+
+    El perfil admite int decimal sin sufijo hasta 2147483647 y double decimal
+    sin sufijo. El exponente puede ser arbitrario: nunca se calcula 10**n ni se
+    redondea mediante float. El límite se aplica al token recortado, en unidades
+    UTF-16, igual que al texto del control Kotlin.
+    """
+    if not isinstance(value, str):
+        return None
+    literal = value.strip()
+    if (len(literal) > DECIMAL_LITERAL_MAX_LENGTH
+            or sum(2 if ord(char) > 0xFFFF else 1 for char in literal) > DECIMAL_LITERAL_MAX_LENGTH):
+        raise DecimalLiteralResourceLimit("literal supera el límite técnico de 16384 unidades UTF-16")
+    if _DECIMAL_INTEGER.fullmatch(literal):
+        coefficient = literal.replace("'", "")
+        if (len(coefficient), coefficient) > (10, "2147483647"):
+            return None
+        exponent = "0"
+        fraction_length = 0
+    else:
+        match = next((match for pattern in _DECIMAL_FLOATS if (match := pattern.fullmatch(literal))), None)
+        if match is None:
+            return None
+        parts = match.groupdict()
+        fraction = (parts.get("fraction") or "").replace("'", "")
+        coefficient = (parts.get("whole") or "").replace("'", "") + fraction
+        fraction_length = len(fraction)
+        exponent = parts.get("exponent") or "0"
+    coefficient = coefficient.lstrip("0")
+    if not coefficient:
+        return "0", "0"
+    normalized = coefficient.rstrip("0")
+    trailing_zeros = len(coefficient) - len(normalized)
+    return normalized, _adjust_decimal_exponent(exponent, trailing_zeros - fraction_length)
+
+
+def validate_decimal_answer_contract(block, where):
+    if "answerComparison" not in block:
+        return
+    valid_mode = isinstance(block["answerComparison"], str) and block["answerComparison"] == DECIMAL_LITERAL_MODE
+    require(valid_mode, where, "answerComparison debe ser cpp_decimal_literal_value; configuración técnica inválida")
+    valid_kind = block["type"] == "fill_code"
+    require(valid_kind, where, "answerComparison sólo corresponde a fill_code; configuración técnica inválida")
+    if not valid_mode or not valid_kind:
+        return
+    answers = block.get("answers")
+    valid_answers = isinstance(answers, list) and bool(answers) and all(isinstance(answer, str) and answer.strip() for answer in answers)
+    require(valid_answers, where, "comparación decimal requiere answers textuales no vacías; configuración técnica inválida")
+    if not valid_answers:
+        return
+    values = []
+    for index, answer in enumerate(answers, 1):
+        try:
+            value = parse_cpp_decimal_literal(answer)
+        except DecimalLiteralResourceLimit as error:
+            require(False, where, f"answer {index}: {error}; configuración técnica inválida")
+            return
+        require(value is not None, where, f"answer {index} fuera del perfil decimal int/double; configuración técnica inválida")
+        values.append(value)
+    if any(value is None for value in values):
+        return
+    require(all(value == values[0] for value in values), where, "answers deben representar exactamente la cantidad de answers[0]; configuración técnica inválida")
 
 
 def validate_answer_contract(block, where):
+    validate_decimal_answer_contract(block, where)
     if block["type"] == "output_prediction" and "outputComparison" in block:
         mode = block["outputComparison"]
         require(isinstance(mode, str) and mode in {"trimmed", "exact"}, where, "outputComparison debe ser trimmed o exact")
@@ -393,6 +523,9 @@ def preserves_previous_exercise(relative, pn, bn, old, current):
         return True
     lesson_path = Path(relative).relative_to(CONTENT.relative_to(ROOT)).as_posix()
     location = (lesson_path, pn + 1, bn + 1)
+    if location in DECIMAL_LITERAL_LOCATIONS and old["type"] == "fill_code":
+        if current == dict(old, answerComparison=DECIMAL_LITERAL_MODE):
+            return True
     revision = FILL_CODE_REVISIONS.get(location)
     if revision is not None and old["type"] == "fill_code":
         return (
@@ -495,7 +628,8 @@ def main():
                     require(len(options) >= 2 and len(set(options)) == len(options), where, "opciones insuficientes o duplicadas")
                     require(0 <= block["correctIndex"] < len(options), where, "índice de respuesta fuera de rango")
                 if kind in {"fill_code", "output_prediction", "inline_fill_code"}:
-                    require(bool(block["answers"]) and all(isinstance(a, str) and a.strip() for a in block["answers"]), where, "respuesta vacía o no textual")
+                    answers = block.get("answers")
+                    require(isinstance(answers, list) and bool(answers) and all(isinstance(a, str) and a.strip() for a in answers), where, "respuesta vacía o no textual")
                     validate_answer_contract(block, where)
                 if kind == "order_code":
                     require(sorted(block["correctOrder"]) == list(range(len(block["fragments"]))), where, "orden no es una permutación")

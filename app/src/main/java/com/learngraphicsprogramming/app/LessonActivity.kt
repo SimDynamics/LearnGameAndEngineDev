@@ -4284,7 +4284,7 @@ class LessonActivity : AppCompatActivity() {
         button.setOnClickListener {
 
             val userAnswer =
-                CppCodeAnswerNormalizer.normalizeFill(block.getString("code"), input.text.toString())
+                CppExerciseAnswers.normalizeFill(block, input.text.toString())
 
             if (answeredCorrectly) return@setOnClickListener
             if (userAnswer.isBlank()) {

@@ -9,8 +9,10 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.accessibility.AccessibilityEvent
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -24,6 +26,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * Checks the published C++ answers through LessonActivity's actual native controls.
@@ -291,12 +295,152 @@ class CppCurricularAnswerDeviceTest {
         }
     }
 
-    private fun withCopiedBlock(location: Location,
+    @Test fun decimalLiteralQuantityUsesThePublishedSelectorAndExactDecimalValue() {
+        withCopiedBlock(NUMERIC_PREPARATION) { scenario, fixture ->
+            assertEquals("fill_code", fixture.block.getString("type"))
+            assertEquals("conservar_preparacion", fixture.block.getString("id"))
+            assertEquals("cpp_decimal_literal_value", fixture.block.getString("answerComparison"))
+            assertEquals("The published canonical answers are preserved", listOf("3", "3.0"),
+                strings(fixture.block.getJSONArray("answers")))
+            for (answer in NUMERIC_ACCEPTED) {
+                assertResponse(scenario, fixture, listOf(answer), true)
+                assertResponse(scenario, fixture, listOf(" \t\n$answer\r\n "), true)
+            }
+            for (answer in NUMERIC_REJECTED) {
+                assertResponse(scenario, fixture, listOf(answer), false)
+            }
+        }
+    }
+
+    @Test fun numericAlternateAndNearbyWrongQuantitySurviveReconstructionAndRecreation() {
+        withCopiedBlock(NUMERIC_PREPARATION) { scenario, fixture ->
+            for ((answer, correct) in listOf("3.0000000000000001" to false, " \t3e0\n " to true)) {
+                val submitted = listOf(answer)
+                assertResponse(scenario, fixture, submitted, correct)
+                rebuild(scenario, fixture)
+                assertRestoredResponse(scenario, fixture, submitted, correct)
+                scenario.recreate()
+                scenario.onActivity { injectFixture(it, fixture) }
+                assertRestoredResponse(scenario, fixture, submitted, correct)
+            }
+            scenario.onActivity { activity ->
+                val key = "exercise_${fixture.id}_page_${NUMERIC_PREPARATION.page - 1}_block_${NUMERIC_PREPARATION.block - 1}"
+                assertTrue("The numeric mode preserves the original page/block storage coordinates",
+                    context.getSharedPreferences(PROGRESS, Context.MODE_PRIVATE).contains(key))
+                assertEquals(1, field(activity, "requiredExercises"))
+                assertEquals(1, field(activity, "completedExercises"))
+            }
+        }
+    }
+
+    @Test fun fillWithoutNumericSelectorKeepsOnlyItsPublishedTextAlternatives() {
+        withCopiedBlock(NUMERIC_PREPARATION, transform = { it.remove("answerComparison") }) { scenario, fixture ->
+            assertFalse(fixture.block.has("answerComparison"))
+            assertResponse(scenario, fixture, listOf(" \t3\n "), true)
+            assertResponse(scenario, fixture, listOf(" \t3.0\n "), true)
+            for (answer in listOf("3e0", "3.00", "03.0", "3 .0", "1+2")) {
+                assertResponse(scenario, fixture, listOf(answer), false)
+            }
+        }
+        withCopiedBlock(NUMERIC_PREPARATION, transform = {
+            it.remove("answerComparison")
+            it.getJSONArray("answers").put("3e0")
+        }) { scenario, fixture ->
+            assertFalse(fixture.block.has("answerComparison"))
+            assertResponse(scenario, fixture, listOf(" \t3e0\n "), true)
+            assertResponse(scenario, fixture, listOf("3E+0"), false)
+        }
+    }
+
+    @Test fun numericResourceLimitIsTechnicalAndAllowsRetryWithoutSavingAnIncorrectAnswer() {
+        withCopiedBlock(NUMERIC_PREPARATION) { scenario, fixture ->
+            val overLimit = "3." + "0".repeat(CppDecimalLiteral.MAX_LENGTH - 1)
+            assertTrue(overLimit.length > CppDecimalLiteral.MAX_LENGTH)
+            assertTechnicalResponse(scenario, fixture, overLimit, requireTechnicalToast = true)
+            // A technical failure leaves the same controls available for an ordinary retry.
+            assertResponse(scenario, fixture, listOf("3e0"), true)
+        }
+        withCopiedBlock(NUMERIC_PREPARATION) { scenario, fixture ->
+            val boundary = "3." + "0".repeat(CppDecimalLiteral.MAX_LENGTH - 2)
+            assertEquals(CppDecimalLiteral.MAX_LENGTH, boundary.length)
+            assertResponse(scenario, fixture, listOf(boundary), true)
+        }
+    }
+
+    @Test fun malformedNumericConfigurationIsTechnicalWithoutSavedAnswersOrCompletion() {
+        val malformed = listOf<(JSONObject) -> Unit>(
+            { it.put("answerComparison", "unknown_decimal_mode") },
+            { it.put("answerComparison", JSONObject.NULL) },
+            { it.put("answerComparison", 3) },
+            { it.put("answerComparison", JSONObject().put("mode", "cpp_decimal_literal_value")) },
+            { it.put("answers", JSONArray(listOf("1+2", "3.0"))) },
+            { it.put("answers", JSONArray(listOf("3", "3.1"))) },
+            { it.put("answers", JSONArray(listOf("3", "3.0000000000000001"))) },
+            { it.put("answers", JSONArray()) },
+            { it.put("answers", JSONArray(listOf(3, "3.0"))) },
+            { it.put("answers", JSONArray(listOf("3." + "0".repeat(CppDecimalLiteral.MAX_LENGTH), "3.0"))) }
+        )
+        for (transform in malformed) {
+            withCopiedBlock(NUMERIC_PREPARATION, transform) { scenario, fixture ->
+                assertTechnicalResponse(scenario, fixture, "3")
+            }
+        }
+    }
+
+    private fun assertTechnicalResponse(scenario: ActivityScenario<LessonActivity>, fixture: Fixture,
+                                        answer: String, requireTechnicalToast: Boolean = false) {
+        val technicalToast = CountDownLatch(1)
+        val automation = if (requireTechnicalToast) instrumentation.uiAutomation else null
+        automation?.setOnAccessibilityEventListener { event ->
+            if (event.eventType == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED &&
+                event.text.any { it.toString() == context.getString(R.string.attempt_evaluation_error) }) {
+                technicalToast.countDown()
+            }
+        }
+        try {
+            scenario.onActivity { activity ->
+                assertNull("The technical fixture starts without a saved response",
+                    ProgressRepository.getExerciseState(activity, fixture.id,
+                        fixture.location.page - 1, fixture.location.block - 1))
+                val attempts = field(activity, "exerciseAttempts") as ExerciseAttemptLedger
+                val history = attempts.save().toString()
+                val reserve = context.getSharedPreferences(ATTEMPTS, Context.MODE_PRIVATE).all.toMap()
+                val input = inputs(activity).single()
+                input.setText(answer)
+                assertEquals("Resource errors must receive the raw unmodified input", answer, input.text.toString())
+                val button = checkButton(activity)
+                assertTrue(button.isAttachedToWindow && button.isEnabled)
+                button.performClick()
+                assertNull("Technical failures do not persist a student's incorrect response",
+                    ProgressRepository.getExerciseState(activity, fixture.id,
+                        fixture.location.page - 1, fixture.location.block - 1))
+                assertEquals(0, field(activity, "completedExercises"))
+                assertEquals("Technical failures do not record an answer penalty", history, attempts.save().toString())
+                assertEquals("Technical failures preserve the fixture's attempt reserve", reserve,
+                    context.getSharedPreferences(ATTEMPTS, Context.MODE_PRIVATE).all)
+                assertTrue("Technical failures leave the response editable", input.isEnabled)
+                assertTrue("Technical failures leave Check available", button.isEnabled)
+                assertFalse("A technical failure does not display incorrect-answer feedback",
+                    descendants(content(activity)).filterIsInstance<TextView>().any {
+                        it.text.toString() == activity.getString(R.string.exercise_incorrect)
+                    })
+            }
+            if (requireTechnicalToast) {
+                assertTrue("The real control displays the technical evaluation feedback",
+                    technicalToast.await(3, TimeUnit.SECONDS))
+            }
+        } finally {
+            automation?.setOnAccessibilityEventListener(null)
+        }
+    }
+
+    private fun withCopiedBlock(location: Location, transform: (JSONObject) -> Unit = {},
                                 test: (ActivityScenario<LessonActivity>, Fixture) -> Unit) {
         val source = LessonRepository.loadLessonJson(context, ROUTE, location.lesson)
         assertEquals(location.lesson, source.getString("id"))
         val block = JSONObject(source.getJSONArray("pages").getJSONObject(location.page - 1)
             .getJSONArray("blocks").getJSONObject(location.block - 1).toString())
+        transform(block)
         val id = "cpp_fundamentals__programas_y_ejecucion__answer_device_${UUID.randomUUID().toString().replace("-", "") }"
         val pages = JSONArray().apply {
             repeat(source.getJSONArray("pages").length()) { pageIndex ->
@@ -473,5 +617,17 @@ class CppCurricularAnswerDeviceTest {
             Location("cpp_fundamentals__archivos_y_programa_completo__bases_y_anchuras_en_cada_campo", 6, 5),
             Location("cpp_fundamentals__archivos_y_programa_completo__precision_por_campo_y_resumenes_formateados", 4, 5),
             Location("cpp_fundamentals__archivos_y_programa_completo__texto_con_campos_y_patrones_literales", 3, 4))
+        private val NUMERIC_PREPARATION = Location(
+            "cpp_fundamentals__errores_y_construccion_gradual__requisitos_casos_y_primera_version", 3, 5)
+        private val NUMERIC_ACCEPTED = listOf("3", "3.0", "3.00", "3e0", "3E+0", "30e-1", "0.3e1", "3.",
+            ".3e1", "03.0", "0003.00", "03e0", "3e-0", "3e000000", "3000e-3", "3'000e-3", "3.0'0",
+            "0.0'3e2", "3e0'0", "0'3.0", "3e" + "0".repeat(512), "3" + "0".repeat(64) + "e-64")
+        private val NUMERIC_REJECTED = listOf("0", "2", "4", "3.1", "3.9", "3e1", "3e-1",
+            "3.0000000000000001", "2.9999999999999999", "3e", "3e+", "3..0", "3 .0", "3,0", "preparacion",
+            "3 // tres", "3/* tres */", "\"3\"", "'3'", "1+2", "(3)", "+3", "-3", "0x3", "0X3", "0b11",
+            "03", "003", "0'3", "3u", "3L", "3.0f", "3.0L", "3e0f", "3'", "'3", "3''0", "3.'0",
+            "3e'0", "3e+'0", "3_0", "3\t.0", "3\n.0", "3e 0", "3 0", "3\u00a0.0", "NaN", "Infinity",
+            "2147483648", "3e999999999999999999999999999999999999999999999999",
+            "3e-999999999999999999999999999999999999999999999999")
     }
 }
