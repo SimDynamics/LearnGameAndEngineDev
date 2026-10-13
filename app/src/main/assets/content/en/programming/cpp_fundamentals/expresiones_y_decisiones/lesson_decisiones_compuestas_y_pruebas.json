@@ -1,0 +1,285 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__decisiones_compuestas_y_pruebas",
+  "title": "Compound Decisions and Test Cases",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose among more than two outcomes"
+        },
+        {
+          "type": "paragraph",
+          "text": "An if, else if, else chain organizes more than two alternatives. The first condition is checked; if it is true, its block runs and the rest of the chain is skipped. If it is false, the next condition is checked. The final else handles data that meet none of the preceding conditions. At most one block in the chain runs."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int energia = 7;\n    if (energia < 4) {\n        std::cout << \"Low\";\n    } else if (energia < 9) {\n        std::cout << \"Medium\";\n    } else {\n        std::cout << \"High\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The program displays Medium. To reach that branch, we already know energia < 4 was false. Therefore, the second branch represents values from 4 through 8, even though its condition only says energia < 9. The meaning of a branch also depends on the conditions rejected before it."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Classify a quantity using this chain. Predict its single output line.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int lecturas = 3;\n    if (lecturas < 3) {\n        std::cout << \"Start\";\n    } else if (lecturas < 7) {\n        std::cout << \"In progress\";\n    } else {\n        std::cout << \"Complete\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "In progress"
+          ],
+          "explanation": "3 is not less than 3, but it is less than 7. The second branch is chosen, and the final else is skipped."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In an if/else if/else chain, two conditions would be true for the current data. Which block runs?",
+          "options": [
+            "Both blocks whose conditions would be true.",
+            "The block for the first true condition in the chain.",
+            "Only the final else block."
+          ],
+          "correctIndex": 1,
+          "explanation": "The chain stops selecting as soon as the first condition is satisfied."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One chain differs from two independent decisions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Two independent if statements can both execute their blocks. A chain with else if chooses at most one. Decide which structure the requirement calls for. If a general condition and a more specific one overlap within a chain, their order matters: placing the general one first may prevent the specific one from ever being reached."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Here, every applicable achievement should be displayed. Predict the complete output.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int aciertos = 8;\n    if (aciertos >= 5) {\n        std::cout << \"Passed\\n\";\n    }\n    if (aciertos >= 8) {\n        std::cout << \"Outstanding\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Passed\nOutstanding"
+          ],
+          "explanation": "These are independent decisions, and both conditions are true. That is why both achievements are displayed."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Another requirement asks for just one category: Outstanding from 8 onward; Passed from 5 if the value is below 8; Pending otherwise. Which chain order represents that requirement?",
+          "options": [
+            "Two independent if statements, without else.",
+            "Check >= 5 first, then else if >= 8, and finally else.",
+            "Check >= 8 first, then else if >= 5, and finally else."
+          ],
+          "correctIndex": 2,
+          "explanation": "The more specific category must be checked first. If >= 5 came first, it would also capture values of 8 and above."
+        },
+        {
+          "type": "note",
+          "text": "The structure must reflect whether responses are mutually exclusive or can coexist. Do not add else merely to shorten the program: that would change which blocks can run."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One decision can depend on another"
+        },
+        {
+          "type": "paragraph",
+          "text": "You can also put an if inside the block of another if. The nested decision is reached only when the outer block runs. Braces and indentation help us follow the levels. In this example, permission is checked before deciding whether the available quantity is enough."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const bool permiso = true;\n    const int solicitadas = 5;\n    const int disponibles = 4;\n    if (permiso) {\n        if (solicitadas <= disponibles) {\n            std::cout << \"Enough\\n\";\n        } else {\n            std::cout << \"Not enough\\n\";\n        }\n    } else {\n        std::cout << \"No permission\\n\";\n    }\n    std::cout << \"Review complete\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is Not enough, followed by Review complete. If permiso were false, the inner decision would not be reached and No permission would be displayed. The final message is outside the entire selection. Associate each else with its if using the braces; do not infer the connection from how close the words appear."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Now permiso is true, solicitadas is 3, and disponibles is 3. Which messages does this structure produce with the new data?",
+          "options": [
+            "Enough and Review complete.",
+            "No permission and Review complete.",
+            "Not enough and Review complete."
+          ],
+          "correctIndex": 0,
+          "explanation": "The outer branch allows execution to reach the comparison. <= includes equality at 3, and the final message runs after the decision."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mini-project: dispatching orders with explicit rules"
+        },
+        {
+          "type": "paragraph",
+          "text": "A small workshop receives a request declared in the program. The rules, in order, are: accept quantities from 1 to 12; for any other quantity display Invalid quantity; for a valid quantity without permission display No permission; with permission and enough items display Complete; otherwise display how many items are missing. disponibles is known to be between 0 and 12. The small data values and these domains keep the calculations representable."
+        },
+        {
+          "type": "paragraph",
+          "text": "First predict the initial case: solicitadas is 6, disponibles is 4, and permiso is true. Run the program to check. Change only solicitadas to test 0, 1, 4, 5, 12, and 13. Keep disponibles at 4. Before each run, write the expected output from the rules, including the missing quantity when applicable."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int solicitadas = 6;\n    const int disponibles = 4;\n    const bool permiso = true;\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Invalid quantity\";\n    } else if (!permiso) {\n        std::cout << \"No permission\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Complete\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pending: \" << faltantes;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Then restore solicitadas to 6 and change permiso to false. Finally combine solicitadas equal to 0 with permiso false: the stated priority requires reporting Invalid quantity first. Notice that faltantes exists and is calculated only in the branch where the quantity is valid, permission is granted, and solicitadas exceeds disponibles."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "According to the requirement's priority, solicitadas equal to 0 and permiso false must produce:",
+          "options": [
+            "Pending: 0",
+            "No permission",
+            "Invalid quantity"
+          ],
+          "correctIndex": 2,
+          "explanation": "Quantity validation comes before checking permission. The first applicable reason is reported."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Match each test case to the error it can reveal"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the dispatch program, 0 and 13 test rejection just outside the allowed range; 1 and 12 verify that its endpoints are accepted. With disponibles equal to 4, cases 4 and 5 test the boundary between Complete and Pending. A valid quantity with permiso false tests rejection for lack of permission. An invalid quantity together with permiso false tests which reason takes priority."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Another delivery accepts quantities from 2 to 9 and has 5 items available, with permiso true. Which set tests both endpoints of the new range, the neighboring values outside it, and the transition from sufficient to insufficient stock?",
+          "options": [
+            "1, 2, 5, 6, 9, and 10",
+            "1 and 10",
+            "2, 3, 4, and 5"
+          ],
+          "correctIndex": 0,
+          "explanation": "Under the new rules, 1/2 and 9/10 test the accepted range; 5/6 tests availability. Test cases must come from the current requirement, not be copied from the previous dispatch program."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Another dispatch has a valid and sufficient quantity but lacks permission. Predict the message according to these rules.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int solicitadas = 3;\n    const int disponibles = 8;\n    const bool permiso = false;\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Invalid quantity\";\n    } else if (!permiso) {\n        std::cout << \"No permission\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Complete\";\n    } else {\n        std::cout << \"Pending: \" << solicitadas - disponibles;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "No permission"
+          ],
+          "explanation": "The quantity passes validation, but the lack of permission decides the chain before availability is compared."
+        },
+        {
+          "type": "note",
+          "text": "A test case consists of input data and an expected output. State what property each case checks. Repeating an input that already passes does not automatically test a boundary or priority that has not yet been observed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall several concepts by tracing one program"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Without running it first, trace copies, assignment, subtraction, and the decision. Enter the complete output.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int disponibles = 11;\n    int usados = 3;\n    const int antes = usados;\n    usados = usados + 4;\n    const int libres = disponibles - usados;\n    const bool queda_espacio = libres > 0;\n    if (queda_espacio) {\n        std::cout << \"Free: \" << libres << \"\\n\";\n    } else {\n        std::cout << \"Complete\\n\";\n    }\n    std::cout << \"Before: \" << antes;\n    return 0;\n}\n",
+          "answers": [
+            "Free: 4\nBefore: 3"
+          ],
+          "explanation": "antes keeps the value 3. usados changes to 7, libres becomes 4, and the condition selects the first branch. The final message shows the saved copy."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "An int variable named cantidad needs to be divided by two while retaining a fractional part. Which declaration converts a value before division?",
+          "options": [
+            "const int mitad = cantidad / 2;",
+            "const double mitad = cantidad / 2;",
+            "const double mitad = static_cast<double>(cantidad) / 2;"
+          ],
+          "correctIndex": 2,
+          "explanation": "Converting one operand makes / use double. Changing only the destination type happens after integer division."
+        },
+        {
+          "type": "paragraph",
+          "text": "If your prediction fails, return to the first point where your reasoning and the program diverge. Was it a copy, the type of division, grouping, equality at a boundary, or the selected execution path? That explanation determines what to change; running again without a hypothesis does not identify the cause."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review a condition that compiles but expresses the wrong rule"
+        },
+        {
+          "type": "paragraph",
+          "text": "Someone writes (cantidad < 1) && (cantidad > 12) to detect quantities outside the range from 1 to 12. That conjunction requires the same quantity to be below 1 and above 12 at the same time. For these integers, it can never be true. The error lies in translating the requirement, even though the operators and types are valid."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which combination of diagnosis, repair, and testing addresses that problem?",
+          "options": [
+            "Keep && and test only 6 because it is within the range.",
+            "Replace && with || and test 0, 1, 12, and 13 against their expected outputs.",
+            "Change every int to double without revisiting the conditions."
+          ],
+          "correctIndex": 1,
+          "explanation": "To be outside the range, either side is enough. Testing around both endpoints checks rejection and inclusion of the boundary values."
+        },
+        {
+          "type": "fill_code",
+          "question": "Now express acceptance: the quantity must be at least 1 and no greater than 12. Complete only the logical operator that requires both comparisons.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 13;\n    const bool aceptada = (cantidad >= 1) ___ (cantidad <= 12);\n    if (aceptada) {\n        std::cout << \"Accepted\";\n    } else {\n        std::cout << \"Rejected\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "&&",
+            "and"
+          ],
+          "explanation": "Acceptance requires both conditions. With 13, the maximum is exceeded and Rejected is displayed."
+        },
+        {
+          "type": "note",
+          "text": "Before moving on, explain one decision using its data, conditions, branches, and expected output. You can now build finite programs that calculate and choose paths. Repetition will be studied later, along with its own termination condition."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Post-lab comparison"
+        },
+        {
+          "type": "paragraph",
+          "text": "With disponibles equal to 4 and permiso true, solicitadas equal to 0 or 13 produces Invalid quantity; 1 or 4 produces Complete; 5 produces Pending: 1; 6 produces Pending: 2; and 12 produces Pending: 8. With solicitadas equal to 6 and permiso false, No permission appears. With solicitadas equal to 0 and permiso false, Invalid quantity must still appear."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int solicitadas = 6;\n    const int disponibles = 4;\n    const bool permiso = true;\n    if ((solicitadas < 1) || (solicitadas > 12)) {\n        std::cout << \"Invalid quantity\";\n    } else if (!permiso) {\n        std::cout << \"No permission\";\n    } else if (solicitadas <= disponibles) {\n        std::cout << \"Complete\";\n    } else {\n        const int faltantes = solicitadas - disponibles;\n        std::cout << \"Pending: \" << faltantes;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Check that exactly one outcome is displayed and that the priority rejects the quantity first, then the lack of permission, and only then decides whether enough items are available. The missing-item calculation runs only for valid quantities with solicitadas greater than disponibles. Keep disponibles between 0 and 12; no loop or function is needed for these tests."
+        },
+        {
+          "type": "note",
+          "text": "Use this comparison only after predicting and running your tests. The editor does not grade these outputs automatically: compare them with the criteria and explain the first difference. Keep your version if it has the same behavior."
+        }
+      ]
+    }
+  ]
+}

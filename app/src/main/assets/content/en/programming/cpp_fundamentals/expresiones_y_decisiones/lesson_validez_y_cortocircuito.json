@@ -1,0 +1,228 @@
+{
+  "id": "cpp_fundamentals__expresiones_y_decisiones__validez_y_cortocircuito",
+  "title": "Data Validity and Short-Circuit Evaluation",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "One condition can protect the next"
+        },
+        {
+          "type": "paragraph",
+          "text": "The && and || operators use an evaluation rule called short-circuiting. && evaluates its left operand first; if it is false, the result is already false and the right operand is not evaluated. || also evaluates the left operand first; if it is true, the result is already true and the right operand is not evaluated. If that first result does not determine the answer, the second operand is evaluated."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int piezas = 19;\n    const int capacidad = 0;\n    const bool alcanza_tres = (capacidad > 0) && (piezas / capacidad >= 3);\n    std::cout << alcanza_tres;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 0. The first comparison is false, so the division is not evaluated. With positive capacity, the second comparison is evaluated. The check must be on the left of && and the operation that depends on it on the right. This is a specific guarantee of these operators; the arithmetic precedence studied earlier does not, by itself, guarantee a general order of evaluation."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In A && B, A is false. What happens to B?",
+          "options": [
+            "B is not evaluated; the overall result is already false.",
+            "B is always evaluated to display its value.",
+            "B is evaluated before A."
+          ],
+          "correctIndex": 0,
+          "explanation": "A conjunction is determined by its first false operand, so its right operand is skipped."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check the precondition before calculating the remainder"
+        },
+        {
+          "type": "paragraph",
+          "text": "A precondition is a requirement that the data must meet before an operation. To divide a nonnegative quantity, we require positive capacity. The condition (capacidad > 0) && (cantidad % capacidad == 0) tells us whether the capacity is valid and the division has no remainder. If capacidad is zero or negative, the second operand is skipped."
+        },
+        {
+          "type": "fill_code",
+          "question": "The model accepts only positive divisors. Complete the comparison operator that protects the remainder operation; enter only that operator.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 24;\n    const int divisor = 0;\n    const bool exacto_y_valido = (divisor ___ 0) && (cantidad % divisor == 0);\n    std::cout << exacto_y_valido;\n    return 0;\n}\n",
+          "answers": [
+            ">"
+          ],
+          "explanation": "> accepts only positive divisors. When divisor is 0, the first condition is false and % is not evaluated."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which order checks the divisor before calculating the remainder?",
+          "options": [
+            "(cantidad % divisor == 0) && (divisor > 0)",
+            "Both orders offer equal protection because && means 'and'.",
+            "(divisor > 0) && (cantidad % divisor == 0)"
+          ],
+          "correctIndex": 2,
+          "explanation": "Only a check on the left can prevent the remainder from being evaluated. The logical meaning does not remove this evaluation dependency."
+        },
+        {
+          "type": "note",
+          "text": "Do not run a version that calculates the remainder before checking whether a divisor is zero. That version has no valid output to compare. The correct example avoids the operation instead of relying on what may appear to happen on a device."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An alternative can identify when to reject"
+        },
+        {
+          "type": "paragraph",
+          "text": "The || operator can also protect an operation. The condition (capacidad <= 0) || (cantidad % capacidad != 0) determines whether the capacity is invalid or a remainder is left over. For an invalid capacity, the first operand is already true and the remainder operation is skipped. For a positive capacity, the second question is checked."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the output of this detector for a division that needs review.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int cantidad = 25;\n    const int capacidad = 0;\n    const bool requiere_revision = (capacidad <= 0) || (cantidad % capacidad != 0);\n    std::cout << requiere_revision;\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "explanation": "The capacity is not positive. The first operand is true, so || skips the remainder calculation."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In A || B, when must B be evaluated to determine the result?",
+          "options": [
+            "When A is true.",
+            "When A is false.",
+            "Never."
+          ],
+          "correctIndex": 1,
+          "explanation": "If A is false, B can still make the alternative true. If A is true, the result is already determined."
+        },
+        {
+          "type": "paragraph",
+          "text": "The review warning combines two distinct reasons. By itself, true does not tell us whether capacity was invalid or there was a remainder. When you need different messages, keep the questions separate and choose a decision path that distinguishes them."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: divide only after validation"
+        },
+        {
+          "type": "paragraph",
+          "text": "The data are already declared. total is 28 and capacidad is 4. For these experiments, use total from 0 to 120 and positive capacities from 1 to 12. Also test capacities of 0 and -1 to observe their rejection without performing / or %. Predict the initial case, run it, and then test capacidad equal to 0, -1, and 6, one at a time. The first line reports whether capacity is positive and the division is exact; the second shows complete groups only when capacity is positive. The program checks positivity; keeping the other limits is part of this experiment."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    const int capacidad = 4;\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n    std::cout << valido_y_exacto << \"\\n\";\n    if (capacidad > 0) {\n        std::cout << \"Groups: \" << total / capacidad;\n    } else {\n        std::cout << \"Invalid capacity\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "If only capacidad is changed to 0, which output does the program produce?",
+          "options": [
+            "0\nInvalid capacity",
+            "0\nGroups: 0",
+            "1\nInvalid capacity"
+          ],
+          "correctIndex": 0,
+          "explanation": "&& skips % and produces false. The if also skips / and displays the rejection."
+        },
+        {
+          "type": "paragraph",
+          "text": "With capacidad equal to 6, the capacity is valid even though the division is not exact: there are 4 complete groups and 4 left over. With 0 or -1, the model rejects the capacity. These are different reasons even though the first line has the same bool value."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose test cases for a protective condition"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "With total equal to 28, which plan checks a negative capacity, zero capacity, exact division, and division with a remainder?",
+          "options": [
+            "Capacities 4, 4, 4, and 4.",
+            "Capacities 4 and 7.",
+            "Capacities -1, 0, 4, and 6."
+          ],
+          "correctIndex": 2,
+          "explanation": "The first two values test rejection; 4 gives remainder 0 and 6 gives remainder 4. Each case answers a different question."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Recall remainder and a compound condition with valid data. Enter the two displayed values.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int unidades = 22;\n    const int capacidad = 5;\n    const bool valido_y_exacto = (capacidad > 0) && (unidades % capacidad == 0);\n    std::cout << valido_y_exacto << \" \" << unidades % capacidad;\n    return 0;\n}\n",
+          "answers": [
+            "0 2"
+          ],
+          "explanation": "The divisor is positive, so the remainder is evaluated. A remainder of 2 makes the exact-division condition false."
+        },
+        {
+          "type": "note",
+          "text": "Reversing two conditions can change a program's safety even when they seem to say the same thing in words. A check must precede the operation it protects and determine whether that operation is evaluated."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A false result does not explain the entire state"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "valido_y_exacto is false for (capacidad > 0) && (total % capacidad == 0). What can you conclude without knowing the data?",
+          "options": [
+            "Validity and exactness do not both hold; the reason still needs to be identified.",
+            "The division is necessarily valid and has a remainder.",
+            "The capacity must be zero."
+          ],
+          "correctIndex": 0,
+          "explanation": "The capacity may have been rejected, or the division may be valid but leave a remainder. The conjunction does not preserve which requirement failed."
+        },
+        {
+          "type": "paragraph",
+          "text": "To explain a result, return to the data and the condition that produced it. A bool result compresses information: true or false is useful for choosing a path, but can represent several reasons. The next lesson will organize decisions to produce different messages and test each one."
+        },
+        {
+          "type": "note",
+          "text": "The short-circuit guarantees used here apply to && and || with bool operands. Every executed calculation uses small quantities, positive divisors, and representable results. Rejected data never reach / or %."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Post-lab comparison"
+        },
+        {
+          "type": "paragraph",
+          "text": "With total 28 and capacidad 4, the output is 1 and Groups: 7 on two lines. With capacidad 0 or -1, it is 0 and Invalid capacity. With capacidad 6, it is 0 and Groups: 4. The reference keeps the condition that checks positivity before calculating the remainder and the branch that protects division."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const int total = 28;\n    const int capacidad = 4;\n    const bool valido_y_exacto = (capacidad > 0) && (total % capacidad == 0);\n    std::cout << valido_y_exacto << \"\\n\";\n    if (capacidad > 0) {\n        std::cout << \"Groups: \" << total / capacidad;\n    } else {\n        std::cout << \"Invalid capacity\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Check two separate requirements: rejected data never reach / or %, and a positive capacity lets the program display groups even when the division is not exact. With total 0 and capacidad 4, the expected output is 1 and Groups: 0. Keep total from 0 to 120 and positive capacities from 1 to 12 for these experiments; the program does not validate the upper limits."
+        },
+        {
+          "type": "note",
+          "text": "Use this comparison only after predicting and running your tests. The editor does not grade these outputs automatically: compare them with the criteria and explain the first difference. Keep your version if it has the same behavior."
+        }
+      ]
+    }
+  ]
+}
