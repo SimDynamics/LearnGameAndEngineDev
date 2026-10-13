@@ -4,26 +4,9 @@ El estado corresponde a la incorporación en las lecciones: **pendiente**, **cre
 
 ## IMÁGENES POR GENERAR E INTEGRAR
 
-Sin imágenes pendientes identificadas para los primeros cursos de Programación y Matemáticas. Las representaciones de `math_course_01` utilizan los componentes matemáticos existentes.
+Sin imágenes pendientes identificadas para el alcance actual del primer curso de Programación.
 
 ## CAPACIDADES POR IMPLEMENTAR E INTEGRAR
-
-El cierre de `math_course_01` queda condicionado a `MATH_ENUMERACIONES_TEXTUALES_OPCIONES`. Sus respuestas y actividades están conservadas; la carencia afecta a la presentación de las etiquetas indicada en la ficha.
-
-### MATH_ENUMERACIONES_TEXTUALES_OPCIONES
-
-- **PENDIENTE_ID:** `MATH_ENUMERACIONES_TEXTUALES_OPCIONES`.
-- **Estado:** pendiente. Detectado en el render nativo de las opciones del curso en el Honor X8a, en vertical y horizontal.
-- **Ubicación:** `app/src/main/assets/content/es/math_physics/math_course_01/estructura_y_divisibilidad/lesson_divisibilidad_y_primos.json`; curso `math_course_01`, unidad `math_course_01__estructura_y_divisibilidad`, lección `math_course_01__estructura_y_divisibilidad__divisibilidad_y_primos`, actividad `dos_criterios`, p6 b4; respuesta `dos_criterios__eleccion`, opciones `a`, `b`, `c`.
-- **Objetivo pedagógico:** identificar la intersección entre los pares y los múltiplos de tres del universo de números del uno al doce. Leer colecciones de enteros, sin interpretar la conjunción española «y» como una variable.
-- **Experiencia deseada:** ver las listas «3, 6, 9 y 12», «6 y 12» y «2, 4, 8 y 10» como texto legible, con sus separaciones. Compararlas con el diagrama y seleccionar una opción.
-- **Tipo de interacción:** `math_multiple_choice_single` y `venn_diagram` existentes. La presentación de la opción debe conservar la diferencia entre una enumeración escrita en prosa y una expresión matemática.
-- **Datos y condiciones:** el JSON ya contiene las tres etiquetas correctas. El render automático las compone como expresiones, elimina los espacios visibles y muestra, por ejemplo, «6y12» con apariencia algebraica. El texto recuperado de `TextView` conserva los espacios: una aserción sobre esa cadena no comprueba el resultado dibujado.
-- **Respuesta o estado correcto:** opción `b`, «6 y 12». Conservan los valores, los IDs, el orden y el validador publicados. La aceptación de `b`, el rechazo de una alternativa y la restauración del estado ya se comprobaron con los controles Android de este bloque.
-- **Capacidad faltante:** presentar correctamente estas etiquetas existentes sin invalidar el progreso acreditado. El contrato permite utilizar `content` con una representación `text` y `mathMode: text`, pero exige modificar el bloque y `MathPuzzleState.fingerprint` calcula su huella completa, por lo que dejaría de reconocer un estado correcto anterior. Se conserva el bloque original y se solicita la corrección técnica de su presentación. Codex decidirá la implementación; no se requiere sustituir el ejercicio.
-- **Solución o retroalimentación:** la zona compartida contiene 6 y 12. 3 y 9 sólo cumplen ser múltiplos de tres; 2, 4, 8 y 10 sólo cumplen ser pares. Conservar los mensajes publicados.
-- **Criterios de verificación:** observar las tres listas legibles en la actividad real, en vertical y horizontal; conservar el bloque y su huella y reconocer un estado correcto guardado antes de la corrección; comprobar que `b` se acepta y las otras opciones se rechazan; mantener el render de fórmulas auténticas, como `y = 2x` y `1/4`. No dar por comprobada la presentación únicamente por extraer la cadena del control.
-- **Implementación o recursos:** consultar `app/src/main/java/com/learngraphicsprogramming/app/math/MathTextView.kt`, `MathInputControls.kt`, `MathWidgetUi.kt` y `MathPuzzleState.kt`. Capturas actuales en `.gradle/math-content-qa/revision-maestra-main-4f0fa82/native-honor/2e6b8f4a-f619-451f-bb39-3c8043440bf7/portrait-venn_diagram.png` y `native-honor/c3a07378-dd3a-41ae-895d-3a17c01574af/native-venn_diagram.png` bajo la misma carpeta de QA. Se conservan allí las comprobaciones de las 246 páginas y los 559 puzzles/652 controles; los campos compuestos se poblaron mediante su API pública de restauración y las demás familias mediante acciones de sus controles. Esas comprobaciones no evalúan ergonomía de gestos ni acreditan dominio del estudiante.
 
 ### CPP_RELLENO_LITERAL_NUMERICO
 
