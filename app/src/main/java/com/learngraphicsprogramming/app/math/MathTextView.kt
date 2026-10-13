@@ -27,6 +27,7 @@ object MathTextRenderer {
     private val arithmetic = Regex("[−-]?\\d+(?:[.,]\\d+)?(?:\\s*[×÷+−]\\s*[−-]?\\d+(?:[.,]\\d+)?)+")
     private val power = Regex("[a-zA-Z0-9π]+(?:\\^[{]?[−-]?\\d+[}]?|[²³⁴⁵⁶⁷⁸⁹⁰¹]+)")
     private val wholeMath = Regex("[\\d\\s.,;:xyabnmπθ=<>≤≥≠+−*/×÷()\\[\\]{}|∪∩?²³⁴⁵⁶⁷⁸⁹⁰¹^_%-]+")
+    private val integerEnumeration = Regex("""[−-]?[0-9]+(?:\s*,\s*[−-]?[0-9]+)*\s+y\s+[−-]?[0-9]+""")
 
     /** mode: text preserves prose; inline/block typeset the complete expression; auto recognizes
      * only explicit delimiters, unambiguous mathematical fragments and short whole expressions.
@@ -73,7 +74,8 @@ object MathTextRenderer {
             appendContent(value.substring(contentStart))
             return output
         }
-        if (value.length <= 100 && wholeMath.matches(value.trim())) {
+        if (value.length <= 100 && wholeMath.matches(value.trim()) &&
+            !integerEnumeration.matches(value.trim())) {
             appendMath(value)
             return output
         }
