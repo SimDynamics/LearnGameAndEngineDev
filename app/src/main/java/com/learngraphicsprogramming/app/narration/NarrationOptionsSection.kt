@@ -361,10 +361,12 @@ class NarrationOptionsSection(private val activity: Activity) {
     private fun sectionHeading(titleRes: Int) = LinearLayout(activity).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(0, dp(14), 0, dp(6))
-        addView(View(activity).apply {
-            setBackgroundColor(Color.rgb(76, 79, 87))
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
-        })
+        if (titleRes != R.string.narration_section_general) {
+            addView(View(activity).apply {
+                setBackgroundColor(Color.rgb(76, 79, 87))
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
+            })
+        }
         addView(text(s(titleRes), 18f).apply {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setTextColor(Color.WHITE)
