@@ -1,0 +1,246 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__buscar_y_representar_ausencia",
+  "title": "Rechercher et représenter l'absence de résultat",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une recherche doit aussi représenter l'absence"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rechercher une valeur peut aboutir à une correspondance ou à aucune. Le programme doit représenter les deux résultats. Pour demander seulement si la valeur existe, initialise bool encontrado = false; et mets-le à true lorsqu'une visite correspond. Si aucune valeur ne correspond, false conserve un sens valide ; il n'est pas nécessaire d'accéder à une position inventée."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{5, 2, 8};\n    int objetivo = 2;\n    bool encontrado = false;\n    for (int valor : datos) {\n        if (valor == objetivo) {\n            encontrado = true;\n        }\n    }\n    if (encontrado) {\n        std::cout << \"Trouvé\";\n    } else {\n        std::cout << \"Non trouvé\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "encontrado indique si une visite précédente a trouvé une correspondance. Une visite ultérieure différente ne doit pas le remettre à false et effacer une correspondance déjà obtenue."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver la preuve d'une correspondance"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 1, 9};\n    bool encontrado = false;\n    for (int valor : datos) {\n        if (valor == 4) {\n            encontrado = true;\n        }\n    }\n    std::cout << encontrado;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "1"
+          ],
+          "explanation": "Trouver quatre au début reste une preuve valable après la visite d'autres valeurs."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    bool encontrado = false;\n    for (int valor : datos) {\n        if (valor == 0) {\n            encontrado = true;\n        }\n    }\n    std::cout << encontrado;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Le vecteur vide ne contient pas de zéro ; aucune visite ne modifie l'état."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un programme affecte encontrado = (valor == objetivo) à chaque itération. À quelle question répondra-t-il à la fin ?",
+          "options": [
+            "Combien d'éléments contient le vecteur.",
+            "Si la dernière valeur visitée correspondait, en effaçant d'éventuelles correspondances précédentes.",
+            "Si au moins une visite correspondait, dans tous les cas."
+          ],
+          "correctIndex": 1,
+          "explanation": "Remplacer l'indicateur à chaque visite fait perdre les preuves précédentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Si nous avons besoin de la première position"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour savoir où la cible est apparue, nous conservons un indice. Nous initialisons posicion = datos.size() comme marqueur d'absence : ce nombre n'est pas un indice valide. Un parcours à partir de zéro remplace ce marqueur à la première correspondance, puis peut s'arrêter. Nous utilisons posicion pour accéder à l'élément seulement après avoir vérifié qu'il est inférieur à size()."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{6, 3, 6};\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == 6) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << \"Indice : \" << posicion;\n    } else {\n        std::cout << \"Non trouvé\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La deuxième partie de la condition poursuit les visites uniquement tant qu'aucune correspondance n'a été trouvée. Le parcours à partir de zéro, arrêté à la première correspondance, conserve donc le premier indice. Le marqueur égal à la taille n'est jamais utilisé comme indice d'accès."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valeurs répétées et première correspondance"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{2, 7, 7, 1};\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == 7) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << posicion << \":\" << datos.at(posicion);\n    } else {\n        std::cout << \"Absent\";\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "1:7"
+          ],
+          "explanation": "La première correspondance est à l'indice un, et la boucle cesse de chercher les suivantes."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Sans condition d'arrêt, si chaque correspondance remplaçait posicion, quel indice resterait ?",
+          "options": [
+            "Celui de la première correspondance.",
+            "Celui de la dernière correspondance.",
+            "Toujours zéro."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le résultat dépend des mises à jour que tu autorises après une première correspondance."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le nom de l'opération utilisée comme marqueur d'absence.",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{1, 3};\n    std::size_t posicion = datos.___();\n    std::cout << posicion;\n    return 0;\n}\n",
+          "answers": [
+            "size"
+          ],
+          "explanation": "La taille se trouve hors du domaine des indices valides et peut servir de marqueur sans jamais être utilisée pour accéder à un élément."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'absence exige sa propre branche"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{1, 4};\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == 9) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << datos.at(posicion);\n    } else {\n        std::cout << \"Non trouvé\";\n    }\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "Non trouvé"
+          ],
+          "explanation": "Aucune visite ne modifie le marqueur ; l'autre branche évite d'accéder à l'indice deux."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pourquoi n'utilisons-nous pas -1 comme indice std::size_t pour représenter l'absence ?",
+          "options": [
+            "Parce que tous les vecteurs en contiennent un.",
+            "Parce que la soustraction n'existe pas en C++.",
+            "Parce qu'un type non signé ne représente pas -1 et que cette valeur ne serait pas un accès valide."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le marqueur choisi doit avoir un sens explicite et être vérifié avant tout accès."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un indice zéro trouvé n'est pas équivalent à false. N'utilise pas if (posicion) pour décider de l'existence d'un élément : le premier indice valide vaut zéro. La condition posicion < size() exprime bien l'existence recherchée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rechercher du texte avec la même structure"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> zonas{\"Cour\", \"Nord\", \"Sud\"};\n    bool existe = false;\n    for (const auto& zona : zonas) {\n        if (zona == \"Nord\") {\n            existe = true;\n        }\n    }\n    std::cout << existe;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "1"
+          ],
+          "explanation": "La comparaison détermine si une chaîne correspond à l'étiquette recherchée."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu recherches « sud » dans une collection qui ne contient que « Sud ». Ces chaînes correspondent-elles selon la comparaison exacte utilisée ?",
+          "options": [
+            "Non, ce sont deux suites de caractères différentes.",
+            "Seulement si le type est changé en int.",
+            "Oui, les majuscules et minuscules sont toujours ignorées."
+          ],
+          "correctIndex": 0,
+          "explanation": "La recherche doit utiliser les règles d'égalité exigées par la tâche ; ici, la casse est prise en compte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une recherche aux résultats vérifiables"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis une recherche de la première occurrence de huit dans {3, 8, 8, 2}. Si elle existe, affiche Indice : 1 ; sinon, affiche Non trouvé. Vérifie ensuite {}, {8}, {2} et {8, 4, 8} : les résultats sont l'absence, l'indice zéro, l'absence et l'indice zéro. Conserve la cible dans une variable afin de pouvoir la modifier sans changer l'algorithme de recherche."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    // Construis ici le programme demandé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ajoute ensuite l'affichage de la valeur trouvée, mais uniquement dans la branche prouvant que son indice existe. Explique pourquoi le cas avec répétitions distingue la première occurrence de la dernière."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence et révision de l'état"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{3, 8, 8, 2};\n    int objetivo = 8;\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == objetivo) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << \"Indice : \" << posicion;\n    } else {\n        std::cout << \"Non trouvé\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{6, 1};\n    int objetivo = 6;\n    bool encontrado = false;\n    for (int valor : datos) {\n        if (valor == objetivo) {\n            encontrado = true;\n        }\n    }\n    objetivo = 1;\n    std::cout << encontrado << \" \" << objetivo;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "1 1"
+          ],
+          "explanation": "L'indicateur conserve le résultat de la recherche précédente ; modifier la cible ensuite ne relance pas la boucle."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel ensemble de cas permet de vérifier la première occurrence ?",
+          "options": [
+            "Modifier seulement le message.",
+            "Une collection où seul le premier élément correspond.",
+            "Cible au début, à la fin, répétée et absente ; ainsi qu'une collection vide."
+          ],
+          "correctIndex": 2,
+          "explanation": "Chaque cas vérifie une propriété différente : position, arrêt du parcours et représentation de l'absence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de l'atelier : signaler la première occurrence dans l'ordre initial, conserver le marqueur d'absence si nécessaire et accéder à la valeur trouvée uniquement après avoir vérifié la validité de son indice ; les valeurs répétées doivent permettre de distinguer la première occurrence de la dernière."
+        }
+      ]
+    }
+  ]
+}

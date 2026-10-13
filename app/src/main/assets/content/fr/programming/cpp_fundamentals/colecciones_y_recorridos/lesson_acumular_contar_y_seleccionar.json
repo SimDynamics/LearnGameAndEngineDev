@@ -1,0 +1,285 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__acumular_contar_y_seleccionar",
+  "title": "Accumuler, compter et former une autre collection",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un résumé conserve les valeurs déjà parcourues"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour obtenir le total, initialise suma = 0 avant la boucle. Chaque visite ajoute sa valeur à suma. Après avoir parcouru un préfixe de la collection, suma représente le total de ce préfixe. À la fin, elle représente le total complet. Zéro est la valeur initiale appropriée puisqu'aucune donnée n'a encore été ajoutée."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 6, 2};\n    int suma = 0;\n    for (int valor : datos) {\n        suma += valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La somme passe par zéro, trois, neuf et onze. La variable existe en dehors du corps afin de conserver le travail effectué entre les visites et de permettre l'affichage du résultat ensuite."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une collection vide et les signes ont aussi un sens"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, -2, 0};\n    int suma = 0;\n    for (int valor : datos) {\n        suma += valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Le signe de chaque valeur intervient dans la somme ; zéro compte aussi comme une visite."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    int suma = 0;\n    for (int valor : datos) {\n        suma += valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "La somme d'une collection sans données est nulle selon la définition de ce résumé."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Où faut-il initialiser la somme pour conserver le résultat accumulé entre les visites ?",
+          "options": [
+            "Seulement après l'affichage.",
+            "Avant la boucle.",
+            "Dans chaque itération, juste avant l'ajout."
+          ],
+          "correctIndex": 1,
+          "explanation": "Réinitialiser la somme à chaque tour effacerait les contributions précédentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une réinitialisation change le problème"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 8, 3};\n    int suma = 0;\n    for (int valor : datos) {\n        suma = 0;\n        suma += valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "3"
+          ],
+          "explanation": "Cette version perd les contributions précédentes et se termine avec la dernière valeur ; elle ne calcule pas le total."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Corrige uniquement l'opérateur de mise à jour afin d'ajouter chaque valeur à la somme conservée.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{5, 2};\n    int suma = 0;\n    for (int valor : datos) {\n        suma ___ valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "+="
+          ],
+          "explanation": "+= ajoute la valeur sans remplacer la somme par cette seule donnée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une sortie peut être un nombre parfaitement valide tout en décrivant le mauvais problème. Compare toujours avec une collection dont le total est différent du dernier élément ; un seul élément ne permet pas de détecter cette réinitialisation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compter les correspondances n'est pas additionner leurs valeurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour compter les valeurs qui satisfont une condition, augmente le compteur d'une unité pour chaque correspondance. Pour additionner ces valeurs, ajoute leur valeur réelle. Ce sont deux questions différentes : dans {2, 5, 8}, il y a deux valeurs paires, dont la somme vaut dix."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 6, 4, 3};\n    int cantidad = 0;\n    int suma = 0;\n    for (int valor : datos) {\n        if (valor % 2 == 0) {\n            ++cantidad;\n            suma += valor;\n        }\n    }\n    std::cout << cantidad << \" \" << suma;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "2 10"
+          ],
+          "explanation": "On compte deux correspondances et on additionne leurs valeurs, six et quatre."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu dois compter les mesures supérieures à cinq. Quelle quantité ajoutes-tu au compteur pour chaque correspondance ?",
+          "options": [
+            "La valeur de la mesure.",
+            "La taille complète du vecteur.",
+            "Un."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le compteur représente un nombre de correspondances, pas leur grandeur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une collection de résultats"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si nous devons aussi conserver les valeurs sélectionnées, préparons un autre vecteur vide. Parcourons la source et utilisons push_back sur le résultat chaque fois que la condition est satisfaite. Lire un vecteur tout en agrandissant un autre préserve les références et les limites du vecteur source. Les valeurs retenues conservent leur ordre de découverte."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> origen{7, 2, 9, 4};\n    std::vector<int> elegidos;\n    for (int valor : origen) {\n        if (valor > 5) {\n            elegidos.push_back(valor);\n        }\n    }\n    for (int valor : elegidos) {\n        std::cout << valor << \";\";\n    }\n    std::cout << \"Origine=\" << origen.size();\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "7;9;Origine=4"
+          ],
+          "explanation": "Deux valeurs sont ajoutées au résultat ; la source conserve quatre éléments."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète uniquement le nom de l'opération d'ajout et la variable visitée.",
+          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> origen{1, 4};\n    std::vector<int> elegidos;\n    for (int valor : origen) {\n        if (valor > 2) {\n            elegidos.[]([]);\n        }\n    }\n    std::cout << elegidos.size();\n    return 0;\n}\n",
+          "answers": [
+            "push_back",
+            "valor"
+          ],
+          "answerAlternatives": [
+            [
+              "push_back",
+              "emplace_back"
+            ],
+            [
+              "valor"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Aucun, certains ou tous"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'exercice précédent ajoute valor au moyen de push_back. Si aucun élément ne satisfait la condition, le résultat reste vide ; si tous la satisfont, il contient autant d'éléments que la source. Nous n'inventons pas un zéro pour indiquer l'absence de correspondances : cela créerait une donnée qui n'existait pas."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{-1, -4};\n    int positivos = 0;\n    for (int valor : datos) {\n        if (valor > 0) {\n            ++positivos;\n        }\n    }\n    std::cout << positivos;\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Aucune valeur ne satisfait la condition ; le compteur augmente pour chaque correspondance, pas pour chaque visite."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu filtres les valeurs supérieures à dix et aucune ne correspond. Quelle collection convient comme résultat ?",
+          "options": [
+            "Un vecteur contenant un zéro inventé.",
+            "Une copie complète de la source.",
+            "Un vecteur vide."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'absence de correspondances signifie qu'aucun élément n'est sélectionné."
+        },
+        {
+          "type": "order_code",
+          "question": "Remets les fragments dans l'ordre pour calculer le total de {2, 5} et afficher 7 après le parcours.",
+          "fragments": [
+            "    suma += valor;",
+            "    std::cout << suma;",
+            "#include <iostream>\n#include <vector>\n\nint main() {",
+            "    for (int valor : datos) {",
+            "    std::vector<int> datos{2, 5};\n    int suma = 0;",
+            "    }",
+            "    return 0;\n}"
+          ],
+          "correctOrder": [
+            2,
+            4,
+            3,
+            0,
+            5,
+            1,
+            6
+          ],
+          "explanation": "Prépare la collection et la somme avant le parcours ; l'affichage montre le résumé complet."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un résumé avec sélection"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un rapport pour {2, 7, 4, 1} : additionne toutes les valeurs et conserve dans un autre vecteur celles qui sont au moins égales à quatre. Affiche Total : 14, Sélectionnés : 2 et Valeurs :7;4; sur trois lignes distinctes. Recommence avec {}, {4}, {1} et {6, 8}. Prévois le total, la taille du résultat et les valeurs sélectionnées dans chaque cas avant de compiler."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Construis ici le programme demandé.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Utilise au maximum vingt entiers entre -50 et 50, afin que la somme reste petite. Outre le résultat affiché, vérifie que la collection d'origine conserve toutes ses données."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence et révision des copies"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 7, 4, 1};\n    int total = 0;\n    std::vector<int> elegidos;\n    for (int valor : datos) {\n        total += valor;\n        if (valor >= 4) {\n            elegidos.push_back(valor);\n        }\n    }\n    std::cout << \"Total : \" << total << \"\\n\";\n    std::cout << \"Sélectionnés : \" << elegidos.size() << \"\\nValeurs :\";\n    for (int valor : elegidos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n    std::vector<int> copia = datos;\n    for (auto& valor : copia) {\n        valor += 2;\n    }\n    std::cout << datos.at(0) << \" \" << copia.at(0);\n    return 0;\n}\n",
+          "question": "Prévois la sortie exacte, sans ajouter de guillemets.",
+          "answers": [
+            "3 5"
+          ],
+          "explanation": "Copier le vecteur crée une autre collection contenant des copies de ses éléments. Modifier la copie ne change pas la source."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pourquoi est-il utile de tester au moins une collection contenant plusieurs valeurs différentes ?",
+          "options": [
+            "Parce qu'un essai avec plusieurs valeurs prouve le fonctionnement pour toute taille de vecteur.",
+            "Parce que cet essai remplace ceux avec zéro ou un seul élément.",
+            "Parce qu'il peut révéler des réinitialisations et des différences entre compter et additionner qu'un seul élément masquerait."
+          ],
+          "correctIndex": 2,
+          "explanation": "Avec {2, 7, 4, 1}, la somme vaut 14 et le nombre d'éléments 4 ; réinitialiser la somme à chaque visite ne laisserait que 1. Le cas {1} ne distingue pas additionner de compter et ne teste pas la conservation des contributions précédentes. Ces essais ne remplacent pas ceux avec zéro ou un seul élément."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de l'atelier : conserver la somme entre les visites ; former un autre vecteur contenant toutes les valeurs sélectionnées, et seulement elles, dans leur ordre initial ; laisser la source inchangée ; distinguer la taille du résultat de la somme de ses valeurs."
+        }
+      ]
+    }
+  ]
+}

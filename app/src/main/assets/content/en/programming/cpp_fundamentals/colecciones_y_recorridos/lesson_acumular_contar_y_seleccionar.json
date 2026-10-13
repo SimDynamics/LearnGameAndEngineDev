@@ -1,0 +1,285 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__acumular_contar_y_seleccionar",
+  "title": "Accumulating, Counting, and Building Another Collection",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A summary retains what has already been visited"
+        },
+        {
+          "type": "paragraph",
+          "text": "To obtain a total, initialize suma = 0 before the loop. Each visit adds its value to suma. After visiting a prefix of the collection, suma represents the total of that prefix. At the end, it represents the complete total. Zero is the appropriate initial value because no data have been added yet."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3, 6, 2};\n    int suma = 0;\n    for (int valor : datos) {\n        suma += valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The sum goes through zero, three, nine, and eleven. The variable exists outside the body so that it keeps the work done across visits and can display the result afterward."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Empty collections and signs matter too"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, -2, 0};\n    int suma = 0;\n    for (int valor : datos) {\n        suma += valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Each value's sign contributes to the sum; zero still counts as a visit."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    int suma = 0;\n    for (int valor : datos) {\n        suma += valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "The sum of no values is zero under this summary's definition."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Where must the sum be initialized to retain the accumulated result between visits?",
+          "options": [
+            "Only after printing.",
+            "Before the loop.",
+            "Inside each iteration, just before adding."
+          ],
+          "correctIndex": 1,
+          "explanation": "Resetting the sum on each iteration would erase earlier contributions."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reinitializing changes the task"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 8, 3};\n    int suma = 0;\n    for (int valor : datos) {\n        suma = 0;\n        suma += valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "3"
+          ],
+          "explanation": "This version loses previous contributions and ends with the last value; it does not calculate the total."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fix only the update operator so each value is added to what was retained.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{5, 2};\n    int suma = 0;\n    for (int valor : datos) {\n        suma ___ valor;\n    }\n    std::cout << suma;\n    return 0;\n}\n",
+          "answers": [
+            "+="
+          ],
+          "explanation": "+= adds a value without replacing the sum with only that value."
+        },
+        {
+          "type": "paragraph",
+          "text": "An output can be a perfectly valid number yet describe the wrong task. Always compare against a collection whose total differs from its last element; a single value cannot reveal this reinitialization."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Counting matches is not summing their values"
+        },
+        {
+          "type": "paragraph",
+          "text": "To count how many values satisfy a condition, increment a counter by one for each match. To add the matching values, add those values themselves. These are different questions: in {2, 5, 8}, there are two even values, and their sum is ten."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 6, 4, 3};\n    int cantidad = 0;\n    int suma = 0;\n    for (int valor : datos) {\n        if (valor % 2 == 0) {\n            ++cantidad;\n            suma += valor;\n        }\n    }\n    std::cout << cantidad << \" \" << suma;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "2 10"
+          ],
+          "explanation": "There are two matches, and their values, six and four, add up to ten."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You must count measurements greater than five. How much do you add to the counter for each match?",
+          "options": [
+            "The measurement's value.",
+            "The entire vector's size.",
+            "One."
+          ],
+          "correctIndex": 2,
+          "explanation": "The counter represents a number of matches, not their magnitude."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a collection of results"
+        },
+        {
+          "type": "paragraph",
+          "text": "If we also need to preserve the selected values, create another empty vector. Traverse the source and use push_back on the result whenever the condition holds. Reading one vector while growing another preserves the source vector's references and bounds. Selected values retain the order in which they were found."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> origen{7, 2, 9, 4};\n    std::vector<int> elegidos;\n    for (int valor : origen) {\n        if (valor > 5) {\n            elegidos.push_back(valor);\n        }\n    }\n    for (int valor : elegidos) {\n        std::cout << valor << \";\";\n    }\n    std::cout << \"Source=\" << origen.size();\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "7;9;Source=4"
+          ],
+          "explanation": "Two values are appended to the result; the source still has four elements."
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Fill in only the name of the append operation and the variable being visited.",
+          "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> origen{1, 4};\n    std::vector<int> elegidos;\n    for (int valor : origen) {\n        if (valor > 2) {\n            elegidos.[]([]);\n        }\n    }\n    std::cout << elegidos.size();\n    return 0;\n}\n",
+          "answers": [
+            "push_back",
+            "valor"
+          ],
+          "answerAlternatives": [
+            [
+              "push_back",
+              "emplace_back"
+            ],
+            [
+              "valor"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "None, some, or all"
+        },
+        {
+          "type": "paragraph",
+          "text": "The previous fill-in exercise appends valor using push_back. If no element satisfies the condition, the result stays empty; if all do, it has as many elements as the source. We do not invent a zero to mean there were no matches: that would create data that were not present."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{-1, -4};\n    int positivos = 0;\n    for (int valor : datos) {\n        if (valor > 0) {\n            ++positivos;\n        }\n    }\n    std::cout << positivos;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Neither value matches; the counter increases only for matches, not for every visit."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You filter values greater than ten, and none match. Which collection should be the result?",
+          "options": [
+            "A vector containing an invented zero.",
+            "A complete copy of the source.",
+            "An empty vector."
+          ],
+          "correctIndex": 2,
+          "explanation": "No matches means zero selected elements."
+        },
+        {
+          "type": "order_code",
+          "question": "Arrange the fragments to calculate the total of {2, 5} and print 7 after the traversal.",
+          "fragments": [
+            "    suma += valor;",
+            "    std::cout << suma;",
+            "#include <iostream>\n#include <vector>\n\nint main() {",
+            "    for (int valor : datos) {",
+            "    std::vector<int> datos{2, 5};\n    int suma = 0;",
+            "    }",
+            "    return 0;\n}"
+          ],
+          "correctOrder": [
+            2,
+            4,
+            3,
+            0,
+            5,
+            1,
+            6
+          ],
+          "explanation": "Prepare the collection and the sum before traversing; the output observes the complete summary."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a summary with selection"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a report for {2, 7, 4, 1}: add all the values and keep those that are at least four in another vector. Display Total: 14, Selected: 2, and Values:7;4; on three separate lines. Repeat with {}, {4}, {1}, and {6, 8}. Predict the total, result size, and selected values for each case before compiling."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Use at most twenty integers between -50 and 50, keeping the sum small. Besides the displayed result, check that the original collection still contains the same data."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution and review of copying"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 7, 4, 1};\n    int total = 0;\n    std::vector<int> elegidos;\n    for (int valor : datos) {\n        total += valor;\n        if (valor >= 4) {\n            elegidos.push_back(valor);\n        }\n    }\n    std::cout << \"Total: \" << total << \"\\n\";\n    std::cout << \"Selected: \" << elegidos.size() << \"\\nValues:\";\n    for (int valor : elegidos) {\n        std::cout << valor << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{3};\n    std::vector<int> copia = datos;\n    for (auto& valor : copia) {\n        valor += 2;\n    }\n    std::cout << datos.at(0) << \" \" << copia.at(0);\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "3 5"
+          ],
+          "explanation": "Copying a vector creates a separate collection with copies of its elements. Modifying the copy does not change the source."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Why is it useful to test at least one collection containing several different values?",
+          "options": [
+            "Because a test with several values proves it works for every possible vector size.",
+            "Because that test replaces the empty and single-value tests.",
+            "Because it can reveal reinitialization errors and differences between counting and adding that one value may hide."
+          ],
+          "correctIndex": 2,
+          "explanation": "With {2, 7, 4, 1}, the sum is 14 and the count is 4; resetting the sum on each visit would leave only 1. The case {1} does not distinguish summing from counting and does not test the preservation of previous contributions. These cases do not replace the empty and single-value tests."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lab criteria: preserve the sum across visits; build another vector containing all and only the selected values in their original order; leave the source unchanged; and distinguish the result's size from the sum of its values."
+        }
+      ]
+    }
+  ]
+}

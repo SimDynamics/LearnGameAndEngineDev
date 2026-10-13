@@ -1,0 +1,246 @@
+{
+  "id": "cpp_fundamentals__colecciones_y_recorridos__buscar_y_representar_ausencia",
+  "title": "Searching and Representing a Missing Result",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A search needs a negative answer too"
+        },
+        {
+          "type": "paragraph",
+          "text": "Searching for a value can end with a match or no match at all. The program must represent both outcomes. To ask only whether a value exists, initialize bool encontrado = false; and set it to true when a visited value matches. If there is no match, false retains a valid meaning; we do not need to access an invented position."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{5, 2, 8};\n    int objetivo = 2;\n    bool encontrado = false;\n    for (int valor : datos) {\n        if (valor == objetivo) {\n            encontrado = true;\n        }\n    }\n    if (encontrado) {\n        std::cout << \"Found\";\n    } else {\n        std::cout << \"Not found\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "encontrado records whether any previous visit matched. A later visit that does not match must not reset it to false and erase a match that already occurred."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preserve evidence of a match"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{4, 1, 9};\n    bool encontrado = false;\n    for (int valor : datos) {\n        if (valor == 4) {\n            encontrado = true;\n        }\n    }\n    std::cout << encontrado;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "1"
+          ],
+          "explanation": "Finding four at the beginning remains valid evidence after visiting other values."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos;\n    bool encontrado = false;\n    for (int valor : datos) {\n        if (valor == 0) {\n            encontrado = true;\n        }\n    }\n    std::cout << encontrado;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "0"
+          ],
+          "explanation": "An empty vector contains no zero; no visit changes the state."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A program assigns encontrado = (valor == objetivo) on every iteration. Which question will it answer at the end?",
+          "options": [
+            "How many elements are in the vector.",
+            "Whether the last visited value matched, potentially erasing earlier matches.",
+            "Whether any visit matched, always."
+          ],
+          "correctIndex": 1,
+          "explanation": "Replacing the flag on every visit loses earlier evidence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "If we need the first position"
+        },
+        {
+          "type": "paragraph",
+          "text": "To know where the target appeared, we preserve an index. We initialize posicion = datos.size() as a not-found marker: this number is not a valid index. A traversal starting at zero replaces that marker upon finding the first match and can then stop. We use posicion for access only after confirming it is less than size()."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{6, 3, 6};\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == 6) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << \"Index: \" << posicion;\n    } else {\n        std::cout << \"Not found\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The second part of the condition keeps visits going only while no match has been found. Starting at zero and stopping on a match ensures that the stored index is the first one. The marker equal to the size is never used as a subscript."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Repeated values and the first match"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{2, 7, 7, 1};\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == 7) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << posicion << \":\" << datos.at(posicion);\n    } else {\n        std::cout << \"Absent\";\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "1:7"
+          ],
+          "explanation": "The first match is at index one, and the loop does not search for another."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Without a stopping condition, if every match overwrote posicion, which index would remain?",
+          "options": [
+            "The index of the first match.",
+            "The index of the last match.",
+            "Always zero."
+          ],
+          "correctIndex": 1,
+          "explanation": "The outcome depends on which updates you allow after finding a match."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the name of the operation used as the not-found marker.",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{1, 3};\n    std::size_t posicion = datos.___();\n    std::cout << posicion;\n    return 0;\n}\n",
+          "answers": [
+            "size"
+          ],
+          "explanation": "The size is outside the valid index range, so it can serve as a marker without being used to access an element."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Absence needs its own branch"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{1, 4};\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == 9) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << datos.at(posicion);\n    } else {\n        std::cout << \"Not found\";\n    }\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "Not found"
+          ],
+          "explanation": "No visit changes the marker; the alternative branch avoids accessing index two."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Why do we not use -1 as a std::size_t index representing absence?",
+          "options": [
+            "Because every vector contains one.",
+            "Because subtraction does not exist in C++.",
+            "Because an unsigned type does not represent -1, and that value would not be a valid element access."
+          ],
+          "correctIndex": 2,
+          "explanation": "The chosen marker must have a clear meaning and be checked before access."
+        },
+        {
+          "type": "paragraph",
+          "text": "An index of zero that was found is different from false. Do not use if (posicion) to decide whether a value exists: the first valid index is zero. The condition posicion < size() expresses the existence we need."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Search text with the same structure"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <string>\n\nint main() {\n    std::vector<std::string> zonas{\"Courtyard\", \"North\", \"South\"};\n    bool existe = false;\n    for (const auto& zona : zonas) {\n        if (zona == \"North\") {\n            existe = true;\n        }\n    }\n    std::cout << existe;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "1"
+          ],
+          "explanation": "The comparison determines whether a string matches the requested label."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You search for \"south\" in a collection containing only \"South\". Do these strings match under the exact comparison used?",
+          "options": [
+            "No, they are different sequences of characters.",
+            "Only if the type is changed to int.",
+            "Yes, uppercase and lowercase are always ignored."
+          ],
+          "correctIndex": 0,
+          "explanation": "A search must use the equality rules required by the task; this one distinguishes letter case."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a search with testable outcomes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a search for the first occurrence of eight in {3, 8, 8, 2}. If it exists, display Index: 1; otherwise, display Not found. Then check {}, {8}, {2}, and {8, 4, 8}: the outcomes are absence, index zero, absence, and index zero. Keep the target in a variable so you can change it without modifying the search algorithm."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Next, add output showing the found value, but only within the branch that proves its index exists. Explain why the case with repeated values distinguishes the first occurrence from the last."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference solution and review of state"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <cstddef>\n\nint main() {\n    std::vector<int> datos{3, 8, 8, 2};\n    int objetivo = 8;\n    std::size_t posicion = datos.size();\n    for (std::size_t i = 0; i < datos.size() && posicion == datos.size(); ++i) {\n        if (datos[i] == objetivo) {\n            posicion = i;\n        }\n    }\n    if (posicion < datos.size()) {\n        std::cout << \"Index: \" << posicion;\n    } else {\n        std::cout << \"Not found\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{6, 1};\n    int objetivo = 6;\n    bool encontrado = false;\n    for (int valor : datos) {\n        if (valor == objetivo) {\n            encontrado = true;\n        }\n    }\n    objetivo = 1;\n    std::cout << encontrado << \" \" << objetivo;\n    return 0;\n}\n",
+          "question": "Predict the exact output, without adding quotation marks.",
+          "answers": [
+            "1 1"
+          ],
+          "explanation": "The flag retains the result of the earlier search; changing the target afterward does not run the loop again."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which set of cases helps verify that the first occurrence is found?",
+          "options": [
+            "Only change the message.",
+            "Only a collection whose first element matches.",
+            "Target at the beginning, at the end, repeated, and absent; also an empty collection."
+          ],
+          "correctIndex": 2,
+          "explanation": "Each case tests a different property: position, stopping, and representing absence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lab criteria: report the first occurrence in the original order, preserve the not-found marker when appropriate, and access the found value only after checking its index is valid; repeated values must distinguish the first occurrence from the last."
+        }
+      ]
+    }
+  ]
+}
