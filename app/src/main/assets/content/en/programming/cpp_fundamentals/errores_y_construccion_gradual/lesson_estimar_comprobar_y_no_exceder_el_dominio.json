@@ -1,0 +1,183 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__estimar_comprobar_y_no_exceder_el_dominio",
+  "title": "Estimate Results and Respect the Computation Domain",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Property Can Reveal an Impossible Result"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before calculating an exact result, identify properties that every valid result must satisfy. When adding small nonnegative quantities, the sum must not be less than any of its contributions; when calculating the mean of data within an interval, the mean must also lie between the smallest and largest values. These properties detect some errors, but they do not replace checking the exact requirement."
+        },
+        {
+          "type": "paragraph",
+          "text": "For 2, 4, and 6, the arithmetic mean adds the three values and divides by their count. It is 12/3=4. A mean of 12 would exceed the maximum of 6 and reveal a missing division. A mean of 5 would be plausible based on its range, yet still incorrect for those values."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "plausible_no_es_exactamente_correcto",
+          "question": "The values are 2, 4, and 6, and the program reports a mean of 5. What can a check that only verifies the range from 2 to 6 conclude?",
+          "options": [
+            "Being different from the input values is enough to reject every calculated mean.",
+            "It falls within the checked range, but the exact mean still needs to be verified.",
+            "Falling within the range proves that the mean is correct."
+          ],
+          "correctIndex": 1,
+          "explanation": "A necessary condition is not always sufficient. The exact mean is 4."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "detectar_division_omitida",
+          "question": "The values are 1, 3, and 5, but the reported mean is 9. Which property lets you reject that result without knowing more about the code?",
+          "options": [
+            "A mean must always equal the last value.",
+            "The mean of these values must lie between 1 and 5.",
+            "A mean of positive values must be positive."
+          ],
+          "correctIndex": 1,
+          "explanation": "The mean lies within the range of the data, and 9 violates that necessary condition. Checking only positivity would miss this error because 9 is positive too. The mean is not always the last value either: for 2, 4, and 6, the mean is 4 but the last value is 6."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Guard the Empty Case Before Dividing"
+        },
+        {
+          "type": "paragraph",
+          "text": "A mean requires at least one value. An empty sequence has no ordinary average obtainable by dividing by zero. Decide how to handle this case according to the domain, and perform the calculation only when the count is positive. Do not start by attempting the division to see what happens; the absence of data already tells you how to proceed."
+        },
+        {
+          "type": "output_prediction",
+          "id": "media_de_vacio_controlada",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{};\n    if (datos.empty()) {\n        std::cout << \"No data\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        double media{static_cast<double>(suma) / datos.size()};\n        std::cout << media;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "No data"
+          ],
+          "explanation": "The empty branch prevents the calculation. No division is evaluated without data."
+        },
+        {
+          "type": "output_prediction",
+          "id": "media_fraccionaria_controlada",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 3};\n    int suma{0};\n    for (int dato : datos) { suma += dato; }\n    double media{static_cast<double>(suma) / datos.size()};\n    std::cout << media;\n    return 0;\n}\n",
+          "answers": [
+            "2.5"
+          ],
+          "explanation": "Conversion takes place before division, preserving the fractional mean."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "conversion_tardia_media",
+          "question": "Given suma=5 and cantidad=2, the code calculates static_cast<double>(suma/cantidad). What information is lost?",
+          "options": [
+            "The ability to convert an int to double.",
+            "The fractional part already discarded by integer division.",
+            "The entire integer part of the result."
+          ],
+          "correctIndex": 1,
+          "explanation": "Converting the integer quotient afterward cannot recover the information lost during division."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Positive Result Does Not Make an Invalid Operation Safe"
+        },
+        {
+          "type": "paragraph",
+          "text": "When multiplying signed integers, both operands and their result must fit in the type. Do not multiply first and then check whether the result appears negative: if overflow occurred, the operation already left the realm of defined behavior. In this course, we establish small domains before calculating. A system handling general data would need to check representation limits before performing operations."
+        },
+        {
+          "type": "paragraph",
+          "text": "If piezas is between 0 and 10 and minutosPorPieza is between 1 and 100, their product lies between 0 and 1000. These values fit even within the minimum range C++ requires for int. This justification uses the input domain; it does not assume that int has exactly 32 bits. Validate both arguments before multiplying."
+        },
+        {
+          "type": "output_prediction",
+          "id": "producto_dominio_rechazado",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{11};\n    int minutosPorPieza{20};\n    if (piezas < 0 || piezas > 10 || minutosPorPieza < 1 || minutosPorPieza > 100) {\n        std::cout << \"Outside the domain\";\n    } else {\n        std::cout << piezas * minutosPorPieza;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Outside the domain"
+          ],
+          "explanation": "The rule rejects 11 before performing multiplication in the valid branch."
+        },
+        {
+          "type": "output_prediction",
+          "id": "producto_fronteras_validas",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{10};\n    int minutosPorPieza{100};\n    if (piezas < 0 || piezas > 10 || minutosPorPieza < 1 || minutosPorPieza > 100) {\n        std::cout << \"Outside the domain\";\n    } else {\n        std::cout << piezas * minutosPorPieza;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "1000"
+          ],
+          "explanation": "Both endpoints are included, and the product lies within the justified safe domain."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "revisar_dominio_ampliado",
+          "question": "The domain changes from two small arguments to “any positive int.” What additional check does their product require?",
+          "options": [
+            "Before multiplying, check that the product is representable as well as that both arguments are positive.",
+            "Keep only the subsequent check resultado>0.",
+            "Assume the type automatically widens to store the product."
+          ],
+          "correctIndex": 0,
+          "explanation": "Being positive does not limit how large the product can become. The old check no longer justifies the expanded domain."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: A Property and an Exact Comparison"
+        },
+        {
+          "type": "paragraph",
+          "text": "For the initial collection, manually calculate the sum, mean, minimum, and maximum. Complete the mean using conversion before division, and display whether it lies within the range. Then test {1,2}, the single value {5}, and the empty collection: the last must report No data before any mean calculation or element access. Use no more than five values, all between 0 and 10. A plausibility check complements the exact expectation; it does not replace it."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"No data\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        std::cout << \"Sum=\" << suma;\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab Reference Solution"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and testing your attempt. It is one possible implementation; other solutions are valid if they meet the same contract and the stated criteria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. For {1,4,7}, the sum is 12, the mean is 4, the minimum is 1, and the maximum is 7. The mean must lie within the range and also match the exact expectation. For {1,2}, the sum is 3, the mean is 1.5, the minimum is 1, and the maximum is 2; for {5}, all four values equal 5. With {}, display No data before dividing or accessing an element. Use at most five values between 0 and 10; other ways of displaying the results are acceptable."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"No data\";\n        return 0;\n    }\n    int suma{0};\n    int minimo{datos[0]};\n    int maximo{datos[0]};\n    for (int dato : datos) {\n        suma += dato;\n        if (dato < minimo) { minimo = dato; }\n        if (dato > maximo) { maximo = dato; }\n    }\n    int cantidad{static_cast<int>(datos.size())};\n    double media{static_cast<double>(suma) / cantidad};\n    bool dentro{media >= minimo && media <= maximo};\n    std::cout << \"Sum=\" << suma << \" Mean=\" << media\n              << \" Minimum=\" << minimo << \" Maximum=\" << maximo\n              << \" InRange=\" << dentro;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The empty guard comes before both the datos[0] access and division. The conversion of suma happens before division. InRange=1 reports that the range property holds, but you must still compare media with the exact manual calculation. Change only the collection to test the other three cases; the small domain also keeps the sum representable."
+        }
+      ]
+    }
+  ]
+}

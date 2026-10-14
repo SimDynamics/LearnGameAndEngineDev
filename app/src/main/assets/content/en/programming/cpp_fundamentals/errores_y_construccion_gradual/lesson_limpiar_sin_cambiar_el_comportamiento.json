@@ -1,0 +1,277 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__limpiar_sin_cambiar_el_comportamiento",
+  "title": "Clean Up the Program Without Changing Its Behavior",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separate a Responsibility You Already Recognize"
+        },
+        {
+          "type": "paragraph",
+          "text": "Refactoring means changing the internal organization while preserving the behavior we agreed upon. Extracting the item-count check into a well-named bool function can make the code easier to read and reuse. Do not use that extraction as an opportunity to change the boundary, the meaning of zero, or the error signal without stating so: that would also be a change in requirements."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(3) << \":\" << estimar(11);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "piezas_validas expresses only the input domain. estimar retains responsibility for producing minutes or the -1 signal. main decides how to present the result. A useful function separates a recognizable idea; you do not need to turn every operator into a function. After extracting, retest the boundaries and previous cases."
+        },
+        {
+          "type": "output_prediction",
+          "id": "reglas_extraidas_conservadas",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "answers": [
+            "-1:5:23"
+          ],
+          "explanation": "The new organization preserves rejection, the first nonempty order, and the upper boundary."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "refactor_o_regla_nueva",
+          "question": "While extracting piezas_validas, you change piezas<=10 to piezas<10. What have you changed?",
+          "options": [
+            "Only the formatting of the code, without affecting any input.",
+            "The behavior too: a previously accepted boundary is now rejected.",
+            "The way output is printed, but not whether the input is valid."
+          ],
+          "correctIndex": 1,
+          "explanation": "Changing a comparison changes the domain, even when it happens during an extraction."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Names and Comments Communicate Intent"
+        },
+        {
+          "type": "paragraph",
+          "text": "A name such as piezas_validas communicates a question about the domain. A useful comment states boundaries, units, the reason for a decision, or a constraint that the code does not make obvious. Repeating “add two” next to +2 usually just adds noise. A comment promising inputs from 0 to 10 while the code allows up to 12 confuses the caller: review both as part of the interface."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "comentario_util",
+          "question": "The function returns minutes and accepts 0 to 10 items. Which comment helps the caller?",
+          "options": [
+            "Returns minutes; accepts any int without checking its domain.",
+            "Returns minutes; also treats -1 as a valid duration.",
+            "Returns minutes; -1 indicates a quantity outside 0 to 10."
+          ],
+          "correctIndex": 2,
+          "explanation": "The comment explains the units, domain, and error signal."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "comentario_desactualizado",
+          "question": "The comment says “accepts up to 10,” but validation was changed to <=12. What do you need to resolve?",
+          "options": [
+            "Assume the compiler verifies whether the comment is true.",
+            "Hide the comment without checking whether the expansion was intentional.",
+            "Agree on the requirement and bring code, comment, and tests into alignment."
+          ],
+          "correctIndex": 2,
+          "explanation": "A comment is not evaluated as a program rule; it can contradict the actual behavior."
+        },
+        {
+          "type": "fill_code",
+          "id": "frontera_preservada",
+          "question": "You extract the domain check. Complete only the comparison operator to accept item counts from zero through ten, including both endpoints, and reject all other integers.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas ___ 10;\n}\n\nint main() {\n    std::cout << piezas_validas(10);\n    return 0;\n}\n",
+          "answers": [
+            "<="
+          ],
+          "explanation": "The original boundary includes 10. The extraction must preserve that case."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Regression Test Connects Before and After"
+        },
+        {
+          "type": "output_prediction",
+          "id": "version_limpiada_con_defecto",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas < 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(9) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "answers": [
+            "21:-1"
+          ],
+          "explanation": "The new comparison excludes 10. The interior case passes, but the boundary reveals an unrequested change."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "estrategia_de_extraccion",
+          "question": "Which sequence preserves evidence when extracting a function?",
+          "options": [
+            "Delete the tests because the code has more functions.",
+            "Change the domain and output together, and test only an input you already know.",
+            "Record the current behavior and tests, extract one responsibility, and run those tests again."
+          ],
+          "correctIndex": 2,
+          "explanation": "Small changes and preserved comparisons help detect accidental changes."
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lab, extract piezas_validas and use it inside estimar. Preserve the four original outputs. Then add tests for -1, 1, and 11. Do not change the times, domain, or error signal at this stage. Once the extraction has been verified, expand the upper boundary to 12 as a separate change and add tests for 12 and 13."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\" << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab Reference Solution"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and testing your attempt. It is one possible implementation; other solutions are valid if they meet the same contract and the stated criteria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. After extracting piezas_validas, the four original outputs remain 0:7:23:-1 for 0, 2, 10, and 11. The added tests for -1, 1, and 11 produce -1, 5, and -1. The estimate preserves units, timings, and the -1 error signal. In a second stage, after expanding the range to 12, tests for 12 and 13 must produce 27 and -1; 11 now produces 25. This last difference is an explicit requirement change, not part of the extraction."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "piezas_validas answers only the domain question. First compare the output against the earlier version. Then add calls for -1, 1, and 11 without changing the rules. For the separate expansion, change the upper bound in piezas_validas to 12, and check 12, 13, and the earlier cases with updated expectations where appropriate."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose an Extraction in a Different Program"
+        },
+        {
+          "type": "paragraph",
+          "text": "A report processes integer readings already available in a collection. A valid reading lies between -4 and 9, inclusive. Valid negative readings receive the label Cold; zero receives Neutral; positive readings receive Warm. Any reading outside that interval receives Out of range and is excluded from both the sum and the count of valid readings. Each reading is processed once, in its original order, even if its value is repeated."
+        },
+        {
+          "type": "paragraph",
+          "text": "Observable behavior includes one line Reading=value:label per reading and, at the end, Summary=valid:rejected:sum. The sum includes only valid readings, retaining their original signs. An empty collection produces no individual reading lines and leaves all three counters at zero. Use at most six readings in these tests: the valid sum lies between -24 and 54, within the range of int."
+        },
+        {
+          "type": "paragraph",
+          "text": "The program on the following page already meets that contract. Your job is to reorganize it without repairing or expanding the rules. Identify a domain decision that can become a clearly named function. Before writing it, explain what data it needs, what it returns, and which responsibility remains with main. The extracted function should accept the needed data, return a decision or result, and neither print nor modify the collection."
+        },
+        {
+          "type": "note",
+          "text": "Choose the function name and interface yourself; there is no single required extraction. Keep the loop, summary updates, and presentation in main. If a function has a precondition, its caller must check it before calling. Use the types, parameters, return values, and conditions already studied; you do not need new syntax."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preserve Evidence Before and After Extraction"
+        },
+        {
+          "type": "paragraph",
+          "text": "First derive each label and the summary for {-4,0,7,10,-5} from the requirement. Run the initial version, compare against that expectation, and record its complete output before editing. Do not automatically treat previous output as the correct answer: here you can check it against explicit rules. Then perform one extraction and recheck the same case."
+        },
+        {
+          "type": "paragraph",
+          "text": "Change only the collection to prepare tests that distinguish rules: {} tests the absence of data; {-5,-4,-3} separates an out-of-range value, the lower boundary, and a lower interior value; {8,9,10} does the same at the upper end; {-1,0,1} distinguishes the three valid labels; {-5,10} tests rejections only; {9,9,-4,0} tests repeated values and a mix of signs. Work out expected results by hand, and run each collection both before and after reorganizing."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare the individual lines, their order, and the summary, not just the sum. Explain why your tests would reveal an excluded boundary, a different label for zero, a rejected reading added to the sum, or an omitted duplicate. Attempt the extraction and these checks before moving to the reference. Different interfaces are acceptable if they separate a recognizable responsibility and preserve the entire contract."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<int> lecturas{-4, 0, 7, 10, -5};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Reading=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Out of range\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            if (lectura < 0) {\n                std::cout << \"Cold\\n\";\n            } else if (lectura == 0) {\n                std::cout << \"Neutral\\n\";\n            } else {\n                std::cout << \"Warm\\n\";\n            }\n        }\n    }\n    std::cout << \"Summary=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference for One Possible Extraction"
+        },
+        {
+          "type": "note",
+          "text": "Consult this implementation after choosing, building, and testing your extraction. The reference uses a different collection. Compare decisions, responsibilities, and tests; you do not need to reproduce its names or select the same function."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: with {-4,0,7,10,-5}, the summary remains 3:2:3 and each label keeps its meaning. The summaries for {}, {-5,-4,-3}, {8,9,10}, {-1,0,1}, {-5,10}, and {9,9,-4,0} are, respectively, 0:0:0, 2:1:-7, 2:1:17, 3:0:0, 0:2:0, and 4:0:14. These totals are not sufficient on their own: also check all Reading=value:label lines, line breaks, and ordering, including both occurrences of 9."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Receives a valid reading from -4 to 9; returns its label without printing.\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura < 0) { return \"Cold\"; }\n    if (lectura == 0) { return \"Neutral\"; }\n    return \"Warm\";\n}\n\nint main() {\n    std::vector<int> lecturas{9, -5, -1, 0};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Reading=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Out of range\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Summary=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Here the classification of a valid reading was extracted. The function receives a copy of an int and returns a string; it does not print or decide what contributes to the summary. Its contract requires values from -4 to 9. main checks the range before calling it, maintains the counters, and decides where to display the label. For the reference data, the labels are Warm, Out of range, Cold, and Neutral, in that order, and the summary is 3:1:8."
+        },
+        {
+          "type": "paragraph",
+          "text": "Another solution could extract the validity decision into a bool function and leave classification in main. It could also separate both decisions if each interface expresses a clear idea. Those choices are valid when they preserve the responsibilities and all outputs; moving all of main into a differently named function without separating any idea does not meet this exercise's objective. Then restore the initial collection in your own version and repeat the saved comparisons."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Matching Summary Does Not Verify the Labels"
+        },
+        {
+          "type": "paragraph",
+          "text": "Trace the following program and predict its complete output. Then compare each line against the report's contract. Decide what evidence would be lost if a test kept only the final line."
+        },
+        {
+          "type": "output_prediction",
+          "id": "u7_refactor_transferencia_etiquetas_y_resumen",
+          "question": "Predict the complete output. Preserve internal line breaks; do not add quotation marks.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura <= 0) { return \"Cold\"; }\n    return \"Warm\";\n}\n\nint main() {\n    std::vector<int> lecturas{0, 2, -2};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Reading=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Out of range\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Summary=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n",
+          "answers": [
+            "Reading=0:Cold\nReading=2:Warm\nReading=-2:Cold\nSummary=3:0:0"
+          ],
+          "explanation": "Zero satisfies lectura<=0 and receives Cold. That violates the required Neutral label for zero, even though the three valid readings and their sum produce a correct summary. Checking only the final line would hide this behavior change."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "u7_refactor_transferencia_alcance_de_la_comparacion",
+          "question": "After an extraction, every test compares only Summary=valid:rejected:sum. Which conclusion respects the scope of that evidence?",
+          "options": [
+            "The summaries match; using the same readings means the labels have also been verified.",
+            "The summaries match; the labels and the order of lines still need to be checked.",
+            "The summaries match; preserving the data is enough to accept the reorganization."
+          ],
+          "correctIndex": 1,
+          "explanation": "Identical inputs and matching summaries do not guarantee every observable behavior. The contract also specifies a label for each reading and its position in the output."
+        },
+        {
+          "type": "paragraph",
+          "text": "Now return to your own extraction: explain why its parameter and return value are sufficient for the chosen decision, where its domain is protected, and which saved tests distinguish its cases. Refactoring preserves agreed behavior while changing the organization for a purpose; a set of matching outputs only supports what was actually compared."
+        }
+      ]
+    }
+  ]
+}

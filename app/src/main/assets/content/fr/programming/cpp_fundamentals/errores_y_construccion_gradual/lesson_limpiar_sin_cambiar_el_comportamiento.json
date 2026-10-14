@@ -1,0 +1,277 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__limpiar_sin_cambiar_el_comportamiento",
+  "title": "Nettoyer le programme sans changer son comportement",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Séparer une responsabilité déjà identifiée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Refactoriser consiste à changer l'organisation interne tout en préservant le comportement convenu. Extraire la vérification du nombre de pièces dans une fonction bool au nom clair peut faciliter la lecture et la réutilisation. Ne profite pas de cette extraction pour modifier la borne, le sens du zéro ou le signal d'erreur sans l'indiquer : ce serait aussi un changement d'exigence."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(3) << \":\" << estimar(11);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "piezas_validas exprime uniquement le domaine d'entrée. estimar conserve la responsabilité de produire un nombre de minutes ou le signal -1. main décide de la présentation. Une fonction utile sépare une idée identifiable ; il n'est pas nécessaire de transformer chaque opérateur en fonction. Après l'extraction, vérifie de nouveau les bornes et les cas précédents."
+        },
+        {
+          "type": "output_prediction",
+          "id": "reglas_extraidas_conservadas",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(-1) << \":\" << estimar(1) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "answers": [
+            "-1:5:23"
+          ],
+          "explanation": "La nouvelle organisation préserve le refus, la première commande non vide et la borne supérieure."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "refactor_o_regla_nueva",
+          "question": "En extrayant piezas_validas, tu remplaces piezas<=10 par piezas<10. Qu'as-tu changé ?",
+          "options": [
+            "Uniquement la présentation du code, sans modifier aucune entrée.",
+            "Également le comportement : une borne auparavant acceptée est maintenant rejetée.",
+            "La façon d'afficher le résultat, mais pas la validité des données."
+          ],
+          "correctIndex": 1,
+          "explanation": "Modifier une comparaison change le domaine, même pendant une extraction."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les noms et les commentaires expriment l'intention"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un nom comme piezas_validas communique une question liée au domaine. Un commentaire utile précise les bornes, les unités, la raison d'une décision ou une contrainte que le code ne rend pas évidente. Répéter « ajoute deux » à côté de +2 apporte généralement du bruit. Un commentaire annonçant des données entre 0 et 10 alors que le code accepte jusqu'à 12 égare l'appelant : examine les deux comme éléments de l'interface."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "comentario_util",
+          "question": "La fonction renvoie des minutes et accepte de 0 à 10 pièces. Quel commentaire aide l'appelant ?",
+          "options": [
+            "Renvoie des minutes ; accepte n'importe quel int sans vérifier le domaine.",
+            "Renvoie des minutes ; interprète aussi -1 comme une durée valide.",
+            "Renvoie des minutes ; -1 indique une quantité hors de 0 à 10."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le commentaire explique l'unité, le domaine et le signal d'erreur."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "comentario_desactualizado",
+          "question": "Le commentaire dit « accepte jusqu'à 10 », mais la validation a été modifiée pour utiliser <=12. Que faut-il résoudre ?",
+          "options": [
+            "Supposer que le compilateur vérifie la véracité du commentaire.",
+            "Masquer le commentaire sans vérifier si l'élargissement était intentionnel.",
+            "Définir l'exigence et rendre cohérents le code, le commentaire et les tests."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le commentaire n'est pas exécuté comme une règle du programme ; il peut contredire le comportement réel."
+        },
+        {
+          "type": "fill_code",
+          "id": "frontera_preservada",
+          "question": "Tu extrais la vérification du domaine. Complète uniquement l'opérateur de comparaison pour accepter de zéro à dix pièces, bornes incluses, et rejeter tous les autres entiers.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas ___ 10;\n}\n\nint main() {\n    std::cout << piezas_validas(10);\n    return 0;\n}\n",
+          "answers": [
+            "<="
+          ],
+          "explanation": "La borne initiale inclut 10. L'extraction doit préserver ce cas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un test de régression relie l'avant et l'après"
+        },
+        {
+          "type": "output_prediction",
+          "id": "version_limpiada_con_defecto",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas < 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(9) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "answers": [
+            "21:-1"
+          ],
+          "explanation": "La nouvelle comparaison exclut 10. Le cas intérieur réussit, mais la borne révèle un changement non demandé."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "estrategia_de_extraccion",
+          "question": "Quelle succession d'étapes préserve les preuves lors de l'extraction d'une fonction ?",
+          "options": [
+            "Supprimer les tests parce que le code comporte davantage de fonctions.",
+            "Modifier simultanément le domaine et la sortie, puis tester uniquement une entrée déjà connue.",
+            "Noter le comportement et les tests actuels, extraire une responsabilité, puis relancer ces tests."
+          ],
+          "correctIndex": 2,
+          "explanation": "Des changements limités et des comparaisons conservées permettent de repérer une modification accidentelle."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le laboratoire, extrais piezas_validas et utilise-la dans estimar. Conserve les quatre sorties initiales. Ajoute ensuite des tests pour -1, 1 et 11. À cette étape, ne change ni les durées, ni le domaine, ni le signal d'erreur. Une fois l'extraction vérifiée, élargis la borne supérieure à 12 comme un changement distinct et ajoute des tests pour 12 et 13."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\" << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence du laboratoire"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et testé ta tentative. C'est une implémentation possible ; d'autres solutions sont valides si elles respectent le même contrat et les critères indiqués."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. Après extraction de piezas_validas, les quatre sorties initiales restent 0:7:23:-1 pour 0, 2, 10 et 11. Les tests ajoutés pour -1, 1 et 11 produisent -1, 5 et -1. L'estimation conserve son unité, les durées et le signal -1. Dans une seconde étape, après élargissement à 12, les tests pour 12 et 13 doivent produire 27 et -1 ; 11 produit alors 25. Cette dernière différence est un changement d'exigence explicite, pas une partie de l'extraction."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(2) << \":\"\n              << estimar(10) << \":\" << estimar(11);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "piezas_validas répond uniquement à la question du domaine. Compare d'abord la sortie à celle de la version précédente. Ajoute ensuite des appels pour -1, 1 et 11 sans modifier les règles. Pour l'élargissement séparé, porte la borne supérieure de piezas_validas à 12, puis vérifie 12, 13 et les anciens cas en mettant leurs attentes à jour si nécessaire."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir une extraction dans un autre programme"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un rapport traite des relevés entiers déjà présents dans une collection. Un relevé valide est compris entre -4 et 9, bornes incluses. Les relevés négatifs valides reçoivent l'étiquette Froide ; zéro reçoit Neutre ; les positifs reçoivent Chaude. Tout relevé hors de cet intervalle reçoit Hors limites et n'entre ni dans la somme ni dans le nombre de relevés valides. Chaque donnée est traitée une fois, dans l'ordre initial, même si sa valeur se répète."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le comportement observable comprend une ligne Lecture=valeur:étiquette par relevé, puis, à la fin, Résumé=valides:rejetés:somme. La somme ne comprend que les relevés valides, en conservant leur signe d'origine. Une collection vide ne produit aucune ligne de relevé et laisse les trois compteurs à zéro. Ne dépasse pas six relevés dans ces tests : la somme des valeurs valides est comprise entre -24 et 54, à l'intérieur du domaine de int."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme de la page suivante respecte déjà ce contrat. Ton travail consiste à le réorganiser, sans corriger ni élargir les règles. Repère une décision du domaine qui pourrait devenir une fonction au nom clair. Avant de l'écrire, explique les données dont elle a besoin, ce qu'elle renvoie et quelle responsabilité reste à main. La fonction extraite doit recevoir les données nécessaires, renvoyer une décision ou un résultat, sans rien afficher ni modifier la collection."
+        },
+        {
+          "type": "note",
+          "text": "Choisis toi-même le nom et l'interface de la fonction ; aucune extraction unique n'est imposée. Conserve dans main le parcours, la mise à jour du résumé et l'affichage. Si une fonction possède une précondition, l'appelant doit la vérifier avant de l'appeler. Utilise les types, paramètres, retours et conditions déjà étudiés ; aucune syntaxe nouvelle n'est nécessaire."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver des preuves avant et après l'extraction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Commence par déduire de l'exigence chaque étiquette et le résumé de {-4,0,7,10,-5}. Exécute la version initiale, compare-la à cette attente et note la sortie complète avant de modifier le code. Ne considère pas automatiquement une ancienne sortie comme correcte : tu peux ici la confronter à des règles explicites. Procède ensuite à une extraction et vérifie de nouveau le même cas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Change uniquement la collection afin de préparer des tests qui distinguent les règles : {} vérifie l'absence de données ; {-5,-4,-3} distingue une valeur extérieure, la borne inférieure et une valeur intérieure proche ; {8,9,10} fait de même pour la borne supérieure ; {-1,0,1} distingue les trois étiquettes valides ; {-5,10} ne teste que des refus ; {9,9,-4,0} vérifie les répétitions et le mélange de signes. Calcule les résultats attendus à la main, puis exécute chaque collection avant et après la réorganisation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare les lignes individuelles, leur ordre et le résumé, pas seulement la somme. Explique pourquoi tes tests révéleraient une borne exclue, une étiquette différente pour zéro, un rejet ajouté à la somme ou une répétition ignorée. Essaie l'extraction et ces vérifications avant de consulter la référence. Des interfaces différentes sont admises si elles séparent une responsabilité identifiable tout en préservant l'intégralité du contrat."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<int> lecturas{-4, 0, 7, 10, -5};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Lecture=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Hors limites\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            if (lectura < 0) {\n                std::cout << \"Froide\\n\";\n            } else if (lectura == 0) {\n                std::cout << \"Neutre\\n\";\n            } else {\n                std::cout << \"Chaude\\n\";\n            }\n        }\n    }\n    std::cout << \"Résumé=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure d'une extraction possible"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette implémentation après avoir choisi, construit et testé ton extraction. La référence utilise une autre collection. Compare les décisions, les responsabilités et les tests ; tu n'as pas besoin de reprendre ses noms ni de sélectionner la même fonction."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : avec {-4,0,7,10,-5}, le résumé reste 3:2:3 et chaque étiquette garde sa signification. Les résumés pour {}, {-5,-4,-3}, {8,9,10}, {-1,0,1}, {-5,10} et {9,9,-4,0} sont respectivement 0:0:0, 2:1:-7, 2:1:17, 3:0:0, 0:2:0 et 4:0:14. Ces totaux ne suffisent pas à eux seuls : vérifie aussi toutes les lignes Lecture=valeur:étiquette, les sauts de ligne et l'ordre, y compris les deux occurrences de 9."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\n// Reçoit un relevé valide de -4 à 9 ; renvoie son étiquette sans afficher.\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura < 0) { return \"Froide\"; }\n    if (lectura == 0) { return \"Neutre\"; }\n    return \"Chaude\";\n}\n\nint main() {\n    std::vector<int> lecturas{9, -5, -1, 0};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Lecture=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Hors limites\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Résumé=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ici, on a extrait la classification d'un relevé valide. La fonction reçoit une copie d'un int et renvoie une chaîne ; elle n'affiche rien et ne décide pas de ce qui entre dans le résumé. Son contrat exige une valeur de -4 à 9. main vérifie l'intervalle avant l'appel, conserve la mise à jour des compteurs et décide où afficher l'étiquette. Pour les données de cette référence, les étiquettes sont Chaude, Hors limites, Froide et Neutre, dans cet ordre, et le résumé est 3:1:8."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une autre solution peut extraire la décision de validité dans une fonction bool et laisser la classification dans main. Elle peut aussi séparer les deux décisions si chaque interface exprime une idée claire. Ces choix sont valides lorsqu'ils préservent les responsabilités et toutes les sorties ; déplacer tout main dans une fonction portant un autre nom, sans isoler d'idée, ne répond pas à l'objectif de cet exercice. Rétablis ensuite la collection initiale dans ta propre version et répète les comparaisons conservées."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un résumé identique ne vérifie pas les étiquettes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Suis le programme ci-dessous et prédis sa sortie complète. Compare ensuite chaque ligne au contrat du rapport. Détermine quels éléments de preuve disparaîtraient si un test ne conservait que la dernière ligne."
+        },
+        {
+          "type": "output_prediction",
+          "id": "u7_refactor_transferencia_etiquetas_y_resumen",
+          "question": "Prédis la sortie complète. Préserve les sauts de ligne internes ; n'ajoute pas de guillemets.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstd::string etiqueta_de_lectura(int lectura) {\n    if (lectura <= 0) { return \"Froide\"; }\n    return \"Chaude\";\n}\n\nint main() {\n    std::vector<int> lecturas{0, 2, -2};\n    int validas{0};\n    int rechazadas{0};\n    int suma{0};\n    for (int lectura : lecturas) {\n        std::cout << \"Lecture=\" << lectura << \":\";\n        if (lectura < -4 || lectura > 9) {\n            ++rechazadas;\n            std::cout << \"Hors limites\\n\";\n        } else {\n            ++validas;\n            suma += lectura;\n            std::cout << etiqueta_de_lectura(lectura) << \"\\n\";\n        }\n    }\n    std::cout << \"Résumé=\" << validas << \":\" << rechazadas << \":\" << suma;\n    return 0;\n}\n",
+          "answers": [
+            "Lecture=0:Froide\nLecture=2:Chaude\nLecture=-2:Froide\nRésumé=3:0:0"
+          ],
+          "explanation": "Zéro satisfait lectura<=0 et reçoit Froide. Cela enfreint l'exigence Neutre pour zéro, même si les trois relevés valides et leur somme produisent un résumé correct. Ne comparer que la dernière ligne masquerait ce changement de comportement."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "u7_refactor_transferencia_alcance_de_la_comparacion",
+          "question": "Après une extraction, tous les tests comparent uniquement Résumé=valides:rejetés:somme. Quelle conclusion respecte la portée de cette preuve ?",
+          "options": [
+            "Les résumés coïncident ; les étiquettes sont aussi vérifiées puisqu'on a utilisé les mêmes relevés.",
+            "Les résumés coïncident ; il reste à vérifier les étiquettes et l'ordre des lignes.",
+            "Les résumés coïncident ; conserver les données suffit pour accepter la réorganisation."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les mêmes entrées et des résumés identiques ne garantissent pas tous les comportements observables. Le contrat précise aussi une étiquette pour chaque relevé et sa position dans la sortie."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reviens maintenant à ta propre extraction : explique pourquoi son paramètre et son retour suffisent à la décision choisie, où son domaine est protégé et quels tests conservés distinguent ses cas. Refactoriser préserve le comportement convenu et change l'organisation dans un but précis ; un ensemble de sorties identiques ne prouve que ce qui a été comparé."
+        }
+      ]
+    }
+  ]
+}

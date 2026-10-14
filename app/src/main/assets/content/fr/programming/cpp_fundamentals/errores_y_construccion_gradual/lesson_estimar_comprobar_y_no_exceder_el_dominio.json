@@ -1,0 +1,183 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__estimar_comprobar_y_no_exceder_el_dominio",
+  "title": "Estimer les résultats et respecter le domaine de calcul",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une propriété peut révéler un résultat impossible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de calculer un résultat exact, repère les propriétés que tout résultat valide doit respecter. Si tu additionnes de petites quantités non négatives, la somme ne doit pas être inférieure à l'une de ses contributions ; si tu calcules la moyenne de données situées dans un intervalle, cette moyenne doit aussi être comprise entre le minimum et le maximum. Ces propriétés permettent de détecter certaines erreurs, mais ne remplacent pas la vérification exacte des exigences."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour 2, 4 et 6, la moyenne arithmétique s'obtient en additionnant les trois valeurs puis en divisant par leur nombre. Elle vaut 12/3=4. Une moyenne de 12 dépasserait le maximum 6 et révélerait un oubli de division. Une moyenne de 5 semblerait plausible au regard de l'intervalle, mais resterait incorrecte pour ces données."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "plausible_no_es_exactamente_correcto",
+          "question": "Les données sont 2, 4 et 6, et le programme annonce une moyenne de 5. Que permet de conclure une vérification qui contrôle uniquement l'appartenance à l'intervalle de 2 à 6 ?",
+          "options": [
+            "Il suffit que la moyenne diffère des données pour rejeter toute moyenne calculée.",
+            "La valeur se trouve dans l'intervalle vérifié, mais il reste à contrôler la moyenne exacte.",
+            "Appartenir à cet intervalle prouve que la moyenne est correcte."
+          ],
+          "correctIndex": 1,
+          "explanation": "Une condition nécessaire n'est pas toujours suffisante. La moyenne exacte est 4."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "detectar_division_omitida",
+          "question": "Les données sont 1, 3 et 5, mais la moyenne annoncée est 9. Quelle propriété permet de rejeter ce résultat sans en savoir davantage sur le code ?",
+          "options": [
+            "Une moyenne doit toujours être égale à la dernière valeur.",
+            "La moyenne de ces données doit être comprise entre 1 et 5.",
+            "La moyenne de données positives doit être positive."
+          ],
+          "correctIndex": 1,
+          "explanation": "La moyenne appartient à l'intervalle des données ; 9 ne respecte pas cette condition nécessaire. Vérifier uniquement sa positivité ne détecte pas l'erreur, car 9 est également positif. La moyenne n'est pas non plus toujours la dernière valeur : pour 2, 4 et 6, elle vaut 4, tandis que la dernière valeur est 6."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Protéger le cas vide avant la division"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le calcul d'une moyenne nécessite au moins une donnée. Une séquence vide n'a pas de moyenne ordinaire que l'on pourrait obtenir en divisant par zéro. Décide de la réponse adaptée au domaine et effectue le calcul uniquement si la quantité est positive. N'essaie pas d'abord la division pour voir ce qui se passe : l'absence de données permet déjà de prendre la décision."
+        },
+        {
+          "type": "output_prediction",
+          "id": "media_de_vacio_controlada",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{};\n    if (datos.empty()) {\n        std::cout << \"Aucune donnée\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        double media{static_cast<double>(suma) / datos.size()};\n        std::cout << media;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Aucune donnée"
+          ],
+          "explanation": "La branche du cas vide évite le calcul. Aucune division n'est effectuée sans données."
+        },
+        {
+          "type": "output_prediction",
+          "id": "media_fraccionaria_controlada",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{2, 3};\n    int suma{0};\n    for (int dato : datos) { suma += dato; }\n    double media{static_cast<double>(suma) / datos.size()};\n    std::cout << media;\n    return 0;\n}\n",
+          "answers": [
+            "2.5"
+          ],
+          "explanation": "La conversion précède la division et préserve la partie fractionnaire de la moyenne."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "conversion_tardia_media",
+          "question": "Avec suma=5 et cantidad=2, on calcule static_cast<double>(suma/cantidad). Que perd-on ?",
+          "options": [
+            "La possibilité de convertir un int en double.",
+            "La partie fractionnaire déjà supprimée par la division entière.",
+            "Toute la partie entière du résultat."
+          ],
+          "correctIndex": 1,
+          "explanation": "Convertir ensuite le quotient entier ne permet pas de retrouver l'information perdue lors de la division."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un résultat positif ne rend pas une opération invalide sûre"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour multiplier des entiers signés, les opérandes et le résultat doivent être représentables dans le type. Ne multiplie pas d'abord pour vérifier ensuite si le résultat semble négatif : en cas de dépassement de capacité, l'opération a déjà quitté le comportement défini. Dans ce cours, nous déclarons de petits domaines avant de calculer. Un système acceptant des données générales devrait vérifier les limites de représentation avant d'effectuer l'opération."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si piezas est compris entre 0 et 10 et minutosPorPieza entre 1 et 100, leur produit se trouve entre 0 et 1000. Ces valeurs sont représentables même dans la plage minimale que C++ impose à int. Cette justification repose sur le domaine ; elle ne suppose pas que int possède exactement 32 bits. Vérifie les deux arguments avant de multiplier."
+        },
+        {
+          "type": "output_prediction",
+          "id": "producto_dominio_rechazado",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{11};\n    int minutosPorPieza{20};\n    if (piezas < 0 || piezas > 10 || minutosPorPieza < 1 || minutosPorPieza > 100) {\n        std::cout << \"Hors du domaine\";\n    } else {\n        std::cout << piezas * minutosPorPieza;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Hors du domaine"
+          ],
+          "explanation": "La règle rejette 11 avant d'effectuer le produit dans la branche valide."
+        },
+        {
+          "type": "output_prediction",
+          "id": "producto_fronteras_validas",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{10};\n    int minutosPorPieza{100};\n    if (piezas < 0 || piezas > 10 || minutosPorPieza < 1 || minutosPorPieza > 100) {\n        std::cout << \"Hors du domaine\";\n    } else {\n        std::cout << piezas * minutosPorPieza;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "1000"
+          ],
+          "explanation": "Les deux bornes sont incluses, et le produit reste dans le domaine sûr qui a été justifié."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "revisar_dominio_ampliado",
+          "question": "Le domaine de deux petits arguments devient « n'importe quel int positif ». Quelle vérification supplémentaire faut-il prévoir avant leur produit ?",
+          "options": [
+            "Vérifier avant la multiplication que le produit est représentable, en plus de vérifier que les deux arguments sont positifs.",
+            "Conserver uniquement le contrôle effectué ensuite, resultado>0.",
+            "Supposer que le type s'élargit automatiquement pour stocker le produit."
+          ],
+          "correctIndex": 0,
+          "explanation": "La positivité ne limite pas la grandeur du produit. L'ancienne vérification ne suffit plus à justifier ce nouveau domaine."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Laboratoire : une propriété et une comparaison exacte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour la collection initiale, calcule à la main la somme, la moyenne, le minimum et le maximum. Complète le calcul de la moyenne en convertissant avant la division, puis indique si elle se trouve dans l'intervalle. Teste ensuite {1,2}, une seule donnée {5} et la collection vide : cette dernière doit afficher Aucune donnée avant tout calcul de moyenne ou accès à un élément. Garde au maximum cinq données de 0 à 10. Un contrôle de plausibilité complète l'attente exacte ; il ne la remplace pas."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Aucune donnée\";\n    } else {\n        int suma{0};\n        for (int dato : datos) { suma += dato; }\n        std::cout << \"Somme=\" << suma;\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence du laboratoire"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et testé ta tentative. C'est une implémentation possible ; d'autres solutions sont valides si elles respectent le même contrat et les critères indiqués."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. Pour {1,4,7}, la somme est 12, la moyenne 4, le minimum 1 et le maximum 7. La moyenne doit être dans l'intervalle et correspondre à l'attente exacte. Pour {1,2}, la somme est 3, la moyenne 1.5, le minimum 1 et le maximum 2 ; pour {5}, les quatre valeurs sont égales à 5. Avec {}, il faut afficher Aucune donnée avant de diviser ou d'accéder à un élément. Utilise au maximum cinq données comprises entre 0 et 10 ; d'autres présentations de ces résultats sont valides."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> datos{1, 4, 7};\n    if (datos.empty()) {\n        std::cout << \"Aucune donnée\";\n        return 0;\n    }\n    int suma{0};\n    int minimo{datos[0]};\n    int maximo{datos[0]};\n    for (int dato : datos) {\n        suma += dato;\n        if (dato < minimo) { minimo = dato; }\n        if (dato > maximo) { maximo = dato; }\n    }\n    int cantidad{static_cast<int>(datos.size())};\n    double media{static_cast<double>(suma) / cantidad};\n    bool dentro{media >= minimo && media <= maximo};\n    std::cout << \"Somme=\" << suma << \" Moyenne=\" << media\n              << \" Minimum=\" << minimo << \" Maximum=\" << maximo\n              << \" DansIntervalle=\" << dentro;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le contrôle du cas vide précède aussi bien l'accès datos[0] que la division. La conversion de suma s'effectue avant la division. DansIntervalle=1 signale que la propriété d'appartenance à l'intervalle est vérifiée, mais il faut encore comparer media avec le calcul manuel exact. Change uniquement la collection pour tester les trois autres cas ; le petit domaine garantit également que la somme est représentable."
+        }
+      ]
+    }
+  ]
+}
