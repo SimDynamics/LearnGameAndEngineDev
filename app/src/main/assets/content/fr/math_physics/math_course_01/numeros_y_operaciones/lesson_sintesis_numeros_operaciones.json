@@ -1,0 +1,518 @@
+{
+  "id": "math_course_01__numeros_y_operaciones__sintesis_numeros_operaciones",
+  "title": "Synthèse : nombres, états et opérations",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir avant de calculer"
+        },
+        {
+          "type": "paragraph",
+          "text": "Maintenant, la difficulté évolue : l'énoncé ne précise pas toujours quelle opération utiliser. Commence par nommer la quantité recherchée. Si tu réunis des longueurs dans la même unité, tu les additionnes ; si tu compares un état final à un état initial, tu soustrais l'état initial de l'état final ; si tu accumules des changements identiques, tu multiplies ; si tu répartis un changement total en étapes égales, tu divises. Le choix de l'opération répond à la relation entre les données."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tous les nombres du problème ne jouent pas le même rôle. La durée peut indiquer combien de fois un changement se répète, tandis qu'une température initiale représente le point de départ. Identifie ces rôles avant de combiner les nombres. Sur la droite numérique, le signe indique le côté de l'origine ; pour un changement, il indique une direction. La distance à zéro indique la grandeur, mais pas la direction."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une réponse doit passer trois vérifications : grandeur, signe et signification. Par exemple, si tu pars de -6 et reçois un changement de +2 à chacune de quatre étapes, le changement total vaut \\(4\\times2=8\\), et l'état final vaut \\(-6+8=2\\). Répondre 8 lorsque l'on demande l'état final revient à confondre le changement avec le résultat de son application."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "estado_o_cambio",
+          "prompt": "Un niveau commence à -7 cm puis augmente trois fois de 4 cm. Quelle expression calcule son état final ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "estado_o_cambio__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "3 × (-7 + 4)",
+                  "reviewFeedback": "Ton expression multiplie toute la parenthèse. Identifie la valeur initiale et vérifie combien de fois elle apparaît après la distributivité."
+                },
+                {
+                  "id": "b",
+                  "label": "-7 + 3 × 4",
+                  "reviewFeedback": "Relie chaque partie de l'expression à l'état initial et aux étapes décrites. Vérifie quelle quantité se répète."
+                },
+                {
+                  "id": "c",
+                  "label": "-7 - 3 × 4",
+                  "reviewFeedback": "Revois le signe avec lequel ton expression applique les changements. Représente une étape pour déterminer s'il s'agit d'une augmentation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La valeur initiale -7 n'intervient qu'une fois. Les trois augmentations totalisent 12 ; le niveau final est de 5 cm.",
+            "incorrect": "La valeur initiale intervient une seule fois, alors que les trois changements positifs se répètent. Distingue l'état initial des changements."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un même calcul, plusieurs vérifications"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu peux vérifier \\(-6+8=2\\) sur la droite ou par soustraction : \\(2-8=-6\\). Tu peux vérifier un quotient en le multipliant par son diviseur. Pour \\((-35)\\div7=-5\\), le produit \\(7\\times(-5)=-35\\) permet de retrouver le dividende. Chaque vérification revient à la relation qui définit l'opération."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si tu obtiens un résultat surprenant, cherche la première étape qui ne conserve plus le sens. Tu as peut-être confondu distance et position, mal transformé une soustraction d'un négatif, additionné au lieu de répéter un changement ou tenté une division par zéro. Refaire le calcul entier plus vite ne permet pas nécessairement de localiser l'erreur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les activités suivantes mêlent mesures, enregistrements et calculs. Certaines demandent une décision avant le résultat. Ne devine pas l'opération à partir de l'apparence d'un nombre : une quantité négative peut représenter un état initial, un changement ou un quotient. Conserve l'unité et la référence tout au long de la résolution. Reconnaître qu'il manque une condition nécessaire pour déterminer une réponse fait aussi partie du raisonnement mathématique."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_y_limite",
+          "prompt": "Quelle affirmation est correcte ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_y_limite__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0 ÷ 7 ne peut pas être calculé parce qu'il y a un zéro.",
+                  "reviewFeedback": "Ton affirmation utilise la simple présence de zéro pour décider. Distingue la position du diviseur et vérifie la relation multiplicative."
+                },
+                {
+                  "id": "b",
+                  "label": "7 ÷ 0 vaut 0, car multiplier par zéro donne zéro.",
+                  "reviewFeedback": "Vérifie si le quotient proposé, multiplié par son diviseur, permet de retrouver le dividende."
+                },
+                {
+                  "id": "c",
+                  "label": "0 ÷ 7 vaut 0, mais 7 ÷ 0 n'est pas défini.",
+                  "reviewFeedback": "Vérifie chacune des divisions par la relation entre dividende, diviseur et quotient. Identifie le rôle de zéro dans chaque cas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Zéro divisé par sept donne zéro. Sept divisé par zéro ne peut pas être un nombre dont le produit par zéro donne sept.",
+            "incorrect": "Il faut vérifier si zéro est le diviseur, et non simplement s'il apparaît. Un produit par zéro ne peut pas retrouver un dividende non nul."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire, ordonner et distinguer"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "lectura_completa",
+          "prompt": "Lis le point marqué. Indique sa position et sa distance à zéro.",
+          "representations": [
+            {
+              "type": "math_number_line",
+              "mode": "read_value",
+              "min": -7,
+              "max": 7,
+              "step": 1,
+              "value": -5,
+              "closed": true,
+              "direction": "none",
+              "showValueLabel": false
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "lectura_completa__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "Position",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Distance",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "p": {
+                    "type": "numeric",
+                    "expected": "-5"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La position vaut -5 et la distance vaut 5 unités.",
+            "incorrect": "Le signe désigne le côté de l'origine. La distance représente l'écart et ne peut pas être négative."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden_acumulado",
+          "prompt": "Classe les valeurs enregistrées de la plus petite à la plus grande.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "orden_acumulado__orden",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "-12"
+                },
+                {
+                  "id": "b",
+                  "label": "-4"
+                },
+                {
+                  "id": "c",
+                  "label": "-1"
+                },
+                {
+                  "id": "d",
+                  "label": "0"
+                },
+                {
+                  "id": "e",
+                  "label": "6"
+                }
+              ],
+              "initialOrder": [
+                "e",
+                "d",
+                "c",
+                "b",
+                "a"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "-12 < -4 < -1 < 0 < 6. Parmi les négatifs, se rapprocher de zéro augmente la valeur.",
+            "incorrect": "Comparer 12, 4 et 1 en ignorant les signes inverse l'ordre des enregistrements négatifs."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sintesis_cambio_descendente",
+          "prompt": "Une mesure initiale de 7 cm reçoit cinq changements identiques de −3 cm. Quelle est la mesure finale ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sintesis_cambio_descendente__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-8"
+              },
+              "unit": "cm"
+            }
+          ],
+          "feedback": {
+            "correct": "7 + 5 × (−3) = 7 − 15 = −8 cm.",
+            "incorrect": "La mesure initiale est un état ; −15 est le changement accumulé. Une diminution peut faire passer une mesure positive du côté négatif."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Appliquer et retrouver une valeur"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "nivel_final",
+          "prompt": "Un réservoir affiche initialement -9 cm par rapport à une référence. Quatre changements identiques de +3 cm se produisent ensuite. Quelle est la mesure finale ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "nivel_final__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              },
+              "unit": "cm"
+            }
+          ],
+          "feedback": {
+            "correct": "-9 + 4 × 3 = -9 + 12 = 3 cm.",
+            "incorrect": "12 est le changement total, pas la mesure finale. Combine l'état initial avec ce changement."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_estado",
+          "prompt": "Une température baisse de 8 °C et termine à -3 °C. Quelle était la température initiale ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_estado__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "5"
+              },
+              "unit": "°C"
+            }
+          ],
+          "feedback": {
+            "correct": "Elle était de 5 °C, car 5 - 8 = -3. Pour retrouver le départ, nous annulons la diminution : -3 + 8.",
+            "incorrect": "-11 représenterait une nouvelle diminution à partir de -3, et non l'état précédent. Vérifie en appliquant le changement à ta réponse."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "lotes_transferencia",
+          "prompt": "Une perte totale de 54 points est répartie sur 6 manches avec le même changement à chaque manche. Quel est le changement par manche ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "lotes_transferencia__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-9"
+              },
+              "unit": "points par manche"
+            }
+          ],
+          "feedback": {
+            "correct": "La perte totale est -54 ; -54 ÷ 6 = -9 points par manche.",
+            "incorrect": "54 est la grandeur de la perte. Le changement orienté vaut -54 et chaque manche garde un signe négatif."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sintesis_saldo_ida_vuelta",
+          "prompt": "Un solde commence à −6 pesos, reçoit 10 puis paie 10. Écris le solde final et le changement total des mouvements.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sintesis_saldo_ida_vuelta__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "f",
+                  "type": "numeric",
+                  "label": "Solde final (pesos)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Changement total (pesos)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "f": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le solde final est −6 et le changement net est nul. Les mouvements se compensent sans effacer le solde initial.",
+            "incorrect": "Un changement net nul ne signifie pas un solde final nul. Distingue ce qui existait de ce qui s'est produit."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Détecter les limites et corriger"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparar_resta",
+          "prompt": "Une personne écrit -4 - (-6) = -10. Quelle correction conserve l'opération d'origine ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparar_resta__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Remplacer par -4 + 6 = 2.",
+                  "reviewFeedback": "Vérifie que la transformation modifie la façon d'effectuer la soustraction sans changer la valeur initiale ni le nombre soustrait."
+                },
+                {
+                  "id": "b",
+                  "label": "Enlever le signe de -4 pour obtenir 4 + 6 = 10.",
+                  "reviewFeedback": "Ta correction modifie aussi l'état initial. Revois quelle transformation de l'opération autoriserait ce changement."
+                },
+                {
+                  "id": "c",
+                  "label": "Remplacer par -4 - 6 = -10.",
+                  "reviewFeedback": "Compare le nombre soustrait avant et après ta transformation. Représente le changement sur la droite pour vérifier si l'opération est conservée."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Soustraire -6 revient à ajouter son opposé, +6. La valeur correcte est 2.",
+            "incorrect": "Pour soustraire un négatif, ajoute son opposé en conservant la valeur initiale."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "longitudes_sintesis",
+          "prompt": "Une corde de 240 cm est découpée en 8 morceaux égaux, sans perte de matière. Quelle est la longueur de chaque morceau ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "longitudes_sintesis__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "30"
+              },
+              "unit": "cm"
+            }
+          ],
+          "feedback": {
+            "correct": "240 ÷ 8 = 30 cm ; huit morceaux de 30 cm redonnent 240 cm.",
+            "incorrect": "Ajouter 8 ne partage pas la corde. L'absence de perte signifie que les longueurs des morceaux totalisent la longueur initiale."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sintesis_unidad_y_estimacion",
+          "prompt": "Trois segments mesurent 99 cm, 102 cm et 98 cm. Quelle affirmation conserve l'unité et la précision appropriée ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sintesis_unidad_y_estimacion__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La longueur exacte est de 300 cm, car on l'a estimée en arrondissant à la centaine.",
+                  "reviewFeedback": "Ton affirmation transforme une estimation en égalité exacte. Vérifie si les données initiales et les données arrondies ont exactement la même somme."
+                },
+                {
+                  "id": "b",
+                  "label": "La longueur exacte est de 299 cm, et 300 cm est une estimation utile.",
+                  "reviewFeedback": "Vérifie séparément l'unité de la somme et la différence entre le calcul exact et l'estimation."
+                },
+                {
+                  "id": "c",
+                  "label": "Le total vaut 299 kg, car ce sont toutes des quantités.",
+                  "reviewFeedback": "L'unité choisie doit correspondre à la propriété additionnée. Examine ce que représentent les centimètres."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "99 + 102 + 98 = 299 cm. L'estimation 100 + 100 + 100 = 300 cm est proche, mais différente du total exact.",
+            "incorrect": "Une approximation n'est pas une égalité exacte, et une longueur ne s'exprime pas en kilogrammes."
+          }
+        }
+      ]
+    }
+  ]
+}

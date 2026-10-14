@@ -1,0 +1,476 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__expresiones_y_prioridad",
+  "title": "Expressions, Parentheses, and Powers",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Expression Describes How to Combine Quantities"
+        },
+        {
+          "type": "paragraph",
+          "text": "An expression combines numbers and operations to describe a quantity. Its meaning depends on its structure, not just on the numbers it contains. If you buy three packs with five pencils each plus four loose pencils, you first recognize three groups of five and then add the four remaining pencils. The expression must preserve the relationship between the groups and the loose items."
+        },
+        {
+          "type": "paragraph",
+          "text": "The total is \\(4+3\\times5=19\\). By contrast, \\((4+3)\\times5=35\\) describes five groups of seven: parentheses combine four and three into one unit before multiplication. Both expressions use the same numbers and signs but describe different relationships. Parentheses indicate grouping; they are not decorations that can always be removed."
+        },
+        {
+          "type": "paragraph",
+          "text": "When we do not enclose every operation in parentheses, we follow a convention of precedence. Multiplying and dividing before adding allows us to read sums of groups, like the pencils, without parenthesizing each group. The convention gives the expression an agreed value no matter who reads it."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "expresion_paquetes",
+          "prompt": "There are 4 boxes with 6 pencils each, plus 3 loose pencils. Which expression describes the total?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "expresion_paquetes__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4 × (6 + 3)",
+                  "reviewFeedback": "Interpret the scope of the parentheses: identify which quantity would be repeated in every box and compare it with the loose pencils."
+                },
+                {
+                  "id": "b",
+                  "label": "4 × 6 + 3",
+                  "reviewFeedback": "Relate each operation to boxes, pencils per box, and loose pencils. Check that every quantity is counted once."
+                },
+                {
+                  "id": "c",
+                  "label": "4 + 6 × 3",
+                  "reviewFeedback": "Give each operation a meaning. Check which quantities you are adding and which you repeat before calculating."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The four groups contribute 4 × 6 pencils, and then three more are added: 27 in total.",
+            "incorrect": "Identify the groups of pencils and the additional loose pencils before combining the quantities."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "prioridad_basica",
+          "prompt": "Calculate 7 + 4 × 3.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "prioridad_basica__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "19"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "First 4 × 3 = 12, then 7 + 12 = 19.",
+            "incorrect": "Grouping (7 + 4) × 3 would give 33, but those parentheses are not in the original expression."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Powers: Repeating Factors"
+        },
+        {
+          "type": "paragraph",
+          "text": "A power summarizes a product of equal factors. In \\(2^3=2\\times2\\times2=8\\), 2 is the base and 3 is the exponent: it tells us how many identical factors appear. It does not mean multiplying 2 by 3. Likewise, \\(5^2=25\\) and \\(5^1=5\\). For a positive integer exponent, the definition also works with zero or a negative base."
+        },
+        {
+          "type": "paragraph",
+          "text": "Parentheses indicate the entire base: \\((-3)^2=(-3)\\times(-3)=9\\). In \\(-3^2\\), the power of 3 is calculated first, then its opposite is taken: the result is -9. When the base is negative, parentheses prevent the outer minus sign from being mistaken for part of the base. In \\((-2)^3\\), there are three negative factors, producing -8."
+        },
+        {
+          "type": "paragraph",
+          "text": "For a nonzero base, we also use the convention \\(a^0=1\\). This agrees with reducing the exponent by dividing by the base: \\(3^3=27\\), \\(3^2=9\\), \\(3^1=3\\), and one more division by 3 gives 1. The powers in our exercises are small enough to check by multiplication."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "base_y_signo",
+          "prompt": "Calculate both expressions and preserve the difference in their structures.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "base_y_signo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "(-4)²",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "-4²",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "16"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-16"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "(-4)² is 16 because the entire base is -4. -4² is -16 because the outer minus is applied after 4².",
+            "incorrect": "If you get the same result for both expressions, reconsider which number is the base in each power."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencia_cero",
+          "prompt": "Calculate 8⁰.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencia_cero__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "1"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Any nonzero base raised to the zero power equals 1; it is not 8 × 0.",
+            "incorrect": "Exponentiation does not multiply the base by the exponent. An exponent of zero follows the pattern of decreasing the exponent by division by the base."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Precedence and Order Among Equal-Level Operations"
+        },
+        {
+          "type": "paragraph",
+          "text": "Evaluate parentheses first, then powers, then multiplication and division, and finally addition and subtraction. When multiplication and division occur in sequence, they have equal precedence and are evaluated from left to right. The same applies to addition and subtraction. Multiplication does not always take precedence over division."
+        },
+        {
+          "type": "paragraph",
+          "text": "For example, \\(24\\div6\\times2=4\\times2=8\\). Grouping it as \\(24\\div(6\\times2)\\) would give 2, but those parentheses change the expression. In \\(18-5+2\\), working from left to right gives \\(13+2=15\\). Changing it to \\(18-(5+2)\\) would give 11 and introduce different grouping."
+        },
+        {
+          "type": "paragraph",
+          "text": "In \\(2\\times(7-3)^2+1\\), evaluate the parentheses: \\(7-3=4\\). Next \\(4^2=16\\), then \\(2\\times16=32\\), and finally \\(32+1=33\\). Writing the entire expression at every step helps locate errors. An equals sign means both sides have the same value; it should not link an incomplete calculation to an unrelated partial result."
+        },
+        {
+          "type": "note",
+          "text": "Before calculating, identify groupings and the base of each power. Then check whether the size of the result makes sense for the situation described."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "misma_prioridad",
+          "prompt": "Calculate 30 ÷ 5 × 2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "misma_prioridad__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "12"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Division and multiplication have the same precedence: 30 ÷ 5 = 6, then 6 × 2 = 12.",
+            "incorrect": "Getting 3 would mean evaluating 30 ÷ (5 × 2), which adds a grouping not present."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pasos_prioridad",
+          "prompt": "Order the steps solving 3 × (6 - 2)² - 5. Each card is a full expression with the same value.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pasos_prioridad__orden",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "3 × (6 - 2)² - 5"
+                },
+                {
+                  "id": "b",
+                  "label": "3 × 4² - 5"
+                },
+                {
+                  "id": "c",
+                  "label": "3 × 16 - 5"
+                },
+                {
+                  "id": "d",
+                  "label": "48 - 5"
+                },
+                {
+                  "id": "e",
+                  "label": "43"
+                }
+              ],
+              "initialOrder": [
+                "e",
+                "d",
+                "c",
+                "b",
+                "a"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Parentheses, exponentiation, multiplication, and subtraction give 43. Each step preserves the value of the entire expression.",
+            "incorrect": "Do not multiply 3 by 4 before evaluating the power: that changes the base. Nor should you subtract 5 from 16 before multiplying."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_resta_igual_prioridad",
+          "prompt": "Calculate 16 − 7 + 2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "suma_resta_igual_prioridad__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "11"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Addition and subtraction have equal precedence: 16 − 7 = 9, then 9 + 2 = 11.",
+            "incorrect": "16 − (7 + 2) would give 7, but those are additional parentheses that were not written."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare Different Groupings"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "parentesis_cambian_cociente",
+          "prompt": "Calculate both expressions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "parentesis_cambian_cociente__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "24 ÷ 3 × 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "24 ÷ (3 × 2)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "16"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Without parentheses: 24 ÷ 3 = 8, then 8 × 2 = 16. With parentheses: 3 × 2 = 6, then 24 ÷ 6 = 4.",
+            "incorrect": "Parentheses make the whole product the divisor. Without them, multiplication and division proceed from left to right."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "parentesis_anidados",
+          "prompt": "Calculate 20 − (3 × (5 − 2) + 4).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "parentesis_anidados__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The inner group is 3; the outer group is 3 × 3 + 4 = 13; finally, 20 − 13 = 7.",
+            "incorrect": "Evaluate the entire group being subtracted. Do not subtract only the first product and then add four."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check Equality and the Domain Too"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cadena_igualdad_falsa",
+          "prompt": "Someone writes 5 + 2 × 3 = 7 × 3 = 21. Which is the first step that breaks equality?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cadena_igualdad_falsa__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The step from 7 × 3 to 21.",
+                  "reviewFeedback": "Check both sides of the equality you selected. Finding an error requires showing that the value changed."
+                },
+                {
+                  "id": "b",
+                  "label": "The step from 5 + 2 × 3 to 7 × 3.",
+                  "reviewFeedback": "Analyze that step using order of operations. Compare the values before and after the chosen transformation."
+                },
+                {
+                  "id": "c",
+                  "label": "None: using the same numbers guarantees the same value.",
+                  "reviewFeedback": "Reconsider whether keeping the same numbers guarantees the same value. Examine how regrouping and changing the order of operations affects it."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first value is 11 and the second is 21. Adding before multiplying changes the expression; 7 × 3 = 21 is a valid equality.",
+            "incorrect": "A correct final calculation does not justify an earlier change in the structure or value of the expression."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisor_oculto_cero",
+          "prompt": "Which expression has a defined value?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisor_oculto_cero__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "8 ÷ (5 − 5)",
+                  "reviewFeedback": "First calculate the parentheses serving as the divisor. Then check whether that divisor permits a quotient."
+                },
+                {
+                  "id": "b",
+                  "label": "0 ÷ (5 − 5)",
+                  "reviewFeedback": "Distinguish numerator from divisor in the expression you chose. Evaluate the parentheses before determining whether the quotient exists."
+                },
+                {
+                  "id": "c",
+                  "label": "0 ÷ (5 + 5)",
+                  "reviewFeedback": "Check the divisor of the selected expression before calculating. Justify the quotient's existence using its relationship to multiplication."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Only 0 ÷ 10 is defined and equals zero. In the other two expressions, the entire divisor is zero.",
+            "incorrect": "Evaluate the entire divisor before dividing. A divisor of zero cannot give a defined quotient."
+          }
+        }
+      ]
+    }
+  ]
+}
