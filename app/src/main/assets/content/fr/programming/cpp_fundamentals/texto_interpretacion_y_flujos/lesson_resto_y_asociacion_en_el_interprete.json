@@ -1,0 +1,179 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete",
+  "title": "Reste et associativité dans l'interpréteur",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compléter le niveau multiplicatif"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'inspecteur reconnaissait déjà %. Nous allons maintenant donner un sens à ce signe dans le langage des expressions entières. Une unité reste un nombre de 0..99 ; les noms n'existent pas encore et chaque résultat intermédiaire doit demeurer dans -100..100. Le niveau des termes regroupe *, / et % avec la même priorité, de gauche à droite. Les signes unaires et les parenthèses conservent leur rôle."
+        },
+        {
+          "type": "paragraph",
+          "text": "La source reste une string de 120 caractères ASCII au maximum, avec l'espace, la tabulation et le saut de ligne comme séparateurs. Chaque opération se termine par ;. Nous ne changeons ni l'acceptation de l'historique ni la récupération : un calcul partiel correct ne valide pas une opération incomplète."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Comment le terme doit-il regrouper 26%7*2 ?",
+          "options": [
+            "26%(7*2)",
+            "(26%7)*2",
+            "(26*2)%7"
+          ],
+          "correctIndex": 1,
+          "explanation": "Les trois opérateurs multiplicatifs appartiennent au même niveau et sont appliqués dans leur ordre d'apparition. Les opérandes ne sont pas réorganisés.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete__e01"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reste entier et signe du dividende"
+        },
+        {
+          "type": "paragraph",
+          "text": "La division entière écarte la partie fractionnaire vers zéro. Pour un diviseur non nul, a = (a/b)*b + a%b. Un reste non nul a le signe du dividende, même lorsque le diviseur est négatif. Par exemple, -14/5 vaut -2 et -14%5 vaut -4. Nous n'utilisons pas de reste en virgule flottante et n'arrondissons pas vers moins l'infini."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis les trois lignes de ce calcul C++ qui définit le sens de l'opérateur.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::cout << 16 % 5 << \"\\n\";\n    std::cout << -16 % 5 << \"\\n\";\n    std::cout << 16 % -5 << \"\\n\";\n    return 0;\n}\n",
+          "answers": [
+            "1\n-1\n1"
+          ],
+          "explanation": "Le dividende détermine le signe d'un reste non nul. Changer seulement le signe du diviseur ne modifie pas ce signe.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete__e02"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle affirmation décrit 18%6 dans le domaine du langage ?",
+          "options": [
+            "Le reste doit être égal au diviseur, soit six.",
+            "Zéro indique nécessairement une erreur.",
+            "Le résultat zéro est valide : il ne reste aucune unité."
+          ],
+          "correctIndex": 2,
+          "explanation": "Seul un diviseur nul est invalide. Un reste nul est accepté et enregistré dans l'historique.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete__e03"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La vérification doit précéder l'opération"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie le diviseur avant d'effectuer / ou %. Avec la plage -100..100, un produit a une valeur absolue maximale de 10000, une somme ou différence de 200 et la division la plus extrême par -1 produit au maximum 100 en valeur absolue. Ces résultats candidats tiennent dans tout int conforme. La garde contre zéro évite une opération invalide ; vérifier après le calcul serait trop tard."
+        },
+        {
+          "type": "order_code",
+          "question": "Remets les fragments dans l'ordre pour calculer un reste en toute sécurité. Suppose que izquierda et derecha sont dans -100..100 et que resultado_en_dominio est déjà défini.",
+          "fragments": [
+            "izquierda = resultado_en_dominio(izquierda % derecha);",
+            "if (derecha == 0) {",
+            "    throw std::runtime_error(\"Division par zéro\");",
+            "}"
+          ],
+          "correctOrder": [
+            1,
+            2,
+            3,
+            0
+          ],
+          "explanation": "La garde complète est exécutée avant l'opérateur %. Le diagnostic empêche d'atteindre le calcul lorsque le diviseur vaut zéro.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete__e04"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le lecteur de tokens est également appelé analyseur lexical ou lexer. Le lexer et token_valido doivent tous deux admettre % de façon cohérente. Ensuite, leer_termino effectue le calcul. L'ajouter uniquement au lexer produirait un signe reconnu que la grammaire refuserait encore."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Intégration guidée dans ton interpréteur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reprends le programme construit avec historique et étends le niveau multiplicatif pour accepter %. Cet exercice intègre la nouvelle règle aux modules déjà étudiés ; l'éditeur ne fournit pas l'implémentation. Conserve les signes unaires, les parenthèses, une profondeur maximale de huit, la plage de chaque résultat intermédiaire, la réserve d'un seul token et l'abandon du texte jusqu'à ;."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le texte initial est \"22%6;-22%6;17/3%4;\". Il doit enregistrer 4, -4 et 1, avec trois acceptations, zéro rejet et une somme de 1. Le dernier terme commence par la division : 17/3 vaut 5, puis 5%4 vaut 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie \"23%7%3;\" → 2 et \"23%(7%3);\" → 0. Vérifie \"9%0;6;\" : refus du diviseur nul, puis acceptation de 6. \"0%7;\" conserve zéro. \"(-99-1)%-1;\" conserve zéro. \"99*2%3;\" est rejeté lors de la multiplication, même si le reste final imaginé aurait été petit."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    const std::string texto{\"22%6;-22%6;17/3%4;\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères avant d'ouvrir la référence : reconnaître le signe, respecter priorité et association, rejeter zéro avant l'opération, vérifier chaque résultat intermédiaire et n'ajouter à l'historique qu'après ;. Une autre implémentation est valable si elle respecte toutes ces propriétés observables."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après ton essai"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence utilise \"19%6;-19%6;25/4%3;\" : elle conserve 1, -1 et 0. Compare d'abord les contrats du lexer, de la réserve et du terme. La division et le reste partagent la vérification préalable ; tous deux respectent la plage numérique."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Nombre hors domaine\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Échec du flux\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/' || token.clase == '%'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flux irrécupérable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Échec de récupération\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Résultat hors domaine\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Imbrication excessive\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Parenthèse fermante attendue\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Unité attendue\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/' || token.clase == '%') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Division par zéro\");\n            }\n            if (token.clase == '/') izquierda = resultado_en_dominio(izquierda / derecha);\n            else izquierda = resultado_en_dominio(izquierda % derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Point-virgule attendu\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::string texto{\"19%6;-19%6;25/4%3;\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valeur: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Erreur: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Récupération interrompue: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Acceptées: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rejetées: \" << rechazadas << \"\\n\";\n    std::cout << \"Somme: \" << suma << \"\\nHistorique:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La somme est nulle et l'historique contient trois éléments. Ni un reste nul ni une somme nulle ne prouvent qu'aucune opération n'a eu lieu. Le récapitulatif conserve son propre domaine."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfert après l'intégration"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis toute la sortie d'une session avec regroupement et récupération.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Nombre hors domaine\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Échec du flux\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/' || token.clase == '%'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion();\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nbool Lector_tokens::descartar_operacion() {\n    if (entrada_.bad()) {\n        throw std::runtime_error(\"Flux irrécupérable\");\n    }\n    if (lleno_) {\n        const Token pendiente = guardado_;\n        lleno_ = false;\n        if (pendiente.clase == ';') {\n            return true;\n        }\n        if (pendiente.clase == 'f') {\n            return false;\n        }\n    }\n    entrada_.clear();\n    char actual = '?';\n    while (entrada_.get(actual)) {\n        if (actual == ';') {\n            return true;\n        }\n    }\n    if (entrada_.bad() || !entrada_.eof()) {\n        throw std::runtime_error(\"Échec de récupération\");\n    }\n    return false;\n}\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Résultat hors domaine\");\n    }\n    return candidato;\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad);\n\nint leer_unidad(Lector_tokens& lector, int profundidad) {\n    if (profundidad > 8) {\n        throw std::runtime_error(\"Imbrication excessive\");\n    }\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    if (token.clase == '+') {\n        return leer_unidad(lector, profundidad + 1);\n    }\n    if (token.clase == '-') {\n        const int valor = leer_unidad(lector, profundidad + 1);\n        return resultado_en_dominio(-valor);\n    }\n    if (token.clase == '(') {\n        const int valor = leer_expresion(lector, profundidad + 1);\n        const Token cierre = lector.leer();\n        if (cierre.clase != ')') {\n            lector.devolver(cierre);\n            throw std::runtime_error(\"Parenthèse fermante attendue\");\n        }\n        return valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Unité attendue\");\n}\n\nint leer_termino(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_unidad(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '*') {\n            const int derecha = leer_unidad(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda * derecha);\n        } else if (token.clase == '/' || token.clase == '%') {\n            const int derecha = leer_unidad(lector, profundidad);\n            if (derecha == 0) {\n                throw std::runtime_error(\"Division par zéro\");\n            }\n            if (token.clase == '/') izquierda = resultado_en_dominio(izquierda / derecha);\n            else izquierda = resultado_en_dominio(izquierda % derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_expresion(Lector_tokens& lector, int profundidad) {\n    int izquierda = leer_termino(lector, profundidad);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_termino(lector, profundidad);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector, 0);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Point-virgule attendu\");\n    }\n    return resultado;\n}\n\nint sumar_historial(const std::vector<int>& valores) {\n    int total = 0;\n    for (int valor : valores) {\n        total += valor;\n    }\n    return total;\n}\n\nint main() {\n    const std::string texto{\"18%5*2;8%0;18%(5*2);\"};\n    Lector_tokens lector{texto};\n    std::vector<int> aceptados;\n    int rechazadas = 0;\n    bool continuar = true;\n    while (continuar) {\n        try {\n            const Token inicio = lector.leer();\n            if (inicio.clase == 'f') {\n                continuar = false;\n                continue;\n            }\n            lector.devolver(inicio);\n            const int resultado = leer_operacion(lector);\n            aceptados.push_back(resultado);\n            std::cout << \"Valeur: \" << resultado << \"\\n\";\n        } catch (const std::runtime_error& error) {\n            ++rechazadas;\n            std::cout << \"Erreur: \" << error.what() << \"\\n\";\n            try {\n                continuar = lector.descartar_operacion();\n            } catch (const std::runtime_error& fallo) {\n                std::cout << \"Récupération interrompue: \" << fallo.what() << \"\\n\";\n                continuar = false;\n            }\n        }\n    }\n    const int suma = sumar_historial(aceptados);\n    std::cout << \"Acceptées: \" << aceptados.size() << \"\\n\";\n    std::cout << \"Rejetées: \" << rechazadas << \"\\n\";\n    std::cout << \"Somme: \" << suma << \"\\nHistorique:\";\n    for (int valor : aceptados) {\n        std::cout << \" \" << valor;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Valeur: 6\nErreur: Division par zéro\nValeur: 8\nAcceptées: 2\nRejetées: 1\nSomme: 14\nHistorique: 6 8"
+          ],
+          "explanation": "La première opération calcule 3*2. La deuxième n'exécute pas %. La dernière calcule d'abord 5*2 entre parenthèses, puis le reste. L'opération rejetée n'entre pas dans l'historique.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__resto_y_asociacion_en_el_interprete__e05"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ajoute un cas avec un diviseur négatif et un autre avec un opérande calculé hors de la plage autorisée. Justifie quel niveau détecte chaque problème et quelle frontière permet la continuation. L'extension modifie le langage décrit ; elle ne convertit pas les nombres décimaux en entiers et n'ajoute pas l'affectation composée %=."
+        },
+        {
+          "type": "note",
+          "text": "Le reste dans l'interpréteur est étudié dans le texte d'appui (Stroustrup, 2024, section 6.5). Le modèle conserve les entiers et des limites explicites ; ses exemples et activités sont originaux."
+        }
+      ]
+    }
+  ]
+}
