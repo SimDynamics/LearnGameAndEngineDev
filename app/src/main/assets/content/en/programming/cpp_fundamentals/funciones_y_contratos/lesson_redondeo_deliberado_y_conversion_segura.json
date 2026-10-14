@@ -1,0 +1,336 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura",
+  "title": "Deliberate Rounding and Safe Conversion",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choosing a nearby integer deliberately changes the value"
+        },
+        {
+          "type": "paragraph",
+          "text": "Truncating, requiring an exact conversion, and rounding serve different purposes. A cast from double to int discards the fractional part toward zero when the truncated value fits. The checked conversion in the previous lesson rejects fractions to preserve the numeric value. Now we will allow the value to change: we will choose the numerically nearest integer. Displaying fewer digits as text is another operation; it does not assign that integer to a variable."
+        },
+        {
+          "type": "paragraph",
+          "text": "To understand nearest, compare the distances to the neighboring integers. Six and one quarter is one quarter away from six and three quarters away from seven: we choose six. Negative six and three quarters is one quarter away from negative seven and three quarters away from negative six: we choose negative seven. Nearest does not always mean smaller, larger, or closer to zero."
+        },
+        {
+          "type": "paragraph",
+          "text": "At the halfway point, two integers are equally distant. Our contract resolves that tie away from zero: three and one half becomes four, and negative three and one half becomes negative four. This is an explicit chosen rule; another requirement might choose differently. A value that is already an integer retains its numeric value."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__regla_de_empate_negativo",
+          "question": "A marker must represent the nearest integer to -7.5, with halfway ties rounded away from zero. Which marker follows that rule?",
+          "options": [
+            "-7, because discarding the fraction always resolves the tie.",
+            "-8, because both candidates are equally close and we choose the one farther from zero.",
+            "-7, because the greater integer is always the nearest."
+          ],
+          "correctIndex": 1,
+          "explanation": "Negative seven and negative eight are each half a unit away. The tie rule selects negative eight, which is farther from zero."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__decidir_que_operacion_necesita_el_encargo",
+          "question": "An order requires a whole number of pieces with no fractional part; a prepared position may be assigned a nearby integer marker. Which decision respects both tasks?",
+          "options": [
+            "Round both, because any integer candidate solves the issue.",
+            "Truncate both pieces and position, because the cast returns an int.",
+            "Check for an exact conversion for pieces and deliberately round the position."
+          ],
+          "correctIndex": 2,
+          "explanation": "An integer result alone does not satisfy the pieces requirement: 4.25 must be rejected there. For a nearby marker, changing 4.25 to four is precisely what the task allows."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "std::round returns an integral-valued double"
+        },
+        {
+          "type": "paragraph",
+          "text": "The <cmath> header declares std::round. Given a double, it returns a double with an integral value: the nearest integer, with halfway ties away from zero. Integral describes the value; it does not change the result type to int. We can store it in a double candidate and convert afterward once safety has been established."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double origen{6.25};\n    const double redondeado = std::round(origen);\n    std::cout << \"Source: \" << origen\n              << \"\\nRounded: \" << redondeado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Guided comparison: this program displays 6.25 and 6 on separate lines. origen still equals six and one quarter. redondeado has value six and type double; seeing 6 in cout does not prove its type is int. We have not yet built a function that validates any argument or writes to a destination."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__truncar_frente_a_redondear_un_negativo",
+          "question": "Predict both lines for this new input. These known values are finite and small, so both casts to int are safe.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double origen{-2.75};\n    const int truncado = static_cast<int>(origen);\n    const double candidato = std::round(origen);\n    const int cercano = static_cast<int>(candidato);\n    std::cout << \"Truncated: \" << truncado\n              << \"\\nNearest: \" << cercano;\n    return 0;\n}\n",
+          "answers": [
+            "Truncated: -2\nNearest: -3"
+          ],
+          "explanation": "The cast discards the fraction toward zero and produces negative two. Negative three is closer to negative two and three quarters; round returns that integral value before the second cast."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__limite_sobre_el_origen",
+          "question": "The contract allows origen in -100..100. The value 100.25 would round to 100. What should happen?",
+          "options": [
+            "Reject the original input even though the potential marker would be one hundred.",
+            "Accept it because the resulting integer is within the interval.",
+            "Assign one hundred and return false to report the difference."
+          ],
+          "correctIndex": 0,
+          "explanation": "The interval restricts the original argument. A rejection must preserve the destination; checking the marker only after publishing it is not enough."
+        },
+        {
+          "type": "note",
+          "text": "Recall std::isfinite and validation before casting. For a finite input in -100..100, std::round also stays between those integers, which all fit in int. This argument uses the problem's small domain; it does not promise conversion of every finite double or the full int range. Zeros represent the same numeric marker zero, without preserving their sign or spelling."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a function that publishes only an accepted marker"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build bool redondear_entero(double origen, int& destino). Accept only finite input in -100..100, including both endpoints. Within that domain, return true and assign the nearest integer, with ties away from zero. Outside it, return false without changing destino. Do not print. origen is passed by value; destino allows updating the caller's object."
+        },
+        {
+          "type": "paragraph",
+          "text": "Plan validation before calculating the candidate and converting it to int. Once the input is accepted, std::round produces a small integral-valued double that fits in int. A fractional input is allowed now: do not add the round-trip equality check from the exact-conversion contract. We are not claiming lossless conversion, because changing the quantity can be the whole purpose."
+        },
+        {
+          "type": "paragraph",
+          "text": "In main, start with destino=37 and origen=1.75. Keeping the destination between calls, test -1.25, 2.5, -2.5, -100.0, -100.25, and 0.0 in that order. Display each bool and destination as B:D on its own line. First trace the original input, the decision, and the resulting destination; distinguish preserving an old destination from assigning the marker zero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Also test 0.5, -0.5, 99.5, -99.5, 100.0, and 100.25. Examine both sides of zero and both boundaries. Repeat the rejected cases with a different starting destination, such as -8, to verify that its previous value is retained. The original argument does not change: compare it with an earlier copy. Do not cast an out-of-range input just to inspect the result."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Define redondear_entero before main, or declare its signature and define it afterward.\nint main() {\n    // Build the calls and trace their results using the contract.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "The editor supplies no guards, signature, or body. Build and test before opening the reference. Equivalent implementations are accepted if they validate the original argument, keep every cast safe, follow the nearest-value and tie rules, and preserve the destination on rejection."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later reference: domain, candidate, and assignment"
+        },
+        {
+          "type": "note",
+          "text": "This implementation uses different data from the initial exercise. Compare it with your contract, then return to your own tests; do not substitute its output for the trace you prepared."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    int destino{28};\n    double origen{2.25};\n    bool aceptado = redondear_entero(origen, destino);\n    std::cout << \"Positive nearest: \" << aceptado << \";Destination: \" << destino << '\\n';\n    origen = -2.75;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Negative nearest: \" << aceptado << \";Destination: \" << destino << '\\n';\n    origen = 4.5;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Positive halfway: \" << aceptado << \";Destination: \" << destino << '\\n';\n    origen = -4.5;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Negative halfway: \" << aceptado << \";Destination: \" << destino << '\\n';\n    origen = 100.0;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Boundary: \" << aceptado << \";Destination: \" << destino << '\\n';\n    origen = 100.25;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Outside: \" << aceptado << \";Destination: \" << destino << '\\n';\n    origen = 0.0;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Zero: \" << aceptado << \";Destination: \" << destino << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference produces destinations 2, -3, 5, -5, 100, 100, and 0. Only Outside returns 0; the other bools are 1. The initial exercise with 1.75, -1.25, 2.5, -2.5, -100.0, -100.25, and 0.0 should output 1:2, 1:-1, 1:3, 1:-3, 1:-100, 0:-100, and 1:0, one per line."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: check finiteness and the original input's interval before casting; accept valid fractions; apply the correct rule to negatives and halfway cases; keep destino unchanged for each false; accept zero and replace the destination with zero. Both 99.5 and -99.5 yield 100 and -100; the endpoints themselves are also accepted. Rounding does not modify the caller's double or promise to preserve the input's type, representation, or spelling."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__interpretar_el_bool_sin_perder_cero",
+          "question": "After a call, destino is zero. What distinguishes an accepted zero marker from rejection that preserved an earlier zero?",
+          "options": [
+            "The value zero alone proves that rejection occurred.",
+            "The returned bool together with the contract protecting the destination.",
+            "Displaying more digits of the original argument."
+          ],
+          "correctIndex": 1,
+          "explanation": "The status result and the value have different roles. An input of 0.25 is accepted and writes zero; an out-of-range argument may be rejected while leaving a previous zero unchanged."
+        },
+        {
+          "type": "note",
+          "text": "Other candidate names or early returns are acceptable. The deliberate-rounding contract requires the nearest integer; there is no tolerance permitting a different marker. Tests judge the double value received by the function; they do not reconstruct a decimal spelling or an earlier operation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall different contracts before using their results"
+        },
+        {
+          "type": "paragraph",
+          "text": "An order of pieces requires an exact integral quantity; a prepared position may be assigned a nearby marker. Use convertir_entero for the first decision and redondear_entero for the second. If either operation rejects, the program must not treat the retained destination as a new result. The task determines the contract before we interpret the bool."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__dos_contratos_mismos_argumentos",
+          "question": "Predict all three lines. The left side publishes only an exact quantity; the right side allows a nearby marker.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const int candidato = static_cast<int>(origen);\n    if (static_cast<double>(candidato) != origen) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    int piezas{9};\n    int marca{9};\n    bool exacto = convertir_entero(4.75, piezas);\n    bool cercano = redondear_entero(4.75, marca);\n    std::cout << \"Fraction: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca << '\\n';\n    exacto = convertir_entero(0.0, piezas);\n    cercano = redondear_entero(0.0, marca);\n    std::cout << \"Zero: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca << '\\n';\n    exacto = convertir_entero(-100.25, piezas);\n    cercano = redondear_entero(-100.25, marca);\n    std::cout << \"Outside: \" << exacto << ':' << piezas << '|' << cercano << ':' << marca;\n    return 0;\n}\n",
+          "answers": [
+            "Fraction: 0:9|1:5\nZero: 1:0|1:0\nOutside: 0:0|0:0"
+          ],
+          "explanation": "The fraction is rejected for pieces and rounded to five for the marker. Both accept zero. Both reject negative one hundred and one quarter before casting and preserve their previous zero destinations."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__la_receta_positiva_no_resuelve_negativos",
+          "question": "Predict this defined comparison. The cast in the shortcut uses a known small value, so there is no range risk here.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const double origen{-1.75};\n    const int receta = static_cast<int>(origen + 0.5);\n    int marca{6};\n    const bool aceptado = redondear_entero(origen, marca);\n    std::cout << \"Shortcut: \" << receta << \"\\nContract: \" << aceptado << ':' << marca;\n    return 0;\n}\n",
+          "answers": [
+            "Shortcut: -1\nContract: 1:-2"
+          ],
+          "explanation": "Adding half a unit and truncating gives negative one here. Negative two is closer to negative one and three quarters. That shortcut does not implement our rule for negative values."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__fraccion_legitima_o_dato_invalido",
+          "question": "An order requires exactly 2.5 pieces, and the system accepts only whole pieces without changing the quantity. What preserves that requirement?",
+          "options": [
+            "Round to three and accept because the result has type int.",
+            "Truncate to two and accept because the fraction was discarded.",
+            "Reject the quantity using the exact-conversion contract."
+          ],
+          "correctIndex": 2,
+          "explanation": "The requirement forbids changing the number of pieces. Rounding is valid for a different contract, not an automatic repair for an incompatible input."
+        },
+        {
+          "type": "note",
+          "text": "Keep input-domain validation separate from the policy for fractional values. Neither contract can be replaced by changing cout's precision: that presentation produces characters, not a new int marker."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Apply rounding to unique markers without losing observations"
+        },
+        {
+          "type": "paragraph",
+          "text": "The prepared input is a vector of up to eight finite double values, each in -102..102. Preserve every element and its original order. Reuse the redondear_entero contract: some input values will be outside -100..100 and must be rejected. Process observations in their original order, without sorting or truncating the collection."
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a vector of unique int markers in order of first appearance after rounding. An accepted marker not yet present is appended. An accepted marker already present counts as a collision and is not appended again. Each repeated occurrence is counted separately; even two different double values may collide. A rejection increments rejected and produces no marker: it does not participate in searching or count as a collision. Zero is a valid marker."
+        },
+        {
+          "type": "paragraph",
+          "text": "Start with {0.25,0.4,-0.25,2.5,2.75,-2.5,100.25,2.5}. For each observation, trace the bool, the marker only when accepted, whether it has appeared before, and the new counters. Display Markers: followed by each marker preceded by a space; then Collisions: C, Rejected: R, and Data preserved: B, each on its own line. B compares the entire vector against an earlier copy. If there are no markers, the first line contains just Markers:. Never use zero or an old destination value as a rejection signal. The library supports comparing vectors with ==: they are equal when they have the same size and equal elements at each position, which is why order and repetitions matter. For these finite doubles, we compare their numeric values exactly against their copies, without tolerance or promises about their representation. You may also compare sizes and positions using a familiar traversal."
+        },
+        {
+          "type": "paragraph",
+          "text": "Also predict results for {}, {0.0}, {101.0,-101.0}, {0.25,-0.25}, {3.0,3.0,3.0}, and {-100.0,100.0,99.5,-99.5}. Distinguish an exact repeated observation from different observations that round to the same marker. A linear search of the markers collected so far is sufficient for this small domain. You may organize the classification in main or functions using interfaces already taught; the editor does not supply the algorithm."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Define or rebuild your own redondear_entero before main.\nint main() {\n    // Build the observations, classification, and contract tests.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Build from this editor before consulting the reference. Printing a fixed summary is not sufficient: verify the complete original vector, order of first appearances, and each counter. Classification may accept fractional inputs; the exact conversion for pieces is not an equivalent substitute."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later reference: observe, accept, and find a marker"
+        },
+        {
+          "type": "note",
+          "text": "The program uses different inputs: it includes an integer that collides with an earlier marker and an accepted zero. Compare its organization with yours after attempting the exercise, and retain your original test cases too."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{1.25, 1.75, 2.0, -1.75, 101.0, 0.0, -0.4, 1.25};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Markers:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nCollisions: \" << colisiones\n              << \"\\nRejected: \" << rechazados\n              << \"\\nData preserved: \" << (datos == original) << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference displays Markers: 1 2 -2 0, Collisions: 3, Rejected: 1, and Data preserved: 1, each on its own line. Both 1.75 and 2.0 produce marker two; both 0.0 and -0.4 produce zero; repeating 1.25 creates another collision. The value 101 produces no marker even though the local variable has an initial value."
+        },
+        {
+          "type": "paragraph",
+          "text": "The initial exercise produces Markers: 0 3 -3, Collisions: 4, Rejected: 1, and Data preserved: 1. Criteria: one marker per distinct accepted integer value, first-appearance order, and one collision for every accepted duplicate. Do not sort the markers or infer collisions solely by comparing original double values. On rejection, the function preserves its destination, but that destination must not be consumed as a new marker."
+        },
+        {
+          "type": "paragraph",
+          "text": "For each collection, the observation count must equal unique-marker count + collisions + rejections. This additionally checks that every observation belongs to exactly one outcome; it does not replace checking which markers remain or their order. Original data must preserve size and order, and no counter can exceed eight."
+        },
+        {
+          "type": "note",
+          "text": "Other searches or decompositions are acceptable if they satisfy those criteria with the prerequisites already taught. A true result with marker zero is a complete acceptance; false does not authorize reading the preserved destination to classify the observation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall halfway cases, order, and rejection with new inputs"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__mitades_y_orden_de_primera_aparicion",
+          "question": "Predict all four lines for this new collection. Consider positive and negative halfway values, and preserve first-appearance order rather than numeric order.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{1.5, 2.4, 2.5, -1.5, -2.4, -2.5, 100.1, 0.0};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Markers:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nCollisions: \" << colisiones\n              << \"\\nRejected: \" << rechazados\n              << \"\\nData preserved: \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Markers: 2 3 -2 -3 0\nCollisions: 2\nRejected: 1\nData preserved: 1"
+          ],
+          "explanation": "Halfway values yield two, three, negative two, and negative three, according to their sign. 2.4 repeats marker two, and -2.4 repeats marker negative two. The input 100.1 is rejected before rounding; zero is appended last as its first accepted appearance."
+        },
+        {
+          "type": "paragraph",
+          "text": "Check the prepared cases before the reference. An empty collection has no markers, collisions, or rejections. {0.0} has marker zero and both counters are zero. {101.0,-101.0} has no markers and two rejections. {0.25,-0.25} gives marker zero and one collision. Three occurrences of 3.0 produce marker three and two collisions. {-100.0,100.0,99.5,-99.5} keeps markers -100 and 100 in that order, with two collisions and no rejections."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__que_regla_cambia_el_informe",
+          "question": "A different report requires accepting only observations that are already exact integers; it keeps the -100..100 domain and unique markers. Which change follows this new decision?",
+          "options": [
+            "Replace rounding with checked exact conversion and keep classifying accepted values.",
+            "Keep round, because the output vector already contains only ints.",
+            "Sort the doubles before rounding to remove fractional parts."
+          ],
+          "correctIndex": 0,
+          "explanation": "The acceptance policy changes: a fraction no longer produces a marker. Finding already accepted markers and counting their repetitions has the same meaning. Sorting does not make a value integral, and it would change the required order."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__cero_aceptado_no_es_rechazo",
+          "question": "Predict this new traversal. The prepared values are finite and within the collection's input domain.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{-0.25, 0.25, -0.5, -100.25, 100.25};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Markers:\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nCollisions: \" << colisiones\n              << \"\\nRejected: \" << rechazados\n              << \"\\nData preserved: \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Markers: 0 -1\nCollisions: 1\nRejected: 2\nData preserved: 1"
+          ],
+          "explanation": "The first two fractions share marker zero, so the second produces one collision. Negative one half rounds to negative one. Both arguments just outside the interval are rejected without consuming local destinations or creating collisions."
+        },
+        {
+          "type": "note",
+          "text": "The supporting reading distinguishes checked conversion from deliberate rounding (Stroustrup, 2024, section 7.4.7, p. 200). round_to belongs to PPP support; here we use std::round with the -100..100 domain and preserve the destination on rejection. N3096 specifies the nearest integer with halfway ties away from zero (ISO/IEC JTC 1/SC 22/WG 14, 2023, section 7.12.9.6); N4950 and the HTML draft identify the C++ <cmath> interface (Köppe et al., 2023, sections [c.math] and [cmath.syn]; Working draft: Programming languages — C++, n.d., section [cmath.syn]). The explanations, contracts, and exercises in this learning path are original."
+        }
+      ]
+    }
+  ]
+}

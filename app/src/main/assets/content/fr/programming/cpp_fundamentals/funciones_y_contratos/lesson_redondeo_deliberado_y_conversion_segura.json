@@ -1,0 +1,336 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura",
+  "title": "Arrondi volontaire et conversion sûre",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir l'entier le plus proche modifie volontairement la valeur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tronquer, exiger une conversion exacte et arrondir répondent à des besoins différents. Un cast de double vers int supprime la partie fractionnaire vers zéro lorsque le résultat tronqué est représentable. La conversion contrôlée de la leçon précédente rejette les fractions pour préserver la valeur numérique. Maintenant, nous accepterons de la changer : nous choisirons l'entier numériquement le plus proche. Afficher moins de chiffres dans un texte est une autre opération ; cela n'affecte pas cet entier à une variable."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour comprendre la proximité, compare les distances aux entiers voisins. Six et un quart se situe à un quart de six et à trois quarts de sept : nous choisissons six. Moins six et trois quarts se trouve à un quart de moins sept et à trois quarts de moins six : nous choisissons moins sept. Le plus proche ne signifie pas toujours le plus petit, le plus grand, ni celui le plus proche de zéro."
+        },
+        {
+          "type": "paragraph",
+          "text": "À mi-chemin, deux entiers sont à la même distance. Notre contrat résout cette égalité en s'éloignant de zéro : trois et demi devient quatre, et moins trois et demi devient moins quatre. C'est une règle choisie et explicite ; un autre besoin pourrait en choisir une différente. Une valeur déjà entière conserve sa valeur numérique."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__regla_de_empate_negativo",
+          "question": "Un repère doit représenter l'entier le plus proche de -7.5, avec une égalité départagée en s'éloignant de zéro. Quel repère respecte cette règle ?",
+          "options": [
+            "-7, car éliminer la fraction décide toujours l'égalité.",
+            "-8, car les deux candidats sont à la même distance et on choisit le plus éloigné de zéro.",
+            "-7, car l'entier le plus grand est toujours le plus proche."
+          ],
+          "correctIndex": 1,
+          "explanation": "Moins sept et moins huit se trouvent chacun à un demi de la donnée. La règle de départage choisit moins huit, plus éloigné de zéro."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__decidir_que_operacion_necesita_el_encargo",
+          "question": "Une commande de pièces n'est valide que sans partie fractionnaire ; une position préparée peut recevoir un repère entier proche. Quelle décision respecte les deux tâches ?",
+          "options": [
+            "Arrondir les deux, car tout entier obtenu résout le problème.",
+            "Tronquer les pièces et la position, car le cast renvoie un int.",
+            "Vérifier une conversion exacte pour les pièces et arrondir volontairement la position."
+          ],
+          "correctIndex": 2,
+          "explanation": "Un résultat int ne suffit pas à respecter la quantité de pièces : il faut y rejeter 4.25. Pour un repère proche, remplacer 4.25 par quatre est précisément ce que la tâche autorise."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "std::round renvoie un double de valeur entière"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'en-tête <cmath> déclare std::round. Avec un double, il renvoie un double de valeur entière : l'entier le plus proche, avec les égalités départagées en s'éloignant de zéro. La valeur est entière, mais le type du résultat ne devient pas int. Nous pouvons la conserver dans un candidat double avant de la convertir, après avoir justifié la sécurité de cette conversion."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double origen{6.25};\n    const double redondeado = std::round(origen);\n    std::cout << \"Origine : \" << origen\n              << \"\\nArrondi : \" << redondeado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comparaison guidée : le programme affiche 6.25 et 6 sur deux lignes. origen vaut toujours six et un quart. redondeado vaut six et reste de type double ; voir 6 dans cout ne prouve pas que son type soit int. Nous n'avons pas encore construit de fonction qui valide n'importe quel argument ou qui écrit dans une destination."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__truncar_frente_a_redondear_un_negativo",
+          "question": "Prévois les deux lignes avec cette nouvelle donnée. Ces valeurs connues sont finies et petites ; les deux casts en int sont sûrs.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double origen{-2.75};\n    const int truncado = static_cast<int>(origen);\n    const double candidato = std::round(origen);\n    const int cercano = static_cast<int>(candidato);\n    std::cout << \"Tronqué : \" << truncado\n              << \"\\nProche : \" << cercano;\n    return 0;\n}\n",
+          "answers": [
+            "Tronqué : -2\nProche : -3"
+          ],
+          "explanation": "Le cast élimine la fraction vers zéro et produit moins deux. Moins trois est plus proche de moins deux et trois quarts ; round fournit cette valeur entière avant le deuxième cast."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__limite_sobre_el_origen",
+          "question": "Le contrat autorise origen de -100 à 100. La valeur 100.25 serait arrondie à 100. Quelle décision convient ?",
+          "options": [
+            "Rejeter la donnée d'origine, même si son repère possible serait cent.",
+            "L'accepter, puisque l'entier obtenu respecte l'intervalle.",
+            "Affecter cent et renvoyer false pour signaler la différence."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'intervalle porte sur l'argument initial. Un rejet doit préserver la destination ; il ne suffit pas de vérifier le repère après l'avoir enregistré."
+        },
+        {
+          "type": "note",
+          "text": "Retrouve std::isfinite et la validation avant le cast. Pour une origine finie entre -100 et 100, std::round reste également entre ces entiers, tous représentables en int. Cette justification dépend du petit domaine du problème ; elle ne garantit pas la conversion de tout double fini ni de tout le domaine de int. Les zéros correspondent à la même valeur numérique, sans conservation de leur signe ni de leur écriture."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une fonction qui publie seulement un repère accepté"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis bool redondear_entero(double origen, int& destino). Accepte seulement une origine finie entre -100 et 100, bornes comprises. Dans ce domaine, renvoie true et affecte l'entier le plus proche, en départageant les égalités loin de zéro. Hors du domaine, renvoie false sans modifier destino. N'affiche rien. origen est transmis par valeur ; destino permet de modifier l'objet de l'appelant."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prévois la validation avant le calcul du candidat et sa conversion en int. Après acceptation, std::round donne un double de valeur entière petite et représentable en int. Une fraction est désormais autorisée : n'ajoute pas la comparaison d'aller-retour du contrat exact. Nous ne prétendons pas effectuer une conversion sans perte, car changer la quantité peut être justement l'objectif."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, commence avec destino=37 et origen=1.75. Conserve la destination entre les appels, puis essaie -1.25, 2.5, -2.5, -100.0, -100.25 et 0.0, dans cet ordre. Affiche le bool et la destination sous la forme B:D, une ligne par appel. Établis d'abord la trace de l'origine, de la décision et de la destination finale ; distingue la conservation d'une ancienne destination de l'affectation du repère zéro."
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste aussi 0.5, -0.5, 99.5, -99.5, 100.0 et 100.25. Observe les deux côtés de zéro et les deux bornes. Recommence les rejets avec une autre destination initiale, par exemple -8, pour vérifier que la valeur précédente est conservée. L'argument initial ne change pas : compare-le avec une copie antérieure. N'effectue pas de cast hors du domaine pour en étudier la sortie."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Définis redondear_entero avant main, ou déclare sa signature puis définis-la après.\nint main() {\n    // Construis les appels et leurs traces à partir du contrat.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "L'éditeur ne fournit ni protections, ni signature, ni corps. Construis et vérifie avant d'ouvrir la référence. Les implémentations équivalentes sont acceptées si elles valident l'argument initial, garantissent la sécurité de chaque cast, respectent la proximité et le départage, et conservent la destination en cas de rejet."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : domaine, candidat et affectation"
+        },
+        {
+          "type": "note",
+          "text": "Cette implémentation utilise des données différentes du premier essai. Compare-la à ton contrat, puis reviens à tes propres tests ; ne remplace pas ta trace initiale par ces sorties."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    int destino{28};\n    double origen{2.25};\n    bool aceptado = redondear_entero(origen, destino);\n    std::cout << \"Proche positif : \" << aceptado << \";Destination : \" << destino << '\\n';\n    origen = -2.75;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Proche négatif : \" << aceptado << \";Destination : \" << destino << '\\n';\n    origen = 4.5;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Moitié positive : \" << aceptado << \";Destination : \" << destino << '\\n';\n    origen = -4.5;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Moitié négative : \" << aceptado << \";Destination : \" << destino << '\\n';\n    origen = 100.0;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Limite : \" << aceptado << \";Destination : \" << destino << '\\n';\n    origen = 100.25;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Hors domaine : \" << aceptado << \";Destination : \" << destino << '\\n';\n    origen = 0.0;\n    aceptado = redondear_entero(origen, destino);\n    std::cout << \"Zéro : \" << aceptado << \";Destination : \" << destino << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence donne les destinations 2, -3, 5, -5, 100, 100 et 0. Seul Hors domaine renvoie 0 ; tous les autres bool valent 1. Le premier essai avec 1.75, -1.25, 2.5, -2.5, -100.0, -100.25 et 0.0 doit produire 1:2, 1:-1, 1:3, 1:-3, 1:-100, 0:-100 et 1:0, une ligne par résultat."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : vérifier la finitude et l'intervalle de l'origine avant tout cast ; accepter les fractions valides ; appliquer correctement la règle aux négatifs et aux valeurs à mi-chemin ; conserver destino pour chaque false ; accepter zéro et y remplacer la destination par zéro. 99.5 et -99.5 donnent 100 et -100 ; les bornes elles-mêmes sont acceptées. L'arrondi ne modifie pas le double de l'appelant et ne promet pas de conserver le type, la représentation ou l'écriture de l'origine."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__interpretar_el_bool_sin_perder_cero",
+          "question": "Après un appel, destino vaut zéro. Comment distinguer un repère zéro accepté d'un rejet qui a conservé un zéro antérieur ?",
+          "options": [
+            "La valeur zéro suffit pour affirmer un rejet.",
+            "Le bool renvoyé, associé au contrat qui protège la destination.",
+            "L'affichage d'un plus grand nombre de chiffres de l'argument d'origine."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le statut et la valeur ont des rôles différents. Une valeur 0.25 est acceptée et enregistre zéro ; un argument hors limites peut être rejeté en conservant un zéro antérieur."
+        },
+        {
+          "type": "note",
+          "text": "D'autres noms de candidats ou des retours anticipés conviennent. Le contrat d'arrondi volontaire exige l'entier le plus proche ; aucune tolérance n'autorise un repère différent. Les tests jugent la valeur double reçue par la fonction, sans reconstituer une écriture décimale ou une opération antérieure."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver les contrats différents avant d'utiliser leurs résultats"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une commande de pièces exige une quantité entière exacte ; une position préparée peut recevoir un repère proche. Utilise convertir_entero pour le premier choix et redondear_entero pour le deuxième. Si une opération rejette, le programme ne doit pas traiter la destination conservée comme un nouveau résultat. La tâche détermine le contrat avant l'interprétation du bool."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__dos_contratos_mismos_argumentos",
+          "question": "Prévois les trois lignes. À gauche, seule une quantité exacte est enregistrée ; à droite, le repère proche est autorisé.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const int candidato = static_cast<int>(origen);\n    if (static_cast<double>(candidato) != origen) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    int piezas{9};\n    int marca{9};\n    bool exacto = convertir_entero(4.75, piezas);\n    bool cercano = redondear_entero(4.75, marca);\n    std::cout << \"Fraction : \" << exacto << ':' << piezas << '|' << cercano << ':' << marca << '\\n';\n    exacto = convertir_entero(0.0, piezas);\n    cercano = redondear_entero(0.0, marca);\n    std::cout << \"Zéro : \" << exacto << ':' << piezas << '|' << cercano << ':' << marca << '\\n';\n    exacto = convertir_entero(-100.25, piezas);\n    cercano = redondear_entero(-100.25, marca);\n    std::cout << \"Hors domaine : \" << exacto << ':' << piezas << '|' << cercano << ':' << marca;\n    return 0;\n}\n",
+          "answers": [
+            "Fraction : 0:9|1:5\nZéro : 1:0|1:0\nHors domaine : 0:0|0:0"
+          ],
+          "explanation": "La fraction est rejetée pour les pièces et arrondie à cinq pour le repère. Les deux acceptent zéro. Les deux rejettent moins cent et un quart avant le cast et conservent leurs destinations nulles antérieures."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__la_receta_positiva_no_resuelve_negativos",
+          "question": "Prévois cette comparaison au comportement défini. Le cast de la recette utilise une petite valeur connue : aucun risque de dépassement ici.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const double origen{-1.75};\n    const int receta = static_cast<int>(origen + 0.5);\n    int marca{6};\n    const bool aceptado = redondear_entero(origen, marca);\n    std::cout << \"Recette : \" << receta << \"\\nContrat : \" << aceptado << ':' << marca;\n    return 0;\n}\n",
+          "answers": [
+            "Recette : -1\nContrat : 1:-2"
+          ],
+          "explanation": "Ajouter une demi-unité puis tronquer donne moins un dans ce cas. Moins deux est plus proche de moins un et trois quarts. Cette recette ne respecte pas notre contrat pour les valeurs négatives."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__fraccion_legitima_o_dato_invalido",
+          "question": "Une commande exige exactement 2.5 pièces et le système n'accepte que des pièces entières sans changer la quantité. Quelle décision respecte cette exigence ?",
+          "options": [
+            "Arrondir à trois et accepter parce que le résultat est de type int.",
+            "Tronquer à deux et accepter parce que la fraction a disparu.",
+            "Rejeter la quantité au moyen de la conversion exacte."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'exigence interdit de modifier le nombre de pièces. L'arrondi convient à un autre contrat, ce n'est pas une correction automatique d'une donnée incompatible."
+        },
+        {
+          "type": "note",
+          "text": "Sépare la validation du domaine et la politique concernant les fractions. Aucun de ces contrats ne peut être remplacé par la précision d'affichage de cout : elle produit des caractères, pas un nouveau repère int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer l'arrondi à des repères uniques sans perdre d'observations"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'entrée préparée est un vecteur contenant au plus huit double finis, chacun entre -102 et 102. Préserve tous ses éléments et leur ordre. Réutilise le contrat redondear_entero : certaines données dépassent -100..100 et doivent être rejetées. Traite les observations dans leur ordre initial, sans trier ni tronquer la collection."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un vecteur de repères int uniques dans l'ordre de première apparition après l'arrondi. Un repère accepté qui n'existe pas encore est ajouté. Un repère accepté déjà présent compte une collision et n'est pas ajouté de nouveau. Chaque répétition compte séparément ; deux double différents peuvent aussi aboutir au même repère. Un rejet augmente le nombre de rejets et ne produit aucun repère : il ne participe ni à la recherche ni aux collisions. Zéro est un repère valable."
+        },
+        {
+          "type": "paragraph",
+          "text": "Commence avec {0.25,0.4,-0.25,2.5,2.75,-2.5,100.25,2.5}. Pour chaque observation, établis une trace : bool, repère uniquement en cas d'acceptation, présence antérieure et compteurs actualisés. Affiche Repères : suivi de chaque repère précédé d'un espace ; puis Collisions : C, Rejetés : R et Données conservées : B, chacun sur sa propre ligne. B compare le vecteur entier à une copie initiale. Sans repères, la première ligne affiche seulement Repères :. N'utilise jamais zéro ou l'ancienne destination pour signaler un rejet. La bibliothèque permet de comparer des vecteurs avec == : ils sont égaux si leurs tailles et les éléments de chaque position sont égaux, d'où l'importance de l'ordre et des répétitions. Pour ces double finis, on compare numériquement les valeurs à leur copie, sans tolérance ni promesse sur leur représentation. Tu peux aussi comparer les tailles et les positions avec un parcours connu."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prévois aussi les résultats de {}, {0.0}, {101.0,-101.0}, {0.25,-0.25}, {3.0,3.0,3.0} et {-100.0,100.0,99.5,-99.5}. Distingue une observation répétée d'une collision entre des observations différentes. Une recherche linéaire dans les repères déjà collectés suffit pour ce petit domaine. Tu peux organiser la classification dans main ou dans des fonctions aux interfaces déjà étudiées ; l'éditeur ne fournit pas l'algorithme."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Définis ou reconstruis ta propre redondear_entero avant main.\nint main() {\n    // Construis les observations, leur classification et les tests du contrat.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Construis depuis cet éditeur avant de consulter la référence. Afficher un résumé fixe ne suffit pas : vérifie le vecteur initial entier, l'ordre de première apparition et chaque compteur. Cette classification peut accepter des fractions ; la conversion exacte des pièces n'est donc pas un substitut équivalent."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : observer, accepter et chercher un repère"
+        },
+        {
+          "type": "note",
+          "text": "Le programme utilise d'autres données : il comprend un entier qui entre en collision avec un repère précédent et un zéro accepté. Compare son organisation à la tienne après ton essai et conserve aussi tes cas initiaux."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{1.25, 1.75, 2.0, -1.75, 101.0, 0.0, -0.4, 1.25};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Repères :\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nCollisions : \" << colisiones\n              << \"\\nRejetés : \" << rechazados\n              << \"\\nDonnées conservées : \" << (datos == original) << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence affiche Repères : 1 2 -2 0, Collisions : 3, Rejetés : 1 et Données conservées : 1, chacun sur sa propre ligne. 1.75 et 2.0 partagent le repère deux ; 0.0 et -0.4 partagent zéro ; répéter 1.25 crée une autre collision. La valeur 101 ne fournit aucun repère, même si la variable locale a une valeur initiale."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le premier essai donne Repères : 0 3 -3, Collisions : 4, Rejetés : 1 et Données conservées : 1. Critères : un repère par entier distinct accepté, ordre de première apparition et une collision pour chaque acceptation répétée. Ne trie pas les repères et ne déduis pas les collisions uniquement des double d'origine. Le rejet conserve la destination de la fonction, mais il ne faut pas la réutiliser comme un nouveau repère."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour chaque collection, le nombre d'observations doit être égal au nombre de repères uniques + collisions + rejets. Cette propriété vérifie en plus que chaque observation appartient à un seul cas ; elle ne remplace pas la vérification des repères conservés et de leur ordre. Les données originales doivent garder leur taille et leur ordre, et aucun compteur ne dépasse huit."
+        },
+        {
+          "type": "note",
+          "text": "D'autres recherches ou décompositions conviennent si elles respectent ces critères avec les prérequis déjà enseignés. Recevoir true avec un repère zéro est une acceptation complète ; recevoir false n'autorise pas à examiner la destination conservée pour classer l'observation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver les moitiés, l'ordre et les rejets avec de nouvelles données"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__mitades_y_orden_de_primera_aparicion",
+          "question": "Prévois les quatre lignes pour cette nouvelle collection. Observe les demi-unités des deux signes et conserve l'ordre de première apparition, pas l'ordre numérique.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{1.5, 2.4, 2.5, -1.5, -2.4, -2.5, 100.1, 0.0};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Repères :\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nCollisions : \" << colisiones\n              << \"\\nRejetés : \" << rechazados\n              << \"\\nDonnées conservées : \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Repères : 2 3 -2 -3 0\nCollisions : 2\nRejetés : 1\nDonnées conservées : 1"
+          ],
+          "explanation": "Les moitiés donnent deux, trois, moins deux et moins trois, selon leur signe. 2.4 répète deux et -2.4 répète moins deux. La valeur 100.1 est rejetée avant l'arrondi ; zéro est ajouté à la fin lors de sa première apparition acceptée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie les cas préparés avant la référence. La collection vide ne contient ni repères, ni collisions, ni rejets. {0.0} donne le repère zéro et deux compteurs nuls. {101.0,-101.0} ne produit aucun repère et compte deux rejets. {0.25,-0.25} donne un repère zéro et une collision. Trois occurrences de 3.0 donnent un repère trois et deux collisions. {-100.0,100.0,99.5,-99.5} conserve les repères -100 et 100 dans cet ordre, avec deux collisions et aucun rejet."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__que_regla_cambia_el_informe",
+          "question": "Un autre rapport exige de n'accepter que les observations qui sont déjà exactement entières ; il conserve le domaine -100..100 et les repères uniques. Quel changement respecte cette nouvelle décision ?",
+          "options": [
+            "Remplacer l'arrondi par la conversion exacte et conserver la classification des valeurs acceptées.",
+            "Conserver round, puisque le vecteur de sortie ne contient que des int.",
+            "Trier les double avant l'arrondi pour éliminer les fractions."
+          ],
+          "correctIndex": 0,
+          "explanation": "La politique d'acceptation change : une fraction ne donne plus de repère. Rechercher les repères déjà acceptés et compter leurs répétitions garde le même sens. Le tri ne rend pas une valeur entière et modifierait l'ordre exigé."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__redondeo_deliberado_y_conversion_segura__cero_aceptado_no_es_rechazo",
+          "question": "Prévois ce nouveau parcours. Les données préparées sont finies et respectent le domaine d'entrée de la collection.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool redondear_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const double candidato = std::round(origen);\n    destino = static_cast<int>(candidato);\n    return true;\n}\n\nint main() {\n    const std::vector<double> datos{-0.25, 0.25, -0.5, -100.25, 100.25};\n    const std::vector<double> original = datos;\n    std::vector<int> marcas;\n    int colisiones{0};\n    int rechazados{0};\n    for (const double origen : datos) {\n        int marca{71};\n        if (!redondear_entero(origen, marca)) {\n            ++rechazados;\n        } else {\n            bool encontrada{false};\n            for (const int existente : marcas) {\n                if (existente == marca) {\n                    encontrada = true;\n                    break;\n                }\n            }\n            if (encontrada) {\n                ++colisiones;\n            } else {\n                marcas.push_back(marca);\n            }\n        }\n    }\n    std::cout << \"Repères :\";\n    for (const int marca : marcas) {\n        std::cout << ' ' << marca;\n    }\n    std::cout << \"\\nCollisions : \" << colisiones\n              << \"\\nRejetés : \" << rechazados\n              << \"\\nDonnées conservées : \" << (datos == original) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Repères : 0 -1\nCollisions : 1\nRejetés : 2\nDonnées conservées : 1"
+          ],
+          "explanation": "Les deux premières fractions donnent le même repère zéro : la seconde provoque une collision. Moins un demi donne moins un. Les deux arguments juste hors de l'intervalle sont rejetés sans utiliser leurs anciennes destinations locales ni créer de collisions."
+        },
+        {
+          "type": "note",
+          "text": "La lecture complémentaire distingue la conversion contrôlée de l'arrondi volontaire (Stroustrup, 2024, section 7.4.7, p. 200). round_to appartient au support PPP ; nous utilisons ici std::round avec le domaine -100..100 et la préservation de la destination en cas de rejet. N3096 définit l'entier le plus proche et le départage des moitiés loin de zéro (ISO/IEC JTC 1/SC 22/WG 14, 2023, section 7.12.9.6) ; N4950 et le projet HTML décrivent l'interface C++ de <cmath> (Köppe et al., 2023, sections [c.math] et [cmath.syn] ; Working draft: Programming languages — C++, s. d., section [cmath.syn]). Les explications, contrats et activités de cette progression sont originaux."
+        }
+      ]
+    }
+  ]
+}
