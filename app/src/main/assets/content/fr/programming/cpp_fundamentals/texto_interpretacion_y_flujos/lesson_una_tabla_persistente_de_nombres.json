@@ -1,0 +1,203 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres",
+  "title": "Une table de noms persistante",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver une association pendant la session"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un token de nom n'indique pas encore quelle est la valeur de ce nom. La table conserve les couples nom/valeur d'une opération à l'autre au cours de la même exécution. Après avoir créé solde avec la valeur cinq, consulter solde retrouve cinq ; une deuxième consultation ne crée pas une autre entrée et ne réinitialise pas la valeur. La table vit en dehors de la boucle des opérations."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'état est stocké dans un vector de Vinculo : chaque enregistrement associe une string et un int. Les noms sont uniques, sensibles à la casse, suivent le contrat de un à douze caractères et ne peuvent pas être le mot réservé crea. Chaque valeur est comprise entre -100 et 100. Dans cette petite session, la table accepte au maximum huit associations ; atteindre cette limite entraîne un rejet explicite, sans remplacer un autre nom."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La consultation d'un nom absent renvoie zéro et ajoute aussi ce nom à la table. Quel problème cela introduit-il ?",
+          "options": [
+            "La consultation reste pure puisqu'elle fournit une valeur neutre.",
+            "Cela confond l'absence avec une valeur valide et modifie l'état simplement en l'observant.",
+            "Cela diagnostique l'absence et conserve la taille précédente."
+          ],
+          "correctIndex": 1,
+          "explanation": "Zéro est une valeur légitime. Consulter doit observer l'état ; un nom absent provoque un diagnostic sans insérer d'association.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e01"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Consultation constante et modification par référence"
+        },
+        {
+          "type": "paragraph",
+          "text": "contiene indique si le nom existe. consultar renvoie sa valeur ou diagnostique l'absence. definir vérifie le nom, la valeur, les doublons et la capacité avant d'ajouter une entrée. asignar exige un nom existant et modifie son membre au moyen d'une référence. L'interface empêche un client de modifier directement la collection."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous n'utilisons pas deux vecteurs parallèles : le nom et sa valeur doivent rester associés. La consultation utilise const Vinculo& ; la modification utilise Vinculo&. Modifier une copie locale pendant le parcours laisserait la valeur stockée inchangée."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis l'état obtenu après avoir modifié des copies des enregistrements.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nstruct Vinculo { std::string nombre; int valor; };\nint main() {\n    std::vector<Vinculo> datos{{\"Nord\", 3}, {\"Sud\", 8}};\n    for (Vinculo dato : datos) {\n        if (dato.nombre == \"Sud\") dato.valor = 10;\n    }\n    std::cout << datos[1].nombre << '=' << datos[1].valor;\n    return 0;\n}\n",
+          "answers": [
+            "Sud=8"
+          ],
+          "explanation": "dato est une copie. Sa modification n'atteint pas le second élément du vecteur.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e02"
+        },
+        {
+          "type": "inline_fill_code",
+          "question": "Complète seulement l'élément de syntaxe permettant de modifier l'enregistrement existant lorsqu'on le trouve.",
+          "language": "cpp",
+          "template": "for (Vinculo[] dato : datos) {\n    if (dato.nombre == \"Est\") dato.valor = 7;\n}\n",
+          "answers": [
+            "&"
+          ],
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e03"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une petite interface avec ses invariants"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette implémentation réutilise nombre_valido et resultado_en_dominio du module de tokens. Même lorsqu'une erreur du langage est diagnostiquée, aucune branche de refus n'ajoute d'association ni ne modifie une valeur. Elle ne conserve pas de référence à un élément pendant que le vecteur grandit. La signature const std::vector<Vinculo>& entradas() const renvoie une référence au vecteur datos_, qui appartient à la table : le & du type renvoyé évite de copier cette collection. Le premier const empêche de modifier le vecteur par ce résultat ; le const final indique que cette méthode de consultation ne modifie pas les membres de la table dans ce modèle. La référence n'est pas propriétaire : la table doit rester vivante pendant son utilisation. Dans ces exercices, nous ne gardons pas la référence au-delà de la durée de vie de la table et ne modifions pas la collection pendant son inspection. const auto& vista = tabla.entradas() conserve cette relation ; const auto copia = tabla.entradas() construit une collection indépendante."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Nombre hors domaine\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Échec du flux\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nom trop long\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Échec du flux\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Échec du flux\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texte trop long\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Tampon occupé\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalide\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Échec grave du flux\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Échec du flux\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Résultat hors domaine\");\n    }\n    return candidato;\n}\n\nstruct Vinculo {\n    std::string nombre;\n    int valor;\n};\n\nclass Tabla_nombres {\npublic:\n    bool contiene(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return true;\n        }\n        return false;\n    }\n\n    int consultar(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return dato.valor;\n        }\n        throw std::runtime_error(\"Nom non défini\");\n    }\n\n    void definir(const std::string& nuevo, int valor) {\n        if (!nombre_valido(nuevo)) throw std::runtime_error(\"Nom invalide\");\n        resultado_en_dominio(valor);\n        if (contiene(nuevo)) throw std::runtime_error(\"Nom déjà défini\");\n        if (datos_.size() >= 8) throw std::runtime_error(\"Table pleine\");\n        datos_.push_back(Vinculo{nuevo, valor});\n    }\n\n    void asignar(const std::string& existente, int valor) {\n        resultado_en_dominio(valor);\n        for (Vinculo& dato : datos_) {\n            if (dato.nombre == existente) {\n                dato.valor = valor;\n                return;\n            }\n        }\n        throw std::runtime_error(\"Nom non défini\");\n    }\n\n    const std::vector<Vinculo>& entradas() const {\n        return datos_;\n    }\n\nprivate:\n    std::vector<Vinculo> datos_;\n};\n\nint main() {\n    Tabla_nombres tabla;\n    tabla.definir(\"Cour\", 6);\n    tabla.definir(\"cour\", 2);\n    tabla.asignar(\"Cour\", 9);\n    std::cout << tabla.consultar(\"Cour\") << ' ' << tabla.consultar(\"cour\");\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie distingue Cour et cour : 9 2. Ce sont deux noms différents, sans conversion en minuscules. Le mot crea est réservé uniquement en cas de correspondance exacte ; Crea reste un nom autorisé."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e07",
+          "question": "Prédis les deux valeurs : la table reste vivante et est modifiée avant l'inspection de vista et copia.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Nombre hors domaine\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Échec du flux\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nom trop long\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Échec du flux\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Échec du flux\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texte trop long\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Tampon occupé\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalide\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Échec grave du flux\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Échec du flux\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Résultat hors domaine\");\n    }\n    return candidato;\n}\n\nstruct Vinculo {\n    std::string nombre;\n    int valor;\n};\n\nclass Tabla_nombres {\npublic:\n    bool contiene(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return true;\n        }\n        return false;\n    }\n\n    int consultar(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return dato.valor;\n        }\n        throw std::runtime_error(\"Nom non défini\");\n    }\n\n    void definir(const std::string& nuevo, int valor) {\n        if (!nombre_valido(nuevo)) throw std::runtime_error(\"Nom invalide\");\n        resultado_en_dominio(valor);\n        if (contiene(nuevo)) throw std::runtime_error(\"Nom déjà défini\");\n        if (datos_.size() >= 8) throw std::runtime_error(\"Table pleine\");\n        datos_.push_back(Vinculo{nuevo, valor});\n    }\n\n    void asignar(const std::string& existente, int valor) {\n        resultado_en_dominio(valor);\n        for (Vinculo& dato : datos_) {\n            if (dato.nombre == existente) {\n                dato.valor = valor;\n                return;\n            }\n        }\n        throw std::runtime_error(\"Nom non défini\");\n    }\n\n    const std::vector<Vinculo>& entradas() const {\n        return datos_;\n    }\n\nprivate:\n    std::vector<Vinculo> datos_;\n};\n\nint main() {\n    Tabla_nombres tabla;\n    tabla.definir(\"Digue\", 3);\n    const auto& vista = tabla.entradas();\n    const auto copia = tabla.entradas();\n    tabla.asignar(\"Digue\", 8);\n    std::cout << vista[0].valor << ' ' << copia[0].valor;\n    return 0;\n}\n",
+          "answers": [
+            "8 3"
+          ],
+          "explanation": "vista désigne le vecteur de la table et observe huit ; copia conserve les enregistrements où la valeur était trois. const interdit d'écrire à travers vista, mais n'empêche pas qu'une opération autorisée de la table modifie sa valeur avant l'inspection. La table, la vue et la copie sont encore vivantes au moment de l'affichage ; la collection n'est pas modifiée pendant l'inspection."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'absence et les doublons sont observables"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis les lignes obtenues après une définition répétée et la consultation d'un nom inexistant.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Nombre hors domaine\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Échec du flux\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nom trop long\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Échec du flux\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Échec du flux\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texte trop long\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Tampon occupé\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalide\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Échec grave du flux\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Échec du flux\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Résultat hors domaine\");\n    }\n    return candidato;\n}\n\nstruct Vinculo {\n    std::string nombre;\n    int valor;\n};\n\nclass Tabla_nombres {\npublic:\n    bool contiene(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return true;\n        }\n        return false;\n    }\n\n    int consultar(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return dato.valor;\n        }\n        throw std::runtime_error(\"Nom non défini\");\n    }\n\n    void definir(const std::string& nuevo, int valor) {\n        if (!nombre_valido(nuevo)) throw std::runtime_error(\"Nom invalide\");\n        resultado_en_dominio(valor);\n        if (contiene(nuevo)) throw std::runtime_error(\"Nom déjà défini\");\n        if (datos_.size() >= 8) throw std::runtime_error(\"Table pleine\");\n        datos_.push_back(Vinculo{nuevo, valor});\n    }\n\n    void asignar(const std::string& existente, int valor) {\n        resultado_en_dominio(valor);\n        for (Vinculo& dato : datos_) {\n            if (dato.nombre == existente) {\n                dato.valor = valor;\n                return;\n            }\n        }\n        throw std::runtime_error(\"Nom non défini\");\n    }\n\n    const std::vector<Vinculo>& entradas() const {\n        return datos_;\n    }\n\nprivate:\n    std::vector<Vinculo> datos_;\n};\n\nint main() {\n    Tabla_nombres tabla;\n    tabla.definir(\"Porte\", 4);\n    try { tabla.definir(\"Porte\", 7); }\n    catch (const std::runtime_error& error) { std::cout << error.what() << \"\\n\"; }\n    try { std::cout << tabla.consultar(\"Fenetre\"); }\n    catch (const std::runtime_error& error) { std::cout << error.what() << \"\\n\"; }\n    std::cout << tabla.consultar(\"Porte\") << ' ' << tabla.entradas().size();\n    return 0;\n}\n",
+          "answers": [
+            "Nom déjà défini\nNom non défini\n4 1"
+          ],
+          "explanation": "Ni la redéfinition ni la consultation absente ne modifient la table. La valeur reste quatre et une seule association existe.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e04"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La table possède déjà huit noms. Quelle règle respecte son contrat lors de la définition d'un autre nom ?",
+          "options": [
+            "Le rejeter en conservant les huit associations précédentes.",
+            "Supprimer le premier pour réutiliser sa place.",
+            "Accepter le neuvième uniquement si sa valeur est zéro."
+          ],
+          "correctIndex": 0,
+          "explanation": "La capacité fait partie du domaine de cette table. Un rejet ne doit pas choisir silencieusement un autre nom à supprimer.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e05"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Séparer un candidat de l'état accepté"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copier Tabla_nombres copie son vecteur et ses enregistrements. Nous pouvons essayer des changements sur la copie sans les publier dans la table de la session. Si la procédure de validation accepte le candidat, nous remplaçons la table à la fin. La consultation se fait sur une table déjà définie ; elle n'invente pas de valeur provisoire pour faciliter le calcul."
+        },
+        {
+          "type": "order_code",
+          "question": "Remets les instructions dans l'ordre pour tester un candidat avant de l'accepter. Suppose que validar(candidata) renvoie bool et ne modifie pas tabla.",
+          "fragments": [
+            "if (validar(candidata)) { tabla = candidata; }",
+            "Tabla_nombres candidata = tabla;",
+            "candidata.asignar(\"Salle\", 8);"
+          ],
+          "correctOrder": [
+            1,
+            2,
+            0
+          ],
+          "explanation": "La table candidate existe avant d'être modifiée. Le remplacement est conditionné à la réussite de la validation. Un échec laisse tabla intacte.",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_tabla_persistente_de_nombres__e06"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Intégration guidée : essayer et écarter une modification"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reprends l'interface et construis un client avec l'association Zone=5. Copie la table, change Zone à huit dans la copie, puis écarte ce candidat : consulter la table originale doit toujours donner cinq. Construis une deuxième copie, change Zone à onze et accepte-la ; la table originale doit alors contenir onze. Affiche Original: 5, Candidat: 8, Écarté: 5 et Accepté: 11, une ligne par étiquette."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste l'absence, zéro, -100 et 100 ; une valeur 101 doit être rejetée sans modifier la précédente. Remplis la table de huit noms distincts et vérifie le refus du neuvième. Répète un nom et vérifie que la taille n'augmente pas non plus. Critères : associations intactes, consultation sans insertion, original modifié uniquement lors de l'acceptation et états antérieurs conservés à chaque rejet."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après la pratique"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n#include <stdexcept>\n\nconstexpr char numero = 'n';\nconstexpr char nombre = 'v';\nconstexpr char declaracion = 'd';\nconstexpr char final_texto = 'f';\n\nstruct Token {\n    char clase;\n    int valor;\n    std::string texto;\n};\n\nbool es_letra(char c) {\n    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');\n}\n\nbool es_digito(char c) {\n    return c >= '0' && c <= '9';\n}\n\nbool sigue_nombre(char c) {\n    return es_letra(c) || es_digito(c) || c == '_';\n}\n\nbool nombre_valido(const std::string& texto) {\n    if (texto.empty() || texto.size() > 12 || !es_letra(texto[0])) {\n        return false;\n    }\n    for (char c : texto) {\n        if (!sigue_nombre(c)) return false;\n    }\n    return texto != \"crea\";\n}\n\nToken palabra_token(const std::string& palabra) {\n    if (palabra == \"crea\") return Token{declaracion, 0, \"\"};\n    return Token{nombre, 0, palabra};\n}\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') continue;\n        if (es_digito(actual)) {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (es_digito(actual)) {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) throw std::runtime_error(\"Nombre hors domaine\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    return Token{numero, valor, \"\"};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Échec du flux\");\n            return Token{numero, valor, \"\"};\n        }\n        if (es_letra(actual)) {\n            std::string palabra(1, actual);\n            while (entrada.get(actual)) {\n                if (sigue_nombre(actual)) {\n                    palabra += actual;\n                    if (palabra.size() > 12) throw std::runtime_error(\"Nom trop long\");\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    return palabra_token(palabra);\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Échec du flux\");\n            return palabra_token(palabra);\n        }\n        if (actual == '+' || actual == '-' || actual == '*' || actual == '/'\n                || actual == '%' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '=') {\n            return Token{actual, 0, \"\"};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) throw std::runtime_error(\"Échec du flux\");\n    return Token{final_texto, 0, \"\"};\n}\n\nbool token_valido(const Token& token) {\n    if (token.clase == numero) {\n        return token.valor >= 0 && token.valor <= 99 && token.texto.empty();\n    }\n    if (token.clase == nombre) {\n        return token.valor == 0 && nombre_valido(token.texto);\n    }\n    const bool signo = token.clase == '+' || token.clase == '-' || token.clase == '*'\n        || token.clase == '/' || token.clase == '%' || token.clase == '('\n        || token.clase == ')' || token.clase == ';' || token.clase == '=';\n    return token.valor == 0 && token.texto.empty()\n        && (signo || token.clase == declaracion || token.clase == final_texto);\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {\n        if (texto.size() > 120) throw std::runtime_error(\"Texte trop long\");\n    }\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(const Token& token) {\n        if (lleno_) throw std::runtime_error(\"Tampon occupé\");\n        if (!token_valido(token)) throw std::runtime_error(\"Token invalide\");\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool descartar_operacion() {\n        if (entrada_.bad()) throw std::runtime_error(\"Échec grave du flux\");\n        if (lleno_) {\n            const Token pendiente = guardado_;\n            lleno_ = false;\n            if (pendiente.clase == ';') return true;\n            if (pendiente.clase == final_texto) return false;\n        }\n        entrada_.clear();\n        char c = '?';\n        while (entrada_.get(c)) {\n            if (c == ';') return true;\n        }\n        if (entrada_.bad() || !entrada_.eof()) throw std::runtime_error(\"Échec du flux\");\n        return false;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{final_texto, 0, \"\"};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Résultat hors domaine\");\n    }\n    return candidato;\n}\n\nstruct Vinculo {\n    std::string nombre;\n    int valor;\n};\n\nclass Tabla_nombres {\npublic:\n    bool contiene(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return true;\n        }\n        return false;\n    }\n\n    int consultar(const std::string& nombre_buscado) const {\n        for (const Vinculo& dato : datos_) {\n            if (dato.nombre == nombre_buscado) return dato.valor;\n        }\n        throw std::runtime_error(\"Nom non défini\");\n    }\n\n    void definir(const std::string& nuevo, int valor) {\n        if (!nombre_valido(nuevo)) throw std::runtime_error(\"Nom invalide\");\n        resultado_en_dominio(valor);\n        if (contiene(nuevo)) throw std::runtime_error(\"Nom déjà défini\");\n        if (datos_.size() >= 8) throw std::runtime_error(\"Table pleine\");\n        datos_.push_back(Vinculo{nuevo, valor});\n    }\n\n    void asignar(const std::string& existente, int valor) {\n        resultado_en_dominio(valor);\n        for (Vinculo& dato : datos_) {\n            if (dato.nombre == existente) {\n                dato.valor = valor;\n                return;\n            }\n        }\n        throw std::runtime_error(\"Nom non défini\");\n    }\n\n    const std::vector<Vinculo>& entradas() const {\n        return datos_;\n    }\n\nprivate:\n    std::vector<Vinculo> datos_;\n};\n\nint main() {\n    Tabla_nombres tabla;\n    tabla.definir(\"Troncon\", 3);\n    std::cout << \"Original: \" << tabla.consultar(\"Troncon\") << \"\\n\";\n    Tabla_nombres candidata = tabla;\n    candidata.asignar(\"Troncon\", 7);\n    std::cout << \"Candidat: \" << candidata.consultar(\"Troncon\") << \"\\n\";\n    std::cout << \"Écarté: \" << tabla.consultar(\"Troncon\") << \"\\n\";\n    Tabla_nombres segunda = tabla;\n    segunda.asignar(\"Troncon\", 12);\n    tabla = segunda;\n    std::cout << \"Accepté: \" << tabla.consultar(\"Troncon\") << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Copier une table est possible parce qu'elle contient un vecteur d'enregistrements copiables ; copier le lecteur ne l'est pas puisqu'il contient un istringstream. La prochaine leçon remplacera cette décision manuelle d'acceptation par une instruction complète terminée par ;."
+        },
+        {
+          "type": "note",
+          "text": "La table de noms persistante est présentée dans le texte d'appui (Stroustrup, 2024, section 6.8.1 et exercice 4 du chapitre 6). Tabla_nombres encapsule une recherche linéaire ; ses limites, noms et essais sont originaux."
+        }
+      ]
+    }
+  ]
+}
