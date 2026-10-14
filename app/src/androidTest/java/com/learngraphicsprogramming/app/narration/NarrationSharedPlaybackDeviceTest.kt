@@ -8,6 +8,7 @@ import android.app.KeyguardManager
 import android.app.Activity
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.speech.tts.TextToSpeech
 import android.os.Looper
 import android.os.SystemClock
 import android.view.WindowManager
@@ -17,6 +18,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.learngraphicsprogramming.app.CoursesActivity
 import com.learngraphicsprogramming.app.AppearanceSettingsRepository
 import java.io.File
+import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
@@ -30,6 +32,7 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -67,7 +70,7 @@ class NarrationSharedPlaybackDeviceTest {
         val keyguard = deviceContext.getSystemService(KeyguardManager::class.java)
         if (!keyguard.isKeyguardSecure) deviceShell("wm dismiss-keyguard")
         deviceShell("cmd statusbar collapse")
-        assertFalse("Unlock the phone before testing real playback", keyguard.isDeviceLocked)
+        assertFalse("Unlock the target device before testing real playback", keyguard.isDeviceLocked)
         // The actual application's service must not generate user audio for a test.
         assertTrue(deviceContext.getSharedPreferences("lesson_narration_settings", Context.MODE_PRIVATE).edit()
             .putBoolean("enabled", false).putString("engine", NarrationEngine.ANDROID.name).commit())
@@ -170,7 +173,15 @@ class NarrationSharedPlaybackDeviceTest {
     }
 
     @Test fun completedPageNeverReplaysOnPlayButRewindAndRestartRemainAvailable() {
-        NarrationSettingsRepository.saveEngine(context, NarrationEngine.ANDROID)
+        assumeAndroidTtsInstalled()
+        exerciseCompletion(NarrationEngine.ANDROID)
+    }
+
+    @Test fun kokoroCompletedPageNeverReplaysOnPlayButRewindAndRestartRemainAvailable() =
+        exerciseCompletion(NarrationEngine.KOKORO)
+
+    private fun exerciseCompletion(engine: NarrationEngine) {
+        NarrationSettingsRepository.saveEngine(context, engine)
         val page = "qa/completed-narration"
         val current = onMain {
             LessonNarrationController(context, { states.add(it) }, { errors.add(it) }).also {
@@ -253,7 +264,10 @@ class NarrationSharedPlaybackDeviceTest {
         }
     }
 
-    @Test fun androidTtsUsesSharedPauseSeekRateResumeAndCleanup() = exercise(NarrationEngine.ANDROID)
+    @Test fun androidTtsUsesSharedPauseSeekRateResumeAndCleanup() {
+        assumeAndroidTtsInstalled()
+        exercise(NarrationEngine.ANDROID)
+    }
 
     @Test fun kokoroSpanishUsesSharedPauseSeekRateResumeAndCleanup() = exercise(NarrationEngine.KOKORO)
 
@@ -324,8 +338,11 @@ class NarrationSharedPlaybackDeviceTest {
 
     private fun exercise(engine: NarrationEngine) {
         NarrationSettingsRepository.saveEngine(context, engine)
+        val playbackStarts = CopyOnWriteArrayList<NarrationPlaybackProgress>()
         val current = onMain {
-            LessonNarrationController(context, { states.add(it) }, { errors.add(it) }).also {
+            LessonNarrationController(context, { states.add(it) }, { errors.add(it) }, { event ->
+                if (event.phase == NarrationPlaybackPhase.PLAYING) playbackStarts.add(event)
+            }).also {
                 controller = it
                 it.toggle(listOf(text), NarrationLanguage.SPANISH)
             }
@@ -339,6 +356,7 @@ class NarrationSharedPlaybackDeviceTest {
             field<File>(first, "file")
         }
         val fileLength = audio.length()
+        val fileHash = sha256(audio)
         val fileTimestamp = audio.lastModified()
         val generation = onMain { field<Long>(current, "generation") }
         val loadedSpanishFrontend = onMain { field<Any?>(current, "spanishLexicon") != null }
@@ -360,46 +378,45 @@ class NarrationSharedPlaybackDeviceTest {
         assertFalse(onMain { current.isPlaying })
         assertPausedWithoutAdvance(current)
 
-        var position = onMain { player(current).currentPosition }
+        var position = onMain { field<Long>(current, "offset") }
         seekPaused(current, 5, position + 5_000)
-        position = onMain { player(current).currentPosition }
+        position = onMain { field(current, "offset") }
         seekPaused(current, -3, position - 3_000)
-        position = onMain { player(current).currentPosition }
+        position = onMain { field(current, "offset") }
         seekPaused(current, -5, (position - 5_000).coerceAtLeast(0))
         seekPaused(current, 5, 5_000)
 
         for (rate in listOf(0.5f, 1f, 1.5f, 2f)) {
             // Keep every measurement away from completion, including short system voices.
             seekPaused(current, -3_600, 0)
-            val pausedPlayer = onMain { player(current) }
-            val before = onMain { pausedPlayer.currentPosition }
+            val before = onMain { field<Long>(current, "offset") }
             onMain {
                 NarrationSettingsRepository.saveRate(context, rate)
                 current.settingsChanged()
-                assertSame("Changing speed must reuse the prepared audio and player", pausedPlayer, player(current))
+                assertNull("Changing speed must keep the paused decoder released", field<MediaPlayer?>(current, "player"))
+                assertSame("Changing speed retains the prepared audio", audio,
+                    field<File>(field<List<*>>(current, "segments").first()!!, "file"))
                 assertEquals("The requested speed must remain stored while paused", rate,
                     NarrationSettingsRepository.get(context).rate, 0.001f)
-                // NuPlayer reports effective speed 0 while paused; verify the rate when running.
-                assertEquals("Pitch remains neutral", 1f, player(current).playbackParams.pitch, 0.001f)
                 assertFalse("Speed must preserve the requested paused state", current.isPlaying)
-                assertFalse("PlaybackParams must not leave a paused player running", player(current).isPlaying)
             }
             assertPausedWithoutAdvance(current)
-            assertTrue("Speed changes must preserve the source timestamp", abs(onMain { player(current).currentPosition } - before) <= 100)
-            assertActualPlaybackRate(current, pausedPlayer, rate)
+            assertEquals("Speed changes preserve the exact source timestamp", before, onMain { field<Long>(current, "offset") })
+            assertActualPlaybackRate(current, playbackStarts, rate)
             assertPausedWithoutAdvance(current)
         }
         assertEquals("Rate changes and seeks must keep the same source file", audio, onMain {
             field<File>(field<List<*>>(current, "segments").first()!!, "file")
         })
         assertEquals("Cached audio bytes must be reused", fileLength, audio.length())
+        assertEquals("Pause, seeks and rates must never synthesize different audio", fileHash, sha256(audio))
         assertEquals("Cached audio must not be rewritten", fileTimestamp, audio.lastModified())
         assertEquals("Changing playback position/rate must retain the page generation", generation, onMain { field<Long>(current, "generation") })
 
-        val beforeResume = onMain { player(current).currentPosition }
-        onMain { current.toggle(listOf(text), NarrationLanguage.SPANISH) }
+        val beforeResume = onMain { field<Long>(current, "offset") }
+        resumeAtSavedPosition(current, playbackStarts)
         await("Resume must advance the same cached audio", 5_000) {
-            current.isPlaying && player(current).isPlaying && player(current).currentPosition > beforeResume + 200
+            current.isPlaying && ready(current) && player(current).isPlaying && player(current).currentPosition > beforeResume + 200
         }
         onMain { current.restart() }
         await("Restart must return to the beginning and continue playback", 5_000) {
@@ -444,28 +461,65 @@ class NarrationSharedPlaybackDeviceTest {
         }
     }
 
-    private fun seekPaused(current: LessonNarrationController, seconds: Int, expected: Int) {
-        onMain { current.seekBy(seconds) }
-        await("A paused $seconds-second seek must reach $expected ms", 10_000) {
-            ready(current) && abs(player(current).currentPosition - expected) <= 200
+    private fun seekPaused(current: LessonNarrationController, seconds: Int, expected: Long) {
+        onMain {
+            val segment = field<Int>(current, "index")
+            current.seekBy(seconds)
+            assertEquals("The one-segment fixture retains its source segment", segment, field<Int>(current, "index"))
+            assertEquals("A paused seek uses the exact source offset", expected, field<Long>(current, "offset"))
         }
-        assertFalse("Seeking must preserve pause", onMain { current.isPlaying || player(current).isPlaying })
         assertPausedWithoutAdvance(current)
     }
 
     private fun assertPausedWithoutAdvance(current: LessonNarrationController) {
-        val before = onMain { player(current).currentPosition }
+        val before = onMain {
+            assertFalse(current.isPlaying)
+            assertNull("Pausing releases the native player", field<MediaPlayer?>(current, "player"))
+            assertFalse("No paused decoder remains ready", ready(current))
+            assertFalse("Pausing releases audio focus", field(current, "focusHeld"))
+            field<Int>(current, "index") to field<Long>(current, "offset")
+        }
         SystemClock.sleep(350)
         onMain {
             assertFalse(current.isPlaying)
-            assertFalse(player(current).isPlaying)
-            assertTrue("Paused media must not advance", abs(player(current).currentPosition - before) <= 80)
+            assertNull("A paused position must not allocate a player", field<MediaPlayer?>(current, "player"))
+            assertFalse(ready(current))
+            assertEquals("The paused source segment remains exact", before.first, field<Int>(current, "index"))
+            assertEquals("The paused source offset cannot advance", before.second, field<Long>(current, "offset"))
+            val saved = requireNotNull(NarrationResumeStore(context).restore(
+                field(current, "resumeKey"), field<List<*>>(current, "segments").size))
+            assertEquals("The existing bookmark owns the exact paused segment", before.first, saved.segment)
+            assertEquals("The existing bookmark owns the exact paused offset", before.second, saved.positionMs)
         }
     }
 
-    private fun assertActualPlaybackRate(current: LessonNarrationController, cachedPlayer: MediaPlayer, rate: Float) {
+    private fun resumeAtSavedPosition(current: LessonNarrationController,
+                                      starts: List<NarrationPlaybackProgress>): MediaPlayer {
+        val point = onMain { field<Int>(current, "index") to field<Long>(current, "offset") }
+        val previousStarts = starts.size
+        onMain {
+            assertNull("Resume begins with a released decoder", field<MediaPlayer?>(current, "player"))
+            current.toggle(listOf(text), NarrationLanguage.SPANISH)
+            assertEquals(point.first, field<Int>(current, "index"))
+            assertEquals("Resume retains the exact requested source position", point.second, field<Long>(current, "offset"))
+        }
+        await("Resume reconstructs a real player from the retained audio", 5_000) {
+            current.isPlaying && ready(current) && player(current).isPlaying && starts.size > previousStarts
+        }
+        return onMain {
+            val started = starts[previousStarts]
+            assertEquals("Actual playback starts in the saved segment", point.first, started.segmentIndex)
+            assertEquals("Actual playback starts at the exact saved offset", point.second, started.positionMs)
+            assertTrue("The newly prepared player seeks before playing",
+                abs(player(current).currentPosition.toLong() - point.second) <= 250L)
+            player(current)
+        }
+    }
+
+    private fun assertActualPlaybackRate(current: LessonNarrationController,
+                                         starts: List<NarrationPlaybackProgress>, rate: Float) {
+        val cachedPlayer = resumeAtSavedPosition(current, starts)
         val before = onMain { cachedPlayer.currentPosition }
-        onMain { current.toggle(listOf(text), NarrationLanguage.SPANISH) }
         await("Resuming at $rate must advance the prepared audio", 5_000) {
             current.isPlaying && cachedPlayer.isPlaying && cachedPlayer.currentPosition > before + 120
         }
@@ -495,8 +549,24 @@ class NarrationSharedPlaybackDeviceTest {
         val tolerance = maxOf(200f, expected * 0.15f)
         assertTrue("Speed $rate: advanced $advanced ms in $elapsed ms; expected $expected +/- $tolerance",
             abs(advanced - expected) <= tolerance)
-        assertFalse("Measurement must return to pause", onMain { current.isPlaying || cachedPlayer.isPlaying })
+        onMain {
+            assertFalse("Measurement must return to pause", current.isPlaying)
+            assertNull("Pausing after the measurement releases its decoder", field<MediaPlayer?>(current, "player"))
+        }
     }
+
+    @Suppress("DEPRECATION")
+    private fun assumeAndroidTtsInstalled() {
+        // Only a missing installed service is a prerequisite omission. Initialization,
+        // voice selection, synthesis and playback errors must still fail the test.
+        val services = deviceContext.packageManager.queryIntentServices(
+            Intent(TextToSpeech.Engine.INTENT_ACTION_TTS_SERVICE), 0)
+        assumeTrue("Android TTS omitted: no installed TTS service on the target device; real Kokoro is tested separately",
+            services.isNotEmpty())
+    }
+
+    private fun sha256(file: File) = MessageDigest.getInstance("SHA-256").digest(file.readBytes())
+        .joinToString("") { "%02x".format(it.toInt() and 255) }
 
     private fun ready(current: LessonNarrationController): Boolean = field(current, "playerReady")
     private fun player(current: LessonNarrationController): MediaPlayer = field(current, "player")
