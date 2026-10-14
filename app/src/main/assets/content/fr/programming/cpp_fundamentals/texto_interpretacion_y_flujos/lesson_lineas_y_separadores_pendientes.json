@@ -1,0 +1,210 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__lineas_y_separadores_pendientes",
+  "title": "Lignes et séparateurs en attente",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver une ligne entière"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une étiquette telle que Cour du nord représente une seule donnée, même si elle contient plusieurs mots. std::getline(entrada, linea) lit les caractères jusqu'au prochain saut de ligne. Elle les stocke dans une std::string, consomme le saut qui termine la ligne et ne l'inclut pas dans la destination. Contrairement à >> pour les chaînes, elle conserve les espaces initiaux, internes et finaux."
+        },
+        {
+          "type": "paragraph",
+          "text": "std::getline reçoit d'abord le flux, puis la destination. Elle renvoie le flux afin de pouvoir vérifier la lecture dans une condition. Cette fonction est déclarée dans <string> ; un flux de texte préparé nécessite toujours <sstream>. Ces laboratoires ne demandent pas de lecture au clavier."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  Cour du nord  \\nSalle bleue\"};\n    std::string linea;\n    while (std::getline(entrada, linea)) {\n        std::cout << \"<\" << linea << \">\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La première ligne conserve ses deux espaces initiaux et ses deux espaces finaux. La seconde est obtenue même si le texte se termine sans autre saut de ligne. Chaque exécution du corps de boucle correspond à une ligne lue avec succès ; la tentative ultérieure qui n'obtient aucune nouvelle ligne n'exécute pas le corps."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une ligne vide peut être une donnée valide"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si le prochain caractère est un saut de ligne, getline le consomme et obtient une chaîne vide. Cette lecture réussit : une ligne vide était présente. S'il ne reste ni caractère ni séparateur à consommer, la tentative de lecture d'une autre ligne échoue. Le succès de la lecture et le contenu de la ligne sont deux questions distinctes."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis la sortie en conservant les lignes et les espaces entre < et >.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Porte 4\\n\\n  Rampe\"};\n    std::string linea;\n    int numero = 0;\n    while (std::getline(entrada, linea)) {\n        ++numero;\n        std::cout << numero << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Total: \" << numero;\n    return 0;\n}\n",
+          "answers": [
+            "1:<Porte 4>\n2:<>\n3:<  Rampe>\nTotal: 3"
+          ],
+          "explanation": "Il existe trois lignes. Le deuxième saut termine une ligne vide ; la troisième conserve deux espaces initiaux et est obtenue avant la fin du texte."
+        },
+        {
+          "type": "paragraph",
+          "text": "linea.empty() demande si la string contient zéro caractère. Elle ne demande pas si le flux a échoué. Une ligne contenant deux espaces possède deux caractères et n'est pas vide, même si elle ressemble à une zone blanche sans délimiteurs."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le texte préparé est \"\\n\". Combien de fois while (std::getline(entrada, linea)) exécute-t-il son corps ?",
+          "options": [
+            "Jamais : une chaîne vide signifie toujours que la lecture a échoué.",
+            "Une fois : une ligne vide valide est obtenue grâce au saut de ligne disponible.",
+            "Deux fois : une fois pour le saut et une autre pour la fin du texte."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le saut de ligne permet d'obtenir une ligne vide valide. La tentative suivante ne trouve ni caractère ni séparateur supplémentaire et termine la boucle."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un saut de ligne final n'invente pas une ligne supplémentaire"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Détermine le nombre de lignes indiqué par ce programme.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"A\\nB\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Les sauts terminent A et B. Il ne reste ensuite ni séparateur ni contenu permettant de produire une autre ligne vide."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare avec A\\nB\\n\\n : le saut supplémentaire consécutif termine bien une troisième ligne vide. Une chaîne entièrement vide ne contient aucune ligne à lire. Détermine ces limites avant d'écrire le compteur : compter les sauts de ligne et compter les lectures réussies ne sont pas des règles interchangeables pour tous les textes."
+        },
+        {
+          "type": "fill_code",
+          "question": "Exercice guidé : complète uniquement le nom de la fonction de std qui conserve les phrases et les lignes vides lors de cette lecture.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Passage haut\\n\\nPassage bas\"};\n    std::string linea;\n    while (std::___(entrada, linea)) {\n        std::cout << \"<\" << linea << \">\\n\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "getline"
+          ],
+          "explanation": "getline lit une ligne entière, conserve les espaces et permet de traiter une ligne vide obtenue avec succès."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combiner des règles de lecture exige de savoir ce qui reste"
+        },
+        {
+          "type": "paragraph",
+          "text": ">> cesse de lire un mot lorsqu'il rencontre un espace blanc, sans consommer ce séparateur final comme partie du mot. Un getline immédiat commence exactement où cette opération s'est arrêtée ; il peut rencontrer le saut de ligne encore présent. Aucune nouvelle ligne n'a été sautée : c'est le reste de la ligne en cours qui a été lu."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"début\\nAtelier vert\\n\"};\n    std::string orden;\n    std::string resto;\n    std::string etiqueta;\n    if (entrada >> orden && std::getline(entrada, resto)\n            && std::getline(entrada, etiqueta)) {\n        std::cout << \"Commande:<\" << orden << \">\\n\";\n        std::cout << \"Reste:<\" << resto << \">\\n\";\n        std::cout << \"Étiquette:<\" << etiqueta << \">\";\n    } else {\n        std::cout << \"Format incomplet\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans ce format, le premier getline consomme le reste vide de la ligne de début ; le second obtient Atelier vert. Si le format était début avis\\nAtelier vert, le reste contiendrait l'espace initial et avis. Le supprimer sans le vérifier cacherait des données. Détermine d'abord ce que le format autorise, puis comment traiter ce reste."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un format exige de conserver une ligne vide avant l'étiquette. Quel risque présente la suppression indistincte de tous les blancs avant getline ?",
+          "options": [
+            "Aucune ligne ne peut être perdue : les sauts de ligne ne sont pas considérés comme des blancs.",
+            "Perdre le premier mot de l'étiquette, car ignorer les blancs consomme aussi ce mot.",
+            "Perdre des lignes vides qui font partie des données."
+          ],
+          "correctIndex": 2,
+          "explanation": "Les sauts de ligne sont également des blancs. Si on les supprime tous, une ligne vide significative disparaît avant la lecture qui devait la conserver. Ignorer les blancs ne lit pas un mot : l'opération s'arrête au premier caractère qui n'est pas blanc."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un rapport distinguant le vide des espaces"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un rapport de lignes pour \"Cour du nord\\n\\n  Quai\\n\". Numérote chaque ligne obtenue à partir de 1 et présente-la sous la forme numéro:<contenu>, en conservant ses caractères. À la fin, affiche deux lignes : Lignes: suivi du nombre total et Vides: suivi du nombre de lignes contenant zéro caractère. Utilise un espace après chaque étiquette. Les tests contiennent au maximum 6 lignes de 40 caractères ASCII chacune ; les deux compteurs tiennent dans int."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour le premier cas, les résultats attendus sont 1:<Cour du nord>, 2:<> et 3:<  Quai>, suivis de Lignes: 3 et Vides: 1. Une chaîne vide ne produit que Lignes: 0 et Vides: 0. \"\\n\" produit une ligne vide. \"  \" produit une ligne de deux espaces, qui ne doit pas être comptée comme vide. \"A\\n\" produit une ligne et \"A\\n\\n\" en produit deux. Prédis chaque résultat avant l'exécution."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Cour du nord\\n\\n  Quai\\n\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Choisis la lecture, les destinations et l'emplacement de chaque mise à jour. Lors de la vérification, distingue l'échec qui termine la boucle d'une ligne valide au contenu vide. L'éditeur n'évalue pas automatiquement ces critères ; compare les sorties complètes et reviens aux cas précédents après les corrections."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer après avoir construit"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence utilise Zone est comme première ligne. Le total augmente après chaque lecture réussie ; le contenu est inspecté pour décider si vacias doit augmenter. Ces décisions appartiennent au corps de la boucle, où une nouvelle ligne existe."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Zone est\\n\\n  Quai\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n        if (linea.empty()) {\n            ++vacias;\n        }\n        std::cout << cantidad << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Lignes: \" << cantidad << \"\\nVides: \" << vacias;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare la référence à ton implémentation et explique pourquoi les espaces initiaux de Quai sont conservés. Une solution qui supprime tous les espaces ou rejette les lignes vides ne respecte pas le rapport, même si elle compte certaines lignes correctement."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Reprends la lecture et les conditions avec ces données différentes.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\n \\nFin\"};\n    std::string linea;\n    int total = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++total;\n        if (linea.empty()) {\n            ++vacias;\n        }\n    }\n    std::cout << \"Lignes: \" << total << \"\\nVides: \" << vacias;\n    return 0;\n}\n",
+          "answers": [
+            "Lignes: 3\nVides: 1"
+          ],
+          "explanation": "La première ligne est vide, la seconde contient un espace et la troisième contient Fin. Une seule de ces trois lignes a zéro caractère."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Séparer la source de sa signification"
+        },
+        {
+          "type": "paragraph",
+          "text": "getline décide où une ligne se termine ; elle ne vérifie pas que son contenu respecte le format exigé par un problème. Une ligne telle que ajouter trois peut avoir été lue correctement et constituer malgré tout une commande invalide. Plus tard, nous placerons une ligne obtenue dans un autre istringstream pour analyser ses éléments sans perdre la frontière de l'opération."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu souhaites conserver l'étiquette complète de chaque ligne, puis l'analyser séparément. Quelle responsabilité relève de la première lecture ?",
+          "options": [
+            "Obtenir une ligne valide et conserver ses caractères pour l'analyse ultérieure.",
+            "Accepter tout texte comme une commande correcte parce que getline a réussi.",
+            "Convertir automatiquement chaque mot de la ligne en nombre."
+          ],
+          "correctIndex": 0,
+          "explanation": "La lecture de ligne obtient une unité de texte. La validation de sa structure et la conversion de ses éléments sont des responsabilités ultérieures."
+        }
+      ]
+    }
+  ]
+}

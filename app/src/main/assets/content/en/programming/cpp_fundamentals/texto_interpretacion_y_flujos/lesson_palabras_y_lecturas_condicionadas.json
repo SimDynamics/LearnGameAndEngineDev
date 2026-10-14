@@ -1,0 +1,210 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__palabras_y_lecturas_condicionadas",
+  "title": "Words and Conditional Reads",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Text Needs a Reading Rule"
+        },
+        {
+          "type": "paragraph",
+          "text": "Until now, the data in our labs were already declared with their types. Text such as sun  moon contains characters: to turn them into data, you must decide what separates one unit from the next. Reading words works for a list of simple names; keeping a complete phrase requires another rule that we will develop later."
+        },
+        {
+          "type": "paragraph",
+          "text": "An input stream provides data in order and remembers where the next read will resume. std::istringstream, declared in <sstream>, constructs that stream from a string. The name entrada identifies the reader object; it is not the destination string. Here the source is prepared in the program: you can change it between runs to repeat a test. The lab does not ask for keyboard input."
+        },
+        {
+          "type": "paragraph",
+          "text": "The extraction entrada >> palabra tries to read a std::string. It skips leading whitespace and then collects characters up to the next whitespace character: a tab or newline also separates words. The next extraction continues from that position. The operator changes the stream and the destination object, so reading is a stateful operation."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  sun  moon \"};\n    std::string primera;\n    std::string segunda;\n    if (entrada >> primera >> segunda) {\n        std::cout << \"<\" << primera << \">|<\" << segunda << \">\";\n    } else {\n        std::cout << \"Missing words\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The extractions return the stream itself, allowing them to be chained and their state tested in an if. The condition checks whether the required reads succeeded. Only then do we use both words. The < > and | symbols are added by the output to make the boundaries visible; they were not part of the input."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Continue Reading Without Starting Over"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the complete output. The characters \\t and \\n inside the string represent a tab and a newline.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\tbreeze\\nbridge path\"};\n    std::string palabra;\n    if (entrada >> palabra) {\n        std::cout << \"1:<\" << palabra << \">\\n\";\n    }\n    if (entrada >> palabra) {\n        std::cout << \"2:<\" << palabra << \">\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "1:<breeze>\n2:<bridge>"
+          ],
+          "explanation": "Each extraction skips whitespace and advances by one word. The second resumes after breeze; path remains available for a later read."
+        },
+        {
+          "type": "paragraph",
+          "text": "The destination palabra can be reused: after a successful read, it holds the latest word. If you need to keep all the words, copy them into a collection or process each before the next read. Changing the destination does not rewind the stream."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A single std::string is read from \"high-low+mid\" with >>. What unit does it produce?",
+          "options": [
+            "Only high, because a hyphen always separates words.",
+            "Three words, because the symbols represent operators.",
+            "The entire string high-low+mid, because it contains no whitespace."
+          ],
+          "correctIndex": 2,
+          "explanation": "String extraction separates on whitespace. Symbols do not acquire an operation's meaning merely by appearing in text; we will need to define and implement that interpretation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Chain of Reads Is Not a Transaction"
+        },
+        {
+          "type": "paragraph",
+          "text": "If two words are needed and only one exists, the first extraction may succeed while the second fails. The combined if prevents the use of an incomplete pair; it does not promise to undo data already consumed or preserve every destination. Do not infer the value of a destination after a failed read: make decisions using the read result and data obtained successfully."
+        },
+        {
+          "type": "output_prediction",
+          "question": "What does this program print when there is only one word?",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"channel\"};\n    std::string origen;\n    std::string destino;\n    if (entrada >> origen >> destino) {\n        std::cout << origen << \" -> \" << destino;\n    } else {\n        std::cout << \"Incomplete pair\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Incomplete pair"
+          ],
+          "explanation": "The second word is missing. The combined condition fails, and the alternative displays a diagnostic without using the incomplete pair."
+        },
+        {
+          "type": "fill_code",
+          "question": "Guided exercise: complete only the operator that reads izquierda before continuing with derecha.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"north south\"};\n    std::string izquierda;\n    std::string derecha;\n    if (entrada ___ izquierda >> derecha) {\n        std::cout << izquierda << \" / \" << derecha;\n    } else {\n        std::cout << \"Incomplete pair\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            ">>"
+          ],
+          "explanation": "The chain's result is the stream after both operations. The condition requires the necessary extraction not to have failed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Repeat While a Valid Word Is Read"
+        },
+        {
+          "type": "paragraph",
+          "text": "If the number of words is unknown, the read itself can be the loop condition. An iteration runs only when a word was obtained. When no further word can be obtained, the condition fails and the body is not repeated. An old word is not processed as though it were new."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  copper\\tsilver\\ngold \"};\n    std::string palabra;\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Progress comes from extraction: every successful iteration consumes a word from finite text. The next read begins farther along. The condition controls validity; the body uses what was already obtained. Keeping those responsibilities separate helps avoid processing the destination after failure."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You want to count all the words obtained. Where should a counter starting at 0 be incremented?",
+          "options": [
+            "Inside the body, once for each successful read.",
+            "Before the loop, to count the final failed read attempt too.",
+            "After the loop, once for each character that could not be read."
+          ],
+          "correctIndex": 0,
+          "explanation": "Each execution of the body corresponds to a valid word. The final attempt that ends the loop must not be counted as data."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Word Report"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a report for the prepared text \"  echo\\tsea\\nsun  \". Each word must appear on its own line between < and >. Then print Words: followed by a space and the number obtained. Preserve reading order and do not add a word for the extra spaces. Each test's text will have at most 8 words, of up to 20 ASCII characters each; an int counter from 0 to 8 is sufficient."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running, determine the expected result: the initial text produces <echo>, <sea>, <sun>, and Words: 3 on four lines. The empty string and an all-whitespace string produce only Words: 0. \"one two\" produces two words; \"onetwo\" produces just one. Add a case with spaces at the beginning and end. The editor provides the source; you must choose the destination, repetition, counter, and display."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  echo\\tsea\\nsun  \"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "The editor lets you build and run the program; these criteria are not checked automatically. Review each output and explain which read advances the loop and which condition prevents using data that was not obtained. Compare against the reference after your attempt."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare an Implementation"
+        },
+        {
+          "type": "paragraph",
+          "text": "This reference uses river, hill, and valley. The counter belongs in the body because only there do we have a new, valid word. The final output runs once when reading ends. Keep your solution if it meets the same criteria, even if it uses different names."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  river\\thill\\nvalley  \"};\n    std::string palabra;\n    int cantidad = 0;\n    while (entrada >> palabra) {\n        std::cout << \"<\" << palabra << \">\\n\";\n        ++cantidad;\n    }\n    std::cout << \"Words: \" << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "To check the cases from your attempt, change only the constructor's text and run again. With an empty string, the body is never entered, so cantidad stays 0. Consecutive separators do not produce empty words: string extraction skips them."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Revisit word reading and the counter: predict the output for these different inputs.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  one\\n\\t  two-three \"};\n    std::string palabra;\n    int cantidad = 0;\n    while (entrada >> palabra) {\n        ++cantidad;\n        std::cout << cantidad << \":<\" << palabra << \">\\n\";\n    }\n    std::cout << \"Total: \" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "1:<one>\n2:<two-three>\nTotal: 2"
+          ],
+          "explanation": "The newline, tab, and spaces separate words. The hyphen remains part of two-three, so only two valid reads occur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose the Unit the Problem Needs"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A full label must preserve \"River Workshop\" with its internal space. What is the limitation of reading it with a single string extraction using >>?",
+          "options": [
+            "Extraction rejects every letter because it expects a number.",
+            "It obtains only River; spaces separate the remaining words.",
+            "It obtains the whole phrase and removes only the final space."
+          ],
+          "correctIndex": 1,
+          "explanation": "The unit read by >> for a string is a whitespace-delimited word. Reading a complete line will preserve internal spaces and let us decide later what they mean."
+        },
+        {
+          "type": "paragraph",
+          "text": "A word, a line, and a character are different units. Which one to choose depends on what you must preserve. In upcoming lessons, we will develop these distinctions and validate number and operation formats; having characters available does not yet prove they form acceptable data."
+        }
+      ]
+    }
+  ]
+}

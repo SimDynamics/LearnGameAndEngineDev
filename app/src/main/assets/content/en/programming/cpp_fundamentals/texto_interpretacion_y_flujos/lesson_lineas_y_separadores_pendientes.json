@@ -1,0 +1,210 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__lineas_y_separadores_pendientes",
+  "title": "Lines and Pending Delimiters",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preserve an Entire Line"
+        },
+        {
+          "type": "paragraph",
+          "text": "A label such as North courtyard is a single piece of data even though it contains two words. std::getline(entrada, linea) reads characters until a newline. It stores them in a std::string, consumes the newline that terminates the line, and does not include it in the destination. Unlike >> for strings, it preserves leading, internal, and trailing spaces."
+        },
+        {
+          "type": "paragraph",
+          "text": "std::getline receives the stream first and then the destination. It returns the stream so you can check the read in a condition. The function is declared in <string>; a prepared text stream still needs <sstream>. These labs do not read from the keyboard."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"  North courtyard  \\nBlue room\"};\n    std::string linea;\n    while (std::getline(entrada, linea)) {\n        std::cout << \"<\" << linea << \">\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The first line retains its two leading and two trailing spaces. The second is read even though the text ends without another newline. Each loop-body execution corresponds to a successfully read line; the later attempt that cannot read a new line does not execute the body."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Empty Line Can Be Valid Data"
+        },
+        {
+          "type": "paragraph",
+          "text": "If the next character is a newline, getline consumes it and obtains an empty string. That read succeeds: an empty line was present. If there are no characters or delimiters left to consume, the attempt to read another line fails. Read success and line content are different questions."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the output, preserving the lines and spaces between < and >.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Gate 4\\n\\n  Ramp\"};\n    std::string linea;\n    int numero = 0;\n    while (std::getline(entrada, linea)) {\n        ++numero;\n        std::cout << numero << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Total: \" << numero;\n    return 0;\n}\n",
+          "answers": [
+            "1:<Gate 4>\n2:<>\n3:<  Ramp>\nTotal: 3"
+          ],
+          "explanation": "There are three lines. The second newline terminates an empty line; the third retains two leading spaces and is read before the text ends."
+        },
+        {
+          "type": "paragraph",
+          "text": "linea.empty() asks whether the string contains zero characters. It does not ask whether the stream failed. A line containing two spaces has two characters and is not empty, even if it appears blank without delimiters."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The prepared text is \"\\n\". How many times does while (std::getline(entrada, linea)) execute?",
+          "options": [
+            "Never: an empty string always indicates a failed read.",
+            "Once: it obtains a valid empty line terminated by the available newline.",
+            "Twice: once for the newline and once for the end of the text."
+          ],
+          "correctIndex": 1,
+          "explanation": "The newline permits a valid empty line. The following attempt finds no characters or further delimiter, so it ends the loop."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Final Newline Does Not Invent Another Line"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Determine how many lines this program reports.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"A\\nB\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "The newlines terminate A and B. There is then no remaining delimiter or content to produce another empty line."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare that with A\\nB\\n\\n: the additional consecutive newline does terminate a third, empty line. A completely empty string contains no lines to read. Decide these boundaries before writing a counter; counting newlines and counting successful line reads are not interchangeable rules for all text."
+        },
+        {
+          "type": "fill_code",
+          "question": "Guided exercise: complete only the name of the std function that preserves phrases and empty lines in this read.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"Upper step\\n\\nLower step\"};\n    std::string linea;\n    while (std::___(entrada, linea)) {\n        std::cout << \"<\" << linea << \">\\n\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "getline"
+          ],
+          "explanation": "getline reads a complete line, preserves spaces, and lets us process an empty line that was successfully read."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combining Reading Rules Requires Knowing What Remains"
+        },
+        {
+          "type": "paragraph",
+          "text": ">> stops reading a word when it reaches whitespace and does not consume that final delimiter as part of the word. An immediate getline starts exactly where that operation stopped; it may encounter the newline still waiting there. No new line was skipped: the remainder of the current line was read."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"start\\nGreen workshop\\n\"};\n    std::string orden;\n    std::string resto;\n    std::string etiqueta;\n    if (entrada >> orden && std::getline(entrada, resto)\n            && std::getline(entrada, etiqueta)) {\n        std::cout << \"Command:<\" << orden << \">\\n\";\n        std::cout << \"Remainder:<\" << resto << \">\\n\";\n        std::cout << \"Label:<\" << etiqueta << \">\";\n    } else {\n        std::cout << \"Incomplete format\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "In this format, the first getline consumes the empty remainder of the start line; the second obtains Green workshop. If the format were start notice\\nGreen workshop, the remainder would contain the leading space and notice. Discarding it without checking would conceal data. First decide what the format permits and then what to do with that remainder."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A format requires preserving an empty line before the label. What is the risk of indiscriminately removing all whitespace before getline?",
+          "options": [
+            "No line can be lost: newlines are not whitespace.",
+            "Losing the label's first word, because skipping whitespace also consumes that word.",
+            "Losing empty lines that are part of the data."
+          ],
+          "correctIndex": 2,
+          "explanation": "Newlines are whitespace too. Removing all of them makes a meaningful empty line disappear before the read meant to preserve it. Skipping whitespace does not read a word: it stops at the first non-whitespace character."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Report That Distinguishes Empty from Whitespace"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a line report for \"North courtyard\\n\\n  Pier\\n\". Number every successfully read line starting at 1 and show it as number:<content>, preserving its characters. Finally, print two lines: Lines: followed by the total count and Empty: followed by the number of lines with zero characters. Put a space after each label. The test domain contains at most 6 lines of at most 40 ASCII characters; both counters fit in int."
+        },
+        {
+          "type": "paragraph",
+          "text": "For the initial case, expect 1:<North courtyard>, 2:<>, and 3:<  Pier>, followed by Lines: 3 and Empty: 1. An empty string produces only Lines: 0 and Empty: 0. \"\\n\" produces one empty line. \"  \" produces a two-space line, which must not be counted as empty. \"A\\n\" produces one line, and \"A\\n\\n\" produces two. Establish each expectation before running."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"North courtyard\\n\\n  Pier\\n\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Choose the reading function, destinations, and where each update belongs. When reviewing, distinguish a failure that terminates the loop from a valid line whose contents are empty. The editor does not grade these criteria automatically; compare complete outputs and revisit earlier cases after making corrections."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare After Building"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference uses East zone as its first line. The total increases after each successful read, and the contents are inspected to decide whether to increment vacias. The decisions are made inside the body, where a new line is available."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"East zone\\n\\n  Pier\\n\"};\n    std::string linea;\n    int cantidad = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++cantidad;\n        if (linea.empty()) {\n            ++vacias;\n        }\n        std::cout << cantidad << \":<\" << linea << \">\\n\";\n    }\n    std::cout << \"Lines: \" << cantidad << \"\\nEmpty: \" << vacias;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare the reference with your implementation and explain why the leading spaces before Pier are preserved. A solution that strips all spaces or rejects empty lines fails the report even if some of its line counts are correct."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Revisit line reading and its conditions for these different inputs.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"\\n \\nEnd\"};\n    std::string linea;\n    int total = 0;\n    int vacias = 0;\n    while (std::getline(entrada, linea)) {\n        ++total;\n        if (linea.empty()) {\n            ++vacias;\n        }\n    }\n    std::cout << \"Lines: \" << total << \"\\nEmpty: \" << vacias;\n    return 0;\n}\n",
+          "answers": [
+            "Lines: 3\nEmpty: 1"
+          ],
+          "explanation": "The first line is empty, the second contains a single space, and the third contains End. Only one of the three has zero characters."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separate the Source from Its Meaning"
+        },
+        {
+          "type": "paragraph",
+          "text": "getline decides where a line ends; it does not check whether its contents match the format required by the problem. A line such as add three might have been read successfully and still be an invalid command. Later, we will put a line that was read into another istringstream to parse its components while preserving the operation boundary."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You want to preserve each line's complete label and then analyze it separately. What is the responsibility of the initial read?",
+          "options": [
+            "Obtain a valid line and preserve its characters for later analysis.",
+            "Accept any text as a correct command because getline succeeded.",
+            "Automatically convert every word in the line to a number."
+          ],
+          "correctIndex": 0,
+          "explanation": "Line reading obtains a unit of text. Validating its structure and converting its parts are later responsibilities."
+        }
+      ]
+    }
+  ]
+}
