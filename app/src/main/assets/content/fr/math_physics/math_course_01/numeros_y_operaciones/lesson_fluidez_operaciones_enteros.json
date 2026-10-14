@@ -1,0 +1,377 @@
+{
+  "id": "math_course_01__numeros_y_operaciones__fluidez_operaciones_enteros",
+  "title": "Opérations sur les entiers : choisir, calculer et vérifier",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Anticiper une réponse avant de terminer le calcul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans cette pratique, réunis les idées des leçons précédentes. Avant de calculer, décide si le résultat sera positif, négatif ou nul et estime sa grandeur. Vérifie ensuite à l'aide d'une opération inverse ou d'un autre regroupement. Un calcul n'a pas besoin d'être long pour que cette décision soit importante."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "signos_y_tamanos",
+          "prompt": "Calcule les trois expressions ; observe qu'elles utilisent les mêmes grandeurs, mais des opérations différentes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "signos_y_tamanos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "−12 + 8",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "−12 − 8",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "(−12) ÷ (−4)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-20"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les résultats sont −4, −20 et 3. L'addition compense, soustraire un positif accentue le déplacement négatif et la division recherche un facteur.",
+            "incorrect": "Les signes ne remplacent pas l'opération. Ici, addition et soustraction donnent des résultats différents, et le quotient se vérifie avec (−4) × 3."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_tres_signos",
+          "prompt": "Calcule −8 + 15 + (−7).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "suma_tres_signos__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "0"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les termes négatifs totalisent −15 et compensent +15 : le résultat est zéro.",
+            "incorrect": "Conserve le signe de chaque terme lors du regroupement. Des nombres non nuls peuvent donner une somme nulle."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver une quantité manquante"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cambio_ausente",
+          "prompt": "Un solde était de 4 pesos et se termine à −9 pesos. Quel changement orienté a-t-il subi ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cambio_ausente__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-13"
+              },
+              "unit": "pesos"
+            }
+          ],
+          "feedback": {
+            "correct": "Le changement vaut −13 pesos : 4 + (−13) = −9.",
+            "incorrect": "L'état final est −9, mais le changement doit faire passer de 4 à −9. Vérifie en appliquant ta réponse à la valeur initiale."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisor_ausente",
+          "prompt": "Quel entier non nul complète 48 ÷ ? = −6 ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisor_ausente__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le diviseur est −8 : (−8) × (−6) = 48.",
+            "incorrect": "Le produit du diviseur et du quotient doit redonner 48. Ne confonds pas addition et multiplication."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "verificacion_cociente",
+          "prompt": "On propose (−45) ÷ (−9) = −5. Quelle vérification permet de détecter l'erreur ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "verificacion_cociente__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(−9) × (−5) = 45, ce qui ne redonne pas −45.",
+                  "reviewFeedback": "Vérifie quelle quantité doit être retrouvée par le produit choisi et examine soigneusement le signe de chaque facteur."
+                },
+                {
+                  "id": "b",
+                  "label": "−9 + (−5) = −14, qui devrait être le dividende.",
+                  "reviewFeedback": "La vérification choisie additionne le diviseur et le quotient. Revois la relation qui définit un quotient avant d'effectuer le calcul."
+                },
+                {
+                  "id": "c",
+                  "label": "Puisqu'il y a un négatif, tout quotient doit être négatif.",
+                  "reviewFeedback": "Ton affirmation traite la présence d'un signe comme une règle générale. Examine le dividende et le diviseur, puis vérifie le quotient proposé avec l'opération inverse."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La vérification multiplie le diviseur par le quotient. Le produit obtenu vaut +45 ; le quotient correct vaut +5.",
+            "incorrect": "Additionner le diviseur et le quotient ne vérifie pas une division. Deux négatifs n'imposent pas un quotient négatif : la relation multiplicative détermine son signe."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changements répétés et données d'une droite"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "registro_mixto",
+          "prompt": "Un score commence à −4 points, subit trois pertes de 5 points, puis gagne 12. Quelle est sa valeur finale ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "registro_mixto__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-7"
+              },
+              "unit": "points"
+            }
+          ],
+          "feedback": {
+            "correct": "−4 + 3 × (−5) + 12 = −4 − 15 + 12 = −7 points.",
+            "incorrect": "Les trois pertes concernent le score ; l'état initial n'intervient qu'une fois. Le gain final ne compense pas toute la quantité négative."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "origen_y_repeticiones",
+          "prompt": "Un mobile part de −6 m et arrive à 2 m au moyen de quatre changements égaux. Écris le changement total et le changement à chaque étape.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "origen_y_repeticiones__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "t",
+                  "type": "numeric",
+                  "label": "Changement total (m)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Changement par étape (m)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "t": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le changement total est de 8 m et chaque étape apporte 2 m. Vérification : −6 + 4 × 2 = 2.",
+            "incorrect": "La position finale 2 ne constitue pas à elle seule le changement total. Relie d'abord départ et arrivée, puis partage le changement."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zéro et limites dans une nouvelle situation"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparto_sin_grupos",
+          "prompt": "Il y a 12 jetons à répartir également entre zéro groupe. Quelle conclusion convient ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparto_sin_grupos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Chaque groupe reçoit zéro jeton.",
+                  "reviewFeedback": "Pour interpréter une quantité par groupe, vérifie si son produit par le nombre de groupes permet de retrouver les jetons disponibles."
+                },
+                {
+                  "id": "b",
+                  "label": "Chaque groupe reçoit douze jetons.",
+                  "reviewFeedback": "Examine le sens de « chaque groupe » lorsqu'aucun groupe n'a été formé. Vérifie ta proposition à partir du total qu'elle produirait."
+                },
+                {
+                  "id": "c",
+                  "label": "Aucune quantité par groupe n'est définie : le nombre de groupes vaut zéro.",
+                  "reviewFeedback": "Examine si les conditions du partage permettent de déterminer une quantité par groupe et si cette quantité pourrait reconstituer le total."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le partage demanderait 12 ÷ 0. Aucune quantité multipliée par zéro groupe ne peut redonner douze jetons.",
+            "incorrect": "Avec zéro groupe, ni zéro ni douze jetons par groupe ne permettent de retrouver douze. La condition empêche de définir le quotient."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_operaciones_distintas",
+          "prompt": "Calcule sans confondre le rôle du zéro.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_operaciones_distintas__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "s",
+                  "type": "numeric",
+                  "label": "0 + (−6)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "0 × (−6)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "0 ÷ (−6)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "s": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "p": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Somme : −6 ; produit : 0 ; quotient : 0. La division est définie parce que le diviseur vaut −6.",
+            "incorrect": "La présence de zéro n'a pas un seul effet pour toutes les opérations. Examine l'opération et la position de zéro."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,377 @@
+{
+  "id": "math_course_01__numeros_y_operaciones__fluidez_operaciones_enteros",
+  "title": "Integer Operations: Choose, Calculate, and Check",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Anticipate an Answer Before Completing the Calculation"
+        },
+        {
+          "type": "paragraph",
+          "text": "In this practice, combine ideas from earlier lessons. Before calculating, decide whether the result will be positive, negative, or zero, and estimate its magnitude. Then check using an inverse operation or a different grouping. A calculation need not be long for the decision to matter."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "signos_y_tamanos",
+          "prompt": "Calculate all three expressions; notice that they use the same magnitudes with different operations.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "signos_y_tamanos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "−12 + 8",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "−12 − 8",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "(−12) ÷ (−4)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-20"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The results are −4, −20, and 3. Addition offsets, subtracting a positive increases movement in the negative direction, and division finds a factor.",
+            "incorrect": "Signs do not replace the operation. Addition and subtraction give different results here, and the quotient is checked with (−4) × 3."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_tres_signos",
+          "prompt": "Calculate −8 + 15 + (−7).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "suma_tres_signos__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "0"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The negative terms add to −15 and cancel +15: the result is zero.",
+            "incorrect": "Keep the sign of each term when regrouping. A result of zero can come from nonzero numbers."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recover a Missing Quantity"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cambio_ausente",
+          "prompt": "A balance started at 4 pesos and ended at −9 pesos. What directed change occurred?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cambio_ausente__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-13"
+              },
+              "unit": "pesos"
+            }
+          ],
+          "feedback": {
+            "correct": "The change was −13 pesos: 4 + (−13) = −9.",
+            "incorrect": "The final state is −9, but the change must take the balance from 4 to −9. Check your answer by applying it to the starting value."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisor_ausente",
+          "prompt": "Which nonzero integer completes 48 ÷ ? = −6?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisor_ausente__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The divisor is −8: (−8) × (−6) = 48.",
+            "incorrect": "Multiplying the divisor by the quotient must recover 48. Do not confuse addition with multiplication."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "verificacion_cociente",
+          "prompt": "Someone proposes (−45) ÷ (−9) = −5. Which check detects the mistake?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "verificacion_cociente__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(−9) × (−5) = 45, which does not recover −45.",
+                  "reviewFeedback": "Check which value the product you chose is meant to recover and review the signs of its factors."
+                },
+                {
+                  "id": "b",
+                  "label": "−9 + (−5) = −14, which must be the dividend.",
+                  "reviewFeedback": "The check you chose combines divisor and quotient by addition. Reconsider the relationship defining a quotient before calculating."
+                },
+                {
+                  "id": "c",
+                  "label": "Because a negative appears, every quotient must be negative.",
+                  "reviewFeedback": "Your claim treats the presence of a sign as a universal rule. Examine the roles of dividend and divisor and check the proposed quotient with the inverse operation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The check multiplies divisor by quotient. The product is +45; the correct quotient is +5.",
+            "incorrect": "Adding divisor and quotient does not check a division. Two negatives do not require a negative quotient: multiplication determines its sign."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Repeated Changes and Number-Line Data"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "registro_mixto",
+          "prompt": "A score begins at −4 points, loses 5 points three times, and then gains 12. What is the final score?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "registro_mixto__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-7"
+              },
+              "unit": "points"
+            }
+          ],
+          "feedback": {
+            "correct": "−4 + 3 × (−5) + 12 = −4 − 15 + 12 = −7 points.",
+            "incorrect": "The three losses affect the score; the initial state occurs only once. The final gain does not offset all the negative quantity."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "origen_y_repeticiones",
+          "prompt": "An object moves from −6 m to 2 m in four equal changes. Write the total change and the change at each stage.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "origen_y_repeticiones__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "t",
+                  "type": "numeric",
+                  "label": "Total change (m)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Change per stage (m)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "t": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "e": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The total change is 8 m and each stage contributes 2 m. Check: −6 + 4 × 2 = 2.",
+            "incorrect": "The final position 2 is not the total change by itself. First relate the starting and final positions, then distribute that change."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zero and Limits in a New Situation"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparto_sin_grupos",
+          "prompt": "There are 12 counters to divide equally among zero groups. Which conclusion is correct?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparto_sin_grupos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Each group gets zero counters.",
+                  "reviewFeedback": "To interpret a quantity per group, check whether multiplying it by the number of groups recovers the available counters."
+                },
+                {
+                  "id": "b",
+                  "label": "Each group gets twelve counters.",
+                  "reviewFeedback": "Consider what 'each group' means when none has been formed. Check your suggestion against the total that would result."
+                },
+                {
+                  "id": "c",
+                  "label": "No quantity per group is defined because the number of groups is zero.",
+                  "reviewFeedback": "Examine whether the conditions of division determine a quantity per group and whether that quantity could recover the total."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The division would be 12 ÷ 0. No quantity multiplied by zero groups can recover twelve counters.",
+            "incorrect": "With zero groups, neither zero nor twelve counters per group recovers twelve. The condition prevents defining the quotient."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_operaciones_distintas",
+          "prompt": "Calculate without confusing the roles of zero.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_operaciones_distintas__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "s",
+                  "type": "numeric",
+                  "label": "0 + (−6)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "0 × (−6)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "0 ÷ (−6)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "s": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "p": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Addition: −6; product: 0; quotient: 0. Division is defined because the divisor is −6.",
+            "incorrect": "Zero does not have just one effect across all operations. Check the operation and the position of zero."
+          }
+        }
+      ]
+    }
+  ]
+}
