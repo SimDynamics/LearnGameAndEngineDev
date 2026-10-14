@@ -1,0 +1,155 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__leer_y_validar_una_linea_completa",
+  "title": "Read and Validate a Complete Line",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reading One Object Does Not Validate the Whole Line"
+        },
+        {
+          "type": "paragraph",
+          "text": "Our Recuento operator>> reads one object and leaves whatever follows it. This behavior makes chained reads possible. For a line that must contain exactly one record, we need a stricter contract: an identifier and count, no extra data, and preservation of the destination if any check fails."
+        },
+        {
+          "type": "paragraph",
+          "text": "We agree on the format ID [aceptados;rechazados]. ID is between 0 and 9, and the quantities are between 0 and 10. We allow the spaces skipped by formatted extraction and trailing whitespace. Integers are read in decimal: a plus sign or leading zeros may represent the same value. An empty line has no record. The record reader receives an already delimited line, without the newline that getline would remove; the examples build these lines from known strings. No space is required between ID and the opening bracket: 3[2;1] also follows this format."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "registro_y_sufijo",
+          "question": "The line 2 [4;1] extra allows ID and Recuento to be extracted. What must still be checked to meet our contract?",
+          "options": [
+            "Whether the identifier preserves its leading zeros.",
+            "Whether the count can be printed with another separator.",
+            "Whether anything other than whitespace remains after the record."
+          ],
+          "correctIndex": 2,
+          "explanation": "Extracting the fields does not validate the suffix. The word extra violates the one-record-per-line rule."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "First Solve the Single-Field Case"
+        },
+        {
+          "type": "paragraph",
+          "text": "This reader obtains an identifier in a local candidate. It checks extraction and domain before examining the end. std::ws consumes spaces, tabs, and other whitespace according to the stream; if it reaches the end, eof() signals this. If another character remains, the text is incomplete. bad() identifies a stream failure that must also be rejected."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_id_completo(const std::string& texto, int& destino) {\n    std::istringstream origen{texto};\n    int candidato{0};\n    if (!(origen >> candidato) || candidato < 0 || candidato > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int id{8};\n    bool valido = leer_id_completo(\"03  \", id);\n    std::cout << valido << \":\" << id;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 1:3. 03 represents the numeric identifier 3, and trailing spaces are allowed. The destination is updated only after all the text has been checked. We do not report success merely because eof() is set: an incomplete extraction may also reach the end. If an integer ends right at the end of the text, its extraction can set EOF without failing. Given that state, ws can add failbit. We already checked extraction here; the absence of a suffix is still valid. Therefore we do not replace this final check with a requirement that the stream remain in good(), or by testing !origen after ws."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "eof_no_basta",
+          "question": "The text ends before all fields are obtained, and the stream signals EOF and failure. Is the record valid?",
+          "options": [
+            "Yes, because no extra characters remain.",
+            "No: reaching the end does not replace obtaining all fields.",
+            "Yes, if the candidates were initialized to zero."
+          ],
+          "correctIndex": 1,
+          "explanation": "Initial values do not prove a successful read. Extraction must finish first; only then do we check the suffix."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preserve the Destination Even After Reading a Prefix"
+        },
+        {
+          "type": "output_prediction",
+          "id": "id_con_texto_sobrante",
+          "question": "Predict the output. The reader requires the whole representation to be consumed, except for trailing whitespace.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_id_completo(const std::string& texto, int& destino) {\n    std::istringstream origen{texto};\n    int candidato{0};\n    if (!(origen >> candidato) || candidato < 0 || candidato > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int id{8};\n    bool valido = leer_id_completo(\"4 extra\", id);\n    std::cout << valido << \":\" << id;\n    return 0;\n}\n",
+          "answers": [
+            "0:8"
+          ],
+          "explanation": "The value 4 is obtained, but extra remains after skipping the space. eof() is false; the record is rejected before assigning the destination."
+        },
+        {
+          "type": "paragraph",
+          "text": "Preserving the caller's object and returning false does not mean returning consumed characters to the stream. Our local source is destroyed when the function returns. Under this contract, we receive a complete string and create a new source on each call, so one invalid line does not contaminate the reading of another."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "destino_y_origen_distintos",
+          "question": "If a failed read preserves the destination, what can you conclude about the source?",
+          "options": [
+            "It also recovered all its characters automatically.",
+            "It could not have consumed any characters before failing.",
+            "Preserving the destination does not guarantee that the source is restored."
+          ],
+          "correctIndex": 2,
+          "explanation": "Object and stream have different states. Delaying assignment protects the destination."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build the Reader for a Complete Record"
+        },
+        {
+          "type": "paragraph",
+          "text": "Use the supplied Registro type and the Recuento operator>> you already learned. Build leer_linea: it receives a string by const reference and a Registro by reference, and returns bool. It must accept exactly the agreed format, validate ID, reject suffixes, and update the complete record only on success. Do not print inside the reader."
+        },
+        {
+          "type": "paragraph",
+          "text": "In main, test four lines in this order: 3 [2;1]; 3 [2;1] extra; 10 [2;1]; 3 [2;11]. Before each call, reset the destination to {8,{9,9}}. Display success as 0 or 1, followed by ID, aceptados, and rechazados, separated by colons. Predict every result before executing."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\n// Define leer_linea before main.\nint main() {\n    // Build your tests and check the destination after each call.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "The reference comes after your attempt. The operator code is provided as a dependency you have already studied; the decision to accept an entire line belongs in your new function."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference and Cases That Distinguish the Contract"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    const std::vector<std::string> pruebas{\n        \"3 [2;1]\", \"3 [2;1] extra\", \"10 [2;1]\", \"3 [2;11]\"\n    };\n    for (const std::string& linea : pruebas) {\n        Registro destino{8, {9, 9}};\n        bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The four lines produce, respectively, 1:3:2:1, 0:8:9:9, 0:8:9:9, and 0:8:9:9. Criteria: combined extraction into a candidate, checked ID domain, checked Recuento domain and separators through its operator, only whitespace following the record, and final assignment of all fields."
+        },
+        {
+          "type": "paragraph",
+          "text": "Add these tests: 03 [02;+1] and 3 [2;1] with trailing spaces must be accepted as the same record; an empty line, 3 [2;1 without a closing bracket, -1 [2;1], 3 [2,1], and 3 [2;1][0;0] must be rejected while preserving {8,{9,9}}. 0 [0;0] and 9 [10;10] are valid boundary values. We are not comparing identical characters; we are comparing values admitted by our format."
+        },
+        {
+          "type": "paragraph",
+          "text": "Another organization is correct if it preserves these guarantees. Clearing an error with clear() is not sufficient: it does not turn a suffix or incomplete field into a valid record. The next decision belongs to the collection: what should be done with valid, invalid, and repeated lines?"
+        },
+        {
+          "type": "note",
+          "text": "Reading and validation are discussed in the primary source (Stroustrup, 2024, sections 9.4–9.9, pp. 259–275). The format, reader, and activities are original to this learning path."
+        }
+      ]
+    }
+  ]
+}

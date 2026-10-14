@@ -1,0 +1,155 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__leer_y_validar_una_linea_completa",
+  "title": "Lire et valider une ligne complète",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La lecture d'un objet ne valide pas toute la ligne"
+        },
+        {
+          "type": "paragraph",
+          "text": "Notre operator>> pour Recuento lit un objet et laisse ce qui vient ensuite. Ce comportement permet d'enchaîner les lectures. Pour une ligne qui doit contenir exactement un enregistrement, il nous faut un contrat plus strict : un identifiant et un décompte, aucune donnée supplémentaire et la préservation de la destination si une vérification échoue."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous convenons du format ID [aceptados;rechazados]. ID est compris entre 0 et 9, et les quantités entre 0 et 10. Nous acceptons les espaces ignorés par l'extraction formatée et les espaces finaux. Les entiers sont lus en décimal : un signe positif ou des zéros initiaux peuvent représenter la même valeur. Une ligne vide ne contient aucun enregistrement. Le lecteur reçoit une ligne déjà délimitée, sans le saut de ligne que retirerait getline ; les exemples construisent ces lignes à partir de chaînes connues. Aucun espace n'est exigé entre ID et le crochet ouvrant : 3[2;1] respecte aussi ce format."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "registro_y_sufijo",
+          "question": "La ligne 2 [4;1] reste permet d'extraire ID et Recuento. Que faut-il encore vérifier pour respecter notre contrat ?",
+          "options": [
+            "Si l'identifiant conserve ses zéros initiaux.",
+            "Si le décompte peut s'afficher avec un autre séparateur.",
+            "Si des données autres que des espaces subsistent après l'enregistrement."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'extraction des champs ne valide pas le suffixe. Le mot reste enfreint la règle d'un seul enregistrement par ligne."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Résoudre d'abord le cas d'un seul champ"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce lecteur obtient un identifiant dans une variable candidate locale. Il vérifie l'extraction et le domaine avant d'examiner la fin. std::ws consomme les espaces, les tabulations et les autres caractères blancs selon le flux ; s'il atteint la fin, eof() le signale. Si un autre caractère subsiste, le texte est incomplet. bad() indique une défaillance du flux qui doit elle aussi être rejetée."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_id_completo(const std::string& texto, int& destino) {\n    std::istringstream origen{texto};\n    int candidato{0};\n    if (!(origen >> candidato) || candidato < 0 || candidato > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int id{8};\n    bool valido = leer_id_completo(\"03  \", id);\n    std::cout << valido << \":\" << id;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 1:3. 03 représente l'identifiant numérique 3 et les espaces finaux sont autorisés. La destination n'est actualisée qu'après vérification de tout le texte. Nous ne déclarons pas un succès simplement parce que eof() est actif : une extraction incomplète peut aussi atteindre la fin. Si un entier se termine exactement à la fin du texte, son extraction peut signaler EOF sans échouer. Dans cet état, ws peut ajouter failbit. Ici, nous avons déjà vérifié l'extraction ; l'absence de suffixe reste valide. C'est pourquoi nous ne remplaçons pas cette dernière vérification par l'exigence que le flux reste en good(), ni par le test !origen après ws."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "eof_no_basta",
+          "question": "Le texte se termine avant l'obtention de tous les champs et le flux signale EOF et un échec. L'enregistrement est-il valide ?",
+          "options": [
+            "Oui, car aucun caractère supplémentaire ne subsiste.",
+            "Non : atteindre la fin ne remplace pas l'extraction de tous les champs.",
+            "Oui, si les variables candidates ont été initialisées à zéro."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les valeurs initiales ne prouvent pas la lecture. L'extraction doit d'abord se terminer ; ensuite, nous vérifions le suffixe."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Préserver la destination même après avoir lu un préfixe"
+        },
+        {
+          "type": "output_prediction",
+          "id": "id_con_texto_sobrante",
+          "question": "Prédis la sortie. Le lecteur exige que toute la représentation soit consommée, à l'exception des espaces finaux.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool leer_id_completo(const std::string& texto, int& destino) {\n    std::istringstream origen{texto};\n    int candidato{0};\n    if (!(origen >> candidato) || candidato < 0 || candidato > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int id{8};\n    bool valido = leer_id_completo(\"4 reste\", id);\n    std::cout << valido << \":\" << id;\n    return 0;\n}\n",
+          "answers": [
+            "0:8"
+          ],
+          "explanation": "La valeur 4 est obtenue, mais reste subsiste après le saut de l'espace. eof() vaut false ; la ligne est rejetée avant toute affectation à la destination."
+        },
+        {
+          "type": "paragraph",
+          "text": "Préserver l'objet de l'appelant et renvoyer false ne signifie pas restituer au flux les caractères consommés. Notre source locale est détruite au retour de la fonction. Pour ce contrat, nous recevons une chaîne complète et créons une nouvelle source à chaque appel : une ligne invalide ne contamine donc pas la lecture d'une autre."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "destino_y_origen_distintos",
+          "question": "Si une lecture échouée préserve la destination, que peux-tu affirmer sur la source ?",
+          "options": [
+            "Elle a aussi récupéré automatiquement tous ses caractères.",
+            "Elle n'a pu consommer aucun caractère avant l'échec.",
+            "La préservation de la destination ne garantit pas la restitution de la source."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'objet et le flux ont des états différents. L'affectation différée protège la destination."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire le lecteur d'un enregistrement complet"
+        },
+        {
+          "type": "paragraph",
+          "text": "Utilise le type Registro fourni et l'operator>> de Recuento déjà étudié. Construis leer_linea : elle reçoit une string par référence const et un Registro par référence, et renvoie bool. Elle doit accepter exactement le format convenu, valider ID, rejeter les suffixes et n'actualiser l'ensemble de l'enregistrement qu'en cas de succès. N'affiche rien dans le lecteur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, teste quatre lignes dans cet ordre : 3 [2;1] ; 3 [2;1] reste ; 10 [2;1] ; 3 [2;11]. Avant chaque appel, réinitialise la destination à {8,{9,9}}. Affiche le succès sous la forme 0 ou 1, suivi de ID, aceptados et rechazados, séparés par des deux-points. Prédis chaque résultat avant l'exécution."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\n// Définis leer_linea avant main.\nint main() {\n    // Construis tes tests et vérifie la destination après chaque appel.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "La référence suit la tentative. Le code de l'opérateur est fourni comme une dépendance déjà étudiée ; la décision d'accepter la ligne entière appartient à ta nouvelle fonction."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence et cas qui distinguent le contrat"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    const std::vector<std::string> pruebas{\n        \"3 [2;1]\", \"3 [2;1] reste\", \"10 [2;1]\", \"3 [2;11]\"\n    };\n    for (const std::string& linea : pruebas) {\n        Registro destino{8, {9, 9}};\n        bool valido = leer_linea(linea, destino);\n        std::cout << valido << ':' << destino.id << ':'\n                  << destino.recuento.aceptados << ':'\n                  << destino.recuento.rechazados << '\\n';\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les quatre lignes donnent respectivement 1:3:2:1, 0:8:9:9, 0:8:9:9 et 0:8:9:9. Critères : extraction combinée dans une variable candidate, domaine de ID vérifié, domaine et séparateurs de Recuento vérifiés par son opérateur, uniquement des espaces après l'enregistrement et affectation finale de tous les champs."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ajoute ces tests : 03 [02;+1] et 3 [2;1] avec des espaces finaux doivent être acceptés comme le même enregistrement ; une ligne vide, 3 [2;1 sans crochet fermant, -1 [2;1], 3 [2,1] et 3 [2;1][0;0] doivent être rejetés en conservant {8,{9,9}}. 0 [0;0] et 9 [10;10] sont des valeurs limites valides. Nous ne comparons pas des caractères identiques, mais les valeurs autorisées par notre format."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une autre organisation est correcte si elle conserve ces garanties. Effacer un échec avec clear() ne suffit pas : cela ne transforme pas un suffixe ou un champ incomplet en enregistrement valide. La prochaine décision concerne la collection : que faire des lignes valides, invalides et répétées ?"
+        },
+        {
+          "type": "note",
+          "text": "La lecture et la validation sont étudiées dans la source principale (Stroustrup, 2024, sections 9.4–9.9, pp. 259–275). Le format, le lecteur et les activités sont originaux dans ce parcours."
+        }
+      ]
+    }
+  ]
+}
