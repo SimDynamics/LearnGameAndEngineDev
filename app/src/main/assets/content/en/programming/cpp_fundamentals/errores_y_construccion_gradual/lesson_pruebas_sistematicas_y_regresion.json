@@ -1,0 +1,188 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__pruebas_sistematicas_y_regresion",
+  "title": "Systematic Testing and Regression",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Test Has an Input, an Expected Result, and a Comparison"
+        },
+        {
+          "type": "paragraph",
+          "text": "Running a program and looking at the screen does not, by itself, define a test. A test case specifies data, expected behavior, and a comparison with actual behavior. Calculate the expected result from the requirement before running the program. If you obtain it by copying the formula of the function under test, you may repeat the same mistake in both the test and the program."
+        },
+        {
+          "type": "paragraph",
+          "text": "For the small workshop's estimate, choose -1, 0, 1, 4, 10, and 11 items. The two values just outside the boundaries check rejection. Zero checks the empty-order rule. One checks the first nonempty order. Four checks an interior case. Ten checks the accepted upper boundary. The function returns -1 for invalid inputs, 0 for zero, and 3+2*piezas for all other valid inputs."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "resultado_esperado_independiente",
+          "question": "How do you obtain a useful expected result for testing estimar(4)?",
+          "options": [
+            "By taking whatever output the program happened to produce first.",
+            "By calculating 3 setup minutes plus 2 for each of the four items, as specified by the requirement.",
+            "By copying the body of estimar into another function without reviewing it."
+          ],
+          "correctIndex": 1,
+          "explanation": "The requirement is the reference. Repeating the implementation may repeat its defect."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_que_falta",
+          "question": "You have only tested orders with 2 and 6 items. Which case is especially useful for revealing that you always add setup time?",
+          "options": [
+            "4 items.",
+            "0 items.",
+            "8 items."
+          ],
+          "correctIndex": 1,
+          "explanation": "Positive quantities all require setup. An empty order follows a different branch."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Make Every Comparison Visible"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(4)};\n    int esperado{11};\n    if (real == esperado) {\n        std::cout << \"Pass\";\n    } else {\n        std::cout << \"Fail: \" << real << \" expected \" << esperado;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The test helper prints both the actual and expected results when they differ. It does not alter the result to make the test pass. A failed test provides evidence; also check that its expectation agrees with the requirement. The message helps the investigation but does not substitute for finding the cause."
+        },
+        {
+          "type": "output_prediction",
+          "id": "comparacion_con_defecto",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(0)};\n    int esperado{0};\n    if (real == esperado) {\n        std::cout << \"Pass\";\n    } else {\n        std::cout << \"Fail:\" << real << \":\" << esperado;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Fail:3:0"
+          ],
+          "explanation": "The faulty version adds setup time to an empty order. The independently determined expectation exposes the defect."
+        },
+        {
+          "type": "output_prediction",
+          "id": "expectativa_tambien_puede_fallar",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(2)};\n    int esperado{4};\n    std::cout << real << \":\" << esperado << \":\" << (real == esperado);\n    return 0;\n}\n",
+          "answers": [
+            "7:4:0"
+          ],
+          "explanation": "The calculation correctly returns 3+4=7. The expectation of 4 overlooked setup time; the test must be corrected."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Every Test Must Run"
+        },
+        {
+          "type": "paragraph",
+          "text": "We can collect small tests in a verificar function that receives an input and an expected result and returns bool. After a fix, it is useful to run the tests that passed before as well: that is regression testing. Do not write verificar(caso1)&&verificar(caso2) if both need to run: short-circuit evaluation may skip the second when the first fails. Record each result through an independent call."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cortocircuito_oculta_segunda_prueba",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool verificar(int caso) {\n    std::cout << \"T\" << caso;\n    return caso != 0;\n}\n\nint main() {\n    bool todas{verificar(0) && verificar(1)};\n    std::cout << \":\" << todas;\n    return 0;\n}\n",
+          "answers": [
+            "T0:0"
+          ],
+          "explanation": "The first call returns false; && does not execute the second. The summary does not prove that every test case was visited."
+        },
+        {
+          "type": "output_prediction",
+          "id": "llamadas_independientes",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool verificar(int caso) {\n    std::cout << \"T\" << caso;\n    return caso != 0;\n}\n\nint main() {\n    bool primera{verificar(0)};\n    bool segunda{verificar(1)};\n    bool todas{primera && segunda};\n    std::cout << \":\" << todas;\n    return 0;\n}\n",
+          "answers": [
+            "T0T1:0"
+          ],
+          "explanation": "Both calls have already occurred before their results are combined."
+        },
+        {
+          "type": "fill_code",
+          "id": "detectar_desigualdad",
+          "question": "Complete only the operator that counts a failure when the actual and expected results differ.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int real{7};\n    int esperado{7};\n    int fallos{0};\n    if (real ___ esperado) {\n        ++fallos;\n    }\n    std::cout << fallos;\n    return 0;\n}\n",
+          "answers": [
+            "!=",
+            "not_eq"
+          ],
+          "explanation": "A failure is counted when real and esperado are different. Equal values leave the count at zero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Small Tests Can Cover an Entire Small Domain"
+        },
+        {
+          "type": "paragraph",
+          "text": "For a function with a very small input domain, it may be reasonable to visit every permitted value. That does not automatically resolve unknown requirements or prove a property for a larger domain. For programs accepting general data, representative cases and arguments for correctness complement each other. “All my tests pass” should say what those tests actually checked."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "limite_de_evidencia",
+          "question": "Six selected tests of the estimate passed. Which claim is directly supported?",
+          "options": [
+            "Those six cases and comparisons produced the expected results.",
+            "Those six cases replace the checks needed after future changes.",
+            "Those six cases guarantee every input in an expanded domain."
+          ],
+          "correctIndex": 0,
+          "explanation": "Evidence has a specific scope. Changes to the domain or behavior require new tests."
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lab, write verificar(int piezas, int esperado): it calls estimar, displays the actual and expected results with a label, and returns whether they match. Independently test -1, 0, 1, 4, 10, and 11 with expected results -1, 0, 5, 11, 23, and -1. Count failures and display the total. Then deliberately add setup time in the zero case, verify that the test catches it, and restore the correct solution. The defect changes results; it does not introduce dangerous operations."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Zero=\" << estimar(0) << \"\\n\";\n    std::cout << \"Four=\" << estimar(4) << \"\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab Reference Solution"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and testing your attempt. It is one possible implementation; other solutions are valid if they meet the same contract and the stated criteria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. verificar must compare the actual result with an independently determined expectation, display both with a label, and return whether they match. All six tests for -1, 0, 1, 4, 10, and 11 must execute even if one fails. The expected results are -1, 0, 5, 11, 23, and -1, and the correct version finishes with zero failures. If setup time is added in the zero case, only that test fails in this set: the summary must report one failure; after the fix is restored, it must return to zero."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nbool verificar(int piezas, int esperado) {\n    int real{estimar(piezas)};\n    bool coincide{real == esperado};\n    std::cout << \"Items=\" << piezas << \" actual=\" << real\n              << \" expected=\" << esperado << \" \";\n    if (coincide) { std::cout << \"Pass\\n\"; }\n    else { std::cout << \"Fail\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!verificar(-1, -1)) { ++fallos; }\n    if (!verificar(0, 0)) { ++fallos; }\n    if (!verificar(1, 5)) { ++fallos; }\n    if (!verificar(4, 11)) { ++fallos; }\n    if (!verificar(10, 23)) { ++fallos; }\n    if (!verificar(11, -1)) { ++fallos; }\n    std::cout << \"Failures=\" << fallos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The calls occupy separate statements; none can be skipped because of an earlier &&. To verify that the helper detects the defect, temporarily change return 0 in the piezas==0 case to return 3. The comparison for that case will show actual=3, expected=0, and Fail. Restore the original rule and rerun the entire set."
+        }
+      ]
+    }
+  ]
+}

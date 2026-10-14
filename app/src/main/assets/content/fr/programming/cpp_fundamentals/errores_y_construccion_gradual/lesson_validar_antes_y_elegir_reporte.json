@@ -1,0 +1,195 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__validar_antes_y_elegir_reporte",
+  "title": "Valider avant le calcul et choisir comment signaler",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un type correct peut tout de même contenir une donnée invalide"
+        },
+        {
+          "type": "paragraph",
+          "text": "int peut représenter -1 et 11, mais cela n'en fait pas des quantités valides pour le petit atelier, qui accepte de 0 à 10 pièces. La validation vérifie les règles du domaine que le type ne suffit pas à exprimer. Effectue-la avant les opérations qui dépendent de ces règles. Une condition écrite après une division, un accès ou une modification ne protège pas une opération déjà effectuée."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{11};\n    if (piezas < 0 || piezas > 10) {\n        std::cout << \"Commande invalide\";\n    } else if (piezas == 0) {\n        std::cout << 0;\n    } else {\n        std::cout << 3 + 2 * piezas;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "validacion_frontera_aceptada",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{10};\n    if (piezas < 0 || piezas > 10) {\n        std::cout << \"Invalide\";\n    } else {\n        std::cout << \"Accepté\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Accepté"
+          ],
+          "explanation": "Le domaine inclut 10. Les comparaisons strictes rejettent uniquement les valeurs situées hors de l'intervalle."
+        },
+        {
+          "type": "output_prediction",
+          "id": "validacion_negativa",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{-1};\n    if (piezas < 0 || piezas > 10) {\n        std::cout << \"Invalide\";\n    } else {\n        std::cout << \"Accepté\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Invalide"
+          ],
+          "explanation": "-1 enfreint la borne inférieure même si son type est int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Valider les données qui seront réellement utilisées"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifier une quantité initiale puis lui soustraire une valeur peut produire une quantité invalide pour la fonction suivante. Si pendientes doit rester non négatif, vérifie les relations avant la soustraction qui représente les pièces terminées. Le contrat d'une fonction n'est pas automatiquement préservé parce qu'une autre donnée a été validée à une étape précédente."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "completar_mas_de_lo_disponible",
+          "question": "Il reste 5 pièces à terminer et on propose d'en terminer 7. L'opération doit conserver un nombre de pièces restantes non négatif. Que faut-il vérifier avant de modifier l'état ?",
+          "options": [
+            "Changer pendientes en unsigned pour qu'il ne paraisse jamais négatif.",
+            "Soustraire 7 et accepter le résultat, puisque 5 était valide.",
+            "Vérifier que completadas se situe entre 0 et pendientes."
+          ],
+          "correctIndex": 2,
+          "explanation": "La relation entre les deux données préserve le sens de l'état. Modifier la représentation ne rend pas une opération impossible valide."
+        },
+        {
+          "type": "output_prediction",
+          "id": "rechazo_preserva_estado",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int pendientes{5};\n    int completadas{7};\n    if (completadas < 0 || completadas > pendientes) {\n        std::cout << \"Refusé:\";\n    } else {\n        pendientes -= completadas;\n    }\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "answers": [
+            "Refusé:5"
+          ],
+          "explanation": "La décision précède la modification. L'état initial reste valide lorsque le refus est signalé."
+        },
+        {
+          "type": "output_prediction",
+          "id": "aceptacion_modifica_estado",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int pendientes{5};\n    int completadas{2};\n    if (completadas < 0 || completadas > pendientes) {\n        std::cout << \"Refusé:\";\n    } else {\n        pendientes -= completadas;\n    }\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "La quantité acceptée peut être soustraite sans enfreindre la règle des pièces restantes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une valeur spéciale nécessite un contrat sans ambiguïté"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une fonction peut renvoyer une valeur spéciale pour signaler une erreur si cette valeur se trouve hors de tous les résultats valides et si l'appelant la vérifie. Pour une estimation non négative en minutes, -1 peut représenter une commande invalide. Zéro serait ambigu : il représente déjà une commande vide valide. Le résultat spécial doit être documenté ; il ne contraint pas, à lui seul, l'appelant à le traiter correctement."
+        },
+        {
+          "type": "output_prediction",
+          "id": "valor_especial_comprobado",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Renvoie -1 si piezas est hors de 0..10.\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int resultado{estimar(12)};\n    if (resultado == -1) {\n        std::cout << \"Commande invalide\";\n    } else {\n        std::cout << resultado;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Commande invalide"
+          ],
+          "explanation": "L'appelant reconnaît le signal d'erreur avant de l'utiliser comme une durée en minutes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cero_como_error_ambiguo",
+          "question": "Une fonction renvoie 0 aussi bien pour une commande vide valide que pour une donnée invalide. Quelle distinction perd l'appelant qui ne reçoit que cet int ?",
+          "options": [
+            "Distinguer un résultat nul d'un résultat positif.",
+            "Distinguer une commande vide valide d'une donnée invalide.",
+            "Distinguer deux commandes valides grâce à leurs durées positives."
+          ],
+          "correctIndex": 1,
+          "explanation": "Une même valeur représente deux situations que l'appelant doit pouvoir distinguer."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "olvidar_comprobar_senal",
+          "question": "La fonction utilise -1 pour signaler une erreur, mais l'appelant additionne tous ses résultats comme s'il s'agissait de minutes. Quel est le défaut ?",
+          "options": [
+            "Le type int empêche -1 d'atteindre l'accumulateur de minutes.",
+            "Le contrat oblige automatiquement à ignorer tout résultat -1.",
+            "Un signal d'erreur est ajouté comme s'il représentait une durée valide."
+          ],
+          "correctIndex": 2,
+          "explanation": "Un code d'erreur peut être ignoré. Il faut une politique de traitement explicite à chaque endroit où il est utilisé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Détecter et signaler relèvent de responsabilités différentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction de calcul connaît son domaine et peut détecter une donnée invalide. L'appelant connaît le contexte et décide d'afficher un message, de refuser une commande ou d'essayer de traiter la suivante. Placer tout l'affichage dans le calcul réduit les possibilités de réutilisation et peut provoquer des messages en double. L'unité sur les exceptions présente une autre manière de séparer détection et traitement. Dans ces laboratoires, utilise le compilateur Clang 23 par défaut, qui prend en charge les exceptions ; l'autre option, Clang 21, ne permet pas cet exercice."
+        },
+        {
+          "type": "fill_code",
+          "id": "rechazo_fuera_dominio",
+          "question": "Complète uniquement l'opérateur logique : le dépassement de l'une ou l'autre des deux bornes suffit à rejeter la donnée.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{4};\n    if (piezas < 0 ___ piezas > 10) {\n        std::cout << \"Invalide\";\n    } else {\n        std::cout << \"Valide\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "||",
+            "or"
+          ],
+          "explanation": "On refuse une valeur inférieure à zéro ou supérieure à dix. Utiliser && imposerait deux inégalités incompatibles."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le laboratoire, écris une fonction estimar qui renvoie -1 pour les données hors de 0 à 10 et applique la règle précédente aux données valides. Traite la collection : affiche Invalide pour le signal d'erreur et les minutes pour les autres valeurs. Conserve un total ne comprenant que les estimations valides. Teste aussi une collection vide. Détermine les résultats à la main avant d'exécuter le programme."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Pièces=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence du laboratoire"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et testé ta tentative. Il s'agit d'une implémentation possible ; d'autres solutions sont valides si elles respectent le même contrat et les critères indiqués."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. La fonction renvoie -1 pour les données hors de 0 à 10, 0 pour zéro et 3+2*piezas pour les autres. Dans {0,2,11,-1,5}, les résultats valides sont 0, 7 et 13 ; 11 et -1 affichent Invalide et n'entrent pas dans le total. Celui-ci est de 20 minutes. Une collection vide ne parcourt aucune commande et conserve un total de 0. D'autres libellés d'affichage conviennent s'ils permettent de vérifier ces décisions."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    int total{0};\n    for (int piezas : pedidos) {\n        int minutos{estimar(piezas)};\n        std::cout << \"Pièces=\" << piezas << \":\";\n        if (minutos == -1) {\n            std::cout << \"Invalide\\n\";\n        } else {\n            total += minutos;\n            std::cout << minutos << \"\\n\";\n        }\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "estimar détecte la donnée invalide et main choisit comment la présenter. L'addition n'a lieu que dans la branche valide : aucun signal -1 n'est considéré comme du temps. Remplace les données par {} pour vérifier le cas vide ; le bilan doit afficher Total=0."
+        }
+      ]
+    }
+  ]
+}

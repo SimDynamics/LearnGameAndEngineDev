@@ -1,0 +1,188 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__pruebas_sistematicas_y_regresion",
+  "title": "Tests systématiques et régression",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un test comporte une entrée, un résultat attendu et une comparaison"
+        },
+        {
+          "type": "paragraph",
+          "text": "Exécuter un programme et regarder l'écran ne suffit pas à définir un test. Un cas de test précise les données, le comportement attendu et une comparaison avec le comportement réel. Calcule le résultat attendu à partir de l'exigence, avant l'exécution. Si tu l'obtiens en recopiant la formule de la fonction testée, tu risques de reproduire la même erreur dans le test et dans le programme."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour l'estimation du petit atelier, choisis -1, 0, 1, 4, 10 et 11 pièces. Les deux valeurs immédiatement extérieures aux bornes vérifient les refus. Zéro vérifie la règle de la commande vide. Un vérifie la première commande non vide. Quatre vérifie un cas intérieur. Dix vérifie la borne supérieure acceptée. La fonction renvoie -1 pour les données invalides, 0 pour zéro et 3+2*piezas pour les autres données valides."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "resultado_esperado_independiente",
+          "question": "Comment obtiens-tu un résultat attendu utile pour vérifier estimar(4) ?",
+          "options": [
+            "En reprenant n'importe quelle sortie déjà produite par le programme.",
+            "En calculant 3 minutes de préparation plus 2 pour chacune des quatre pièces, conformément à l'exigence.",
+            "En recopiant sans vérification le corps de estimar dans une autre fonction."
+          ],
+          "correctIndex": 1,
+          "explanation": "L'exigence constitue la référence. Répéter l'implémentation peut reproduire son défaut."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prueba_que_falta",
+          "question": "Tu n'as testé que des commandes de 2 et 6 pièces. Quel cas est particulièrement utile pour révéler que tu ajoutes toujours la préparation ?",
+          "options": [
+            "4 pièces.",
+            "0 pièce.",
+            "8 pièces."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les commandes non vides comportent toutes une préparation. Le cas vide nécessite une branche différente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rendre chaque comparaison visible"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(4)};\n    int esperado{11};\n    if (real == esperado) {\n        std::cout << \"Réussi\";\n    } else {\n        std::cout << \"Échec: \" << real << \" attendu \" << esperado;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le vérificateur affiche le résultat réel et le résultat attendu lorsqu'ils diffèrent. Il ne modifie pas le résultat pour faire réussir le test. Un test qui échoue fournit un indice ; vérifie également que son attente respecte l'exigence. Le message aide à enquêter, mais ne remplace pas la recherche de la cause."
+        },
+        {
+          "type": "output_prediction",
+          "id": "comparacion_con_defecto",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(0)};\n    int esperado{0};\n    if (real == esperado) {\n        std::cout << \"Réussi\";\n    } else {\n        std::cout << \"Échec:\" << real << \":\" << esperado;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Échec:3:0"
+          ],
+          "explanation": "La version défectueuse ajoute la préparation à une commande vide. L'attente établie indépendamment révèle l'erreur."
+        },
+        {
+          "type": "output_prediction",
+          "id": "expectativa_tambien_puede_fallar",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int real{estimar(2)};\n    int esperado{4};\n    std::cout << real << \":\" << esperado << \":\" << (real == esperado);\n    return 0;\n}\n",
+          "answers": [
+            "7:4:0"
+          ],
+          "explanation": "Le calcul renvoie correctement 3+4=7. L'attente de 4 a oublié la préparation ; c'est le test qu'il faut corriger."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tous les tests doivent être exécutés"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous pouvons regrouper de petits tests dans une fonction verificar qui reçoit une entrée et un résultat attendu, puis renvoie bool. Après une correction, il convient d'exécuter aussi les tests qui réussissaient auparavant : c'est la vérification de régression. N'écris pas verificar(caso1)&&verificar(caso2) si les deux appels doivent s'exécuter : l'évaluation en court-circuit peut ignorer le second quand le premier échoue. Enregistre chaque résultat avec un appel indépendant."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cortocircuito_oculta_segunda_prueba",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool verificar(int caso) {\n    std::cout << \"T\" << caso;\n    return caso != 0;\n}\n\nint main() {\n    bool todas{verificar(0) && verificar(1)};\n    std::cout << \":\" << todas;\n    return 0;\n}\n",
+          "answers": [
+            "T0:0"
+          ],
+          "explanation": "Le premier appel renvoie false ; && n'exécute pas le second. Le bilan ne prouve pas que tous les cas ont été visités."
+        },
+        {
+          "type": "output_prediction",
+          "id": "llamadas_independientes",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool verificar(int caso) {\n    std::cout << \"T\" << caso;\n    return caso != 0;\n}\n\nint main() {\n    bool primera{verificar(0)};\n    bool segunda{verificar(1)};\n    bool todas{primera && segunda};\n    std::cout << \":\" << todas;\n    return 0;\n}\n",
+          "answers": [
+            "T0T1:0"
+          ],
+          "explanation": "Les deux appels ont déjà été effectués avant la combinaison de leurs résultats."
+        },
+        {
+          "type": "fill_code",
+          "id": "detectar_desigualdad",
+          "question": "Complète uniquement l'opérateur qui permet de compter un échec lorsque le résultat réel et le résultat attendu diffèrent.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int real{7};\n    int esperado{7};\n    int fallos{0};\n    if (real ___ esperado) {\n        ++fallos;\n    }\n    std::cout << fallos;\n    return 0;\n}\n",
+          "answers": [
+            "!=",
+            "not_eq"
+          ],
+          "explanation": "On compte un échec lorsque real et esperado sont différents. L'égalité laisse le compteur à zéro."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "De petits tests peuvent couvrir tout un petit domaine"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour une fonction dont le domaine d'entrée est très restreint, il peut être raisonnable de tester toutes les valeurs permises. Cela ne résout pas automatiquement les exigences inconnues et ne démontre pas une propriété sur un domaine plus large. Pour les programmes acceptant des données générales, des cas représentatifs et des arguments de correction sont complémentaires. « Tous mes tests réussissent » doit préciser ce que ces tests ont vérifié."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "limite_de_evidencia",
+          "question": "Six tests choisis pour l'estimation ont réussi. Quelle affirmation est directement étayée ?",
+          "options": [
+            "Les six cas et leurs comparaisons ont produit les résultats attendus.",
+            "Ces six cas remplacent les vérifications nécessaires après de futurs changements.",
+            "Ces six cas garantissent toutes les entrées d'un domaine élargi."
+          ],
+          "correctIndex": 0,
+          "explanation": "Les preuves ont une portée précise. Modifier le domaine ou le comportement exige de nouveaux tests."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le laboratoire, écris la fonction verificar(int piezas, int esperado), qui appelle estimar, affiche les résultats réel et attendu avec une étiquette, puis renvoie s'ils coïncident. Teste indépendamment -1, 0, 1, 4, 10 et 11, avec les attentes -1, 0, 5, 11, 23 et -1. Compte les échecs et affiche le total. Ensuite, ajoute volontairement la préparation au cas zéro, vérifie que le test le détecte, puis rétablis la solution correcte. Ce défaut modifie les résultats sans introduire d'opération dangereuse."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"Zéro=\" << estimar(0) << \"\\n\";\n    std::cout << \"Quatre=\" << estimar(4) << \"\\n\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence du laboratoire"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et testé ta tentative. Il s'agit d'une implémentation possible ; d'autres solutions sont valides si elles respectent le même contrat et les critères indiqués."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. verificar doit comparer le résultat réel à une attente établie indépendamment, afficher les deux avec une étiquette et renvoyer s'ils coïncident. Les six tests pour -1, 0, 1, 4, 10 et 11 doivent tous s'exécuter, même si l'un échoue. Les résultats attendus sont -1, 0, 5, 11, 23 et -1, et la version correcte se termine sans échec. Si l'on ajoute la préparation au cas zéro, ce cas est le seul à échouer dans cet ensemble : le bilan doit indiquer un échec ; après restauration de la règle, il doit revenir à zéro."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nbool verificar(int piezas, int esperado) {\n    int real{estimar(piezas)};\n    bool coincide{real == esperado};\n    std::cout << \"Pièces=\" << piezas << \" réel=\" << real\n              << \" attendu=\" << esperado << \" \";\n    if (coincide) { std::cout << \"Réussi\\n\"; }\n    else { std::cout << \"Échec\\n\"; }\n    return coincide;\n}\n\nint main() {\n    int fallos{0};\n    if (!verificar(-1, -1)) { ++fallos; }\n    if (!verificar(0, 0)) { ++fallos; }\n    if (!verificar(1, 5)) { ++fallos; }\n    if (!verificar(4, 11)) { ++fallos; }\n    if (!verificar(10, 23)) { ++fallos; }\n    if (!verificar(11, -1)) { ++fallos; }\n    std::cout << \"Échecs=\" << fallos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les appels figurent dans des instructions indépendantes ; aucun n'est ignoré à cause d'un && précédent. Pour vérifier que le test détecte le défaut, remplace temporairement return 0 dans le cas piezas==0 par return 3. La comparaison correspondante affichera réel=3, attendu=0 et Échec. Rétablis la règle initiale et exécute de nouveau tout l'ensemble."
+        }
+      ]
+    }
+  ]
+}

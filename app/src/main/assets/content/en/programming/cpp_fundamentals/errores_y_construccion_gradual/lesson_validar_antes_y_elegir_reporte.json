@@ -1,0 +1,195 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__validar_antes_y_elegir_reporte",
+  "title": "Validate Before Calculating and Choose How to Report",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Correct Type Can Still Hold Invalid Data"
+        },
+        {
+          "type": "paragraph",
+          "text": "int can represent -1 and 11, but that does not make them valid quantities for the small workshop, which accepts 0 to 10 items. Validation checks domain rules that the type alone does not express. Validate before performing operations that depend on those rules. A condition written after dividing, accessing an element, or modifying state cannot protect an operation that has already happened."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{11};\n    if (piezas < 0 || piezas > 10) {\n        std::cout << \"Invalid order\";\n    } else if (piezas == 0) {\n        std::cout << 0;\n    } else {\n        std::cout << 3 + 2 * piezas;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "validacion_frontera_aceptada",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{10};\n    if (piezas < 0 || piezas > 10) {\n        std::cout << \"Invalid\";\n    } else {\n        std::cout << \"Accepted\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Accepted"
+          ],
+          "explanation": "The domain includes 10. The strict comparisons reject only values outside the interval."
+        },
+        {
+          "type": "output_prediction",
+          "id": "validacion_negativa",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{-1};\n    if (piezas < 0 || piezas > 10) {\n        std::cout << \"Invalid\";\n    } else {\n        std::cout << \"Accepted\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Invalid"
+          ],
+          "explanation": "-1 violates the lower bound even though its type is int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Validate the Data That Will Actually Be Used"
+        },
+        {
+          "type": "paragraph",
+          "text": "Checking an initial quantity and then subtracting something from it can yield a quantity that is invalid for the next function. If pendientes must be nonnegative, check the relevant relationships before the subtraction representing completed items. A function's contract is not automatically preserved just because another value was validated at an earlier stage."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "completar_mas_de_lo_disponible",
+          "question": "There are 5 pending items, and someone proposes completing 7. The operation must leave a nonnegative number of pending items. Which check should be made before changing the state?",
+          "options": [
+            "Change pendientes to unsigned so that it can never appear negative.",
+            "Subtract 7 and accept the result because 5 was valid.",
+            "Check that completadas is between 0 and pendientes."
+          ],
+          "correctIndex": 2,
+          "explanation": "The relationship between the two values protects the meaning of the state. Changing the representation does not make an impossible operation valid."
+        },
+        {
+          "type": "output_prediction",
+          "id": "rechazo_preserva_estado",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int pendientes{5};\n    int completadas{7};\n    if (completadas < 0 || completadas > pendientes) {\n        std::cout << \"Rejected:\";\n    } else {\n        pendientes -= completadas;\n    }\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "answers": [
+            "Rejected:5"
+          ],
+          "explanation": "The decision is made before modifying the state. The original state remains valid when the rejection is reported."
+        },
+        {
+          "type": "output_prediction",
+          "id": "aceptacion_modifica_estado",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int pendientes{5};\n    int completadas{2};\n    if (completadas < 0 || completadas > pendientes) {\n        std::cout << \"Rejected:\";\n    } else {\n        pendientes -= completadas;\n    }\n    std::cout << pendientes;\n    return 0;\n}\n",
+          "answers": [
+            "3"
+          ],
+          "explanation": "The accepted quantity can be subtracted without violating the pending-items rule."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Special Value Needs an Unambiguous Contract"
+        },
+        {
+          "type": "paragraph",
+          "text": "A function may return a special value to report an error if that value is outside the set of all valid results and the caller checks it. For a nonnegative estimate in minutes, -1 can mean an invalid order. Zero would be ambiguous: it already means a valid empty order. The special result must be documented; by itself it does not force the caller to handle it correctly."
+        },
+        {
+          "type": "output_prediction",
+          "id": "valor_especial_comprobado",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Return -1 if piezas is outside 0..10.\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int resultado{estimar(12)};\n    if (resultado == -1) {\n        std::cout << \"Invalid order\";\n    } else {\n        std::cout << resultado;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Invalid order"
+          ],
+          "explanation": "The caller recognizes the error signal before using it as a number of minutes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cero_como_error_ambiguo",
+          "question": "A function returns 0 both for a valid empty order and for invalid data. What distinction does a caller receiving only that int lose?",
+          "options": [
+            "Distinguishing a zero result from a positive result.",
+            "Distinguishing a valid empty order from invalid data.",
+            "Distinguishing one valid order from another using their positive minute counts."
+          ],
+          "correctIndex": 1,
+          "explanation": "The same value represents two situations that the caller needs to distinguish."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "olvidar_comprobar_senal",
+          "question": "A function uses -1 to indicate an error, but the caller adds all its results as though they were minutes. What is wrong?",
+          "options": [
+            "The int type prevents -1 from reaching the minute accumulator.",
+            "The contract automatically requires every -1 result to be skipped.",
+            "An error signal is added as though it were valid time."
+          ],
+          "correctIndex": 2,
+          "explanation": "An error code can be ignored. Each place that uses it needs an explicit handling policy."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Detecting and Reporting Are Different Responsibilities"
+        },
+        {
+          "type": "paragraph",
+          "text": "The calculation function knows its domain and can detect invalid input. The caller knows the context and decides whether to display a message, reject an order, or try processing the next one. Putting all presentation inside the calculation makes the function less reusable and can produce duplicate messages. The exceptions unit develops another way to separate detection from handling. In those labs, use the default Clang 23 compiler, which supports exceptions; the alternative Clang 21 does not support that exercise."
+        },
+        {
+          "type": "fill_code",
+          "id": "rechazo_fuera_dominio",
+          "question": "Complete only the logical operator: violating either boundary is enough to reject the input.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int piezas{4};\n    if (piezas < 0 ___ piezas > 10) {\n        std::cout << \"Invalid\";\n    } else {\n        std::cout << \"Valid\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "||",
+            "or"
+          ],
+          "explanation": "Reject values below zero or above ten. Using && would require two incompatible inequalities to hold simultaneously."
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lab, write an estimar function that returns -1 for inputs outside 0 to 10 and follows the previous rule for valid inputs. Process the collection: display Invalid for the error signal and the minutes for all other results. Keep a running total of valid estimates only. Also test an empty collection. Determine the results by hand before running the program."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    for (int piezas : pedidos) {\n        std::cout << \"Items=\" << piezas << \"\\n\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab Reference Solution"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and testing your attempt. It is one possible implementation; other solutions are valid if they meet the same contract and the stated criteria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. The function returns -1 for inputs outside 0 to 10, 0 for zero, and 3+2*piezas for the others. In {0,2,11,-1,5}, the valid results are 0, 7, and 13; 11 and -1 display Invalid and are excluded from the total. The total is 20 minutes. An empty collection visits no orders and keeps the total at 0. Other output labels are acceptable if they make these decisions verifiable."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> pedidos{0, 2, 11, -1, 5};\n    int total{0};\n    for (int piezas : pedidos) {\n        int minutos{estimar(piezas)};\n        std::cout << \"Items=\" << piezas << \":\";\n        if (minutos == -1) {\n            std::cout << \"Invalid\\n\";\n        } else {\n            total += minutos;\n            std::cout << minutos << \"\\n\";\n        }\n    }\n    std::cout << \"Total=\" << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "estimar detects invalid data, and main decides how to present it. Addition takes place only on the valid path: no -1 signal is treated as time. Replace the data with {} to test the empty case; the summary must display Total=0."
+        }
+      ]
+    }
+  ]
+}
