@@ -1,0 +1,234 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__argumentos_con_tipos_que_expresan_su_funcion",
+  "title": "Arguments with Types That Express Their Purpose",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Integers Can Have Different Roles"
+        },
+        {
+          "type": "paragraph",
+          "text": "A seat reservation needs a total capacity and a current occupancy. If both arguments were int, swapping them would produce a call with correct types. Parameter names help us read a declaration, but they do not let the compiler distinguish the roles of two integers at a call site. We can express each role with a user-defined type."
+        },
+        {
+          "type": "paragraph",
+          "text": "Capacidad and Ocupacion will be structs with a member named unidades. Capacidad and Ocupacion are different types even though both contain an int. First we use the types to prevent mixing up roles; then the constructor checks the numerical rules."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which error do these two distinct types help detect?",
+          "options": [
+            "Requesting an occupancy greater than the capacity.",
+            "Supplying a value outside the allowed domain inside Capacidad.",
+            "Swapping capacity and occupancy in a call."
+          ],
+          "correctIndex": 2,
+          "explanation": "The other two errors still provide values of the expected type and require validation of the rules."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construct Arguments with Their Roles Visible"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva sala{Capacidad{8}, Ocupacion{3}};\n    std::cout << sala.capacidad() << \":\" << sala.ocupacion() << \":\" << sala.disponibles();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Capacidad{8} constructs an argument that names its role; Ocupacion{3} does the same for occupied seats. The constructor's initializer list reads the unidades member of each parameter and initializes its own members. Validation requires capacity from one to twenty and occupancy from zero through capacity."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva sala{Capacidad{12}, Ocupacion{7}};\n    std::cout << sala.disponibles();\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "explanation": "The query subtracts valid occupancy from its capacity. The argument roles are not confused."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the type name that represents the seats already occupied.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva sala{Capacidad{6}, ___{2}};\n    std::cout << sala.disponibles();\n    return 0;\n}\n",
+          "answers": [
+            "Ocupacion"
+          ],
+          "explanation": "The second parameter expects Ocupacion."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Mixing Roles Is a Type Error"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    // Intentional error: the argument roles are swapped.\n    Reserva sala{Ocupacion{2}, Capacidad{6}};\n    std::cout << sala.disponibles();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Why is this call rejected before execution?",
+          "options": [
+            "The number two is always an invalid occupancy.",
+            "Ocupacion does not match the first parameter, which expects Capacidad.",
+            "The constructor automatically swaps the two arguments."
+          ],
+          "correctIndex": 1,
+          "explanation": "The problem is the argument type, even though the numbers could form a valid reservation in the correct order."
+        },
+        {
+          "type": "paragraph",
+          "text": "We do not add automatic conversions between these structs or from a bare int. Keeping the role of each argument visible preserves the distinction we just introduced."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Argument Type Does Not Validate Its Values"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    try {\n        Reserva sala{Capacidad{6}, Ocupacion{7}};\n        std::cout << sala.disponibles();\n    } catch (const ReservaInvalida&) { std::cout << \"Rejected\"; }\n    return 0;\n}\n",
+          "answers": [
+            "Rejected"
+          ],
+          "explanation": "The argument types match, but occupancy exceeds capacity and the constructor rejects the value."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    try {\n        Reserva sala{Capacidad{0}, Ocupacion{0}};\n        std::cout << sala.disponibles();\n    } catch (const ReservaInvalida&) { std::cout << \"Rejected\"; }\n    return 0;\n}\n",
+          "answers": [
+            "Rejected"
+          ],
+          "explanation": "Zero occupied seats could be valid, but zero capacity is outside the specified domain."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does Capacidad{30} guarantee by itself, before reaching the Reserva constructor?",
+          "options": [
+            "The argument has type Capacidad; its domain still needs to be checked.",
+            "Occupancy will automatically be zero.",
+            "Capacity is between one and twenty."
+          ],
+          "correctIndex": 0,
+          "explanation": "The public struct distinguishes the role of the data but does not contain its own validation policy."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Different Rules for Quantities with Different Meanings"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva vacia{Capacidad{4}, Ocupacion{0}};\n    Reserva llena{Capacidad{4}, Ocupacion{4}};\n    std::cout << vacia.disponibles() << \" \" << llena.disponibles();\n    return 0;\n}\n",
+          "answers": [
+            "4 0"
+          ],
+          "explanation": "Zero occupied seats and fully occupied capacity are both valid states for this reservation."
+        },
+        {
+          "type": "paragraph",
+          "text": "In Pedido, zero units was invalid. Here, zero occupied seats is valid: the two numbers represent different concepts. Do not mechanically copy a condition from another class. Write the new concept's domain and test its boundaries."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which cases test both occupancy boundaries for a capacity of four?",
+          "options": [
+            "Zero and four are accepted; minus one and five are rejected.",
+            "Only an occupancy of two seats.",
+            "Four different capacities, always with occupancy two."
+          ],
+          "correctIndex": 0,
+          "explanation": "The neighboring values outside the domain distinguish the lower and upper boundary comparisons."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Interface Sufficient for Derived Queries"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\ndouble porcentaje_ocupado(const Reserva& sala) {\n    return 100.0 * sala.ocupacion() / sala.capacidad();\n}\n\nint main() {\n    const Reserva sala{Capacidad{9}, Ocupacion{4}};\n    std::cout << porcentaje_ocupado(sala);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Capacity can never be zero in a correctly constructed object. That rule justifies the division. The literal 100.0 makes the calculation use double. The function receives a const reference and uses public queries: it does not need to write to the private representation. The usual output may round the approximation; no fixed decimal format is specified here."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer the Distinction Between Argument Roles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Design Caja with the types Ancho and Alto, each containing an int member called unidades. Caja keeps its dimensions in private members. Its constructor takes Ancho first and then Alto; both values must be between one and ten. Reject other values with CajaInvalida. Provide const queries ancho(), alto(), and area(). Construct a width of three and a height of four, displaying 3:4:12. Test one and ten in each dimension, as well as neighboring values zero and eleven. Also check that swapping the argument types causes a compilation diagnostic; remove that call before running the valid tests."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Build the program described in the exercise.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The area fits in int for this domain: its maximum is one hundred. Justify that limit before multiplying. Distinct types prevent swapping dimensions, while numerical validation serves a different purpose."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference Solution and Criteria for Argument Roles"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Ancho { int unidades; };\nstruct Alto { int unidades; };\nstruct CajaInvalida {};\nclass Caja {\npublic:\n    Caja(Ancho ancho, Alto alto) : ancho_{ancho.unidades}, alto_{alto.unidades} {\n        if (ancho_ < 1 || ancho_ > 10 || alto_ < 1 || alto_ > 10) { throw CajaInvalida{}; }\n    }\n    int ancho() const { return ancho_; }\n    int alto() const { return alto_; }\n    int area() const { return ancho_ * alto_; }\nprivate:\n    int ancho_;\n    int alto_;\n};\n\nint main() {\n    const Caja caja{Ancho{3}, Alto{4}};\n    std::cout << caja.ancho() << \":\" << caja.alto() << \":\" << caja.area();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: the parameter types reflect the order of the roles; all four valid endpoints are preserved; zero and eleven are rejected for either dimension; members are private; queries work on const objects; and area is calculated from the actual dimensions. The constructor body does not have to match this implementation exactly."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Ocupacion { int unidades; };\nstruct ReservaInvalida {};\n\nclass Reserva {\npublic:\n    Reserva(Capacidad capacidad, Ocupacion ocupacion)\n        : capacidad_{capacidad.unidades}, ocupacion_{ocupacion.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || ocupacion_ < 0 || ocupacion_ > capacidad_) {\n            throw ReservaInvalida{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int ocupacion() const { return ocupacion_; }\n    int disponibles() const { return capacidad_ - ocupacion_; }\nprivate:\n    int capacidad_;\n    int ocupacion_;\n};\n\nint main() {\n    Reserva original{Capacidad{5}, Ocupacion{2}};\n    Reserva copia = original;\n    std::cout << copia.capacidad() << \" \" << copia.ocupacion();\n    return 0;\n}\n",
+          "answers": [
+            "5 2"
+          ],
+          "explanation": "Copying by value preserves both members of a valid reservation."
+        }
+      ]
+    }
+  ]
+}

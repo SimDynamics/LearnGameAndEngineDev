@@ -1,0 +1,200 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__operaciones_auxiliares_y_significado_de_igualdad",
+  "title": "Helper Operations and the Meaning of Equality",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Derived Query Can Live Outside the Class"
+        },
+        {
+          "type": "paragraph",
+          "text": "The Pedido interface already lets us read the code, number of units, and state. If we need to know whether two orders have the same complete value, we can write a free function that uses these queries. We do not need to expose private members or add an operation that returns them for modification. A small interface should be sufficient for the actions it promises."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nint main() {\n    Pedido a{\"A\", 3};\n    Pedido b{\"A\", 3};\n    std::cout << mismo_valor(a, b);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The const reference avoids making a copy for each query and expresses that comparing the orders does not change them. The conjunction requires agreement on every field we decided forms the value."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Value Equality and Identification Are Different Questions"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\n\nint main() {\n    Pedido a{\"K\", 2};\n    Pedido b{\"K\", 8};\n    std::cout << (a.codigo() == b.codigo()) << \" \" << mismo_valor(a, b);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "The codes match, but the quantities differ. The complete values are not equal."
+        },
+        {
+          "type": "paragraph",
+          "text": "Our type does not guarantee that codes are unique across objects. Comparing only the code answers a different question and may be useful, but it is not the complete equality defined here. Decide on the meaning before choosing a shorter expression."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Two orders have the same code and quantity, but one was shipped and the other is still in preparado. Under this definition of complete equality…",
+          "options": [
+            "Their values are equal because the code is sufficient.",
+            "Their values are equal because the code and quantity match.",
+            "Their values differ because of the state."
+          ],
+          "correctIndex": 2,
+          "explanation": "The state is explicitly included in the definition of an object's value."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Give == Its Conventional Meaning"
+        },
+        {
+          "type": "paragraph",
+          "text": "C++ lets us define operator operations for user-defined types. bool operator==(const Pedido& a, const Pedido& b) defines how to compare these two operands. operator== is that function's special name; its bool result tells us whether the operands are equal. Preserving the conventional meaning of equality makes a == b readable."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n\nint main() {\n    Pedido a{\"M\", 4};\n    Pedido b = a;\n    std::cout << (a == b) << \" \";\n    b.enviar();\n    std::cout << (a == b) << \" \" << (a != b);\n    return 0;\n}\n",
+          "answers": [
+            "1 0 1"
+          ],
+          "explanation": "The copy initially has the same complete value. Changing b's state breaks equality; != returns the negation of ==."
+        },
+        {
+          "type": "paragraph",
+          "text": "operator!= reuses == and negates its result so that both operations have consistent definitions."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the negation operator that makes != consistent with ==.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return ___(a == b); }\n\nint main() {\n    Pedido a{\"A\", 1};\n    Pedido b{\"B\", 1};\n    std::cout << (a != b);\n    return 0;\n}\n",
+          "answers": [
+            "!",
+            "not"
+          ],
+          "explanation": "Different means that complete equality does not hold. ! and its alternative spelling not negate the same bool result; both preserve consistency with ==."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "What an Overload Can and Should Preserve"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "When defining == for Pedido, which statement is correct?",
+          "options": [
+            "It changes the precedence of == relative to &&.",
+            "It defines that operation for the user-defined type while preserving the usual two-operand syntax.",
+            "It allows redefining the sum of two int values without any user-defined type."
+          ],
+          "correctIndex": 1,
+          "explanation": "Overloads do not introduce new precedence rules and cannot replace operations involving only built-in types."
+        },
+        {
+          "type": "paragraph",
+          "text": "At least one operand of an overloaded operator must be of a user-defined type. We cannot invent new operator symbols or change how many operands an operator takes using this function. Choosing an operation with the expected meaning is a design decision: the fact that something can be written with + does not justify calling it addition."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which action in this interface has a state-transition contract and is expressed with a named function?",
+          "options": [
+            "==, which returns complete equality.",
+            "!=, which negates that equality.",
+            "enviar(), because it is a transition with its own contract."
+          ],
+          "correctIndex": 2,
+          "explanation": "An action name communicates intent without suggesting an algebraic relationship that the model does not have."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Helpers Built on a Public Interface"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n\nint main() {\n    const std::vector<Pedido> pedidos{{\"A\", 2}, {\"B\", 5}, {\"A\", 2}};\n    const Pedido buscado{\"A\", 2};\n    std::size_t cantidad = 0;\n    for (const auto& pedido : pedidos) {\n        if (pedido == buscado) { ++cantidad; }\n    }\n    std::cout << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Two complete elements match. Traversal does not modify the objects or remove repeated elements."
+        },
+        {
+          "type": "paragraph",
+          "text": "Equality does not automatically provide an ordering. We cannot use sort on Pedido without first defining an ordering comparison appropriate to the problem. Nor do we need to add an ordering merely to count matches: the operation required for this task is enough."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Define Equality for Another Association"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define a struct Medida with a string etiqueta and an int cantidad. Complete equality must compare both members. Write a mismo_valor function and consistent == and != operations. Predict and test the pairs {\"A\", 2}/{\"A\", 2}, {\"A\", 2}/{\"A\", 3}, and {\"A\", 2}/{\"B\", 2}. Then traverse a vector and count measurements equal to {\"A\", 2}, without changing or removing any records."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Build the program described in the exercise.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Using a public struct keeps the association we want to compare simple. We do not introduce an additional rule about quantities. Your definition of equality must preserve the distinction between matching labels and matching complete values."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference Solution, Criteria, and Limits of Equality"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n#include <cstddef>\n\nstruct Medida { std::string etiqueta; int cantidad; };\nbool mismo_valor(const Medida& a, const Medida& b) {\n    return a.etiqueta == b.etiqueta && a.cantidad == b.cantidad;\n}\nbool operator==(const Medida& a, const Medida& b) { return mismo_valor(a, b); }\nbool operator!=(const Medida& a, const Medida& b) { return !(a == b); }\n\nint main() {\n    std::vector<Medida> medidas{{\"A\", 2}, {\"A\", 3}, {\"A\", 2}, {\"B\", 2}};\n    const Medida buscada{\"A\", 2};\n    std::size_t cantidad = 0;\n    for (const auto& medida : medidas) { if (medida == buscada) { ++cantidad; } }\n    std::cout << cantidad << \" \" << (Medida{\"A\", 2} != Medida{\"A\", 3});\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: both members must match for == to be true; != is true exactly when == is false; neither comparison changes its arguments; counting includes duplicates and leaves the collection unchanged. Test an empty vector, one matching element, one nonmatching element, and several records with repeated labels. This definition does not introduce a sorting order."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};bool mismo_valor(const Pedido& a, const Pedido& b) {\n    return a.codigo() == b.codigo() && a.unidades() == b.unidades() && a.estado() == b.estado();\n}\n\nbool operator==(const Pedido& a, const Pedido& b) { return mismo_valor(a, b); }\nbool operator!=(const Pedido& a, const Pedido& b) { return !(a == b); }\n\nint main() {\n    Pedido a{\"Z\", 3};\n    Pedido b = a;\n    b.cambiar_unidades(0);\n    std::cout << (a == b);\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "explanation": "The request for zero units fails without changing b; their complete values remain equal."
+        }
+      ]
+    }
+  ]
+}
