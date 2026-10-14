@@ -1,0 +1,606 @@
+{
+  "id": "math_course_01__racionales_y_decimales__multiplicar_fracciones",
+  "title": "Multiplying Fractions: Taking a Part and Scaling",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Fraction of Another Quantity"
+        },
+        {
+          "type": "paragraph",
+          "text": "Multiplying by a fraction can mean taking part of a quantity. If three quarters of a sheet remain and you use two thirds of what remains, you are not using two thirds of a whole sheet. The new reference is the three-quarter portion. Dividing that portion into three equal parts produces pieces equal to one quarter of the sheet, and taking two gives half a sheet."
+        },
+        {
+          "type": "paragraph",
+          "text": "The calculation expresses this relationship: \\(\\frac{2}{3}\\times\\frac{3}{4}=\\frac{6}{12}=\\frac{1}{2}\\). In general, multiplying fractions means multiplying their numerators and multiplying their denominators. The product's denominator describes the combined partition, while its numerator counts the selected parts. Both original denominators must be nonzero."
+        },
+        {
+          "type": "paragraph",
+          "text": "This interpretation corrects a common misconception: multiplication does not always increase a number. For a positive quantity, multiplying by a number between zero and one reduces it; multiplying by one leaves it unchanged; multiplying by a number greater than one increases it. Taking one quarter of a bottle is less than taking the whole bottle, even though the operation is called multiplication. This prediction helps you check the magnitude of the result."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "porcion_de_porcion",
+          "prompt": "5/6 of a sheet remain. 3/5 of what is available is used. What fraction of the whole sheet is used?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/5 of 5/6 is used: the product is 15/30 = 1/2 of the whole sheet.",
+            "incorrect": "3/5 uses the entire sheet as the reference and ignores the fact that only 5/6 remained. Adding the fractions does not mean taking a part of what is available."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cancel Factors Before Multiplying"
+        },
+        {
+          "type": "paragraph",
+          "text": "Products can be simplified before creating large numbers. For \\(\\frac{14}{15}\\times\\frac{9}{28}\\), divide fourteen and twenty-eight by fourteen, and nine and fifteen by three. The result is \\(\\frac{1}{5}\\times\\frac{3}{2}=\\frac{3}{10}\\). No isolated digits were canceled: common factors were removed from the overall numerator and denominator."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cross-cancellation is valid because multiplication is commutative and associative. You can regroup fourteen times nine on top and fifteen times twenty-eight on the bottom, identify their factors, and simplify. If the expression contained addition instead of multiplication, you could not apply the same method without checking the entire expression. Writing out the factorization makes clear why cancellation preserves the value."
+        },
+        {
+          "type": "paragraph",
+          "text": "The sign is handled separately using the rules for integers. One negative factor and one positive factor give a negative product; two negative factors give a positive product. For example, \\(\\frac{-2}{5}\\times\\frac{-5}{6}=\\frac{1}{3}\\). Predict the sign, simplify the factors, and finally check that the result has the expected sign."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "prever_tamano",
+          "prompt": "Without first calculating a decimal, which statement about (4/5) × (7/8) is true?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tamano",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is greater than both factors because they were multiplied.",
+                  "reviewFeedback": "Your argument assumes every multiplication increases the factors. Consider what it means to take a fraction of a quantity when the factor lies between zero and one."
+                },
+                {
+                  "id": "b",
+                  "label": "It is positive and smaller than both factors because each is between zero and one.",
+                  "reviewFeedback": "Check the sign of the product separately from its size relative to each factor. Use the interpretation of taking a part of a quantity."
+                },
+                {
+                  "id": "c",
+                  "label": "It is negative because both denominators exceed their numerators.",
+                  "reviewFeedback": "Your argument confuses the relationship between numerator and denominator with a negative sign. Review what determines the sign of a fraction and what determines its size."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The product is 28/40 = 7/10. Taking seven eighths of four fifths reduces four fifths; taking four fifths of seven eighths also reduces seven eighths.",
+            "incorrect": "Multiplication does not always increase a quantity. A positive fraction less than one is still positive: a larger denominator does not introduce a minus sign."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelar_antes",
+          "prompt": "Calculate (21/25) × (10/14) and enter the simplest form with a positive denominator.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Simplified product: numerator"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Simplified product: positive denominator"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "21 and 14 share the factor seven; 10 and 25 share the factor five. This gives (3/5) × (2/2) = 3/5. Multiplying directly gives 210/350, which has the same value.",
+            "incorrect": "Cancel factors from the complete products, not a numerator from one fraction against another numerator. 210/350 is equivalent, but here you must simplify fully to 3/5."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "signos_productos",
+          "prompt": "Calculate (−4/9) × (3/−8). Any equivalent numerical representation is accepted.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto",
+              "type": "math_numeric_input",
+              "label": "Product",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/6"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Both factors are negative, so the product is positive. Multiplying gives 12/72 = 1/6.",
+            "incorrect": "The single minus sign in 3/−8 makes that factor negative; multiplying it by another negative factor gives a positive product. −1/6 mistakenly keeps one of the two negative signs."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Products of Measurements and Successive Steps"
+        },
+        {
+          "type": "paragraph",
+          "text": "Multiplication also combines measurements. A rectangle two meters wide and one and a half meters high has an area of three square meters: we count square units with the product 2 × 3/2. Adding lengths does not give an area. The final unit reminds us what was measured and prevents confusing the product with a length."
+        },
+        {
+          "type": "paragraph",
+          "text": "In successive processes, each fraction may apply to what remains. If three quarters of a quantity are kept in each round, after two rounds \\(\\frac{3}{4}\\times\\frac{3}{4}=\\frac{9}{16}\\) of the original amount remain. We do not keep three quarters of the original amount twice and add the results: the second round begins with an amount that has already decreased."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dimensiones_racionales",
+          "prompt": "Set the width to 3/2 m and the height to 5/2 m. Then enter the area in square meters.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dimensiones",
+              "type": "math_slider_interaction",
+              "parameters": [
+                {
+                  "id": "ancho",
+                  "label": "Width in meters",
+                  "min": 0.5,
+                  "max": 4,
+                  "step": 0.5,
+                  "value": 1
+                },
+                {
+                  "id": "alto",
+                  "label": "Height in meters",
+                  "min": 0.5,
+                  "max": 3,
+                  "step": 0.5,
+                  "value": 1
+                }
+              ],
+              "visual": {
+                "type": "rectangle",
+                "widthParameter": "ancho",
+                "heightParameter": "alto"
+              },
+              "validator": {
+                "type": "sliders",
+                "values": {
+                  "ancho": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  },
+                  "alto": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "area",
+              "type": "math_numeric_input",
+              "label": "Area in square meters",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "15/4"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The product is (3/2)×(5/2) = 15/4 m². Two lengths are combined to measure area.",
+            "incorrect": "Adding the sides gives four meters of combined lengths, not an area. Set both sides and calculate their product; the resulting unit is m²."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_rondas",
+          "prompt": "Each round retains 2/3 of the points available at its start. What fraction of the initial points remains after three rounds?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "8/27"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The successive factors are (2/3)×(2/3)×(2/3) = 8/27. Each round acts on the result of the previous one.",
+            "incorrect": "Adding 2/3 three times treats the rounds as independent quantities based on the original amount. Subtracting 1/3 three times also ignores that the starting amount shrinks."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Factors Greater Than One, Signs, and Zero"
+        },
+        {
+          "type": "paragraph",
+          "text": "Multiplying by 5/2 means taking two and a half times a quantity. It does not always mean taking part of an available object: it can also scale a measurement. Fractions greater than one enlarge a positive quantity; fractions between zero and one reduce it. Zero remains an absorbing element, and one remains the identity element."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "fraccion_por_entero",
+          "prompt": "5/12 of each of eighteen meters of ribbon is used. What total length is used?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "15/2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "18×5/12 = 15/2 m. Each meter contributes five twelfths; the total is seven and a half meters.",
+            "incorrect": "18/12 takes only one twelfth per meter; 5/30 adds terms that are factors here."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escalar_mas_de_uno",
+          "prompt": "A piece measures 2/3 m, and a copy must measure 9/4 times that length. Calculate the copy's length and choose the comparison that checks it.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Length of the copy, in m",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "3/2"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The copy must be shorter than 2/3 m because a fraction was used.",
+                  "reviewFeedback": "Your argument treats every fraction as a reduction factor. Compare the chosen scaling factor with one whole unit before predicting the size."
+                },
+                {
+                  "id": "b",
+                  "label": "The copy must be longer than 2/3 m because the factor 9/4 exceeds one.",
+                  "reviewFeedback": "Check the proposed comparison by reconstructing the scaled length. Consider what applying a factor greater than one means."
+                },
+                {
+                  "id": "c",
+                  "label": "The copy must always have the same length.",
+                  "reviewFeedback": "Your choice keeps the length unchanged despite applying a factor. Review what value a scaling factor must have to leave the length unchanged."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The copy is 3/2 m long. An improper fraction can be an enlargement factor.",
+            "incorrect": "Being a fraction does not mean being less than one. Here 9/4 equals two and one quarter."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_signo_uno_cero",
+          "prompt": "Calculate all three products. Treat zero and one as numbers without changing their properties.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "negativo",
+                  "type": "numeric",
+                  "label": "(−5/7)×(14/15)"
+                },
+                {
+                  "id": "cero",
+                  "type": "numeric",
+                  "label": "0×(−11/6)"
+                },
+                {
+                  "id": "neutro",
+                  "type": "numeric",
+                  "label": "1×(−13/8)"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "negativo": {
+                    "type": "numeric",
+                    "expected": "-2/3"
+                  },
+                  "cero": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "neutro": {
+                    "type": "numeric",
+                    "expected": "-13/8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The results are −2/3, zero, and −13/8. Exactly one negative factor makes a product negative; zero absorbs, and one preserves the value.",
+            "incorrect": "A positive denominator does not erase a negative sign. Zero times a negative number does not become negative either: it stays zero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_factores",
+          "prompt": "Calculate (−3/5)×(10/9)×(−3/4) in simplest form with a positive denominator.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerator in simplest form"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Positive denominator"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "Two negative factors give a positive sign. After regrouping the factors and simplifying, the product is 1/2.",
+            "incorrect": "Count the signs of all factors. Cancellation can take place between factors of the total numerator and denominator, not between two numerators."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Action Determines Whether to Subtract or Multiply"
+        },
+        {
+          "type": "paragraph",
+          "text": "Removing 1/4 L from a container is subtracting a fixed amount. Removing 1/4 of the contents means taking a fraction of a base that may differ from one liter. If the container held 1/2 L, the removals would be 1/4 L and 1/8 L respectively. Reading the reference carefully prevents using the right operation for the wrong question."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "retiro_fijo_y_fraccion",
+          "prompt": "Two containers each hold 7/8 L. From A, 1/4 L is removed; from B, 1/4 of its contents is removed. How many liters remain in each container?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Remaining in A, in L"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Remaining in B, in L"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "5/8"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "21/32"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A has 5/8 L left. In B, three quarters of 7/8 L remain: 21/32 L. The removals use different bases.",
+            "incorrect": "In B, one quarter of a liter is not removed: 7/32 L is removed. The phrases \"of a liter\" and \"of the contents\" describe different quantities."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distribuir_producto",
+          "prompt": "Calculate (1/3)×(3/4+9/8). You may add first or distribute the factor.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The sum is 15/8 and one third of it is 5/8. Distributing gives 1/4+3/8 = 5/8; both methods preserve the value.",
+            "incorrect": "Canceling the three inside only one addend does not divide the entire sum. The distributive property applies the factor to every addend."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_propiedad",
+          "prompt": "Which property lets us change (2/7)×(7/3)×(9/4) into (2/7)×((7/3)×(9/4)) without changing the product?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Associativity: it changes how the factors are grouped.",
+                  "reviewFeedback": "Check what changed between the expressions: identify the grouping of factors without losing their order or the operation connecting them."
+                },
+                {
+                  "id": "b",
+                  "label": "Commutativity: the factors were rearranged.",
+                  "reviewFeedback": "The property you chose allows factors to be swapped. Compare their positions in both expressions and check whether that happened."
+                },
+                {
+                  "id": "c",
+                  "label": "Division is associative.",
+                  "reviewFeedback": "Your choice refers to another operation. First identify the operation connecting the factors and then the transformation shown by the parentheses."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Only the parentheses change; the order of the factors stays the same. This is the associative property of multiplication.",
+            "incorrect": "Commutativity requires changing the order, which did not happen here. Division does not automatically inherit associativity."
+          }
+        }
+      ]
+    }
+  ]
+}
