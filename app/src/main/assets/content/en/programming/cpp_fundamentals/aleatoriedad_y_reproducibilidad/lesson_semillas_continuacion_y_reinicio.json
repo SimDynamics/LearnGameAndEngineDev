@@ -1,0 +1,207 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__semillas_continuacion_y_reinicio",
+  "title": "Seeds, Continuation, and Reset",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prepare the Same Starting Point"
+        },
+        {
+          "type": "paragraph",
+          "text": "A seed determines the engine's initial state. Repeating an experiment also requires the same distribution, its parameters, and the same order of calls. Within the same environment, preparing those elements identically allows the sequence to be repeated. We do not need to know its numbers beforehand to verify that relationship."
+        },
+        {
+          "type": "paragraph",
+          "text": "For vector<int>, == compares the size and the values in the same order. Two samples can be compared without printing their contents. Preserving order matters here: we will not sort the samples before deciding whether the execution was repeated."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 uno{43};\n    std::mt19937 dos{43};\n    std::uniform_int_distribution<int> reparto_uno{1, 8};\n    std::uniform_int_distribution<int> reparto_dos{1, 8};\n    std::vector<int> primera;\n    std::vector<int> segunda;\n    for (int i{0}; i < 5; ++i) {\n        primera.push_back(reparto_uno(uno));\n        segunda.push_back(reparto_dos(dos));\n    }\n    std::cout << (primera == segunda) << ':' << primera.size();\n    return 0;\n}\n",
+          "answers": [
+            "1:5"
+          ],
+          "explanation": "Both experiments start identically and make the same calls. The comparison preserves size, values, and order."
+        },
+        {
+          "type": "note",
+          "text": "The algorithm uniform_int_distribution uses to map values can differ between libraries. Recording the seed, engine, bounds, and calls allows reproduction in the same environment; retaining the actual data also helps with investigation in another environment."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Continuing Preserves the Current State"
+        },
+        {
+          "type": "paragraph",
+          "text": "If you reuse the engine and the distribution, the next call continues the experiment. Splitting a traversal into two loops does not reset those objects. Constructing them again does create new objects from their initial states. The seed provided at construction is not automatically reapplied on every iteration."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 entero{67};\n    std::mt19937 dividido{67};\n    std::uniform_int_distribution<int> a{2, 9};\n    std::uniform_int_distribution<int> b{2, 9};\n    std::vector<int> todos;\n    std::vector<int> por_partes;\n    for (int i{0}; i < 6; ++i) {\n        todos.push_back(a(entero));\n    }\n    for (int i{0}; i < 2; ++i) {\n        por_partes.push_back(b(dividido));\n    }\n    for (int i{0}; i < 4; ++i) {\n        por_partes.push_back(b(dividido));\n    }\n    std::cout << (todos == por_partes) << ':' << por_partes.size();\n    return 0;\n}\n",
+          "answers": [
+            "1:6"
+          ],
+          "explanation": "All six calls in each experiment use the same engine and distribution for that experiment; dividing the loop does not change the sequence."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You need to continue a sample in a second batch. Which approach preserves that intention?",
+          "options": [
+            "Construct a new engine with the initial seed in every batch.",
+            "Keep the engine and distribution between the two batches.",
+            "Reseed the engine before obtaining every value."
+          ],
+          "correctIndex": 1,
+          "explanation": "Continuation uses the state reached by the experiment. Reconstructing or reseeding changes the contract."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Resetting Is an Explicit Action"
+        },
+        {
+          "type": "paragraph",
+          "text": "motor.seed(semilla) restores the initial state associated with that seed. It neither prints nor returns a sample. A distribution can also retain information between calls; reset() clears that dependency without changing its parameters. To restart completely, we reseed the engine and call reset() on the distribution. Another option is to construct both objects again."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{97};\n    std::uniform_int_distribution<int> elegir{-4, 4};\n    std::vector<int> antes;\n    std::vector<int> despues;\n    for (int i{0}; i < 4; ++i) {\n        antes.push_back(elegir(motor));\n    }\n    motor.seed(97);\n    elegir.reset();\n    for (int i{0}; i < 4; ++i) {\n        despues.push_back(elegir(motor));\n    }\n    std::cout << (antes == despues);\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "explanation": "The engine returns to the start and the distribution no longer depends on previous draws. The four calls are repeated in the same environment."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "After constructing motor with a seed, you assign another number only to the int variable semilla. What action applies that change to the existing engine?",
+          "options": [
+            "Assigning semilla automatically changes every engine that previously read it.",
+            "Calling motor.seed(semilla); resets the engine using the current value.",
+            "Reconstructing only the distribution makes the existing engine read the semilla variable again."
+          ],
+          "correctIndex": 1,
+          "explanation": "The constructor read a value; it did not establish a permanent link with that variable. seed is the operation that changes the engine's state."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "What We Can Actually Guarantee"
+        },
+        {
+          "type": "paragraph",
+          "text": "Identical preparation and identical calls allow repetition. Different seeds allow different starting states, but we do not promise that every distributed value will be different: two experiments can coincide on one value or a short sample. Nor do we require successive draws to be distinct. Repeated values and repetition of the entire procedure are different ideas."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Two different seeds produce the same first integer within 1..3. Which interpretation is correct?",
+          "options": [
+            "Distributed values can match; that single value does not show whether the engine was reset.",
+            "The distribution must widen its range to distinguish seeds.",
+            "The seeds must be equal because each seed has an exclusive integer."
+          ],
+          "correctIndex": 0,
+          "explanation": "A small interval allows coincidences. A seed sets the state; it does not reserve a unique output."
+        },
+        {
+          "type": "paragraph",
+          "text": "The engine also supports a direct call, motor(), which obtains a value from its sequence and advances its state. That value is not restricted by our distribution. If we only need to compare it, auto retains the type returned by the engine without converting it to int. An extra direct call changes the history; reproducing the experiment also requires repeating that call."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 a{113};\n    std::mt19937 b{113};\n    const auto primero_a = a();\n    const auto primero_b = b();\n    const auto segundo_a = a();\n    const auto segundo_b = b();\n    std::cout << (primero_a == primero_b) << ':';\n    std::cout << (segundo_a == segundo_b);\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "explanation": "Engines of the same type with the same starting state are compared after two direct advances each; the numeric values of those advances are not required."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build Continuation and Reproduction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Starting with a minimal main, prepare two engines seeded with 53 and two independent distributions over 1..9. Obtain six values from the first engine in one loop. With the second, obtain two and then four, retaining the objects and collecting all the data in another vector. Display In batches:1 if the complete sequences match. Then reset the first engine and its distribution, obtain six more values, and display Restart:1 if that reproduces the first sample."
+        },
+        {
+          "type": "paragraph",
+          "text": "Calculate the comparisons; do not simply print constant ones. Before running, note which objects must remain alive between batches and which must be reset for reproduction. Then change the total count to zero and to one; use a partition that adds up to that count. Do not use different seeds producing unequal samples as your success criterion."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Build the functions and tests described in the exercise.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference After Both Experiments"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 primero{53};\n    std::mt19937 segundo{53};\n    std::uniform_int_distribution<int> a{1, 9};\n    std::uniform_int_distribution<int> b{1, 9};\n    std::vector<int> completa;\n    std::vector<int> lotes;\n    for (int i{0}; i < 6; ++i) {\n        completa.push_back(a(primero));\n    }\n    for (int i{0}; i < 2; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    for (int i{0}; i < 4; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    std::cout << \"In batches:\" << (completa == lotes) << '\\n';\n    primero.seed(53);\n    a.reset();\n    std::vector<int> repetida;\n    for (int i{0}; i < 6; ++i) {\n        repetida.push_back(a(primero));\n    }\n    std::cout << \"Restart:\" << (completa == repetida);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: batches share their generation objects; the original sample stays unchanged; each sample contains six elements; resetting restores both components; comparisons include order and size. The lines are In batches:1 and Restart:1. With zero or one value, both comparisons also match when the partition is correct. An empty match does not prove that any values were obtained."
+        },
+        {
+          "type": "paragraph",
+          "text": "To explore a different arrangement, construct an engine inside each batch with seed 53. That restarts the batch instead of expressing continuation. Inspect the samples and explain the procedural difference; do not elevate a possible observed numerical mismatch to a guarantee across all intervals."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reproduction Also Requires Recording the Calls"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You store only seed 41. What additional information is required to repeat a distributed sample in the same environment?",
+          "options": [
+            "The engine and initial bounds: discarded draws do not influence reproduction.",
+            "The engine, bounds, and sorted values: sorting lets us reconstruct the draw order.",
+            "The engine, distribution and its bounds, plus the number and order of calls, including discarded draws."
+          ],
+          "correctIndex": 2,
+          "explanation": "Consumption history is part of the experiment. Local variable names do not determine the sequence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transfer: generate a collection of quantities to test a familiar calculation. Keep the seed and configuration alongside the collection. Repeat one execution, then continue another; explain which procedure each question required. In a later session, rebuild the reset without consulting the reference."
+        },
+        {
+          "type": "note",
+          "text": "Random generation is covered in the main source (Stroustrup, 2024, section 4.7.5, pp. 108–110). State, seed, and reset were checked against the C++ working draft (Working draft: Programming languages — C++, n.d., sections [rand.req.eng] and [rand.req.dist]). The activities are original; reproducibility of distributed values is limited to the same environment."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,207 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__semillas_continuacion_y_reinicio",
+  "title": "Graines, continuation et réinitialisation",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Préparer le même point de départ"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une graine détermine l'état initial du moteur. Répéter une expérience exige également la même distribution, ses paramètres et le même ordre d'appels. Dans le même environnement, préparer ces éléments de façon identique permet de reproduire la séquence. Il n'est pas nécessaire de connaître ses nombres à l'avance pour vérifier cette relation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour vector<int>, == compare la taille et les valeurs dans le même ordre. Deux échantillons peuvent être comparés sans afficher leur contenu. Ici, préserver l'ordre est important : nous ne trierons pas les échantillons avant de déterminer si l'exécution a été reproduite."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 uno{43};\n    std::mt19937 dos{43};\n    std::uniform_int_distribution<int> reparto_uno{1, 8};\n    std::uniform_int_distribution<int> reparto_dos{1, 8};\n    std::vector<int> primera;\n    std::vector<int> segunda;\n    for (int i{0}; i < 5; ++i) {\n        primera.push_back(reparto_uno(uno));\n        segunda.push_back(reparto_dos(dos));\n    }\n    std::cout << (primera == segunda) << ':' << primera.size();\n    return 0;\n}\n",
+          "answers": [
+            "1:5"
+          ],
+          "explanation": "Les deux expériences commencent à l'identique et effectuent les mêmes appels. La comparaison tient compte de la taille, des valeurs et de leur ordre."
+        },
+        {
+          "type": "note",
+          "text": "L'algorithme utilisé par uniform_int_distribution pour transformer les valeurs peut varier d'une bibliothèque à l'autre. Enregistrer la graine, le moteur, les bornes et les appels permet de reproduire l'expérience dans le même environnement ; conserver les données concrètes facilite également l'analyse dans un autre environnement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Continuer conserve l'état actuel"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si tu réutilises le moteur et la distribution, l'appel suivant poursuit l'expérience. Scinder un parcours en deux boucles ne réinitialise pas les objets. Les reconstruire prépare en revanche de nouveaux objets à leur point de départ. La graine choisie lors de la construction n'est pas automatiquement réappliquée à chaque itération."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 entero{67};\n    std::mt19937 dividido{67};\n    std::uniform_int_distribution<int> a{2, 9};\n    std::uniform_int_distribution<int> b{2, 9};\n    std::vector<int> todos;\n    std::vector<int> por_partes;\n    for (int i{0}; i < 6; ++i) {\n        todos.push_back(a(entero));\n    }\n    for (int i{0}; i < 2; ++i) {\n        por_partes.push_back(b(dividido));\n    }\n    for (int i{0}; i < 4; ++i) {\n        por_partes.push_back(b(dividido));\n    }\n    std::cout << (todos == por_partes) << ':' << por_partes.size();\n    return 0;\n}\n",
+          "answers": [
+            "1:6"
+          ],
+          "explanation": "Les six appels de chaque expérience utilisent le même moteur et la même distribution ; séparer la boucle ne change pas la séquence."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu veux poursuivre un échantillon dans un second lot. Quelle organisation respecte cette intention ?",
+          "options": [
+            "Construire dans chaque lot un nouveau moteur avec la graine initiale.",
+            "Conserver le moteur et la distribution entre les deux lots.",
+            "Réinitialiser la graine avant d'obtenir chaque donnée."
+          ],
+          "correctIndex": 1,
+          "explanation": "La continuation utilise l'état déjà atteint par l'expérience. Reconstruire les objets ou réinitialiser la graine modifie le contrat."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La réinitialisation est une action explicite"
+        },
+        {
+          "type": "paragraph",
+          "text": "motor.seed(semilla) rétablit l'état initial associé à cette graine. L'appel n'affiche ni ne renvoie d'échantillon. Une distribution peut également conserver des informations entre les appels ; reset() supprime cette dépendance sans changer ses paramètres. Pour recommencer complètement, on réinitialise le moteur avec seed et on appelle reset() sur la distribution. Une autre solution consiste à reconstruire les deux objets."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{97};\n    std::uniform_int_distribution<int> elegir{-4, 4};\n    std::vector<int> antes;\n    std::vector<int> despues;\n    for (int i{0}; i < 4; ++i) {\n        antes.push_back(elegir(motor));\n    }\n    motor.seed(97);\n    elegir.reset();\n    for (int i{0}; i < 4; ++i) {\n        despues.push_back(elegir(motor));\n    }\n    std::cout << (antes == despues);\n    return 0;\n}\n",
+          "answers": [
+            "1"
+          ],
+          "explanation": "Le moteur revient au début et la distribution ne dépend plus des tirages précédents. Les quatre appels sont répétés dans le même environnement."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Après avoir construit motor avec une graine, tu affectes un autre nombre à la seule variable int semilla. Quelle action applique ce changement au moteur existant ?",
+          "options": [
+            "L'affectation à semilla modifie automatiquement tous les moteurs qui l'ont lue auparavant.",
+            "Appeler motor.seed(semilla); réinitialise le moteur avec la valeur actuelle.",
+            "Reconstruire uniquement la distribution oblige le moteur existant à relire la variable semilla."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le constructeur a lu une valeur ; il n'a pas créé de lien permanent avec la variable. seed est l'opération qui modifie l'état du moteur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La relation que nous pouvons réellement garantir"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une préparation identique et les mêmes appels permettent la répétition. Des graines différentes permettent de préparer d'autres états initiaux, mais nous ne promettons pas que chaque valeur distribuée sera différente : deux expériences peuvent coïncider sur un résultat ou sur un petit échantillon. Nous n'exigeons pas non plus que les tirages successifs soient différents. La répétition de valeurs et la répétition de toute la procédure sont deux idées distinctes."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Deux graines différentes produisent le même premier entier dans 1..3. Quelle interprétation est correcte ?",
+          "options": [
+            "Les valeurs distribuées peuvent coïncider ; ce seul résultat ne permet pas de savoir si le moteur a été réinitialisé.",
+            "La distribution doit élargir l'intervalle pour distinguer les graines.",
+            "Les graines sont identiques, car chacune possède son propre entier exclusif."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un petit intervalle permet les coïncidences. La graine prépare un état, elle ne réserve pas un résultat unique."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le moteur peut aussi être appelé directement avec motor(), ce qui fournit une valeur de sa séquence et fait avancer son état. Cette valeur n'est pas limitée par notre distribution. Si nous devons seulement la comparer, auto conserve le type renvoyé par le moteur sans conversion vers int. Un appel direct supplémentaire modifie l'historique ; pour répéter l'expérience, il faut également reproduire cet appel."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 a{113};\n    std::mt19937 b{113};\n    const auto primero_a = a();\n    const auto primero_b = b();\n    const auto segundo_a = a();\n    const auto segundo_b = b();\n    std::cout << (primero_a == primero_b) << ':';\n    std::cout << (segundo_a == segundo_b);\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "explanation": "Nous comparons des moteurs du même type, avec le même état initial et deux avancées directes chacun ; il n'est pas nécessaire de connaître les valeurs numériques de ces avancées."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire la continuation et la reproduction"
+        },
+        {
+          "type": "paragraph",
+          "text": "À partir d'un main minimal, prépare deux moteurs avec la graine 53 et deux distributions indépendantes sur 1..9. Tire six valeurs avec le premier dans une boucle. Avec le second, tire-en deux, puis quatre, en conservant les objets et en regroupant toutes les données dans un autre vecteur. Affiche Par lots:1 si les séquences complètes coïncident. Ensuite, réinitialise le premier moteur et sa distribution, obtiens de nouveau six valeurs et affiche Redémarrage:1 si la première série est reproduite."
+        },
+        {
+          "type": "paragraph",
+          "text": "Calcule les comparaisons, sans afficher des uns constants. Avant l'exécution, note quels objets doivent rester vivants entre les lots et lesquels doivent être réinitialisés pour reproduire la séquence. Modifie ensuite le nombre total à zéro, puis à un ; conserve une répartition dont la somme correspond à ce nombre. Ne prends pas pour critère de réussite l'obtention d'échantillons différents avec des graines différentes."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Construis les fonctions et les tests décrits dans la consigne.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après les deux expériences"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 primero{53};\n    std::mt19937 segundo{53};\n    std::uniform_int_distribution<int> a{1, 9};\n    std::uniform_int_distribution<int> b{1, 9};\n    std::vector<int> completa;\n    std::vector<int> lotes;\n    for (int i{0}; i < 6; ++i) {\n        completa.push_back(a(primero));\n    }\n    for (int i{0}; i < 2; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    for (int i{0}; i < 4; ++i) {\n        lotes.push_back(b(segundo));\n    }\n    std::cout << \"Par lots:\" << (completa == lotes) << '\\n';\n    primero.seed(53);\n    a.reset();\n    std::vector<int> repetida;\n    for (int i{0}; i < 6; ++i) {\n        repetida.push_back(a(primero));\n    }\n    std::cout << \"Redémarrage:\" << (completa == repetida);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : les lots utilisent les mêmes objets de génération ; l'échantillon d'origine reste intact ; chaque échantillon comporte six éléments ; la réinitialisation rétablit les deux composants ; les comparaisons portent sur l'ordre et la taille. Les lignes sont Par lots:1 et Redémarrage:1. Avec zéro ou une valeur, les deux comparaisons coïncident également si la répartition est correcte. La correspondance entre deux échantillons vides ne prouve pas qu'une valeur a été générée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour explorer une autre organisation, construis un moteur dans chaque lot avec la graine 53. Cela redémarre le lot au lieu de poursuivre la séquence. Examine les échantillons et explique la différence entre les procédures ; ne transforme pas une éventuelle différence numérique observée en garantie pour tous les intervalles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reproduire exige aussi d'enregistrer les appels"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu ne conserves que la graine 41. Quelles informations supplémentaires te faut-il pour reproduire un échantillon distribué dans le même environnement ?",
+          "options": [
+            "Le moteur et les bornes initiales : les tirages écartés n'influencent pas la reproduction.",
+            "Le moteur, les bornes et les valeurs triées : le tri permet de reconstruire l'ordre des tirages.",
+            "Le moteur, la distribution et ses bornes, ainsi que le nombre et l'ordre des appels, y compris les tirages écartés."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'historique de consommation fait partie de l'expérience. Les noms des variables locales ne déterminent pas la séquence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transfert : génère une collection de quantités pour tester un calcul déjà connu. Conserve la graine et la configuration avec cette collection. Reproduis une exécution, puis poursuis une autre ; explique quelle procédure était nécessaire pour chaque question. Lors d'une prochaine séance, reconstruis la réinitialisation sans consulter la référence."
+        },
+        {
+          "type": "note",
+          "text": "La génération aléatoire est étudiée dans la source principale (Stroustrup, 2024, section 4.7.5, p. 108–110). L'état, seed et reset ont été vérifiés avec le brouillon de C++ (Working draft: Programming languages — C++, s. d., sections [rand.req.eng] et [rand.req.dist]). Les activités sont originales ; la reproductibilité des valeurs distribuées se limite au même environnement."
+        }
+      ]
+    }
+  ]
+}

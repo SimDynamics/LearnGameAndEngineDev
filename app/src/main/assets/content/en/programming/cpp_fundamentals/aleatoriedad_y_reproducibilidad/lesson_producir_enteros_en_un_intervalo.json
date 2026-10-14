@@ -1,0 +1,205 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__producir_enteros_en_un_intervalo",
+  "title": "Generate Integers Within a Range",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Generating Data Is Also a Computation"
+        },
+        {
+          "type": "paragraph",
+          "text": "So far, we have chosen the data for each test ourselves. We can produce other data by following a procedure. A pseudorandom generator computes a sequence from a state; it does not obtain every result from a human decision or promise unpredictability. In this unit, we explicitly choose how it starts so we can investigate and repeat our experiments."
+        },
+        {
+          "type": "paragraph",
+          "text": "The <random> header provides engines and distributions. std::mt19937 motor{31}; constructs an engine with an initial state determined by 31. That number is called a seed. std::uniform_int_distribution<int> reparto{2, 5}; constructs a distribution that produces integers from two through five, inclusive. The engine supplies values from its own sequence; the distribution maps them to the range we need."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{31};\n    std::uniform_int_distribution<int> reparto{2, 5};\n    int dato = reparto(motor);\n    std::cout << \"In range: \" << (dato >= 2 && dato <= 5);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This guided comparison displays In range: 1. We have not specified which of the four integers should appear. We construct standard-library objects and use their interfaces; we do not need to implement their algorithms or write our own templates."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You want integers from four through eight, inclusive. Which pair of objects expresses this goal?",
+          "options": [
+            "An mt19937 engine and a uniform_int_distribution<int> constructed with 4 and 8.",
+            "A uniform_int_distribution<int> with 4 and 7: the written upper bound is excluded.",
+            "An engine constructed with 4 and 8, without a distribution: its values already lie in that range."
+          ],
+          "correctIndex": 0,
+          "explanation": "The engine and the range have different roles. Both endpoints belong to the integer distribution's interval."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Invoke an Operation on an Object"
+        },
+        {
+          "type": "paragraph",
+          "text": "In reparto(motor), reparto is the object we just constructed, not the name of a free function. Its interface lets us invoke it with parentheses and pass the engine as an argument. The call returns an int. The distribution requests values from the engine and may need several internal calls; we will not count one engine call per distributed value. Nor do we manually modify its internal state."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the name of the engine that has already been declared.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{47};\n    std::uniform_int_distribution<int> reparto{1, 3};\n    int dato = reparto(___);\n    std::cout << (dato >= 1 && dato <= 3);\n    return 0;\n}\n",
+          "answers": [
+            "motor"
+          ],
+          "explanation": "The argument supplies the source of values used by the distribution."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 fuente{73};\n    std::uniform_int_distribution<int> elegir{-3, 2};\n    bool dentro = true;\n    for (int i{0}; i < 12; ++i) {\n        const int valor = elegir(fuente);\n        dentro = dentro && valor >= -3 && valor <= 2;\n    }\n    std::cout << \"Values:12;In range:\" << dentro;\n    return 0;\n}\n",
+          "answers": [
+            "Values:12;In range:1"
+          ],
+          "explanation": "Twelve values are obtained. The check tests a property of the range without requiring a particular sequence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Both Endpoints Are Included"
+        },
+        {
+          "type": "paragraph",
+          "text": "The distribution's interval is not a vector's index range. With bounds -2 and 2, five integers are possible: -2, -1, 0, 1, and 2. For indices of a nonempty vector, by contrast, the final valid index is size()-1. First decide what your bounds represent; then write the appropriate construction."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "For uniform_int_distribution<int>{3, 6}, which list contains exactly the possible results?",
+          "options": [
+            "3, 4, 5.",
+            "4, 5, 6.",
+            "3, 4, 5, 6."
+          ],
+          "correctIndex": 2,
+          "explanation": "The distribution includes both the lower and upper endpoints; it does not use an open interval."
+        },
+        {
+          "type": "paragraph",
+          "text": "The bounds can also be equal. uniform_int_distribution<int>{4, 4} can only return four. It is still a valid range, with exactly one possible result. We make no assumptions about how many internal values the distribution requests from the engine."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{89};\n    std::uniform_int_distribution<int> elegir{7, 7};\n    for (int i{0}; i < 3; ++i) {\n        std::cout << '[' << elegir(motor) << ']';\n    }\n    return 0;\n}\n",
+          "answers": [
+            "[7][7][7]"
+          ],
+          "explanation": "An interval containing a single integer forces that result on every call. Here, the output does not depend on the mapping algorithm."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Uniform Does Not Mean a Balanced Sample"
+        },
+        {
+          "type": "paragraph",
+          "text": "Uniform means that the integers in the range have equal probabilities under the distribution. It does not mean each group of calls must contain them equally often. Results can repeat, and some values might not appear in a short sample. This operation also does not select elements without replacement."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "After six draws from 1..3, you see several repeated results. Which conclusion is justified?",
+          "options": [
+            "Repeats alone are compatible with the distribution; the range still needs checking.",
+            "It is an error because the distribution must visit every integer before repeating.",
+            "The repeats prove that the seed was ignored."
+          ],
+          "correctIndex": 0,
+          "explanation": "A uniform distribution promises neither turns nor unique results. A small sample alone cannot establish or disprove its quality."
+        },
+        {
+          "type": "note",
+          "text": "We will use this mechanism for programming experiments with small quantities and explicit seeds. We do not treat it as a security guarantee or proof of unpredictability."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Sample and Check Its Contract"
+        },
+        {
+          "type": "paragraph",
+          "text": "Starting from the minimal editor, create an engine with seed 59 and an integer distribution over -2..4. Obtain sixteen values and store them in a vector<int> in order. Display Count:16 and then In range:1 on separate lines. Calculate the first quantity from the vector and the second by traversing its elements; do not print those answers as constants."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running, explain why all values must satisfy the range. You may also inspect the values, but do not use a list from your PC as the expected output of another library. Then change the number of draws to zero and to one. For an empty sample, the check that no value lies outside the range is true even though no value was obtained."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Build the functions and tests described in the exercise.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference After Your Implementation"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{59};\n    std::uniform_int_distribution<int> elegir{-2, 4};\n    std::vector<int> datos;\n    for (int i{0}; i < 16; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    bool dentro = true;\n    for (int dato : datos) {\n        dentro = dentro && dato >= -2 && dato <= 4;\n    }\n    std::cout << \"Count:\" << datos.size() << '\\n';\n    std::cout << \"In range:\" << dentro;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: sixteen calls to the distribution, one element stored for each result, preserved order, and a check of every element. The reference displays Count:16 and In range:1. With zero calls it displays Count:0 and In range:1; with one, Count:1 and In range:1. Changing the bounds to 5..5 forces every generated value to be five. Neither endpoint is required to appear, and the counts of each value need not match."
+        },
+        {
+          "type": "paragraph",
+          "text": "The dentro variable accumulates a property; the count confirms how many observations exist. Neither check alone proves that the sample has balanced frequencies. Other implementations meeting the contract are acceptable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisit Empty Collections and the Range Property"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{101};\n    std::uniform_int_distribution<int> elegir{0, 9};\n    std::vector<int> datos;\n    for (int i{0}; i < 0; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    bool dentro = true;\n    for (int dato : datos) {\n        dentro = dentro && dato >= 0 && dato <= 9;\n    }\n    std::cout << datos.size() << ':' << dentro;\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "No values are generated. There is no element that violates the range, and the vector remains empty."
+        },
+        {
+          "type": "paragraph",
+          "text": "In a later session, construct a sample for another small integer range. Distinguish the seed, the bounds, and the count: changing one does not mean changing the others. Write testable properties before inspecting the data."
+        },
+        {
+          "type": "note",
+          "text": "Integer generation is covered in the main source (Stroustrup, 2024, section 4.7.5, pp. 108–110). Adapted for standard interfaces with original activities. The interval and precondition were checked against the C++ working draft (Working draft: Programming languages — C++, n.d., section [rand.dist.uni.int])."
+        }
+      ]
+    }
+  ]
+}

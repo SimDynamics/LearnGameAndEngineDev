@@ -1,0 +1,205 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__producir_enteros_en_un_intervalo",
+  "title": "Produire des entiers dans un intervalle",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Produire des données est aussi un calcul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Jusqu'ici, nous avons choisi les données de chaque test. Nous pouvons en produire d'autres à l'aide d'une procédure. Un générateur pseudo-aléatoire calcule une séquence à partir d'un état ; chaque résultat ne provient pas d'une décision humaine et le générateur ne garantit pas qu'il soit imprévisible. Dans cette unité, nous choisissons manuellement l'état de départ pour étudier et répéter nos expériences."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'en-tête <random> fournit des moteurs et des distributions. std::mt19937 motor{31}; construit un moteur dont l'état initial dépend de 31. Ce nombre est appelé graine. std::uniform_int_distribution<int> reparto{2, 5}; construit une distribution qui produit des entiers de deux à cinq, bornes comprises. Le moteur fournit les valeurs de sa propre séquence ; la distribution les transforme pour les adapter à l'intervalle nécessaire."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{31};\n    std::uniform_int_distribution<int> reparto{2, 5};\n    int dato = reparto(motor);\n    std::cout << \"Dans l'intervalle : \" << (dato >= 2 && dato <= 5);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette comparaison guidée affiche Dans l'intervalle : 1. Nous n'avons pas précisé lequel des quatre entiers doit apparaître. Nous construisons des objets de la bibliothèque standard et utilisons leur interface ; nous n'avons pas besoin d'implémenter leurs algorithmes ni d'écrire nos propres templates."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu veux des quantités entières de quatre à huit inclus. Quelle paire d'objets exprime cet objectif ?",
+          "options": [
+            "Un moteur mt19937 et une uniform_int_distribution<int> construite avec 4 et 8.",
+            "Une uniform_int_distribution<int> avec 4 et 7 : la borne supérieure écrite est exclue.",
+            "Un moteur construit avec 4 et 8, sans distribution : ses valeurs appartiennent déjà à cet intervalle."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le moteur et l'intervalle jouent des rôles différents. Les deux bornes appartiennent à la distribution entière."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Invoquer une opération d'un objet"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans reparto(motor), reparto est l'objet que nous venons de construire, pas le nom d'une fonction libre. Son interface permet de l'appeler avec des parenthèses et de transmettre le moteur comme argument. L'appel renvoie un int. La distribution demande des valeurs au moteur et peut nécessiter plusieurs appels internes ; nous ne compterons donc pas un appel au moteur par valeur distribuée. Nous ne modifions pas non plus son état interne manuellement."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le nom du moteur déjà déclaré.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{47};\n    std::uniform_int_distribution<int> reparto{1, 3};\n    int dato = reparto(___);\n    std::cout << (dato >= 1 && dato <= 3);\n    return 0;\n}\n",
+          "answers": [
+            "motor"
+          ],
+          "explanation": "L'argument fournit la source des valeurs utilisées par la distribution."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 fuente{73};\n    std::uniform_int_distribution<int> elegir{-3, 2};\n    bool dentro = true;\n    for (int i{0}; i < 12; ++i) {\n        const int valor = elegir(fuente);\n        dentro = dentro && valor >= -3 && valor <= 2;\n    }\n    std::cout << \"Données:12;Dans l'intervalle:\" << dentro;\n    return 0;\n}\n",
+          "answers": [
+            "Données:12;Dans l'intervalle:1"
+          ],
+          "explanation": "Douze valeurs sont obtenues. La vérification porte sur une propriété de l'intervalle sans imposer une séquence particulière."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les deux bornes sont incluses"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'intervalle de la distribution ne correspond pas aux indices d'un vecteur. Avec les bornes -2 et 2, cinq entiers sont possibles : -2, -1, 0, 1 et 2. Pour les indices d'un vecteur non vide, en revanche, le dernier indice autorisé serait size()-1. Détermine d'abord ce que représentent les bornes, puis écris la construction appropriée."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pour uniform_int_distribution<int>{3, 6}, quelle liste contient exactement les résultats possibles ?",
+          "options": [
+            "3, 4, 5.",
+            "4, 5, 6.",
+            "3, 4, 5, 6."
+          ],
+          "correctIndex": 2,
+          "explanation": "La distribution inclut la borne inférieure et la borne supérieure ; il ne s'agit pas d'un intervalle ouvert."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les bornes peuvent aussi être égales. uniform_int_distribution<int>{4, 4} ne peut produire que quatre. Cela reste un intervalle valide avec un seul résultat possible. Nous ne supposons rien du nombre de valeurs internes que la distribution demande au moteur."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{89};\n    std::uniform_int_distribution<int> elegir{7, 7};\n    for (int i{0}; i < 3; ++i) {\n        std::cout << '[' << elegir(motor) << ']';\n    }\n    return 0;\n}\n",
+          "answers": [
+            "[7][7][7]"
+          ],
+          "explanation": "Un intervalle ne contenant qu'un entier impose ce résultat à chaque appel. Ici, la sortie ne dépend pas de l'algorithme de transformation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Uniforme ne signifie pas échantillon équilibré"
+        },
+        {
+          "type": "paragraph",
+          "text": "Uniforme signifie que les entiers de l'intervalle ont la même probabilité selon la distribution. Cela ne signifie pas que chaque série d'appels doit tous les contenir aussi souvent. Les résultats peuvent se répéter et certaines valeurs peuvent manquer dans un petit échantillon. Cette opération ne sélectionne pas non plus des éléments sans répétition."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Après six tirages dans 1..3, tu observes plusieurs résultats répétés. Quelle conclusion est justifiée ?",
+          "options": [
+            "Les répétitions sont compatibles avec la distribution ; il faut encore vérifier l'intervalle.",
+            "Il y a une erreur, car la distribution doit produire chaque entier avant d'en répéter un.",
+            "Les répétitions prouvent que la graine a été ignorée."
+          ],
+          "correctIndex": 0,
+          "explanation": "Une distribution uniforme ne garantit ni tour de rôle ni absence de répétitions. Un petit échantillon ne suffit pas à établir ou réfuter sa qualité."
+        },
+        {
+          "type": "note",
+          "text": "Nous utiliserons ce mécanisme pour des expériences de programmation avec de petites quantités et des graines explicites. Nous n'en faisons ni une garantie de sécurité ni une preuve d'imprévisibilité."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un échantillon et vérifier son contrat"
+        },
+        {
+          "type": "paragraph",
+          "text": "À partir de l'éditeur minimal, crée un moteur avec la graine 59 et une distribution entière sur -2..4. Obtiens seize valeurs et conserve-les dans un vector<int> dans l'ordre. Affiche Quantité:16 puis Dans l'intervalle:1 sur deux lignes. Calcule la première quantité à partir du vecteur et la seconde en parcourant ses éléments ; n'affiche pas ces réponses comme des constantes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant l'exécution, explique pourquoi toutes les valeurs doivent appartenir à l'intervalle. Tu peux également examiner les valeurs, mais n'utilise pas une liste produite par ton PC comme attente pour une autre bibliothèque. Modifie ensuite le nombre de tirages à zéro et à un. Pour un échantillon vide, la vérification qu'aucune valeur ne sort de l'intervalle est vraie, même si aucune valeur n'a été produite."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    // Construis les fonctions et les tests décrits dans la consigne.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après ta construction"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{59};\n    std::uniform_int_distribution<int> elegir{-2, 4};\n    std::vector<int> datos;\n    for (int i{0}; i < 16; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    bool dentro = true;\n    for (int dato : datos) {\n        dentro = dentro && dato >= -2 && dato <= 4;\n    }\n    std::cout << \"Quantité:\" << datos.size() << '\\n';\n    std::cout << \"Dans l'intervalle:\" << dentro;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : seize appels à la distribution, un élément conservé par résultat, ordre préservé et vérification de chaque élément. La référence affiche Quantité:16 et Dans l'intervalle:1. Avec zéro appel, elle affiche Quantité:0 et Dans l'intervalle:1 ; avec un appel, Quantité:1 et Dans l'intervalle:1. Avec des bornes 5..5, chaque valeur produite est obligatoirement cinq. Il n'est pas exigé que les deux bornes apparaissent ni que chaque valeur apparaisse aussi souvent."
+        },
+        {
+          "type": "paragraph",
+          "text": "La variable dentro accumule une propriété ; la quantité confirme le nombre d'observations. Aucune de ces vérifications ne prouve à elle seule que l'échantillon possède des fréquences équilibrées. D'autres implémentations respectant le contrat sont admises."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réviser les collections vides et la propriété de l'intervalle"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n\nint main() {\n    std::mt19937 motor{101};\n    std::uniform_int_distribution<int> elegir{0, 9};\n    std::vector<int> datos;\n    for (int i{0}; i < 0; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    bool dentro = true;\n    for (int dato : datos) {\n        dentro = dentro && dato >= 0 && dato <= 9;\n    }\n    std::cout << datos.size() << ':' << dentro;\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "Aucune valeur n'est générée. Aucun élément ne viole l'intervalle et le vecteur reste vide."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une autre séance, construis un échantillon pour un autre petit intervalle d'entiers. Distingue la graine, les bornes et le nombre de tirages : modifier l'un ne signifie pas modifier les autres. Écris des propriétés vérifiables avant d'examiner les données."
+        },
+        {
+          "type": "note",
+          "text": "La génération d'entiers est étudiée dans la source principale (Stroustrup, 2024, section 4.7.5, p. 108–110). Adaptation aux interfaces standard et activités originales. L'intervalle et la précondition ont été vérifiés avec le brouillon de C++ (Working draft: Programming languages — C++, s. d., section [rand.dist.uni.int])."
+        }
+      ]
+    }
+  ]
+}
