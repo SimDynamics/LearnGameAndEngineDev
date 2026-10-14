@@ -1,0 +1,235 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__copias_y_parametros_de_tipos_propios",
+  "title": "Copies and Parameters of User-Defined Types",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copying Preserves a Value, Not a Link"
+        },
+        {
+          "type": "paragraph",
+          "text": "For our Pedido, the default copy copies each member: code, units, and state. A copy of a valid order preserves that value in another object. Shipping the original later does not update the copy. Private data do not prevent copying the object's value through the copy operations provided by the language."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"A\", 3};\n    Pedido copia = original;\n    original.enviar();\n    std::cout << (original.estado() == Estado::enviado) << \" \" << (copia.estado() == Estado::preparado);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Here, copying the members preserves the validity rule: the source already had a valid state, and all its data are reproduced together. We are not defining a manual copy operation or managing memory ourselves."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copy at Creation and Assign Later"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido a{\"B\", 4};\n    Pedido b{\"C\", 7};\n    b = a;\n    a.cambiar_unidades(5);\n    std::cout << b.codigo() << \":\" << b.unidades() << \" \" << a.codigo() << \":\" << a.unidades();\n    return 0;\n}\n",
+          "answers": [
+            "B:4 B:5"
+          ],
+          "explanation": "Assignment copies the complete value of a into b; any later change is independent."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What happens to b's previous code when you write b = a?",
+          "options": [
+            "It is always retained because the data are private.",
+            "It is replaced as part of the copied order value.",
+            "It is automatically concatenated with a's code."
+          ],
+          "correctIndex": 1,
+          "explanation": "Assignment for this class copies all its members, not only the unit count."
+        },
+        {
+          "type": "paragraph",
+          "text": "Copying a Pedido does not check whether its code must be unique in an external collection. That rule is not part of this type. An application requiring unique identities would need to decide where and how to enforce that additional condition."
+        },
+        {
+          "type": "paragraph",
+          "text": "This Pedido is treated as a copyable value. Assignment replaces the complete value of an existing object with another valid value; therefore it can also replace the object's state. The conditions of enviar(), cancelar(), and cambiar_unidades() still describe those specific operations. An application that wanted to preserve an identity and an irreversible history would also have to design and restrict value replacement; that additional guarantee is not included here."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A By-Value Parameter Also Copies"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool enviar_copia(Pedido pedido) {\n    return pedido.enviar();\n}\n\nint main() {\n    Pedido pedido{\"D\", 6};\n    bool aplicado = enviar_copia(pedido);\n    std::cout << aplicado << \" \" << (pedido.estado() == Estado::preparado);\n    return 0;\n}\n",
+          "answers": [
+            "1 1"
+          ],
+          "explanation": "The function ships its local copy; the caller's object remains in preparado."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The bool true returned by enviar_copia proves…",
+          "options": [
+            "That the caller's object accepted the transition.",
+            "That the local order retained its prepared state.",
+            "That the local copy accepted shipping, not that the caller's object changed."
+          ],
+          "correctIndex": 2,
+          "explanation": "The function's contract must account for how it receives its parameter."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Reference for Modifying the Caller's Object"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool enviar_original(Pedido& pedido) {\n    return pedido.enviar();\n}\n\nint main() {\n    Pedido pedido{\"E\", 2};\n    bool aplicado = enviar_original(pedido);\n    std::cout << aplicado << \" \" << (pedido.estado() == Estado::enviado);\n    return 0;\n}\n",
+          "answers": [
+            "1 1"
+          ],
+          "explanation": "The reference allows the operation to affect the object supplied by the caller."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the reference symbol that lets the function modify the caller's Pedido.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool enviar_original(Pedido___ pedido) {\n    return pedido.enviar();\n}\n\nint main() {\n    Pedido pedido{\"F\", 1};\n    std::cout << enviar_original(pedido);\n    return 0;\n}\n",
+          "answers": [
+            "&"
+          ],
+          "explanation": "Pedido& refers to the caller's object in this function."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Constant Reference for Queries"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool puede_prepararse(const Pedido& pedido) {\n    return pedido.estado() == Estado::preparado;\n}\n\nint main() {\n    Pedido pedido{\"G\", 8};\n    std::cout << puede_prepararse(pedido) << \" \";\n    pedido.cancelar();\n    std::cout << puede_prepararse(pedido);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "The function queries the current state without modifying the order."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A function must query a Pedido without copying it or being able to modify it. Which parameter expresses that contract?",
+          "options": [
+            "const Pedido pedido",
+            "const Pedido& pedido",
+            "Pedido& pedido"
+          ],
+          "correctIndex": 1,
+          "explanation": "A constant reference expresses read-only access without copying the object."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copies Inside a Collection"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido original{\"H\", 3};\n    std::vector<Pedido> registros;\n    registros.push_back(original);\n    original.cambiar_unidades(9);\n    std::cout << registros.at(0).unidades() << \" \" << original.unidades();\n    return 0;\n}\n",
+          "answers": [
+            "3 9"
+          ],
+          "explanation": "The vector contains the copy added at that moment, not a permanent link to the original."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> registros{{\"I\", 2}, {\"J\", 5}};\n    for (auto& pedido : registros) { pedido.enviar(); }\n    for (const auto& pedido : registros) {\n        std::cout << pedido.codigo() << \":\" << (pedido.estado() == Estado::enviado) << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "I:1;J:1;"
+          ],
+          "explanation": "References modify the orders held in the vector, while const queries display their states."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Program to Compare Effects"
+        },
+        {
+          "type": "paragraph",
+          "text": "Create two functions: cancelar_copia(Pedido) and cancelar_original(Pedido&), each returning the result of cancelar. Construct an order in preparado, call the by-value version first, and show that the original remains in preparado. Then call the by-reference version and show that the original ends in cancelado. Also test an order already in enviado: both requests must be rejected without changing it."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Build the program described in the exercise.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Add a display function that takes const Pedido&. Use the public queries, without directly accessing private members. Predict the return value and the effect of each call separately."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution and Copying Criteria"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool cancelar_copia(Pedido pedido) { return pedido.cancelar(); }\nbool cancelar_original(Pedido& pedido) { return pedido.cancelar(); }\n\nint main() {\n    Pedido pedido{\"K\", 4};\n    bool a = cancelar_copia(pedido);\n    std::cout << a << \":\" << (pedido.estado() == Estado::preparado) << \" \";\n    bool b = cancelar_original(pedido);\n    std::cout << b << \":\" << (pedido.estado() == Estado::cancelado);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: the by-value function modifies only its copy; the reference applies the operation to the original; and the bool result agrees with each contract. Display queries accept const references. Rejections preserve the value regardless of how the parameter was received."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which check exposes confusion between a copy and a reference?",
+          "options": [
+            "Compare the outputs inside the function without inspecting the caller's object.",
+            "Inspect only the bool returned by the function.",
+            "Observe the caller's object after the function, as well as its return value."
+          ],
+          "correctIndex": 2,
+          "explanation": "The observable effect must apply to the correct object, not merely to the function's result."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nbool cancelar_copia(Pedido pedido) { return pedido.cancelar(); }\nbool cancelar_original(Pedido& pedido) { return pedido.cancelar(); }\n\nvoid presentar(const Pedido& pedido) {\n    std::cout << pedido.codigo() << \":\" << pedido.unidades()\n        << \" prepared:\" << (pedido.estado() == Estado::preparado);\n}\n\nint main() {\n    Pedido pedido{\"T\", 5};\n    presentar(pedido);\n    std::cout << \"\\n\";\n    pedido.enviar();\n    presentar(pedido);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The display function takes const Pedido& and uses only public queries. It displays T:5 prepared:1 and, after shipping, T:5 prepared:0 on a separate line; it does not modify the object in order to print it."
+        }
+      ]
+    }
+  ]
+}

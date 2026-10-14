@@ -1,0 +1,544 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado",
+  "title": "Meaningful Default Values",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decide Whether Construction Without Arguments Makes Sense"
+        },
+        {
+          "type": "paragraph",
+          "text": "A counter ranging from zero to five can start at zero when no value is supplied. That value represents a specific, valid situation. Our Pedido needs a nonempty code and a quantity: there is no code we can invent that would satisfy every request. Whether construction without arguments should be available is an interface decision, not an obligation for every class (Stroustrup, 2024, section 8.7.3)."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "When should we offer construction without arguments?",
+          "options": [
+            "When it replaces any rejected input with an arbitrary alternative.",
+            "Whenever all members have built-in types.",
+            "When it produces a valid state with a defined meaning."
+          ],
+          "correctIndex": 2,
+          "explanation": "The initial state must satisfy the rules and represent what that form of construction promises."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Constructors, Two Ways to Construct"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador a;\n    Contador b{4};\n    std::cout << a.valor() << \" \" << b.valor();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contador() is the constructor without arguments. The member initializer for valor_ specifies zero, and the empty body needs to do nothing else. Contador(int inicial) requests a value: its member initializer list takes precedence over the initializer written alongside the member, and its body checks the domain. Both use the type's name; their parameter lists distinguish them (Stroustrup, 2024, sections 8.4.2 and 8.7.3)."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador a{2};\n    Contador b;\n    Contador c{0};\n    std::cout << a.valor() << \":\" << b.valor() << \":\" << c.valor();\n    return 0;\n}\n",
+          "answers": [
+            "2:0:0"
+          ],
+          "explanation": "The explicit construction of a uses two; b uses the default value and c receives zero explicitly."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Default Value Does Not Repair Invalid Arguments"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    try {\n        Contador contador{6};\n        std::cout << contador.valor();\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rejected\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Rejected"
+          ],
+          "explanation": "The constructor taking an argument checks six and rejects construction. It does not switch to the no-argument constructor."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A valid Contador() exists. What does the contract require for Contador{-1}?",
+          "options": [
+            "Create an object holding minus one and rely on valor().",
+            "Silently use Contador().",
+            "Reject the argument supplied to that construction."
+          ],
+          "correctIndex": 2,
+          "explanation": "Having a valid no-argument alternative does not make every argument valid."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the member's initial value so that construction without arguments starts at zero.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = ___;\n};\n\nint main() {\n    Contador contador;\n    std::cout << contador.valor();\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "The member initializer defines the value used by Contador()."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Do Not Request Construction That the Type Does Not Offer"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Intentional error: Pedido requires a code and a unit count.\n    Pedido pedido;\n    std::cout << pedido.unidades();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "When we declare the Pedido constructor with those two parameters, another no-argument constructor does not automatically appear. The diagnostic indicates that none of the available constructors matches the request. The fix is to supply valid arguments or make a justified design change, not to expose the members publicly so they can be filled in later (Stroustrup, 2024, section 8.7.3)."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which declaration uses the available Pedido interface?",
+          "options": [
+            "Pedido pedido{}; without arguments.",
+            "Pedido pedido; followed by assignment to its private data.",
+            "Pedido pedido{\"Q\", 3};"
+          ],
+          "correctIndex": 2,
+          "explanation": "Pedido pedido{\"Q\", 3}; supplies the nonempty code \"Q\" and three units, within the constructor's valid domain. The other options request no-argument construction, which Pedido does not provide."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Empty Collection and Constructed Elements Are Different Decisions"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> pedidos;\n    pedidos.push_back(Pedido{\"T\", 2});\n    std::cout << pedidos.size() << \" \" << pedidos.at(0).codigo();\n    return 0;\n}\n",
+          "answers": [
+            "1 T"
+          ],
+          "explanation": "The empty collection does not need to construct any Pedido. push_back receives one built with valid arguments."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    // Intentional error: two elements require default construction of Pedido.\n    std::vector<Pedido> pedidos(2);\n    std::cout << pedidos.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "A vector constructed with the size two requests a collection that already contains two objects. That form requires being able to default-construct each element. An empty collection, by contrast, can exist even when the element type cannot be constructed without arguments. We can also supply complete elements directly with an initializer list."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    std::vector<Pedido> pedidos{{\"A\", 1}, {\"B\", 5}};\n    std::cout << pedidos.size() << \":\" << pedidos.at(1).unidades();\n    return 0;\n}\n",
+          "answers": [
+            "2:5"
+          ],
+          "explanation": "Each element receives its own arguments instead of requesting two no-argument constructions."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construct a Deliberate Initial Value"
+        },
+        {
+          "type": "paragraph",
+          "text": "Design Nivel with an integer value ranging from zero to three. Without arguments it starts at zero; with an argument it accepts only values in that domain and preserves the supplied value. Use private data, a valor() const query, and the NivelInvalido signal for rejection. Test without arguments and with zero, three, minus one, and four. Then construct a vector containing two default-initialized levels and display both values."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Build the program described in the exercise.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before compiling, explain why a vector of two levels makes sense here, whereas our vector of two orders could not be constructed without arguments. Do not use a constructor that silently replaces invalid arguments with zero."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference Solution and Initial Value Criteria"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct NivelInvalido {};\nclass Nivel {\npublic:\n    Nivel() {}\n    Nivel(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 3) { throw NivelInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Nivel primero;\n    Nivel segundo{3};\n    std::vector<Nivel> niveles(2);\n    std::cout << primero.valor() << \":\" << segundo.valor() << \" \";\n    for (const auto& nivel : niveles) { std::cout << nivel.valor(); }\n    try {\n        Nivel rechazado{4};\n        std::cout << rechazado.valor();\n    } catch (const NivelInvalido&) { std::cout << \" Rejected\"; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: construction without arguments represents zero; construction with arguments preserves zero and three; minus one and four are rejected without completing an invalid object; each vector element starts at zero; all queries can be used on const objects. Other implementations satisfying these conditions are also valid."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    const Contador origen{5};\n    Contador copia = origen;\n    std::cout << copia.valor();\n    return 0;\n}\n",
+          "answers": [
+            "5"
+          ],
+          "explanation": "Copying an existing value does not request the no-argument constructor. The copy preserves its members."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Integer Can Request an Object Without Naming It"
+        },
+        {
+          "type": "paragraph",
+          "text": "So far we have written Contador{3} to construct a counter deliberately. Its Contador(int) constructor also permits implicit conversion: in certain contexts the compiler can use an int to construct the required Contador, even when the client does not write Contador{...}. The value three is not itself a Contador; this conversion calls the constructor and creates an object of that type (Stroustrup, 2024, section 17.5.1). First examine what is allowed by the familiar version, which does not yet use explicit."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    const Contador convertido = 3;\n    std::cout << convertido.valor() << ':' << leer(4);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 3:4. The first declaration requests a Contador from the int three. leer(4) requests another Contador from the int four so that the read-only reference receives a suitable object. That second object exists during the call; leer returns its int value and does not retain the reference. Neither conversion bypasses the constructor body or its validation."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__origen_de_la_conversion_implicita",
+          "question": "In the previous version, leer takes const Contador&, yet leer(4) compiles. What makes that call possible?",
+          "options": [
+            "const converts any integer into a reference of the requested type.",
+            "Contador(int), without explicit, permits constructing the object through implicit conversion.",
+            "Because leer returns int, the types of its arguments are not checked."
+          ],
+          "correctIndex": 1,
+          "explanation": "The conversion is provided by the Contador(int) constructor. const limits modification through the reference, and the return type describes the result; neither turns an int into a Contador by itself."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Require Construction to Be Visible at the Call Site"
+        },
+        {
+          "type": "paragraph",
+          "text": "If the interface requires clients to state when they create a Contador from an integer, we mark that constructor explicit: explicit Contador(int inicial). We retain Contador() and all validity checks. The keyword does not change the domain or the initial value; it prevents that constructor from being used for the implicit conversions shown earlier (Stroustrup, 2024, section 17.5.1). Contador directo{3} remains valid direct construction (Working draft: Programming languages — C++, n.d., section [class.conv.ctor])."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_directa_predeterminado_y_copia",
+          "language": "cpp",
+          "question": "The constructor taking int is marked explicit. Predict the values from no-argument construction, direct construction, and copying an existing Contador.",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    const Contador inicio;\n    const Contador directo{5};\n    const Contador copia = directo;\n    std::cout << inicio.valor() << ':' << directo.valor() << ':' << copia.valor();\n    return 0;\n}\n",
+          "answers": [
+            "0:5:5"
+          ],
+          "explanation": "inicio uses Contador() and starts at zero. directo explicitly uses the constructor with five. copia receives another Contador and copies its value: it does not need to convert an int, so explicit Contador(int) does not prohibit it."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_conserva_la_copia_del_tipo",
+          "question": "Contador has explicit Contador(int), and const Contador origen{2} already exists. Which declaration still copies as this model allows?",
+          "options": [
+            "Contador copia = origen;",
+            "Contador copia = 2;",
+            "Contador copia = origen.valor();"
+          ],
+          "correctIndex": 0,
+          "explanation": "origen already has type Contador, so copying it does not request a conversion from int. Both 2 and origen.valor() have type int and cannot implicitly use the constructor marked explicit. An equals sign in a declaration does not forbid all copies: the type of the initializer matters."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Conversion Diagnostic Is Not a Numeric Rejection"
+        },
+        {
+          "type": "paragraph",
+          "text": "The following program contains an intentional compile-time error. Three lies within the counter's domain, but the declaration requests an implicit conversion. The compiler rejects that construction form: it never executes the constructor body or throws ContadorInvalido. Do not try to predict an output for a program that cannot be compiled."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    // Intentional error: this form requires implicit conversion.\n    Contador copia = 3;\n    std::cout << copia.valor();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__reparar_construccion_sin_quitar_explicit",
+          "question": "What change preserves the requirement for explicit construction and creates a counter whose value is three?",
+          "options": [
+            "Change three to zero, retaining Contador copia = 0;.",
+            "Remove domain checking from the constructor.",
+            "Write Contador copia{3};."
+          ],
+          "correctIndex": 2,
+          "explanation": "Braces following the name construct the Contador directly with three. Zero is also an int, so it would not repair the prohibited conversion; removing numeric validation does not change how the constructor is selected. Contador copia = Contador{3}; would also work, because a Contador is constructed explicitly before initializing copia."
+        },
+        {
+          "type": "fill_code",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__marcar_constructor_explicit",
+          "language": "cpp",
+          "question": "Complete only the keyword that requires deliberate construction from int while keeping Contador contador{2}; valid.",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    ___ Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador contador{2};\n    std::cout << contador.valor();\n    return 0;\n}\n",
+          "answers": [
+            "explicit"
+          ],
+          "explanation": "explicit is written before the constructor. Direct brace construction remains available, and the constructor still checks the range from zero to five."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Argument Must Express Its Type Too"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall int leer(const Contador&): it queries a counter and returns its value. With an explicit constructor, leer(3) can no longer ask the compiler to convert the integer into a counter. The client can pass an existing Contador or explicitly construct Contador{3} as the argument. The const reference receives the object for reading; it does not give every int the Contador type."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    // Intentional error: the argument is int, not Contador.\n    std::cout << leer(3);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__construir_el_argumento_explicit",
+          "question": "You want to preserve leer(const Contador&) and explicit Contador(int). Which call deliberately supplies a counter with value three?",
+          "options": [
+            "leer(Contador{3})",
+            "leer(3)",
+            "leer(3.0)"
+          ],
+          "correctIndex": 0,
+          "explanation": "Contador{3} invokes the constructor directly. Changing the number to double does not explicitly construct the required type or remove explicit. The object constructed as an argument remains available during the call, and leer returns an independent int without retaining a reference to it."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__argumento_construido_y_objeto_existente",
+          "language": "cpp",
+          "question": "Both calls supply Contador objects. Predict the exact output.",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    const Contador existente{1};\n    std::cout << leer(Contador{4}) << ':' << leer(existente) << ':';\n    std::cout << existente.valor();\n    return 0;\n}\n",
+          "answers": [
+            "4:1:1"
+          ],
+          "explanation": "The first call reads the object constructed with four. The second reads existente with one and does not modify it. explicit does not change values or prevent passing existing objects of the required type."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Requiring the Form Does Not Replace Checking the Value"
+        },
+        {
+          "type": "paragraph",
+          "text": "Contador{6} specifies direct construction, so it does not violate the prohibition on implicit conversion. The constructor body must still reject six at runtime. These are two distinct decisions: explicit controls certain ways to construct an object from another type; the if statement and exception preserve the zero-to-five domain. Contador() is not used to repair a rejected argument either."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_y_dominio_son_decisiones_distintas",
+          "language": "cpp",
+          "question": "Every request uses direct construction. Predict all four lines, distinguishing success from an exception.",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    for (int inicial : std::vector<int>{0, 6, 5, -1}) {\n        try {\n            const Contador contador{inicial};\n            std::cout << \"Value:\" << contador.valor() << '\\n';\n        } catch (const ContadorInvalido&) {\n            std::cout << \"Rejected:\" << inicial << '\\n';\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Value:0\nRejected:6\nValue:5\nRejected:-1"
+          ],
+          "explanation": "Zero and five are retained. Six and minus one violate the numeric rules and throw ContadorInvalido during construction; each catch allows the next input to be handled. These rejections occur while running a valid program, unlike the diagnostic for Contador copia = 3;."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__identificar_compilacion_frente_a_dominio",
+          "question": "With this Contador, which comparison correctly distinguishes the two kinds of rejection?",
+          "options": [
+            "Contador copia = 3; and Contador directo{6}; throw the same exception after compiling.",
+            "Contador copia = 3; is rejected at compile time; Contador directo{6}; compiles, and its constructor rejects six when run.",
+            "explicit rejects six at compile time, and the if statement automatically repairs conversion from three."
+          ],
+          "correctIndex": 1,
+          "explanation": "Types and initialization forms are checked before execution. The numeric condition is evaluated inside an allowed construction. No catch can turn a program that fails to compile into an executable program."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build an Interface That Requires This Decision"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rebuild Contador with private representation, no-argument construction producing zero, explicit Contador(int), a valor() const query, and a ContadorInvalido rejection for values outside zero to five. Implement leer(const Contador&), which returns valor() without printing or retaining references. Start from the minimal editor: write the declarations, constructor, and calls yourself."
+        },
+        {
+          "type": "paragraph",
+          "text": "In main, declare a counter without arguments, another constructed directly with four, and a copy of the latter using Contador copia = directo;. Display four lines: Default:0, Direct:4, Argument:2, and Copy:4. Argument comes from leer(Contador{2}); the other lines query the respective objects. In two subsequent tests, directly construct objects with -1 and 6 inside separate try/catch blocks, displaying Rejected:-1 and Rejected:6. Do not print the answers as constants instead of querying or validating the objects."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Implement Contador, leer, and the tests in the exercise.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "After verifying the valid program, add only Contador no_permitido = 3; and try compiling: it must fail because of implicit conversion. Remove that line and check leer(3); separately, which must also fail at compile time. Repair the call with leer(Contador{3}) and run again. Preserve explicit and the checks; do not change leer's signature to accept int. Distinguish each diagnostic from output and from ContadorInvalido. Compiler wording may vary."
+        },
+        {
+          "type": "paragraph",
+          "text": "Change four to zero or five, and two to another valid value. Predict the lines before running and confirm that the copy retains the chosen value. Criteria: direct construction remains available; the default value remains zero; both implicit uses are separately rejected; copies between Contador objects remain permitted; invalid numeric arguments are rejected without fabricating a fallback counter."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference Solution and Review of the Decisions"
+        },
+        {
+          "type": "paragraph",
+          "text": "This reference uses five for the directly constructed object and one for the constructed argument. Compare it with your program by its rules and compile-time checks, not just by one case's output. The intentionally invalid lines are commented out: uncomment only one at a time to inspect its diagnostic, then comment it out again before running."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint leer(const Contador& contador) {\n    return contador.valor();\n}\n\nint main() {\n    const Contador inicio;\n    const Contador directo{5};\n    const Contador copia = directo;\n    std::cout << \"Default:\" << leer(inicio) << '\\n';\n    std::cout << \"Direct:\" << leer(directo) << '\\n';\n    std::cout << \"Argument:\" << leer(Contador{1}) << '\\n';\n    std::cout << \"Copy:\" << leer(copia) << '\\n';\n    try {\n        const Contador fuera{-1};\n        std::cout << fuera.valor() << '\\n';\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rejected:-1\\n\";\n    }\n    try {\n        const Contador fuera{6};\n        std::cout << fuera.valor() << '\\n';\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rejected:6\\n\";\n    }\n    // Intentional error to test separately:\n    // Contador no_permitido = 3;\n    // leer(3);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference displays Default:0, Direct:5, Argument:1, Copy:5, Rejected:-1, and Rejected:6, one per line. The copy of directo retains five because it receives an existing Contador. Directly constructing the two invalid values reaches the constructor and throws; the two commented lines instead prevent compilation because they request implicit conversions."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_no_equivale_a_const_ni_a_validacion",
+          "question": "A classmate suggests removing explicit because the class already has an if statement and valor() const. What purpose does each interface decision serve?",
+          "options": [
+            "explicit requires certain construction forms; if validates the number; valor() const allows reading without modifying the object.",
+            "All three decisions are equivalent: any of them prevents conversion from int and rejects values outside the domain.",
+            "if determines accepted types at compile time, and explicit determines which values the object accepts at runtime."
+          ],
+          "correctIndex": 0,
+          "explanation": "Construction form, numeric domain, and permission to query are separate decisions. One cannot replace the others. An explicit constructor also does not prohibit copying an existing Contador or change the default value."
+        },
+        {
+          "type": "paragraph",
+          "text": "In another session, before looking at the examples, classify Contador a;, Contador b{2};, Contador c = 2;, Contador d = b;, leer(2);, and leer(Contador{2});. Explain which forms request an implicit conversion, and repair only those forms. Later, when building a reader from text, revisit this decision: requiring the client to name the reader explicitly helps distinguish the input text from the object that processes it."
+        },
+        {
+          "type": "note",
+          "text": "The relationship between construction and default values is supported by sections 8.4.2 and 8.7.3; conversion through constructors and explicit are covered in section 17.5.1, pp. 497–498 (Stroustrup, 2024). This connection revisits only the construction decision. Permitted forms were compared with section [class.conv.ctor] of the public working draft (Working draft: Programming languages — C++, n.d.). The explanations, model, and activities are original to this learning path; full references appear at the end of the course."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisit Assignment to an Existing Object"
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lesson on copying, we distinguished creating an object from assigning to it afterward. Contador copia = origen; declares another object; destino = origen; replaces the value of a destination that already exists. Revisit that distinction with our Contador: it retains private representation, a default value of zero, and an explicit constructor taking int."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    const Contador origen{4};\n    std::cout << destino.valor() << ':';\n    destino = origen;\n    std::cout << destino.valor() << ':' << origen.valor();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 2:4:4. Assignment replaces destino's previous value with the value of origen, which is already a Contador. It neither converts an integer nor modifies origen. explicit Contador(int) does not remove assignment between objects of the same type (Working draft: Programming languages — C++, n.d., sections [class.conv.ctor] and [class.copy.assign])."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__explicit_tambien_importa_al_asignar",
+          "question": "With the same Contador, after declaring Contador destino{2};, you add destino = 3;. What happens when you try to compile and run that program?",
+          "options": [
+            "It compiles and replaces two with three: destino already exists, so explicit does not matter.",
+            "It compiles, but throws ContadorInvalido when run because explicit detects an int argument.",
+            "It does not compile: assignment expects a Contador, and explicit prevents obtaining one through implicit conversion from int."
+          ],
+          "correctIndex": 2,
+          "explanation": "Three lies within the numeric domain but has type int. The destination object already exists; nevertheless, assignment would need to convert that int into a Contador. The explicit constructor does not provide that implicit conversion. Compilation fails before execution: there is neither output nor a ContadorInvalido exception for that line (Stroustrup, 2024, section 17.5.1)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Requiring explicit construction also affects conversions that would otherwise be needed for assignment; it does not depend on whether the equals sign appears in a declaration. To replace the value, we can provide an existing Contador or deliberately construct the Contador that will become the new value (Stroustrup, 2024, section 17.5.1)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Starting from the minimal editor, write the familiar Contador and test this sequence. Create destino with two and const origen with four. Display Start:2 by querying destino. Assign origen to destino and display From object:4. Then replace destino with a Contador directly constructed with one and display From construction:1. Try to replace it with a Contador constructed with six inside try/catch: display Rejected:6 on catching ContadorInvalido and, after catch, Preserved:1 by querying destino. Each message must occupy its own line. First predict why the rejected attempt will not replace the last valid value."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Implement Contador and revisit the assignment tests.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Check destino = 3; separately: it must prevent compilation. Repair only the value on the right side of =, preserving the existing destination, explicit, and domain validation; do not redeclare destino. In valid tests, query the objects instead of printing their values as constants. Criteria: assigning from origen leaves four in both objects; assigning the object constructed with one changes only destino; rejection of six leaves one in destino; no compile-time diagnostic is presented as a caught exception. Preserve your attempt before checking the reference."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare Value Replacement"
+        },
+        {
+          "type": "paragraph",
+          "text": "Consult this reference after building and explaining your attempt. It preserves the same destino object throughout the sequence. The object constructed on the right supplies the new value; it is not a new declaration of destino."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{2};\n    const Contador origen{4};\n    std::cout << \"Start:\" << destino.valor() << '\\n';\n    destino = origen;\n    std::cout << \"From object:\" << destino.valor() << '\\n';\n    destino = Contador{1};\n    std::cout << \"From construction:\" << destino.valor() << '\\n';\n    try {\n        destino = Contador{6};\n    } catch (const ContadorInvalido&) {\n        std::cout << \"Rejected:6\\n\";\n    }\n    std::cout << \"Preserved:\" << destino.valor() << '\\n';\n    // Intentional error to test separately:\n    // destino = 3;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The program displays Start:2, From object:4, From construction:1, Rejected:6, and Preserved:1, each on a separate line. Constructing Contador{6} throws before assignment can receive that new value, so destino retains one in this test. The catch does not restore one and no fallback counter with zero is fabricated. To repair the earlier diagnostic, write destino = Contador{3};: this directly constructs a valid object and then assigns it to the existing destination. Merely replacing three with zero in destino = 0; would still request an implicit conversion (Stroustrup, 2024, section 17.5.1; Working draft: Programming languages — C++, n.d., section [class.conv.ctor])."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__valores_por_defecto_con_significado__asignacion_y_rechazo_conservan_destino",
+          "language": "cpp",
+          "question": "Predict the entire output. Each query observes the indicated object after the statements that have already run.",
+          "code": "#include <iostream>\n\nstruct ContadorInvalido {};\n\nclass Contador {\npublic:\n    Contador() {}\n    explicit Contador(int inicial) : valor_{inicial} {\n        if (valor_ < 0 || valor_ > 5) { throw ContadorInvalido{}; }\n    }\n    int valor() const { return valor_; }\nprivate:\n    int valor_ = 0;\n};\n\nint main() {\n    Contador destino{5};\n    const Contador origen{2};\n    destino = origen;\n    std::cout << destino.valor() << ':' << origen.valor() << ':';\n    destino = Contador{3};\n    try {\n        destino = Contador{-1};\n    } catch (const ContadorInvalido&) {\n        std::cout << destino.valor() << ':';\n    }\n    std::cout << destino.valor();\n    return 0;\n}\n",
+          "answers": [
+            "2:2:3:3"
+          ],
+          "explanation": "Assignment from origen puts two into destino and leaves two in origen. The next assignment receives the Contador constructed with three. Constructing minus one throws before supplying a value for assignment; therefore both the query inside catch and the final query observe three in destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "When revisiting this lesson in another session, also classify destino = origen;, destino = 4;, and destino = Contador{4}; after declaring the objects. Explain which forms perform assignment, which needs implicit conversion, and how the diagnostic changes if you attempt construction with six. Compare your reasoning against this reference and the earlier diagnostic exercise before running again."
+        }
+      ]
+    }
+  ]
+}
