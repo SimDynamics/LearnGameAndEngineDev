@@ -1,0 +1,159 @@
+{
+  "id": "cpp_fundamentals__excepciones_y_recuperacion__limites_comprobados_y_tipos_de_captura",
+  "title": "Checked Bounds and Catch Types",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check an Index Without Triggering Undefined Behavior"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::vector::at checks the index and, in a standard environment with exception support, throws std::out_of_range when the index is not within the vector's size. Access through [] requires a valid index; it does not provide the same promise of a recoverable exception. Do not execute an out-of-range [] access to try to predict its output. Preliminary guards remain useful when external input can be rejected normally."
+        },
+        {
+          "type": "output_prediction",
+          "id": "at_con_indice_valido",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{4, 8};\n    try {\n        std::cout << datos.at(1);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Out of range\";\n    }\n    std::cout << \":End\";\n    return 0;\n}\n",
+          "answers": [
+            "8:End"
+          ],
+          "explanation": "Index 1 is within the vector's size of 2, so the lookup returns the second element."
+        },
+        {
+          "type": "output_prediction",
+          "id": "at_con_extremo_excluido",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{3, 7};\n    try {\n        int valor{datos.at(2)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Out of range\";\n    }\n    std::cout << \":End\";\n    return 0;\n}\n",
+          "answers": [
+            "Out of range:End"
+          ],
+          "explanation": "With a size of 2, index 2 is the first excluded index. at throws before returning an element."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "no_adivinar_fuera_de_corchetes",
+          "question": "What should you do with a prediction that uses datos[2] when the vector has only two elements?",
+          "options": [
+            "Promise that it always returns 0.",
+            "Reject it as an out-of-domain access and correct the index before running the program.",
+            "Promise that it will always be caught as runtime_error."
+          ],
+          "correctIndex": 1,
+          "explanation": "There is no portable output that we should invent for this [] access."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Exception Type Determines Which Handler Matches"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::invalid_argument and std::out_of_range are different types. A catch for one does not automatically catch the other. The library also provides std::exception, a more general type that can handle these standard exceptions. Include <exception> when using it. If you have both a specific and a general handler, write the specific one first; an earlier general handler could receive the failures you wanted to distinguish."
+        },
+        {
+          "type": "output_prediction",
+          "id": "captura_especifica_antes_general",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n#include <exception>\n\nint main() {\n    std::vector<int> datos{6};\n    try {\n        std::cout << datos.at(1);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Index\";\n    } catch (const std::exception& error) {\n        std::cout << \"Other failure\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Index"
+          ],
+          "explanation": "The first compatible handler is the one specific to out-of-range access."
+        },
+        {
+          "type": "output_prediction",
+          "id": "argumento_no_es_error_de_rango",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n#include <exception>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    try {\n        std::cout << estimar(12);\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Index\";\n    } catch (const std::exception& error) {\n        std::cout << \"Other failure\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Other failure"
+          ],
+          "explanation": "invalid_argument does not match out_of_range. The general standard exception handler does catch that failure."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "captura_general_primero",
+          "question": "You have a general std::exception handler followed by a specific std::out_of_range handler. Which arrangement lets you distinguish an out-of-range error?",
+          "options": [
+            "Change the name error in the second catch.",
+            "Repeat the failed access inside the general catch.",
+            "Move the specific handler before the general one."
+          ],
+          "correctIndex": 2,
+          "explanation": "Handlers are examined in order. The general handler may intercept the exception before the specific one can."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Diagnose Without Depending on Library Wording"
+        },
+        {
+          "type": "paragraph",
+          "text": "Standard exceptions offer what() to inspect a diagnostic message. The text of an out-of-range error may differ between libraries; you do not need to memorize a particular phrase to identify the kind of failure. Keep a stable domain-specific message and use the additional diagnostic for investigation. Do not classify exception types by inspecting words in what(): the catch already uses the object's type."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mensaje_portable_de_prediccion",
+          "question": "You want a portable prediction for a rejected at access. What should the catch print?",
+          "options": [
+            "A fixed message chosen by the program, such as Invalid index.",
+            "An invented element beyond the vector's bounds.",
+            "The exact text returned by one library's what(), without specifying the environment."
+          ],
+          "correctIndex": 0,
+          "explanation": "A domain-specific message provides a stable expectation. Internal diagnostic wording may vary."
+        },
+        {
+          "type": "note",
+          "text": "Use the default Clang 23 compiler to practice throw/catch; the alternative Clang 21 does not support this exercise. Inputs are prepared in the code; change the indicated values before running it."
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lab, test indices 0, 1, and 2 with a two-element vector. Display Invalid index in the out_of_range handler and End after the try/catch. Predict each output before running the program. Then inspect error.what() as an additional diagnostic, noting that its text is not part of the portable expected output. Keep at; do not replace this error-handling exercise with an out-of-range [] access."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    try {\n        int valor{datos.at(0)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Invalid index\";\n    }\n    std::cout << \":End\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab Reference Solution"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and testing your attempt. It is one possible implementation; other solutions are valid if they meet the same contract and stated criteria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. With datos {2,9}, indices 0, 1, and 2 must respectively produce 2:End, 9:End, and Invalid index:End in the stable part of the output. Use at and catch out_of_range; never perform an invalid [] access. When enabling additional diagnostics, what() text may vary and does not replace or change the stable expectation. End must still be reached after handling the exception."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::vector<int> datos{2, 9};\n    int indice{0};\n    bool mostrarDiagnostico{false};\n    try {\n        int valor{datos.at(indice)};\n        std::cout << valor;\n    } catch (const std::out_of_range& error) {\n        std::cout << \"Invalid index\";\n        if (mostrarDiagnostico) {\n            std::cerr << error.what() << \"\\n\";\n        }\n    }\n    std::cout << \":End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Test each index by changing indice. With mostrarDiagnostico=false, compare the domain output exactly. Then set that flag to true and inspect the additional diagnostic for index 2 on stderr; do not require an exact library-specific phrase to consider the catch correct."
+        }
+      ]
+    }
+  ]
+}
