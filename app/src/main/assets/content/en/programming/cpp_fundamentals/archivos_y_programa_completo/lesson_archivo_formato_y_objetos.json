@@ -1,0 +1,112 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__archivo_formato_y_objetos",
+  "title": "Distinguish Files, Formats, and Objects",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Stored Data Is Not the Program's Objects"
+        },
+        {
+          "type": "paragraph",
+          "text": "A file preserves a sequence of data identified by a name or path. A text file can represent values with characters: the number twelve can be written using the characters 1 and 2. Reading those characters to obtain an int is an interpretation. The file does not contain a C++ variable with a name, scope, and type that automatically reappears when it is opened."
+        },
+        {
+          "type": "paragraph",
+          "text": "The format defines how to interpret the data: for example, two decimal integers in the order turno and cajas, separated by whitespace. The program must know and verify this agreement. The .txt extension is a naming convention; it does not guarantee that the contents follow the format or are valid for our domain."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "nombre_no_certifica_datos",
+          "question": "A file is called orders.txt. What can you conclude from its name alone?",
+          "options": [
+            "All its records are valid for our program.",
+            "Pedido objects have been saved along with their methods.",
+            "The name does not establish the format or the validity of the contents."
+          ],
+          "correctIndex": 2,
+          "explanation": "The contents must be read, interpreted, and validated against a defined format."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Representation Can Deliberately Lose Details"
+        },
+        {
+          "type": "paragraph",
+          "text": "We already know how to extract data from a string with istringstream. This example isolates the interpretation we will later perform with a file. It does not open a file: known text lets us study the rule without mixing it with opening and closing."
+        },
+        {
+          "type": "output_prediction",
+          "id": "interpretar_ceros_de_presentacion",
+          "question": "Predict the output. What integer values do the characters produce?",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"0007 03\"};\n    int turno{0};\n    int cajas{0};\n    if (entrada >> turno >> cajas) {\n        std::cout << turno << \":\" << cajas;\n    } else {\n        std::cout << \"Invalid format\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "7:3"
+          ],
+          "explanation": "Decimal extraction produces the integers 7 and 3. Leading zeros in the text are not part of those values."
+        },
+        {
+          "type": "paragraph",
+          "text": "If 0007 is only the display of a numeric turno, keeping 7 may be correct. If all four characters form a meaningful identifier, the appropriate type may be a string: 0007 and 7 are then not the same permitted representation. Choose according to the requirement; do not assume every text containing digits should become an int."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "identificador_con_longitud",
+          "question": "The specification requires preserving a four-character code such as 0007 exactly. Which choice keeps that information when reading?",
+          "options": [
+            "Read it as an int and assume you will remember the zeros.",
+            "Read it as a string and check its required format.",
+            "Read it as a double so the type adds the zeros."
+          ],
+          "correctIndex": 1,
+          "explanation": "A string preserves the characters. Its length and characters still have to be checked if the format requires them."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separate Form, Domain, and Meaning"
+        },
+        {
+          "type": "output_prediction",
+          "id": "texto_no_es_entero",
+          "question": "The second field must be an integer. Predict the output when the text three appears.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"0007 three\"};\n    int turno{0};\n    int cajas{0};\n    if (entrada >> turno >> cajas) {\n        std::cout << turno << \":\" << cajas;\n    } else {\n        std::cout << \"Invalid format\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Invalid format"
+          ],
+          "explanation": "The combined extraction did not obtain both integers; the failure branch is taken without treating cajas as valid data."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "campos_intercambiados",
+          "question": "The format requires turno followed by cajas. Both extractions from 7 3 into int succeed. What happens if the code stores the first field in cajas?",
+          "options": [
+            "The library would rearrange the fields according to their names.",
+            "The code would fail to compile because both values have the same type.",
+            "A different meaning would be assigned without int detecting the swap."
+          ],
+          "correctIndex": 2,
+          "explanation": "The library follows the order of operations; names do not fix an incorrect format agreement."
+        },
+        {
+          "type": "paragraph",
+          "text": "Successful reading does not prove that a turno exists or that a quantity belongs to the domain. Distinguish opening the file, interpreting its format, validating values, and using those values. In the next lesson, we will add actual file opening while keeping these steps separate."
+        },
+        {
+          "type": "note",
+          "text": "In this app's lab, program files live inside an isolated execution. Do not assume they survive into the next execution or appear as personal files accessible from the phone. The examples will create their own test data inside that execution."
+        }
+      ]
+    }
+  ]
+}

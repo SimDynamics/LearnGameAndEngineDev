@@ -1,0 +1,147 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__abrir_escribir_y_leer_una_muestra",
+  "title": "Ouvrir, écrire et lire un fichier d'essai",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux directions pour les flux"
+        },
+        {
+          "type": "paragraph",
+          "text": "<fstream> déclare les flux de fichiers. std::ofstream écrit dans un fichier ; std::ifstream lit depuis un fichier. Le nom fourni à la construction du flux désigne le fichier que nous essayons d'ouvrir. L'objet flux permet d'agir sur ce fichier, mais il n'est ni l'ensemble du contenu stocké ni le nom du fichier lui-même."
+        },
+        {
+          "type": "paragraph",
+          "text": "Après l'ouverture, vérifie le flux avant de l'utiliser. L'impossibilité d'ouvrir un fichier est différente de la rencontre d'une donnée qui ne respecte pas le format. Dans ce laboratoire, nous utilisons uniquement des noms relatifs pour nos propres fichiers d'essai ; ils sont résolus dans le répertoire de travail isolé de l'exécution. N'expérimente pas avec des chemins vers des livres, des ressources de l'application ou des documents personnels."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "direccion_del_flujo",
+          "question": "Quelle paire décrit correctement les directions ?",
+          "options": [
+            "ofstream écrit ; ifstream lit.",
+            "ifstream écrit ; ofstream lit.",
+            "Les deux flux ne stockent qu'un nom, sans agir sur les données."
+          ],
+          "correctIndex": 0,
+          "explanation": "Leurs noms correspondent à la sortie et à l'entrée. Les opérations d'insertion et d'extraction gardent leurs rôles respectifs."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Créer le fichier d'essai avant de l'interpréter"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"muestra_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Erreur d'ouverture en écriture\";\n        return 1;\n    }\n    salida << \"2 5\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Erreur d'écriture\";\n        return 1;\n    }\n    std::ifstream entrada{\"muestra_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Erreur d'ouverture en lecture\";\n        return 1;\n    }\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Format invalide\";\n        return 1;\n    }\n    std::cout << \"Total=\" << primero + segundo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette exécution crée son propre fichier d'essai avec deux valeurs. Dans ce mode, l'ouverture de ofstream démarre avec un fichier de sortie vide : si ce fichier d'essai existait déjà, son contenu est remplacé. close termine l'écriture et permet de vérifier l'état du flux avant d'ouvrir le lecteur. La vérification après la fermeture compte, car certaines données ont pu rester temporairement dans un tampon."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme n'additionne qu'après avoir extrait correctement les deux entiers. Les return 1 des branches d'échec terminent main avec un code d'erreur ; ils n'affichent pas 1. Si toutes les étapes réussissent, le résultat visible est Total=7 et le fichier d'essai contient le texte 2 5. Le lecteur n'affiche pas ces caractères tout seul."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "apertura_no_garantiza_formato",
+          "question": "Le fichier a été ouvert correctement. Quelle vérification reste nécessaire avant l'addition ?",
+          "options": [
+            "Uniquement que son nom se termine par .txt.",
+            "Que l'extraction ait obtenu les deux entiers attendus.",
+            "Que les variables de destination aient été initialisées à zéro, même si une extraction échoue."
+          ],
+          "correctIndex": 1,
+          "explanation": "L'ouverture garantit l'accès au fichier, pas le format de ses données. Initialiser les destinations ne prouve pas non plus que les deux extractions ont obtenu des valeurs valides."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changer les données sans changer la procédure"
+        },
+        {
+          "type": "output_prediction",
+          "id": "otra_muestra_misma_suma",
+          "question": "Suppose que l'ouverture, l'écriture et la lecture réussissent. Prédis la sortie de cette version avec deux autres valeurs.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"muestra_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Erreur d'ouverture en écriture\";\n        return 1;\n    }\n    salida << \"3 8\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Erreur d'écriture\";\n        return 1;\n    }\n    std::ifstream entrada{\"muestra_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Erreur d'ouverture en lecture\";\n        return 1;\n    }\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Format invalide\";\n        return 1;\n    }\n    std::cout << \"Total=\" << primero + segundo;\n    return 0;\n}\n",
+          "answers": [
+            "Total=11"
+          ],
+          "explanation": "Le fichier fournit 3 et 8 ; leur somme est calculée après la vérification de l'extraction."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "orden_de_las_etapas",
+          "question": "Quel ordre permet de lire le fichier d'essai tout juste créé et de vérifier le résultat ?",
+          "options": [
+            "Ouvrir le lecteur, additionner les valeurs initiales, puis écrire.",
+            "Écrire et fermer, ouvrir le lecteur, extraire et vérifier, puis additionner.",
+            "Additionner les constantes sans lire et affirmer que le fichier a été vérifié."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le résultat doit provenir des données lues. Additionner des constantes ne vérifie pas ce parcours."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un test d'aller-retour entre écriture et lecture"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis ici le test avec le fichier relatif datos_recarga.txt. Il doit contenir le texte 4 7, son écriture doit se terminer, puis son contenu doit être lu dans deux variables int. Si toutes les étapes réussissent, affiche Total=11, calculé à partir des valeurs lues. Vérifie chaque ouverture, l'état de l'écriture après close et l'extraction avant d'utiliser les variables de destination. En cas d'échec, affiche le diagnostic de l'étape et termine par return 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant d'exécuter le programme, indique quelles opérations testent l'écriture et lesquelles testent la lecture. Ensuite, change les données en 0 6 : le résultat doit être Total=6. Conserve les vérifications ; les zéros initiaux des variables ne remplacent pas la lecture. Afficher directement 11 ou 6 ne suffit pas."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <fstream>\n\nint main() {\n    // Construis l'écriture, la fermeture, la lecture et les vérifications.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Ce test est reproductible, car chaque exécution recrée son propre fichier d'essai. Il ne démontre ni l'importation de fichiers de l'utilisateur ni leur conservation entre les exécutions. La référence apparaît après la tentative."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence et critères après la tentative"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"datos_recarga.txt\"};\n    if (!salida) {\n        std::cout << \"Erreur d'ouverture en écriture\";\n        return 1;\n    }\n    salida << \"4 7\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Erreur d'écriture\";\n        return 1;\n    }\n    std::ifstream entrada{\"datos_recarga.txt\"};\n    if (!entrada) {\n        std::cout << \"Erreur d'ouverture en lecture\";\n        return 1;\n    }\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Format invalide\";\n        return 1;\n    }\n    std::cout << \"Total=\" << primero + segundo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : le fichier reçoit les deux valeurs prévues ; le lecteur fonctionne après une fermeture vérifiée ; les deux extractions s'achèvent avant l'addition ; la sortie est calculée à partir des variables de destination. Avec 4 7, on obtient Total=11 ; avec 0 6, Total=6. D'autres noms de variables ou une autre répartition en fonctions sont valables si ces comportements sont préservés."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si ton programme n'affiche que le total attendu, vérifie son origine : une constante peut coïncider sans que le fichier ait été utilisé. S'il affiche Format invalide, examine le texte écrit et le type que tu as essayé d'extraire. Si une ouverture ou une écriture échoue, n'attribue pas cet échec au calcul : cette étape est antérieure. Les prédictions de cette leçon supposent que le répertoire permet la création et que les opérations sur le fichier se terminent ; le programme garde des diagnostics pour les autres cas."
+        },
+        {
+          "type": "note",
+          "text": "L'ouverture, la lecture, l'écriture et les noms de fichiers sont étudiés dans la source principale (Stroustrup, 2024, sections 9.1–9.4 et 9.11). Les exemples et activités sont originaux dans ce parcours."
+        }
+      ]
+    }
+  ]
+}

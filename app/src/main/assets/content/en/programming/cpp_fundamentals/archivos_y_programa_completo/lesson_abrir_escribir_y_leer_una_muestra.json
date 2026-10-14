@@ -1,0 +1,147 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__abrir_escribir_y_leer_una_muestra",
+  "title": "Open, Write, and Read a Test File",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Directions of a Stream"
+        },
+        {
+          "type": "paragraph",
+          "text": "<fstream> declares file streams. std::ofstream writes to a file; std::ifstream reads from a file. The name supplied when constructing the stream identifies the file we are trying to open. The stream object lets us operate on that file, but it is neither the entire stored content nor the filename itself."
+        },
+        {
+          "type": "paragraph",
+          "text": "After opening a file, check the stream before using it. Failure to open a file is different from encountering data that do not follow the format. In this lab, we use only relative names for our own test files; they resolve inside the execution's isolated working directory. Do not experiment with paths to books, app resources, or personal documents."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "direccion_del_flujo",
+          "question": "Which pair correctly describes the directions?",
+          "options": [
+            "ofstream writes; ifstream reads.",
+            "ifstream writes; ofstream reads.",
+            "Both streams store only a name and do not operate on data."
+          ],
+          "correctIndex": 0,
+          "explanation": "The names reflect output and input. Insertion and extraction operations retain their respective roles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Create the Test File Before Interpreting It"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"muestra_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Output file open error\";\n        return 1;\n    }\n    salida << \"2 5\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Write error\";\n        return 1;\n    }\n    std::ifstream entrada{\"muestra_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Input file open error\";\n        return 1;\n    }\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Invalid format\";\n        return 1;\n    }\n    std::cout << \"Total=\" << primero + segundo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This execution creates its own test file containing two values. Opening ofstream in this mode starts with an empty output file: if that test file already existed, its contents are replaced. close completes the writing and lets us check the stream state before opening the reader. Checking after closing matters because some output may have been held temporarily in a buffer."
+        },
+        {
+          "type": "paragraph",
+          "text": "The program adds the values only after successfully extracting both integers. The return 1 statements in the failure branches end main with an error status; they do not print 1. If every step succeeds, the visible result is Total=7, and the test file contains 2 5. The reader does not print those characters on its own."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "apertura_no_garantiza_formato",
+          "question": "The file was opened successfully. What still needs to be checked before adding the values?",
+          "options": [
+            "Only that the name ends in .txt.",
+            "That extraction obtained both expected integers.",
+            "That the destination variables were initialized to zero, even if an extraction failed."
+          ],
+          "correctIndex": 1,
+          "explanation": "Opening establishes access to the file, not the format of its data. Initializing the destinations also does not show that both extractions obtained valid values."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changing the Data Preserves the Procedure"
+        },
+        {
+          "type": "output_prediction",
+          "id": "otra_muestra_misma_suma",
+          "question": "Assume opening, writing, and reading all succeed. Predict the output of this version using two different values.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"muestra_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Output file open error\";\n        return 1;\n    }\n    salida << \"3 8\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Write error\";\n        return 1;\n    }\n    std::ifstream entrada{\"muestra_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Input file open error\";\n        return 1;\n    }\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Invalid format\";\n        return 1;\n    }\n    std::cout << \"Total=\" << primero + segundo;\n    return 0;\n}\n",
+          "answers": [
+            "Total=11"
+          ],
+          "explanation": "The file supplies 3 and 8; their sum is computed after checking extraction."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "orden_de_las_etapas",
+          "question": "Which order allows you to read the newly created test file and verify the result?",
+          "options": [
+            "Open the reader, add the initial values, and then write.",
+            "Write and close, open the reader, extract and check, then add.",
+            "Add the constants without reading and claim the file was checked."
+          ],
+          "correctIndex": 1,
+          "explanation": "The result must come from the data that were read. Adding constants does not test that process."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Write-and-Read Round-Trip Test"
+        },
+        {
+          "type": "paragraph",
+          "text": "Here, build the test with the relative file datos_recarga.txt. It must contain the text 4 7, be fully written, and then be read into two int variables. If all steps succeed, display Total=11, computed from the values read. Check each opening, the writing status after close, and extraction before using the destination variables. On failure, display the diagnostic for that stage and end with return 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running the program, identify which operations test writing and which test reading. Then change the data to 0 6: the output must be Total=6. Keep the checks; the initial zeros in the variables do not replace reading. Simply printing 11 or 6 is not enough."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <fstream>\n\nint main() {\n    // Build the writing, closing, reading, and checks.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "This test is reproducible because every execution recreates its own test file. It does not demonstrate importing user files or preserving files between executions. The reference follows your attempt."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference and Criteria After the Attempt"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <fstream>\n\nint main() {\n    std::ofstream salida{\"datos_recarga.txt\"};\n    if (!salida) {\n        std::cout << \"Output file open error\";\n        return 1;\n    }\n    salida << \"4 7\";\n    salida.close();\n    if (!salida) {\n        std::cout << \"Write error\";\n        return 1;\n    }\n    std::ifstream entrada{\"datos_recarga.txt\"};\n    if (!entrada) {\n        std::cout << \"Input file open error\";\n        return 1;\n    }\n    int primero{0};\n    int segundo{0};\n    if (!(entrada >> primero >> segundo)) {\n        std::cout << \"Invalid format\";\n        return 1;\n    }\n    std::cout << \"Total=\" << primero + segundo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: the file receives the intended two values; the reader operates after a checked close; both extractions finish before addition; and the output is calculated from the destination variables. With 4 7 the result is Total=11; with 0 6 it is Total=6. Other variable names or a different organization into functions are valid if these behaviors are preserved."
+        },
+        {
+          "type": "paragraph",
+          "text": "If your program displays only the expected total, check where that result came from: a constant might happen to match without using the file. If it reports Invalid format, inspect the text you wrote and the type you tried to extract. If opening or writing fails, do not attribute that failure to the calculation: it happens earlier. Predictions in this lesson assume the directory permits creating the file and that file operations complete; the program keeps diagnostics for other cases."
+        },
+        {
+          "type": "note",
+          "text": "Opening, reading, writing, and filenames are covered in the primary source (Stroustrup, 2024, sections 9.1–9.4 and 9.11). Examples and activities here are original to this learning path."
+        }
+      ]
+    }
+  ]
+}
