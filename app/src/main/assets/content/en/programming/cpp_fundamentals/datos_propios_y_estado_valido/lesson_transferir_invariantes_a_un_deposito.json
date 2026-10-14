@@ -1,0 +1,468 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__transferir_invariantes_a_un_deposito",
+  "title": "Transfer Invariants to a Storage Depot",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changing Concepts Requires Revisiting the Domain"
+        },
+        {
+          "type": "paragraph",
+          "text": "A storage depot has a capacity from one to twenty and stock between zero and that capacity. Zero means empty and is valid. Construction takes Capacidad and Existencias as distinct types, preserves valid inputs, and rejects the others with DepositoInvalido. It does not provide a default capacity without arguments. These rules resemble those for Reserva, but now we will have operations that change the stock."
+        },
+        {
+          "type": "paragraph",
+          "text": "agregar(int) accepts only positive quantities that fit in the available space. retirar(int) accepts only positive quantities that do not exceed the current stock. Both return bool; failure preserves the entire state. The capacidad(), existencias(), and disponibles() queries are const. There are no enviado or cancelado states: do not copy Pedido's enumeration when the new concept does not need it."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which rule must change when transferring the model from Pedido?",
+          "options": [
+            "Zero stock must be rejected, just as zero units were rejected in Pedido.",
+            "The constructor should replace invalid quantities with zero.",
+            "Zero stock is valid even though zero units in Pedido were not."
+          ],
+          "correctIndex": 2,
+          "explanation": "Transferring a model requires reasoning about the new meaning rather than copying another quantity's lower bound."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build from the Specification"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write the complete Deposito class and a main. Test capacity five and stock two. Request adding three, adding one, removing five, and removing one. Display each attempt's bool and the stock afterward. Predict the entire sequence first. Also test construction with capacity zero and twenty-one, and with negative stock or stock exceeding capacity."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Build the program described in the exercise.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Do not consult the reference until you have written the checks for each operation. Prepare separate tests at the empty boundary, at the full boundary, and for zero, negative, and much-too-large quantities. Distinguish construction rejection from operation rejection."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference and State Preservation Criteria"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nint main() {\n    Deposito deposito{Capacidad{5}, Existencias{2}};\n    std::cout << deposito.agregar(3) << \":\" << deposito.existencias() << \"\\n\";\n    std::cout << deposito.agregar(1) << \":\" << deposito.existencias() << \"\\n\";\n    std::cout << deposito.retirar(5) << \":\" << deposito.existencias() << \"\\n\";\n    std::cout << deposito.retirar(1) << \":\" << deposito.existencias();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The trace is 1:5, 0:5, 1:0, and 0:0 on separate lines. The depot accepts becoming exactly full and exactly empty. Capacity does not change, and rejected operations leave stock unchanged."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: construction establishes a capacity from one to twenty and stock from zero through capacity; swapped argument types are rejected at compile time; invalid values throw DepositoInvalido; agregar and retirar accept only positive quantities within their respective limits; no failed operation changes any member; const queries reflect the actual state. Another implementation satisfying these rules is also valid."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check Before Adding"
+        },
+        {
+          "type": "paragraph",
+          "text": "It is tempting to check existencias + cantidad <= capacidad. But if cantidad is an enormous int, that addition may overflow before the decision. The reference first compares cantidad with capacidad - existencias. The invariant guarantees that the difference lies between zero and twenty. Only after acceptance is the addition performed, and the result then remains within capacity."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nint main() {\n    Deposito deposito{Capacidad{8}, Existencias{6}};\n    std::cout << deposito.agregar(1000000) << \" \" << deposito.existencias() << \" \" << deposito.disponibles();\n    return 0;\n}\n",
+          "answers": [
+            "0 6 2"
+          ],
+          "explanation": "The check compares the request against two available spaces and rejects it before adding."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the comparison operator that rejects quantities exceeding the available space.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad ___ capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nint main() {\n    Deposito deposito{Capacidad{4}, Existencias{1}};\n    std::cout << deposito.agregar(4) << \" \" << deposito.existencias();\n    return 0;\n}\n",
+          "answers": [
+            ">"
+          ],
+          "explanation": "Quantities greater than capacity minus stock do not fit."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check Before Subtracting"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nint main() {\n    Deposito deposito{Capacidad{6}, Existencias{0}};\n    std::cout << deposito.retirar(1) << \":\" << deposito.existencias() << \" \";\n    std::cout << deposito.agregar(6) << \":\" << deposito.existencias() << \" \";\n    std::cout << deposito.retirar(6) << \":\" << deposito.existencias();\n    return 0;\n}\n",
+          "answers": [
+            "0:0 1:6 1:0"
+          ],
+          "explanation": "Nothing is removed from an empty depot; filling and emptying exactly at the boundaries are accepted."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nint main() {\n    Deposito deposito{Capacidad{9}, Existencias{4}};\n    std::cout << deposito.agregar(0) << \" \" << deposito.retirar(-2) << \" \" << deposito.existencias();\n    return 0;\n}\n",
+          "answers": [
+            "0 0 4"
+          ],
+          "explanation": "Nonpositive requests fail before changing state."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Why does an accepted removal never leave negative stock?",
+          "options": [
+            "It is enough for the subtraction to produce a representable integer, even if there is insufficient stock.",
+            "The requested quantity is checked to be positive and no greater than stock before subtraction.",
+            "Keep only the absolute value after subtracting."
+          ],
+          "correctIndex": 1,
+          "explanation": "The preliminary condition justifies the subtraction and its result within the domain; correcting it afterward would alter the request."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copies and const Apply Here Too"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nint main() {\n    Deposito original{Capacidad{7}, Existencias{3}};\n    Deposito copia = original;\n    original.agregar(2);\n    const Deposito fotografia = original;\n    std::cout << copia.existencias() << \" \" << fotografia.existencias() << \" \" << original.disponibles();\n    return 0;\n}\n",
+          "answers": [
+            "3 5 2"
+          ],
+          "explanation": "The first copy retains three; the const snapshot contains five and permits only queries."
+        },
+        {
+          "type": "paragraph",
+          "text": "Copying the members of a valid depot preserves the invariant in the new object. A reference would allow operations on the same depot; a const reference would be appropriate for displaying a report. Decide what relationship the function requires before choosing its parameter."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A function needs to remove stock from the depot it receives. Which parameter expresses that need?",
+          "options": [
+            "Deposito& deposito",
+            "Deposito deposito by value",
+            "const Deposito& deposito"
+          ],
+          "correctIndex": 0,
+          "explanation": "A modifiable reference acts on the caller's object. Passing by value would make a copy, and const would prohibit removal."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Process Prepared Movements"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define enum class Accion { agregar, retirar } and a Movimiento struct containing an Accion and an int quantity. For a depot with capacity six and stock one, process adding four, removing two, removing five, adding three, and adding zero, in that order. Display each bool and the stock level. Keep all five movements, even when an action repeats: each represents a separate request. Use a prepared vector of movements; interactive input is not needed."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nint main() {\n    // Build the program described in the exercise.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Test an empty vector and another containing a single rejected movement. Another case with different inputs must reach full and empty exactly. Before execution, write down the successive states: each movement uses the state left by the preceding one, not the initial state."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Traversal Reference and Criteria"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nenum class Accion { agregar, retirar };\nstruct Movimiento { Accion accion; int cantidad; };\n\nint main() {\n    Deposito deposito{Capacidad{6}, Existencias{1}};\n    std::vector<Movimiento> movimientos{{Accion::agregar, 4}, {Accion::retirar, 2},\n        {Accion::retirar, 5}, {Accion::agregar, 3}, {Accion::agregar, 0}};\n    for (const auto& movimiento : movimientos) {\n        bool aceptado = false;\n        if (movimiento.accion == Accion::agregar) {\n            aceptado = deposito.agregar(movimiento.cantidad);\n        } else {\n            aceptado = deposito.retirar(movimiento.cantidad);\n        }\n        std::cout << aceptado << \":\" << deposito.existencias() << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference produces 1:5;1:3;0:3;1:6;0:6;. Criteria: each movement's members remain associated; traversal uses a const reference and does not alter the list; each action selects the corresponding operation; rejected requests still appear in the report; the final state is the actual state after every request. For an empty vector, there are no movement steps or step outputs, and the depot retains its initial state."
+        },
+        {
+          "type": "paragraph",
+          "text": "This traversal receives only the named enumerators that we constructed. If a source provided integers converted to Accion, unrecognized values would need to be rejected before selecting an operation. A scoped enum does not validate an external source by itself."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Delayed Practice in a New Context"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a later session, rebuild a model without opening this code. Choose a new concept with two associated data values and a rule relating them, such as available places and participants. Write down the domain, accepted and rejected construction, const queries, and two operations with preconditions and state preservation upon failure. Justify each access and arithmetic operation, prepare boundaries and neighbors outside the domain, and explain what copying this value means."
+        },
+        {
+          "type": "paragraph",
+          "text": "Use the Pedido and Deposito solutions as methodological references after attempting the exercise, not as names you must retain. Transfer criteria: explicit rules for the new concept; no silent substitution of rejected arguments; appropriate privacy; non-modifying queries; accepted operations remaining inside the domain and rejected ones leaving state unchanged; tests that distinguish boundaries, sequences, copies, and empty cases when the concept allows them. Correctness does not depend on repeating a certain number of exercises."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which evidence best supports that you understood the transfer?",
+          "options": [
+            "Justifying a new domain and handling its boundaries without copying incompatible conditions.",
+            "Only changing the names in the Pedido code.",
+            "Producing one correct output for a single interior case."
+          ],
+          "correctIndex": 0,
+          "explanation": "Transfer requires reconstructing the reasons that make the new concept's state and operations valid."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Parameters Do Not Guarantee Two Depots"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall the difference between an object, a value, and a name. Two distinct depots may both have a capacity of five and stock of three. We can also pass a single depot twice to a function taking two references: both parameters then refer to the same object. An operation through one name changes the state subsequently observed through the other; it does not change which object the reference is bound to."
+        },
+        {
+          "type": "paragraph",
+          "text": "Define Resultado_doble as a struct containing two bool members named retiro and ingreso. Implement procesar(Deposito& primero, Deposito& segundo, int cantidad_retirar, int cantidad_agregar). It must first attempt to remove stock from primero, then attempt to add stock to segundo, using the known public Deposito operations. The second attempt takes place even if the first returns false. Return both results separately and print nothing. Both references may refer to the same depot. Each operation uses the state that exists when it runs, obeys its own rejection rule, and preserves the invariant."
+        },
+        {
+          "type": "paragraph",
+          "text": "These are two separate, ordered requests, and their quantities may differ. This is not a transfer of stock or an all-or-nothing operation: a rejected addition does not undo an accepted removal. We will use validly constructed depots and request quantities from -1 through 21. Keep the given class; do not add an ingresar operation or change its conditions. An addition is requested through agregar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Build two new tests with capacity five and initial stock of three. In Distinct, create two objects and request removal of two from the first and addition of four to the second. In Same, create another new object and pass it as both arguments, with the same quantities. Before each call, keep a const copy of the first object and a const reference view of it. The copy retains an earlier value; the view allows only reading through that reference and observes subsequent changes made through another valid path."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before running, trace the affected object, stock before, result, and stock after for each operation. For each test, print its heading, Distinct or Same, followed by three lines: Results=R:I, States=A:B, and Observation=F:V. R and I are the bool values; A and B are the stock levels observed through the two arguments after the call; F and V are the stock levels observed through the snapshot and view. In Same, the single object is queried twice for A and B. Separate lines with newlines, without a final newline. Calculate the output before writing the program."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\n// Define Resultado_doble and procesar before main.\nint main() {\n    // Build the contract tests here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Use fresh objects for each additional boundary test. With capacity five in both: the first empty and the second holding one unit, request removal of one and addition of two; the first full and the second empty, request removal of five and addition of five; both holding three, request removal of zero and addition of minus one. Also test a single full depot with both quantities five and a single empty depot with removal of one and addition of five. Decide separately what is accepted and what is preserved. Do not rely only on a test where both results are true."
+        },
+        {
+          "type": "note",
+          "text": "Build the function and main before proceeding. The starter editor provides only the familiar class and a minimal scaffold. The lab does not automatically grade your program; the later reference uses different data."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare Both Results and the Object That Changed"
+        },
+        {
+          "type": "paragraph",
+          "text": "Read this after building your program. The reference uses capacity six: the first object starts with four units of stock, and the distinct second object starts with two; it requests removal of three and addition of four. The Same test starts again with four. Modifications happen in separate statements before the results are displayed."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nstruct Resultado_doble {\n    bool retiro;\n    bool ingreso;\n};\n\nResultado_doble procesar(Deposito& primero, Deposito& segundo,\n                        int cantidad_retirar, int cantidad_agregar) {\n    const bool retiro = primero.retirar(cantidad_retirar);\n    const bool ingreso = segundo.agregar(cantidad_agregar);\n    return Resultado_doble{retiro, ingreso};\n}\n\nint main() {\n    Deposito a{Capacidad{6}, Existencias{4}};\n    Deposito b{Capacidad{6}, Existencias{2}};\n    const Deposito foto_a = a;\n    const Deposito& vista_a = a;\n    const Resultado_doble distintos = procesar(a, b, 3, 4);\n    std::cout << \"Distinct\\nResults=\" << distintos.retiro << ':' << distintos.ingreso;\n    std::cout << \"\\nStates=\" << a.existencias() << ':' << b.existencias();\n    std::cout << \"\\nObservation=\" << foto_a.existencias() << ':' << vista_a.existencias();\n\n    Deposito c{Capacidad{6}, Existencias{4}};\n    const Deposito foto_c = c;\n    const Deposito& vista_c = c;\n    const Resultado_doble mismo = procesar(c, c, 3, 4);\n    std::cout << \"\\nSame\\nResults=\" << mismo.retiro << ':' << mismo.ingreso;\n    std::cout << \"\\nStates=\" << c.existencias() << ':' << c.existencias();\n    std::cout << \"\\nObservation=\" << foto_c.existencias() << ':' << vista_c.existencias();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference displays Distinct, Results=1:1, States=1:6, and Observation=4:1; then Same, Results=1:1, States=5:5, and Observation=4:5, each on its own line. Although both results are true in each test, the affected objects and final states differ. The copy retains four; const does not turn the view into a snapshot."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare your original case with capacity five and stock of three. Distinct must produce Results=1:0, States=1:3, and Observation=3:1. Same must produce Results=1:1, States=5:5, and Observation=3:5. In the first case, the addition finds only two free units in the second object; in the second, the removal leaves four free units in the shared object. Do not restore the first object when the addition fails."
+        },
+        {
+          "type": "paragraph",
+          "text": "The additional boundaries distinguish all four result pairs. Empty/one unit of stock with requests one/two gives 0:1 and states 0:3. Full/empty with five/five gives 1:1 and states 0:5. Three/three with zero/minus one gives 0:0 and states 3:3. A single full object with five/five gives 1:1 and returns to five; a single empty object with one/five gives 0:1 and reaches five. In each case, the snapshot keeps the initial value of the first object, and the view reads its final value."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria for alternative solutions: references to the caller's objects; exactly one removal attempt followed by one addition attempt; the second attempt is unconditional on the first result; two bool results corresponding to those attempts; no printing inside procesar or added rollback; capacity preserved and stock valid. A different function or member name is acceptable if the interface and output keep those responsibilities. A matching output alone is not enough: inspect both states and include tests where the first operation fails and where the second fails."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Initial Rejection Does Not Cancel the Second Request"
+        },
+        {
+          "type": "paragraph",
+          "text": "Revisit the contract using different data. Trace each call before answering. In both tests, the requested removal exceeds the initial stock; that does not determine the outcome of the addition. Snapshots and views are created before the calls, and all objects remain alive until they are displayed."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__transferir_invariantes_a_un_deposito__alias_rechazo_inicial_y_vista",
+          "language": "cpp",
+          "question": "Predict both complete lines. Within each line, results, states, and snapshot:view are separated by semicolons. Do not add a final newline.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nstruct Resultado_doble {\n    bool retiro;\n    bool ingreso;\n};\n\nResultado_doble procesar(Deposito& primero, Deposito& segundo,\n                        int cantidad_retirar, int cantidad_agregar) {\n    const bool retiro = primero.retirar(cantidad_retirar);\n    const bool ingreso = segundo.agregar(cantidad_agregar);\n    return Resultado_doble{retiro, ingreso};\n}\n\nint main() {\n    Deposito a{Capacidad{4}, Existencias{1}};\n    Deposito b{Capacidad{4}, Existencias{1}};\n    const Deposito foto_a = a;\n    const Deposito& vista_a = a;\n    const Resultado_doble distintos = procesar(a, b, 2, 3);\n    std::cout << \"Distinct=\" << distintos.retiro << ':' << distintos.ingreso;\n    std::cout << ';' << a.existencias() << ':' << b.existencias();\n    std::cout << ';' << foto_a.existencias() << ':' << vista_a.existencias();\n\n    Deposito c{Capacidad{4}, Existencias{1}};\n    const Deposito foto_c = c;\n    const Deposito& vista_c = c;\n    const Resultado_doble mismo = procesar(c, c, 2, 3);\n    std::cout << \"\\nSame=\" << mismo.retiro << ':' << mismo.ingreso;\n    std::cout << ';' << c.existencias() << ':' << c.existencias();\n    std::cout << ';' << foto_c.existencias() << ':' << vista_c.existencias();\n    return 0;\n}\n",
+          "answers": [
+            "Distinct=0:1;1:4;1:1\nSame=0:1;4:4;1:4"
+          ],
+          "explanation": "Both removals of two are rejected because the initial stock is one. Adding three is still attempted: it fills b in Distinct and fills c in Same. a stays at one, while c changes to four. The snapshots retain one and the views read the object they still refer to.",
+          "outputComparison": "exact"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__transferir_invariantes_a_un_deposito__alias_cortocircuito_omite_solicitud",
+          "question": "A version replaces both attempts with bool completo = primero.retirar(2) && segundo.agregar(3);. The first depot holds one unit, and the second has room for three. Why does this violate the contract?",
+          "options": [
+            "It repeats removal after addition and counts the first request twice.",
+            "It skips addition when removal fails and replaces two results with one.",
+            "It turns removal rejection into accepted addition without consulting the second depot."
+          ],
+          "correctIndex": 1,
+          "explanation": "&& skips its second operand when the first is false. Here the two operations must be attempted separately, and their bool results represent distinct requests. They need not both have the same outcome."
+        },
+        {
+          "type": "paragraph",
+          "text": "A true or false describes an attempt, not a stock balance or a promise of rollback. To investigate an implementation, also observe which object received each operation and what value it held at that moment. Do not infer there is just one object from equal initial values alone."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer Object Identity into a Sequence of Requests"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a batch without resetting the depots between steps. Define Solicitud with an int retirada, an int agregado, and a bool mismo. Each request uses a as the first argument to procesar; when mismo is true, it also uses a as the second argument, and otherwise uses b. Reuse your tested function: removal and addition remain independent, in that order, and both are attempted. Do not print inside it."
+        },
+        {
+          "type": "paragraph",
+          "text": "Start with two distinct objects a and b, each with capacity five and stock of three. At the start, preserve a const snapshot of a and a const reference view of a. Prepare the requests {2,4,false}, {2,1,true}, {2,2,false}, {1,1,true}, and {0,1,false}, in that order. Each request determines whether to share the argument. A rejected step does not erase states or omit later requests."
+        },
+        {
+          "type": "paragraph",
+          "text": "For each request, print Step=R:I;States=A:B on a separate line. States always displays the objects a and b, even if that step passed a twice. At the end, display Totals=NR:NI, counting accepted removals and additions separately, and Observation=F:V on the last line. Do not add a final newline. Before running, trace the values used by each attempt, both stock levels, and both counters. Do not count steps as if both operations were always accepted."
+        },
+        {
+          "type": "paragraph",
+          "text": "Using this minimal editor, write the request record, batch, selection of the second argument, and report. You may reuse your procesar function, but the traversal body and main are not provided. Then test an empty vector, a single request {1,1,true}, that same request repeated twice, and the boundary case with a full and b empty using {5,5,false}. First calculate which information distinguishes the operations, even when a step leaves the state as it was."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\n// Reuse Resultado_doble and procesar; define Solicitud before main.\nint main() {\n    // Build the batch, its states, and its tests here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Build and check the batch before consulting the reference. All its data are prepared and small. Reusing a must not turn it into a copy, and a rejected request must not cause the loop to exit early."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the Batch with Different Initial States"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference uses capacity six, with a starting stock of two and b starting with four; it also changes the request list. The policy and output format stay the same. Assigning Resultado_doble copies the two bool members of the result; it does not change which depots the parameters were bound to during the call."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nstruct Resultado_doble {\n    bool retiro;\n    bool ingreso;\n};\n\nResultado_doble procesar(Deposito& primero, Deposito& segundo,\n                        int cantidad_retirar, int cantidad_agregar) {\n    const bool retiro = primero.retirar(cantidad_retirar);\n    const bool ingreso = segundo.agregar(cantidad_agregar);\n    return Resultado_doble{retiro, ingreso};\n}\n\nstruct Solicitud {\n    int retirada;\n    int agregado;\n    bool mismo;\n};\n\nint main() {\n    Deposito a{Capacidad{6}, Existencias{2}};\n    Deposito b{Capacidad{6}, Existencias{4}};\n    const Deposito foto = a;\n    const Deposito& vista = a;\n    const std::vector<Solicitud> solicitudes{\n        {3, 2, false}, {2, 5, true}, {1, 3, false}, {5, 1, true}};\n    int retiros{0};\n    int ingresos{0};\n    for (const auto& solicitud : solicitudes) {\n        Resultado_doble resultado{false, false};\n        if (solicitud.mismo) {\n            resultado = procesar(a, a, solicitud.retirada, solicitud.agregado);\n        } else {\n            resultado = procesar(a, b, solicitud.retirada, solicitud.agregado);\n        }\n        if (resultado.retiro) { ++retiros; }\n        if (resultado.ingreso) { ++ingresos; }\n        std::cout << \"Step=\" << resultado.retiro << ':' << resultado.ingreso;\n        std::cout << \";States=\" << a.existencias() << ':' << b.existencias() << '\\n';\n    }\n    std::cout << \"Totals=\" << retiros << ':' << ingresos;\n    std::cout << \"\\nObservation=\" << foto.existencias() << ':' << vista.existencias();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference produces four lines: Step=0:1;States=2:6, Step=1:1;States=5:6, Step=1:0;States=4:6, and Step=0:1;States=5:6. It then displays Totals=2:3 and Observation=2:5. When both arguments are a, the addition sees the state left by removal; b retains six. The removal and addition counters describe accepted operations, not stock levels or the number of requests."
+        },
+        {
+          "type": "paragraph",
+          "text": "For your original batch with capacity five, the steps must be 1:0 with states 1:3; 0:1 with 2:3; 1:1 with 0:5; 0:1 with 1:5; and 0:0 with 1:5. The final lines are Totals=2:3 and Observation=3:1. Resetting the state at each step, using a copy as the second argument, or stopping after the first false breaks the sequence even if some rows happen to match."
+        },
+        {
+          "type": "paragraph",
+          "text": "With an empty vector and the original state, only Totals=0:0 and Observation=3:3 are printed. A single request {1,1,true} accepts both operations, leaving a at three and b at three; repeating it twice keeps that state and gives Totals=2:2. At the full-a/empty-b boundary, {5,5,false} accepts both and leaves 0:5. In all these cases, the snapshot and view must reflect their actual relationship, not the number of accepted operations."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transfer criteria: related request fields and ordering are preserved; a and b persist between steps; the second argument is chosen according to mismo; both operations are attempted and their results remain separate; each acceptance is counted independently; states are displayed after each step; the earlier copy remains stable while the view reflects the current state; an empty batch creates no fictitious steps. Alternative loops or presentation functions are acceptable if they preserve these responsibilities rather than printing manually computed constants."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisit Another Access Path Versus a Copy"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before answering, distinguish existing objects from the names used to access them. Every modification in this program occurs in a separate statement. No reference outlives its object, and no inspection occurs while a collection is growing."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__transferir_invariantes_a_un_deposito__alias_copia_vista_y_otra_via",
+          "language": "cpp",
+          "question": "Predict all four complete lines. A copy and a reference are created before the changes; track their objects through the final output. Do not add a final newline.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct Capacidad { int unidades; };\nstruct Existencias { int unidades; };\nstruct DepositoInvalido {};\n\nclass Deposito {\npublic:\n    Deposito(Capacidad capacidad, Existencias existencias)\n        : capacidad_{capacidad.unidades}, existencias_{existencias.unidades} {\n        if (capacidad_ < 1 || capacidad_ > 20 || existencias_ < 0 || existencias_ > capacidad_) {\n            throw DepositoInvalido{};\n        }\n    }\n    int capacidad() const { return capacidad_; }\n    int existencias() const { return existencias_; }\n    int disponibles() const { return capacidad_ - existencias_; }\n    bool agregar(int cantidad) {\n        if (cantidad <= 0 || cantidad > capacidad_ - existencias_) { return false; }\n        existencias_ += cantidad;\n        return true;\n    }\n    bool retirar(int cantidad) {\n        if (cantidad <= 0 || cantidad > existencias_) { return false; }\n        existencias_ -= cantidad;\n        return true;\n    }\nprivate:\n    int capacidad_;\n    int existencias_;\n};\n\nstruct Resultado_doble {\n    bool retiro;\n    bool ingreso;\n};\n\nResultado_doble procesar(Deposito& primero, Deposito& segundo,\n                        int cantidad_retirar, int cantidad_agregar) {\n    const bool retiro = primero.retirar(cantidad_retirar);\n    const bool ingreso = segundo.agregar(cantidad_agregar);\n    return Resultado_doble{retiro, ingreso};\n}\n\nint main() {\n    Deposito a{Capacidad{7}, Existencias{4}};\n    Deposito b = a;\n    const Deposito foto = a;\n    const Deposito& vista = a;\n    Deposito& otra_via = a;\n    const Resultado_doble resultado = procesar(otra_via, b, 2, 1);\n    const bool agregado = otra_via.agregar(3);\n    const bool retirado = b.retirar(4);\n    std::cout << \"Results=\" << resultado.retiro << ':' << resultado.ingreso;\n    std::cout << \"\\nOther=\" << agregado << ':' << retirado;\n    std::cout << \"\\nStates=\" << a.existencias() << ':' << b.existencias();\n    std::cout << \"\\nObservation=\" << foto.existencias() << ':' << vista.existencias();\n    return 0;\n}\n",
+          "answers": [
+            "Results=1:1\nOther=1:1\nStates=5:1\nObservation=4:5"
+          ],
+          "explanation": "b and foto are independent copies of a at the beginning. otra_via and vista continue to designate a. procesar removes two from a and adds one to b; then otra_via adds three to a and b removes four. a finishes at five, b at one, foto retains four, and vista reads five.",
+          "outputComparison": "exact"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__datos_propios_y_estado_valido__transferir_invariantes_a_un_deposito__alias_valores_iguales_no_identidad",
+          "question": "Two depots display the same stock after a step. What conclusion is valid without knowing how they were constructed and which references were passed?",
+          "options": [
+            "Their stock levels match; that fact alone does not determine whether the names designate one or two objects.",
+            "Their stocks match; therefore both references are bound to the same object.",
+            "Their stocks match; therefore modifying one will always update the other."
+          ],
+          "correctIndex": 0,
+          "explanation": "Value equality and object identity are different questions. Construction, copying, and reference binding determine the relationship, not a coincidence of numerical values."
+        },
+        {
+          "type": "paragraph",
+          "text": "In a later review, choose quantities that produce different results for the first and second attempts, and explain the first difference between passing a,b and passing a,a. Then rebuild a batch from its contract before looking at the earlier version. Retain one test where removal fails but addition can succeed, and another where removal succeeds but addition fails: each checks a different guarantee."
+        },
+        {
+          "type": "note",
+          "text": "This review revisits values, copies, and references together with the model of concrete types (Stroustrup, 2024, sections 7.4.5–7.4.6 and chapter 8). The class, policies, requests, and tests in this lesson are original; the processor offers neither a stock-conserving transfer nor an all-or-nothing guarantee."
+        }
+      ]
+    }
+  ]
+}
