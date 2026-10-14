@@ -1,0 +1,160 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__hacer_explicito_el_orden_de_las_operaciones",
+  "title": "Making the Order of Operations Explicit",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Precedence and evaluation order answer different questions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Operator precedence determines how an expression is grouped. It does not always prescribe which operand is evaluated first. When functions merely calculate from their arguments, the order often does not affect the result; when they modify the same state, it may change that state."
+        },
+        {
+          "type": "paragraph",
+          "text": "In this exercise, registrar receives marca by reference, appends one digit to its decimal trace, and returns that digit. We start with marca=0 and make exactly two calls with digits from 1 through 9: the trace is at most 99 and fits in int. The returned value and the modified state serve different purposes."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prioridad_no_es_secuencia",
+          "question": "You know the precedence of + and * in an expression that calls several functions. What have you determined directly?",
+          "options": [
+            "Which calls must execute from left to right.",
+            "How the operations are grouped to produce the value.",
+            "Which variables stop changing inside the functions."
+          ],
+          "correctIndex": 1,
+          "explanation": "Grouping alone does not provide an order for all side effects. You must know the applicable evaluation rules."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An addition can preserve its value while changing the trace"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Precondition for this exercise: marca starts at 0;\n// exactly two calls use digits between 1 and 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint main() {\n    int marca{0};\n    int suma = registrar(marca, 1) + registrar(marca, 2);\n    std::cout << suma << ':' << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "In C++23 this example may produce 3:12 or 3:21. Each function call completes its body, but + does not require the written left-hand call to run first. The digits add up to 3 either way, while the trace retains the chosen order. There is no single portable output that we should demand in a prediction."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "llamadas_en_suma",
+          "question": "In the addition expression, replace arguments 1 and 2 with 3 and 8. Which statement describes the permitted outputs without separating the calls?",
+          "options": [
+            "marca is 38 and the sum is 11; the left call always runs first.",
+            "marca is 83 and the sum is 11; the right call always runs first.",
+            "marca is 38 or 83, and the sum is 11 regardless of order."
+          ],
+          "correctIndex": 2,
+          "explanation": "Either call may execute first. Here each complete function body modifies marca; we are not using unsequenced increments inside the same calculation."
+        },
+        {
+          "type": "paragraph",
+          "text": "One execution shows only what happened in that run. Getting the same result after several identical runs does not turn that choice into a language guarantee. This activity uses reasoning and selection, not a single exact-output answer."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Express the dependency using successive statements"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Precondition for this exercise: marca starts at 0;\n// exactly two calls use digits between 1 and 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint main() {\n    int marca{0};\n    int primero = registrar(marca, 1);\n    int segundo = registrar(marca, 2);\n    int suma = primero + segundo;\n    std::cout << suma << ':' << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is now 3:12. The first statement completes its call before the next statement begins; the addition uses two already-obtained values and no longer changes marca. The names primero and segundo help communicate the ordering decision made by the program."
+        },
+        {
+          "type": "output_prediction",
+          "id": "orden_invertido_explicito",
+          "question": "Predict the output when the call with 2 executes first. A variable's name does not decide when its initialization runs.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Precondition for this exercise: marca starts at 0;\n// exactly two calls use digits between 1 and 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint main() {\n    int marca{0};\n    int segundo = registrar(marca, 2);\n    int primero = registrar(marca, 1);\n    std::cout << primero + segundo << ':' << marca;\n    return 0;\n}\n",
+          "answers": [
+            "3:21"
+          ],
+          "explanation": "The call in the first statement makes marca equal 2. The next appends 1, yielding 21. The returned values still add up to 3."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "nombre_no_reordena",
+          "question": "You rename primero to anterior without moving any statement. What changes in the execution?",
+          "options": [
+            "The call moves earlier to match the new name.",
+            "Nothing in this sequence; only how we describe it changes.",
+            "The addition starts rebuilding the trace from zero."
+          ],
+          "correctIndex": 1,
+          "explanation": "Names should help understanding, but they do not change the semantic order of statements."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a sequence before calling another function"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a program that first records 2 and then 7 and passes the two returned values by value to a function sumar. sumar only calculates their sum and does not modify marca. Store the results of the registration calls in successive statements; do not obtain them as two arguments within a single call."
+        },
+        {
+          "type": "paragraph",
+          "text": "Display result:trace. It must produce 9:27. Change only the order of the registration calls: the output must become 9:72. Restore the original order and change the digits to 9 and 1, keeping that explicit order: expect 10:91. The trace must come from the calls rather than a hard-coded final constant."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Precondition for this exercise: marca starts at 0;\n// exactly two calls use digits between 1 and 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\n// Define an addition function that does not modify marca.\nint main() {\n    // Build and verify the requested sequences.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "The extension requires obtaining the arguments separately before calling the function that combines them. Consult the reference only after attempting it."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later reference and the guarantees we actually check"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Precondition for this exercise: marca starts at 0;\n// exactly two calls use digits between 1 and 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint sumar(int primero, int segundo) {\n    return primero + segundo;\n}\n\nint main() {\n    int marca{0};\n    int primero = registrar(marca, 2);\n    int segundo = registrar(marca, 7);\n    int resultado = sumar(primero, segundo);\n    std::cout << resultado << ':' << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: obtain each argument in a complete statement, in the chosen order; retain the returned values; pass them to sumar; and distinguish the numeric result from the trace. The three variations produce 9:27, 9:72, and 10:91. Another organization is valid if it makes the same dependency explicit."
+        },
+        {
+          "type": "paragraph",
+          "text": "This rule does not require breaking every expression into many statements. && and || already evaluate with left-to-right short-circuiting, as we used to protect accesses. Chained << insertions are also sequenced from left to right in C++23. Do not generalize the unspecified operand order of + to every operator."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nor should unspecified order be confused with undefined behavior. Our two-function-call example permits two orders. An expression such as ++marca + marca mixes modification and reading without the required sequencing and has undefined behavior; it is not used as a prediction program or executed here."
+        },
+        {
+          "type": "note",
+          "text": "Evaluation order is covered in the primary source (Stroustrup, 2024, section 7.5.1, p. 207) and was compared with the execution and expression rules of the fixed C++23 draft (Köppe et al., 2023, section 6.9.1 [intro.execution]). The examples and activities in this learning path are original."
+        }
+      ]
+    }
+  ]
+}

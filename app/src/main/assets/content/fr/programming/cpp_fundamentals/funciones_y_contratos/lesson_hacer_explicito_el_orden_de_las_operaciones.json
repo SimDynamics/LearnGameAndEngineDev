@@ -1,0 +1,160 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__hacer_explicito_el_orden_de_las_operaciones",
+  "title": "Rendre explicite l'ordre des opérations",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Priorité et ordre d'évaluation répondent à des questions différentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "La priorité des opérateurs détermine le regroupement des opérations d'une expression. Elle n'impose pas toujours quel opérande est évalué en premier. Lorsque les fonctions calculent simplement à partir de leurs arguments, l'ordre ne change souvent pas le résultat ; lorsqu'elles modifient un même état, il peut le changer."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans cet exercice, registrar reçoit marca par référence, ajoute un chiffre à sa trace décimale et renvoie ce chiffre. Nous partons de marca=0 et effectuons exactement deux appels avec des chiffres de 1 à 9 : la trace atteint au plus 99 et tient dans int. La valeur renvoyée et l'état modifié ont des rôles distincts."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "prioridad_no_es_secuencia",
+          "question": "Tu connais la priorité de + et * dans une expression appelant plusieurs fonctions. Qu'as-tu déterminé directement ?",
+          "options": [
+            "Les appels qui doivent s'exécuter de gauche à droite.",
+            "La manière dont les opérations sont regroupées pour produire une valeur.",
+            "Les variables qui cessent de changer à l'intérieur des fonctions."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le regroupement ne fournit pas à lui seul une séquence pour tous les effets. Il faut connaître les règles d'évaluation applicables."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une addition peut garder sa valeur et modifier la trace"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Précondition de cet exercice : marca commence à 0 ;\n// exactement deux appels utilisent des chiffres de 1 à 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint main() {\n    int marca{0};\n    int suma = registrar(marca, 1) + registrar(marca, 2);\n    std::cout << suma << ':' << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "En C++23, cet exemple peut produire 3:12 ou 3:21. Chaque appel exécute entièrement son corps, mais + n'oblige pas à commencer par l'appel écrit à gauche. La somme des chiffres vaut 3 dans les deux cas, tandis que la trace conserve l'ordre choisi. Il n'existe pas de sortie unique portable à exiger dans une prédiction."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "llamadas_en_suma",
+          "question": "Dans l'expression d'addition, remplace les arguments 1 et 2 par 3 et 8. Quelle affirmation décrit les sorties permises sans séparer les appels ?",
+          "options": [
+            "marca vaut 38 et la somme 11 ; l'appel de gauche s'exécute toujours en premier.",
+            "marca vaut 83 et la somme 11 ; l'appel de droite s'exécute toujours en premier.",
+            "marca vaut 38 ou 83, tandis que la somme vaut 11 indépendamment de l'ordre."
+          ],
+          "correctIndex": 2,
+          "explanation": "Les appels peuvent s'exécuter dans l'un ou l'autre ordre. Chaque corps complet modifie ici marca ; nous n'utilisons pas d'incréments non séquencés dans un même calcul."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une seule exécution montre uniquement ce qui s'est produit cette fois-là. Obtenir toujours le même résultat en répétant une exécution identique ne transforme pas ce choix en garantie du langage. Cette activité utilise la réflexion et une question à choix, pas une unique sortie exacte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Exprimer la dépendance avec des instructions successives"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Précondition de cet exercice : marca commence à 0 ;\n// exactement deux appels utilisent des chiffres de 1 à 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint main() {\n    int marca{0};\n    int primero = registrar(marca, 1);\n    int segundo = registrar(marca, 2);\n    int suma = primero + segundo;\n    std::cout << suma << ':' << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est maintenant 3:12. La première instruction termine son appel avant le début de la suivante ; l'addition utilise deux valeurs déjà obtenues et ne modifie plus marca. Les noms primero et segundo aident à exprimer la décision d'ordre du programme."
+        },
+        {
+          "type": "output_prediction",
+          "id": "orden_invertido_explicito",
+          "question": "Prévois la sortie lorsque l'appel avec 2 s'exécute en premier. Le nom d'une variable ne détermine pas le moment de son initialisation.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Précondition de cet exercice : marca commence à 0 ;\n// exactement deux appels utilisent des chiffres de 1 à 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint main() {\n    int marca{0};\n    int segundo = registrar(marca, 2);\n    int primero = registrar(marca, 1);\n    std::cout << primero + segundo << ':' << marca;\n    return 0;\n}\n",
+          "answers": [
+            "3:21"
+          ],
+          "explanation": "L'appel de la première instruction donne la valeur 2 à marca. Le suivant ajoute le chiffre 1 et produit 21. Les valeurs renvoyées totalisent toujours 3."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "nombre_no_reordena",
+          "question": "Tu renommes primero en anterior sans déplacer les instructions. Qu'est-ce qui change dans l'exécution ?",
+          "options": [
+            "L'appel avance pour correspondre au nouveau nom.",
+            "Rien dans cette séquence ; seule notre façon de la décrire change.",
+            "L'addition recommence à construire la trace à partir de zéro."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les noms doivent faciliter la compréhension, mais ils ne changent pas l'ordre sémantique des instructions."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une séquence avant d'appeler une autre fonction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un programme qui enregistre d'abord 2, puis 7, et transmet par valeur les deux résultats à une fonction sumar. Cette fonction calcule seulement leur somme et ne modifie pas marca. Conserve les résultats des appels à registrar dans des instructions successives ; ne les obtiens pas comme deux arguments d'un seul appel."
+        },
+        {
+          "type": "paragraph",
+          "text": "Affiche résultat:trace. La sortie doit être 9:27. Inverse uniquement les deux appels à registrar : la sortie doit devenir 9:72. Rétablis l'ordre initial et remplace les chiffres par 9 et 1, en conservant cet ordre explicite : le résultat attendu est 10:91. La trace doit provenir des appels, et non d'une constante finale."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Précondition de cet exercice : marca commence à 0 ;\n// exactement deux appels utilisent des chiffres de 1 à 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\n// Définis une fonction d'addition sans effet sur marca.\nint main() {\n    // Construis et vérifie les séquences demandées.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Le prolongement exige d'obtenir les arguments séparément avant d'appeler la fonction qui les combine. Consulte la référence après avoir essayé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure et garanties réellement vérifiées"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Précondition de cet exercice : marca commence à 0 ;\n// exactement deux appels utilisent des chiffres de 1 à 9.\nint registrar(int& marca, int digito) {\n    marca = marca * 10 + digito;\n    return digito;\n}\n\nint sumar(int primero, int segundo) {\n    return primero + segundo;\n}\n\nint main() {\n    int marca{0};\n    int primero = registrar(marca, 2);\n    int segundo = registrar(marca, 7);\n    int resultado = sumar(primero, segundo);\n    std::cout << resultado << ':' << marca;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : obtenir chaque argument par une instruction complète dans l'ordre choisi ; conserver les valeurs renvoyées ; les transmettre à sumar ; distinguer le résultat numérique de la trace. Les trois variantes donnent 9:27, 9:72 et 10:91. Une autre organisation est valable si elle rend la même dépendance explicite."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette règle n'oblige pas à décomposer toute expression en de nombreuses instructions. && et || disposent déjà d'une évaluation en court-circuit de gauche à droite, utilisée pour protéger les accès. Les insertions en chaîne avec << sont également séquencées de gauche à droite en C++23. Ne généralise pas l'ordre non spécifié des opérandes de + à tous les opérateurs."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ne confonds pas non plus un ordre non spécifié avec un comportement indéfini. Notre exemple de deux appels de fonction permet deux ordres. Une expression telle que ++marca + marca combine une modification et une lecture sans le séquencement nécessaire ; son comportement est indéfini. Nous ne l'utilisons pas comme programme de prédiction et ne l'exécutons pas ici."
+        },
+        {
+          "type": "note",
+          "text": "L'ordre d'évaluation est étudié dans la source principale (Stroustrup, 2024, section 7.5.1, p. 207) et a été comparé aux règles d'exécution et d'expressions du projet figé de C++23 (Köppe et al., 2023, section 6.9.1 [intro.execution]). Les exemples et activités de cette progression sont originaux."
+        }
+      ]
+    }
+  ]
+}
