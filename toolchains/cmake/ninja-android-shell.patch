@@ -1,0 +1,16 @@
+--- a/src/subprocess-posix.cc
++++ b/src/subprocess-posix.cc
+@@ -117,8 +117,10 @@
+   if (err != 0)
+     Fatal("posix_spawnattr_setflags: %s", strerror(err));
+-
++
+-  const char* spawned_args[] = { "/bin/sh", "-c", command.c_str(), NULL };
+-  err = posix_spawn(&pid_, "/bin/sh", &action, &attr,
++  // Android has its system shell in /system/bin; no writable-home script
++  // or Termux dependency is required to execute generated build commands.
++  const char* spawned_args[] = { "/system/bin/sh", "-c", command.c_str(), NULL };
++  err = posix_spawn(&pid_, "/system/bin/sh", &action, &attr,
+         const_cast<char**>(spawned_args), environ);
+   if (err != 0)
+     Fatal("posix_spawn: %s", strerror(err));

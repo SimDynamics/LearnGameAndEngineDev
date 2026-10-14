@@ -3,6 +3,8 @@ package com.learngraphicsprogramming.app.math
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.Rect
+import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
@@ -33,8 +35,10 @@ class MathEuclideanDiagramDeviceTest : MathGeometryQaSupport() {
                     orient(scenario, fixture, orientation)
                     for (index in representations.indices) {
                         var visual: MathEuclideanDiagramView? = null
+                        var inlineParent: ViewGroup? = null
                         scenario.onActivity { activity ->
                             visual = descendants(content(activity)).filterIsInstance<MathEuclideanDiagramView>()[index]
+                            inlineParent = requireNotNull(visual).parent as ViewGroup
                             val wrapper = requireNotNull(visual).parent.parent as ViewGroup
                             scrollVisible(activity, wrapper)
                         }
@@ -44,6 +48,8 @@ class MathEuclideanDiagramDeviceTest : MathGeometryQaSupport() {
                             descendants(wrapper).filterIsInstance<ImageButton>().single { it.tag == "math_expand_representation" }.performClick()
                         }
                         instrumentation.waitForIdleSync()
+                        awaitExpandedWindowState(requireNotNull(visual), requireNotNull(inlineParent), true,
+                            "$sceneName-$index-$orientationName-open")
                         var metadata = JSONObject()
                         instrumentation.runOnMainSync {
                             assertTrue("The same native Euclidean view moved into the actual expanded panel", requireNotNull(visual).isAttachedToWindow)
@@ -58,10 +64,40 @@ class MathEuclideanDiagramDeviceTest : MathGeometryQaSupport() {
                                 .single { it.tag == "math_exit_representation" }.performClick()
                         }
                         instrumentation.waitForIdleSync()
+                        awaitExpandedWindowState(requireNotNull(visual), requireNotNull(inlineParent), false,
+                            "$sceneName-$index-$orientationName-close")
                     }
                 }
             }
         }
+    }
+
+    /** IdleSync alone does not await WindowManager's focus/insets traversal of a dialog. */
+    private fun awaitExpandedWindowState(visual: MathEuclideanDiagramView, inlineParent: ViewGroup,
+                                         expanded: Boolean, label: String) {
+        val deadline = SystemClock.uptimeMillis() + 8_000L
+        var consecutive = 0
+        var previousState = ""
+        var diagnostic = ""
+        while (SystemClock.uptimeMillis() < deadline) {
+            instrumentation.waitForIdleSync()
+            instrumentation.runOnMainSync {
+                val parent = visual.parent as? ViewGroup
+                val bounds = Rect()
+                val visible = visual.getGlobalVisibleRect(bounds)
+                val correctParent = if (expanded) parent?.tag == "math_expanded_visual_container" else parent === inlineParent
+                val measured = visual.width > 0 && visual.height > 0 && !visual.isLayoutRequested && parent?.isLayoutRequested == false
+                val state = "${visual.width}x${visual.height}/$bounds/${parent?.javaClass?.name}/${parent?.tag}"
+                val ready = correctParent && measured && visual.isAttachedToWindow && visual.hasWindowFocus() && visible
+                consecutive = if (ready) { if (state == previousState) consecutive + 1 else 1 } else 0
+                previousState = state
+                diagnostic = "$state attached=${visual.isAttachedToWindow}, focus=${visual.hasWindowFocus()}, visible=$visible, " +
+                    "correctParent=$correctParent, layoutRequested=${visual.isLayoutRequested}"
+            }
+            if (consecutive >= 3) return
+            SystemClock.sleep(50L)
+        }
+        fail("The native representation window did not stabilize after $label: $diagnostic")
     }
 
     @Test fun readingChoicesRejectDistractorsAcceptExplicitRelationshipsAndRestoreCorrectAndWrongState() {

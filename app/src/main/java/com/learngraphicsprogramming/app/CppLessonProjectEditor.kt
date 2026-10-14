@@ -31,6 +31,7 @@ internal class CppLessonProjectEditor(
     private val cursors = mutableMapOf<String, Int>()
     private var selected = ""
     private var switching = false
+    private val usesCmake = block.optJSONObject("cmake") != null
     val controls = LinearLayout(context).apply {
         tag = "cpp_project_controls"
         orientation = LinearLayout.VERTICAL
@@ -52,7 +53,11 @@ internal class CppLessonProjectEditor(
         initialSources = block.optJSONArray("sourceFiles")?.let { selectedSources ->
             List(selectedSources.length()) { selectedSources.getString(it) }
         } ?: initialFiles.keys.filter(CppProject::isSourceFile)
-        CppProject(initialFiles, initialSources)
+        if (usesCmake) {
+            require(!block.has("sourceFiles")) { "CMake selects sources from its description, not sourceFiles" }
+            require(initialFiles.isNotEmpty())
+            CppProject.validateFiles(initialFiles)
+        } else CppProject(initialFiles, initialSources)
         files.putAll(initialFiles)
         sources.addAll(initialSources)
         selected = initialFiles.keys.firstOrNull { it == "main.cpp" } ?: initialFiles.keys.first()
@@ -136,7 +141,7 @@ internal class CppLessonProjectEditor(
         editor.setText(files.getValue(selected))
         editor.setSelection((cursors[selected] ?: 0).coerceIn(0, editor.length()))
         editor.contentDescription = selected
-        compileFile.visibility = if (CppProject.isSourceFile(selected)) View.VISIBLE else View.GONE
+        compileFile.visibility = if (!usesCmake && CppProject.isSourceFile(selected)) View.VISIBLE else View.GONE
         compileFile.isChecked = selected in sources
         fileButtons.removeAllViews()
         files.keys.forEach { path ->
@@ -200,6 +205,17 @@ internal class CppLessonProjectEditor(
         cursors[selected] = editor.selectionStart
         save()
         return CppProject(files, sources.toList())
+    }
+
+    /** The real CMake description chooses sources; an incomplete draft remains editable. */
+    fun filesSnapshot(): Map<String, String> {
+        // setText fires observers before showSelected restores the saved cursor.
+        if (!switching) {
+            files[selected] = editor.text.toString()
+            cursors[selected] = editor.selectionStart
+            save()
+        }
+        return LinkedHashMap(files)
     }
 
     fun reset() {

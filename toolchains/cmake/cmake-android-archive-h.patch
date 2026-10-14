@@ -1,0 +1,13 @@
+--- a/Utilities/cmlibarchive/libarchive/archive.h
++++ b/Utilities/cmlibarchive/libarchive/archive.h
+@@ -95,6 +95,8 @@
+ #endif
+-
++
+ /* Large file support for Android */
+-#if defined(__LIBARCHIVE_BUILD) && defined(__ANDROID__)
++// Android ARM64 has native 64-bit off_t; the old 32-bit large-file shim
++// is not part of CMake's vendored archive and is unnecessary on LP64.
++#if defined(__LIBARCHIVE_BUILD) && defined(__ANDROID__) && !defined(__LP64__)
+ #include "android_lf.h"
+ #endif

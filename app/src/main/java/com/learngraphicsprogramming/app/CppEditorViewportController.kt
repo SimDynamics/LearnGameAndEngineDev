@@ -12,7 +12,6 @@ import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.TextView
 import kotlin.math.abs
-import kotlin.math.ceil
 
 /** The lesson compiler's scrolling and gutter, shared with the standalone editor. */
 internal class CppEditorViewportController(
@@ -147,8 +146,10 @@ internal class CppEditorViewportController(
             }
         }
         if (lineNumbers.text.toString() != numbers) lineNumbers.text = numbers
-        val logicalCount = text.count { it == '\n' } + 1
-        val width = maxOf(dp(18), ceil(lineNumbers.paint.measureText(logicalCount.toString()).toDouble()).toInt() + dp(8))
+        val width = CodeLineNumberMetrics.requiredWidth(
+            numbers, lineNumbers.paint::measureText,
+            maxOf(dp(8), lineNumbers.compoundPaddingLeft + lineNumbers.compoundPaddingRight), dp(18)
+        )
         val params = lineNumberScroll.layoutParams
         if (params != null && params.width != width) {
             params.width = width

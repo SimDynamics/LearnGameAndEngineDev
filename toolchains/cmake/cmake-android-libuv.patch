@@ -1,0 +1,18 @@
+--- a/Utilities/cmlibuv/CMakeLists.txt
++++ b/Utilities/cmlibuv/CMakeLists.txt
+@@ -198,8 +198,12 @@
+     )
+ endif()
+-
++
+-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+-  list(APPEND uv_libraries dl rt)
++if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR ANDROID)
++  # Bionic provides the POSIX realtime API in libc, not a separate librt.
++  list(APPEND uv_libraries dl)
++  if(NOT ANDROID)
++    list(APPEND uv_libraries rt)
++  endif()
+   list(APPEND uv_headers
+     include/uv/linux.h
+     )

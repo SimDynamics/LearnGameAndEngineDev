@@ -1,0 +1,15 @@
+--- a/Utilities/cmlibuv/CMakeLists.txt
++++ b/Utilities/cmlibuv/CMakeLists.txt
+@@ -333,6 +333,11 @@
+     )
+ endif()
+-
++
++if(ANDROID)
++  # internal.h selects this upstream Android implementation of sigmask.
++  list(APPEND uv_sources src/unix/pthread-fixes.c)
++endif()
++
+ include_directories(
+   ${uv_includes}
+   ${KWSYS_HEADER_ROOT}

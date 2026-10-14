@@ -1,11 +1,16 @@
 package com.learngraphicsprogramming.app
 
 import android.app.KeyguardManager
+import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Rect
+import android.graphics.Bitmap
+import android.os.Build
+import android.os.Bundle
 import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
@@ -30,6 +35,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.learngraphicsprogramming.app.narration.NarrationSettingsRepository
 import com.learngraphicsprogramming.app.runtime.CppCompiler
 import java.io.File
+import java.util.WeakHashMap
 import org.json.JSONArray
 import org.json.JSONObject
 import org.hamcrest.Matchers.equalTo
@@ -52,6 +58,7 @@ class CppCurricularLabsDeviceTest {
     private val context = instrumentation.targetContext
     private val snapshots = linkedMapOf<String, Map<String, *>>()
     private var originalPreferenceFiles = emptySet<String>()
+    private var injectedFixtureActivityIdentity: Int? = null
 
     @Before fun preserveUserState() {
         assertEquals("Usar -Plgp.curricularQa=true para aislar los datos del usuario",
@@ -468,20 +475,96 @@ class CppCurricularLabsDeviceTest {
         if (preparedInput != null) block.put("initialStandardInput", preparedInput)
         val lesson = JSONObject().put("id", READING).put("title", "Technical curricular runtime check")
             .put("pages", JSONArray().put(JSONObject().put("blocks", JSONArray().put(block))))
-        ActivityScenario.launch<LessonActivity>(lessonIntent(READING)).use { scenario ->
-            scenario.onActivity { activity ->
-                activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                setField(activity, "lessonJson", lesson)
-                setField(activity, "totalPages", 1)
-                setField(activity, "currentPage", 0)
-                listOf("pageViewCache", "pageRequiredExercises", "pageCompletedExercises").forEach { name ->
-                    (field(activity, name) as MutableMap<*, *>).clear()
-                }
-                invoke(activity, "renderCurrentPage")
+        val startupCompleted = WeakHashMap<LessonActivity, Long>()
+        val observer = object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityCreated(activity: Activity, state: Bundle?) {
+                if (activity is LessonActivity && activity.packageName == context.packageName)
+                    activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
-            instrumentation.waitForIdleSync()
-            test(scenario)
+            override fun onActivityStarted(activity: Activity) = Unit
+            override fun onActivityResumed(activity: Activity) {
+                if (Build.VERSION.SDK_INT < 29 && activity is LessonActivity)
+                    startupCompleted[activity] = SystemClock.uptimeMillis()
+            }
+            override fun onActivityPostResumed(activity: Activity) {
+                if (activity is LessonActivity) startupCompleted[activity] = SystemClock.uptimeMillis()
+            }
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivityStopped(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, state: Bundle) = Unit
+            override fun onActivityDestroyed(activity: Activity) = Unit
         }
+        val application = context.applicationContext as Application
+        application.registerActivityLifecycleCallbacks(observer)
+        try {
+            ActivityScenario.launch<LessonActivity>(lessonIntent(READING)).use { scenario ->
+                awaitOriginalReadingStartupAndInject(scenario, lesson, startupCompleted)
+                instrumentation.waitForIdleSync()
+                test(scenario)
+            }
+        } finally { application.unregisterActivityLifecycleCallbacks(observer) }
+    }
+
+    /** The asset read is synchronous; the Activity/window/configuration startup may still
+     * settle or replace its instance. Only the prepared instance receives the fixture. */
+    private fun awaitOriginalReadingStartupAndInject(scenario: ActivityScenario<LessonActivity>, lesson: JSONObject,
+                                                     startupCompleted: Map<LessonActivity, Long>) {
+        val originalPages = LessonRepository.loadLessonJson(context, ROUTE, READING).getJSONArray("pages").length()
+        val deadline = SystemClock.uptimeMillis() + 12_000L
+        var previousKey = ""
+        var stableSince = 0L
+        var samples = 0
+        var diagnostic = ""
+        while (SystemClock.uptimeMillis() < deadline) {
+            instrumentation.waitForIdleSync()
+            var injected = false
+            scenario.onActivity { activity ->
+                val original = field(activity, "lessonJson") as? JSONObject
+                val root = content(activity)
+                val configuration = activity.resources.configuration
+                val resumedAt = startupCompleted[activity]
+                val ready = resumedAt != null && !activity.isDestroyed && !activity.isFinishing &&
+                    field(activity, "currentLessonId") == READING && original?.optString("id") == READING &&
+                    original?.optJSONArray("pages")?.length() == originalPages &&
+                    field(activity, "totalPages") == originalPages && field(activity, "currentPage") == 0 &&
+                    (field(activity, "pageViewCache") as Map<*, *>).containsKey(0) &&
+                    root.childCount > 0 && root.width > 0 && root.height > 0 && root.isAttachedToWindow &&
+                    !root.isLayoutRequested && activity.window.decorView.hasWindowFocus()
+                val key = "${System.identityHashCode(activity)}/${System.identityHashCode(original)}/" +
+                    "${System.identityHashCode(root.getChildAt(0))}/${root.width}x${root.height}/" +
+                    "${configuration.orientation}/${configuration.densityDpi}/${configuration.locales.toLanguageTags()}"
+                val now = SystemClock.uptimeMillis()
+                if (!ready || key != previousKey) {
+                    stableSince = if (ready) now else 0L
+                    samples = if (ready) 1 else 0
+                } else samples++
+                previousKey = key
+                diagnostic = "$key ready=$ready, page=${field(activity, "currentPage")}, total=${field(activity, "totalPages")}, " +
+                    "loaded=${original?.optString("id")}, focus=${activity.window.decorView.hasWindowFocus()}, postResume=$resumedAt"
+                if (ready && samples >= 4 && now - stableSince >= 500L) {
+                    require(injectedFixtureActivityIdentity == null) { "Inject the runtime fixture once; never repair a later loss by reinjection." }
+                    val metadata = JSONObject().put("sourceLessonId", READING).put("originalPageCount", originalPages)
+                        .put("activityIdentity", System.identityHashCode(activity)).put("postResumeUptime", resumedAt)
+                        .put("stableStartupMillis", now - stableSince).put("stableSamples", samples)
+                        .put("orientation", configuration.orientation).put("requestedOrientation", activity.requestedOrientation)
+                        .put("contentWidth", root.width).put("contentHeight", root.height)
+                    setField(activity, "lessonJson", lesson)
+                    setField(activity, "totalPages", 1)
+                    setField(activity, "currentPage", 0)
+                    listOf("pageViewCache", "pageRequiredExercises", "pageCompletedExercises").forEach { name ->
+                        (field(activity, name) as MutableMap<*, *>).clear()
+                    }
+                    invoke(activity, "renderCurrentPage")
+                    injectedFixtureActivityIdentity = System.identityHashCode(activity)
+                    val directory = runtimeDiagnosticDirectory()
+                    File(directory, "prepared-runtime-fixture-${SystemClock.uptimeMillis()}.json").writeText(metadata.toString(2))
+                    injected = true
+                }
+            }
+            if (injected) return
+            SystemClock.sleep(100L)
+        }
+        fail("The original reading lesson did not finish a stable focused startup before runtime QA injection: $diagnostic")
     }
 
     private fun runWithInput(scenario: ActivityScenario<LessonActivity>, text: String, expected: String,
@@ -652,7 +735,39 @@ class CppCurricularLabsDeviceTest {
     private fun editor(activity: LessonActivity) = tagged(activity, "cpp_code_input") as EditText
     private fun input(activity: LessonActivity) = tagged(activity, "cpp_input") as EditText
     private fun text(activity: LessonActivity, tag: String) = (tagged(activity, tag) as TextView).text.toString()
-    private fun tagged(activity: LessonActivity, tag: String): View = descendants(content(activity)).single { it.tag == tag }
+    private fun tagged(activity: LessonActivity, tag: String): View {
+        val matches = descendants(content(activity)).filter { it.tag == tag }
+        if (matches.size != 1) diagnoseUnexpectedRuntimeControls(activity, tag, matches.size)
+        return matches.single()
+    }
+    private fun runtimeDiagnosticDirectory() = File(requireNotNull(context.getExternalFilesDir(null)), "cpp-runtime-regression-diagnostics").apply { mkdirs() }
+    private fun diagnoseUnexpectedRuntimeControls(activity: LessonActivity, tag: String, count: Int) {
+        val name = "runtime-controls-${SystemClock.uptimeMillis()}-$tag"
+        val lesson = field(activity, "lessonJson") as JSONObject
+        val page = field(activity, "currentPage") as Int
+        val blocks = lesson.optJSONArray("pages")?.optJSONObject(page)?.optJSONArray("blocks")
+        val metadata = JSONObject().put("missingOrRepeatedTag", tag).put("matchCount", count)
+            .put("activityIdentity", System.identityHashCode(activity))
+            .put("injectedFixtureActivityIdentity", injectedFixtureActivityIdentity ?: JSONObject.NULL)
+            .put("currentLessonId", field(activity, "currentLessonId")).put("loadedLessonId", lesson.optString("id"))
+            .put("loadedLessonTitle", lesson.optString("title")).put("currentPage", page).put("totalPages", field(activity, "totalPages"))
+            .put("exerciseFullscreenActive", field(activity, "exerciseFullscreenActive"))
+            .put("compilerFullscreenActive", field(activity, "compilerFullscreenActive"))
+            .put("orientation", activity.resources.configuration.orientation).put("requestedOrientation", activity.requestedOrientation)
+            .put("lessonContentTags", JSONArray(descendants(content(activity)).mapNotNull { it.tag?.toString() }))
+            .put("decorViewTags", JSONArray(descendants(activity.window.decorView).mapNotNull { it.tag?.toString() }))
+            .put("blockTypes", JSONArray().apply { if (blocks != null)
+                for (index in 0 until blocks.length()) put(blocks.optJSONObject(index)?.optString("type") ?: JSONObject.NULL) })
+        runCatching {
+            val screen = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
+            try { File(runtimeDiagnosticDirectory(), "$name.png").outputStream().use {
+                check(screen.compress(Bitmap.CompressFormat.PNG, 100, it))
+            } } finally { screen.recycle() }
+            metadata.put("nativeScreenshot", "$name.png")
+        }.onFailure { metadata.put("screenshotError", it.toString()) }
+        runCatching { File(runtimeDiagnosticDirectory(), "$name.json").writeText(metadata.toString(2)) }
+        println("CPP runtime native diagnostic: $name; expected one $tag, actual=$count")
+    }
     private fun descendants(root: View): List<View> = buildList {
         add(root)
         if (root is ViewGroup) for (index in 0 until root.childCount) addAll(descendants(root.getChildAt(index)))

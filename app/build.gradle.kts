@@ -269,6 +269,8 @@ android {
     }
     sourceSets {
         getByName("main").jniLibs.directories.add("build/generated/cppRuntime/jniLibs")
+        getByName("main").jniLibs.directories.add("build/generated/cmakeRuntime/jniLibs")
+        getByName("main").assets.directories.add("build/generated/cmakeRuntime/assets")
         if (lgpEnableCppExceptions) {
             // This optional overlay is absent from all normal builds.
             getByName("main").assets.directories.add("build/generated/wasiEhRuntime/assets")
@@ -282,6 +284,69 @@ android {
             // Symja external and JGraphT contain byte-identical copies of these schemas.
             pickFirsts += setOf("graphml.xsd", "xlink.xsd", "viz.xsd", "gexf.xsd")
         }
+    }
+}
+
+val prepareCmakeRuntime by tasks.registering {
+    group = "build setup"
+    description = "Package verified Android ARM64 CMake 4.1.2 and Ninja 1.12.1 with data resources."
+    val inputDirectory = rootProject.layout.projectDirectory.dir(".gradle/cmake-android-arm64").asFile
+    val nativeOutput = layout.buildDirectory.dir("generated/cmakeRuntime/jniLibs/arm64-v8a")
+    val assetOutput = layout.buildDirectory.dir("generated/cmakeRuntime/assets/runtime")
+    val names = listOf("liblgp_cmake.so", "liblgp_ninja.so", "liblgp_llvm_ar.so", "cmake-4.1.2-resources.zip")
+    inputs.files(names.map { File(inputDirectory, it) } + File(inputDirectory, "manifest.json"))
+    outputs.dirs(nativeOutput, assetOutput)
+    doLast {
+        val manifestFile = File(inputDirectory, "manifest.json")
+        check(manifestFile.isFile) {
+            "Faltan las herramientas Android CMake/Ninja. Ejecuta " +
+                "toolchains/cmake/build-android-local.ps1 antes de construir el APK."
+        }
+        val manifest = manifestFile.readText()
+        check(Regex("\"abi\"\\s*:\\s*\"arm64-v8a\"").containsMatchIn(manifest) &&
+            Regex("\"minimumAndroidApi\"\\s*:\\s*28\\s*[,}]").containsMatchIn(manifest) &&
+            manifest.contains("643f04182b7ba323ab31f526f785134fb79cba3188a852206ef0473fee282a15") &&
+            manifest.contains("821bdff48a3f683bc4bb3b6f0b5fe7b2d647cf65d52aeb63328c91a6c6df285a") &&
+            manifest.contains("0d261d1ca552c95a8f007e061c787ac7132fbcbc")) {
+            "El manifiesto CMake no corresponde al perfil Android ARM64/API 28."
+        }
+        fun sha256(file: File): String {
+            val digest = MessageDigest.getInstance("SHA-256")
+            file.inputStream().buffered().use { input ->
+                val buffer = ByteArray(1024 * 1024)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count < 0) break
+                    digest.update(buffer, 0, count)
+                }
+            }
+            return digest.digest().joinToString("") { "%02x".format(it) }
+        }
+        val natives = nativeOutput.get().asFile.apply { mkdirs() }
+        val assets = assetOutput.get().asFile.apply { mkdirs() }
+        for (name in names) {
+            val input = File(inputDirectory, name)
+            check(input.isFile) { "Falta la herramienta o recurso CMake: $name" }
+            val expected = Regex("\"${Regex.escape(name)}\"\\s*:\\s*\"([0-9a-f]{64})\"")
+                .find(manifest)?.groupValues?.get(1)
+                ?: error("Falta el SHA-256 de $name en el manifiesto CMake.")
+            check(sha256(input) == expected) { "SHA-256 inválido en las herramientas CMake: $name" }
+            if (name.endsWith(".so")) {
+                val header = ByteArray(20)
+                check(input.inputStream().use { it.read(header) } == header.size &&
+                    header[0] == 0x7f.toByte() && header[1] == 'E'.code.toByte() &&
+                    header[2] == 'L'.code.toByte() && header[3] == 'F'.code.toByte() &&
+                    header[4] == 2.toByte() && header[5] == 1.toByte() &&
+                    header[16] == 3.toByte() && header[17] == 0.toByte() &&
+                    header[18] == 0xb7.toByte() && header[19] == 0.toByte()) {
+                    "La herramienta no es Android ARM64 PIE: $name"
+                }
+                input.copyTo(File(natives, name), overwrite = true)
+            } else {
+                input.copyTo(File(assets, name), overwrite = true)
+            }
+        }
+        manifestFile.copyTo(File(assets, "cmake-tools-manifest.json"), overwrite = true)
     }
 }
 
@@ -606,10 +671,14 @@ val prepareWasmtimeRuntime by tasks.registering {
 }
 
 tasks.configureEach {
+    if (name.startsWith("merge") && name.endsWith("Assets")) {
+        dependsOn(prepareCmakeRuntime)
+    }
     if (lgpEnableCppExceptions && name.startsWith("merge") && name.endsWith("Assets")) {
         dependsOn(prepareWasiEhRuntime)
     }
     if (name.startsWith("merge") && name.endsWith("JniLibFolders")) {
+        dependsOn(prepareCmakeRuntime)
         dependsOn(prepareCppRuntime)
         if (lgpEnableWasmtime) dependsOn(prepareWasmtimeRuntime)
     }

@@ -5324,7 +5324,7 @@ class LessonActivity : AppCompatActivity() {
          * COLUMNA DE NÚMEROS.
          */
         val lineNumberColumn =
-            LinearLayout(this)
+            CodeLineNumberColumn(this)
 
         lineNumberColumn.orientation =
             LinearLayout.VERTICAL
@@ -6189,6 +6189,10 @@ class LessonActivity : AppCompatActivity() {
         blockIndex: Int
     ) {
 
+        val cmakeConfiguration = if (block.has("cmake")) block.getJSONObject("cmake") else null
+        require(cmakeConfiguration == null || block.has("projectFiles")) { "CMake requires projectFiles" }
+        var cmakeLab: CppCmakeLabController? = null
+
         val initialCode =
             block.optString(
                 "initialCode",
@@ -6940,6 +6944,7 @@ class LessonActivity : AppCompatActivity() {
                 override fun onNothingSelected(parent: android.widget.AdapterView<*>?) = Unit
                 override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                     labDrafts.edit().putString("$draftKey/compiler", compilerVariants[position].name).apply()
+                    cmakeLab?.draftChanged()
                 }
             }
         }
@@ -7087,6 +7092,11 @@ class LessonActivity : AppCompatActivity() {
         }
         val programOutput = addProgramOutput(R.string.cpp_program_stdout, "cpp_stdout")
         val programError = addProgramOutput(R.string.cpp_program_stderr, "cpp_stderr")
+        if (cmakeConfiguration != null) {
+            cmakeLab = CppCmakeLabController(this, cmakeConfiguration, draftKey, requireNotNull(projectEditor),
+                sourceCode, { compilerVariants[compilerSelector.selectedItemPosition] }, lessonContent,
+                inputLabel, runButton, statusText, outputText, programOutput, programError, standardInput)
+        }
 
         /*
  * PANTALLA COMPLETA DEL EDITOR.
@@ -7504,6 +7514,7 @@ class LessonActivity : AppCompatActivity() {
             programError.text = ""
 
             if (projectEditor != null) projectEditor.reset() else sourceCode.setText(initialCode)
+            cmakeLab?.reset()
 
             val cursorPosition =
                 initialCode.indexOf(
@@ -7600,7 +7611,7 @@ class LessonActivity : AppCompatActivity() {
         /*
          * COMPILAR Y EJECUTAR.
          */
-        runButton.setOnClickListener {
+        if (cmakeLab == null) runButton.setOnClickListener {
 
             outputText.text = ""
             programOutput.text = ""
@@ -9776,7 +9787,7 @@ class LessonActivity : AppCompatActivity() {
          * COLUMNA DE NÚMEROS.
          */
         val lineNumberColumn =
-            LinearLayout(this)
+            CodeLineNumberColumn(this)
 
         lineNumberColumn.orientation =
             LinearLayout.VERTICAL
@@ -12522,7 +12533,7 @@ class LessonActivity : AppCompatActivity() {
          * NÚMEROS DE LÍNEA.
          */
         val lineNumbers =
-            TextView(this)
+            CodeLineNumbersView(this)
 
         val lineCount =
             code.count {
@@ -12573,7 +12584,7 @@ class LessonActivity : AppCompatActivity() {
 
         lineNumbers.layoutParams =
             LinearLayout.LayoutParams(
-                dp(18),
+                LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.MATCH_PARENT
             )
 
@@ -13915,7 +13926,7 @@ class LessonActivity : AppCompatActivity() {
          * Columna estrecha de números.
          */
         val lineNumberColumn =
-            LinearLayout(this)
+            CodeLineNumberColumn(this)
 
         lineNumberColumn.orientation =
             LinearLayout.VERTICAL

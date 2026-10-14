@@ -1,0 +1,18 @@
+--- a/Utilities/cmlibuv/src/unix/process.c
++++ b/Utilities/cmlibuv/src/unix/process.c
+@@ -423,7 +423,14 @@
+       }
+     }
+-
++
++    // Bionic exposes pthread_setaffinity_np only from API 36. This code
++    // runs in the forked child; sched_setaffinity(0) sets that same thread
++    // using the native Android/Linux API available in our API 28 profile.
++#if defined(__ANDROID__)
++    r = sched_setaffinity(0, sizeof(cpuset), &cpuset) == 0 ? 0 : -errno;
++#else
+     r = -pthread_setaffinity_np(pthread_self(), sizeof(cpuset), &cpuset);
++#endif
+     if (r != 0) {
+       uv__write_int(error_fd, r);
+       _exit(127);

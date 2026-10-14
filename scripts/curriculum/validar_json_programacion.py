@@ -23,10 +23,10 @@ FIELDS = {
     "drag_fill_code": {"type", "id", "question", "language", "template", "choices", "correctOrder"},
     "inline_fill_code": {"type", "id", "question", "language", "template", "answers", "answerAlternatives"},
     # Los proyectos sustituyen initialCode al ejecutar; se conserva el campo legacy.
-    "cpp_compiler": {"type", "language", "initialCode", "initialStandardInput", "projectFiles", "sourceFiles"},
+    "cpp_compiler": {"type", "language", "initialCode", "initialStandardInput", "projectFiles", "sourceFiles", "cmake"},
 }
 EXERCISES = set(FIELDS) - {"heading", "paragraph", "note", "code", "cpp_compiler"}
-COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles"}
+COMPILER_EXTENSIONS = {"initialStandardInput", "projectFiles", "sourceFiles", "cmake"}
 SOURCE_SUFFIXES = {"cpp", "cc", "cxx", "c++"}
 STDIN_LESSON = "app/src/main/assets/content/es/programming/cpp_fundamentals/objetos_y_estado/lesson_leer_una_entrada_conocida.json"
 # Precisiones revisadas de consigna; todos los demás campos del ejercicio,
@@ -460,6 +460,11 @@ def validate_cpp_compiler(block, where):
     if "initialStandardInput" in block:
         require(isinstance(block["initialStandardInput"], str), where, "initialStandardInput debe ser texto")
 
+    if "cmake" in block:
+        validate_cmake(block["cmake"], where)
+        require("projectFiles" in block, where, "cmake requiere projectFiles")
+        require("sourceFiles" not in block, where, "CMake selecciona las fuentes desde su descripción; no admite sourceFiles")
+
     if "projectFiles" not in block:
         require("sourceFiles" not in block, where, "sourceFiles requiere projectFiles")
         return
@@ -486,6 +491,13 @@ def validate_cpp_compiler(block, where):
         for parent in PurePosixPath(path).parents:
             require(str(parent) not in paths, where, "una ruta de archivo también se usa como carpeta")
 
+    if "cmake" in block:
+        require(len(files) <= 128, where, "el proyecto CMake supera 128 archivos")
+        size = sum(len(item["initialCode"].encode("utf-8")) for item in files
+                   if isinstance(item, dict) and isinstance(item.get("initialCode"), str))
+        require(size <= 8 * 1024 * 1024, where, "el proyecto CMake supera 8 MiB de texto")
+        return
+
     inferred = [path for path in paths if is_source_file(path)]
     sources = block.get("sourceFiles", inferred)
     require(isinstance(sources, list) and bool(sources), where, "sourceFiles debe seleccionar al menos una fuente")
@@ -500,6 +512,30 @@ def validate_cpp_compiler(block, where):
         selected.add(source)
         require(source in paths, source_where, "fuente no existe en projectFiles con ese nombre exacto")
         require(is_source_file(source), source_where, "se seleccionó una cabecera o archivo no fuente")
+
+
+def validate_cmake(config, where):
+    """Contrato opcional; los errores de CMakeLists se diagnostican en CMake real."""
+    require(isinstance(config, dict), where, "cmake debe ser un objeto")
+    if not isinstance(config, dict):
+        return
+    require(set(config) <= {"target", "options", "buildType"}, where, "campo cmake no admitido")
+    target = config.get("target")
+    require(isinstance(target, str) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.+-]{0,127}", target),
+            where, "target CMake debe ser un nombre de objetivo")
+    require(config.get("buildType", "Debug") in ("Debug", "Release", "RelWithDebInfo", "MinSizeRel"),
+            where, "buildType CMake no admitido")
+    options = config.get("options", {})
+    require(isinstance(options, dict), where, "options CMake debe ser un objeto")
+    if not isinstance(options, dict):
+        return
+    require(len(options) <= 64, where, "el proyecto CMake supera 64 opciones")
+    for key, value in options.items():
+        require(re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,127}", key)
+                and not key.upper().startswith(("CMAKE_", "LGP_")), where, "nombre de opción CMake reservado o no válido")
+        require(isinstance(value, str) and len(value.encode("utf-16-le")) // 2 <= 4096
+                and not any(ord(c) <= 31 or 127 <= ord(c) <= 159 for c in value),
+                where, "valor de opción CMake debe ser texto sin controles, hasta 4096 unidades UTF-16")
 
 
 def preserves_previous_compiler(relative, pn, bn, old, current, old_lesson):

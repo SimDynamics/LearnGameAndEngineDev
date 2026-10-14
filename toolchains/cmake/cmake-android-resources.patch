@@ -1,0 +1,22 @@
+--- a/Source/cmSystemTools.cxx
++++ b/Source/cmSystemTools.cxx
+@@ -3131,6 +3131,19 @@
+   cmSystemToolsCMakeCommand =
+     cmStrCat(exe_dir, "/cmake", cmSystemTools::GetExecutableExtension());
+ #endif
++#if defined(__ANDROID__)
++  // Android installs executable tools as APK native libraries. Their data
++  // resources are separately extracted; generated rules must reuse the actual
++  // packaged executable name instead of guessing a sibling named cmake.
++  std::string appResourceRoot;
++  if (cmSystemTools::GetEnv("LGP_CMAKE_ROOT", appResourceRoot) &&
++      cmSystemTools::FileExists(
++        cmStrCat(appResourceRoot, "/Modules/CMake.cmake"))) {
++    cmSystemToolsCMakeRoot =
++      cmSystemTools::ToNormalizedPathOnDisk(std::move(appResourceRoot));
++  }
++  cmSystemToolsCMakeCommand = exe;
++#endif
+   cmSystemToolsCTestCommand =
+     cmStrCat(exe_dir, "/ctest", cmSystemTools::GetExecutableExtension());
+   cmSystemToolsCPackCommand =

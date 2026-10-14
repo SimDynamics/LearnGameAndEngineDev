@@ -14,6 +14,7 @@ import java.util.zip.ZipInputStream
 internal class CppCompiler(private val context: Context) {
 
     companion object {
+        private val runtimePreparationLock = Any()
         private const val RUNTIME_VERSION = "wasi-sdk-34-noeh-0f338c64"
         private const val COMPILER_TIMEOUT_SECONDS = 60L
         private const val TIMEOUT_EXIT_CODE = -2
@@ -412,13 +413,13 @@ internal class CppCompiler(private val context: Context) {
             .trimEnd()
     }
 
-    private fun prepareRuntime(): File {
+    internal fun prepareRuntime(): File = synchronized(runtimePreparationLock) {
         val runtimeDirectory = File(context.filesDir, "cpp-runtime/wasi-sdk-34")
         val marker = File(runtimeDirectory, ".ready")
         val expectedVersion =
             if (BuildConfig.LGP_CPP_EXCEPTIONS_ENABLED) "$RUNTIME_VERSION-eh-experiment-1"
             else RUNTIME_VERSION
-        if (marker.takeIf(File::isFile)?.readText() == expectedVersion) return runtimeDirectory
+        if (marker.takeIf(File::isFile)?.readText() == expectedVersion) return@synchronized runtimeDirectory
 
         runtimeDirectory.deleteRecursively()
         runtimeDirectory.mkdirs()
@@ -458,7 +459,7 @@ internal class CppCompiler(private val context: Context) {
             }
         }
         marker.writeText(expectedVersion)
-        return runtimeDirectory
+        runtimeDirectory
     }
 
 }

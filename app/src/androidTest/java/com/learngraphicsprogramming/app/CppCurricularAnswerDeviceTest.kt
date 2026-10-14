@@ -5,7 +5,10 @@ import android.app.Application
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -26,6 +29,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 import java.util.UUID
+import java.util.WeakHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -43,14 +47,38 @@ class CppCurricularAnswerDeviceTest {
     private var originalPreferenceFiles = emptySet<String>()
     private var preferencesCaptured = false
     private var screenGuardRegistered = false
+    private val startupCompleted = WeakHashMap<LessonActivity, Long>()
+    private val startupObservations = WeakHashMap<LessonActivity, JSONObject>()
+    private val injectedActivities = WeakHashMap<LessonActivity, String>()
+    private var lastInjectedActivityIdentity: Int? = null
     private val screenGuard = object : Application.ActivityLifecycleCallbacks {
+        override fun onActivityPreCreated(activity: Activity, state: Bundle?) {
+            if (activity is LessonActivity && activity.packageName == QA_PACKAGE)
+                startupObservations[activity] = JSONObject().put("activityIdentity", System.identityHashCode(activity))
+                    .put("preCreateOrientation", activity.resources.configuration.orientation)
+                    .put("preCreateRequestedOrientation", activity.requestedOrientation)
+        }
         override fun onActivityCreated(activity: Activity, state: Bundle?) {
             if (activity is LessonActivity && activity.packageName == QA_PACKAGE) {
                 activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                startupObservations.getOrPut(activity) { JSONObject() }
+                    .put("createdOrientation", activity.resources.configuration.orientation)
+                    .put("createdRequestedOrientation", activity.requestedOrientation)
             }
         }
         override fun onActivityStarted(activity: Activity) = Unit
-        override fun onActivityResumed(activity: Activity) = Unit
+        override fun onActivityResumed(activity: Activity) {
+            if (Build.VERSION.SDK_INT < 29 && activity is LessonActivity && activity.packageName == QA_PACKAGE)
+                startupCompleted[activity] = SystemClock.uptimeMillis()
+        }
+        override fun onActivityPostResumed(activity: Activity) {
+            if (activity is LessonActivity && activity.packageName == QA_PACKAGE) {
+                startupCompleted[activity] = SystemClock.uptimeMillis()
+                startupObservations.getOrPut(activity) { JSONObject() }
+                    .put("postResumeOrientation", activity.resources.configuration.orientation)
+                    .put("postResumeRequestedOrientation", activity.requestedOrientation)
+            }
+        }
         override fun onActivityPaused(activity: Activity) = Unit
         override fun onActivityStopped(activity: Activity) = Unit
         override fun onActivitySaveInstanceState(activity: Activity, state: Bundle) = Unit
@@ -276,13 +304,13 @@ class CppCurricularAnswerDeviceTest {
                 rebuild(scenario, fixture)
                 assertRestoredResponse(scenario, fixture, invalid, false)
                 scenario.recreate()
-                scenario.onActivity { injectFixture(it, fixture) }
+                awaitSourceStartupAndInjectFixture(scenario, fixture)
                 assertRestoredResponse(scenario, fixture, invalid, false)
                 assertResponse(scenario, fixture, valid, true)
                 rebuild(scenario, fixture)
                 assertRestoredResponse(scenario, fixture, valid, true)
                 scenario.recreate()
-                scenario.onActivity { injectFixture(it, fixture) }
+                awaitSourceStartupAndInjectFixture(scenario, fixture)
                 assertRestoredResponse(scenario, fixture, valid, true)
                 scenario.onActivity { activity ->
                     val key = "exercise_${fixture.id}_page_${location.page - 1}_block_${location.block - 1}"
@@ -320,7 +348,7 @@ class CppCurricularAnswerDeviceTest {
                 rebuild(scenario, fixture)
                 assertRestoredResponse(scenario, fixture, submitted, correct)
                 scenario.recreate()
-                scenario.onActivity { injectFixture(it, fixture) }
+                awaitSourceStartupAndInjectFixture(scenario, fixture)
                 assertRestoredResponse(scenario, fixture, submitted, correct)
             }
             scenario.onActivity { activity ->
@@ -405,6 +433,7 @@ class CppCurricularAnswerDeviceTest {
                 val attempts = field(activity, "exerciseAttempts") as ExerciseAttemptLedger
                 val history = attempts.save().toString()
                 val reserve = context.getSharedPreferences(ATTEMPTS, Context.MODE_PRIVATE).all.toMap()
+                diagnoseMissingInputs(activity, fixture, 1, "technical-response")
                 val input = inputs(activity).single()
                 input.setText(answer)
                 assertEquals("Resource errors must receive the raw unmodified input", answer, input.text.toString())
@@ -465,7 +494,7 @@ class CppCurricularAnswerDeviceTest {
             .putExtra("lessonId", FIRST_OUTPUT.lesson).putExtra("lessonNumber", 1).putExtra("lessonTotal", 1)
         try {
             ActivityScenario.launch<LessonActivity>(intent).use { scenario ->
-                scenario.onActivity { injectFixture(it, fixture) }
+                awaitSourceStartupAndInjectFixture(scenario, fixture)
                 instrumentation.waitForIdleSync()
                 test(scenario, fixture)
             }
@@ -484,6 +513,7 @@ class CppCurricularAnswerDeviceTest {
 
     private fun injectFixture(activity: LessonActivity, fixture: Fixture) {
         assertEquals(QA_PACKAGE, activity.packageName)
+        require(activity !in injectedActivities) { "Inject once per prepared Activity; never repair a lost fixture by reinjecting." }
         setField(activity, "currentLessonId", fixture.id)
         setField(activity, "lessonJson", JSONObject(fixture.lesson.toString()))
         setField(activity, "totalPages", fixture.lesson.getJSONArray("pages").length())
@@ -496,8 +526,68 @@ class CppCurricularAnswerDeviceTest {
         assertEquals(fixture.location.page - 1, field(activity, "currentPage"))
         val expectedFields = if (fixture.block.getString("type") == "inline_fill_code")
             Regex("\\[\\]").findAll(fixture.block.getString("template")).count() else 1
+        diagnoseMissingInputs(activity, fixture, expectedFields, "fixture-injected")
         assertEquals("Alternatives do not add blanks to the published template", expectedFields, inputs(activity).size)
         assertEquals(1, field(activity, "requiredExercises"))
+        injectedActivities[activity] = fixture.id
+        lastInjectedActivityIdentity = System.identityHashCode(activity)
+    }
+
+    /** Source JSON is read synchronously by onCreate. Wait for the whole startup and native
+     * configuration/window lifecycle, including a possible replacement Activity, before
+     * installing the isolated lesson. Later replacement remains a diagnosed test failure. */
+    private fun awaitSourceStartupAndInjectFixture(scenario: ActivityScenario<LessonActivity>, fixture: Fixture) {
+        val sourcePages = LessonRepository.loadLessonJson(context, ROUTE, FIRST_OUTPUT.lesson).getJSONArray("pages").length()
+        val deadline = SystemClock.uptimeMillis() + 12_000L
+        var stableSince = 0L
+        var previousKey = ""
+        var samples = 0
+        var diagnostic = ""
+        while (SystemClock.uptimeMillis() < deadline) {
+            instrumentation.waitForIdleSync()
+            var injected = false
+            scenario.onActivity { activity ->
+                val loaded = field(activity, "lessonJson") as? JSONObject
+                val configuration = activity.resources.configuration
+                val root = content(activity)
+                val resumedAt = startupCompleted[activity]
+                val originalReady = !activity.isDestroyed && !activity.isFinishing && resumedAt != null &&
+                    field(activity, "currentLessonId") == FIRST_OUTPUT.lesson && loaded?.optString("id") == FIRST_OUTPUT.lesson &&
+                    field(activity, "currentPage") == 0 && field(activity, "totalPages") == sourcePages &&
+                    mapField(activity, "pageViewCache").containsKey(0) && root.childCount > 0 &&
+                    root.isAttachedToWindow && root.width > 0 && root.height > 0 && !root.isLayoutRequested &&
+                    activity.window.decorView.hasWindowFocus()
+                val key = "${System.identityHashCode(activity)}/${System.identityHashCode(loaded)}/" +
+                    "${System.identityHashCode(root.getChildAt(0))}/${root.width}x${root.height}/" +
+                    "${configuration.orientation}/${configuration.densityDpi}/${configuration.locales.toLanguageTags()}"
+                val now = SystemClock.uptimeMillis()
+                if (!originalReady || key != previousKey) {
+                    stableSince = if (originalReady) now else 0L
+                    samples = if (originalReady) 1 else 0
+                } else samples++
+                previousKey = key
+                diagnostic = "$key originalReady=$originalReady, current=${field(activity, "currentLessonId")}, " +
+                    "loaded=${loaded?.optString("id")}, page=${field(activity, "currentPage")}, " +
+                    "focus=${activity.window.decorView.hasWindowFocus()}, postResume=$resumedAt"
+                if (originalReady && samples >= 4 && now - stableSince >= 500L) {
+                    val metadata = JSONObject(startupObservations[activity]?.toString() ?: "{}")
+                        .put("fixtureId", fixture.id).put("activityIdentity", System.identityHashCode(activity))
+                        .put("sourceLessonId", FIRST_OUTPUT.lesson).put("sourcePages", sourcePages)
+                        .put("postResumeUptime", resumedAt).put("stableStartupMillis", now - stableSince)
+                        .put("stableSamples", samples).put("startupNativeOrientation", configuration.orientation)
+                        .put("startupRequestedOrientation", activity.requestedOrientation)
+                        .put("startupContentWidth", root.width).put("startupContentHeight", root.height)
+                    injectFixture(activity, fixture)
+                    val directory = File(requireNotNull(context.getExternalFilesDir(null)), "cpp-answer-regression-diagnostics").apply { mkdirs() }
+                    File(directory, "prepared-${fixture.id.substringAfterLast("__")}-${System.identityHashCode(activity)}.json")
+                        .writeText(metadata.toString(2))
+                    injected = true
+                }
+            }
+            if (injected) return
+            SystemClock.sleep(100L)
+        }
+        fail("The original lesson Activity did not finish a stable focused startup before QA injection: $diagnostic")
     }
 
     private fun assertPublishedAlternatives(fixture: Fixture, expected: List<List<String>>) {
@@ -514,6 +604,7 @@ class CppCurricularAnswerDeviceTest {
             val existing = ProgressRepository.getExerciseState(activity, fixture.id,
                 fixture.location.page - 1, fixture.location.block - 1)
             if (existing != null) resetButton(activity).performClick()
+            diagnoseMissingInputs(activity, fixture, answers.size, "response-after-optional-reset")
             assertEquals(answers.size, inputs(activity).size)
             inputs(activity).forEachIndexed { index, input ->
                 input.setText(answers[index])
@@ -543,6 +634,7 @@ class CppCurricularAnswerDeviceTest {
     private fun assertRestoredResponse(scenario: ActivityScenario<LessonActivity>, fixture: Fixture,
                                       answers: List<String>, expectedCorrect: Boolean) {
         scenario.onActivity { activity ->
+            diagnoseMissingInputs(activity, fixture, answers.size, "restored-response")
             assertEquals("Reconstruction restores the draft including significant characters",
                 answers, inputs(activity).map { it.text.toString() })
             assertSavedResponse(activity, fixture, answers, expectedCorrect)
@@ -560,6 +652,53 @@ class CppCurricularAnswerDeviceTest {
     }
 
     private fun content(activity: LessonActivity): ViewGroup = activity.findViewById(R.id.lessonContent)
+    /** This records the failing native state without waiting, reinjecting or changing the
+     * original assertion. A later absence must remain a failure even if a screenshot fails. */
+    private fun diagnoseMissingInputs(activity: LessonActivity, fixture: Fixture, expected: Int, checkpoint: String) {
+        val lessonInputs = inputs(activity)
+        if (lessonInputs.size >= expected) return
+        if (activity.packageName != QA_PACKAGE || BuildConfig.APPLICATION_ID != QA_PACKAGE) return
+        val name = "missing-inputs-${SystemClock.uptimeMillis()}-$checkpoint"
+        val directory = File(requireNotNull(context.getExternalFilesDir(null)), "cpp-answer-regression-diagnostics").apply { mkdirs() }
+        val loaded = field(activity, "lessonJson") as JSONObject
+        val page = field(activity, "currentPage") as Int
+        val blocks = loaded.optJSONArray("pages")?.optJSONObject(page)?.optJSONArray("blocks")
+        fun inputDescriptions(list: List<EditText>) = JSONArray().apply { list.forEach { input ->
+            put(JSONObject().put("class", input.javaClass.name).put("tag", input.tag?.toString() ?: JSONObject.NULL)
+                .put("parentClass", (input.parent as? View)?.javaClass?.name ?: JSONObject.NULL)
+                .put("attached", input.isAttachedToWindow).put("shown", input.isShown)
+                .put("windowFocus", input.hasWindowFocus()).put("textLength", input.length())
+                .put("width", input.width).put("height", input.height))
+        } }
+        val metadata = JSONObject().put("checkpoint", checkpoint).put("expectedInputCount", expected)
+            .put("fixtureId", fixture.id).put("fixturePage", fixture.location.page - 1).put("fixtureBlock", fixture.location.block - 1)
+            .put("fixtureBlockType", fixture.block.optString("type"))
+            .put("currentLessonId", field(activity, "currentLessonId")).put("loadedLessonId", loaded.optString("id"))
+            .put("currentPage", page).put("totalPages", field(activity, "totalPages"))
+            .put("exerciseFullscreenActive", field(activity, "exerciseFullscreenActive"))
+            .put("compilerFullscreenActive", field(activity, "compilerFullscreenActive"))
+            .put("activityDestroyed", activity.isDestroyed).put("activityFinishing", activity.isFinishing)
+            .put("activityIdentity", System.identityHashCode(activity)).put("lastInjectedActivityIdentity", lastInjectedActivityIdentity ?: JSONObject.NULL)
+            .put("fixtureInjectedIntoThisActivity", injectedActivities[activity] == fixture.id)
+            .put("currentOrientation", activity.resources.configuration.orientation).put("currentRequestedOrientation", activity.requestedOrientation)
+            .put("lessonContentAttached", content(activity).isAttachedToWindow)
+            .put("lessonContentInputCount", lessonInputs.size).put("lessonContentInputs", inputDescriptions(lessonInputs))
+            .put("decorViewInputs", inputDescriptions(descendants(activity.window.decorView).filterIsInstance<EditText>()))
+            .put("blockTypesAtCurrentPage", JSONArray().apply { if (blocks != null)
+                for (index in 0 until blocks.length()) put(blocks.optJSONObject(index)?.optString("type") ?: JSONObject.NULL) })
+            .put("lessonContentClassesAndTags", JSONArray(descendants(content(activity)).map {
+                "${it.javaClass.name}:${it.tag ?: ""}"
+            }))
+        runCatching {
+            val screenshot = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
+            try { File(directory, "$name.png").outputStream().use {
+                check(screenshot.compress(Bitmap.CompressFormat.PNG, 100, it))
+            } } finally { screenshot.recycle() }
+            metadata.put("nativeScreenshot", "$name.png")
+        }.onFailure { metadata.put("screenshotError", it.toString()) }
+        runCatching { File(directory, "$name.json").writeText(metadata.toString(2)) }
+        println("CPP missing-input native evidence: $name; expected=$expected actual=${lessonInputs.size}")
+    }
     private fun preferenceFiles(): Set<String> = File(context.applicationInfo.dataDir, "shared_prefs")
         .listFiles().orEmpty().filter { it.name.endsWith(".xml") }.map { it.name.removeSuffix(".xml") }.toSet()
     private fun inputs(activity: LessonActivity) = descendants(content(activity)).filterIsInstance<EditText>()
