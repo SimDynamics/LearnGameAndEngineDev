@@ -1,0 +1,644 @@
+{
+  "id": "math_course_01__fracciones_y_equivalencia__comparar_fracciones",
+  "title": "Comparing Fractions with a Common Unit",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Use Benchmarks Before Calculating"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comparing fractions means ordering numbers with respect to the same unit. Zero, one half, and one are useful benchmarks. A positive fraction whose numerator is less than its denominator is less than one; if the numerator exceeds the denominator, it is greater than one. To determine whether 7/12 exceeds one half, remember that six twelfths make one half: seven twelfths are one twelfth greater."
+        },
+        {
+          "type": "paragraph",
+          "text": "If fractions have the same positive denominator, their parts are the same size, so you only need to compare numerators. Five eighths are greater than three eighths because there are two extra parts. If they have the same positive numerator, the situation changes: five sixths are greater than five ninths because each sixth is larger than each ninth. A larger denominator does not mean a larger number."
+        },
+        {
+          "type": "paragraph",
+          "text": "These observations let you choose an efficient strategy. To compare 5/11 with 7/12, the first is less than one half and the second is greater. You do not need decimals or a large common denominator. Your comparison should explain which benchmark or shared unit makes the order clear."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "referencia_mitad",
+          "prompt": "Without converting to decimals, compare 8/17 and 5/9 using one half.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "8/17 > 5/9 because eight is greater than five.",
+                  "reviewFeedback": "Your argument compares the number of parts without considering their size. Interpret the chosen fraction's denominator before comparing numerators."
+                },
+                {
+                  "id": "b",
+                  "label": "8/17 < 1/2 < 5/9, so 8/17 < 5/9.",
+                  "reviewFeedback": "Check separately how each fraction compares with the proposed benchmark. Justify each inequality without decimal approximations."
+                },
+                {
+                  "id": "c",
+                  "label": "They are equal because both are between zero and one.",
+                  "reviewFeedback": "Being in the same interval does not mean being at the same point. Consider what check would be needed to justify the equality you chose."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Twice 8/17 is 16/17, less than one; twice 5/9 is 10/9, greater than one. One half separates the values.",
+            "incorrect": "The numerators count parts of different sizes. Sharing an interval does not mean sharing a point."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convert to Equal-Sized Parts"
+        },
+        {
+          "type": "paragraph",
+          "text": "When a benchmark is not enough, find a positive common denominator. To compare 7/12 and 5/8, use twenty-fourths: \\(\\frac{7}{12}=\\frac{14}{24}\\) and \\(\\frac{5}{8}=\\frac{15}{24}\\). Fourteen parts are fewer than fifteen parts of the same size. The first fraction is smaller, even though its original numerator, seven, is greater than five."
+        },
+        {
+          "type": "paragraph",
+          "text": "The product of the denominators always gives a common denominator, but it can produce unnecessarily small parts. The least common multiple usually reduces the work. In this example, 24 is enough; 96 would also work. The important thing is to transform both fractions without changing their value, not necessarily to find the smallest denominator."
+        },
+        {
+          "type": "paragraph",
+          "text": "With positive denominators, cross products also let you compare fractions. For 7/12 and 5/8, compare 7 × 8 with 5 × 12: 56 < 60. This is equivalent to comparing the numerators after converting both fractions to denominator 96. Do not use the inequality rule without checking the denominators' signs: make them positive first."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparacion_comun",
+          "prompt": "Compare 5/6 and 7/9. Choose the comparison sign and enter the least positive common denominator.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5/6 < 7/9",
+                  "reviewFeedback": "To justify the less-than sign you chose, express the quantities as equal-sized parts. Preserve the value of each fraction as you do so."
+                },
+                {
+                  "id": "b",
+                  "label": "5/6 = 7/9",
+                  "reviewFeedback": "An equality between fractions requires an exact check. See whether their representations using the same fractional unit coincide."
+                },
+                {
+                  "id": "c",
+                  "label": "5/6 > 7/9",
+                  "reviewFeedback": "Justify the greater-than sign you chose using equal-sized parts. Also check that the denominator you entered is the smallest possible one."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            },
+            {
+              "id": "den",
+              "type": "math_numeric_input",
+              "label": "Least common denominator",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "18"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5/6 = 15/18 and 7/9 = 14/18. Fifteen eighteenths exceed fourteen; lcm(6,9) = 18.",
+            "incorrect": "54 is a common denominator, but it is not the least one requested. Comparing five with seven without transforming the parts reverses the conclusion here."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ordering Negative Fractions"
+        },
+        {
+          "type": "paragraph",
+          "text": "A negative fraction lies to the left of zero. The farther it is from zero, the smaller the number. That is why −5/6 is less than −1/3. You cannot simply copy the order of positive fractions and add negative signs without changing the order: reflecting the points across zero reverses which one lies farther left."
+        },
+        {
+          "type": "paragraph",
+          "text": "To compare −7/10 and −2/3, convert both to thirtieths: they become −21/30 and −20/30. Negative twenty-one is less than negative twenty, so −7/10 < −2/3. You can also observe that 7/10 > 2/3 and then reverse the inequality when taking their opposites. A common denominator lets you check the sign instead of relying on an isolated rule."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden_con_signos",
+          "prompt": "Arrange the five numbers from least to greatest. All use the same unit, and no two have the same value.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "orden",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "−5/6"
+                },
+                {
+                  "id": "b",
+                  "label": "−1/3"
+                },
+                {
+                  "id": "c",
+                  "label": "0"
+                },
+                {
+                  "id": "d",
+                  "label": "3/8"
+                },
+                {
+                  "id": "e",
+                  "label": "2/3"
+                }
+              ],
+              "initialOrder": [
+                "d",
+                "a",
+                "e",
+                "c",
+                "b"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−5/6 < −1/3 < 0 < 3/8 < 2/3. Negatives come before zero; among them, the number farther from zero is smaller.",
+            "incorrect": "Do not order negative fractions by their numerators as though they were positive. For 3/8 and 2/3, you can use twenty-fourths: 9/24 < 16/24."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "negativos",
+          "prompt": "Which reasoning correctly compares −4/7 and −3/5?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−20/35 > −21/35, so −4/7 > −3/5.",
+                  "reviewFeedback": "Check that the conversions preserve the sign and place the converted numbers on a number line. Distinguish the value from the distance to zero."
+                },
+                {
+                  "id": "b",
+                  "label": "−4/7 < −3/5 because four is greater than three.",
+                  "reviewFeedback": "Your argument uses the numerator alone to measure size. Check the fractional unit first, then the effect of the negative sign on the order."
+                },
+                {
+                  "id": "c",
+                  "label": "Any two negative numbers are always the same distance from zero.",
+                  "reviewFeedback": "Your chosen statement assigns the same distance to all negative numbers. Consider what their magnitudes tell you beyond their signs."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Negative twenty thirty-fifths is closer to zero than negative twenty-one thirty-fifths. Also, 4/7 < 3/5, and taking opposites reverses the order.",
+            "incorrect": "The numerator alone does not determine the order between different partitions. Being negative does not make magnitudes equal."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose a Method and Check It"
+        },
+        {
+          "type": "paragraph",
+          "text": "A reasoned answer can be brief: name the common unit or a benchmark that separates the numbers. Before finishing, check the expected sign and interval. A negative number cannot lie to the right of zero; a positive proper fraction cannot exceed one. These checks catch errors without repeating every calculation."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "entre_referencias",
+          "prompt": "Select all numbers strictly between 1/2 and 3/4. Do not include the endpoints.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dentro",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5/8",
+                  "reviewFeedback": "For the selected fraction in eighths, compare its position with both bounds using compatible partitions. Also consider what \"strictly\" requires."
+                },
+                {
+                  "id": "b",
+                  "label": "2/3",
+                  "reviewFeedback": "For the selected fraction in thirds, make an exact comparison with each bound. A single inequality is not enough to establish that it lies within the interval."
+                },
+                {
+                  "id": "c",
+                  "label": "3/4",
+                  "reviewFeedback": "For the selected fraction, distinguish being equal to a bound from lying between the bounds. Apply the condition about endpoints literally."
+                },
+                {
+                  "id": "d",
+                  "label": "4/9",
+                  "reviewFeedback": "For the selected fraction in ninths, check both sides of the interval. Do not rely only on the fraction being positive and less than one."
+                },
+                {
+                  "id": "e",
+                  "label": "7/10",
+                  "reviewFeedback": "For the selected fraction in tenths, check each bound separately. Use equivalent fractions that preserve the size of the quantity."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5/8, 2/3, and 7/10 lie between both benchmarks. Common denominators let you check each bound; 3/4 is an endpoint and is excluded.",
+            "incorrect": "3/4 does not satisfy \"strictly between\": it equals the upper endpoint. 4/9 is less than 1/2 because 8 < 9. Check two conditions for each candidate, not just one."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tramos",
+          "prompt": "Two pieces from the same roll measure 11/15 m and 3/4 m. Which one is longer?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pieza",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The 11/15 m piece.",
+                  "reviewFeedback": "Your chosen piece is measured in fifteenths. Before explaining why it is longer, convert its length to a fractional unit that allows lengths to be compared."
+                },
+                {
+                  "id": "b",
+                  "label": "The 3/4 m piece.",
+                  "reviewFeedback": "Justify your choice by comparing lengths with the same unit and equal-sized parts. Make sure your conclusion is not based on the numerator alone."
+                },
+                {
+                  "id": "c",
+                  "label": "They are the same length.",
+                  "reviewFeedback": "Your choice claims the lengths are equal. Test that equality using exact equivalent fractions; being close is not enough."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "11/15 = 44/60 and 3/4 = 45/60. The second piece is one sixtieth of a meter longer.",
+            "incorrect": "Eleven parts of one size and three of another cannot be compared merely by counting. Being close in length is not enough either: 44/60 and 45/60 differ."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cases That Change the Method"
+        },
+        {
+          "type": "paragraph",
+          "text": "With equal positive numerators, the smaller denominator gives larger parts. With the same positive denominator, taking more parts gives a larger number. If a denominator is negative, normalize the sign first. No rule that looks only at the numerator or only at the denominator works in every case."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mismo_numerador",
+          "prompt": "Compare 4/9 and 4/7. Choose an explanation based on the size of the parts.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4/9 > 4/7 because nine is greater than seven.",
+                  "reviewFeedback": "Your argument treats a larger denominator as making each part larger. Imagine dividing the same unit into the specified number of parts, and examine the size of each."
+                },
+                {
+                  "id": "b",
+                  "label": "They are equal because both contain four parts.",
+                  "reviewFeedback": "Your explanation counts the parts but does not compare their sizes. Consider what changes in each part when the unit is divided differently."
+                },
+                {
+                  "id": "c",
+                  "label": "4/9 < 4/7 because one ninth is smaller than one seventh and four are taken.",
+                  "reviewFeedback": "Check that your reasoning uses the same whole unit and the same number of parts taken. Justify the comparison from those conditions."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "With the same positive numerator, four smaller parts make a smaller quantity.",
+            "incorrect": "The denominator does not count the parts taken: it determines their size. Having four parts does not mean the quantities are equal when the parts differ in size."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "signos_denominadores",
+          "prompt": "Select all true comparisons. Normalize denominators before deciding.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5/−8 < −2/3",
+                  "reviewFeedback": "In the selected comparison, make the negative denominator positive without changing the value. Then check the inequality using equal-sized parts."
+                },
+                {
+                  "id": "b",
+                  "label": "−5/8 > −2/3",
+                  "reviewFeedback": "In the selected comparison, review the order of the negative positions and preserve the signs when finding a common denominator."
+                },
+                {
+                  "id": "c",
+                  "label": "−7/−6 > 1",
+                  "reviewFeedback": "In the selected expression, determine the combined effect of the signs before comparing with one. Do not decide from an isolated sign."
+                },
+                {
+                  "id": "d",
+                  "label": "0/−4 < −1/9",
+                  "reviewFeedback": "In the selected comparison, identify the value represented by a zero numerator with a nonzero divisor. Place it on the number line before comparing."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−5/8 = −15/24 > −16/24 = −2/3. −7/−6 is 7/6, which is greater than one. 0/−4 is zero and exceeds any negative number.",
+            "incorrect": "5/−8 represents −5/8; it does not change the comparison in b. Two negative signs give a positive result, and a negative denominator does not make zero negative."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "impropias_cercanas",
+          "prompt": "Compare 13/8 and 8/5, both greater than one. Enter their difference: first minus second.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Difference",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/40"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "13/8 is greater.",
+                  "reviewFeedback": "Check your chosen comparison by finding the sign of the requested difference. Keep the order \"first minus second\" when calculating it."
+                },
+                {
+                  "id": "b",
+                  "label": "8/5 is greater.",
+                  "reviewFeedback": "Connect the order you chose to the sign of the difference \"first minus second.\" Use common parts for an exact check."
+                },
+                {
+                  "id": "c",
+                  "label": "They are equal because both exceed one.",
+                  "reviewFeedback": "Your argument uses a shared bound to claim equality. Check whether exceeding the same benchmark determines an exact position."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "13/8 = 65/40 and 8/5 = 64/40. The difference is 1/40, which is positive.",
+            "incorrect": "Being greater than one does not make two fractions equal. Fortieths make the difference between two close measures comparable."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "igualdad_disfrazada",
+          "prompt": "What is the relationship between 14/21 and 10/15?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "14/21 is greater because fourteen is greater than ten.",
+                  "reviewFeedback": "Your argument compares numerators without checking the partitions. See whether the selected fraction can be reduced without changing its value."
+                },
+                {
+                  "id": "b",
+                  "label": "They are equal: both simplify to 2/3.",
+                  "reviewFeedback": "Verify the proposed simplifications by applying the same factor to the numerator and denominator. Check that each equality preserves the value."
+                },
+                {
+                  "id": "c",
+                  "label": "10/15 is greater because fifteen is less than twenty-one.",
+                  "reviewFeedback": "Your argument uses only the denominator to order fractions. Also consider how many parts are taken and whether simplifying them makes the value clearer."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "14/21 = 2/3 = 10/15. A comparison may result in equality rather than a greater number.",
+            "incorrect": "Looking at only one term can create a false order between two representations of the same number."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_estrategia",
+          "prompt": "To compare 19/20 and 21/20, which strategy is enough, and why?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Compare 19 and 21: the parts are already twentieths.",
+                  "reviewFeedback": "Review the condition that lets you compare numerators in this case. Identify what already fixes the size of the parts."
+                },
+                {
+                  "id": "b",
+                  "label": "Add the denominators to convert them into fortieths.",
+                  "reviewFeedback": "Your strategy adds denominators. Check whether that transformation preserves the fractions' values before using it to order them."
+                },
+                {
+                  "id": "c",
+                  "label": "Find the GCD of 19 and 21, because every comparison is a simplification.",
+                  "reviewFeedback": "Your strategy looks for common factors in the numerators. Reconsider what information a comparison requires and what information simplification provides."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The shared positive denominator already determines the size of the parts. Nineteen twentieths are less than twenty-one.",
+            "incorrect": "Adding denominators changes the numbers. The GCD of the numerators does not determine this comparison."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cotas_sin_decimal",
+          "prompt": "Select all numbers strictly between 1 and 3/2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "9/8",
+                  "reviewFeedback": "For the selected fraction in eighths, compare exactly with both bounds. Distinguish exceeding one bound from satisfying both conditions."
+                },
+                {
+                  "id": "b",
+                  "label": "3/2",
+                  "reviewFeedback": "For the selected fraction, check whether the condition allows equality with an endpoint or requires a strict inequality."
+                },
+                {
+                  "id": "c",
+                  "label": "7/6",
+                  "reviewFeedback": "For the selected fraction in sixths, check how far it exceeds one and compare that amount with the upper bound."
+                },
+                {
+                  "id": "d",
+                  "label": "11/7",
+                  "reviewFeedback": "For the selected fraction in sevenths, use a common fractional unit to check the upper bound, and check the lower bound too."
+                },
+                {
+                  "id": "e",
+                  "label": "5/4",
+                  "reviewFeedback": "For the selected fraction in fourths, check its relationship with each bound. Keep the same whole unit for both comparisons."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9/8, 7/6, and 5/4 are greater than one and less than three halves. 3/2 is the endpoint, and 11/7 exceeds it.",
+            "incorrect": "Check both bounds. Exceeding one is necessary but not sufficient; \"strictly\" excludes the endpoint 3/2."
+          }
+        }
+      ]
+    }
+  ]
+}
