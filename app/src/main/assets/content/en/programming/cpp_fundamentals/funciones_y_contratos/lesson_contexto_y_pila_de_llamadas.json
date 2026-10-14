@@ -1,0 +1,274 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__contexto_y_pila_de_llamadas",
+  "title": "Call Context and the Call Stack",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Active Call Retains What It Needs to Continue"
+        },
+        {
+          "type": "paragraph",
+          "text": "You already know that each call has its own parameters and local objects, and that one function can wait for another function's result. Now we will organize that context: which call is executing its body, which calls are waiting, and where work resumes when a call returns. A call stays active from its beginning until it finishes, even while waiting for an inner call."
+        },
+        {
+          "type": "paragraph",
+          "text": "An activation record models a call's context: its parameters, the local objects it needs, and the information for returning to the appropriate point in its caller. A by-value parameter contains its own value; a reference binds to the object supplied under its contract. An activation record does not turn every input into a copy of its object."
+        },
+        {
+          "type": "paragraph",
+          "text": "The call stack organizes these records using last in, first out. The lists in this lesson show only main and our functions, not internal library calls. This is a model for reasoning about execution. An implementation may organize or optimize its storage, so we will not infer memory addresses, byte counts, or an exact physical layout."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "main calls exterior, and exterior is waiting for interior to finish. Which of these three calls is currently executing its body?",
+          "options": [
+            "main, because it started first.",
+            "exterior and main must have finished before interior could begin.",
+            "interior, while exterior and main retain their contexts."
+          ],
+          "correctIndex": 2,
+          "explanation": "The most recent call is doing the work. The earlier ones remain active while waiting for the result they need."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Local Name Does Not Replace Its Caller's Context"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint interior(int dato) {\n    const int guardado = dato * 2;\n    std::cout << \"I:\" << dato << \":\" << guardado << \"|\";\n    return guardado;\n}\n\nint exterior(int dato) {\n    const int guardado = dato + 1;\n    std::cout << \"E:\" << guardado << \"|\";\n    const int recibido = interior(guardado);\n    std::cout << \"V:\" << guardado << \":\" << recibido << \"|\";\n    return guardado + recibido;\n}\n\nint main() {\n    const int dato = 2;\n    const int resultado = exterior(dato);\n    std::cout << \"M:\" << dato << \":\" << resultado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The guided example produces E:3|I:3:6|V:3:6|M:2:9. exterior retains guardado equal to three while interior has a different guardado equal to six. After returning, exterior uses its own three and the received result six. main retains its value two and then receives nine. The name guardado does not identify one shared object across these calls."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n\nint interior(int dato) {\n    const int guardado = dato * 2;\n    std::cout << \"I:\" << dato << \":\" << guardado << \"|\";\n    return guardado;\n}\n\nint exterior(int dato) {\n    const int guardado = dato + 1;\n    std::cout << \"E:\" << guardado << \"|\";\n    const int recibido = interior(guardado);\n    std::cout << \"V:\" << guardado << \":\" << recibido << \"|\";\n    return guardado + recibido;\n}\n\nint main() {\n    const int dato = 4;\n    const int resultado = exterior(dato);\n    std::cout << \"M:\" << dato << \":\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "E:5|I:5:10|V:5:10|M:4:15"
+          ],
+          "explanation": "exterior retains five during the interior call. interior returns ten; exterior combines both values, and main receives fifteen."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "When interior in the example calculates guardado, which list shows our active calls from oldest to newest?",
+          "options": [
+            "main → exterior → interior.",
+            "interior → exterior → main.",
+            "main → interior; exterior no longer exists."
+          ],
+          "correctIndex": 0,
+          "explanation": "exterior has not returned: it is waiting for interior while retaining its context. The list begins with the oldest call."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Returning Removes a Call and Resumes the Previous One"
+        },
+        {
+          "type": "paragraph",
+          "text": "When interior returns its result, that call ends and its local context is no longer active. exterior resumes at the statement that needed the result, can finish initializing recibido, and continues. When exterior returns, main completes its own initialization of resultado. Returning a value lets the caller use it even after the completed call's local objects have ceased to exist."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "interior has returned, and exterior has just finished initializing recibido but has not yet returned. Which of our calls remain active?",
+          "options": [
+            "main → exterior → interior.",
+            "main → exterior.",
+            "main only."
+          ],
+          "correctIndex": 1,
+          "explanation": "The interior call has finished. exterior continues its work, and main is still waiting for its result."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n\nint interior(int dato) {\n    const int guardado = dato * 2;\n    std::cout << \"I:\" << dato << \":\" << guardado << \"|\";\n    return guardado;\n}\n\nint exterior(int dato) {\n    const int guardado = dato + 1;\n    std::cout << \"E:\" << guardado << \"|\";\n    const int recibido = interior(guardado);\n    std::cout << \"V:\" << guardado << \":\" << recibido << \"|\";\n    return guardado + recibido;\n}\n\nint main() {\n    const int primero = exterior(1);\n    const int segundo = exterior(3);\n    std::cout << \"R:\" << primero << \":\" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "E:2|I:2:4|V:2:4|E:4|I:4:8|V:4:8|R:6:12"
+          ],
+          "explanation": "The first chain of calls finishes before the second begins. Each new call creates its own context."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "main calls exterior twice in successive statements. Each exterior calls interior once. Counting only main, exterior, and interior, what is the maximum number of simultaneously active calls?",
+          "options": [
+            "Two: a function cannot remain active when it calls another.",
+            "Five: every call made accumulates until main ends.",
+            "Three: main and the exterior/interior pair of the current call."
+          ],
+          "correctIndex": 2,
+          "explanation": "Calls that have returned are no longer active. The total number of calls made and maximum depth are different measures."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Context Does Not Execute Declarations on Paths That Are Skipped"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall the paths through return. Ordinary local objects are initialized when execution reaches their declarations. A call may return before reaching a declaration or another call. The activation-record model does not mean every line of the body has been executed in advance."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n\nint doble(int dato) {\n    std::cout << \"D:\" << dato << \"|\";\n    return dato * 2;\n}\n\nint inspeccionar(int dato) {\n    std::cout << \"I:\" << dato << \"|\";\n    if (dato == 0) {\n        std::cout << \"Base|\";\n        return 0;\n    }\n    const int recibido = doble(dato);\n    std::cout << \"V:\" << recibido << \"|\";\n    return recibido;\n}\n\nint main() {\n    const int resultado = inspeccionar(0);\n    std::cout << \"M:\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "I:0|Base|M:0"
+          ],
+          "explanation": "The return in the zero case avoids the call to doble and the later declaration of recibido."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n\nint doble(int dato) {\n    std::cout << \"D:\" << dato << \"|\";\n    return dato * 2;\n}\n\nint inspeccionar(int dato) {\n    std::cout << \"I:\" << dato << \"|\";\n    if (dato == 0) {\n        std::cout << \"Base|\";\n        return 0;\n    }\n    const int recibido = doble(dato);\n    std::cout << \"V:\" << recibido << \"|\";\n    return recibido;\n}\n\nint main() {\n    const int resultado = inspeccionar(3);\n    std::cout << \"M:\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "I:3|D:3|V:6|M:6"
+          ],
+          "explanation": "inspeccionar waits for doble; after receiving six, it continues with its output and returns the result to main."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In inspeccionar(0), why do we not add a call to doble to our stack?",
+          "options": [
+            "Because inspeccionar can never call another function.",
+            "Because this execution path returns before reaching that call.",
+            "Because defining doble means it must run at some other time."
+          ],
+          "correctIndex": 1,
+          "explanation": "An available definition does not mean its body executes. The selected path reaches the earlier return."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review Recursion Using Separate Contexts"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall the recursive sum already studied: for a positive nivel, the function waits for the preceding level's result; zero is the base case. This trace uses levels zero through three. It adds no new summation rule; it shows when each call enters and returns. E marks entry and S marks exit before returning."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n\nint sumar_con_traza(int nivel) {\n    std::cout << \"E\" << nivel << \"|\";\n    if (nivel == 0) {\n        std::cout << \"S0|\";\n        return 0;\n    }\n    const int recibido = sumar_con_traza(nivel - 1);\n    const int resultado = nivel + recibido;\n    std::cout << \"S\" << nivel << \":\" << resultado << \"|\";\n    return resultado;\n}\n\nint main() {\n    const int resultado = sumar_con_traza(2);\n    std::cout << \"M:\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "E2|E1|E0|S0|S1:1|S2:3|M:3"
+          ],
+          "explanation": "Calls enter down to zero. Then zero returns, the call at level one completes one, and the call at level two completes three."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Just as sumar_con_traza(3) enters its base case, counting main and those recursive calls, which list is active?",
+          "options": [
+            "main → level 3 → level 2 → level 1 → level 0.",
+            "main → level 0 → level 1 → level 2 → level 3.",
+            "main → level 0; the previous calls have lost their parameters."
+          ],
+          "correctIndex": 0,
+          "explanation": "Each call retains its own nivel and continuation. The newest call is the base case."
+        },
+        {
+          "type": "paragraph",
+          "text": "A function may have several active calls with the same name and different parameters. The call at level one does not change the level of the call at level two. On return, the completed context disappears and the waiting context resumes. The number of active calls matters even when all use one function definition."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Trace from a Minimal main"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build two functions and connect them from main. The permitted initial input is between zero and seven. pieza(int dato), called here with values from three through ten, prints P+ followed by its argument, calculates a local object guardado as twice that value, and prints P- followed by guardado; it returns that local value. conjunto(int dato) creates another guardado equal to dato+3, prints C+ followed by that value, calls pieza(guardado), stores the result in recibido, prints C-guardado:recibido, and returns their sum. Each marker occupies its own line."
+        },
+        {
+          "type": "paragraph",
+          "text": "main validates its input before printing any marker. If invalid, it prints only Invalid data and never calls conjunto. If valid, it prints M+dato, obtains conjunto's result, and prints M-dato:resultado. Use four as the initial case. The markers must come from the statements executed by the calls, not a fixed trace. Both local objects must have the same name guardado to show that they belong to different contexts."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Build the functions and tests described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before executing, list the active calls among main, conjunto, and pieza while pieza runs and after it returns. Predict every line for zero and seven. Also test -1 and 8 as rejections. Intermediate values range from three to ten, their doubles from six to twenty, and the result from nine to thirty; all arithmetic fits in int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference and Trace Criteria"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint pieza(int dato) {\n    std::cout << \"P+\" << dato << \"\\n\";\n    const int guardado = dato * 2;\n    std::cout << \"P-\" << guardado << \"\\n\";\n    return guardado;\n}\n\nint conjunto(int dato) {\n    const int guardado = dato + 3;\n    std::cout << \"C+\" << guardado << \"\\n\";\n    const int recibido = pieza(guardado);\n    std::cout << \"C-\" << guardado << \":\" << recibido << \"\\n\";\n    return guardado + recibido;\n}\n\nint main() {\n    const int dato = 4;\n    if (dato < 0 || dato > 7) {\n        std::cout << \"Invalid data\";\n        return 0;\n    }\n    std::cout << \"M+\" << dato << \"\\n\";\n    const int resultado = conjunto(dato);\n    std::cout << \"M-\" << dato << \":\" << resultado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "For input four, the lines are M+4, C+7, P+7, P-14, C-7:14, and M-4:21. While pieza runs, our model shows main → conjunto → pieza; afterward, main → conjunto remain. Criteria: every marker appears when its statement is reached; conjunto retains guardado during the call; recibido is combined with the appropriate local value; main retains its input; invalid inputs are rejected before any marker. Constants that merely imitate the initial trace are not accepted."
+        },
+        {
+          "type": "paragraph",
+          "text": "For zero: M+0, C+3, P+3, P-6, C-3:6, and M-0:9. For seven: M+7, C+10, P+10, P-20, C-10:20, and M-7:30. -1 and 8 produce only Invalid data. Another implementation is valid if it preserves the responsibilities, contracts, and sequence. The markers make some of the work visible; they do not measure the implementation's physical storage."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer the Model to Another Composition"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n\nint sumar_con_traza(int nivel) {\n    std::cout << \"E\" << nivel << \"|\";\n    if (nivel == 0) {\n        std::cout << \"S0|\";\n        return 0;\n    }\n    const int recibido = sumar_con_traza(nivel - 1);\n    const int resultado = nivel + recibido;\n    std::cout << \"S\" << nivel << \":\" << resultado << \"|\";\n    return resultado;\n}\n\nint main() {\n    const int resultado = sumar_con_traza(1);\n    std::cout << \"M:\" << resultado;\n    return 0;\n}\n",
+          "answers": [
+            "E1|E0|S0|S1:1|M:1"
+          ],
+          "explanation": "Two sumar_con_traza calls are active upon entering zero, in addition to main. Each returns once."
+        },
+        {
+          "type": "paragraph",
+          "text": "In another session, take a composition you already know how to build and add entry and return markers. First write down which call waits for which other call and what values each must retain. Then change the data or a branch that skips a call. Compare your list with the trace without confusing a list of names in the source text with calls actually executed."
+        },
+        {
+          "type": "paragraph",
+          "text": "To explain the result, distinguish three things: a name's scope, a call's context, and the value delivered on return. Correctness does not depend on memorizing a number of records or a memory address. This model prepares you to read a call chain while debugging and to understand recursive functions already bounded by their contracts."
+        },
+        {
+          "type": "note",
+          "text": "The call model is discussed in the primary source (Stroustrup, 2024, section 7.4.8, pp. 201–204). The model, input domains, traces, and activities in this learning path are original."
+        }
+      ]
+    }
+  ]
+}

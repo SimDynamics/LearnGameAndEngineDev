@@ -1,0 +1,362 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion",
+  "title": "Récursion finie et comparaison avec les boucles",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une fonction peut s'appeler elle-même"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une fonction récursive s'appelle elle-même, directement ou indirectement. Pour l'utiliser ici, il faut un cas de base qui renvoie un résultat sans nouvel appel et une étape qui rapproche les données de ce cas. Le domaine doit rendre cette progression possible. Le calcul suivant reçoit pendientes entre 0 et 8."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint pasos_hasta_cero(int pendientes) {\n    if (pendientes == 0) {\n        return 0;\n    }\n    return 1 + pasos_hasta_cero(pendientes - 1);\n}\n\nint main() {\n    std::cout << pasos_hasta_cero(3);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'appel avec 3 attend 1 plus le résultat de l'appel avec 2 ; celui-ci attend le résultat de l'appel avec 1 ; et l'appel avec 0 renvoie 0 sans continuer. Les résultats en attente sont ensuite complétés : 1, 2 et 3. Chaque appel a son propre paramètre. Le fait que le nom soit identique ne transforme pas tous les paramètres pendientes en un seul objet."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quels deux éléments justifient la terminaison pour un argument compris entre 0 et 8 ?",
+          "options": [
+            "Que return apparaisse après une addition.",
+            "Seulement le nom de la fonction.",
+            "Le cas de base à 0 qui renvoie et l'argument qui diminue de 1."
+          ],
+          "correctIndex": 2,
+          "explanation": "Une valeur non négative qui diminue atteint zéro, et le cas de base n'effectue aucun autre appel."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Attendre un résultat pour en compléter un autre"
+        },
+        {
+          "type": "output_prediction",
+          "question": "La fonction additionne les entiers de 1 à tope, avec tope entre 0 et 8. Prévois son résultat.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint suma_hasta(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_hasta(tope - 1);\n}\n\nint main() {\n    std::cout << suma_hasta(4);\n    return 0;\n}\n",
+          "answers": [
+            "10"
+          ],
+          "explanation": "Le calcul complète 4 + 3 + 2 + 1 + 0. Le cas de base apporte 0 et permet aux appels en attente de se terminer."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour tope égal à 3, considère suma_hasta(3) comme 3 + suma_hasta(2), et non comme le remplacement de tous les paramètres par la dernière valeur. Chaque appel conserve ce dont il a besoin pour terminer sa propre addition lorsqu'il reçoit le résultat de l'appel suivant. Le résultat maximal dans ce domaine est 36 et il y a au plus neuf appels actifs."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel résultat correspond au cas de base suma_hasta(0) ?",
+          "options": [
+            "0, sans nouvel appel.",
+            "1, car toute fonction récursive doit ajouter un.",
+            "Un autre appel avec -1."
+          ],
+          "correctIndex": 0,
+          "explanation": "La somme d'aucun entier positif vaut zéro. Le cas de base renvoie directement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le même résultat au moyen d'une boucle"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous pouvons exprimer cette somme avec un accumulateur et une boucle. La version itérative fait avancer son compteur vers la limite ; la version récursive réduit son argument jusqu'à zéro. Les deux ont besoin d'un domaine, d'un état initial approprié et d'une justification de terminaison. Pour ce problème linéaire, leur comparaison est simple."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    std::cout << suma_iterativa(2) << \" \" << suma_recursiva(2);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que compare-t-on lorsqu'on teste les deux versions avec les mêmes données valides ?",
+          "options": [
+            "Le fait qu'elles utilisent toutes deux un paramètre par référence.",
+            "Seulement leur nombre de lignes.",
+            "Les valeurs renvoyées et le résultat attendu du problème."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'équivalence concerne le calcul promis. L'organisation interne peut différer."
+        },
+        {
+          "type": "note",
+          "text": "Un appel récursif conserve temporairement son contexte pendant qu'il en attend un autre. Les détails de ce mécanisme seront étudiés plus tard. Ici, nous limitons le domaine pour conserver une petite profondeur et de petits résultats ; nous n'utilisons pas de récursion sans borne."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Atelier : comparer le cas de base, un cas intérieur et la borne supérieure"
+        },
+        {
+          "type": "paragraph",
+          "text": "tope est déclaré avec la valeur 3. Prévois les deux réponses puis exécute. Teste ensuite 0, 1 et 8 ; calcule d'abord la somme attendue pour chaque donnée. Enfin, teste -1 et 9 : main doit les rejeter sans appeler les fonctions. Conserve la validation et les étapes qui rapprochent chaque version de sa fin."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 3;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Hors domaine\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Avec tope égal à 8, que doivent renvoyer les deux versions ?",
+          "options": [
+            "0 36",
+            "36 36",
+            "8 8"
+          ],
+          "correctIndex": 1,
+          "explanation": "La somme des entiers de 1 à 8 vaut 36. Les deux parcours respectent le même contrat."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour une comparaison finie, remplace temporairement le return 0 du cas de base récursif par return 1. Prévois le cas tope égal à 0 et compare-le à la version itérative. Rétablis ensuite 0 : ce changement permet encore de terminer, mais ne calcule plus la somme promise."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Expliquer la terminaison avant d'exécuter"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pour un appel récursif dont pendientes est positif et doit atteindre zéro, quel argument progresse vers le cas de base ?",
+          "options": [
+            "pendientes",
+            "pendientes + 1",
+            "pendientes - 1"
+          ],
+          "correctIndex": 2,
+          "explanation": "La soustraction réduit l'entier positif tout en conservant un argument non négatif jusqu'à zéro."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel test isole directement le cas de base de suma_recursiva sans aucun autre appel récursif ?",
+          "options": [
+            "tope égal à 8.",
+            "Un argument hors domaine.",
+            "tope égal à 0."
+          ],
+          "correctIndex": 2,
+          "explanation": "Zéro entre dans le cas de base et renvoie immédiatement. Une donnée rejetée par main ne teste pas ce corps."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant d'accepter une fonction récursive, repère son cas de base, la quantité qui progresse, son domaine et le résultat conservé au retour. Ne teste pas une variante qui répète indéfiniment le même appel. Ce modèle réapparaîtra pour les problèmes pouvant être résolus par parties, avec le choix d'une structure adaptée."
+        },
+        {
+          "type": "note",
+          "text": "Tu sais maintenant nommer des calculs, communiquer leurs domaines, distinguer lecture et modification, composer des fonctions et justifier leurs chemins. Retrouve ces choix pour construire et vérifier une fonction récursive."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : le cas de base et la somme promise"
+        },
+        {
+          "type": "note",
+          "text": "Compare après avoir terminé l'atelier et noté tes résultats prévus. La référence présente une organisation possible ; les critères reconnaissent aussi d'autres implémentations qui respectent les mêmes contrats."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction : les versions itérative et récursive doivent coïncider : tope 3 produit 6 6, 0 produit 0 0, 1 produit 1 1 et 8 produit 36 36. -1 et 9 produisent Hors domaine, sans appel aux fonctions. Si le cas de base récursif renvoie 1, tope 0 produit 0 1 ; avec 3, ce serait 6 7. Cette variante se termine mais ne calcule plus la somme. Rétablis le cas de base à 0."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 0;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Hors domaine\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence teste le cas de base. Pour un tope positif validé, chaque appel récursif utilise un entier non négatif plus petit, tope-1, jusqu'à zéro. La boucle visite les valeurs de 1 à tope et n'exécute aucun tour pour zéro. La validation restreint les deux versions à 0..8 et leurs résultats à 0..36. Prouver la terminaison et vérifier le résultat de la somme sont deux obligations distinctes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compter des paires sans recevoir l'algorithme"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une table possède des jetons et forme des paires complètes : chaque paire exige deux jetons, et un jeton restant ne compte pas comme une paire. La donnée autorisée est un int entre 0 et 12. Construis int parejas_recursivas(int fichas), qui renvoie le nombre de paires complètes qu'on peut former. Son résultat doit dépendre de l'argument et non d'une réponse écrite pour un seul cas."
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction calcule sans afficher et reçoit fichas par valeur, sans modifier l'objet de l'appelant. Choisis quelles quantités peuvent être résolues sans autre appel, comment réduire un cas restant à un cas plus petit et comment compléter le résultat au retour. Utilise la récursion dans cette fonction : ne la remplace ni par une division ni par une boucle. La comparaison itérative vient après ton essai."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, déclare fichas avec la valeur initiale 7. Vérifie le domaine avant d'appeler : une valeur invalide affiche seulement Hors domaine et n'atteint pas parejas_recursivas. Une valeur valide affiche Paires:R;Jetons:F, sans espaces ni saut final, où R est le résultat calculé et F la valeur d'origine conservée. Place la définition avant main ou déclare correctement son interface avant l'appel."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construis la fonction récursive, la validation et l'affichage.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prévois les résultats avant d'exécuter pour 0 et 1, pour la valeur paire 4, la valeur impaire 7 et la borne supérieure 12. Vérifie ensuite les rejets de -1 et 13 sans appel. Pour chaque cas valide, vérifie aussi F : le passage par valeur ne doit pas consommer les jetons de l'objet de main. Il ne suffit pas que le programme se termine : il doit compter les paires promises."
+        },
+        {
+          "type": "note",
+          "text": "Avant d'exécuter ta version, examine l'argument de chaque appel récursif possible : il doit rester dans le domaine, diminuer dans les cas qui continuent et atteindre un cas qui renvoie sans nouvel appel. N'exécute pas de variantes répétant indéfiniment un appel ou quittant le domaine. Consulte la référence après avoir construit et expliqué ta solution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure du comptage de paires"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Précondition : fichas est compris entre 0 et 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint main() {\n    const int fichas = 9;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Hors domaine\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    std::cout << \"Paires:\" << parejas << \";Jetons:\" << fichas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence utilise d'autres données et produit Paires:4;Jetons:9. Ton essai avec 7 produit Paires:3;Jetons:7. Avec 0 et 1, les sorties sont respectivement Paires:0;Jetons:0 et Paires:0;Jetons:1 ; avec 4, Paires:2;Jetons:4 ; avec 12, Paires:6;Jetons:12. Les deux données invalides produisent seulement Hors domaine."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec zéro ou un jeton, aucune paire complète n'existe : les deux cas de base renvoient zéro. Avec au moins deux jetons, la référence sépare une paire et compte les paires restantes. Soustraire deux à une donnée paire atteint zéro ; avec une donnée impaire, cela atteint un. Vérifier seulement le cas de base zéro ne couvre pas ce deuxième parcours. L'étape doit atteindre une base appropriée, et pas seulement produire un nombre plus petit."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : résultat correct pour tout 0..12 ; cas de base couvrant chaque reste que l'étape peut atteindre ; progression finie restant dans le domaine ; combinaison des résultats selon le nombre de paires ; paramètre par valeur sans affichage dans la fonction ; validation avant l'appel et format exact dans main. La référence renvoie au plus six. Tu peux exprimer les bases dans une condition ou plusieurs branches ; une autre implémentation récursive équivalente convient si tu justifies ces mêmes obligations."
+        },
+        {
+          "type": "paragraph",
+          "text": "La seule sortie Hors domaine ne prouve pas qu'aucun appel antérieur n'a eu lieu. Examine le parcours de main : le retour lors d'un rejet doit empêcher d'atteindre le calcul. Pour les données valides, vérifie séparément la valeur d'origine et le résultat. Le paramètre local permet ici de réduire le problème sans modifier fichas dans main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer une version itérative et le problème lui-même"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après ta construction, cette comparaison guidée compte les mêmes paires avec une boucle. pendientes est un objet local de la fonction itérative : on peut le réduire sans modifier l'argument d'origine de main. Le compteur commence sans paires formées et augmente à chaque retrait de deux jetons. Les deux fonctions ont la même précondition, 0..12."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Précondition des deux fonctions : fichas est entre 0 et 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint parejas_iterativas(int fichas) {\n    int pendientes = fichas;\n    int parejas = 0;\n    while (pendientes >= 2) {\n        pendientes -= 2;\n        ++parejas;\n    }\n    return parejas;\n}\n\nint main() {\n    const int fichas = 8;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Hors domaine\";\n        return 0;\n    }\n    const int recursivas = parejas_recursivas(fichas);\n    const int iterativas = parejas_iterativas(fichas);\n    std::cout << recursivas << \":\" << iterativas << \":\" << fichas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparaison produit 4:4:8. Teste les deux versions avec les cas précédents et les autres valeurs de 0..12. Relie chaque réponse aux jetons nécessaires pour former ces paires et au reste insuffisant pour en former une nouvelle. Deux fonctions qui donnent le même résultat ne suffisent pas si elles se trompent toutes les deux sur le problème. Dans la version itérative, pendientes doit aussi finir à zéro ou un : la boucle s'arrête alors."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion__descenso_finito_y_conteo_incorrecto",
+          "language": "cpp",
+          "question": "Prévois la sortie de cette variante finie. Son argument est dans 0..12 ; décide ensuite si le résultat compte les paires complètes.",
+          "code": "#include <iostream>\n\nint variante(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + variante(fichas - 1);\n}\n\nint main() {\n    std::cout << variante(5);\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Les appels avec 5, 4, 3 et 2 ajoutent chacun un, tandis que celui avec 1 renvoie zéro : on obtient quatre. Cinq jetons ne permettent que deux paires. La variante se termine avec des arguments valides, mais retirer un seul jeton pour chaque paire comptée ne respecte pas le problème."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les cas zéro et un ne détectent pas à eux seuls cette erreur : la variante y renvoie aussi zéro. Un essai hors du cas de base vérifie la réduction et la combinaison du travail. Distingue les obligations d'atteindre un cas de base, de compter correctement et de conserver l'argument de l'appelant."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer la conception à des groupes de trois"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une autre table forme des groupes complets de trois jetons. Un ou deux jetons restants ne constituent pas un autre groupe. Conserve le domaine 0..12 et construis int grupos_recursivos(int fichas) : il renvoie le nombre de groupes complets de trois, sans afficher ni modifier l'objet de l'appelant. Choisis de nouveau les cas directs, l'appel qui réduit le problème et la combinaison du résultat. Cette fonction doit utiliser la récursion, pas une division ou une boucle."
+        },
+        {
+          "type": "paragraph",
+          "text": "main commence avec huit jetons, valide avant l'appel et affiche Groupes:G;Jetons:F, sans espaces ni saut final. Les valeurs invalides affichent seulement Hors domaine, sans appel. Construis depuis l'éditeur minimal ; tu peux retrouver l'organisation précédente, mais explique quels choix changent pour des groupes d'une autre taille."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Construis le nouveau comptage récursif et vérifie son contrat.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prévois les résultats de 0, 1, 2, 3, 8, 11 et 12 avant l'exécution. Rejette -1 et 13 avant tout calcul. Suis sur papier une quantité qui permet de former des groupes et laisse des jetons : chaque argument doit rester valide et atteindre un cas qui ne nécessite aucun nouvel appel. Vérifie aussi que main conserve le nombre initial de jetons."
+        },
+        {
+          "type": "note",
+          "text": "Ce transfert vérifie que tu sais adapter les cas de base et la progression au sens du problème. Consulte la référence après ton essai ; changer mécaniquement un chiffre sans revoir les cas atteignables peut laisser une fonction incorrecte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure et révision des deux comptages"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Précondition : fichas est compris entre 0 et 12.\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    const int fichas = 10;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Hors domaine\";\n        return 0;\n    }\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << \"Groupes:\" << grupos << \";Jetons:\" << fichas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence utilise d'autres données et produit Groupes:3;Jetons:10. Ton essai avec 8 donne Groupes:2;Jetons:8. Les cas 0, 1 et 2 donnent zéro groupe tout en conservant chaque donnée initiale dans F ; avec 3, Groupes:1;Jetons:3 ; avec 11, Groupes:3;Jetons:11 ; avec 12, Groupes:4;Jetons:12. -1 et 13 produisent uniquement Hors domaine."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les cas de base couvrent maintenant zéro, un et deux jetons. Soustraire trois d'un cas qui peut former un groupe garde un argument non négatif et finit sur l'un de ces restes. Chaque retour ajoute le groupe séparé avant l'appel. Le maximum est quatre ; tous les arguments n'ont pas besoin d'atteindre exactement zéro."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : compter les groupes complets sur tout 0..12 ; couvrir chaque reste atteignable ; justifier une descente finie et valide ; combiner le résultat selon trois jetons par groupe ; conserver l'argument d'origine ; aucune sortie dans la fonction et validation avant l'appel ; format demandé. Une autre solution récursive avec des cas de base formulés différemment peut aussi satisfaire le contrat."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion__mismo_argumento_dos_agrupaciones",
+          "language": "cpp",
+          "question": "Prévois la sortie complète. Chaque calcul reçoit par valeur le même objet de main.",
+          "code": "#include <iostream>\n\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    const int fichas = 5;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Hors domaine\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << parejas << \":\" << grupos << \":\" << fichas;\n    return 0;\n}\n",
+          "answers": [
+            "2:1:5"
+          ],
+          "explanation": "Cinq jetons permettent deux paires ou un groupe de trois. Les appels répondent à deux questions sur les mêmes données sans les consommer dans main : chaque paramètre reçoit sa valeur, et l'objet d'origine contient toujours cinq."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une autre séance, reconstruis les deux comptages avec 1, 2, 3 et 6 jetons et écris les cas de base et les étapes avant de consulter le code. Explique pourquoi le deuxième appel ne reçoit pas les jetons restant après le premier. Pour vérifier chaque fonction, compare-la au résultat attendu du problème et à une version itérative correcte ; ne te contente pas du fait que deux programmes renvoient la même réponse."
+        }
+      ]
+    }
+  ]
+}

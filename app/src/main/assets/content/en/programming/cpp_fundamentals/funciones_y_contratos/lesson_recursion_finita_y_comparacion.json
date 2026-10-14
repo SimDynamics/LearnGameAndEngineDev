@@ -1,0 +1,362 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion",
+  "title": "Finite Recursion and Comparison with Loops",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Function Can Call Itself"
+        },
+        {
+          "type": "paragraph",
+          "text": "A recursive function calls itself, directly or indirectly. To use one here, we need a base case that returns a result without another call, and a step that brings the data closer to that case. The domain must make this progress possible. The following calculation receives pendientes between 0 and 8."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint pasos_hasta_cero(int pendientes) {\n    if (pendientes == 0) {\n        return 0;\n    }\n    return 1 + pasos_hasta_cero(pendientes - 1);\n}\n\nint main() {\n    std::cout << pasos_hasta_cero(3);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The call with 3 waits for 1 plus the result of the call with 2; that call waits for the call with 1; and the call with 0 returns 0 without continuing. The pending results are then completed: 1, 2, and 3. Each call has its own parameter. Sharing a name does not make all the pendientes parameters one object."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which two properties justify termination for an argument between 0 and 8?",
+          "options": [
+            "That return appears after an addition.",
+            "Only the function's name.",
+            "The base case at 0 that returns, and an argument that decreases by 1."
+          ],
+          "correctIndex": 2,
+          "explanation": "A nonnegative decreasing value reaches 0, and the base case makes no further call."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Wait for One Result to Complete Another"
+        },
+        {
+          "type": "output_prediction",
+          "question": "The function sums the integers from 1 to tope, with tope between 0 and 8. Predict the result.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint suma_hasta(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_hasta(tope - 1);\n}\n\nint main() {\n    std::cout << suma_hasta(4);\n    return 0;\n}\n",
+          "answers": [
+            "10"
+          ],
+          "explanation": "The calculation completes 4 + 3 + 2 + 1 + 0. The base case contributes 0 and allows the pending calls to return."
+        },
+        {
+          "type": "paragraph",
+          "text": "For tope equal to 3, think of suma_hasta(3) as 3 + suma_hasta(2), not as replacing every parameter with the last value. Each call retains what it needs to complete its own addition when it receives the next call's result. The maximum result in this domain is 36, with at most nine active calls."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What result belongs to the base case suma_hasta(0)?",
+          "options": [
+            "0, without another call.",
+            "1, because every recursive function must add one.",
+            "Another call with -1."
+          ],
+          "correctIndex": 0,
+          "explanation": "The sum of no positive integers is 0. The base case returns directly."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Same Result Using a Loop"
+        },
+        {
+          "type": "paragraph",
+          "text": "We can express this sum using an accumulator and a loop. The iterative version advances its counter toward the limit; the recursive version reduces its argument toward zero. Both need a domain, an appropriate initial state, and a justification for termination. For this linear problem, they are easy to compare."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    std::cout << suma_iterativa(2) << \" \" << suma_recursiva(2);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What do you compare when testing both versions with the same valid data?",
+          "options": [
+            "Whether both use a reference parameter.",
+            "Only whether they contain the same number of lines.",
+            "Their returned values and the result expected from the problem."
+          ],
+          "correctIndex": 2,
+          "explanation": "Equivalence concerns the promised calculation. Internal organization may differ."
+        },
+        {
+          "type": "note",
+          "text": "A recursive call temporarily retains its context while waiting for another. The details of that mechanism are studied later. Here we limit the domain so that both recursion depth and results stay small; we do not use unbounded recursion."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Compare the Base Case, an Interior Case, and the Upper Bound"
+        },
+        {
+          "type": "paragraph",
+          "text": "tope is declared as 3. Predict both answers and run the program. Then test 0, 1, and 8; calculate the expected sum before each run. Finally, test -1 and 9: main must reject both without calling either function. Preserve the validation and the steps that bring each version toward its end."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 3;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Outside the domain\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "With tope equal to 8, what must both versions return?",
+          "options": [
+            "0 36",
+            "36 36",
+            "8 8"
+          ],
+          "correctIndex": 1,
+          "explanation": "The sum from 1 through 8 is 36. Both traversals meet the same contract."
+        },
+        {
+          "type": "paragraph",
+          "text": "For a finite comparison, temporarily replace return 0 in the recursive base case with return 1. Predict the case tope equal to 0 and compare it with the iterative version. Restore 0 afterward: this change still permits termination, but no longer computes the promised sum."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Explain Termination Before Running"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "For a recursive call with a positive pendientes value that must reach 0, which argument makes progress toward the base case?",
+          "options": [
+            "pendientes",
+            "pendientes + 1",
+            "pendientes - 1"
+          ],
+          "correctIndex": 2,
+          "explanation": "Subtracting one decreases a positive integer while keeping the argument nonnegative until it reaches 0."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which test directly isolates the base case of suma_recursiva without making other recursive calls?",
+          "options": [
+            "tope equal to 8.",
+            "An argument outside the domain.",
+            "tope equal to 0."
+          ],
+          "correctIndex": 2,
+          "explanation": "Zero enters the base case and returns immediately. An argument rejected by main does not test that function body."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before accepting a recursive function, identify its base case, the quantity that makes progress, its domain, and the result retained on the way back. Do not test a variation that repeats the same call indefinitely. This pattern will return in problems that can be solved in parts, together with the choice of a suitable structure."
+        },
+        {
+          "type": "note",
+          "text": "You can now name calculations, state their domains, distinguish reading from modification, compose functions, and justify their execution paths. Recall these decisions when building and checking a recursive function."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: The Base Case and the Promised Sum"
+        },
+        {
+          "type": "note",
+          "text": "Compare only after completing the lab and writing down your predicted results. The reference shows one possible organization; the criteria also recognize other implementations that satisfy the same contracts."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria: The iterative and recursive versions must agree: tope 3 produces 6 6, 0 produces 0 0, 1 produces 1 1, and 8 produces 36 36. -1 and 9 produce Outside the domain, without calling either function. If the recursive base case returns 1, tope 0 produces 0 1; for 3, it would be 6 7. That version terminates but no longer computes the sum. Restore the base case to 0."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint suma_iterativa(int tope) {\n    int total = 0;\n    for (int valor = 1; valor <= tope; ++valor) {\n        total = total + valor;\n    }\n    return total;\n}\n\nint suma_recursiva(int tope) {\n    if (tope == 0) {\n        return 0;\n    }\n    return tope + suma_recursiva(tope - 1);\n}\n\nint main() {\n    const int tope = 0;\n    if ((tope < 0) || (tope > 8)) {\n        std::cout << \"Outside the domain\";\n    } else {\n        const int iterativa = suma_iterativa(tope);\n        const int recursiva = suma_recursiva(tope);\n        std::cout << iterativa << \" \" << recursiva;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference tests the base case. With a validated positive tope, every recursive call uses a smaller nonnegative integer, tope-1, until it reaches zero. The loop visits 1 through tope and performs no iterations for zero. Validation restricts both versions to 0..8 and their results to 0..36. Showing termination and showing that the function returns the correct sum are separate obligations."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Count Pairs Without Being Given the Algorithm"
+        },
+        {
+          "type": "paragraph",
+          "text": "A table has tokens and forms complete pairs: each pair requires two tokens, and a leftover token does not count as a pair. The permitted input is an int from 0 through 12. Build int parejas_recursivas(int fichas) to return the number of complete pairs that can be formed. Its result must depend on the argument, not on a hard-coded answer for one case."
+        },
+        {
+          "type": "paragraph",
+          "text": "The function calculates without printing and receives fichas by value, leaving the caller's object unchanged. Decide which quantities can be handled without another call, how to reduce a pending case to a smaller one, and how to complete its result on return. Use recursion in this function: do not substitute division or a loop. The iterative comparison comes after your attempt."
+        },
+        {
+          "type": "paragraph",
+          "text": "In main, declare fichas with initial value 7. Validate its domain before calling: an invalid value displays only Outside the domain and never reaches parejas_recursivas. A valid value displays Pairs:R;Tokens:F, with no spaces or final newline, where R is the computed result and F is the unchanged original value. Put the definition before main or declare its interface correctly before calling it."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Build the recursive function, validation, and output.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write down the expected results before executing for 0 and 1, for even value 4, odd value 7, and upper bound 12. Then check -1 and 13 as rejections without calls. For every valid case also check F: passing by value must not consume the tokens in main's object. Merely terminating is not enough: the program must count the promised pairs."
+        },
+        {
+          "type": "note",
+          "text": "Before running your version, examine the argument of each possible recursive call: it must stay in the domain, decrease in the cases that continue, and reach a case that returns without calling itself again. Do not execute variations that repeat a call indefinitely or leave the domain. Consult the reference after building and explaining your solution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference for Counting Pairs"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: fichas is between 0 and 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint main() {\n    const int fichas = 9;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Outside the domain\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    std::cout << \"Pairs:\" << parejas << \";Tokens:\" << fichas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference uses different data and produces Pairs:4;Tokens:9. Your attempt with 7 produces Pairs:3;Tokens:7. Inputs 0 and 1 produce Pairs:0;Tokens:0 and Pairs:0;Tokens:1, respectively; 4 produces Pairs:2;Tokens:4; 12 produces Pairs:6;Tokens:12. Both invalid values produce only Outside the domain."
+        },
+        {
+          "type": "paragraph",
+          "text": "With zero or one token, no complete pair exists: both base cases return zero. With two or more, the reference sets aside one pair and counts pairs from the remainder. Subtracting two from an even input reaches zero; from an odd input, it reaches one. Checking only the zero base case does not cover that second path. The step must reach a suitable base case, not merely produce a smaller number."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: correct results throughout 0..12; base cases covering every remainder your step can reach; finite progress that stays in the domain; combination of results according to the number of pairs; a by-value parameter with no printing inside the function; validation before the call; and exact formatting in main. The reference returns at most six. You may express the bases with one condition or several paths; another equivalent recursive implementation is valid if it justifies these same obligations."
+        },
+        {
+          "type": "paragraph",
+          "text": "Displaying Outside the domain alone does not prove that a previous call was avoided. Review main's execution path: returning on rejection must prevent reaching the calculation. For valid data, check the original value and the result separately. Here the local parameter lets the function reduce the problem without modifying fichas in main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare with an Iterative Version and with the Problem"
+        },
+        {
+          "type": "paragraph",
+          "text": "After your implementation, this guided comparison counts the same pairs with a loop. pendientes is local to the iterative function: it can decrease without changing the original argument in main. The counter starts with no pairs and increases each time the tokens for a complete pair are removed. Both functions have the same precondition, 0..12."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre for both functions: fichas is between 0 and 12.\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint parejas_iterativas(int fichas) {\n    int pendientes = fichas;\n    int parejas = 0;\n    while (pendientes >= 2) {\n        pendientes -= 2;\n        ++parejas;\n    }\n    return parejas;\n}\n\nint main() {\n    const int fichas = 8;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Outside the domain\";\n        return 0;\n    }\n    const int recursivas = parejas_recursivas(fichas);\n    const int iterativas = parejas_iterativas(fichas);\n    std::cout << recursivas << \":\" << iterativas << \":\" << fichas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The comparison produces 4:4:8. Test both with the previous cases and the other values from 0..12. Relate every answer to the tokens required to form those pairs and the remainder too small to form another. Two functions agreeing is not enough if both solve the problem incorrectly. In the iterative version, pendientes must also end at zero or one; at that point the loop stops."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion__descenso_finito_y_conteo_incorrecto",
+          "language": "cpp",
+          "question": "Predict the output of this finite variant. Its argument is within 0..12; then decide whether the result counts complete pairs.",
+          "code": "#include <iostream>\n\nint variante(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + variante(fichas - 1);\n}\n\nint main() {\n    std::cout << variante(5);\n    return 0;\n}\n",
+          "answers": [
+            "4"
+          ],
+          "explanation": "Calls with 5, 4, 3, and 2 each add one, and the call with 1 returns zero: the result is four. Five tokens allow only two pairs. The variation terminates and keeps valid arguments, but removing one token per counted pair does not solve the problem."
+        },
+        {
+          "type": "paragraph",
+          "text": "The zero and one cases alone do not reveal this mistake: the variation returns zero for both. A test outside the base case checks how the work is reduced and combined. Keep the obligations of reaching a base case, counting correctly, and preserving the caller's input separate."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer the Design to Groups of Three"
+        },
+        {
+          "type": "paragraph",
+          "text": "Another table forms complete groups of three tokens. One or two leftover tokens cannot form another group. Keep the domain 0..12 and build int grupos_recursivos(int fichas): it returns how many complete groups of three can be formed, without printing or changing the caller's object. Choose the direct cases, the call that reduces the problem, and how to combine its result. The function must use recursion rather than division or a loop."
+        },
+        {
+          "type": "paragraph",
+          "text": "main starts with 8 tokens, validates before calling, and displays Groups:G;Tokens:F, without spaces or a final newline. Invalid values display only Outside the domain, without a call. Build from the minimal editor; you may reuse your earlier organization, but explain what decisions must change when groups have a different size."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    // Build the new recursive count and check its contract.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write the expected results for 0, 1, 2, 3, 8, 11, and 12 before executing. Reject -1 and 13 before the calculation. Trace on paper a quantity that forms groups and leaves spare tokens: every argument must remain valid and reach a case needing no additional call. Check that main also keeps the original number of tokens."
+        },
+        {
+          "type": "note",
+          "text": "This transfer checks whether you can adapt base cases and progress to the meaning of the problem. Consult the reference after your attempt: mechanically changing one digit without reviewing the reachable cases can leave the function incorrect."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference and Review of Both Counts"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: fichas is between 0 and 12.\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    const int fichas = 10;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Outside the domain\";\n        return 0;\n    }\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << \"Groups:\" << grupos << \";Tokens:\" << fichas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference uses different data and produces Groups:3;Tokens:10. Your attempt with 8 produces Groups:2;Tokens:8. Inputs 0, 1, and 2 give zero groups while preserving each original value in F; 3 produces Groups:1;Tokens:3; 11 produces Groups:3;Tokens:11; 12 produces Groups:4;Tokens:12. -1 and 13 produce only Outside the domain."
+        },
+        {
+          "type": "paragraph",
+          "text": "The base cases now cover zero, one, and two tokens. Subtracting three from a case that can form a group keeps the argument nonnegative and eventually reaches one of those remainders. Each return adds the group set aside before the call. The maximum answer is four; not every input needs to reach exactly zero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: count complete groups for all inputs in 0..12; cover every reachable remainder; justify a finite valid descent; combine the result according to three tokens per group; preserve the original argument; no printing in the function and validation before calling; and the required format. An equivalent recursive implementation with differently expressed bases can also satisfy the contract."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__recursion_finita_y_comparacion__mismo_argumento_dos_agrupaciones",
+          "language": "cpp",
+          "question": "Predict the full output. Each calculation receives the same object in main by value.",
+          "code": "#include <iostream>\n\nint parejas_recursivas(int fichas) {\n    if (fichas < 2) {\n        return 0;\n    }\n    return 1 + parejas_recursivas(fichas - 2);\n}\n\nint grupos_recursivos(int fichas) {\n    if (fichas < 3) {\n        return 0;\n    }\n    return 1 + grupos_recursivos(fichas - 3);\n}\n\nint main() {\n    const int fichas = 5;\n    if (fichas < 0 || fichas > 12) {\n        std::cout << \"Outside the domain\";\n        return 0;\n    }\n    const int parejas = parejas_recursivas(fichas);\n    const int grupos = grupos_recursivos(fichas);\n    std::cout << parejas << \":\" << grupos << \":\" << fichas;\n    return 0;\n}\n",
+          "answers": [
+            "2:1:5"
+          ],
+          "explanation": "Five tokens form two pairs or one group of three. The calls answer two questions about the same input without consuming it in main: each parameter receives its value, and the original object still holds five."
+        },
+        {
+          "type": "paragraph",
+          "text": "In another session, rebuild both counts with 1, 2, 3, and 6 tokens and write their base cases and steps before looking at the code. Explain why the second call does not receive the tokens left over from the first. To test each function, compare it with the problem's expected result and a correct iterative version; do not accept only that two programs return the same answer."
+        }
+      ]
+    }
+  ]
+}
