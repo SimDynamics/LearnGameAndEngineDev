@@ -25,11 +25,13 @@ interface MathAnswerValidator {
 /**
  * Validators operate on typed answers. Register another validator without changing a renderer.
  * Numeric answers are rationally exact unless a tolerance is declared. Tolerance is absolute.
- * Expressions use exact bounded polynomials, not a CAS:
+ * Legacy expression validators use exact bounded polynomials, not a CAS:
  * +, -, *, / by rational constants, integer powers 0..8, implicit multiplication and pi/π.
  * Expressions have at most one variable; equations have at most two and are compared after
  * moving both sides to the left, up to a nonzero rational factor. Functions, variable
  * denominators and general symbolic equivalence deliberately return an unsupported message.
+ * The opt-in parametric_rational_expression validator has its own exact rational-function
+ * contract with declared parameters, definitions and nonzero conditions; legacy limits stay intact.
  */
 object MathValidators {
     private val registry = mutableMapOf<String, MathAnswerValidator>()
@@ -40,6 +42,7 @@ object MathValidators {
         register("exact_fraction", ::fraction)
         register("equivalent_expression", ::expression)
         register("symbolic", ::expression)
+        register("parametric_rational_expression", ::parametricExpression)
         register("text", ::literal)
         register("exact_text", ::literal)
         register("latex", ::latex)
@@ -88,6 +91,7 @@ object MathValidators {
                 requireMath(spec.opt("expected") is String) { "$type requiere expected como texto." }
                 PolynomialExpression.parse(MathExpressionSemantics.polynomialSource(spec.getString("expected")))
             }
+            "parametric_rational_expression" -> parametricContract(spec)
             "text", "exact_text" -> requireMath(spec.opt("expected") is String) { "$type requiere expected como texto." }
             "latex" -> {
                 requireMath(spec.opt("expected") is String) { "latex requiere expected como texto." }
@@ -174,6 +178,52 @@ object MathValidators {
         val actual = PolynomialExpression.parse(MathExpressionSemantics.polynomialSource(text))
         val expected = PolynomialExpression.parse(MathExpressionSemantics.polynomialSource(spec.getString("expected")))
         return result(actual == expected)
+    }
+
+    private fun parametricContract(spec: JSONObject): ParametricRationalExpression.Contract {
+        requireMath(!spec.has("parameterDomain") || spec.opt("parameterDomain") == "rational") {
+            "parametric_rational_expression sólo admite parámetros racionales."
+        }
+        requireMath(tolerance(spec, 0.0) == 0.0) { "La comparación paramétrica debe ser exacta, sin tolerancia." }
+        val parameters = stringList(requiredArray(spec, "parameters"))
+        val assumptions = stringList(requiredArray(spec, "nonzero"))
+        val rawDefinitions = requiredObject(spec, "definitions")
+        val definitions = rawDefinitions.keys().asSequence().associateWith { key ->
+            requireMath(rawDefinitions.opt(key) is String) { "La definición $key debe ser una expresión textual." }
+            parametricSource(rawDefinitions.getString(key))
+        }
+        requireMath(spec.opt("expected") is String) { "El esperado paramétrico debe ser una expresión textual." }
+        return ParametricRationalExpression.compile(parameters, definitions,
+            assumptions.map(::parametricSource), parametricSource(spec.getString("expected")))
+    }
+
+    private fun parametricSource(source: String): String {
+        if (source.length > ParametricRationalExpression.MAX_SOURCE_LENGTH)
+            throw ParametricRationalExpression.ResourceLimitException("source length")
+        return MathExpressionSemantics.polynomialSource(source)
+    }
+
+    private fun parametricExpression(spec: JSONObject, answer: MathAnswer): MathValidationResult {
+        val text = (answer as? MathAnswer.Text)?.value ?: return wrongKind()
+        // Invalid content is technical; only an answer's unsupported syntax gets retry guidance.
+        val contract = parametricContract(spec)
+        return try {
+            when (contract.compare(parametricSource(text))) {
+                ParametricRationalExpression.Comparison.CORRECT -> result(true)
+                ParametricRationalExpression.Comparison.VALUE_MISMATCH -> {
+                    val message = MathUiMessage(R.string.math_ui_parametric_value_mismatch)
+                    MathValidationResult(false, message.diagnostic, uiMessage = message)
+                }
+                ParametricRationalExpression.Comparison.DOMAIN_MISMATCH -> {
+                    val message = MathUiMessage(R.string.math_ui_parametric_domain_mismatch)
+                    MathValidationResult(false, message.diagnostic, uiMessage = message)
+                }
+            }
+        } catch (_: ParametricRationalExpression.ResourceLimitException) {
+            fail(MathUiMessage(R.string.math_ui_parametric_resource_limit))
+        } catch (_: ParametricRationalExpression.UnsupportedException) {
+            fail(MathUiMessage(R.string.math_ui_parametric_unsupported))
+        }
     }
 
     private fun literal(spec: JSONObject, answer: MathAnswer): MathValidationResult {

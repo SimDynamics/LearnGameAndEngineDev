@@ -1,6 +1,6 @@
 {
   "id": "math_algebra_elemental__sistemas_lineales__formulas_con_datos_y_una_condicion_no_nula",
-  "title": "Fórmulas con datos y una condición no nula (en desarrollo)",
+  "title": "Fórmulas con datos y una condición no nula",
   "pages": [
     {
       "blocks": [
@@ -92,8 +92,143 @@
           "text": "Para obtener la otra coordenada, multiplica E2 por a y E1 por c, y resta esta última a la primera: (acx + ady) − (acx + bcy) = av − cu. Los términos con x se cancelan y queda (ad − bc)y = av − cu, o Dy = av − cu."
         },
         {
-          "type": "paragraph",
-          "text": "Son dos consecuencias de las originales: todo par solución tiene que cumplirlas. Si D ≠ 0, puedes dividir por D y el par queda forzado a x = (du − bv)/D e y = (av − cu)/D. Los denominadores dependen de datos fijos, no de las incógnitas x e y. Todavía debemos comprobar que el candidato satisface las originales; no basta con que proceda de sus consecuencias (Lang, 1971, pp. 53–55, 57)."
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_el_criterio_con_datos",
+          "prompt": "En ax + by = u y cx + dy = v, a, b, c, d, u y v son datos racionales fijos. Usa d veces la primera menos b veces la segunda para cancelar y; usa a veces la segunda menos c veces la primera para cancelar x. Escribe D, los dos miembros derechos que quedan y las fórmulas de x e y cuando D es distinta de cero. Usa sólo los datos y la definición de D; no añadas una hipótesis de que b o d sean no nulas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_el_criterio_con_datos__D",
+              "type": "math_expression_input",
+              "label": "Expresión de la diferencia D",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "a*d-b*c"
+              }
+            },
+            {
+              "id": "construir_el_criterio_con_datos__nx",
+              "type": "math_expression_input",
+              "label": "Miembro derecho después de cancelar y",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "d*u-b*v"
+              }
+            },
+            {
+              "id": "construir_el_criterio_con_datos__ny",
+              "type": "math_expression_input",
+              "label": "Miembro derecho después de cancelar x",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "a*v-c*u"
+              }
+            },
+            {
+              "id": "construir_el_criterio_con_datos__x",
+              "type": "math_expression_input",
+              "label": "Expresión del candidato x en términos de los datos",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(d*u-b*v)/D"
+              }
+            },
+            {
+              "id": "construir_el_criterio_con_datos__y",
+              "type": "math_expression_input",
+              "label": "Expresión del candidato y en términos de los datos",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(a*v-c*u)/D"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Son dos consecuencias de las originales: todo par solución tiene que cumplirlas. Si D ≠ 0, puedes dividir por D y el par queda forzado a x = (du − bv)/D e y = (av − cu)/D. Los denominadores dependen de datos fijos, no de las incógnitas x e y. Todavía debemos comprobar que el candidato satisface las originales; no basta con que proceda de sus consecuencias (Lang, 1971, pp. 53–55, 57).",
+            "incorrect": "Revisa el orden de cada resta al cancelar una incógnita y conserva los datos completos. La división autorizada utiliza D no nula; no presupongas que b o d sean distintas de cero."
+          }
         },
         {
           "type": "paragraph",
@@ -691,6 +826,74 @@
           "feedback": {
             "correct": "D = 3·(−2) − 2·1 = −8. a aporta la exclusión general de otras coordenadas mediante la D no nula; c comprueba que el par existe. b confunde derechos nulos con condiciones inexistentes. d atribuye a una comprobación concreta una conclusión de unicidad que necesita otro argumento.",
             "incorrect": "Calcula D con su signo. Comprobar (0, 0) demuestra que ese par sirve; para demostrar que es el único usamos las consecuencias y la división por la D no nula."
+          }
+        },
+        {
+          "type": "heading",
+          "text": "Trasladar los datos sin cambiar el permiso de división"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "trasladar_datos_sin_perder_la_condicion_no_nula",
+          "prompt": "Los datos racionales a, b, c, d, u y v cumplen ad − bc ≠ 0. Ahora las condiciones son ax + by = u + v y cx + dy = u − v. Construye una fórmula para x y otra para y, válidas para todos esos datos permitidos. Conserva completo cada miembro derecho al combinar ecuaciones. Puedes usar D sólo con la definición D = ad − bc, y cualquier forma equivalente que mantenga el mismo dominio.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "trasladar_datos_sin_perder_la_condicion_no_nula__x",
+              "type": "math_expression_input",
+              "label": "Fórmula de x para los nuevos derechos",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(d*(u+v)-b*(u-v))/D"
+              }
+            },
+            {
+              "id": "trasladar_datos_sin_perder_la_condicion_no_nula__y",
+              "type": "math_expression_input",
+              "label": "Fórmula de y para los nuevos derechos",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(a*(u-v)-c*(u+v))/D"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Conservaste completos u + v y u − v. Con D = ad − bc ≠ 0, el candidato es x = [d(u + v) − b(u − v)]/D e y = [a(u − v) − c(u + v)]/D. Al sustituirlo en la primera original, el numerador se reduce a D(u + v); en la segunda, a D(u − v). Dividir por D recupera los dos derechos y confirma que el par sirve. Las dos consecuencias fuerzan ese mismo par. No fue necesario suponer b ≠ 0 ni d ≠ 0.",
+            "incorrect": "Conserva cada miembro derecho completo al multiplicar y restar. Revisa los signos y qué fórmula corresponde a cada incógnita; una cancelación formal no autoriza añadir divisores que puedan ser cero en los datos permitidos."
           }
         }
       ]

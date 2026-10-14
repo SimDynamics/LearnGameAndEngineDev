@@ -271,6 +271,27 @@ class MathPuzzleRenderer(
             spec.responses.map { MathValidationResult(false, "evaluation failed", evaluable = false, uiMessage = MathUiMessage(R.string.math_ui_evaluation_error)) }
         }
         val results = spec.responses.zip(validations)
+        if (results.any { !it.second.evaluable }) {
+            // A parser/resource failure is a retry, including when another field is wrong.
+            // changed() already preserved the draft; do not record an incorrect submission.
+            val details = results.filter { !it.second.evaluable }.map { (response, checked) ->
+                var message = checked.resolveMessage(context)
+                checked.fieldId?.let { message = "$it: $message" }
+                val definitions = response.config.optJSONArray("fields")
+                if (definitions != null) for (index in 0 until definitions.length()) {
+                    val field = definitions.getJSONObject(index)
+                    val prefix = "${field.getString("id")}: "
+                    if (message.startsWith(prefix)) {
+                        message = "${field.optString("label", context.getString(R.string.math_ui_field, index + 1))}: ${message.removePrefix(prefix)}"
+                        break
+                    }
+                }
+                "${response.config.optString("label", response.id)}: $message"
+            }
+            MathTextRenderer.apply(feedback, details.joinToString("\n"))
+            feedback.setTextColor(MathWidgetUi.muted)
+            return
+        }
         if (results.all { it.second.correct }) {
             isCorrect = true
             showCorrect()
