@@ -1,0 +1,624 @@
+{
+  "id": "programming_practice_tools__construccion_reproducible__opciones_y_revision_de_la_configuracion",
+  "title": "Opciones y revisión de la configuración (en desarrollo)",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una elección de construcción también forma parte del contrato"
+        },
+        {
+          "type": "paragraph",
+          "text": "En la lección anterior una comparación estricta era una revisión que incumplía el contrato inclusivo de Pases. Ahora el proyecto admite deliberadamente dos políticas: aceptar puntos iguales al mínimo o exigir que lo superen. No podemos decidir si una ejecución es correcta sin saber qué política se acordó y qué versión se construyó. Una opción de construcción conservará esa elección."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ambas implementaciones usan la misma interfaz: bool admitir(int puntos, int minimo). Su dominio conserva puntos y minimo entre 0 y 20, inclusive. inclusiva.cpp define la comparación >=; estricta.cpp define >. El cliente puede llamar a la función sin cambiar su firma, pero la política seleccionada determina el significado del resultado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuerpo de inclusiva.cpp:"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos >= minimo;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuerpo de estricta.cpp:"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construiremos exactamente una de estas implementaciones dentro de la biblioteca regla, y el cliente revisar utilizará esa biblioteca. Las fuentes pueden conservarse juntas sin que ambas tengan que formar parte de un mismo producto. Recuperamos objetivos, cabecera y enlace; la parte nueva es describir la elección durante la configuración."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "opc_politica_estricta_no_es_fallo_universal",
+          "question": "El proyecto acordó exigir puntos mayores que el mínimo. La implementación estricta rechaza puntos iguales. ¿Qué conclusión corresponde?",
+          "options": [
+            "La implementación falla siempre, porque toda comparación de límites debe incluir la igualdad.",
+            "Puede cumplir esa política; hay que contrastar la ejecución con la elección acordada y los casos de su contrato.",
+            "La firma bool admitir garantiza las dos políticas a la vez, sin necesidad de elegir una implementación."
+          ],
+          "correctIndex": 1,
+          "explanation": "Una frontera estricta es correcta cuando forma parte del contrato acordado. La firma fija tipos y nombre, pero no decide la política de igualdad. La elección debe conservarse junto con los archivos, la construcción y los casos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Declarar una opción y distinguir su valor inicial"
+        },
+        {
+          "type": "paragraph",
+          "text": "option declara una opción booleana de CMake. En el siguiente ejemplo, ACEPTAR_IGUAL es su nombre, el argumento entre comillas es un texto de ayuda y ON es su valor inicial. Las comillas agrupan varias palabras como un solo argumento del lenguaje de CMake. Ese texto explica la intención; no ejecuta la comparación de puntos (Scott, 2025, pp. 34–38)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "option(ACEPTAR_IGUAL \"Aceptar tambien la igualdad\" ON)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Trabajaremos con ON para la elección verdadera y OFF para la falsa. Son valores de CMake, distintos de escribir una comparación C++ dentro de la descripción. CMake admite otras representaciones booleanas; aquí usamos estas dos para que la elección quede explícita. Conserva el nombre ACEPTAR_IGUAL: otro nombre o distintas mayúsculas no designan automáticamente la misma variable."
+        },
+        {
+          "type": "paragraph",
+          "text": "El valor inicial no es una orden de imponer ON en cualquier configuración. Actúa cuando no existe ya una elección conservada para esa opción. Una elección explícita o un valor conservado puede determinar otra decisión; los examinaremos por separado. Es necesario distinguir el texto de la descripción del valor que realmente se utiliza (Scott, 2025, pp. 36–40)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "opc_leer_los_argumentos_de_option",
+          "question": "¿Qué papel cumple \"Aceptar tambien la igualdad\" en la instrucción mostrada?",
+          "options": [
+            "Es texto de ayuda de la opción; no sustituye las instrucciones que seleccionan o implementan la política.",
+            "Es el cuerpo de la función admitir que CMake compila cuando el valor es ON.",
+            "Es la entrada que std::cin entregará al programa para decidir la igualdad."
+          ],
+          "correctIndex": 0,
+          "explanation": "La cadena es un argumento de ayuda en la declaración de la opción. La selección requiere instrucciones de CMake y el comportamiento requiere una implementación C++. Los datos de ejecución se proporcionan por otro mecanismo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "opc_valor_inicial_no_imposicion",
+          "question": "La descripción declara el valor inicial ON y la configuración recibe una elección explícita OFF para ACEPTAR_IGUAL. ¿Qué debe orientar tu predicción?",
+          "options": [
+            "ON necesariamente, porque el último argumento de option anula toda elección explícita.",
+            "La cadena de ayuda, porque sus palabras deben convertirse en una condición de C++.",
+            "El valor elegido OFF; el valor inicial no reemplaza por sí solo esa elección."
+          ],
+          "correctIndex": 2,
+          "explanation": "option proporciona un valor inicial cuando corresponde. Una elección explícita de esa opción no desaparece porque el código de la descripción siga mostrando ON. Registra el valor utilizado al configurar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decidir qué fuente participa durante la configuración"
+        },
+        {
+          "type": "paragraph",
+          "text": "if(ACEPTAR_IGUAL) consulta la elección y decide qué instrucciones de CMake se procesan. En este marco, ON selecciona la primera rama y OFF la rama de else(). endif() cierra el bloque condicional. Este if pertenece al lenguaje de CMake; actúa al configurar, antes de que el ejecutable reciba puntos y minimo (Scott, 2025, pp. 53–55)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Politicas LANGUAGES CXX)\noption(ACEPTAR_IGUAL \"Aceptar tambien la igualdad\" ON)\nif(ACEPTAR_IGUAL)\n    add_library(regla STATIC inclusiva.cpp)\nelse()\n    add_library(regla STATIC estricta.cpp)\nendif()\nadd_executable(revisar main.cpp)\ntarget_compile_features(regla PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(regla revisar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(revisar PRIVATE regla)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con la rama verdadera se define regla usando inclusiva.cpp; con la falsa se define regla usando estricta.cpp. Las dos ramas son alternativas: cada configuración crea el mismo objetivo con una de las fuentes. Después se describe el cliente y su relación con la biblioteca, como en la lección anterior. El perfil C++20 y CXX_EXTENSIONS OFF se conserva en ambos objetivos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La cabecera regla.h declara admitir y mantiene la guarda ya conocida. El cliente main.cpp incluye esa cabecera. Cambiar la elección no cambia automáticamente el nombre ni los tipos de la función. El if de CMake selecciona la implementación; la comparación de C++ evalúa cada llamada de esa implementación con sus argumentos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "opc_momento_de_la_eleccion",
+          "question": "En un cliente que lee puntos al ejecutarse, el usuario proporciona valores distintos. ¿Qué sucede con el if de CMake de la descripción mostrada?",
+          "options": [
+            "Vuelve a elegir una fuente por cada llamada a admitir sin configurar ni construir.",
+            "Ya decidió la fuente durante la configuración; el programa construido evalúa las llamadas con sus datos.",
+            "Se ejecuta como parte de admitir y decide si std::cin entrega ON u OFF."
+          ],
+          "correctIndex": 1,
+          "explanation": "La descripción prepara una construcción. La elección selecciona una implementación al configurar; los argumentos de una llamada no vuelven a interpretar CMakeLists.txt. Si se quiere otra elección de construcción, habrá que configurar y construir esa revisión."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "opc_una_impl_por_configuracion",
+          "question": "¿Qué selección de fuentes corresponde a la descripción condicional mostrada?",
+          "options": [
+            "Ambas implementaciones, porque conservar dos archivos en el directorio los añade siempre a regla.",
+            "La cabecera sola, porque una opción booleana reemplaza los cuerpos de las funciones.",
+            "Una de las dos implementaciones según la elección; el cliente main.cpp pertenece a revisar."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cada rama procesa un add_library diferente para la misma biblioteca. La presencia de otros archivos no los selecciona automáticamente. La cabecera declara la interfaz; la fuente elegida aporta la definición al producto que el cliente enlaza."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Predecir con la elección explícita, no sólo con el texto del archivo"
+        },
+        {
+          "type": "paragraph",
+          "text": "El laboratorio siguiente declara ON como valor inicial, pero el campo de opciones contiene ACEPTAR_IGUAL=OFF. Esa elección utiliza estricta.cpp. Conservaremos las llamadas (6,6), (9,6) y (4,6): una igualdad, un caso por encima y otro por debajo. Calcula toda la salida antes de configurar."
+        },
+        {
+          "type": "output_prediction",
+          "id": "opc_oraculo_con_override_off",
+          "language": "cpp",
+          "question": "Este listado reúne la implementación elegida y el cliente sólo para calcular el comportamiento. ¿Qué salida produce? Conserva : y no añadas salto final.",
+          "code": "#include <iostream>\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La igualdad no satisface >; nueve supera seis y cuatro no lo supera. La salida sigue el orden de las llamadas. Leer ON en option no justificaría atribuir la otra política a esta configuración que eligió OFF."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para una comparación controlada mantendremos archivos y llamadas iguales y cambiaremos sólo la elección. Las fuentes representan ambas políticas válidas; no repararemos una función para que oculte cuál se construyó. La revisión que se ejecuta y su elección deben corresponder al oráculo utilizado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Configurar y contrastar las dos políticas en el laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "El campo de opciones acepta una línea ACEPTAR_IGUAL=OFF. No escribas allí el prefijo -D de una orden de terminal ni añadas :BOOL al nombre: este control conserva pares nombre=valor y la herramienta prepara sus argumentos. El target es revisar; no es el nombre de la opción ni una de las fuentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero configura, construye revisar y ejecuta la elección inicial OFF. Comprueba los tres resultados de la página anterior. Después cambia sólo la línea a ACEPTAR_IGUAL=ON, predice la nueva salida y vuelve a configurar, construir y ejecutar. Conserva el cliente y ambas implementaciones."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Politicas LANGUAGES CXX)\noption(ACEPTAR_IGUAL \"Aceptar tambien la igualdad\" ON)\nif(ACEPTAR_IGUAL)\n    add_library(regla STATIC inclusiva.cpp)\nelse()\n    add_library(regla STATIC estricta.cpp)\nendif()\nadd_executable(revisar main.cpp)\ntarget_compile_features(regla PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(regla revisar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(revisar PRIVATE regla)\n"
+            },
+            {
+              "path": "regla.h",
+              "initialCode": "#ifndef OPCIONES_REGLA_H\n#define OPCIONES_REGLA_H\n\n// Dominio: 0 <= puntos <= 20 y 0 <= minimo <= 20.\nbool admitir(int puntos, int minimo);\n\n#endif\n"
+            },
+            {
+              "path": "inclusiva.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos >= minimo;\n}\n"
+            },
+            {
+              "path": "estricta.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "revisar",
+            "buildType": "Debug",
+            "options": {
+              "ACEPTAR_IGUAL": "OFF"
+            }
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Una edición del campo no demuestra por sí sola que el ejecutable cambió. La elección participa al configurar y determina una fuente para la construcción. Conserva por separado la descripción, el valor elegido y la salida de la revisión construida. La siguiente página permite contrastar tu cambio después del intento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar el cambio de elección con una predicción nueva"
+        },
+        {
+          "type": "paragraph",
+          "text": "Después de elegir ON y volver a configurar y construir, inclusiva.cpp aporta la implementación. El siguiente listado reúne esa revisión y las mismas llamadas. No cambiaremos los datos para ocultar una diferencia de política; la igualdad sigue siendo el caso que separa las dos reglas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "opc_oraculo_con_eleccion_on",
+          "language": "cpp",
+          "question": "¿Qué salida produce la implementación elegida con ON para estas llamadas?",
+          "code": "#include <iostream>\n\nbool admitir(int puntos, int minimo) {\n    return puntos >= minimo;\n}\n\nint main() {\n    std::cout << admitir(6, 6) << ':'\n              << admitir(9, 6) << ':'\n              << admitir(4, 6);\n    return 0;\n}\n",
+          "answers": [
+            "1:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "La igualdad satisface >=; nueve también alcanza el mínimo de seis y cuatro no lo alcanza. Las llamadas son las mismas que con OFF. La diferencia del primer resultado corresponde a la elección y a la implementación que se construyó."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "opc_casos_que_distinguen_las_politicas",
+          "question": "Un compañero ejecuta sólo el caso (9,6) y obtiene true. ¿Qué demuestra esa observación respecto a ON u OFF?",
+          "options": [
+            "Identifica necesariamente ON, porque cualquier true procede de la igualdad incluida.",
+            "Identifica necesariamente OFF, porque nueve supera seis sin necesidad de incluir la igualdad.",
+            "No distingue las dos políticas: ambas aceptan ese caso; la igualdad ofrece una comparación que las separa."
+          ],
+          "correctIndex": 2,
+          "explanation": "Cuando los puntos superan el mínimo, ambas implementaciones devuelven true. Una coincidencia puede ser compatible con más de una explicación. Elegir la igualdad recupera el método de los casos que discriminan hipótesis."
+        },
+        {
+          "type": "paragraph",
+          "text": "La descripción, la elección y la revisión ejecutada pertenecen a la misma evidencia. Mantener el nombre revisar no prueba que un ejecutable anterior corresponda a la configuración nueva. Recupera el registro de procedencia aprendido al principio del curso."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un valor conservado no desaparece al omitir un argumento"
+        },
+        {
+          "type": "paragraph",
+          "text": "CMake conserva decisiones de configuración en su caché del directorio de construcción. En una configuración ordinaria, option usa el valor inicial si todavía no existe una elección conservada; no reemplaza cada vez un valor que ya está allí. En una terminal de PC, -D puede proporcionar o cambiar esa elección (Scott, 2025, pp. 36–40)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera estas dos configuraciones ordinarias sobre el mismo directorio de construcción, con herramientas y fuentes válidas. La primera proporciona explícitamente OFF. La segunda omite -D, sin renovar ni borrar la caché. Son órdenes de terminal de ejemplo; no se pegan como líneas en el campo de opciones del laboratorio."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "cmake -S fuente -B construccion -DACEPTAR_IGUAL:BOOL=OFF\ncmake -S fuente -B construccion\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Omitir el argumento en la segunda invocación conserva la decisión anterior; no significa elegir el valor inicial ON otra vez. La ausencia de una elección nueva y la elección explícita OFF son objetos distintos, aunque en este caso ambas invocaciones utilicen OFF. Hay que conocer el estado de la configuración, no sólo la última línea escrita."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "opc_cache_persistente_con_otro_inicial",
+          "question": "Otro proyecto declara valor inicial OFF. En una caché existente se conservó ON mediante una elección explícita. Se configura de nuevo en ese mismo directorio, sin -D y sin renovar la caché. ¿Qué valor conserva option?",
+          "options": [
+            "ON, porque omitir una elección nueva no elimina el valor ya conservado.",
+            "OFF, porque el último argumento de option debe imponerse en cada invocación.",
+            "Ninguno, porque sin -D no puede existir una opción en la caché."
+          ],
+          "correctIndex": 0,
+          "explanation": "La caché conserva ON bajo las condiciones dadas. El inicial OFF serviría cuando no existiese ya esa elección. Cambiar u omitir argumentos y renovar la configuración son decisiones diferentes; no hay que confundirlas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El laboratorio renueva su configuración antes de interpretar la descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este laboratorio utiliza --fresh al configurar. En ese perfil CMake renueva CMakeCache.txt y CMakeFiles y procesa la descripción y las elecciones actuales. No es una orden de borrar todo el directorio ni todos sus productos. --fresh requiere una herramienta CMake 3.24 o posterior; el perfil instalado satisface ese requisito, aunque la descripción de nuestro proyecto siga usando instrucciones válidas con mínimo 3.20 (Scott, 2025, p. 163)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por eso, en este laboratorio quitar la línea ACEPTAR_IGUAL=OFF y configurar de nuevo deja que se use el valor inicial actual de option. Un campo vacío no equivale a escribir OFF: significa que no se proporciona esa elección explícita. Conserva esta diferencia respecto a la caché ordinaria del ejemplo de PC."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vuelve al primer laboratorio. Desde la elección ON de tu último intento, deja vacío el campo de opciones y configura, construye y ejecuta. Después cambia sólo el valor inicial de option de ON a OFF, mantén el campo vacío y repite las fases. Finalmente escribe ACEPTAR_IGUAL=ON y vuelve a configurar, construir y ejecutar, conservando ese inicial OFF. Predice cada revisión antes de observarla."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "opc_nuevo_inicial_con_eleccion_explicita",
+          "question": "En el perfil fresco del laboratorio, option declara ahora inicial OFF y el campo contiene ACEPTAR_IGUAL=ON. ¿Qué decisión se utiliza al configurar?",
+          "options": [
+            "OFF, porque una configuración fresca ignora todas las opciones explícitas.",
+            "ON, porque renovar la configuración no impide proporcionar una elección explícita actual.",
+            "La elección de la primera ejecución de revisar, aunque el campo y la descripción hayan cambiado."
+          ],
+          "correctIndex": 1,
+          "explanation": "Se renueva la configuración y se proporciona ON de forma explícita. El inicial OFF no reemplaza esa elección. Renovar la caché y eliminar el campo son acciones distintas; hay que registrar cuáles se realizaron."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar la opción de construcción de los datos de ejecución"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora el cliente lee los dos primeros enteros de la entrada preparada, en orden puntos minimo. Es una recuperación de la entrada y las comprobaciones del primer curso. Debe obtener ambos y ambos deben pertenecer a 0..20. Si no, muestra Entrada invalida en stderr y termina con código 2, sin imprimir una respuesta de admitir. No se afirma que valide o consuma todo el texto restante de la entrada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una elección ACEPTAR_IGUAL=OFF fija qué implementación utiliza el cliente. Los valores de entrada pertenecen a cada ejecución de ese cliente; no sustituyen el valor de la opción ni vuelven a interpretar CMakeLists.txt. El siguiente laboratorio mantiene la misma descripción y los mismos cuerpos de las dos políticas; cambia sólo el cliente para leer datos."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Politicas LANGUAGES CXX)\noption(ACEPTAR_IGUAL \"Aceptar tambien la igualdad\" ON)\nif(ACEPTAR_IGUAL)\n    add_library(regla STATIC inclusiva.cpp)\nelse()\n    add_library(regla STATIC estricta.cpp)\nendif()\nadd_executable(revisar main.cpp)\ntarget_compile_features(regla PRIVATE cxx_std_20)\ntarget_compile_features(revisar PRIVATE cxx_std_20)\nset_target_properties(regla revisar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(revisar PRIVATE regla)\n"
+            },
+            {
+              "path": "regla.h",
+              "initialCode": "#ifndef OPCIONES_REGLA_H\n#define OPCIONES_REGLA_H\n\n// Dominio: 0 <= puntos <= 20 y 0 <= minimo <= 20.\nbool admitir(int puntos, int minimo);\n\n#endif\n"
+            },
+            {
+              "path": "inclusiva.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos >= minimo;\n}\n"
+            },
+            {
+              "path": "estricta.cpp",
+              "initialCode": "#include \"regla.h\"\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"regla.h\"\n#include <iostream>\n\nint main() {\n    int puntos{0};\n    int minimo{0};\n    if (!(std::cin >> puntos >> minimo) ||\n        puntos < 0 || puntos > 20 || minimo < 0 || minimo > 20) {\n        std::cerr << \"Entrada invalida\";\n        return 2;\n    }\n    std::cout << admitir(puntos, minimo);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "revisar",
+            "buildType": "Debug",
+            "options": {
+              "ACEPTAR_IGUAL": "OFF"
+            }
+          },
+          "initialStandardInput": "6 6\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Configura y construye con OFF; ejecuta la entrada inicial 6 6. Después cambia sólo la entrada preparada a 9 6 y luego a 4 6, ejecutando el mismo programa en cada caso. No edites las fuentes ni la opción y no solicites otra configuración o construcción. Predice cada respuesta a partir de la política estricta y los datos de esa corrida."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "opc_mismos_archivos_datos_nuevos",
+          "question": "Quieres probar puntos nuevos con la implementación estricta ya construida del segundo laboratorio. ¿Qué acción cambia sólo los datos de esa ejecución?",
+          "options": [
+            "Cambiar los enteros en la entrada preparada y ejecutar el programa vigente, manteniendo descripción, opción y fuentes.",
+            "Cambiar ON por OFF en option y atribuir ese cambio a los argumentos de la función.",
+            "Cambiar el texto de ayuda de option para que sus palabras pasen a std::cin."
+          ],
+          "correctIndex": 0,
+          "explanation": "El cliente lee puntos y minimo de su entrada de ejecución. La opción selecciona la implementación antes de construirla. El texto de ayuda no se entrega automáticamente a std::cin; sus papeles son distintos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un rechazo de datos no es un fallo de configuración"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el segundo laboratorio conserva OFF y el programa construido. Prueba la entrada 6, sin el segundo entero. El cliente no puede obtener minimo: comprueba su rama de rechazo antes de llamar a admitir. Observa stdout, stderr y el código de terminación; no atribuyas esa corrida a un fallo de construcción."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "opc_fase_del_rechazo_de_datos",
+          "question": "Configuración y construcción terminaron correctamente. Con la entrada incompleta, esta ejecución no imprime en stdout, escribe Entrada invalida en stderr y termina con código 2. ¿Qué explica esa evidencia?",
+          "options": [
+            "CMake no encontró inclusiva.cpp y por eso la ejecución imprimió una respuesta falsa.",
+            "El enlazador rechazó la comparación > y el proceso no llegó a ejecutar main.",
+            "El cliente ejecutó su comprobación de entrada y rechazó esos datos antes de llamar a la función."
+          ],
+          "correctIndex": 2,
+          "explanation": "El código 2 pertenece a la rama de rechazo del cliente ejecutado. Sus datos no satisfacen la preparación exigida. La descripción puede configurar y el programa puede construir correctamente, aunque una ejecución rechace un caso de entrada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera la entrada completa 6 6 y vuelve a ejecutar sin reconstruir: contrasta otra vez la política OFF. Ahora cambia la opción explícita a ON, configura y construye, y ejecuta esos mismos enteros. Por último, cambia sólo la entrada a 4 6 y ejecuta. La variación conserva los datos al cambiar política, y conserva la política al cambiar datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una referencia posterior a tus intentos: la política estricta no acepta 6 igual a 6; la inclusiva sí. Ambas rechazan 4 frente a un mínimo de 6. Cambiar el significado acordado de la función y cambiar sus argumentos son dimensiones distintas del experimento."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para contrastar tus tres intentos: con campo vacío e inicial ON se elige inclusiva.cpp; con campo vacío e inicial OFF se elige estricta.cpp; con inicial OFF y elección explícita ON vuelve a elegirse inclusiva.cpp. La referencia se interpreta después de los intentos: las mismas llamadas permiten comprobar la política, y los archivos seleccionados permiten identificar la construcción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el nombre de una decisión en otra descripción"
+        },
+        {
+          "type": "paragraph",
+          "text": "La opción es una decisión nombrada de la descripción; no es el nombre de la biblioteca ni un literal que se entregue a la función C++. Recupera esa diferencia al leer el fragmento de otro proyecto."
+        },
+        {
+          "type": "fill_code",
+          "id": "opc_nombre_consultado_por_if",
+          "language": "cmake",
+          "question": "Completa únicamente el nombre de la opción que decide si usar amplia.cpp. Escribe el nombre declarado, sin comillas ni una expresión: se practica la forma if(nombre) mostrada en la lección.",
+          "code": "option(ELEGIR_AMPLIA \"Elegir la politica amplia\" OFF)\nif(___)\n    add_library(criterio STATIC amplia.cpp)\nelse()\n    add_library(criterio STATIC limitada.cpp)\nendif()\n",
+          "answers": [
+            "ELEGIR_AMPLIA"
+          ],
+          "explanation": "if(ELEGIR_AMPLIA) consulta la decisión nombrada por option. criterio es el objetivo de biblioteca y amplia.cpp es la fuente de su rama verdadera. El inicial OFF no cambia el nombre de la decisión ni garantiza que nunca se proporcione otra elección."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este fragmento practica la lectura del condicional y no es por sí solo un proyecto completo: las fuentes, el cliente y sus requisitos tendrían que existir. En la siguiente actividad tendrás los archivos y crearás una descripción completa con una política distinta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir la configuración a dos tarifas acordadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El proyecto Cotizaciones ofrece precio(unidades), con unidades entre 0 y 8, inclusive. La tarifa normal calcula tres por unidad; la especial calcula dos por unidad. No se aplican otros cargos. precio.h conserva la declaración; normal.cpp y especial.cpp contienen las dos alternativas. muestra.cpp imprime los precios para 0, 2 y 5 unidades, en ese orden, con : y sin salto final."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe CMakeLists.txt desde el espacio vacío. Usa una opción TARIFA_ESPECIAL con inicial OFF: ON selecciona especial.cpp y OFF selecciona normal.cpp. Define la biblioteca estática tarifas con exactamente la implementación elegida y el ejecutable cotizar con muestra.cpp, enlazado a tarifas. Conserva el mínimo CMake 3.20, CXX habilitado, C++20 y extensiones desactivadas en ambos objetivos. El campo ya proporciona TARIFA_ESPECIAL=ON: el primer intento debe construir la tarifa especial aunque el inicial acordado sea OFF."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": ""
+            },
+            {
+              "path": "precio.h",
+              "initialCode": "#ifndef OPCIONES_PRECIO_H\n#define OPCIONES_PRECIO_H\n\n// Dominio: 0 <= unidades <= 8.\nint precio(int unidades);\n\n#endif\n"
+            },
+            {
+              "path": "especial.cpp",
+              "initialCode": "#include \"precio.h\"\n\nint precio(int unidades) {\n    return 2 * unidades;\n}\n"
+            },
+            {
+              "path": "normal.cpp",
+              "initialCode": "#include \"precio.h\"\n\nint precio(int unidades) {\n    return 3 * unidades;\n}\n"
+            },
+            {
+              "path": "muestra.cpp",
+              "initialCode": "#include \"precio.h\"\n#include <iostream>\n\nint main() {\n    std::cout << precio(0) << ':'\n              << precio(2) << ':'\n              << precio(5);\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "cotizar",
+            "buildType": "Debug",
+            "options": {
+              "TARIFA_ESPECIAL": "ON"
+            }
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice los tres precios, configura, construye cotizar y ejecuta. Después deja vacío el campo de opciones, vuelve a configurar en el perfil fresco, construye y ejecuta la tarifa normal. Conserva los archivos C++ y las cantidades. Son válidas otras descripciones que satisfagan los mismos objetivos, elección, requisitos y relación; no es necesario copiar un orden superficial único de instrucciones. La referencia aparece después de tu intento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar la descripción y recuperar un caso que no distingue tarifas"
+        },
+        {
+          "type": "paragraph",
+          "text": "La siguiente descripción es una referencia para Cotizaciones. La opción elige la implementación de tarifas y la relación aporta su producto a cotizar. El campo de opciones y el valor inicial de la descripción cumplen papeles distintos, también aquí."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Cotizaciones LANGUAGES CXX)\noption(TARIFA_ESPECIAL \"Usar la tarifa de dos por unidad\" OFF)\nif(TARIFA_ESPECIAL)\n    add_library(tarifas STATIC especial.cpp)\nelse()\n    add_library(tarifas STATIC normal.cpp)\nendif()\nadd_executable(cotizar muestra.cpp)\ntarget_compile_features(tarifas PRIVATE cxx_std_20)\ntarget_compile_features(cotizar PRIVATE cxx_std_20)\nset_target_properties(tarifas cotizar PROPERTIES CXX_EXTENSIONS OFF)\ntarget_link_libraries(cotizar PRIVATE tarifas)\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "opc_tarifa_normal_tras_quitar_eleccion",
+          "language": "cpp",
+          "question": "En el perfil fresco, el campo quedó vacío y la opción declara inicial OFF. Este listado reúne la implementación seleccionada y el cliente. ¿Qué salida produce?",
+          "code": "#include <iostream>\n\nint precio(int unidades) {\n    return 3 * unidades;\n}\n\nint main() {\n    std::cout << precio(0) << ':'\n              << precio(2) << ':'\n              << precio(5);\n    return 0;\n}\n",
+          "answers": [
+            "0:6:15"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Se utiliza la tarifa normal, tres por unidad. Cero cuesta cero, dos cuestan seis y cinco cuestan quince. La salida se contrasta con esa elección actual, sin atribuirle la tarifa especial del intento anterior."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "opc_cero_no_identifica_tarifa",
+          "question": "Se ejecutó sólo precio(0) y se observó cero. ¿Qué demuestra ese caso sobre la tarifa que se construyó?",
+          "options": [
+            "Obliga a que sea la especial, porque la normal cobra siempre al menos tres.",
+            "Es compatible con ambas tarifas; una cantidad positiva permite distinguir sus resultados.",
+            "Demuestra que ninguna implementación se enlazó, porque todo precio válido es positivo."
+          ],
+          "correctIndex": 1,
+          "explanation": "Ambas funciones multiplican las unidades y producen cero cuando reciben cero. La coincidencia no identifica una tarifa. Elegir una cantidad positiva y conservar la configuración permite contrastar la diferencia sin cambiar el contrato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar los límites después de separar configuración y entrada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Regresa a admitir después de trabajar con precios. La implementación estricta corresponde a OFF y exige superar el mínimo. Este listado completo utiliza extremos del dominio; calcula cada llamada con esa regla y no con la tarifa ni con una observación anterior."
+        },
+        {
+          "type": "output_prediction",
+          "id": "opc_recuperar_extremos_en_otra_politica",
+          "language": "cpp",
+          "question": "¿Qué salida produce esta revisión estricta para las llamadas mostradas?",
+          "code": "#include <iostream>\n\nbool admitir(int puntos, int minimo) {\n    return puntos > minimo;\n}\n\nint main() {\n    std::cout << admitir(0, 0) << ':'\n              << admitir(20, 0) << ':'\n              << admitir(0, 20);\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0"
+          ],
+          "outputComparison": "exact",
+          "explanation": "Cero no supera cero; veinte supera cero; cero no supera veinte. Los tres pares pertenecen al dominio. La política es estricta aunque el primer y el último valor estén en límites válidos."
+        },
+        {
+          "type": "order_code",
+          "id": "opc_orden_tras_editar_eleccion",
+          "question": "Cambió la elección de construcción y ya calculaste un oráculo para esa política y unos datos de prueba. Ordena estas cuatro acciones para contrastar la nueva revisión; la ejecución debe utilizar el producto actualizado. No se pide un orden fijo entre compilaciones independientes.",
+          "fragments": [
+            "Ejecutar el producto actualizado con los datos acordados.",
+            "Configurar y generar utilizando la descripción y la elección actuales.",
+            "Contrastar esa salida con el oráculo de esa política y esos datos.",
+            "Construir el objetivo ejecutable con la implementación seleccionada."
+          ],
+          "correctOrder": [
+            1,
+            3,
+            0,
+            2
+          ],
+          "explanation": "La elección participa en la configuración; la construcción utiliza la implementación elegida. Después se ejecuta ese producto y se contrasta su salida con un oráculo correspondiente. Una salida anterior no demuestra la revisión nueva."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "opc_registro_que_separa_dos_ejecuciones",
+          "question": "Quieres que otro estudiante distinga dos ejecuciones con políticas o datos diferentes. ¿Qué debes conservar para relacionar cada resultado con su revisión?",
+          "options": [
+            "Fuentes, descripción, herramientas, elección efectiva, construcción, entrada de cada corrida, salida y terminación.",
+            "Fuentes, descripción, herramientas, construcción, entrada, salida y terminación; usar el inicial de option como elección efectiva.",
+            "Fuentes, descripción, herramientas, elección efectiva, construcción, salida y terminación; guardar los datos iniciales del laboratorio como entrada de todas las corridas."
+          ],
+          "correctIndex": 0,
+          "explanation": "La procedencia incluye decisiones de construcción y datos de ejecución. El valor inicial puede diferir de la elección efectiva y el mismo nombre puede corresponder a revisiones distintas. Este registro recupera el método de evidencia y comparación del principio del curso."
+        }
+      ]
+    }
+  ]
+}
