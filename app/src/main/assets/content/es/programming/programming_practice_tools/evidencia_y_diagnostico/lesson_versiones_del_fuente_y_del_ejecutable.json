@@ -1,0 +1,230 @@
+{
+  "id": "programming_practice_tools__evidencia_y_diagnostico__versiones_del_fuente_y_del_ejecutable",
+  "title": "Vincular una observación con el programa ejecutado (en desarrollo)",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una observación necesita una procedencia"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este curso continúa «Programar desde cero con C++». Ya sabes expresar requisitos, separar funciones, trabajar con colecciones y flujos, organizar fuentes y comprobar casos. Ahora aprenderás a construir proyectos y a mantenerlos con evidencia: qué fuentes se usaron, cómo se obtuvo el programa, qué datos recibió y qué resultado produjo. No basta recordar que alguna versión funcionó."
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta primera lección distinguirás un archivo fuente guardado, el proceso que lo convierte en un programa ejecutable y la ejecución concreta que observas. Relacionarás una discrepancia con su versión y prepararás un caso que permita investigar su causa. Los conocimientos nuevos son de trabajo con programas; no se exige CMake, Git ni un depurador previo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un pequeño gestor de existencias debe solicitar reposición cuando la cantidad disponible sea menor o igual que el mínimo. Su dominio es 0 ≤ disponibles ≤ 40 y 1 ≤ minimo ≤ 40; ambos valores son enteros. La función devuelve un bool y no modifica las cantidades. Aquí estudiaremos sólo llamadas de ese dominio. En la salida ordinaria de std::cout, sin boolalpha, false se imprime como 0 y true como 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "El reporte «con 5 unidades y mínimo 5 no solicita reposición» identifica un síntoma. Antes de explicar su causa, necesitamos saber qué programa recibió esos datos. Guardar una corrección no demuestra que la prueba haya ejecutado esa corrección; investigar una versión distinta desperdicia evidencia (Kernighan & Pike, 1999, p. 129)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "evidencia_del_caso_reportado",
+          "question": "Se observó 0 para disponibles=5 y minimo=5. ¿Qué permite afirmar el requisito, sin inventar aún una causa?",
+          "options": [
+            "El mínimo debe cambiarse a 6 porque la salida del programa define el requisito.",
+            "En esa ejecución el resultado contradice el requisito; todavía debemos identificar el programa y explicar por qué ocurrió.",
+            "El fallo demuestra que se ejecutó una versión antigua, aunque no conocemos su ruta ni sus fuentes."
+          ],
+          "correctIndex": 1,
+          "explanation": "La igualdad está incluida: el resultado esperado es true, impreso como 1. El dato demuestra una discrepancia bajo el requisito y el dominio; por sí solo no distingue una comparación equivocada de un ejecutable equivocado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Fuente, construcción y ejecución son evidencias distintas"
+        },
+        {
+          "type": "paragraph",
+          "text": "El archivo fuente es el texto que guardas. Un ejecutable es un resultado de una construcción anterior; no cambia automáticamente cada vez que editas el texto. Llamaremos revisión A y revisión B a dos estados guardados diferentes. Esos nombres identifican estados para este ejercicio; no son instrucciones ni requieren un sistema de control de versiones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al compilar una fuente C++, se comprueba y traduce su contenido; al enlazar, se combinan los resultados y las implementaciones necesarias para formar el programa. Una declaración puede permitir compilar una llamada, pero no sustituye la definición requerida al enlazar. En proyectos con varias fuentes, conocer la lista elegida forma parte de identificar lo que realmente se construyó. Un comando puede coordinar ambos pasos; que estén automatizados no borra sus diferencias. Una construcción también puede reutilizar resultados anteriores de fuentes que no cambiaron; no siempre vuelve a compilar todo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Construir tampoco es ejecutar. Una herramienta de construcción coordina el trabajo y registra si pudo completarlo; el programa obtenido se ejecuta después con sus datos. CMake prepara reglas para herramientas de construcción: no es otro nombre del compilador ni del programa del alumno. Estudiaremos su configuración y generación cuando construyamos proyectos reproducibles (Scott, 2025, cap. 1–2)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "construccion_y_comportamiento",
+          "question": "La construcción terminó sin errores y, al ejecutar, main retornó 0. ¿Qué evidencia falta para acreditar el requisito de reposición?",
+          "options": [
+            "Comparar los resultados de casos pertinentes con lo que exige el requisito, identificando el programa y los datos usados.",
+            "Ninguna: construir y retornar 0 demuestran que cualquier función coincide con su requisito.",
+            "Basta que el archivo ejecutable tenga el mismo nombre que antes."
+          ],
+          "correctIndex": 0,
+          "explanation": "El éxito de construcción acredita que se obtuvo un programa en ese proceso; el retorno 0 acredita cómo terminó esa ejecución. Ninguno calcula por nosotros qué decisión de reposición era correcta. Un nombre de archivo tampoco identifica su contenido."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir un caso que separe las explicaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "La revisión A mostrada en la actividad utiliza <. Calcula por separado lo que produce esa implementación y lo que exige el requisito, sin corregir el código durante la predicción. Después decide qué llamada aporta evidencia para distinguir ambas reglas. Probar condiciones a cada lado y en su frontera permite investigar supuestos precisos (Kernighan & Pike, 1999, pp. 140–141)."
+        },
+        {
+          "type": "output_prediction",
+          "id": "salida_de_la_revision_a",
+          "question": "Predice únicamente la salida del programa mostrado, sin corregirlo mientras la calculas. Después compárala con el requisito.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Dominio: disponibles entre 0 y 40; minimo entre 1 y 40.\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    std::cout << debe_reponer(4, 5) << \":\"\n              << debe_reponer(5, 5) << \":\"\n              << debe_reponer(6, 5);\n    return 0;\n}\n",
+          "answers": [
+            "1:0:0"
+          ],
+          "explanation": "La implementación usa <: 4<5 es verdadero, 5<5 es falso y 6<5 es falso. El programa produce 1:0:0, mientras el requisito exige 1:1:0. No ajustes la salida esperada para hacer coincidir la función sospechosa."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_que_discrimina_la_frontera",
+          "question": "Si sólo puedes añadir un caso para distinguir la regla < de la regla <=, manteniendo mínimo=5, ¿cuál eliges?",
+          "options": [
+            "Disponibles=4, porque ambas reglas producen true.",
+            "Disponibles=41, aunque queda fuera del dominio de la función.",
+            "Disponibles=5, porque pertenece al dominio y las reglas discrepan exactamente allí."
+          ],
+          "correctIndex": 2,
+          "explanation": "La igualdad es el caso discriminante. El caso 4 sigue siendo un control útil, pero no separa estas hipótesis. El 41 incumple la precondición y no es evidencia sobre el contrato declarado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una corrección guardada puede no ser la ejecución observada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón este escenario de trabajo externo al lector: existencias.exe se construyó con la revisión A. Después guardas la revisión B cambiando < por <=. Al construir B aparece un error en otra parte del archivo y no se obtiene un ejecutable nuevo. El ejecutable A anterior permanece en su carpeta; luego lo ejecutas manualmente y vuelve a mostrar 1:0:0."
+        },
+        {
+          "type": "paragraph",
+          "text": "El resultado no refuta el cambio <=, porque no procede de una construcción correcta de B. Tampoco demuestra que B sea correcta: esa versión todavía no pudo construirse y probarse. Una carpeta puede contener artefactos de intentos anteriores. Este escenario describe una secuencia explícita; no afirma que el compilador integrado del lector ejecute automáticamente artefactos antiguos."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "conservar_la_procedencia_del_resultado",
+          "question": "En el escenario descrito, ¿cuál es la conclusión más precisa?",
+          "options": [
+            "La revisión B sigue excluyendo la igualdad: basta mirar el resultado de A.",
+            "La salida pertenece al ejecutable A conservado; primero hay que resolver el fallo de construcción de B y probar el programa obtenido de sus fuentes.",
+            "Hay que cambiar el requisito para aceptar 1:0:0 y conservar cualquier ejecutable disponible."
+          ],
+          "correctIndex": 1,
+          "explanation": "Se conserva la procedencia de la observación. No se debe atribuir al texto B una ejecución de A. Resolver el error de construcción permitirá estudiar B; comparar su salida con el requisito será todavía necesario."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando una corrección parece no tener efecto, verifica el estado guardado, el resultado completo de construcción y la ruta exacta del ejecutable usado. Si dos carpetas tienen archivos con el mismo nombre, ese nombre no resuelve la ambigüedad. Registra entradas y resultado junto con esa identificación. Reproduce el fallo y prueba tus suposiciones antes de culpar al entorno o cambiar varias partes a la vez (Thomas & Hunt, 2020, pp. 90–97)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "mismo_nombre_distinto_programa",
+          "question": "Hay una copia en salida/ y otra en respaldo/, ambas llamadas existencias.exe. Sólo salida/ fue reconstruida correctamente con B. Una prueba de respaldo/ falla en la igualdad. ¿Qué acción produce evidencia sobre B?",
+          "options": [
+            "Repetir respaldo/ muchas veces y contar sus fallos como pruebas de B.",
+            "Renombrar ambas copias sin comprobar cuál se ejecuta.",
+            "Ejecutar la copia de salida/ identificada, con los mismos datos, y contrastarla con el requisito."
+          ],
+          "correctIndex": 2,
+          "explanation": "Conservar los datos controla esa parte de la comparación; elegir la copia construida de B controla la versión. Renombrar o repetir una copia equivocada no aporta esa evidencia."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una comprobación independiente"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el laboratorio, parte de la función de revisión A del editor. Antes de ejecutar, escribe fuera del programa los resultados esperados para (4,5), (5,5) y (6,5). Obténlos del requisito. Conserva ese registro cuando construyas y ejecutes; no lo rellenes copiando lo que devuelve la función que estás investigando."
+        },
+        {
+          "type": "paragraph",
+          "text": "Implementa las tres comprobaciones en main. Cada una debe comparar debe_reponer con su esperado y mostrar qué caso falló. Si alguna falla, el programa de comprobación debe terminar con un código distinto de cero; si las tres pasan, con cero. Puedes usar condicionales, un bool acumulado o una estructura de casos que ya conozcas. Primero usa la revisión A sin modificarla para comprobar que tu prueba detecta la discrepancia; después cambia sólo la comparación y repite los mismos casos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Separa las evidencias: el compilador puede construir correctamente una prueba que devuelve 1 al detectar un fallo de comportamiento. Esa salida no es un error de compilación. Un main que retorna siempre 0 tampoco invalida la discrepancia, pero comunica mal el resultado de la comprobación. Conocer el esperado antes del test y revisar el propio programa de prueba evita aceptar una baseline equivocada (Kernighan & Pike, 1999, pp. 146–150)."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    // Compara las tres llamadas con esperados obtenidos del requisito.\n    // Muestra los casos que fallan y comunica el resultado con el retorno.\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "esperados_sin_copiar_la_funcion",
+          "question": "¿Qué construcción hace que las tres pruebas puedan detectar el error de la función?",
+          "options": [
+            "Obtener el esperado llamando a debe_reponer otra vez con los mismos argumentos.",
+            "Fijar los esperados true, true y false desde la regla del requisito y compararlos con las llamadas.",
+            "Imprimir las tres llamadas y declarar que la salida observada siempre es la correcta."
+          ],
+          "correctIndex": 1,
+          "explanation": "Duplicar la llamada duplica la misma interpretación equivocada. El oráculo de estos tres casos es la regla independiente del requisito; imprimir sin comparar sólo produce observaciones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparar el intento y recuperar la evidencia"
+        },
+        {
+          "type": "note",
+          "text": "Consulta esta referencia después de construir tu comprobación. No se exige copiar nombres, mensajes ni esta organización: importa cumplir los criterios."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una prueba válida de A acepta las decisiones de (4,5) y (6,5), detecta el fallo de (5,5) y retorna un código no nulo. Tras corregir sólo la comparación a <=, las tres llamadas deben coincidir y el programa de prueba retornar 0. El registro de cada ejecución debe identificar la revisión, los tres casos y el resultado, sin atribuir a una revisión salidas producidas por otra."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;  // Revision A: conservar para verificar la prueba.\n}\n\nbool comprobar(int disponibles, int minimo, bool esperado) {\n    const bool obtenido{debe_reponer(disponibles, minimo)};\n    if (obtenido == esperado) { return true; }\n    std::cout << \"Fallo: \" << disponibles << \",\" << minimo\n              << \" esperado=\" << esperado << \" obtenido=\" << obtenido << \"\\n\";\n    return false;\n}\n\nint main() {\n    bool correcto{true};\n    if (!comprobar(4, 5, true)) { correcto = false; }\n    if (!comprobar(5, 5, true)) { correcto = false; }\n    if (!comprobar(6, 5, false)) { correcto = false; }\n    if (!correcto) { return 1; }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cada comprobación se ejecuta aunque una anterior falle. Una expresión con && puede omitir llamadas posteriores por cortocircuito; que el resultado final sea false no demuestra que se hayan observado todos los casos. Después de corregir A, conserva los controles que funcionaban y añade otra frontera, (8,8), con un caso a cada lado. Estos nuevos datos ponen a prueba la regla y no sólo la muestra 4,5,6."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "transferir_el_registro_de_prueba",
+          "question": "La revisión corregida supera (4,5),(5,5),(6,5). ¿Cuál es la revisión del registro más útil al probar mínimo=8?",
+          "options": [
+            "Conservar los tres casos y añadir sólo (7,8) y (9,8): no repetir la igualdad porque ya pasó con mínimo 5.",
+            "Sustituir los tres casos anteriores por (7,8),(8,8),(9,8): los casos con mínimo 5 ya no ayudan a comprobar la función.",
+            "Conservar los tres casos y añadir (7,8),(8,8),(9,8), con esperados true,true,false obtenidos de la misma regla."
+          ],
+          "correctIndex": 2,
+          "explanation": "La regla vale para todos los mínimos del dominio. Una igualdad que pasó con mínimo 5 no certifica la igualdad con mínimo 8; omitirla podría ocultar una corrección ajustada a la primera muestra. Conservar los casos previos comprueba además que el cambio no estropeó decisiones antes correctas. La variación aporta evidencia nueva, aunque estos seis casos no prueban por sí solos todo el dominio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al continuar, usaremos la identificación del programa, los datos y los esperados para contrastar causas. Mantén separadas la observación, la construcción y el cumplimiento del requisito: cuando alguno cambia, debes saber qué comparación sigue siendo válida."
+        }
+      ]
+    }
+  ]
+}
