@@ -1,0 +1,191 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__un_lector_con_buffer_de_un_token",
+  "title": "Un lecteur avec un tampon d'un token",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire par anticipation sans perdre la donnée"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsqu'on combine des unités, une fonction peut avoir besoin d'examiner le token suivant pour décider s'il lui appartient. Par exemple, après avoir lu 5, le signe * peut appartenir à une multiplication ; le signe ; peut indiquer la fin de l'opération. Si une règle rencontre un token qui relève d'une autre règle, elle doit le conserver pour que cette dernière puisse le recevoir."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un tampon d'un token offre un emplacement de réserve logique. leer() fournit d'abord le token réservé, s'il existe ; sinon, elle demande une unité au lecteur de caractères. devolver(token) réserve un token pour la lecture suivante. Cela ne fait pas reculer le flux de caractères : une copie du token déjà obtenu est conservée. Ici, nous restituons une unité lue par anticipation dont une autre règle aura besoin."
+        },
+        {
+          "type": "paragraph",
+          "text": "Rappelle-toi les classes avec représentation privée, constructeur, consultations const et invariants. Lector_tokens disposera de son propre istringstream, d'un indicateur précisant si la réserve est occupée et d'un Token initialisé. Le constructeur reçoit le texte et construit le flux dans la liste d'initialisation des membres ; le code client utilise les fonctions publiques pour obtenir et restituer les unités."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Définir et protéger la transition d'état"
+        },
+        {
+          "type": "paragraph",
+          "text": "La capacité est exactement un token. Si le tampon est vide, devolver accepte un token cohérent et le remplit. S'il est plein, leer fournit le token réservé et le vide. Appeler devolver avec un tampon plein rejette l'opération sans remplacer le token déjà présent. Un token dont la catégorie et la valeur sont incohérentes est lui aussi refusé avant toute modification de l'état."
+        },
+        {
+          "type": "paragraph",
+          "text": "token_valido reprend le domaine numérique 0..9 de cette version et impose valor égal à 0 pour les signes et la fin. leer_token est réutilisée sans modification de ses règles. L'indicateur tiene_pendiente() est une consultation const : il permet d'observer l'état sans consommer d'unité. Le constructeur est marqué explicit : la construction directe avec des accolades reste valide, mais une string ne se convertit pas implicitement en Lector_tokens. Chaque client construit délibérément son lecteur avec le texte choisi."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"3+7;\"};\n    const Token primero = lector.leer();\n    std::cout << \"Premier: \" << primero.valor << \"\\n\";\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"En attente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token repetido = lector.leer();\n    std::cout << \"Relu: \" << repetido.clase << \"\\n\";\n    std::cout << \"En attente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Suivant: \" << siguiente.valor;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La trace présente d'abord 3, réserve +, le fournit une seconde fois, puis obtient 7. La réserve ne duplique pas le signe à l'infini : leer efface son indicateur avant de renvoyer la copie. Les membres du tampon sont initialisés même si leur valeur n'a d'importance que lorsque l'indicateur signale que la réserve est pleine."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Suivre la position logique et celle du flux"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis toute la trace avec d'autres données. Distingue la lecture du tampon de celle de nouveaux caractères.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"8/4;\"};\n    const Token primero = lector.leer();\n    std::cout << \"Premier: \" << primero.valor << \"\\n\";\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"En attente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token repetido = lector.leer();\n    std::cout << \"Relu: \" << repetido.clase << \"\\n\";\n    std::cout << \"En attente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Suivant: \" << siguiente.valor;\n    return 0;\n}\n",
+          "answers": [
+            "Premier: 8\nEn attente: 1\nRelu: /\nEn attente: 0\nSuivant: 4"
+          ],
+          "explanation": "Le signe / a été lu depuis le texte, puis réservé. La lecture suivante restitue cette copie et vide le tampon ; celle d'après poursuit le flux pour obtenir 4."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que devient la position physique dans istringstream lorsque devolver est appelée avec le signe déjà lu ?",
+          "options": [
+            "Elle recule d'un caractère et reconstruit chaque token.",
+            "Elle reste inchangée ; la prochaine unité provient du tampon.",
+            "Elle revient au début du texte pour conserver l'ordre."
+          ],
+          "correctIndex": 1,
+          "explanation": "La restitution est logique : on stocke une copie du token. La position du lecteur de caractères ne change pas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Refuser une seconde réserve sans perdre la première"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"2+6;\"};\n    lector.leer();\n    const Token signo = lector.leer();\n    lector.devolver(signo);\n    try {\n        lector.devolver(Token{'n', 9});\n    } catch (const std::runtime_error& error) {\n        std::cout << error.what() << \"\\n\";\n    }\n    const Token conservado = lector.leer();\n    std::cout << \"Conservé: \" << conservado.clase << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Suivant: \" << siguiente.valor;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est Tampon occupé, Conservé: + et Suivant: 6. Le refus conserve le token réservé. Si l'affectation à guardado_ avait lieu avant la vérification de lleno_, le diagnostic risquerait d'apparaître après la perte du token qui devait être conservé."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le tampon est vide et on essaie de restituer Token{'n', 14}. Que demande ce contrat initial ?",
+          "options": [
+            "Conserver 14 et modifier silencieusement le langage des chiffres isolés.",
+            "Le transformer en deux tokens dans le même emplacement de réserve.",
+            "Le rejeter sans remplir le tampon, car il n'appartient pas à 0..9."
+          ],
+          "correctIndex": 2,
+          "explanation": "La représentation numérique de cette version admet un chiffre par token. La validation précède toute modification de guardado_ ou lleno_."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un client de l'interface"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'éditeur fournit le lecteur d'un token déjà étudié, avec un main vide. Construis la trace pour \"5*2;\" : affiche Premier: 5 ; lis puis restitue le signe suivant ; affiche En attente: 1 ; relis ce signe et affiche Relu: * ; affiche En attente: 0 ; lis le nombre suivant et affiche Suivant: 2. Utilise une ligne par résultat et un espace après chaque étiquette."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le but est de choisir et d'ordonner les appels publics, sans lire ni modifier directement les membres privés. Vérifie aussi \"9-0;\", qui change le signe et le nombre qui suit. Dans un test séparé, restitue une seconde unité lorsque la réserve est déjà pleine : intercepte le rejet et confirme que le premier token réservé ainsi que le nombre suivant sont conservés. Avec un tampon vide, tente de restituer un nombre hors de 0..9 : cela doit être rejeté et le tampon doit rester vide."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cet exercice s'appuie sur une interface existante : tu dois construire son client et les tests de ses transitions. L'éditeur ne note pas automatiquement la trace. Vérifie la sortie et l'état après chaque opération ; obtenir uniquement le dernier nombre ne suffit pas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la séquence d'appels après l'essai"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"5*2;\"};\n    const Token primero = lector.leer();\n    std::cout << \"Premier: \" << primero.valor << \"\\n\";\n    const Token anticipado = lector.leer();\n    lector.devolver(anticipado);\n    std::cout << \"En attente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token repetido = lector.leer();\n    std::cout << \"Relu: \" << repetido.clase << \"\\n\";\n    std::cout << \"En attente: \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << \"Suivant: \" << siguiente.valor;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette séquence affiche la trace demandée sans accéder à la représentation privée. Un client utilisant d'autres noms peut convenir s'il respecte l'ordre et les états. Chaque lecture renvoie un Token par valeur : conserver une variable locale ne réserve pas automatiquement ce token dans le lecteur. L'exercice copie Token, pas le lecteur. Lector_tokens contient un istringstream, qui ne peut pas être copié ; construis un autre lecteur avec le texte d'essai pour effectuer un parcours indépendant."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour le test de réserve occupée, compare avec la page précédente : vérifie le rejet avant de lire le token conservé. Pour un nombre invalide avec une réserve vide, intercepte Token invalide et observe que tiene_pendiente() vaut false. La lecture suivante doit continuer à partir des caractères du texte, puisque le rejet n'a consommé ni inséré d'unité."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La réserve peut aussi contenir la fin du texte"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis l'état et les étiquettes après avoir réservé le token de fin.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 9;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"\"};\n    const Token fin = lector.leer();\n    lector.devolver(fin);\n    std::cout << lector.tiene_pendiente() << \"\\n\";\n    const Token otra_vez = lector.leer();\n    std::cout << otra_vez.clase << \" \" << lector.tiene_pendiente() << \"\\n\";\n    const Token siguiente = lector.leer();\n    std::cout << siguiente.clase;\n    return 0;\n}\n",
+          "answers": [
+            "1\nf 0\nf"
+          ],
+          "explanation": "Le marqueur de fin est un token cohérent que l'on peut réserver. Le lire vide le tampon ; demander une autre unité au texte épuisé indique de nouveau la fin. Le client choisit de s'arrêter lorsqu'il reçoit ce marqueur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le tampon ne garantit pas à lui seul la terminaison de tous les algorithmes. Un client qui restitue puis relit indéfiniment la même unité sans avancer ni s'arrêter pourrait tourner sans fin. La future grammaire devra justifier quel token chaque étape consomme et pourquoi restituer une unité transfère sa responsabilité à une autre règle."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une interface stable pour les unités plus longues"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lire des nombres à plusieurs chiffres modifiera la reconnaissance des caractères et son domaine numérique. Le client continuera à recevoir un Token et à restituer une seule unité. La réserve d'un token ne dépend pas du nombre de caractères qui le représentaient : cette séparation permettra de construire ensuite des règles d'expression sans connaître les détails de lecture de chaque nombre."
+        },
+        {
+          "type": "note",
+          "text": "La prochaine extension modifiera également token_valido : le domaine déclaré, la reconnaissance et la validation de la réserve doivent correspondre. N'en étendre qu'un produirait un lecteur qui reconnaît des nombres puis les refuse lorsqu'ils sont restitués. Le tampon avec indicateur d'occupation et la lecture anticipée adaptent Token_stream du texte d'appui (Stroustrup, 2024, sections 5.8.1–5.8.2). La validation des combinaisons, les consultations et les activités appartiennent à ce parcours."
+        }
+      ]
+    }
+  ]
+}
