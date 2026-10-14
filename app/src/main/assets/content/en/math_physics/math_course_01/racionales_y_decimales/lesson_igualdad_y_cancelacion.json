@@ -1,0 +1,438 @@
+{
+  "id": "math_course_01__racionales_y_decimales__igualdad_y_cancelacion",
+  "title": "Equality, Cross Products, and Cancellation",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Why Cross Products Work"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reciprocal now lets us justify a rule used earlier. For nonzero b and d, if a/b = c/d, multiplying both sides by b×d preserves equality. On the first side, b combines with its reciprocal, leaving a×d; on the other side, b×c remains. Thus equality of the fractions implies a×d = b×c."
+        },
+        {
+          "type": "paragraph",
+          "text": "The converse also works: if a×d = b×c, we divide both sides by b×d, which is nonzero, and recover a/b = c/d. Both directions are necessary: we have established not merely a condition that accompanies equality, but a condition equivalent to it."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cruzados_dos_direcciones",
+          "prompt": "For 4/9 and 12/27, calculate the cross products and choose what they allow us to conclude.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izq",
+                  "type": "numeric",
+                  "label": "4×27"
+                },
+                {
+                  "id": "der",
+                  "type": "numeric",
+                  "label": "12×9"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izq": {
+                    "type": "numeric",
+                    "expected": "108"
+                  },
+                  "der": {
+                    "type": "numeric",
+                    "expected": "108"
+                  }
+                }
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "They only allow us to approximate both decimals.",
+                  "reviewFeedback": "Your interpretation treats the products as a decimal approximation. Check whether any rounding took place and what exact relationship these products verify."
+                },
+                {
+                  "id": "b",
+                  "label": "They prove exact equality, because the denominators are nonzero.",
+                  "reviewFeedback": "Check why the condition on the denominators lets you go from the products to the relationship between the fractions."
+                },
+                {
+                  "id": "c",
+                  "label": "They prove that both fractions are in simplest form.",
+                  "reviewFeedback": "Your interpretation confuses equality between representations with simplifying each one. Examine what being in simplest form means and whether the products verify that condition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Both products equal 108. The equivalence of the two conditions proves exact equality; it does not claim each representation is in simplest form.",
+            "incorrect": "Equal cross products are not a rounding result. 12/27 still has a common factor of three, although it represents 4/9."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "denominadores_hipotesis",
+          "prompt": "Someone proposes using 0×5 = 0×7 to claim that 0/0 = 7/5. What is wrong?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The multiplication 0×5 was calculated incorrectly.",
+                  "reviewFeedback": "Your diagnosis points to an error in multiplication. Check that calculation first, and distinguish a correct calculation from the validity of the criterion being applied."
+                },
+                {
+                  "id": "b",
+                  "label": "The criterion requires nonzero denominators; 0/0 does not represent a number.",
+                  "reviewFeedback": "Review every assumption of the criterion before applying it to the proposed expressions. Check that both represent quotients within its domain."
+                },
+                {
+                  "id": "c",
+                  "label": "Cross products only work with positive fractions.",
+                  "reviewFeedback": "Your diagnosis restricts the criterion to positive signs. Review whether the proof requires that sign or a different condition for carrying out division."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplication by zero is correct, but the first expression has a zero denominator. Without the assumption, the quotient being compared does not exist.",
+            "incorrect": "The criterion also works for negative fractions when the denominators are nonzero. Finding two equal products outside the rule's domain is not enough."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "equivalencia_desconocida",
+          "prompt": "Complete 5/12 = 15/d with a nonzero denominator.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5×d = 15×12 = 180, so d = 36. Multiplying both terms of 5/12 by three yields the same representation.",
+            "incorrect": "Adding ten to the denominator imitates an additive change that does not preserve the fraction. The same factor of three must apply to the top and bottom."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cancellation Requires a Nonzero Factor"
+        },
+        {
+          "type": "paragraph",
+          "text": "If k×u = k×v and k is nonzero, multiply both sides by the reciprocal of k. Associativity lets us form k⁻¹×k = 1, leaving u = v. This is the mathematical reason for canceling a factor. If k is zero, it has no reciprocal and both products can be equal even when u and v differ."
+        },
+        {
+          "type": "paragraph",
+          "text": "The same reasoning explains (k×m)/(k×n) = m/n when k and n are nonzero. The cross products become k×m×n and m×k×n, which are equal by associativity and commutativity. This does not justify removing an addend from a sum."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelar_en_igualdad",
+          "prompt": "We know (−3/4)×u = (−3/4)×(5/6). What is u, and why?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Value of u",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/6"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "The common factor has a reciprocal: applying it to both sides leaves the remaining factors equal.",
+                  "reviewFeedback": "Check that the common factor has a reciprocal and that the same operation is applied to both sides of the equality."
+                },
+                {
+                  "id": "b",
+                  "label": "The negative common factor forces us to change the sign of the remaining factor.",
+                  "reviewFeedback": "Your argument changes the sign of a factor remaining after cancellation. Explicitly apply the same operation to both sides and see which signs are preserved."
+                },
+                {
+                  "id": "c",
+                  "label": "u can be any rational number because both sides are products.",
+                  "reviewFeedback": "Your statement allows any value without verifying it. Substitute a candidate value into the equality and consider what information a nonzero common factor preserves."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The common factor −3/4 is nonzero and has a reciprocal. Applying it on both sides gives u = 5/6.",
+            "incorrect": "The factor's sign appears on both sides and does not change the other factor. Cancellation depends on the common factor being nonzero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelacion_cero_contraejemplo",
+          "prompt": "From 0×u = 0×v, what must necessarily follow?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "u = v.",
+                  "reviewFeedback": "Your conclusion implicitly cancels a factor. Check whether that factor has the inverse operation needed to justify the step."
+                },
+                {
+                  "id": "b",
+                  "label": "u and v must both equal zero.",
+                  "reviewFeedback": "Your conclusion requires the other factors to be zero as well. Test this using a nonzero value and examine the product."
+                },
+                {
+                  "id": "c",
+                  "label": "Nothing requires u and v to be equal: u=2 and v=9 satisfy the equality.",
+                  "reviewFeedback": "Check that the proposed case satisfies the original equality and consider what kind of conclusion a counterexample can disprove."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Both products are zero for u=2 and v=9. The counterexample proves that canceling zero is invalid.",
+            "incorrect": "Equality of products with a zero factor gives no information about the other factors. There is no reciprocal with which to cancel it."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_completo",
+          "prompt": "Select all valid equalities.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(6×(2+5))/(6×4) = 7/4.",
+                  "reviewFeedback": "For the selected equality, check whether the factor being removed multiplies the entire numerator and denominator. Also verify the addition."
+                },
+                {
+                  "id": "b",
+                  "label": "(6+5)/(6+4) = 5/4.",
+                  "reviewFeedback": "For the selected equality, distinguish six as an addend from six as a factor. Calculate the original quotient to see whether its value is preserved."
+                },
+                {
+                  "id": "c",
+                  "label": "(6×(2+5))/(6×4) = (2+5)/4.",
+                  "reviewFeedback": "For the selected equality, identify the extent of the common factor. Check that cancellation leaves the complete expression multiplied by that factor intact."
+                },
+                {
+                  "id": "d",
+                  "label": "(6×2+6×5)/(6×4) = (2+5)/4.",
+                  "reviewFeedback": "For the selected equality, factor the entire numerator before considering cancellation. Check that the distributive property preserves both addends."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "In a, c, and d, six multiplies the entire numerator and denominator; distribution or factorization reveals that structure.",
+            "incorrect": "Option b cancels addends and changes 11/10 into 5/4. Seeing the same written six does not guarantee that it is a factor of the whole expression."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Zero Product Reveals a Zero Factor"
+        },
+        {
+          "type": "paragraph",
+          "text": "If u×v = 0, at least one factor is zero. If u is already zero, the statement holds. If u is nonzero, multiplying by its reciprocal gives v = 0. This argument uses two cases and covers every possibility. It does not prove that both factors must be zero."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_nulo_no_nulo",
+          "prompt": "A rational number t satisfies (7/9)×t = 0. What is t?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Value of t",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "0"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Since 7/9 is nonzero, its reciprocal lets us cancel that factor and obtain t = 0.",
+            "incorrect": "A small positive factor does not make a product exactly zero when the other factor is nonzero. Exact equality is required here."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_nulo_casos",
+          "prompt": "If u×v = 0, select all statements that are always true.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "u = 0 or v = 0, or both.",
+                  "reviewFeedback": "For the selected statement, review what \"or\" means and whether it includes the case where both conditions hold."
+                },
+                {
+                  "id": "b",
+                  "label": "u = 0 and v = 0 necessarily.",
+                  "reviewFeedback": "For the selected statement, check the requirement that both factors must be zero. Try a product with one zero factor and examine the other."
+                },
+                {
+                  "id": "c",
+                  "label": "If u is not zero, v must be zero.",
+                  "reviewFeedback": "For the selected statement, use the assumption about the first factor before applying its reciprocal. Check what remains of the product equality."
+                },
+                {
+                  "id": "d",
+                  "label": "If u is zero, v may be any rational number.",
+                  "reviewFeedback": "For the selected statement, keep the assumption that the first factor is zero and check what restrictions the product places on the second."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "At least one factor is zero; if one is nonzero, the other must be zero. If u is zero, the equality imposes no restriction on v.",
+            "incorrect": "Both do not have to be zero: 0×8 = 0 is a counterexample. Reasoning by cases avoids canceling zero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_distributividad",
+          "prompt": "We know that 5×(p+q) = 0. Which conclusion is justified?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "p = 0 and q = 0.",
+                  "reviewFeedback": "Your conclusion requires each addend to be zero. Consider whether a sum could be zero because nonzero values cancel one another."
+                },
+                {
+                  "id": "b",
+                  "label": "p+q = 0, because five is nonzero; p and q may be opposites.",
+                  "reviewFeedback": "Check which entire factor is multiplied by five and why the inverse operation is allowed. Keep the distinction between a sum and its addends."
+                },
+                {
+                  "id": "c",
+                  "label": "Five cannot be canceled because the second factor is a sum.",
+                  "reviewFeedback": "Your argument rules out cancellation because the other factor is a sum. Identify which complete expression is being multiplied and whether cancellation requires dividing addends separately."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Five multiplies the entire sum and is nonzero, giving p+q = 0. For example, p=3 and q=−3 satisfy the condition.",
+            "incorrect": "A complete factor may be a sum. We cannot infer that each addend is zero: they can cancel each other."
+          }
+        }
+      ]
+    }
+  ]
+}

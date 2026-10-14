@@ -1,0 +1,438 @@
+{
+  "id": "math_course_01__racionales_y_decimales__igualdad_y_cancelacion",
+  "title": "Égalité, produits en croix et simplification",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pourquoi les produits en croix fonctionnent"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'inverse permet maintenant de justifier une règle utilisée auparavant. Pour b et d non nuls, si a/b = c/d, multiplier les deux membres par b×d conserve l'égalité. Dans le premier membre, b se combine avec son inverse et il reste a×d ; dans le second, il reste b×c. Ainsi, l'égalité des fractions implique a×d = b×c."
+        },
+        {
+          "type": "paragraph",
+          "text": "La réciproque fonctionne aussi : si a×d = b×c, on divise les deux membres par b×d, qui est non nul, et on retrouve a/b = c/d. Les deux sens sont nécessaires : on vérifie non seulement une condition liée à l'égalité, mais une condition qui lui est équivalente."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cruzados_dos_direcciones",
+          "prompt": "Pour 4/9 et 12/27, calcule les produits en croix et choisis ce qu'ils permettent de conclure.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izq",
+                  "type": "numeric",
+                  "label": "4×27"
+                },
+                {
+                  "id": "der",
+                  "type": "numeric",
+                  "label": "12×9"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izq": {
+                    "type": "numeric",
+                    "expected": "108"
+                  },
+                  "der": {
+                    "type": "numeric",
+                    "expected": "108"
+                  }
+                }
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Ils permettent seulement d'approximer les deux nombres décimaux.",
+                  "reviewFeedback": "Ton interprétation considère les produits comme une approximation décimale. Vérifie si un arrondi a été effectué et quelle relation exacte ces produits permettent de vérifier."
+                },
+                {
+                  "id": "b",
+                  "label": "Ils démontrent une égalité exacte, car les dénominateurs sont non nuls.",
+                  "reviewFeedback": "Vérifie pourquoi la condition sur les dénominateurs permet de passer des produits à la relation entre les fractions."
+                },
+                {
+                  "id": "c",
+                  "label": "Ils démontrent que les deux fractions sont irréductibles.",
+                  "reviewFeedback": "Ton interprétation confond l'égalité de deux écritures avec la simplification de chacune. Examine la condition qui caractérise une fraction irréductible et si les produits vérifient cette condition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les deux produits valent 108. L'équivalence des deux conditions démontre une égalité exacte ; elle ne signifie pas que chaque écriture est irréductible.",
+            "incorrect": "Des produits en croix égaux ne sont pas un arrondi. 12/27 possède encore le facteur commun trois, même si elle représente 4/9."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "denominadores_hipotesis",
+          "prompt": "On propose d'utiliser 0×5 = 0×7 pour affirmer que 0/0 = 7/5. Où est l'erreur ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La multiplication 0×5 est mal calculée.",
+                  "reviewFeedback": "Ton diagnostic signale une erreur de multiplication. Vérifie d'abord cette opération et distingue un calcul correct de la validité du critère qu'on essaie d'appliquer."
+                },
+                {
+                  "id": "b",
+                  "label": "Le critère exige des dénominateurs non nuls ; 0/0 ne représente pas un nombre.",
+                  "reviewFeedback": "Examine toutes les hypothèses du critère avant de l'appliquer aux écritures proposées. Vérifie que les deux représentent des quotients dans leur domaine de définition."
+                },
+                {
+                  "id": "c",
+                  "label": "Les produits en croix ne fonctionnent qu'avec des fractions positives.",
+                  "reviewFeedback": "Ton diagnostic limite le critère aux signes positifs. Vérifie si la démonstration exige ce signe ou une autre condition pour effectuer les divisions."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La multiplication par zéro est correcte, mais la première écriture possède un dénominateur nul. Sans cette hypothèse, le quotient que l'on tente de comparer n'existe pas.",
+            "incorrect": "Le critère fonctionne aussi avec des fractions négatives si les dénominateurs sont non nuls. Trouver deux produits égaux hors de son domaine ne suffit pas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "equivalencia_desconocida",
+          "prompt": "Complète 5/12 = 15/d avec un dénominateur non nul.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5×d = 15×12 = 180, donc d = 36. Multiplier les deux termes de 5/12 par trois donne la même écriture.",
+            "incorrect": "Ajouter dix au dénominateur imite une modification additive qui ne conserve pas la fraction. Le même facteur trois doit s'appliquer en haut et en bas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Simplifier exige un facteur non nul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si k×u = k×v et si k n'est pas nul, on multiplie les deux membres par l'inverse de k. L'associativité permet de former k⁻¹×k = 1 et il reste u = v. Voilà la justification mathématique de la suppression d'un facteur commun. Si k vaut zéro, l'inverse n'existe pas et les deux produits peuvent être égaux même si u et v sont différents."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le même raisonnement explique (k×m)/(k×n) = m/n lorsque k et n sont non nuls. Les produits en croix deviennent k×m×n et m×k×n, égaux par associativité et commutativité. Cela n'autorise pas à supprimer un terme d'une somme."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelar_en_igualdad",
+          "prompt": "On sait que (−3/4)×u = (−3/4)×(5/6). Quelle est la valeur de u et pourquoi ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Valeur de u",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/6"
+              }
+            },
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le facteur commun possède un inverse : l'appliquer aux deux membres laisse les autres facteurs égaux.",
+                  "reviewFeedback": "Vérifie que le facteur commun possède un inverse et que la même opération est appliquée aux deux membres de l'égalité."
+                },
+                {
+                  "id": "b",
+                  "label": "Le facteur commun négatif impose de changer le signe du facteur restant.",
+                  "reviewFeedback": "Ton argument change le signe d'un facteur qui reste après simplification. Applique explicitement la même opération aux deux membres et vérifie quels signes sont conservés."
+                },
+                {
+                  "id": "c",
+                  "label": "u peut être n'importe quel nombre rationnel, car les deux membres sont des produits.",
+                  "reviewFeedback": "Ton affirmation accepte toute valeur sans la vérifier. Remplace u par une valeur candidate dans l'égalité et examine l'information conservée par un facteur commun non nul."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le facteur commun −3/4 est non nul et possède un inverse. L'appliquer aux deux membres donne u = 5/6.",
+            "incorrect": "Le signe du facteur apparaît dans les deux membres et ne change pas celui de l'autre facteur. La simplification dépend du fait que le facteur commun n'est pas nul."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelacion_cero_contraejemplo",
+          "prompt": "De 0×u = 0×v, que peut-on nécessairement conclure ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "u = v.",
+                  "reviewFeedback": "Ta conclusion supprime implicitement un facteur. Vérifie si ce facteur admet l'opération inverse nécessaire pour justifier cette étape."
+                },
+                {
+                  "id": "b",
+                  "label": "u et v doivent tous deux être nuls.",
+                  "reviewFeedback": "Ta conclusion exige que les autres facteurs soient également nuls. Vérifie cette exigence avec une valeur non nulle et examine le produit."
+                },
+                {
+                  "id": "c",
+                  "label": "Rien n'impose que u et v soient égaux : u=2 et v=9 satisfont l'égalité.",
+                  "reviewFeedback": "Vérifie que le cas proposé satisfait l'égalité initiale et examine quel type de conclusion un contre-exemple permet de réfuter."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les deux produits valent zéro avec u=2 et v=9. Ce contre-exemple montre que simplifier par zéro est interdit.",
+            "incorrect": "Une égalité de produits comportant un facteur nul n'apporte aucune information sur les autres facteurs. Aucun inverse ne permet de le supprimer."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_completo",
+          "prompt": "Sélectionne toutes les égalités valables.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(6×(2+5))/(6×4) = 7/4.",
+                  "reviewFeedback": "Pour l'égalité choisie, vérifie si le facteur supprimé multiplie le numérateur entier et le dénominateur entier. Vérifie aussi le calcul de la somme."
+                },
+                {
+                  "id": "b",
+                  "label": "(6+5)/(6+4) = 5/4.",
+                  "reviewFeedback": "Pour l'égalité choisie, distingue le six en tant que terme additionné du six en tant que facteur. Calcule le quotient initial pour vérifier si sa valeur est conservée."
+                },
+                {
+                  "id": "c",
+                  "label": "(6×(2+5))/(6×4) = (2+5)/4.",
+                  "reviewFeedback": "Pour l'égalité choisie, repère toute l'expression multipliée par le facteur commun. Vérifie que la simplification laisse intacte cette expression entière."
+                },
+                {
+                  "id": "d",
+                  "label": "(6×2+6×5)/(6×4) = (2+5)/4.",
+                  "reviewFeedback": "Pour l'égalité choisie, factorise le numérateur entier avant d'examiner la simplification. Vérifie que la distributivité conserve les deux termes de la somme."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dans a, c et d, six multiplie le numérateur entier et le dénominateur entier ; la distributivité ou la factorisation révèle cette structure.",
+            "incorrect": "La proposition b supprime des termes additionnés et transforme 11/10 en 5/4. Voir le même six écrit ne garantit pas qu'il soit un facteur de l'expression entière."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un produit nul révèle un facteur nul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si u×v = 0, au moins un des facteurs est nul. Si u est déjà nul, l'affirmation est vérifiée. Si u n'est pas nul, multiplier par son inverse donne v = 0. Ce raisonnement distingue deux cas et couvre toutes les possibilités. Il ne démontre pas que les deux facteurs doivent être nuls."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_nulo_no_nulo",
+          "prompt": "Un nombre rationnel t vérifie (7/9)×t = 0. Quelle est la valeur de t ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Valeur de t",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "0"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Puisque 7/9 n'est pas nul, son inverse permet de supprimer ce facteur et d'obtenir t = 0.",
+            "incorrect": "Un petit facteur positif ne rend pas exactement nul un produit avec un autre facteur non nul. Ici, une égalité exacte est exigée."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_nulo_casos",
+          "prompt": "Si u×v = 0, sélectionne toutes les affirmations toujours vraies.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "u = 0 ou v = 0, ou les deux.",
+                  "reviewFeedback": "Pour l'affirmation choisie, revois le sens de la disjonction « ou » et vérifie si elle inclut le cas où les deux conditions sont remplies."
+                },
+                {
+                  "id": "b",
+                  "label": "u = 0 et v = 0 nécessairement.",
+                  "reviewFeedback": "Pour l'affirmation choisie, vérifie l'exigence selon laquelle les deux facteurs seraient nuls. Essaie un produit dont un seul facteur est nul et examine l'autre."
+                },
+                {
+                  "id": "c",
+                  "label": "Si u n'est pas nul, v doit être nul.",
+                  "reviewFeedback": "Pour l'affirmation choisie, utilise l'hypothèse sur le premier facteur avant d'appliquer son inverse. Vérifie ce que devient l'égalité du produit."
+                },
+                {
+                  "id": "d",
+                  "label": "Si u est nul, v peut être n'importe quel nombre rationnel.",
+                  "reviewFeedback": "Pour l'affirmation choisie, conserve l'hypothèse que le premier facteur est nul et examine les restrictions que le produit impose au second."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Au moins un facteur est nul ; si l'un est non nul, l'autre doit être nul. Si u est nul, l'égalité n'impose aucune restriction à v.",
+            "incorrect": "Les deux facteurs n'ont pas besoin d'être nuls : 0×8 = 0 est un contre-exemple. La preuve par cas évite de supprimer zéro."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_distributividad",
+          "prompt": "On sait que 5×(p+q) = 0. Quelle conclusion est justifiée ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "p = 0 et q = 0.",
+                  "reviewFeedback": "Ta conclusion exige que chaque terme de la somme soit nul. Vérifie si des valeurs non nulles peuvent s'annuler mutuellement dans une somme."
+                },
+                {
+                  "id": "b",
+                  "label": "p+q = 0, car cinq est non nul ; p et q peuvent être opposés.",
+                  "reviewFeedback": "Vérifie quelle expression entière est multipliée par cinq et pourquoi une opération inverse peut être appliquée. Maintiens la distinction entre la somme et ses termes."
+                },
+                {
+                  "id": "c",
+                  "label": "On ne peut pas supprimer cinq parce que le deuxième facteur est une somme.",
+                  "reviewFeedback": "Ton argument interdit de simplifier un facteur parce que l'autre est une somme. Détermine quelle expression entière est multipliée et si la simplification exige de diviser séparément les termes de la somme."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cinq multiplie toute la somme et est non nul : on obtient p+q = 0. Par exemple, p=3 et q=−3 satisfont cette condition.",
+            "incorrect": "Un facteur entier peut être une somme. On ne peut pas déduire que chaque terme est nul : ils peuvent se compenser."
+          }
+        }
+      ]
+    }
+  ]
+}
