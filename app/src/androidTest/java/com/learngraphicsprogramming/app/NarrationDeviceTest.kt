@@ -273,6 +273,8 @@ class NarrationDeviceTest {
                 try { assertTrue(instrumentation.uiAutomation.injectInputEvent(event, true)) } finally { event.recycle() }
             }
             inject(MotionEvent.ACTION_DOWN, startX, startY)
+            // A deliberate touch/LDPlayer drag is armed by a brief stationary press.
+            SystemClock.sleep(210L)
             repeat(8) { index ->
                 SystemClock.sleep(25)
                 inject(MotionEvent.ACTION_MOVE, startX - 15f * (index + 1), startY - 24f * (index + 1))
@@ -336,6 +338,13 @@ class NarrationDeviceTest {
                 for (amount in listOf(1f, -1f, 2f, -2f)) {
                     send(MotionEvent.ACTION_SCROLL, 2f, 2f, mouse = true, wheel = amount)
                 }
+                // LDPlayer can translate a wheel tick into a fast touchscreen swipe.
+                send(MotionEvent.ACTION_DOWN, 2f, 2f, mouse = false)
+                send(MotionEvent.ACTION_MOVE, 2f, 95f, mouse = false)
+                send(MotionEvent.ACTION_UP, 2f, 95f, mouse = false)
+                assertEquals("A wheel-like touch swipe must not move the bar", initialY, row.y, 0.01f)
+                assertEquals(originalPosition, NarrationSettingsRepository.position(activity))
+
                 // Movement without a mouse-down / primary button must not acquire a drag.
                 send(MotionEvent.ACTION_MOVE, 80f, 80f, mouse = true)
                 send(MotionEvent.ACTION_DOWN, 2f, 2f, mouse = true)
@@ -355,6 +364,8 @@ class NarrationDeviceTest {
                 // Touchscreen dragging remains supported without mouse buttons.
                 val afterMouse = row.y
                 send(MotionEvent.ACTION_DOWN, 2f, 2f, mouse = false)
+                // Finger/LDPlayer-touch drag intentionally pauses before moving.
+                SystemClock.sleep(210L)
                 send(MotionEvent.ACTION_MOVE, 25f, 37f, mouse = false)
                 send(MotionEvent.ACTION_UP, 25f, 37f, mouse = false)
                 assertTrue("Finger drag still moves the bar", row.y > afterMouse + 10f)

@@ -32,3 +32,43 @@ internal object FloatingReaderPlacement {
         !point.x.isFinite() || !point.y.isFinite() || point.x < left || point.y < top ||
             point.x > right || point.y > bottom
 }
+
+/**
+ * A wheel converted to a touchscreen swipe by an emulator is indistinguishable
+ * from a finger swipe at the MotionEvent source level. To avoid moving the
+ * floating reader, a touchscreen drag must begin after a short stationary press.
+ * Native mouse gestures with BUTTON_PRIMARY still drag immediately.
+ */
+internal class FloatingReaderDragGate(private val touchHoldMs: Long = 180L) {
+    private var downAt: Long? = null
+    private var startedWithMouse = false
+    private var rejected = false
+
+    val isRejected: Boolean get() = rejected
+    val canClick: Boolean get() = downAt != null && !rejected
+
+    fun begin(eventTime: Long, mouse: Boolean, primaryPressed: Boolean) {
+        downAt = eventTime
+        startedWithMouse = mouse
+        rejected = mouse && !primaryPressed
+    }
+
+    /** Call on every MOVE. An early displaced touchscreen stream cannot arm later. */
+    fun mayDrag(eventTime: Long, movedBeyondSlop: Boolean, mouse: Boolean, primaryPressed: Boolean): Boolean {
+        val start = downAt ?: return false
+        if (rejected) return false
+        if (mouse != startedWithMouse || (mouse && !primaryPressed)) {
+            rejected = true
+            return false
+        }
+        if (!movedBeyondSlop) return false
+        if (!mouse && (eventTime < start || eventTime - start < touchHoldMs)) {
+            rejected = true
+            return false
+        }
+        return true
+    }
+
+    fun reject() { rejected = true }
+    fun end() { downAt = null; rejected = false; startedWithMouse = false }
+}

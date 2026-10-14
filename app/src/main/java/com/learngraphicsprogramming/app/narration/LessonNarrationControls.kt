@@ -19,6 +19,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.learngraphicsprogramming.app.AppearanceSettingsRepository
 import com.learngraphicsprogramming.app.FloatingPoint
 import com.learngraphicsprogramming.app.FloatingReaderPlacement
+import com.learngraphicsprogramming.app.FloatingReaderDragGate
 import com.learngraphicsprogramming.app.R
 import kotlin.math.abs
 
@@ -178,32 +179,34 @@ class LessonNarrationControls(
 
     private inner class DraggableRow : LinearLayout(activity) {
         var dragging = false
-        private var pressedGesture = false
+        private val dragGate = FloatingReaderDragGate()
         private var downX = 0f; private var downY = 0f
         private var startX = 0f; private var startY = 0f
         private val slop = ViewConfiguration.get(activity).scaledTouchSlop
 
-        private fun directDragInput(event: MotionEvent): Boolean {
-            val mouse = event.isFromSource(InputDevice.SOURCE_MOUSE) ||
+        private fun fromMouse(event: MotionEvent): Boolean =
+            event.isFromSource(InputDevice.SOURCE_MOUSE) ||
                 (event.pointerCount > 0 && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE)
-            return !mouse || (event.buttonState and MotionEvent.BUTTON_PRIMARY) != 0
-        }
+
+        private fun primaryPressed(event: MotionEvent): Boolean =
+            (event.buttonState and MotionEvent.BUTTON_PRIMARY) != 0
+
+        private fun movedBeyondSlop(event: MotionEvent): Boolean =
+            abs(event.rawX-downX) > slop || abs(event.rawY-downY) > slop
 
         private fun begin(event: MotionEvent) {
-            pressedGesture = directDragInput(event)
             dragging = false
-            if (!pressedGesture) return
             downX = event.rawX; downY = event.rawY; startX = x; startY = y
+            dragGate.begin(event.eventTime, fromMouse(event), primaryPressed(event))
         }
 
-        private fun stopGesture() {
-            pressedGesture = false
+        private fun endGesture() {
             dragging = false
+            dragGate.end()
             parent?.requestDisallowInterceptTouchEvent(false)
         }
 
         override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
-            // A mouse wheel event over the floating bar must never move it.
             if (event.actionMasked == MotionEvent.ACTION_SCROLL) return true
             return super.dispatchGenericMotionEvent(event)
         }
@@ -211,48 +214,54 @@ class LessonNarrationControls(
         override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> begin(event)
+                MotionEvent.ACTION_POINTER_DOWN -> dragGate.reject()
                 MotionEvent.ACTION_MOVE -> {
-                    if (pressedGesture && !directDragInput(event)) stopGesture()
-                    if (pressedGesture && !dragging &&
-                        (abs(event.rawX-downX) > slop || abs(event.rawY-downY) > slop)) {
+                    if (event.pointerCount != 1) dragGate.reject()
+                    if (dragGate.mayDrag(event.eventTime, movedBeyondSlop(event),
+                            fromMouse(event), primaryPressed(event))) {
                         dragging = true
                         parent?.requestDisallowInterceptTouchEvent(true)
                     }
                 }
             }
-            return dragging
+            // Consume fast synthetic swipes so they cannot click a child button.
+            return dragging || dragGate.isRejected
         }
 
         override fun onTouchEvent(event: MotionEvent): Boolean {
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     begin(event)
-                    return pressedGesture
+                    return true
+                }
+                MotionEvent.ACTION_POINTER_DOWN -> {
+                    dragGate.reject()
+                    return true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    // Hover/wheel-generated motion without a pressed mouse button is not a drag.
-                    if (!pressedGesture || !directDragInput(event)) {
-                        stopGesture()
-                        return false
-                    }
-                    if (abs(event.rawX-downX) > slop || abs(event.rawY-downY) > slop) dragging = true
-                    if (dragging) {
-                        // No screen clamp here. The head restores a fully visible position later.
+                    if (event.pointerCount != 1) dragGate.reject()
+                    if (dragGate.mayDrag(event.eventTime, movedBeyondSlop(event),
+                            fromMouse(event), primaryPressed(event))) {
+                        dragging = true
+                        parent?.requestDisallowInterceptTouchEvent(true)
+                        // Screen clamping is deliberately handled by the header shortcut.
                         x = startX + event.rawX-downX
                         y = startY + event.rawY-downY
                     }
                     return true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    val owned = pressedGesture
-                    if (owned && dragging) savePosition()
-                    else if (owned && event.actionMasked == MotionEvent.ACTION_UP) performClick()
-                    stopGesture()
-                    return owned
+                    val accepted = dragGate.canClick
+                    if (accepted && dragging) savePosition()
+                    else if (accepted && event.actionMasked == MotionEvent.ACTION_UP &&
+                        !movedBeyondSlop(event)) performClick()
+                    endGesture()
+                    return true
                 }
                 else -> return super.onTouchEvent(event)
             }
         }
+
         override fun performClick(): Boolean { super.performClick(); return true }
     }
 }
