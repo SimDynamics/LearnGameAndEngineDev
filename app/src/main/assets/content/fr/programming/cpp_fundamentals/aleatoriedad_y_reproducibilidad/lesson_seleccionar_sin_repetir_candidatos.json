@@ -1,0 +1,332 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos",
+  "title": "Sélectionner des candidats sans répétition",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir un nombre exact de candidats distincts"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un atelier dispose d'identifiants de participants et veut en choisir trois pour une activité. Chaque participant ne peut apparaître qu'une seule fois. Tirer trois entiers dans un intervalle ne garantit pas cette exigence : le générateur autorise les répétitions. L'histogramme précédent compte ces répétitions ; ici, nous changeons le contrat de sélection. Sélectionner sans remise signifie qu'un candidat choisi ne reste plus disponible pendant cette sélection."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous travaillerons avec un vecteur de dix identifiants int au maximum, tous distincts et compris entre zéro et neuf. Leur ordre initial fait partie de la configuration. Nous demanderons un nombre compris entre zéro et le nombre de candidats. Le résultat doit contenir exactement cette quantité, sans répétition, dans l'ordre de tirage. Chaque résultat doit appartenir au vecteur original, dont les valeurs et l'ordre sont conservés. Zéro est un identifiant valide."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__filtrar_no_asegura_cantidad",
+          "question": "Tu tires trois valeurs puis tu élimines les répétitions. Que peux-tu conclure quant à l'exigence de choisir trois candidats distincts ?",
+          "options": [
+            "Ce n'est pas garanti : il peut rester moins de trois candidats.",
+            "C'est toujours garanti dès lors que trois valeurs ont été tirées.",
+            "C'est garanti si toutes les valeurs appartiennent à l'intervalle autorisé."
+          ],
+          "correctIndex": 0,
+          "explanation": "Supprimer ensuite les répétitions ne garantit pas la quantité demandée. Nous devons contrôler les candidats encore disponibles."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__validar_tambien_cantidad_cero",
+          "question": "La liste des candidats est {2,2} et la quantité demandée est zéro. Notre contrat exige néanmoins des identifiants distincts. Que faut-il faire ?",
+          "options": [
+            "Renvoyer un résultat vide et accepter automatiquement cette configuration.",
+            "Rejeter les candidats avant d'utiliser le moteur.",
+            "Accepter la configuration après avoir supprimé l'une des deux copies."
+          ],
+          "correctIndex": 1,
+          "explanation": "Demander zéro ne supprime pas les exigences de validité du vecteur. Le rejet précède tout tirage."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recommencer chaque fois qu'un identifiant déjà choisi apparaît pourrait exiger un nombre indéterminé d'essais. Ici, nous ne choisirons que parmi les candidats disponibles et effectuerons une extraction par élément demandé. Cela décrit le parcours du programme, sans fixer le nombre d'appels internes que la distribution effectue au moteur pour obtenir chaque indice."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Représenter la disponibilité par un préfixe actif"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une copie de travail permet de préserver l'original. Nous maintenons un compteur restantes : seuls les indices allant de zéro à restantes-1 représentent des candidats disponibles. Cette partie initiale s'appelle ici le préfixe actif. Le vecteur entier conserve sa taille ; les positions allant de restantes jusqu'à la fin sont exclues de la sélection. Nous utiliserons des copies, des compteurs et des accès aux éléments déjà étudiés."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par exemple, trabajo={6,1,8,3} et restantes=2 ne rendent disponibles que six et un. Huit et trois restent stockés mais sont hors du préfixe. L'intervalle d'indices de tirage est 0..1 inclus : ce n'est pas l'intervalle des identifiants. Avant de construire uniform_int_distribution<int>{0,restantes-1}, il faut avoir démontré que restantes est positif."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__indice_no_identificador",
+          "question": "Dans trabajo={9,2,7,4}, avec restantes=3, l'indice un est tiré. Quel identifiant est choisi ?",
+          "options": [
+            "Un, puisqu'il s'agit du nombre produit par la distribution.",
+            "Quatre, puisqu'il se trouve encore dans le vecteur.",
+            "Deux, qui occupe cette position du préfixe actif."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'indice désigne une position disponible. L'élément à cette position est le candidat choisi ; les positions de la fin ne sont plus disponibles."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour retirer un candidat sans déplacer toute la collection, conserve d'abord son identifiant. Le dernier élément actif peut combler le vide ; réduis ensuite restantes d'une unité. L'ancienne position finale devient inactive. Si une autre position était choisie, l'ancien dernier élément reste disponible à sa nouvelle place ; si la dernière position active était choisie, seul ce candidat est retiré. La partie inactive peut contenir des copies répétées et n'a pas le sens d'une liste de candidats disponibles. Exprime cet ordre avec des affectations séparées et des accès justifiés."
+        },
+        {
+          "type": "paragraph",
+          "text": "Initialement, le préfixe contient tous les candidats distincts. Chaque extraction en retire exactement un et conserve les autres dans le préfixe, même si leur ordre de travail change. Ainsi, demander au maximum la taille initiale permet de terminer après le nombre d'extractions prévu, sans recommencer à cause de répétitions. Ne trie pas le résultat : il doit conserver l'ordre des tirages."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire la sélection à partir de son contrat"
+        },
+        {
+          "type": "paragraph",
+          "text": "Implémente seleccionar(std::mt19937& motor, const std::vector<int>& candidatos, int cantidad), renvoyant vector<int>. Accepte dix identifiants différents au maximum, compris entre 0 et 9, et une quantité de zéro à la taille du vecteur incluse. Rejette toute violation avec invalid_argument avant d'utiliser le moteur. Vérifie les candidats et la quantité même lorsque zéro élément est demandé ; une demande valide de zéro renvoie un vecteur vide sans construire de distribution ni effectuer de tirage."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ne convertis la taille en int qu'après avoir vérifié qu'elle ne dépasse pas dix. Utilise une copie de travail, le préfixe actif et une boucle effectuant exactement cantidad extractions. À chaque itération, choisis une position disponible, conserve son identifiant et retire-le du préfixe. La fonction n'affiche rien et ne modifie pas candidatos. Avant l'exécution, justifie pourquoi restantes est positif à chaque itération et pourquoi tous les accès restent dans le vecteur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, utilise candidatos={6,1,8,3,0}, quantité trois et graine 701. Vérifie la quantité obtenue, l'appartenance et l'absence de répétitions, puis compare les données à une copie initiale. Copie le moteur avant la sélection : effectue la même sélection depuis les deux objets, puis compare les résultats et les états finaux des moteurs. Copie ensuite le moteur déjà utilisé et vérifie qu'une continuation de deux sélections avec la même configuration coïncide aussi dans les deux copies."
+        },
+        {
+          "type": "paragraph",
+          "text": "Affiche Quantité:N, Propriétés:B, Original:B, Reproduction:B et Continuation:B sur des lignes distinctes. N provient de la taille réelle ; Propriétés regroupe quantité, appartenance et unicité. Teste ensuite une quantité nulle : ajoute Vide:N:B en comparant le moteur à sa copie précédente. Enfin, tente candidats {2,2} avec une quantité nulle, intercepte invalid_argument et affiche Rejet:B en vérifiant que le moteur est préservé. Termine chaque ligne par un saut de ligne. Ne remplace pas les vérifications par des constantes affichées."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\n// Define seleccionar y tus comprobaciones fuera de main.\nint main() {\n    // Construye los datos, las llamadas y las pruebas del contrato.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prépare d'autres cas avant de consulter la référence : candidats vides avec quantités zéro et un ; {0} avec zéro et un ; {9,2,5} avec un et trois ; tous les identifiants de 0 à 9 avec quantité dix. Rejette les quantités -1 et supérieures à la taille, les identifiants -1 ou 10, les répétitions et onze éléments, même lorsque la quantité est zéro. Chaque rejet doit préserver le moteur et le vecteur. N'exige pas une liste précise si plusieurs choix sont possibles : vérifie les propriétés et la reproduction de la même fonction dans le même environnement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : retirer de l'ensemble disponible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence utilise la graine 733, les candidats {9,4,1,7,0} et quatre sélections. Les données diffèrent de ton essai ; les contrats restent les mêmes. seleccion_correcta vérifie les propriétés sans connaître les identifiants que donnera la distribution. Les comparaisons entre vecteurs tiennent compte de la taille, des valeurs et de leur ordre."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Sélection invalide\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Sélection invalide\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Sélection invalide\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Sélection invalide\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nint main() {\n    const std::vector<int> candidatos{9, 4, 1, 7, 0};\n    const std::vector<int> original = candidatos;\n    std::mt19937 motor{733};\n    std::mt19937 repeticion = motor;\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 4);\n    const std::vector<int> repetidos = seleccionar(repeticion, candidatos, 4);\n    std::cout << \"Quantité:\" << elegidos.size() << '\\n';\n    std::cout << \"Propriétés:\" << seleccion_correcta(candidatos, elegidos, 4) << '\\n';\n    std::cout << \"Original:\" << (candidatos == original) << '\\n';\n    std::cout << \"Reproduction:\" << (elegidos == repetidos && motor == repeticion) << '\\n';\n    std::mt19937 continuacion = motor;\n    const std::vector<int> segundo = seleccionar(motor, candidatos, 2);\n    const std::vector<int> repetido = seleccionar(continuacion, candidatos, 2);\n    std::cout << \"Continuation:\" << (segundo == repetido && motor == continuacion) << '\\n';\n    const std::mt19937 antes_vacio = motor;\n    const std::vector<int> vacio = seleccionar(motor, candidatos, 0);\n    std::cout << \"Vide:\" << vacio.size() << ':' << (motor == antes_vacio) << '\\n';\n    const std::mt19937 antes_error = motor;\n    try {\n        const std::vector<int> invalida = seleccionar(motor, {4, 4}, 0);\n        std::cout << \"Acceptée:\" << invalida.size() << '\\n';\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rejet:\" << (motor == antes_error) << '\\n';\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie contient Quantité:4, Propriétés:1, Original:1, Reproduction:1, Continuation:1, Vide:0:1 et Rejet:1, sur sept lignes avec un saut final. Pour ton premier essai, seule Quantité passe à trois. La vérification de reproduction compare deux exécutions avec des moteurs copiés au même point et la même fonction, les mêmes candidats, la même quantité et le même ordre d'appels."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : validation complète avant toute consommation du moteur ; original intact ; quantité exacte, appartenance et unicité ; sauvegarde de l'identifiant choisi avant son remplacement ; intervalle d'indices limité au préfixe actif positif ; aucun tirage pour une quantité nulle. Si la quantité égale la taille, tous les candidats sont choisis une fois, même si l'ordre change. Avec un seul candidat, seul cet identifiant peut apparaître. Deux appels distincts préparent chacun leur copie des candidats : un identifiant peut figurer dans les deux résultats ; l'unicité est garantie dans chaque sélection."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les indices de travail sont justifiés puisque extraits < quantité demandée <= total implique restantes=total-extraits supérieur ou égal à un. L'intervalle inclusif 0..restantes-1 contient exactement les positions disponibles. Retirer un candidat réduit restantes de un sans introduire un autre identifiant dans le préfixe. La partie inactive n'est jamais réutilisée comme disponible. Copier le dernier élément actif fonctionne aussi lorsque sa position est celle choisie."
+        },
+        {
+          "type": "note",
+          "text": "La distribution peut transformer les valeurs du moteur différemment selon les bibliothèques. Deux sélections successives peuvent coïncider. Nous ne promettons pas non plus un nombre fixe d'avancées internes du moteur par extraction. La conservation du moteur après rejet concerne les arguments invalides détectés au préalable ; elle ne garantit pas une récupération automatique après tout échec mémoire ultérieur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revoir l'ordre des actions avec des indices préparés"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ces programmes utilisent des indices déjà fixés dans leur domaine. Ils n'appellent pas le moteur. Retrace l'identifiant choisi, les positions actives et la partie inactive avant de prédire : tu pourras étudier la procédure sans deviner une séquence propre à la bibliothèque."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__conservar_elegido_y_delimitar_el_prefijo",
+          "language": "cpp",
+          "question": "Prédis les trois lignes complètes, y compris les espaces entre les valeurs. L'indice un est déjà préparé et seules trois positions sont actives au départ.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> trabajo{8, 3, 6, 1};\n    int restantes = 3;\n    const int posicion = 1;\n    const int elegido = trabajo.at(posicion);\n    trabajo.at(posicion) = trabajo.at(restantes - 1);\n    --restantes;\n    std::cout << \"Choisi:\" << elegido << '\\n' << \"Actifs:\";\n    for (int i = 0; i < restantes; ++i) { std::cout << ' ' << trabajo.at(i); }\n    std::cout << '\\n' << \"Travail:\";\n    for (int dato : trabajo) { std::cout << ' ' << dato; }\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Choisi:3\nActifs: 8 6\nTravail: 8 6 6 1"
+          ],
+          "explanation": "Trois est sauvegardé avant le remplacement. Six reste disponible à la place libérée ; son ancienne position devient inactive. La taille du vecteur complet ne change pas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__ultimo_activo_y_cantidad_total",
+          "question": "Il reste un seul candidat actif et une extraction valide à faire. Quels intervalle et accès conviennent ?",
+          "options": [
+            "Construire 0..0 et lire trabajo.at(0).",
+            "Construire 0..restantes pour inclure l'unique candidat.",
+            "Lire la dernière position du vecteur complet, même si elle est hors du préfixe."
+          ],
+          "correctIndex": 0,
+          "explanation": "Lorsque restantes=1, l'indice maximal valide est zéro. La partie inactive et size() ne remplacent pas la limite du préfixe actif."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__sobrescribir_antes_de_conservar_pierde_el_candidato",
+          "language": "cpp",
+          "question": "Cette version incorrecte écrase la valeur avant de la conserver. Prédis sa véritable sortie, sans la remplacer par le résultat qui aurait dû être choisi.",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> trabajo{7, 0, 4, 2};\n    int restantes = 4;\n    const int posicion = 0;\n    trabajo.at(posicion) = trabajo.at(restantes - 1);\n    const int guardado = trabajo.at(posicion);\n    --restantes;\n    std::cout << \"Conservé:\" << guardado << '\\n' << \"Actifs:\";\n    for (int i = 0; i < restantes; ++i) { std::cout << ' ' << trabajo.at(i); }\n    std::cout << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Conservé:2\nActifs: 2 0 4"
+          ],
+          "explanation": "Sept est perdu avant d'être copié dans le résultat ; le deux sauvegardé reste actif. Le programme se termine et ses accès sont valides, mais il ne retire pas correctement le candidat annoncé."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconstruis ensuite une sélection complète avec des candidats dans un autre ordre et conserve tes vérifications. Après un remplacement, deux candidats peuvent occuper des positions différentes. Ne réutilise pas l'intervalle fondé sur la taille initiale lorsque le préfixe a diminué et ne confonds pas une position avec l'identifiant qu'elle contient."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__cada_seleccion_tiene_su_disponibilidad",
+          "question": "seleccionar est appelée deux fois avec le même vecteur original valide. Quelle relation le contrat exige-t-il entre les deux résultats ?",
+          "options": [
+            "Ils ne peuvent partager aucun identifiant parce que le moteur a continué.",
+            "Ils doivent être différents chaque fois que la quantité est positive.",
+            "Chaque résultat ne comporte pas de répétitions internes ; des identifiants peuvent apparaître dans les deux appels."
+          ],
+          "correctIndex": 2,
+          "explanation": "Chaque appel prépare sa propre copie des candidats disponibles. Continuer le moteur ne modifie pas ce contrat."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer la sélection à des paires de participants"
+        },
+        {
+          "type": "paragraph",
+          "text": "Définis un struct Pareja contenant deux membres int, primero et segundo. formar_parejas reçoit std::mt19937& motor, const vector<int>& candidatos et int pares ; elle renvoie vector<Pareja>. Les candidats respectent le même contrat : dix identifiants distincts au maximum, de 0 à 9. pares doit être compris entre zéro et cinq sans demander plus de personnes que disponibles. Rejette toute violation avec invalid_argument avant de consommer le moteur. Un nombre impair de candidats est valide : une personne peut rester sans être choisie."
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque identifiant apparaît au maximum une fois dans l'ensemble des paires, pas seulement à l'intérieur de chacune. Réutilise seleccionar pour tirer tous les participants de cet appel en une seule sélection. La première paire associe les deux premiers identifiants tirés ; la suivante associe les troisième et quatrième, et ainsi de suite. Ne trie ni les membres des paires ni les paires entre elles : l'ordre du tirage est conservé. La quantité demandée, les membres de chaque enregistrement et leur ordre sont des garanties distinctes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie que pares est compris entre zéro et cinq avant de le multiplier par deux. Vérifie également que le nombre de candidats suffit avant la multiplication et tout tirage. La division entière total/2 indique combien de paires complètes sont possibles, même lorsqu'il reste un candidat. Ne convertis pas size() en int avant d'avoir vérifié sa limite. Avec zéro paire, seleccionar doit tout de même valider les candidats : une liste répétée n'est pas autorisée simplement parce que le résultat demandé est vide. N'utilise pas le moteur pour vérifier ces conditions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, utilise candidatos={0,5,2,8,3}, deux paires et la graine 809. Conserve une copie des données et une copie du moteur avant l'appel. Vérifie le nombre de paires, l'appartenance et l'unicité globale. Récupère les identifiants du résultat dans l'ordre primero, segundo de chaque paire ; compare-les à sélectionner quatre identifiants à partir de la copie initiale du moteur. Compare aussi les états finaux des deux moteurs. Affiche Paires:N, Propriétés:B, Ordre:B et Original:B. Teste ensuite zéro paire et une demande de trois paires : affiche Vide:N:B et Rejet:B en vérifiant que le moteur est conservé. Toutes les lignes se terminent par un saut de ligne."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Sélection invalide\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Sélection invalide\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Sélection invalide\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Sélection invalide\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\n// Définis Pareja, formar_parejas et les vérifications hors de main.\nint main() {\n    // Construis le lot et les tests de quantité, identité et ordre.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prédis et vérifie une liste vide avec zéro et une paire ; {0} avec zéro et une ; {2,9} avec une ; {8,0,5} avec une ; puis les dix identifiants avec cinq paires. Teste pares -1 et six, les listes comportant des identifiants hors domaine ou répétés, ainsi qu'une quantité de paires impossible. Change l'ordre des candidats et recommence depuis des moteurs copiés avec ce même nouvel ordre ; n'exige pas que la sélection ressemble à celle de l'ordre précédent. L'éditeur initial fournit seulement seleccionar : écris toi-même le nouveau struct, l'organisation des paires et les tests."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : une seule sélection pour toutes les paires"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence utilise sept candidats {7,0,9,2,5,4,1}, trois paires et la graine 821. Une personne ne sera pas choisie. aplanar_parejas sert de vérification : elle copie les membres dans l'ordre du rapport pour les comparer à une sélection indépendante depuis un moteur copié au même point. Nous ne comparons pas deux objets Pareja grâce à un nouvel opérateur."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> seleccionar(std::mt19937& motor,\n                            const std::vector<int>& candidatos,\n                            int cantidad) {\n    if (candidatos.size() > 10 || cantidad < 0) {\n        throw std::invalid_argument(\"Sélection invalide\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (cantidad > total) {\n        throw std::invalid_argument(\"Sélection invalide\");\n    }\n    for (int i = 0; i < total; ++i) {\n        if (candidatos.at(i) < 0 || candidatos.at(i) > 9) {\n            throw std::invalid_argument(\"Sélection invalide\");\n        }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (candidatos.at(anterior) == candidatos.at(i)) {\n                throw std::invalid_argument(\"Sélection invalide\");\n            }\n        }\n    }\n    std::vector<int> resultado;\n    if (cantidad == 0) {\n        return resultado;\n    }\n    std::vector<int> trabajo = candidatos;\n    int restantes = total;\n    for (int extraidos = 0; extraidos < cantidad; ++extraidos) {\n        std::uniform_int_distribution<int> indice{0, restantes - 1};\n        const int posicion = indice(motor);\n        const int elegido = trabajo.at(posicion);\n        resultado.push_back(elegido);\n        trabajo.at(posicion) = trabajo.at(restantes - 1);\n        --restantes;\n    }\n    return resultado;\n}\n\nbool seleccion_correcta(const std::vector<int>& candidatos,\n                        const std::vector<int>& elegidos, int cantidad) {\n    if (cantidad < 0 || elegidos.size() > 10\n        || static_cast<int>(elegidos.size()) != cantidad) {\n        return false;\n    }\n    const int total = static_cast<int>(elegidos.size());\n    for (int i = 0; i < total; ++i) {\n        bool pertenece = false;\n        for (int candidato : candidatos) {\n            if (candidato == elegidos.at(i)) { pertenece = true; }\n        }\n        if (!pertenece) { return false; }\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (elegidos.at(anterior) == elegidos.at(i)) { return false; }\n        }\n    }\n    return true;\n}\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nstd::vector<Pareja> formar_parejas(std::mt19937& motor,\n                                 const std::vector<int>& candidatos,\n                                 int pares) {\n    if (pares < 0 || pares > 5 || candidatos.size() > 10) {\n        throw std::invalid_argument(\"Paires invalides\");\n    }\n    const int total = static_cast<int>(candidatos.size());\n    if (pares > total / 2) {\n        throw std::invalid_argument(\"Paires invalides\");\n    }\n    const std::vector<int> elegidos = seleccionar(motor, candidatos, 2 * pares);\n    std::vector<Pareja> resultado;\n    for (int i = 0; i < pares; ++i) {\n        resultado.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n    return resultado;\n}\n\nstd::vector<int> aplanar_parejas(const std::vector<Pareja>& grupos) {\n    std::vector<int> resultado;\n    for (const Pareja& grupo : grupos) {\n        resultado.push_back(grupo.primero);\n        resultado.push_back(grupo.segundo);\n    }\n    return resultado;\n}\n\nint main() {\n    const std::vector<int> candidatos{7, 0, 9, 2, 5, 4, 1};\n    const std::vector<int> original = candidatos;\n    std::mt19937 motor{821};\n    std::mt19937 referencia = motor;\n    const std::vector<Pareja> grupos = formar_parejas(motor, candidatos, 3);\n    const std::vector<int> planos = aplanar_parejas(grupos);\n    const std::vector<int> orden = seleccionar(referencia, candidatos, 6);\n    std::cout << \"Paires:\" << grupos.size() << '\\n';\n    std::cout << \"Propriétés:\" << (grupos.size() == 3\n        && seleccion_correcta(candidatos, planos, 6)) << '\\n';\n    std::cout << \"Ordre:\" << (planos == orden && motor == referencia) << '\\n';\n    std::cout << \"Original:\" << (candidatos == original) << '\\n';\n    const std::mt19937 antes_vacio = motor;\n    const std::vector<Pareja> vacio = formar_parejas(motor, candidatos, 0);\n    std::cout << \"Vide:\" << vacio.size() << ':' << (motor == antes_vacio) << '\\n';\n    const std::mt19937 antes_error = motor;\n    try {\n        const std::vector<Pareja> demasiados = formar_parejas(motor, candidatos, 4);\n        std::cout << \"Acceptés:\" << demasiados.size() << '\\n';\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rejet:\" << (motor == antes_error) << '\\n';\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie affiche Paires:3, Propriétés:1, Ordre:1, Original:1, Vide:0:1 et Rejet:1 sur six lignes avec un saut final. Pour le premier essai, Paires vaut deux et les autres propriétés restent vraies. L'unicité globale signifie que les six identifiants tirés dans cette référence sont distincts, et que chaque paire contient aussi deux identifiants différents. Tu n'as pas besoin de connaître leurs valeurs exactes pour vérifier le contrat."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : valider le nombre de paires et la capacité avant la multiplication ; déléguer la sélection unique de 2*pares identifiants ; former exactement pares enregistrements ; préserver l'appartenance et l'unicité globale ; regrouper les éléments consécutifs sans trier ; original intact, zéro et rejet sans consommation du moteur. Un nombre impair de candidats permet des paires complètes avec un restant. Pour {} avec zéro, le résultat est vide ; une paire est rejetée. Avec {2,9} et une paire, les deux identifiants sont utilisés une fois chacun, dans l'ordre obtenu, sans imposer lequel arrive en premier."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans la boucle i<pares, les indices utilisés sont 2*i et 2*i+1. La sélection renvoie exactement 2*pares valeurs ; les deux indices restent donc dans le vecteur et zéro paire ne provoque aucun accès. Après avoir vérifié pares<=5, les produits ne dépassent pas dix. Demander une paire parmi un seul candidat est rejeté au préalable : aucune distribution à borne supérieure négative n'est construite et aucun identifiant fictif ne complète la paire."
+        },
+        {
+          "type": "note",
+          "text": "Ne confonds pas un tirage sans remise avec des sélections indépendantes : un identifiant choisi ne peut plus apparaître à une autre position du même appel. Deux appels sur le même vecteur disposent à nouveau de tous les candidats. Conserver le moteur et la configuration permet de répéter le même processus depuis des copies dans le même environnement ; cela n'impose pas des paires identiques entre bibliothèques."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver l'identité, l'ordre et la portée de l'unicité"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ces sélections ont été préparées explicitement. Prédis le regroupement et les vérifications sans consulter les résultats précédents. L'ordre dans Pareja suit l'ordre de tirage ; l'identifiant zéro désigne un participant, pas une absence."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__agrupar_conserva_el_orden_y_el_cero",
+          "language": "cpp",
+          "question": "Prédis les deux lignes. Le vecteur des identifiants déjà choisis est donné et possède quatre éléments ; aucun tirage aléatoire n'intervient.",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nint main() {\n    const std::vector<int> elegidos{9, 0, 4, 7};\n    std::vector<Pareja> parejas;\n    for (int i = 0; i < 2; ++i) {\n        parejas.push_back(Pareja{elegidos.at(2 * i), elegidos.at(2 * i + 1)});\n    }\n    std::vector<int> planos;\n    for (const Pareja& pareja : parejas) {\n        std::cout << '[' << pareja.primero << ':' << pareja.segundo << ']';\n        planos.push_back(pareja.primero);\n        planos.push_back(pareja.segundo);\n    }\n    std::cout << '\\n' << \"Ordre:\" << (planos == elegidos) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "[9:0][4:7]\nOrdre:1"
+          ],
+          "explanation": "Les positions 0/1 et 2/3 sont regroupées. Lire primero et segundo conserve exactement l'ordre 9,0,4,7."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__pares_cero_no_omite_validacion",
+          "question": "Les candidats sont {0,0} et zéro paire est demandée. Que doit faire formar_parejas ?",
+          "options": [
+            "Accepter un résultat vide parce que personne ne participe à cet appel.",
+            "Rejeter sans consommer le moteur : la validité des candidats reste obligatoire.",
+            "Supprimer une copie de zéro et accepter la configuration corrigée."
+          ],
+          "correctIndex": 1,
+          "explanation": "Demander zéro ne change pas le contrat du vecteur. seleccionar vérifie les candidats avant de renvoyer le résultat vide."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__seleccionar_sin_repetir_candidatos__unicidad_local_no_demuestra_unicidad_global",
+          "language": "cpp",
+          "question": "Prédis les deux indicateurs. Chaque paire est d'abord vérifiée séparément ; les quatre identifiants sont ensuite comparés ensemble.",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Pareja {\n    int primero;\n    int segundo;\n};\n\nint main() {\n    const std::vector<Pareja> parejas{{4, 1}, {1, 8}};\n    bool locales = true;\n    std::vector<int> planos;\n    for (const Pareja& pareja : parejas) {\n        if (pareja.primero == pareja.segundo) { locales = false; }\n        planos.push_back(pareja.primero);\n        planos.push_back(pareja.segundo);\n    }\n    bool globales = true;\n    for (int i = 0; i < 4; ++i) {\n        for (int anterior = 0; anterior < i; ++anterior) {\n            if (planos.at(anterior) == planos.at(i)) { globales = false; }\n        }\n    }\n    std::cout << \"Locales:\" << locales << '\\n';\n    std::cout << \"Globales:\" << globales << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Locales:1\nGlobales:0"
+          ],
+          "explanation": "Les deux paires contiennent des membres distincts, mais l'identifiant un apparaît dans les deux. Le contrat exige l'unicité de tous les participants."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une autre séance, reconstruis formar_parejas avec ta propre fonction seleccionar avant de consulter les références. Choisis un nombre impair de candidats et distingue le nombre total de personnes du nombre de participants choisis. Prépare aussi zéro, le maximum, une configuration avec doublons et une quantité impossible ; observe l'original et le moteur avant et après. Explique quel test détecte la remise en disponibilité entre les paires, lequel détecte l'inversion de l'ordre et lequel révèle un refus ayant consommé des valeurs."
+        },
+        {
+          "type": "note",
+          "text": "Les exercices complémentaires présentent quatre valeurs distinctes et leur génération aléatoire (Stroustrup, 2024, section 4.7.5, p. 108–110, et exercices 12–13, p. 113). Cela motive la distinction entre hasard et unicité. Les contrats, contextes et projets de cette leçon sont originaux. Les bornes inclusives de la distribution entière ainsi que la copie, l'égalité et l'état du moteur ont été vérifiés avec le brouillon de C++ (Working draft: Programming languages — C++, s. d., sections [rand.dist.uni.int] et [rand.req.eng])."
+        }
+      ]
+    }
+  ]
+}

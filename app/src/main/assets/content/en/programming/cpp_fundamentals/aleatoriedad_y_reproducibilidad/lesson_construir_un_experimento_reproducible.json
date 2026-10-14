@@ -1,0 +1,224 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__construir_un_experimento_reproducible",
+  "title": "Build a Reproducible Experiment",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Keep the Configuration as a User-Defined Record"
+        },
+        {
+          "type": "paragraph",
+          "text": "A reproducible experiment needs more than generating numbers. It must preserve its configuration, build a sample, check properties, and allow the procedure to be repeated. We will revisit struct to group the seed, count, and bounds. These four integers serve different purposes even though they share the same type."
+        },
+        {
+          "type": "paragraph",
+          "text": "Our Plan accepts seeds from 0 through 1000, counts from 0 through 20, and bounds from 0 through 9, with the minimum no greater than the maximum. The preparar function receives the plan by const reference, validates it, and constructs a new engine and distribution on every call. It returns the sample without printing. This is a contract for reproduction from the beginning, unlike the previous generator that takes an engine to continue its state."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You call preparar twice with the same valid Plan in the same environment. What does its contract require?",
+          "options": [
+            "Every value in the second sample must differ from the first to avoid repeats.",
+            "Samples with the same size and values in the same order, because each call prepares the same starting point.",
+            "The second batch continues the first call's local engine, even though that object no longer exists."
+          ],
+          "correctIndex": 1,
+          "explanation": "The contract constructs new objects from the same configuration; it does not retain an engine between calls."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Validate the Entire Plan, Even for an Empty Sample"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nint main() {\n    const Plan vacio{0, 0, 2, 7};\n    const Plan invertido{0, 0, 7, 2};\n    std::cout << plan_valido(vacio) << ':' << plan_valido(invertido);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The guided comparison displays 1:0. Zero is a valid manual seed, and requesting zero values is valid; neither automatically signals an error. The second plan has reversed bounds and is rejected even though it will not draw any values."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nint main() {\n    const Plan uno{317, 1, 9, 9};\n    const Plan otro{1001, 1, 0, 9};\n    std::cout << plan_valido(uno) << ':' << plan_valido(otro);\n    return 0;\n}\n",
+          "answers": [
+            "1:0"
+          ],
+          "explanation": "A single-value interval is valid. The other plan exceeds the chosen seed domain and is rejected before an engine is constructed."
+        },
+        {
+          "type": "paragraph",
+          "text": "The seed type accepted by mt19937 is called std::mt19937::result_type: it is a type name belonging to that engine. Our integers from 0 through 1000 fit in it. The explicit cast in the reference makes that adaptation visible after validation. We do not need to decide the engine's internal size ourselves."
+        },
+        {
+          "type": "paragraph",
+          "text": "The summary will associate count, values below a threshold, values from that threshold inclusive, and in_range. Each observation, including duplicates, must be counted once. in_range checks the chosen bounds. As before, range and counts do not certify uniform frequencies in a small sample."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construct the Experiment Independently"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build Plan, plan_valido, and preparar according to their contracts. Also build Informe and resumir: it takes vector<int> by const reference, minimum, maximum, and threshold. It accepts up to twenty values, bounds and threshold from 0 through 9, and minimum no greater than maximum. It may inspect any int value: en_rango will be false if one lies outside the range. Reject invalid summary arguments with invalid_argument before traversing the data. The count must separate dato < umbral from dato >= umbral."
+        },
+        {
+          "type": "paragraph",
+          "text": "In main, prepare two independent samples using Plan{271,12,1,7}. Summarize one using threshold four. Display Count:12, Range:1, Partition:1, and Repetition:1, each label on its own line. Count comes from the report, Range from its flag, Partition checks menores+desde==cantidad, and Repetition compares the two complete samples. Do not print constant ones or sort before comparing. Keep the plan and actual data as well if you want to transfer the experiment to another environment."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before consulting the reference, test an empty plan, a plan with one value, and another with six values from 4..4. Next test seeds -1 and 1001, counts -1 and 21, bounds -1 and 10, and reversed bounds. Reject invalid configurations before constructing an invalid distribution. Regular samples may vary between libraries; their relationships and domains are the criteria."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Build the functions and tests described in the exercise.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Project Reference and Criteria"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Invalid plan\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Invalid summary\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nint main() {\n    const Plan plan{271, 12, 1, 7};\n    try {\n        const std::vector<int> primera = preparar(plan);\n        const std::vector<int> segunda = preparar(plan);\n        const Informe informe = resumir(primera, plan.minimo, plan.maximo, 4);\n        std::cout << \"Count:\" << informe.cantidad << '\\n';\n        std::cout << \"Range:\" << informe.en_rango << '\\n';\n        std::cout << \"Partition:\" << (informe.menores + informe.desde == informe.cantidad) << '\\n';\n        std::cout << \"Repetition:\" << (primera == segunda);\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Configuration rejected\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: related configuration fields and validation; convert the seed only after accepting its domain; create a fresh sample on every call; return by value; preserve the plan and data; completely partition at the threshold; check the range without requiring specific numbers; compare samples in order and with equal size. The reference produces the four required lines. When empty, Count is zero and the three checks are true. An invalid plan displays Configuration rejected without starting a draw."
+        },
+        {
+          "type": "paragraph",
+          "text": "The sum of the two counts is at most twenty. Each value belongs to exactly one category. If summary data may contain any int, checking it requires neither subtraction nor multiplication: the range flag can be false without dangerous arithmetic."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Fixed Cases That Distinguish the Checks"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Invalid plan\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Invalid summary\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nint main() {\n    const Plan plan{353, 6, 4, 4};\n    const std::vector<int> datos = preparar(plan);\n    const Informe informe = resumir(datos, 4, 4, 4);\n    std::cout << informe.cantidad << ':' << informe.menores << ':';\n    std::cout << informe.desde << ':' << informe.en_rango;\n    return 0;\n}\n",
+          "answers": [
+            "6:0:6:1"
+          ],
+          "explanation": "All values equal four because the range has just one value; the 'from threshold' category includes equality."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstruct Plan {\n    int semilla;\n    int cantidad;\n    int minimo;\n    int maximo;\n};\n\nbool plan_valido(const Plan& plan) {\n    return plan.semilla >= 0 && plan.semilla <= 1000\n        && plan.cantidad >= 0 && plan.cantidad <= 20\n        && plan.minimo >= 0 && plan.minimo <= 9\n        && plan.maximo >= 0 && plan.maximo <= 9\n        && plan.minimo <= plan.maximo;\n}\n\nstd::vector<int> preparar(const Plan& plan) {\n    if (!plan_valido(plan)) {\n        throw std::invalid_argument(\"Invalid plan\");\n    }\n    std::mt19937 motor{static_cast<std::mt19937::result_type>(plan.semilla)};\n    std::uniform_int_distribution<int> elegir{plan.minimo, plan.maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < plan.cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nstruct Informe {\n    int cantidad;\n    int menores;\n    int desde;\n    bool en_rango;\n};\n\nInforme resumir(const std::vector<int>& datos, int minimo, int maximo,\n                int umbral) {\n    if (datos.size() > 20 || minimo < 0 || minimo > 9\n            || maximo < 0 || maximo > 9 || minimo > maximo\n            || umbral < 0 || umbral > 9) {\n        throw std::invalid_argument(\"Invalid summary\");\n    }\n    int menores{0};\n    int desde{0};\n    bool en_rango = true;\n    for (int dato : datos) {\n        en_rango = en_rango && dato >= minimo && dato <= maximo;\n        if (dato < umbral) { ++menores; }\n        else { ++desde; }\n    }\n    return Informe{static_cast<int>(datos.size()), menores, desde, en_rango};\n}\n\nint main() {\n    const std::vector<int> datos{2, 8};\n    const Informe informe = resumir(datos, 2, 6, 4);\n    std::cout << \"Range:\" << informe.en_rango << \";Partition:\";\n    std::cout << (informe.menores + informe.desde == informe.cantidad);\n    return 0;\n}\n",
+          "answers": [
+            "Range:0;Partition:1"
+          ],
+          "explanation": "Eight lies outside 2..6. Both observations are still accounted for by the partition; that property does not replace the range check."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Range, partition, and repetition all pass for one sample. Which additional conclusion would be unjustified?",
+          "options": [
+            "Repeating the same configuration preserved the data in that environment.",
+            "The observed sample satisfies those checks.",
+            "Every integer appeared equally often and the experiment certifies statistical quality."
+          ],
+          "correctIndex": 2,
+          "explanation": "The tested properties do not include certification of frequencies or statistical quality."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer the Data into a Histogram"
+        },
+        {
+          "type": "paragraph",
+          "text": "A histogram for these integers records how many times each value occurs. In a table of ten counts, index zero corresponds to value zero and index nine to value nine. There are ten cells, not nine, and every count starts at zero. Repeated values increment the same count and are not removed from the original sample. Recall size-based construction: std::vector<int> tabla(10); creates ten int elements initialized to zero. By contrast, std::vector<int> tabla{10}; creates a single element holding ten. Parentheses indicate a count here; braces indicate an initializer list of values. The histogram requires ten cells with counts initially set to zero."
+        },
+        {
+          "type": "paragraph",
+          "text": "Build frecuencias(const vector<int>&): it accepts up to twenty values from 0 through 9, rejects other inputs with invalid_argument, and returns ten counts. Validate each value before using it as an index. In main, test {2,0,2,9}, keep a copy of the original, and print only nonzero counts as VALUE:COUNT, in ascending value order, one line each. Then print Total:4 and Preserved:1, computed from the table and comparison. Do not replace these computations with the expected answers."
+        },
+        {
+          "type": "paragraph",
+          "text": "Repeat with empty input, {0}, {9}, {3,3,3}, and a value of -1 or 10. Then use a sample produced by Plan{313,20,0,9}: its total must be twenty, but we do not require specific frequencies or all ten cells to be nonzero. Before running, justify the range of every index and the expected property of the total."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Build the functions and tests described in the exercise.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Histogram Reference After Your Attempt"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> frecuencias(const std::vector<int>& datos) {\n    if (datos.size() > 20) {\n        throw std::invalid_argument(\"Too many values\");\n    }\n    for (int dato : datos) {\n        if (dato < 0 || dato > 9) {\n            throw std::invalid_argument(\"Value out of range\");\n        }\n    }\n    std::vector<int> tabla(10);\n    for (int dato : datos) {\n        tabla.at(dato) += 1;\n    }\n    return tabla;\n}\n\nint main() {\n    const std::vector<int> datos{2, 0, 2, 9};\n    const std::vector<int> original = datos;\n    try {\n        const std::vector<int> tabla = frecuencias(datos);\n        int total{0};\n        for (int i{0}; i < 10; ++i) {\n            total += tabla[i];\n            if (tabla[i] != 0) {\n                std::cout << i << ':' << tabla[i] << '\\n';\n            }\n        }\n        std::cout << \"Total:\" << total << '\\n';\n        std::cout << \"Preserved:\" << (datos == original);\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Data rejected\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: ten cells initialized to zero, one increment per valid observation, accumulated repeats, justified indices, preliminary rejection of -1 or 10, and original data preserved. The fixed sample produces 0:1, 2:2, 9:1, Total:4, and Preserved:1 on five lines. Empty input has no count rows and a total of zero; {9} produces 9:1 and total one; {3,3,3} produces 3:3 and total three. The generated sample has a total of twenty without any exact frequency expectation. The traversal uses indices 0..9: frecuencias always returns exactly ten cells, so i<10 excludes the nonexistent position."
+        },
+        {
+          "type": "paragraph",
+          "text": "at() provides an additional check, but our function first validates each input's domain. We do not test an invalid index as a technique for discovering bounds; rejecting invalid arguments prevents that access. To apply the histogram to a generated sample, call preparar and pass its vector to frecuencias. Keep the sample available to investigate any discrepancy."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisit Configuration, State, and Evidence"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "When investigating a failure observed in another environment, which evidence best preserves the question?",
+          "options": [
+            "Plan and histogram: counts suffice to reconstruct the data in their original order.",
+            "Plan and expectation: the seed forces every library to generate the same sample.",
+            "Plan, components and calls, concrete data, and the expected property the case should satisfy."
+          ],
+          "correctIndex": 2,
+          "explanation": "The configuration explains the experiment, and the concrete case lets us investigate without relying on identical mapping across libraries."
+        },
+        {
+          "type": "paragraph",
+          "text": "In a later session, rebuild an experiment with your own data, then a continuation with a shared engine, and finally a fixed regression case. Explain what is reset, which state is copied, which domain is validated, and what evidence each check supplied. You can extend the report with a search or selection you have already learned; first design the cases that distinguish its boundaries."
+        },
+        {
+          "type": "note",
+          "text": "The experiment draws on random generation in the main reference (Stroustrup, 2024, section 4.7.5, pp. 108–110). The project, contracts, and histogram are original. We preserve the distinction between reproduction in the same environment, portable relationships, and observation of samples."
+        }
+      ]
+    }
+  ]
+}
