@@ -1,0 +1,195 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__caracteres_y_clasificacion_explicita",
+  "title": "Caractères et classification explicite",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire des unités plus petites sans perdre les séparateurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un texte comme 4+8 ne contient aucun espace. >> pour string le lit d'un seul bloc : il ne décide pas que + est une opération. Pour reconnaître les signes et les nombres, nous devons observer les caractères et appliquer nos propres règles. entrada.get(actual) tente d'obtenir le caractère suivant, même s'il s'agit d'un espace, d'une tabulation ou d'un saut de ligne."
+        },
+        {
+          "type": "paragraph",
+          "text": "La destination est un char. Le flux renvoie son état pour utiliser l'opération dans un if ou un while, comme dans les lectures précédentes. L'expression entrada >> actual pour char lit également un caractère, mais ignore normalement les blancs initiaux. Nous utilisons ici cette configuration ordinaire ; nous n'avons pas changé les options du flux."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" + 7\"};\n    char actual = '?';\n    while (entrada >> actual) {\n        std::cout << \"<\" << actual << \">\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce programme affiche <+><7>. Il lit des caractères séparés et ignore les deux espaces. Si les espaces font partie de la règle à examiner, cette lecture ne les préserve pas : il faut choisir get."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rendre visibles les caractères lus par get"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" 5\\n\"};\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ') {\n            std::cout << \"ESPACE\\n\";\n        } else if (actual == '\\n') {\n            std::cout << \"SAUT\\n\";\n        } else {\n            std::cout << \"CARACTERE:\" << actual << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans une comparaison de char, les apostrophes délimitent un caractère. '\\n' désigne un saut de ligne et ' ' un espace. Le texte SAUT affiché est une étiquette que nous avons choisie ; get ne transforme pas le saut en ces lettres. Lire et afficher sont deux opérations différentes."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis les étiquettes que ce programme affiche pour un autre texte.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"\\n+ 4\"};\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ') {\n            std::cout << \"E\";\n        } else if (actual == '\\n') {\n            std::cout << \"S\";\n        } else {\n            std::cout << actual;\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "S+E4"
+          ],
+          "explanation": "get conserve le saut de ligne, le signe, l'espace et le chiffre dans cet ordre. Les conditions remplacent uniquement le saut par S et l'espace par E."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconnaître les chiffres avec un domaine explicite"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour ce langage d'exercice, nous utiliserons les chiffres de base de '0' à '9'. La condition actual >= '0' && actual <= '9' reconnaît cet intervalle en incluant ses deux bornes. Les encodages de caractères de C++ conservent ces dix chiffres consécutifs : actual - '0' calcule donc une valeur de 0 à 9 après vérification de la condition."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"3+8\"};\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            const int valor = actual - '0';\n            std::cout << \"Valeur: \" << valor << \"\\n\";\n        } else {\n            std::cout << \"Signe: \" << actual << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le caractère '8' et l'entier 8 ont des rôles distincts : l'un représente un symbole du texte ; l'autre sert aux calculs. La soustraction n'est effectuée qu'après avoir reconnu un chiffre. Ce programme interprète encore chaque chiffre séparément : il ne construit pas le nombre 38 en recevant ces deux caractères côte à côte."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le caractère '7' a été lu avec succès et satisfait le test de chiffre. Quel calcul transforme ce symbole en sa valeur entière 7 ?",
+          "options": [
+            "Ajouter le caractère à '0' pour combiner leurs représentations.",
+            "Soustraire '0' du caractère reconnu.",
+            "Afficher le caractère avec cout et relire la sortie."
+          ],
+          "correctIndex": 1,
+          "explanation": "L'écart entre un chiffre et '0' donne sa valeur de 0 à 9. Vérifier auparavant qu'il s'agit d'un chiffre évite d'appliquer cette règle aux autres caractères."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Classification et signification sont deux étapes distinctes"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le texte préparé est \"12\". Une boucle avec get identifie les deux caractères comme des chiffres. Que peut-on déjà conclure ?",
+          "options": [
+            "Il y a deux chiffres ; une règle supplémentaire est nécessaire pour les réunir en un seul nombre.",
+            "La boucle a calculé automatiquement l'entier 12.",
+            "Le second chiffre est invalide parce que get ne peut lire qu'un caractère sur tout le flux."
+          ],
+          "correctIndex": 0,
+          "explanation": "Chaque get obtient un caractère. Construire une unité comportant plusieurs caractères exige une règle et un état supplémentaires ; cela fera partie de la lecture des tokens."
+        },
+        {
+          "type": "paragraph",
+          "text": "Définis également les blancs autorisés par ton format. Dans les exercices suivants, nous considérerons seulement l'espace, la tabulation et le saut de ligne comme séparateurs. Cette liste est un choix pour notre petit langage, pas une description de toutes les catégories de caractères du monde. Ne confonds pas l'ASCII utilisé dans ces tests avec une analyse générale des lettres et symboles Unicode."
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque itération réussie de get consomme exactement un caractère. Un texte fini garantit la terminaison, même avec des signes inconnus : la classification peut les rejeter ou les compter, mais le lecteur a avancé. Une lecture échouée ne doit pas traiter de nouveau l'ancienne valeur de actual."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un comptage des caractères"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un rapport pour le texte \"7 +\\n3\". Classe chaque caractère lu avec succès dans une seule catégorie : chiffre de 0 à 9, séparateur parmi les trois types définis, ou autre caractère. Affiche Chiffres: N, Séparateurs: N et Autres: N, une étiquette par ligne et un espace avant chaque quantité. Le domaine de chaque test comporte au maximum 40 caractères ASCII ; aucun compteur ne doit dépasser 40."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le premier cas doit produire Chiffres: 2, Séparateurs: 2 et Autres: 1. Une chaîne vide donne trois zéros. \"12\" contient deux chiffres et aucun séparateur ; \" \" contient un séparateur ; \"()\" contient deux caractères de la catégorie autres. Prédis le résultat pour \"001\\t-\" avant d'exécuter. Ne supprime pas les blancs avant de les classer."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"7 +\\n3\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Choisis la lecture qui conserve tous les caractères, les compteurs et les conditions rendant les catégories mutuellement exclusives. Vérifie que la somme des trois comptes égale le nombre de caractères de chaque test. L'éditeur ne valide pas ce critère automatiquement ; utilise-le pour détecter les omissions et les doubles comptages avant de comparer avec la référence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la lecture et les alternatives"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette implémentation traite \"2\\t* 9\\n\", avec d'autres données. La première condition identifie les chiffres ; la deuxième regroupe les séparateurs définis ; l'alternative finale reçoit tout le reste. Grâce à if, else if et else, chaque lecture n'augmente qu'un compteur."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2\\t* 9\\n\"};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            ++digitos;\n        } else if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            ++separadores;\n        } else {\n            ++otros;\n        }\n    }\n    std::cout << \"Chiffres: \" << digitos;\n    std::cout << \"\\nSéparateurs: \" << separadores;\n    std::cout << \"\\nAutres: \" << otros;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si ta version utilise plusieurs conditions indépendantes, vérifie que les catégories ne se recouvrent vraiment pas. Remplacer get par >> ferait disparaître les séparateurs avant l'entrée dans le corps de la boucle et le comptage ne respecterait plus le contrat. Une sortie plausible ne suffit pas : les tests doivent distinguer ces deux lectures."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Reprends la classification : prédis les trois comptes pour ces nouvelles données.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"\\t0-9 \"};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            ++digitos;\n        } else if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            ++separadores;\n        } else {\n            ++otros;\n        }\n    }\n    std::cout << \"Chiffres: \" << digitos;\n    std::cout << \"\\nSéparateurs: \" << separadores;\n    std::cout << \"\\nAutres: \" << otros;\n    return 0;\n}\n",
+          "answers": [
+            "Chiffres: 2\nSéparateurs: 2\nAutres: 1"
+          ],
+          "explanation": "La tabulation et l'espace sont des séparateurs ; 0 et 9 sont les chiffres aux bornes ; le trait d'union appartient aux autres caractères."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Préparer la frontière d'un token"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous savons maintenant lire des mots, des lignes ou des caractères et distinguer ce que chaque lecture conserve. Pour interpréter 12+3, il faudra réunir les caractères 1 et 2 en un nombre, fournir + comme autre élément, puis lire 3. Chacun sera un token : une unité à laquelle notre langage attribue une catégorie. Cette construction doit aussi décider quoi faire lorsque le caractère suivant appartient déjà à l'unité suivante."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un lecteur rassemble les chiffres de 12 puis rencontre +. Quelle exigence doit-il respecter avant de fournir le nombre et de continuer ?",
+          "options": [
+            "Transformer + en un chiffre supplémentaire pour éviter de revenir en arrière.",
+            "Terminer définitivement parce que tous les caractères ne sont pas des chiffres.",
+            "Conserver le signe pour qu'il puisse être fourni comme l'unité suivante."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le signe ne fait pas partie du nombre, mais reste dans l'entrée. La lecture d'une unité doit laisser disponible ce qui appartient à la suivante."
+        }
+      ]
+    }
+  ]
+}

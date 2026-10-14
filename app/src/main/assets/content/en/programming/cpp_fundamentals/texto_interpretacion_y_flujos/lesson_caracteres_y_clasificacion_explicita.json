@@ -1,0 +1,195 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__caracteres_y_clasificacion_explicita",
+  "title": "Characters and Explicit Classification",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Read Smaller Units Without Losing Separators"
+        },
+        {
+          "type": "paragraph",
+          "text": "Text such as 4+8 contains no spaces. >> for string reads it as a whole: it does not decide that + is an operation. To recognize signs and numbers, we must examine individual characters and apply our own rules. entrada.get(actual) tries to read the next character, even if it is a space, tab, or newline."
+        },
+        {
+          "type": "paragraph",
+          "text": "The destination is a char. The stream returns its state, so we can use the operation in if or while, as with earlier reads. The expression entrada >> actual for char also reads one character but normally skips leading whitespace. Here we use that normal configuration; we have not changed the stream's options."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" + 7\"};\n    char actual = '?';\n    while (entrada >> actual) {\n        std::cout << \"<\" << actual << \">\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This program displays <+><7>. It reads separate characters and skips both spaces. If spaces are part of the rule you need to examine, that read does not preserve them: use get instead."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Make the Characters Read by get Visible"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" 5\\n\"};\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ') {\n            std::cout << \"SPACE\\n\";\n        } else if (actual == '\\n') {\n            std::cout << \"NEWLINE\\n\";\n        } else {\n            std::cout << \"CHARACTER:\" << actual << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a char comparison, single quotes delimit a character. '\\n' represents a newline and ' ' represents a space. The output text NEWLINE is a label we chose; get does not turn the newline into those letters. Reading and displaying are separate operations."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the labels this program displays for different text.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"\\n+ 4\"};\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ') {\n            std::cout << \"S\";\n        } else if (actual == '\\n') {\n            std::cout << \"N\";\n        } else {\n            std::cout << actual;\n        }\n    }\n    return 0;\n}\n",
+          "answers": [
+            "N+S4"
+          ],
+          "explanation": "get preserves the newline, sign, space, and digit in that order. The conditions replace only the newline with N and the space with S."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recognize Digits with an Explicit Domain"
+        },
+        {
+          "type": "paragraph",
+          "text": "For this practice language, we use the basic digits from '0' through '9'. The condition actual >= '0' && actual <= '9' recognizes that interval, including both endpoints. C++ character encodings keep these ten digits consecutive, so actual - '0' calculates a value from 0 through 9 after the condition has been checked."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"3+8\"};\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            const int valor = actual - '0';\n            std::cout << \"Value: \" << valor << \"\\n\";\n        } else {\n            std::cout << \"Sign: \" << actual << \"\\n\";\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The character '8' and the integer 8 have different roles: one represents a symbol in the text; the other is used in calculations. Subtraction is performed only after recognizing a digit. This program still interprets each digit separately: it does not construct the number 38 from those two characters."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The character '7' was read successfully and passed the digit test. Which calculation converts it to the integer value 7?",
+          "options": [
+            "Add the character to '0' to combine their representations.",
+            "Subtract '0' from the recognized character.",
+            "Print the character with cout and read the output again."
+          ],
+          "correctIndex": 1,
+          "explanation": "The distance between a digit and '0' gives its value from 0 through 9. Checking for a digit first prevents applying that rule to other characters."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Classification and Meaning Are Separate Steps"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The prepared text is \"12\". A loop using get identifies both characters as digits. What can you conclude so far?",
+          "options": [
+            "There are two digits; an additional rule is needed to combine them into one number.",
+            "The loop automatically calculated the integer 12.",
+            "The second digit is invalid because get permits only one character in the entire stream."
+          ],
+          "correctIndex": 0,
+          "explanation": "Each get reads one character. Building a multi-character unit requires an additional rule and state; it will be part of token reading."
+        },
+        {
+          "type": "paragraph",
+          "text": "Also define which whitespace your format allows. In the following exercises, we treat only space, tab, and newline as separators. This list is a decision for our small language, not a description of every character category in the world. Do not confuse the ASCII used in these tests with general Unicode letter and symbol processing."
+        },
+        {
+          "type": "paragraph",
+          "text": "Every successful get iteration consumes exactly one character. Finite text guarantees termination even if it contains unknown signs: the classifier may reject or count them, but the reader has advanced. A failed read must not process the old value in actual again."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Character Count"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build a report for \"7 +\\n3\". Classify every successfully read character into exactly one category: digit from 0 through 9, separator of one of the three defined kinds, or other character. Display Digits: N, Separators: N, and Other: N, one label per line with a space before each count. Each test contains up to 40 ASCII characters, so no counter can exceed 40."
+        },
+        {
+          "type": "paragraph",
+          "text": "The starting case must produce Digits: 2, Separators: 2, and Other: 1. An empty string produces three zeros. \"12\" has two digits and no separators; \" \" contains one separator; \"()\" contains two characters in the other category. Predict the result for \"001\\t-\" before running. Do not remove whitespace before classifying it."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"7 +\\n3\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Choose the read operation that preserves every character, the counters, and conditions that make the categories mutually exclusive. Check that the three counts add up to the number of characters in each test. The editor does not validate that criterion for you; use it to find omissions or double counting before comparing with the reference."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare Reading and the Alternatives"
+        },
+        {
+          "type": "paragraph",
+          "text": "This implementation processes \"2\\t* 9\\n\", using different input. The first condition detects digits; the second groups the defined separators; the final alternative catches everything else. Because it uses if, else if, and else, a read increments only one counter."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2\\t* 9\\n\"};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            ++digitos;\n        } else if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            ++separadores;\n        } else {\n            ++otros;\n        }\n    }\n    std::cout << \"Digits: \" << digitos;\n    std::cout << \"\\nSeparators: \" << separadores;\n    std::cout << \"\\nOther: \" << otros;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "If your version uses separate independent conditions, check that the categories truly do not overlap. If you replace get with >>, the separators disappear before the loop body, and the count no longer satisfies the contract. Plausible output is not enough: tests must distinguish those two ways of reading."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Revisit classification: predict the three counts for this new input.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"\\t0-9 \"};\n    char actual = '?';\n    int digitos = 0;\n    int separadores = 0;\n    int otros = 0;\n    while (entrada.get(actual)) {\n        if (actual >= '0' && actual <= '9') {\n            ++digitos;\n        } else if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            ++separadores;\n        } else {\n            ++otros;\n        }\n    }\n    std::cout << \"Digits: \" << digitos;\n    std::cout << \"\\nSeparators: \" << separadores;\n    std::cout << \"\\nOther: \" << otros;\n    return 0;\n}\n",
+          "answers": [
+            "Digits: 2\nSeparators: 2\nOther: 1"
+          ],
+          "explanation": "The tab and space are separators; 0 and 9 are digits at the endpoints; the hyphen belongs to other characters."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prepare the Boundary of a Token"
+        },
+        {
+          "type": "paragraph",
+          "text": "We can now read words, lines, or characters and distinguish what each read preserves. To interpret 12+3, we must combine characters 1 and 2 into a number, return + as another element, and then read 3. Each will be a token: a unit assigned a category by our language. This construction must also decide what to do when the next character already belongs to the next unit."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A reader collects the digits of 12 and then encounters +. What must it do before returning the number and continuing?",
+          "options": [
+            "Convert + into another digit so it does not need to move backward.",
+            "Stop permanently because not every character is a digit.",
+            "Keep the sign available to be returned as the next unit."
+          ],
+          "correctIndex": 2,
+          "explanation": "The sign is not part of the number, but it is still part of the input. Reading one unit must leave available what belongs to the next."
+        }
+      ]
+    }
+  ]
+}

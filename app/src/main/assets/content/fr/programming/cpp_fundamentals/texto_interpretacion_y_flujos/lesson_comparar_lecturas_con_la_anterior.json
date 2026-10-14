@@ -1,0 +1,315 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior",
+  "title": "Comparer chaque lecture à la précédente",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'observation précédente n'est pas tout l'historique"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu sais maintenant lire et compter des mots tant que l'extraction réussit. La nouvelle consigne porte sur deux instants : le mot tout juste lu et celui obtenu immédiatement avant. Une répétition adjacente signifie que ces deux mots sont identiques. Il ne s'agit pas de savoir si le mot est apparu quelque part auparavant ni combien de mots différents existent."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans pin pin saule, une répétition adjacente apparaît lors de la lecture du second pin. Dans pin saule pin, il n'y en a pas : le voisin précédent du dernier pin est saule. Trier ces mots changerait la question en modifiant leurs voisins. Nous devons traiter l'ordre de lecture sans rassembler ni trier toute l'entrée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Numérote chaque lecture réussie à partir de un. Si le mot à la position P correspond à celui de P-1, le rapport marque P, la position du second mot de cette paire. La première lecture n'a pas de voisin précédent. Dans une suite de mots identiques, plusieurs positions peuvent être marquées : chaque paire adjacente est examinée séparément, même si elle partage un mot avec la paire suivante."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__repeticion_local_frente_a_global",
+          "question": "Le texte est \"riviere soleil riviere\" et chaque mot est comparé uniquement à son prédécesseur immédiat. Quel rapport de répétitions convient ?",
+          "options": [
+            "Marquer la position trois parce que riviere figurait à la position un.",
+            "Ne marquer aucune position parce qu'aucune paire de mots voisins ne correspond.",
+            "Marquer les positions un et trois parce qu'elles contiennent le même mot."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les voisins sont riviere/soleil et soleil/riviere. L'égalité entre les première et troisième positions n'est pas une répétition adjacente."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__posicion_del_par_solapado",
+          "question": "Pour \"mer mer mer\", quelles positions sont le second mot d'une paire adjacente identique ?",
+          "options": [
+            "Uniquement deux : un mot ne peut pas appartenir à deux paires.",
+            "Un, deux et trois : leur contenu est identique.",
+            "Deux et trois : il y a deux paires, et le premier mot n'a aucun prédécesseur."
+          ],
+          "correctIndex": 2,
+          "explanation": "On compare les positions un/deux puis deux/trois. La position deux appartient aux deux paires, avec des rôles différents."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer avant de remplacer la copie précédente"
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserve une copie de la valeur précédente qui subsiste après la lecture suivante. Avant de la mettre à jour, utilise-la pour décider de sa relation avec la nouvelle valeur. Affecter d'abord la valeur actuelle à anterior supprime cette différence : tu comparerais alors la donnée à sa propre copie. L'ordre de deux instructions change le sens de la question."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior{\"pin\"};\n    const std::string actual{\"chene\"};\n    const bool antes = (anterior == actual);\n    anterior = actual;\n    const bool despues = (anterior == actual);\n    std::cout << \"Avant copie: \" << antes\n              << \"\\nAprès copie: \" << despues;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Comparaison guidée : le premier résultat est false, affiché comme 0 ; le second est true, affiché comme 1. Ce dernier confirme que la copie a eu lieu, et non que pin et chene étaient identiques. Dans une séquence, la copie doit être mise à jour après comparaison, lors de chaque lecture valide, même lorsque les mots diffèrent."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__actualizar_tambien_tras_una_diferencia",
+          "question": "Après avoir lu \"a b\", on obtient un autre \"b\". Quelle valeur la copie précédente doit-elle contenir avant de comparer ce troisième mot ?",
+          "options": [
+            "b, parce que la copie suit toujours la dernière lecture valide.",
+            "a, parce qu'elle n'est mise à jour qu'après une répétition.",
+            "Une chaîne vide, pour recommencer un historique après chaque différence."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le prédécesseur du troisième mot est le second b. Conserver a après une différence ne représenterait plus l'observation immédiatement précédente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le contrat de lecture de mots, >> pour string ignore les séparateurs et ne renvoie pas de mot vide lors d'une lecture valide. Une string anterior initialement vide peut donc indiquer qu'il n'y a pas encore de mot précédent : elle ne correspondra jamais au premier mot valide. Tu peux aussi utiliser un bool explicite de présence. Ce raisonnement dépend du domaine : une chaîne vide ne représente pas l'absence dans toutes les autres lectures."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un rapport de paires adjacentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rappelle-toi que std::cin est le flux d'entrée standard déclaré dans <iostream> ; ici, il reçoit le texte du champ Entrée préparée. Construis le lecteur de mots dans l'éditeur. Utilise std::cin avec l'entrée préparée : lis les string au moyen de >> et traite uniquement les lectures valides. Le texte comporte au maximum huit mots de vingt caractères ASCII chacun. Compare les chaînes littéralement : majuscules et ponctuation conservées font partie des données. Ne normalise, ne trie et ne conserve pas toute la séquence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Numérote à partir de un. Pour chaque mot identique à son prédécesseur immédiat, affiche Répétée: P sur une ligne ; P est la position du nouveau mot. À la fin, affiche Mots: N et Répétitions: R sur deux lignes supplémentaires. Garde un espace après chaque étiquette et termine chaque ligne par un saut. Le premier mot ne compte jamais comme répétition. Si aucun mot n'a été obtenu, seuls les deux récapitulatifs à zéro apparaissent."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'entrée préparée initiale est \"craie craie mur craie mur mur\", sans saut final. Avant l'exécution, prépare une trace indiquant position, valeur précédente avant comparaison, valeur actuelle, décision, puis valeur précédente après mise à jour. Décide quel état doit subsister entre les itérations et ce qui ne change qu'après une lecture réussie. L'entrée complète est préparée avant l'exécution : il ne s'agit pas d'une conversation interactive."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prépare également les résultats attendus pour un texte vide, uniquement des espaces et des tabulations, \"lac\", \"lac lac lac\", \"lac soleil lac\", \"a b b\" et \"Echo echo echo.\". Distingue la répétition du voisin de la réapparition après un autre mot. Explique la dernière tentative de lecture échouée : elle n'augmente pas le compteur et ne compare plus l'ancienne destination. Tu peux utiliser une copie précédente initialement vide grâce au domaine des mots, ou un bool indiquant sa présence."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construis la lecture, l’état précédent et le rapport du contrat.\n    return 0;\n}\n",
+          "initialStandardInput": "craie craie mur craie mur mur"
+        },
+        {
+          "type": "note",
+          "text": "Construis et vérifie avant d'ouvrir la référence. L'éditeur ne fournit ni les variables, ni la condition de répétition, ni la mise à jour. D'autres noms ou interfaces conviennent s'ils respectent le contrat et utilisent uniquement l'observation actuelle et la précédente, sans réunir toute l'entrée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : la copie suit chaque mot lu"
+        },
+        {
+          "type": "note",
+          "text": "Entrée préparée de cette référence, différente de l'exercice : \"  phare\\tpont pont\\npont phare  \". Colle ce texte dans le champ d'entrée et le programme dans l'éditeur de code. La tabulation, le saut de ligne et les espaces séparent les mots ; ils ne sont pas présentés comme des observations."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (std::cin >> actual) {\n        ++posicion;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Répétée: \" << posicion << '\\n';\n        }\n        anterior = actual;\n    }\n    std::cout << \"Mots: \" << posicion\n              << \"\\nRépétitions: \" << repeticiones << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence produit Répétée: 3, Répétée: 4, Mots: 5 et Répétitions: 2, une ligne pour chaque valeur. Le dernier phare était déjà apparu, mais son voisin est pont : il n'est pas marqué. L'entrée de l'exercice produit Répétée: 2, Répétée: 6, Mots: 6 et Répétitions: 2."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : comparer avant de remplacer anterior ; la mettre à jour après chaque lecture valide ; compter la nouvelle position à partir de un ; exclure la dernière tentative échouée et le premier mot du rapport des paires. Une chaîne initialement vide constitue un marqueur d'absence valide uniquement parce qu'aucun mot lu avec succès par >> n'est vide."
+        },
+        {
+          "type": "paragraph",
+          "text": "\"lac lac lac\" marque deux et trois ; \"lac soleil lac\" ne marque rien ; \"a b b\" marque trois ; \"Echo echo echo.\" ne marque rien non plus. Avec un texte vide ou seulement des séparateurs, N et R valent zéro ; \"lac\" donne N=1 et R=0. L'affectation anterior = actual conserve une copie de la valeur reçue et non une référence suivant automatiquement la prochaine lecture de actual."
+        },
+        {
+          "type": "note",
+          "text": "Une organisation utilisant un bool de présence convient également. Si N est positif, R ne dépasse jamais N-1 : il n'existe que ce nombre de paires voisines. Pour N=0, R=0. Cette propriété aide à détecter une erreur, mais ne remplace pas l'examen des positions marquées."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguer l'égalité littérale d'une ressemblance apparente"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'extraction détermine ce qui constitue un mot ; la comparaison littérale détermine si deux mots sont égaux. Le lecteur ne transforme pas Echo en echo et ne retire pas le point de echo. Changer ces règles constituerait un autre contrat. La position compte également : rencontrer le même mot plus tard ne signifie pas qu'il est voisin de sa première apparition."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__mayusculas_puntuacion_y_vecinos",
+          "question": "Prédis toutes les lignes avec ces nouvelles données. Le texte est dans l'istringstream lui-même ; ce programme ne nécessite aucune entrée externe.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"Echo echo echo. echo. Echo\"};\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (entrada >> actual) {\n        ++posicion;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Répétée: \" << posicion << '\\n';\n        }\n        anterior = actual;\n    }\n    std::cout << \"Mots: \" << posicion\n              << \"\\nRépétitions: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Répétée: 4\nMots: 5\nRépétitions: 1"
+          ],
+          "explanation": "Seules les deux occurrences consécutives de echo. coïncident littéralement. Echo ne correspond ni à echo ni à echo. ; le dernier Echo n'est pas voisin du premier."
+        },
+        {
+          "type": "paragraph",
+          "text": "Examine maintenant une version qui compile et se termine, mais change l'ordre des mises à jour. Ne confonds pas la sortie réellement exécutée avec celle exigée par le contrat : répéter le premier mot montrerait déjà que la comparaison est placée au mauvais endroit."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__copiar_demasiado_pronto_cambia_la_pregunta",
+          "question": "Cette version ne respecte pas le contrat. Prédis ce qu'elle affiche telle qu'elle est écrite, avant d'expliquer quel ordre tu corrigerais.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"sel roche sel\"};\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (entrada >> actual) {\n        ++posicion;\n        anterior = actual;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Répétée: \" << posicion << '\\n';\n        }\n    }\n    std::cout << \"Mots: \" << posicion\n              << \"\\nRépétitions: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Répétée: 1\nRépétée: 2\nRépétée: 3\nMots: 3\nRépétitions: 3"
+          ],
+          "explanation": "Elle copie actual avant la comparaison et compare chaque mot à lui-même. Elle marque même le premier. L'entrée sel roche sel ne comporte aucune paire voisine identique ; déplacer la copie après la comparaison redonne à anterior sa signification."
+        },
+        {
+          "type": "note",
+          "text": "Après avoir trouvé cet ordre incorrect, reviens aux cas d'un seul mot et de trois mots identiques. Ces deux cas distinguent une véritable correction de l'état du simple masquage d'une ligne de sortie. Le domaine réduit permet de représenter les compteurs."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer la comparaison à des lignes éventuellement vides"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un autre lecteur, cette fois avec std::getline(std::cin, actual). Chaque ligne lue avec succès est une observation, même lorsqu'elle contient zéro caractère. Le texte préparé comporte jusqu'à six lignes de quarante caractères ASCII chacune, délimitées par LF. Compare tout le contenu littéral : conserve espaces et tabulations ; ne découpe pas en mots, ne supprime pas les blancs, ne trie pas et ne conserve pas toutes les lignes."
+        },
+        {
+          "type": "paragraph",
+          "text": "La première ligne n'a pas de précédente, même lorsqu'elle est vide. Une string anterior vide ne permet plus de distinguer l'absence d'une ligne précédente d'une ligne vide lue avec succès. Utilise un bool de présence qui commence à false et passe à true seulement après une lecture réussie. La comparaison nécessite une précédente ; après la décision, la copie doit représenter la ligne tout juste obtenue, même lorsqu'elle était vide ou différente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Affiche Répétée: P pour chaque ligne identique à celle qui la précède immédiatement ; P numérote la nouvelle ligne à partir de un. Termine par Lignes: N et Répétitions: R. Conserve les espaces des étiquettes et les sauts de ligne du rapport de mots. L'entrée initiale est \"cour\\n\\n\\ncour\\n cour\\n cour\", sans LF final ; ici, \\n représente chaque saut réel du texte préparé. Prépare d'abord une trace indiquant présence, précédente, actuelle, position et décision ; n'affiche pas le contenu de la ligne à la place de cette comparaison."
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste le texte vide, \"\\n\", \"\\n\\n\", \"A\\nA\", \"A\\nA\\n\", \"A\\nB\\nA\", \"A\\n A\" et \"\\nA\\nA\". Distingue l'absence totale de ligne d'une ligne vide obtenue. Une dernière ligne sans LF peut être lue valablement ; un LF final ne crée pas une autre ligne à lui seul. Une lecture échouée ne doit pas traiter encore la valeur précédente de la destination. Prédis toutes les positions et les récapitulatifs avant l'exécution."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Construis le lecteur de lignes, l’indicateur de présence et le rapport.\n    return 0;\n}\n",
+          "initialStandardInput": "cour\n\n\ncour\n cour\n cour"
+        },
+        {
+          "type": "note",
+          "text": "Ce nouvel éditeur ne fournit pas l'algorithme. Retrouve le sens de anterior et adapte-le à l'unité de lecture : une ligne vide est une vraie donnée. D'autres organisations sont admises si elles distinguent explicitement la présence et conservent la comparaison avant la mise à jour."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : présence indépendante du contenu"
+        },
+        {
+          "type": "note",
+          "text": "Entrée préparée pour cette référence : \"\\nporte\\nporte\\n\\n\\nporte\", où chaque \\n représente un LF. Elle commence par une ligne vide et se termine par une ligne sans LF. Elle diffère de l'entrée de l'essai ; compare le programme aux deux traces."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n    while (std::getline(std::cin, actual)) {\n        ++posicion;\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Répétée: \" << posicion << '\\n';\n        }\n        anterior = actual;\n        hay_anterior = true;\n    }\n    std::cout << \"Lignes: \" << posicion\n              << \"\\nRépétitions: \" << repeticiones << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence marque les positions trois et cinq, puis affiche Lignes: 6 et Répétitions: 2. La première ligne vide n'est pas marquée. À la cinquième position, une seconde ligne vide est adjacente à la quatrième ; la dernière porte n'est pas identique à la ligne vide qui la précède. Le texte de l'essai marque trois et six, avec six lignes et deux répétitions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : présence préalable indépendante de la string ; comparaison littérale des voisins dans l'ordre reçu ; aucune répétition de la première ligne ; mise à jour après la comparaison et seulement après une lecture valide ; positions et total comprennent les lignes vides. La dernière donnée sans LF est traitée une seule fois. La condition getline empêche de traiter à nouveau la destination après un échec."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec un texte vide, les deux récapitulatifs valent zéro. \"\\n\" produit une ligne vide et zéro répétition ; \"\\n\\n\" produit deux lignes vides et marque seulement deux. \"A\\nA\" et \"A\\nA\\n\" produisent deux lignes et marquent deux. \"A\\nB\\nA\" et \"A\\n A\" n'en marquent aucune. \"\\nA\\nA\" marque trois. Encore une fois, lorsque N>0, il existe au plus N-1 paires, mais cette borne ne dit pas lesquelles sont égales."
+        },
+        {
+          "type": "note",
+          "text": "Le bool ne décrit pas si la ligne contient des caractères : il indique qu'une lecture valide précédente a eu lieu. Il n'est pas réinitialisé à chaque tour. Le programme conserve seulement les deux valeurs de ligne nécessaires à la comparaison, avec la présence et les compteurs ; il ne conserve pas une collection de toute l'entrée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contenu littéral et fins de ligne sont deux décisions distinctes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans ces textes préparés, \\n représente LF, le caractère que getline utilise comme délimiteur. L'écriture \\r représente un autre caractère, CR. Si CR figure réellement dans le flux avant LF, la lecture le conserve dans la string : elle ne supprime pas automatiquement tout caractère ressemblant à une fin de ligne. En revanche, >> pour les mots traite ces caractères blancs comme séparateurs. L'istringstream suivant fixe les caractères dans le programme."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__cr_literal_no_se_borra_al_leer_lineas",
+          "question": "Prédis le rapport. La première ligne de l'istringstream contient A suivi de CR ; le rapport affiche positions et nombres, pas ce caractère de contrôle.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"A\\r\\nA\\nA\\n\"};\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n    while (std::getline(entrada, actual)) {\n        ++posicion;\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Répétée: \" << posicion << '\\n';\n        }\n        anterior = actual;\n        hay_anterior = true;\n    }\n    std::cout << \"Lignes: \" << posicion\n              << \"\\nRépétitions: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Répétée: 3\nLignes: 3\nRépétitions: 1"
+          ],
+          "explanation": "getline supprime chaque LF délimiteur, mais conserve le CR littéral de la première ligne. A suivi de CR diffère de A. Les deuxième et troisième lignes coïncident ; le LF final n'ajoute pas une quatrième lecture."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les exercices et références à entrée externe utilisent un LF préparé. Une source de texte peut traduire les fins de ligne avant de fournir les caractères au flux ; nous ne supposons pas un traitement identique des octets CR/LF dans tous les environnements. Le contrat compare les strings réellement obtenues. Si un autre format exigeait de normaliser CR, ce serait une règle explicite supplémentaire, non appliquée ici."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__espacios_y_tabuladores_forman_parte_de_la_linea",
+          "question": "Prédis les positions et les récapitulatifs de ces nouvelles lignes, y compris la dernière sans LF.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"  x\\n  x\\nx\\nx \\nx \\n\\tx\"};\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n    while (std::getline(entrada, actual)) {\n        ++posicion;\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Répétée: \" << posicion << '\\n';\n        }\n        anterior = actual;\n        hay_anterior = true;\n    }\n    std::cout << \"Lignes: \" << posicion\n              << \"\\nRépétitions: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Répétée: 2\nRépétée: 5\nLignes: 6\nRépétitions: 2"
+          ],
+          "explanation": "Les deux premières lignes contiennent deux espaces suivis de x. Les quatrième et cinquième contiennent x suivi d'un espace. Le troisième x et la sixième ligne, avec une tabulation suivie de x, ont des contenus littéraux différents ; ces caractères ne sont pas supprimés avant la comparaison."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__ausencia_y_vacio_no_son_el_mismo_estado",
+          "question": "Qu'est-ce qui distingue correctement le texte vide de \"\\n\\n\" selon le contrat de lecture des lignes ?",
+          "options": [
+            "Les deux contiennent zéro observation puisqu'aucun ne comporte de lettres.",
+            "Le premier contient une ligne vide et le second deux répétitions.",
+            "Le premier ne contient aucune ligne ; le second contient deux lignes vides et une répétition."
+          ],
+          "correctIndex": 2,
+          "explanation": "Ici, getline obtient une ligne vide pour chaque délimiteur disponible. La première n'a aucune ligne précédente ; la deuxième possède bien une ligne vide précédente identique."
+        },
+        {
+          "type": "note",
+          "text": "La copie de la valeur précédente et les positions de mots répétés sont abordées dans la lecture d'appui (Stroustrup, 2024, sections 2.5.1 et 2.5.3, p. 38–40). Les contrats, textes, rapports, comparaisons et le transfert aux lignes sont propres à cette leçon. Reprends les leçons précédentes sur les mots et les lignes pour comprendre >>, getline et la fin de l'entrée ; aucune collection, recherche globale ni nouvelle API n'est nécessaire."
+        }
+      ]
+    }
+  ]
+}

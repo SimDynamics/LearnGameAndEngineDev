@@ -1,0 +1,315 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior",
+  "title": "Compare Each Read with the Previous One",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Previous Observation Is Not the Entire History"
+        },
+        {
+          "type": "paragraph",
+          "text": "You can now read and count words while extraction succeeds. The new task depends on two moments: the newly read word and the one immediately before it. An adjacent repetition means those two words are equal. It does not ask whether the word occurred anywhere earlier or how many distinct words exist."
+        },
+        {
+          "type": "paragraph",
+          "text": "In pine pine willow, an adjacent repetition occurs when the second pine is read. In pine willow pine, there is none: the previous neighbor of the final pine is willow. Sorting those words would change the question by changing their neighbors. We must process reading order without collecting or sorting the entire input."
+        },
+        {
+          "type": "paragraph",
+          "text": "Number each successful read starting at one. If the word at position P matches the word at P-1, the report marks P, the position of the second word in the pair. The first read has no previous neighbor. In a run of equal words, several positions can be marked: each adjacent pair is considered separately even when it shares a word with the next pair."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__repeticion_local_frente_a_global",
+          "question": "The text is \"river sun river\" and each word is compared only to its immediate predecessor. Which repetition report is correct?",
+          "options": [
+            "Mark position three because river appeared at position one.",
+            "Mark no positions because no two adjacent words match.",
+            "Mark positions one and three because their spelling matches."
+          ],
+          "correctIndex": 1,
+          "explanation": "The neighbors are river/sun and sun/river. Equality between the first and third positions is not an adjacent repetition."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__posicion_del_par_solapado",
+          "question": "For \"sea sea sea\", which positions are the second word of an equal adjacent pair?",
+          "options": [
+            "Only two: one word cannot belong to two pairs.",
+            "One, two, and three: all have the same content.",
+            "Two and three: there are two pairs, and the first word has no predecessor."
+          ],
+          "correctIndex": 2,
+          "explanation": "Positions one/two and two/three are compared. Position two belongs to both pairs in different roles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare Before Replacing the Previous Copy"
+        },
+        {
+          "type": "paragraph",
+          "text": "Keep a copy of the previous value that survives the next read. Before updating it, use it to decide how it relates to the new value. Assigning the new value to anterior first destroys that distinction: you would then compare the value with a copy of itself. The order of two statements changes the meaning of the question."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior{\"pine\"};\n    const std::string actual{\"oak\"};\n    const bool antes = (anterior == actual);\n    anterior = actual;\n    const bool despues = (anterior == actual);\n    std::cout << \"Before copying: \" << antes\n              << \"\\nAfter copying: \" << despues;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Guided comparison: the first result is false, displayed as 0; the second is true, displayed as 1. The latter confirms that copying worked, not that pine and oak were equal. In a sequence, update the copy after comparing and after every successful read, even when the words differ."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__actualizar_tambien_tras_una_diferencia",
+          "question": "After reading \"a b\", another \"b\" is obtained. What should the previous copy contain before comparing the third word?",
+          "options": [
+            "b, because the copy always follows the latest successful read.",
+            "a, because it is updated only after a repetition.",
+            "An empty string, to start a new history after every difference."
+          ],
+          "correctIndex": 0,
+          "explanation": "The third word's predecessor is the second b. Retaining a after a difference would no longer represent the immediately previous observation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Under the word-reading contract, >> for string skips separators and never produces an empty word on a successful read. Thus an initially empty anterior string can mean that no previous word has been read: it cannot match the first valid word. You may also use an explicit bool presence flag. That reasoning depends on the input domain; the empty marker does not work for every other kind of read."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Report of Adjacent Pairs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall that std::cin is the standard input stream declared in <iostream>; here, it receives text from the Prepared Input field. Build the word reader in the editor. Use std::cin with prepared input: extract strings with >> and process only successful reads. The text contains up to eight words of at most twenty ASCII characters each. Compare strings literally: retained capitalization and punctuation are part of the data. Do not normalize, sort, or store the entire sequence."
+        },
+        {
+          "type": "paragraph",
+          "text": "Number from one. For every word equal to its immediate predecessor, display Repeated: P on one line, where P is the new word's position. At the end, display Words: N and Repetitions: R on two additional lines. Keep one space after each label and end each line with a newline. The first word never counts as a repetition. If no word was obtained, only the two zero summaries appear."
+        },
+        {
+          "type": "paragraph",
+          "text": "The initial prepared input is \"chalk chalk wall chalk wall wall\", without a final newline. Before running, prepare a trace of position, previous value before comparison, current value, decision, and previous value after the update. Decide which state must survive between iterations and what changes only following a successful read. The entire input is prepared before execution; this is not an interactive conversation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Also predict the output for empty text, spaces and tabs only, \"lake\", \"lake lake lake\", \"lake sun lake\", \"a b b\", and \"Echo echo echo.\". Distinguish repeating a neighbor from reappearing after another word. Explain the final failed read: it does not increase the counter or compare the last destination again. You may use an initially empty previous copy because of the word domain, or a bool indicating presence."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Build the reader, previous state, and contract report.\n    return 0;\n}\n",
+          "initialStandardInput": "chalk chalk wall chalk wall wall"
+        },
+        {
+          "type": "note",
+          "text": "Build and check your solution before opening the reference. The editor does not supply the variables, repetition condition, or update. Other names or interfaces are valid if they preserve the contract and use only the current and previous observations, without collecting all the input."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Update the Copy After Every Word"
+        },
+        {
+          "type": "note",
+          "text": "Prepared input for this reference, different from the exercise: \"  beacon\\tbridge bridge\\nbridge beacon  \". Paste this text into the editor's input field and the program into the source editor. Tabs, newlines, and spaces separate words; they are not displayed as observations."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (std::cin >> actual) {\n        ++posicion;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repeated: \" << posicion << '\\n';\n        }\n        anterior = actual;\n    }\n    std::cout << \"Words: \" << posicion\n              << \"\\nRepetitions: \" << repeticiones << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference reports Repeated: 3, Repeated: 4, Words: 5, and Repetitions: 2, one per line. The final beacon appeared earlier, but its neighbor is bridge, so it is not marked. The exercise input gives Repeated: 2, Repeated: 6, Words: 6, and Repetitions: 2."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: compare before replacing anterior; update it on every successful read; count the new position from one; exclude the final failed attempt and the first word from the pair report. An initially empty string is a valid absence marker only because no word successfully read by >> is empty."
+        },
+        {
+          "type": "paragraph",
+          "text": "\"lake lake lake\" marks two and three; \"lake sun lake\" marks none; \"a b b\" marks three; \"Echo echo echo.\" also marks none. For empty text or separators only, N and R are zero; \"lake\" has N=1 and R=0. The assignment anterior = actual keeps a copy of the received value, not a reference that automatically follows the next read into actual."
+        },
+        {
+          "type": "note",
+          "text": "An organization using a bool presence flag is valid too. If N is positive, R cannot exceed N-1: only that many neighboring pairs exist. For N=0, R=0. This property helps detect bugs but does not replace checking the positions that were marked."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguish Literal Equality from an Apparent Match"
+        },
+        {
+          "type": "paragraph",
+          "text": "Extraction determines what counts as a word; literal comparison determines whether two words are equal. The reader does not turn Echo into echo or remove the period from echo. Changing those rules would be a different contract. Position also matters: encountering the same word later does not imply that it is adjacent to its earlier occurrence."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__mayusculas_puntuacion_y_vecinos",
+          "question": "Predict every line for these new inputs. The text is inside the istringstream; this program needs no external input.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"Echo echo echo. echo. Echo\"};\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (entrada >> actual) {\n        ++posicion;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repeated: \" << posicion << '\\n';\n        }\n        anterior = actual;\n    }\n    std::cout << \"Words: \" << posicion\n              << \"\\nRepetitions: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Repeated: 4\nWords: 5\nRepetitions: 1"
+          ],
+          "explanation": "Only the two consecutive occurrences of echo. match literally. Echo differs from echo and echo.; the final Echo is not next to the first one."
+        },
+        {
+          "type": "paragraph",
+          "text": "Now examine a version that compiles and finishes but changes the update order. Do not confuse what it actually prints with what the contract requires; repeating the first word would already show that the comparison was placed incorrectly."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__copiar_demasiado_pronto_cambia_la_pregunta",
+          "question": "This version is incorrect for the contract. Predict what it prints as written before explaining which statement order you would repair.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"salt rock salt\"};\n    std::string anterior;\n    std::string actual;\n    int posicion{0};\n    int repeticiones{0};\n    while (entrada >> actual) {\n        ++posicion;\n        anterior = actual;\n        if (actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repeated: \" << posicion << '\\n';\n        }\n    }\n    std::cout << \"Words: \" << posicion\n              << \"\\nRepetitions: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Repeated: 1\nRepeated: 2\nRepeated: 3\nWords: 3\nRepetitions: 3"
+          ],
+          "explanation": "It copies actual before checking and compares each word with itself. It even marks the first word. The input salt rock salt contains no matching neighboring pair; moving the copy after the comparison restores the meaning of anterior."
+        },
+        {
+          "type": "note",
+          "text": "After identifying that incorrect order, revisit a single-word input and three identical words. Both cases distinguish a genuine state repair from merely hiding one line of output. The small domain keeps the counters representable."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer the Comparison to Lines That May Be Empty"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build another reader, this time with std::getline(std::cin, actual). Each successfully read line is an observation, even if it contains zero characters. Prepared text has up to six lines of up to forty ASCII characters each, delimited by LF. Compare the complete literal content: preserve spaces and tabs; do not split into words, strip whitespace, sort, or store all the lines."
+        },
+        {
+          "type": "paragraph",
+          "text": "The first line has no predecessor even when empty. An empty anterior string can no longer distinguish the absence of a previous line from a previously read valid empty line. Use a presence bool starting as false and set it to true only after successfully reading a line. Comparison requires a prior line; afterward the copy must hold the newly obtained line, even if it was empty or different."
+        },
+        {
+          "type": "paragraph",
+          "text": "Display Repeated: P for every line equal to the one immediately before it; P numbers the new line from one. End with Lines: N and Repetitions: R. Keep the spaces after the labels and the line endings from the word report. The initial input is \"yard\\n\\n\\nyard\\n yard\\n yard\", without a final LF; here \\n stands for each actual newline in the prepared input. First prepare a trace of presence, previous, current, position, and decision; do not print the line contents instead of performing the comparison."
+        },
+        {
+          "type": "paragraph",
+          "text": "Test empty text, \"\\n\", \"\\n\\n\", \"A\\nA\", \"A\\nA\\n\", \"A\\nB\\nA\", \"A\\n A\", and \"\\nA\\nA\". Distinguish failing to obtain any line from obtaining one empty line. A final line without LF can still be read successfully; a final LF does not invent another line by itself. A failed read must not process the old destination again. Determine every marked position and summary before execution."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n\nint main() {\n    // Build the line reader, previous-presence flag, and report.\n    return 0;\n}\n",
+          "initialStandardInput": "yard\n\n\nyard\n yard\n yard"
+        },
+        {
+          "type": "note",
+          "text": "This new editor does not provide the algorithm. Revisit the meaning of anterior and adjust to what the reading unit permits: an empty line is real data. Alternative implementations are valid if they explicitly track presence and preserve the same comparison-before-update order."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Presence Independent of Content"
+        },
+        {
+          "type": "note",
+          "text": "Prepared input for this reference: \"\\ndoor\\ndoor\\n\\n\\ndoor\", where each \\n denotes an LF. It starts with an empty line and ends with a line without LF. This differs from the exercise input; compare the program against both traces."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n    while (std::getline(std::cin, actual)) {\n        ++posicion;\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repeated: \" << posicion << '\\n';\n        }\n        anterior = actual;\n        hay_anterior = true;\n    }\n    std::cout << \"Lines: \" << posicion\n              << \"\\nRepetitions: \" << repeticiones << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference marks positions three and five, then displays Lines: 6 and Repetitions: 2. The first empty line is not marked. Position five is a second empty line adjacent to the fourth, and the final door does not match its previous, empty line. The exercise input marks three and six, with six lines and two repetitions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: keep previous presence independent of the string; literally compare neighbors in reading order; never report a repetition on the first line; update after comparing and only after a successful read; positions and counts include empty lines. The last line without LF is processed once. The getline condition avoids processing the destination again after failure."
+        },
+        {
+          "type": "paragraph",
+          "text": "With empty input, both summaries are zero. \"\\n\" produces one empty line and zero repetitions; \"\\n\\n\" produces two empty lines and marks only position two. \"A\\nA\" and \"A\\nA\\n\" produce two lines and mark two. \"A\\nB\\nA\" and \"A\\n A\" mark none. \"\\nA\\nA\" marks three. Again, when N>0 there are at most N-1 pairs, but that bound does not determine which ones match."
+        },
+        {
+          "type": "note",
+          "text": "The bool does not describe whether the line has any characters: it says a valid previous read occurred. It is not reset on every iteration. The program retains just the two line values required for comparison, along with presence and counters; it does not keep a collection of the entire input."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Literal Contents and Line Endings Are Different Decisions"
+        },
+        {
+          "type": "paragraph",
+          "text": "In these prepared texts, \\n represents LF, the character used as a delimiter by getline. The notation \\r represents a different character, CR. If that CR is actually present in the stream before LF, reading preserves it as part of the string: it does not remove every character that resembles a line ending. By contrast, >> for words treats those whitespace characters as separators. The next istringstream fixes the characters inside the program."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__cr_literal_no_se_borra_al_leer_lineas",
+          "question": "Predict the report. The first line of the istringstream contains A followed by CR; the report prints positions and counts, not the control character itself.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"A\\r\\nA\\nA\\n\"};\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n    while (std::getline(entrada, actual)) {\n        ++posicion;\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repeated: \" << posicion << '\\n';\n        }\n        anterior = actual;\n        hay_anterior = true;\n    }\n    std::cout << \"Lines: \" << posicion\n              << \"\\nRepetitions: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Repeated: 3\nLines: 3\nRepetitions: 1"
+          ],
+          "explanation": "getline removes each delimiting LF but preserves the literal CR in the first line. A followed by CR differs from A. Lines two and three match; the final LF does not produce a fourth read."
+        },
+        {
+          "type": "paragraph",
+          "text": "Exercises and references with external input use prepared LF. A text source may translate line endings before supplying characters to the stream; we do not assume identical CR/LF byte handling in every environment. The contract compares the strings actually obtained. A format requiring CR normalization would add an explicit rule; this exercise does not apply one."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__espacios_y_tabuladores_forman_parte_de_la_linea",
+          "question": "Predict the positions and summaries for these new lines, including the final line without LF.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"  x\\n  x\\nx\\nx \\nx \\n\\tx\"};\n    std::string anterior;\n    std::string actual;\n    bool hay_anterior{false};\n    int posicion{0};\n    int repeticiones{0};\n    while (std::getline(entrada, actual)) {\n        ++posicion;\n        if (hay_anterior && actual == anterior) {\n            ++repeticiones;\n            std::cout << \"Repeated: \" << posicion << '\\n';\n        }\n        anterior = actual;\n        hay_anterior = true;\n    }\n    std::cout << \"Lines: \" << posicion\n              << \"\\nRepetitions: \" << repeticiones << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "Repeated: 2\nRepeated: 5\nLines: 6\nRepetitions: 2"
+          ],
+          "explanation": "The first two lines contain two spaces followed by x. Lines four and five contain x followed by a space. The third x and the sixth line with a tab before x have different literal contents; we do not strip those characters before comparison."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__comparar_lecturas_con_la_anterior__ausencia_y_vacio_no_son_el_mismo_estado",
+          "question": "What correctly distinguishes empty text from \"\\n\\n\" under the line-reading contract?",
+          "options": [
+            "Both have zero observations because neither contains letters.",
+            "The first has one empty line and the second has two repetitions.",
+            "The first has no lines; the second has two empty lines and one repetition."
+          ],
+          "correctIndex": 2,
+          "explanation": "Here getline obtains one empty line for each available delimiter. The first line has no predecessor; the second has an equal, empty predecessor."
+        },
+        {
+          "type": "note",
+          "text": "Copying the previous value and reporting positions of repeated words are covered in the supporting reading (Stroustrup, 2024, sections 2.5.1 and 2.5.3, pp. 38–40). The contracts, inputs, reports, comparisons, and transfer to lines in this lesson are original. Revisit earlier word and line lessons for the meaning of >>, getline, and end of input; no collection, global search, or new API is required."
+        }
+      ]
+    }
+  ]
+}
