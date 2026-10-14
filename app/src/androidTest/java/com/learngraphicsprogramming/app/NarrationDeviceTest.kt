@@ -295,6 +295,73 @@ class NarrationDeviceTest {
         }
     }
 
+    @Test fun mouseWheelNeverMovesFloatingReaderButPressedMouseAndTouchCanDrag() {
+        NarrationSettingsRepository.savePosition(context, 0.5f, 0.4f)
+        launch().use { scenario ->
+            awaitShown(scenario)
+            scenario.onActivity { activity ->
+                val row = activity.findViewById<ViewGroup>(R.id.lessonNarrationControls)
+                assertTrue(row.width > 0 && row.height > 0)
+                val initialX = row.x
+                val initialY = row.y
+                val originalPosition = NarrationSettingsRepository.position(activity)
+                val downTime = SystemClock.uptimeMillis()
+
+                fun send(action: Int, x: Float, y: Float, mouse: Boolean, primary: Boolean = false,
+                         wheel: Float = 0f) {
+                    val properties = MotionEvent.PointerProperties().apply {
+                        id = 0
+                        toolType = if (mouse) MotionEvent.TOOL_TYPE_MOUSE else MotionEvent.TOOL_TYPE_FINGER
+                    }
+                    val coords = MotionEvent.PointerCoords().apply {
+                        this.x = x; this.y = y
+                        pressure = 1f; size = 1f
+                        setAxisValue(MotionEvent.AXIS_VSCROLL, wheel)
+                    }
+                    val event = MotionEvent.obtain(
+                        downTime, SystemClock.uptimeMillis(), action, 1,
+                        arrayOf(properties), arrayOf(coords), 0,
+                        if (primary) MotionEvent.BUTTON_PRIMARY else 0,
+                        1f, 1f, 0, 0,
+                        if (mouse) android.view.InputDevice.SOURCE_MOUSE
+                        else android.view.InputDevice.SOURCE_TOUCHSCREEN, 0
+                    )
+                    try {
+                        val handled = if (action == MotionEvent.ACTION_SCROLL)
+                            row.dispatchGenericMotionEvent(event) else row.dispatchTouchEvent(event)
+                        if (action == MotionEvent.ACTION_SCROLL) assertTrue(handled)
+                    } finally { event.recycle() }
+                }
+
+                for (amount in listOf(1f, -1f, 2f, -2f)) {
+                    send(MotionEvent.ACTION_SCROLL, 2f, 2f, mouse = true, wheel = amount)
+                }
+                // Movement without a mouse-down / primary button must not acquire a drag.
+                send(MotionEvent.ACTION_MOVE, 80f, 80f, mouse = true)
+                send(MotionEvent.ACTION_DOWN, 2f, 2f, mouse = true)
+                send(MotionEvent.ACTION_MOVE, 95f, 95f, mouse = true)
+                send(MotionEvent.ACTION_UP, 95f, 95f, mouse = true)
+                assertEquals(initialX, row.x, 0.01f)
+                assertEquals(initialY, row.y, 0.01f)
+                assertEquals(originalPosition, NarrationSettingsRepository.position(activity))
+
+                // Holding the mouse's primary button is an intentional drag.
+                send(MotionEvent.ACTION_DOWN, 2f, 2f, mouse = true, primary = true)
+                send(MotionEvent.ACTION_MOVE, 42f, 55f, mouse = true, primary = true)
+                send(MotionEvent.ACTION_UP, 42f, 55f, mouse = true)
+                assertTrue("Primary-button drag moves the bar", row.y > initialY + 20f)
+                assertNotEquals(originalPosition, NarrationSettingsRepository.position(activity))
+
+                // Touchscreen dragging remains supported without mouse buttons.
+                val afterMouse = row.y
+                send(MotionEvent.ACTION_DOWN, 2f, 2f, mouse = false)
+                send(MotionEvent.ACTION_MOVE, 25f, 37f, mouse = false)
+                send(MotionEvent.ACTION_UP, 25f, 37f, mouse = false)
+                assertTrue("Finger drag still moves the bar", row.y > afterMouse + 10f)
+            }
+        }
+    }
+
     private fun tree(view: View): List<View> = buildList {
         add(view)
         if (view is ViewGroup) for (index in 0 until view.childCount) addAll(tree(view.getChildAt(index)))

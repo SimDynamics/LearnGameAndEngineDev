@@ -5,6 +5,7 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
+import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
@@ -177,40 +178,80 @@ class LessonNarrationControls(
 
     private inner class DraggableRow : LinearLayout(activity) {
         var dragging = false
+        private var pressedGesture = false
         private var downX = 0f; private var downY = 0f
         private var startX = 0f; private var startY = 0f
         private val slop = ViewConfiguration.get(activity).scaledTouchSlop
-        private fun begin(event: MotionEvent) {
-            dragging = false; downX = event.rawX; downY = event.rawY; startX = x; startY = y
+
+        private fun directDragInput(event: MotionEvent): Boolean {
+            val mouse = event.isFromSource(InputDevice.SOURCE_MOUSE) ||
+                (event.pointerCount > 0 && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE)
+            return !mouse || (event.buttonState and MotionEvent.BUTTON_PRIMARY) != 0
         }
+
+        private fun begin(event: MotionEvent) {
+            pressedGesture = directDragInput(event)
+            dragging = false
+            if (!pressedGesture) return
+            downX = event.rawX; downY = event.rawY; startX = x; startY = y
+        }
+
+        private fun stopGesture() {
+            pressedGesture = false
+            dragging = false
+            parent?.requestDisallowInterceptTouchEvent(false)
+        }
+
+        override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+            // A mouse wheel event over the floating bar must never move it.
+            if (event.actionMasked == MotionEvent.ACTION_SCROLL) return true
+            return super.dispatchGenericMotionEvent(event)
+        }
+
         override fun onInterceptTouchEvent(event: MotionEvent): Boolean {
-            if (event.actionMasked == MotionEvent.ACTION_DOWN) begin(event)
-            if (event.actionMasked == MotionEvent.ACTION_MOVE &&
-                (abs(event.rawX-downX) > slop || abs(event.rawY-downY) > slop)) {
-                dragging = true
-                parent?.requestDisallowInterceptTouchEvent(true)
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> begin(event)
+                MotionEvent.ACTION_MOVE -> {
+                    if (pressedGesture && !directDragInput(event)) stopGesture()
+                    if (pressedGesture && !dragging &&
+                        (abs(event.rawX-downX) > slop || abs(event.rawY-downY) > slop)) {
+                        dragging = true
+                        parent?.requestDisallowInterceptTouchEvent(true)
+                    }
+                }
             }
             return dragging
         }
+
         override fun onTouchEvent(event: MotionEvent): Boolean {
-            if (event.actionMasked == MotionEvent.ACTION_DOWN) { begin(event); return true }
-            if (event.actionMasked == MotionEvent.ACTION_MOVE) {
-                if (abs(event.rawX-downX) > slop || abs(event.rawY-downY) > slop) dragging = true
-                if (dragging) {
-                    // No screen clamp here. The head restores a fully visible position later.
-                    x = startX + event.rawX-downX
-                    y = startY + event.rawY-downY
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    begin(event)
+                    return pressedGesture
                 }
-                return true
+                MotionEvent.ACTION_MOVE -> {
+                    // Hover/wheel-generated motion without a pressed mouse button is not a drag.
+                    if (!pressedGesture || !directDragInput(event)) {
+                        stopGesture()
+                        return false
+                    }
+                    if (abs(event.rawX-downX) > slop || abs(event.rawY-downY) > slop) dragging = true
+                    if (dragging) {
+                        // No screen clamp here. The head restores a fully visible position later.
+                        x = startX + event.rawX-downX
+                        y = startY + event.rawY-downY
+                    }
+                    return true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    val owned = pressedGesture
+                    if (owned && dragging) savePosition()
+                    else if (owned && event.actionMasked == MotionEvent.ACTION_UP) performClick()
+                    stopGesture()
+                    return owned
+                }
+                else -> return super.onTouchEvent(event)
             }
-            if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
-                if (dragging) savePosition()
-                else if (event.actionMasked == MotionEvent.ACTION_UP) performClick()
-                dragging = false
-                parent?.requestDisallowInterceptTouchEvent(false)
-                return true
-            }
-            return true
         }
         override fun performClick(): Boolean { super.performClick(); return true }
     }
