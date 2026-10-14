@@ -248,10 +248,12 @@ class MathPuzzleRenderer(
 
     private fun check() {
         if (isCorrect || !hasResponseChanges()) return
+        var submittedAnswers = emptyMap<String, MathAnswer>()
         val validations = try {
             // Capture one deliberate submission. Cursor, selection, IME metadata and
             // auxiliary tools are not part of an answer's identity.
-            val answers = spec.responses.associate { response -> response.id to responses.getValue(response.id).answer() }
+            submittedAnswers = spec.responses.associate { response -> response.id to responses.getValue(response.id).answer() }
+            val answers = submittedAnswers
             val draftErrors = spec.responses.associate { response -> response.id to responses.getValue(response.id).draftError() }
             val identity = ExerciseAnswerIdentity.of(JSONArray().apply {
                 spec.responses.sortedBy { it.id }.forEach { response ->
@@ -274,19 +276,12 @@ class MathPuzzleRenderer(
         if (results.any { !it.second.evaluable }) {
             // A parser/resource failure is a retry, including when another field is wrong.
             // changed() already preserved the draft; do not record an incorrect submission.
-            val details = results.filter { !it.second.evaluable }.map { (response, checked) ->
-                var message = checked.resolveMessage(context)
-                checked.fieldId?.let { message = "$it: $message" }
-                val definitions = response.config.optJSONArray("fields")
-                if (definitions != null) for (index in 0 until definitions.length()) {
-                    val field = definitions.getJSONObject(index)
-                    val prefix = "${field.getString("id")}: "
-                    if (message.startsWith(prefix)) {
-                        message = "${field.optString("label", context.getString(R.string.math_ui_field, index + 1))}: ${message.removePrefix(prefix)}"
-                        break
-                    }
+            val details = results.mapIndexedNotNull { index, (response, checked) ->
+                if (checked.evaluable) return@mapIndexedNotNull null
+                val message = MathPuzzleFeedback.fieldMessage(response, checked.fieldId, checked.resolveMessage(context)) {
+                    context.getString(R.string.math_ui_field, it)
                 }
-                "${response.config.optString("label", response.id)}: $message"
+                "${responseLabel(response, index)}: $message"
             }
             MathTextRenderer.apply(feedback, details.joinToString("\n"))
             feedback.setTextColor(MathWidgetUi.muted)
@@ -299,25 +294,40 @@ class MathPuzzleRenderer(
             save()
             onCompletionChanged(true)
         } else {
-            val details = results.filterNot { it.second.correct }.map { (response, result) ->
-                val definitions = response.config.optJSONArray("fields")
-                var message = result.resolveMessage(context)
-                result.fieldId?.let { message = "$it: $message" }
-                if (definitions != null) for (index in 0 until definitions.length()) {
-                    val field = definitions.getJSONObject(index)
-                    val prefix = "${field.getString("id")}: "
-                    if (message.startsWith(prefix)) {
-                        message = "${field.optString("label", context.getString(R.string.math_ui_field, index + 1))}: ${message.removePrefix(prefix)}"
-                        break
+            val hasSelections = spec.responses.any(MathPuzzleFeedback::hasSelection)
+            val details = results.mapIndexedNotNull { index, (response, result) ->
+                val message = if (MathPuzzleFeedback.hasSelection(response)) {
+                    // Even a correct subset is not classified during an incorrect submission.
+                    val reviews = MathPuzzleFeedback.selectedReviews(response, submittedAnswers.getValue(response.id),
+                        context.getString(R.string.math_ui_review_selected_option)) {
+                        context.getString(R.string.math_ui_field, it)
+                    }
+                    // A mixed response can retain its numeric/expression diagnostic without
+                    // classifying either the chosen or the absent dropdown alternatives.
+                    val fieldMessage = result.fieldId?.takeIf { !result.correct && !MathPuzzleFeedback.isDropdownField(response, it) }
+                        ?.let { MathPuzzleFeedback.fieldMessage(response, it, result.resolveMessage(context)) { field ->
+                            context.getString(R.string.math_ui_field, field)
+                        } }
+                    (reviews + listOfNotNull(fieldMessage)).joinToString("\n")
+                } else {
+                    if (result.correct) return@mapIndexedNotNull null
+                    MathPuzzleFeedback.fieldMessage(response, result.fieldId, result.resolveMessage(context)) {
+                        context.getString(R.string.math_ui_field, it)
                     }
                 }
-                "${response.config.optString("label", response.id)}: $message"
+                "${responseLabel(response, index)}: $message"
             }
-            MathTextRenderer.apply(feedback, (listOf("✗ ${spec.incorrectFeedback.ifBlank { context.getString(R.string.math_ui_incorrect) }}") + details).filter { it.isNotBlank() }.joinToString("\n"))
+            // A legacy global explanation may discuss absent choices, including in a mixed puzzle.
+            val heading = if (hasSelections) context.getString(R.string.math_ui_incorrect)
+                else spec.incorrectFeedback.ifBlank { context.getString(R.string.math_ui_incorrect) }
+            MathTextRenderer.apply(feedback, (listOf("✗ $heading") + details).filter { it.isNotBlank() }.joinToString("\n"))
             feedback.setTextColor(Color.rgb(240, 166, 166))
             save()
         }
     }
+
+    private fun responseLabel(response: MathResponseSpec, index: Int): String =
+        MathPuzzleFeedback.responseLabel(response, context.getString(R.string.math_ui_response, index + 1))
 
     private fun showCorrect() {
         MathTextRenderer.apply(feedback, context.getString(R.string.math_ui_correct_heading) + spec.correctFeedback.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty())

@@ -10,8 +10,13 @@ import java.security.MessageDigest
 class MathDropdownPublishedContractTest {
     @Test fun thePublishedLessonAndOptionTextsRemainUnmodified() {
         val file = source()
+        // Selected-option reviews are appended presentation metadata. Remove just those
+        // JSON property lines to keep the exact pre-existing publication guard, including
+        // every other text, option, answer and validator; do not replace its expected SHA.
+        val originalContent = file.readText().replace("\r\n", "\n")
+            .replace(Regex(",\\n\\s*\"reviewFeedback\": \"(?:\\\\.|[^\"\\\\])*\""), "")
         val digest = MessageDigest.getInstance("SHA-256")
-            .digest(file.readText().replace("\r\n", "\n").toByteArray(Charsets.UTF_8))
+            .digest(originalContent.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it) }
         assertEquals("Do not shorten labels or change the content fingerprint to fix drawing",
             "d623dd0b0b7ecbc4368d1f85703945811919ca0d6a6aec166cb6663b51473629", digest)

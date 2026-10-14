@@ -113,6 +113,7 @@ object MathPuzzleParser {
         when (family) {
             "choice" -> {
                 val optionIds = ids(raw, "options", id)
+                validateOptionReviews(raw, id)
                 if (validatorType == "choice") {
                     val expected = validator.getJSONArray("expected")
                     val selected = (0 until expected.length()).map { expected.getString(it) }
@@ -135,7 +136,10 @@ object MathPuzzleParser {
                         "Tipo de campo desconocido en $id: $fieldType"
                     }
                     if (fieldType == "fixed") require(field.opt("text") is String) { "El campo fijo de $id requiere text." }
-                    if (fieldType == "dropdown") ids(field, "options", "$id.${field.getString("id")}")
+                    if (fieldType == "dropdown") {
+                        ids(field, "options", "$id.${field.getString("id")}")
+                        validateOptionReviews(field, "$id.${field.getString("id")}")
+                    }
                 }
                 if (validatorType == "fields") {
                     val expected = validator.getJSONObject("fields")
@@ -192,6 +196,12 @@ object MathPuzzleParser {
                     "El modo de gráfica de $id debe coincidir con su validador."
                 }
             }
+        }
+    }
+
+    private fun validateOptionReviews(value: JSONObject, owner: String) {
+        objects(value, "options").forEach { option ->
+            if (option.has("reviewFeedback")) requiredString(option, "reviewFeedback", "opción de $owner")
         }
     }
 
