@@ -1,0 +1,166 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__compartir_flujos_sin_acoplar_el_calculo",
+  "title": "Partager des flux sans coupler le calcul",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La destination peut changer sans modifier le calcul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous avons déjà utilisé cout, ofstream et ostringstream. Tous trois permettent d'insérer des caractères, mais les envoient vers des destinations différentes. std::ostream décrit cette interface de sortie. Une fonction avec un paramètre std::ostream& peut opérer sur chacun de ces objets sans décider si la destination est l'écran, un fichier d'essai ou une chaîne en mémoire."
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence & permet de travailler avec le même flux que celui fourni par l'appelant. Une insertion en modifie le contenu et peut modifier son état : le paramètre n'est donc pas const. Nous n'essayons pas de copier le flux. L'appelant reste responsable de sa création, de la vérification de son ouverture si nécessaire et de sa fermeture lorsqu'il s'agit d'un fichier."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "flujo_prestado",
+          "question": "Une fonction reçoit std::ostream& destino. Quelle responsabilité conserve l'appelant qui lui fournit un ofstream ?",
+          "options": [
+            "La fonction doit toujours le remplacer par cout.",
+            "L'appelant ouvre et ferme son fichier et vérifie ses opérations.",
+            "L'appelant cesse de posséder l'objet en passant la référence."
+          ],
+          "correctIndex": 1,
+          "explanation": "Prêter une référence ne transfère pas la durée de vie de l'objet. La fonction d'écriture utilise la connexion reçue."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Séparer calcul, écriture et choix de destination"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un calcul qui reçoit uniquement des valeurs peut être testé sans créer de fichier ni capturer une sortie. La fonction de présentation reçoit le résultat et une destination. main décide comment réunir ces opérations. Ici, les quantités d'entrée sont connues et comprises entre 0 et 10 ; leur somme tient largement dans un int."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint total(int aceptados, int rechazados) {\n    return aceptados + rechazados;\n}\n\nvoid escribir_total(std::ostream& destino, int cantidad) {\n    destino << \"Total=\" << cantidad;\n}\n\nint main() {\n    int cantidad = total(6, 2);\n    std::ostringstream memoria;\n    escribir_total(memoria, cantidad);\n    std::cout << memoria.str();\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_destinos_una_funcion",
+          "question": "Prédis la sortie de main. Distingue ce qui est accumulé en mémoire de ce qui est envoyé directement à cout.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nvoid escribir_numero(std::ostream& destino, int numero) {\n    destino << \"N=\" << numero;\n}\n\nint main() {\n    std::ostringstream memoria;\n    escribir_numero(memoria, 3);\n    std::cout << memoria.str() << \"|\";\n    escribir_numero(std::cout, 8);\n    return 0;\n}\n",
+          "answers": [
+            "N=3|N=8"
+          ],
+          "explanation": "Le premier appel compose N=3 en mémoire. main l'affiche et ajoute |. Le second appel utilise cout comme destination."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "calculo_sin_presentacion",
+          "question": "Tu veux vérifier le bilan numérique sans capturer de texte. Quelle fonction facilite ce test ?",
+          "options": [
+            "Une fonction qui affiche le bilan sans renvoyer de données.",
+            "Une fonction qui ouvre un fichier à chaque calcul.",
+            "Une fonction qui reçoit des quantités et renvoie leur différence."
+          ],
+          "correctIndex": 2,
+          "explanation": "Renvoyer la valeur permet de vérifier directement le calcul. La présentation et la destination sont décidées ensuite."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un flux d'entrée emprunté avance aussi et change d'état"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::istream est l'interface d'entrée. std::istream& peut recevoir, par exemple, un istringstream ou un ifstream. L'extraction consomme des caractères et peut signaler un échec ; on n'utilise donc pas non plus une référence const. Dans ces exemples, la source est une chaîne connue ; nous ne dépendons pas d'une console interactive."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une fonction peut extraire une valeur dans une variable candidate locale et ne la copier vers la destination qu'une fois l'extraction terminée. Cette garantie appartient à notre fonction : il ne faut pas supposer que toute extraction intégrée vers n'importe quel type préserve sa destination en cas d'échec. Pour plusieurs champs, vérifie toutes les extractions avant d'actualiser l'une des destinations."
+        },
+        {
+          "type": "output_prediction",
+          "id": "lectura_prestada_con_fallo",
+          "question": "Prédis la sortie. La fonction promet de préserver destino si elle ne parvient pas à lire un entier.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_entero(std::istream& origen, int& destino) {\n    int candidato{0};\n    if (!(origen >> candidato)) { return false; }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::istringstream memoria{\"x\"};\n    int cantidad{4};\n    bool leido = leer_entero(memoria, cantidad);\n    std::cout << leido << \":\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "0:4"
+          ],
+          "explanation": "L'extraction de x échoue dans la variable candidate locale. leer_entero renvoie false sans affecter cantidad ; sa valeur précédente reste 4."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "origen_no_es_copia",
+          "question": "Une fonction lit au moyen de std::istream& origen. Quel effet l'appelant peut-il observer ensuite ?",
+          "options": [
+            "La source peut avoir avancé et conserver un état d'échec.",
+            "La source revient automatiquement au début lorsque la fonction se termine.",
+            "La source conserve toujours tous ses caractères sans en consommer."
+          ],
+          "correctIndex": 0,
+          "explanation": "La référence utilise la même source. Le retour ne réinitialise ni sa position ni ses indicateurs d'état."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un lecteur, un calcul et un écrivain"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis trois fonctions. Le lecteur reçoit std::istream& et deux paramètres int& ; il renvoie bool, n'affiche rien et ne modifie les deux destinations que s'il obtient les deux entiers. L'appelant fournit deux objets de destination distincts, même si leurs valeurs sont égales. Cette précondition permet de conserver chaque champ dans sa destination ; passer deux références au même objet sort du contrat et le lecteur n'a pas à détecter ce cas. Le calcul reçoit aceptados et rechazados par valeur et renvoie aceptados moins rechazados. Un écrivain reçoit std::ostream& et le bilan, et insère Balance= suivi de la valeur sans utiliser cout en interne."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, utilise le texte connu 7 2, avec les deux valeurs dans 0..10. Les destinations commencent à 9 et 4. Après une lecture valide, calcule et écris dans un ostringstream ; main affiche sa chaîne. Attends Balance=5. Essaie 0 0 et 2 7 : leurs bilans valent 0 et -5. Ce lecteur vérifie l'extraction, mais ne valide pas à lui seul le domaine ni la consommation complète du texte."
+        },
+        {
+          "type": "paragraph",
+          "text": "Change ensuite le texte en 7 x. Le lecteur doit renvoyer false et préserver les destinations à 9 et 4, même s'il a consommé des caractères. main affiche Entrée invalide|9:4 et termine avec le code 1 ; il n'exécute pas le calcul. Prépare les résultats attendus avant l'exécution."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    // Définis les fonctions avant main et construis les tests.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "La référence se trouve à la page suivante. Évalue le rôle de chaque fonction en plus du texte final : afficher une constante ne prouve ni la lecture ni le calcul."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure et conditions de correction"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    std::istringstream entrada{\"7 2\"};\n    int aceptados{9};\n    int rechazados{4};\n    if (!leer_par(entrada, aceptados, rechazados)) {\n        std::cout << \"Entrée invalide|\" << aceptados << \":\" << rechazados;\n        return 1;\n    }\n    std::ostringstream captura;\n    escribir_balance(captura, balance(aceptados, rechazados));\n    std::cout << captura.str();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : l'appelant fournit deux objets de destination distincts ; le lecteur travaille sur la source reçue et n'affecte chaque champ qu'après la réussite des deux extractions ; le calcul renvoie la différence sans effectuer d'entrée ni de sortie ; l'écrivain utilise uniquement la destination empruntée. Les cas 7 2, 0 0 et 2 7 produisent Balance=5, Balance=0 et Balance=-5. Avec 7 x, la sortie est Entrée invalide|9:4 et le code de retour est 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une autre répartition en fonctions ou des noms différents sont valables si ces responsabilités restent intactes. Répète ensuite l'écriture dans un ofstream vers ton propre fichier d'essai : l'appelant ouvre, vérifie, ferme et vérifie encore. Le fichier doit recevoir le même texte Balance=5. La fonction escribir_balance n'a pas besoin de connaître le nom du fichier."
+        },
+        {
+          "type": "note",
+          "text": "Les interfaces des flux et la lecture sont étudiées dans la source principale (Stroustrup, 2024, sections 9.6–9.8, pp. 266–269). Explications, modèle et activités originaux de ce parcours."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__insertar_un_tipo_y_encadenar_la_salida",
+  "title": "Insérer un type et chaîner la sortie",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Donner une représentation à une valeur de notre propre type"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous utiliserons Recuento, un enregistrement avec aceptados et rechazados, tous deux compris entre 0 et 10. Sa représentation convenue est [aceptados;rechazados], dans cet ordre. Les crochets et le point-virgule font partie du texte ; ils ne sont pas des champs de l'objet. Une représentation utile à nos tests n'est pas nécessairement le format préféré de tous les programmes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le struct possède des membres publics : le compilateur n'empêche pas de construire des valeurs hors du domaine. recuento_valido permet de les vérifier. Ici, nous construirons des valeurs valides que la fonction d'écriture recevra avec cette précondition. La prochaine leçon validera les champs extraits du texte avant d'affecter un Recuento."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "formato_no_es_memoria",
+          "question": "Lorsque nous écrivons [2;1] pour un Recuento, qu'avons-nous produit ?",
+          "options": [
+            "Une copie de la mémoire de l'objet, avec ses méthodes.",
+            "Une représentation de ses champs selon une convention.",
+            "Un nouvel objet que le lecteur reconstruira automatiquement."
+          ],
+          "correctIndex": 1,
+          "explanation": "Nous écrivons des caractères interprétables. Reconstruire une valeur exige un lecteur qui vérifie cette convention."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'opérateur personnalisé est aussi une fonction"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour permettre destino << valor, nous définissons une fonction nommée operator<<. Avant de construire l'écrivain de Recuento, examine un exemple plus petit : Cantidad contient unidades entre 0 et 5 et se représente par (unidades). Le premier paramètre de l'opérateur est std::ostream&, le second const Cantidad&. Le flux change lors de l'écriture ; la valeur est seulement consultée. Le retour std::ostream& fournit une référence à la même destination pour poursuivre les insertions."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    const Cantidad resumen{2};\n    std::cout << resumen;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction est définie à côté de notre type, hors de namespace std. Ici, cout << resumen appelle operator<<(cout, resumen). À l'intérieur, nous utilisons les insertions connues de caractères et d'entiers. Il n'est pas nécessaire d'accéder à une représentation cachée ni de convertir d'abord l'enregistrement en chaîne."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "retorno_para_encadenar",
+          "question": "Quel type de retour permet d'utiliser cout << resumen << \" fin\" avec l'opérateur que nous venons de définir ?",
+          "options": [
+            "void, car la seconde insertion recommence.",
+            "Recuento, car la suite doit modifier l'enregistrement.",
+            "std::ostream&, faisant référence à la même destination reçue."
+          ],
+          "correctIndex": 2,
+          "explanation": "La seconde insertion reçoit le résultat de la première. Elle a besoin du flux sur lequel l'écriture doit continuer."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Continuer sur la même destination"
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_registros_encadenados",
+          "question": "Prédis la sortie complète des deux quantités, y compris le séparateur inséré par main.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    const Cantidad primero{5};\n    const Cantidad segundo{0};\n    std::cout << primero << \"|\" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "(5)|(0)"
+          ],
+          "explanation": "Chaque insertion du type personnalisé renvoie cout. Le texte | est inséré entre les représentations des deux quantités."
+        },
+        {
+          "type": "output_prediction",
+          "id": "registro_en_memoria",
+          "question": "Prédis la sortie. Ici, l'opérateur reçoit un ostringstream.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    std::ostringstream captura;\n    captura << Cantidad{1} << \";fin\";\n    std::cout << \"Capture=\" << captura.str();\n    return 0;\n}\n",
+          "answers": [
+            "Capture=(1);fin"
+          ],
+          "explanation": "L'opérateur compose (1) dans captura ; la chaîne ;fin continue dans ce même flux. main affiche ensuite la chaîne obtenue."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "retornar_no_certifica_escritura",
+          "question": "L'opérateur a renvoyé la destination. Que signifie ce retour ?",
+          "options": [
+            "Il permet de continuer ; les erreurs sont vérifiées dans l'état du flux.",
+            "Il certifie que tous les caractères sont parvenus au fichier physique.",
+            "Il efface un éventuel échec avant l'insertion suivante."
+          ],
+          "correctIndex": 0,
+          "explanation": "Renvoyer la référence ne répare ni ne certifie la destination. Pour un fichier, nous conservons la vérification de l'écriture et de la fermeture."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un opérateur pour la mémoire et le fichier"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans l'éditeur, définis operator<< pour le Recuento fourni. Il doit consulter l'enregistrement sans le modifier, écrire [aceptados;rechazados] dans la destination empruntée et renvoyer cette même destination. Les champs des tests sont valides et les flux gardent leur configuration décimale par défaut."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, crée Recuento{3, 2}. Insère-le dans un ostringstream suivi de ;fin et, séparément, dans le fichier relatif recuento_lgp.txt. Vérifie l'ouverture et l'écriture après la fermeture. main affiche Mémoire=[3;2];fin|Enregistré ; le fichier ne doit contenir que [3;2]. L'opérateur n'utilise pas cout à l'intérieur et n'ajoute pas ;fin."
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste également Recuento{0, 0} et Recuento{10, 10}. Vérifie que les champs changent dans les deux destinations, que la chaîne conserve ;fin et que le fichier ne le reçoit pas. Une coïncidence du message final sans utiliser l'enregistrement ne respecte pas le contrat."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nint main() {\n    // Définis operator<< avant main et teste les deux destinations.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Crée uniquement ton fichier d'essai relatif pendant chaque exécution. La référence apparaît après ta tentative."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure et critères"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint main() {\n    const Recuento resumen{3, 2};\n    std::ostringstream captura;\n    captura << resumen << \";fin\";\n    std::ofstream archivo{\"recuento_lgp.txt\"};\n    if (!archivo) {\n        std::cout << \"Erreur d’ouverture\";\n        return 1;\n    }\n    archivo << resumen;\n    archivo.close();\n    if (!archivo) {\n        std::cout << \"Erreur d’écriture\";\n        return 1;\n    }\n    std::cout << \"Mémoire=\" << captura.str() << \"|Enregistré\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : flux passé par référence modifiable, enregistrement passé par référence const, caractères dans l'ordre convenu et retour du même flux. La mémoire et le fichier utilisent le même opérateur ; le choix de la destination, son ouverture et sa fermeture appartiennent à l'appelant. Avec 0 et 0, la chaîne visible est Mémoire=[0;0];fin|Enregistré et le fichier contient [0;0]. Avec 10 et 10, les deux champs passent à 10."
+        },
+        {
+          "type": "paragraph",
+          "text": "Il est aussi valable d'insérer par étapes et de terminer par return destino. Renommer le paramètre ne change pas le contrat. L'opérateur conserve la configuration de formatage du flux reçu : ces tests utilisent le décimal. Nous n'avons pas défini de sérialisation indépendante de toutes les configurations possibles du flux."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "otro_formato_otro_proposito",
+          "question": "Un autre écran a besoin du texte 3 acceptés et 2 rejetés. Quelle organisation conserve notre format convenu pour les fichiers d'essai ?",
+          "options": [
+            "Changer les crochets de l'opérateur uniquement lorsque le nom du fichier correspond.",
+            "Créer une autre fonction de présentation à cet effet, sans modifier la convention.",
+            "Supposer que str() transformera automatiquement [3;2] en cette phrase."
+          ],
+          "correctIndex": 1,
+          "explanation": "Un format partagé n'impose pas de l'utiliser partout. Une autre présentation peut consulter les mêmes données avec son propre contrat."
+        },
+        {
+          "type": "note",
+          "text": "L'insertion et les types de flux sont étudiés dans la source principale (Stroustrup, 2024, section 9.6, p. 266, et sections 9.7–9.8). Modèle, format et activités originaux de ce parcours."
+        }
+      ]
+    }
+  ]
+}

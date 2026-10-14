@@ -1,0 +1,174 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__insertar_un_tipo_y_encadenar_la_salida",
+  "title": "Insert a Custom Type and Chain Output",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Give a Custom Value a Representation"
+        },
+        {
+          "type": "paragraph",
+          "text": "We will use Recuento, a record with aceptados and rechazados, both between 0 and 10. Its agreed representation is [aceptados;rechazados], in that order. The brackets and semicolon are part of the text; they are not fields of the object. A representation useful for our tests need not be every program's preferred format."
+        },
+        {
+          "type": "paragraph",
+          "text": "The struct has public members: the compiler does not prevent constructing values outside the domain. recuento_valido can check them. Here we construct valid values and pass them to the writer under that precondition. The next lesson will validate fields extracted from text before assigning a Recuento."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "formato_no_es_memoria",
+          "question": "When writing [2;1] for a Recuento, what have we produced?",
+          "options": [
+            "A copy of the object's memory, including its methods.",
+            "A representation of its fields according to an agreement.",
+            "A new object that the reader will automatically reconstruct."
+          ],
+          "correctIndex": 1,
+          "explanation": "We wrote interpretable characters. Reconstructing a value requires a reader that checks the agreement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Custom Operator Is Also a Function"
+        },
+        {
+          "type": "paragraph",
+          "text": "To support destino << valor, we define a function named operator<<. Before building the writer for Recuento, consider a smaller example: Cantidad holds unidades between 0 and 5 and is represented as (unidades). The operator's first parameter is std::ostream&, and its second is const Cantidad&. Writing changes the stream; the value is only read. Returning std::ostream& passes back a reference to the same destination for continued insertion."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    const Cantidad resumen{2};\n    std::cout << resumen;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The function is defined alongside our type, outside namespace std. In this case, cout << resumen calls operator<<(cout, resumen). Inside, we use the familiar character and integer insertions. We do not need access to hidden representation or to turn the record into a string first."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "retorno_para_encadenar",
+          "question": "What return type permits cout << resumen << \" end\" with the operator we just defined?",
+          "options": [
+            "void, because the second insertion starts over.",
+            "Recuento, because the next insertion must modify the record.",
+            "std::ostream&, referring to the same destination received."
+          ],
+          "correctIndex": 2,
+          "explanation": "The second insertion receives the result of the first. It needs the stream on which writing should continue."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Continue on the Same Destination"
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_registros_encadenados",
+          "question": "Predict the complete output for the two quantities, including the separator inserted by main.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    const Cantidad primero{5};\n    const Cantidad segundo{0};\n    std::cout << primero << \"|\" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "(5)|(0)"
+          ],
+          "explanation": "Each insertion of the custom type returns cout. The text | is inserted between the representations of the two quantities."
+        },
+        {
+          "type": "output_prediction",
+          "id": "registro_en_memoria",
+          "question": "Predict the output. Here the operator receives an ostringstream.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nstruct Cantidad { int unidades; };\n\nstd::ostream& operator<<(std::ostream& destino, const Cantidad& valor) {\n    return destino << '(' << valor.unidades << ')';\n}\n\nint main() {\n    std::ostringstream captura;\n    captura << Cantidad{1} << \";end\";\n    std::cout << \"Capture=\" << captura.str();\n    return 0;\n}\n",
+          "answers": [
+            "Capture=(1);end"
+          ],
+          "explanation": "The operator composes (1) in captura; the string ;end continues in that same stream. main then displays the resulting string."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "retornar_no_certifica_escritura",
+          "question": "The operator returned the destination. What does that return mean?",
+          "options": [
+            "It permits continuation; errors are checked in the stream's state.",
+            "It certifies that every character reached the physical file.",
+            "It clears any failure before the next insertion."
+          ],
+          "correctIndex": 0,
+          "explanation": "Returning the reference neither repairs nor certifies the destination. For a file, we still check writing and closing."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build an Operator for Memory and File Output"
+        },
+        {
+          "type": "paragraph",
+          "text": "Starting from the editor, define operator<< for the supplied Recuento. It must read the record without modifying it, write [aceptados;rechazados] to the borrowed destination, and return that same destination. Test fields are valid, and the streams retain their default decimal settings."
+        },
+        {
+          "type": "paragraph",
+          "text": "In main, create Recuento{3, 2}. Insert it into an ostringstream followed by ;end and, separately, into the relative file recuento_lgp.txt. Check opening and writing after closing. main displays Memory=[3;2];end|Saved; the file must contain only [3;2]. The operator neither uses cout internally nor adds ;end."
+        },
+        {
+          "type": "paragraph",
+          "text": "Also test Recuento{0, 0} and Recuento{10, 10}. Check that the fields change in both destinations, the string retains ;end, and the file does not receive it. Matching the final message without using the record does not satisfy the contract."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nint main() {\n    // Define operator<< before main and test both destinations.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Create only your relative test file inside each execution. The reference appears after your attempt."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference and Criteria"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nint main() {\n    const Recuento resumen{3, 2};\n    std::ostringstream captura;\n    captura << resumen << \";end\";\n    std::ofstream archivo{\"recuento_lgp.txt\"};\n    if (!archivo) {\n        std::cout << \"Open error\";\n        return 1;\n    }\n    archivo << resumen;\n    archivo.close();\n    if (!archivo) {\n        std::cout << \"Write error\";\n        return 1;\n    }\n    std::cout << \"Memory=\" << captura.str() << \"|Saved\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: a stream passed by modifiable reference, a record passed by const reference, characters in the agreed order, and return of the same stream. Memory and file output use the same operator; destination selection, opening, and closing belong to the caller. With 0 and 0, the visible string is Memory=[0;0];end|Saved and the file contains [0;0]. With 10 and 10, both fields become 10."
+        },
+        {
+          "type": "paragraph",
+          "text": "It is also valid to insert in stages and finish with return destino. Renaming the parameter does not change the contract. The operator preserves the formatting settings of the stream it receives; these tests use decimal. We have not defined serialization that is independent of every possible stream configuration."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "otro_formato_otro_proposito",
+          "question": "Another screen needs the text 3 accepted and 2 rejected. Which organization preserves our agreed format for test files?",
+          "options": [
+            "Change the operator's brackets only when the filename matches.",
+            "Create another presentation function for that purpose without changing the agreement.",
+            "Assume str() will automatically transform [3;2] into that sentence."
+          ],
+          "correctIndex": 1,
+          "explanation": "A shared format does not have to be used for everything. Another presentation may read the same data under its own contract."
+        },
+        {
+          "type": "note",
+          "text": "Insertion and stream types are covered in the primary source (Stroustrup, 2024, section 9.6, p. 266, and sections 9.7–9.8). The model, format, and activities are original to this learning path."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__compartir_flujos_sin_acoplar_el_calculo",
+  "title": "Share Streams Without Coupling Computation",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Destination Can Change Without Changing the Calculation"
+        },
+        {
+          "type": "paragraph",
+          "text": "We have already used cout, ofstream, and ostringstream. All three let us insert characters, although they send them to different destinations. std::ostream describes this output interface. A function with an std::ostream& parameter can work with any of these objects without deciding whether the destination is the screen, a test file, or a string in memory."
+        },
+        {
+          "type": "paragraph",
+          "text": "The & reference lets us work with the same stream supplied by the caller. An insertion changes its contents and may change its state, so the parameter is not const. We do not try to copy the stream. The caller remains responsible for creating it, checking that it opens when applicable, and closing it if it is a file."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "flujo_prestado",
+          "question": "A function receives std::ostream& destino. What responsibility does the caller retain when supplying an ofstream?",
+          "options": [
+            "The function must always replace it with cout.",
+            "The caller opens and closes the file and checks the operations.",
+            "The caller no longer owns the object after passing the reference."
+          ],
+          "correctIndex": 1,
+          "explanation": "Lending a reference does not transfer an object's lifetime. The writing function uses the connection it receives."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separate Calculation, Writing, and Destination Selection"
+        },
+        {
+          "type": "paragraph",
+          "text": "A calculation that only receives values can be tested without creating a file or capturing output. The presentation function receives the result and a destination. main decides how to combine those operations. Here, the input quantities are known and range from 0 to 10; their sum fits easily in an int."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint total(int aceptados, int rechazados) {\n    return aceptados + rechazados;\n}\n\nvoid escribir_total(std::ostream& destino, int cantidad) {\n    destino << \"Total=\" << cantidad;\n}\n\nint main() {\n    int cantidad = total(6, 2);\n    std::ostringstream memoria;\n    escribir_total(memoria, cantidad);\n    std::cout << memoria.str();\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "dos_destinos_una_funcion",
+          "question": "Predict the output of main. Distinguish what is accumulated in memory from what is sent directly to cout.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nvoid escribir_numero(std::ostream& destino, int numero) {\n    destino << \"N=\" << numero;\n}\n\nint main() {\n    std::ostringstream memoria;\n    escribir_numero(memoria, 3);\n    std::cout << memoria.str() << \"|\";\n    escribir_numero(std::cout, 8);\n    return 0;\n}\n",
+          "answers": [
+            "N=3|N=8"
+          ],
+          "explanation": "The first call composes N=3 in memory. main displays it and adds |. The second call uses cout as its destination."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "calculo_sin_presentacion",
+          "question": "You want to test the numeric balance without capturing text. Which function makes that test easier?",
+          "options": [
+            "A function that prints the balance and returns no data.",
+            "A function that opens a file during each calculation.",
+            "A function that receives quantities and returns their difference."
+          ],
+          "correctIndex": 2,
+          "explanation": "Returning a value lets us test the calculation directly. Presentation and destination are decided afterward."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Borrowed Input Stream Also Advances and Changes State"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::istream is the input interface. std::istream& can receive, for example, an istringstream or an ifstream. Extraction consumes characters and may signal failure, so we do not use a const reference here either. In these examples the source is a known string; no interactive console is required."
+        },
+        {
+          "type": "paragraph",
+          "text": "A function can extract into a local candidate and copy it to the destination only once extraction has finished. This guarantee belongs to our function: we must not assume that every built-in extraction into any type preserves its destination on failure. For multiple fields, check all extractions before updating any destination."
+        },
+        {
+          "type": "output_prediction",
+          "id": "lectura_prestada_con_fallo",
+          "question": "Predict the output. The function promises to preserve destino if it fails to read an integer.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_entero(std::istream& origen, int& destino) {\n    int candidato{0};\n    if (!(origen >> candidato)) { return false; }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::istringstream memoria{\"x\"};\n    int cantidad{4};\n    bool leido = leer_entero(memoria, cantidad);\n    std::cout << leido << \":\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "0:4"
+          ],
+          "explanation": "Extracting x into the local candidate fails. leer_entero returns false without assigning to cantidad; its previous value remains 4."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "origen_no_es_copia",
+          "question": "A function reads through std::istream& origen. What effect might the caller observe afterward?",
+          "options": [
+            "The source may have advanced and may retain a failure state.",
+            "The source automatically returns to the beginning when the function returns.",
+            "The source always retains all its characters without consuming any."
+          ],
+          "correctIndex": 0,
+          "explanation": "The reference uses the same source. Returning does not reset its position or clear state flags."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Reader, a Calculation, and a Writer"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build three functions. The reader receives std::istream& and two int& parameters; it returns bool, does not print, and updates both destinations only if it reads both integers. The caller provides two distinct destination objects, although their values may be equal. This precondition lets the reader preserve each field in its own destination; passing two references to the same object is outside the contract and need not be detected inside the reader. A calculation receives aceptados and rechazados by value and returns aceptados minus rechazados. A writer receives std::ostream& and the balance, and inserts Balance= followed by the value, without using cout internally."
+        },
+        {
+          "type": "paragraph",
+          "text": "In main use the known text 7 2, with both values within 0..10. The destinations start at 9 and 4. After a valid read, calculate and write to an ostringstream; main displays its string. Expect Balance=5. Test 0 0 and 2 7: their balances are 0 and -5. This reader checks extraction; it does not independently validate the domain or whether all text was consumed."
+        },
+        {
+          "type": "paragraph",
+          "text": "Then change the text to 7 x. The reader must return false and preserve the destinations at 9 and 4, even though it has consumed characters. main displays Invalid input|9:4 and exits with code 1; it does not perform the calculation. Prepare your expected results before executing."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    // Define the functions before main and build the tests.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "The reference is on the next page. Evaluate what each function does, not just the final text: printing a constant does not test reading or calculation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference and Correctness Conditions"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nbool leer_par(std::istream& origen, int& aceptados, int& rechazados) {\n    int nuevo_aceptados{0};\n    int nuevo_rechazados{0};\n    if (!(origen >> nuevo_aceptados >> nuevo_rechazados)) {\n        return false;\n    }\n    aceptados = nuevo_aceptados;\n    rechazados = nuevo_rechazados;\n    return true;\n}\n\nint balance(int aceptados, int rechazados) {\n    return aceptados - rechazados;\n}\n\nvoid escribir_balance(std::ostream& destino, int valor) {\n    destino << \"Balance=\" << valor;\n}\n\nint main() {\n    std::istringstream entrada{\"7 2\"};\n    int aceptados{9};\n    int rechazados{4};\n    if (!leer_par(entrada, aceptados, rechazados)) {\n        std::cout << \"Invalid input|\" << aceptados << \":\" << rechazados;\n        return 1;\n    }\n    std::ostringstream captura;\n    escribir_balance(captura, balance(aceptados, rechazados));\n    std::cout << captura.str();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: the caller supplies two distinct destination objects; the reader uses the provided source and assigns each field only after the combined extraction succeeds; the calculation returns the difference without performing input or output; and the writer uses only the borrowed destination. The cases 7 2, 0 0, and 2 7 produce Balance=5, Balance=0, and Balance=-5. With 7 x, the output is Invalid input|9:4 and the exit code is 1."
+        },
+        {
+          "type": "paragraph",
+          "text": "A different division into functions or different names is valid if those responsibilities are preserved. Next, repeat the writing with an ofstream to your own test file: the caller opens, checks, closes, and checks again. The file must receive the same text, Balance=5. The escribir_balance function does not need to know the filename."
+        },
+        {
+          "type": "note",
+          "text": "Stream interfaces and reading are covered in the primary source (Stroustrup, 2024, sections 9.6–9.8, pp. 266–269). The explanations, model, and activities are original to this learning path."
+        }
+      ]
+    }
+  ]
+}
