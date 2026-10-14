@@ -1,0 +1,164 @@
+{
+  "id": "cpp_fundamentals__excepciones_y_recuperacion__lanzar_y_capturar",
+  "title": "Throw and Catch an Exception",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Report an Error Without Returning an Invalid Result"
+        },
+        {
+          "type": "paragraph",
+          "text": "An error signal such as -1 can distinguish an error from a valid result if every caller checks it. Another policy uses exceptions: when a function detects that it cannot fulfill its contract, it throws an object with throw instead of returning normally. Code that knows how to handle the failure can catch it in a catch handler associated with a try block. The mechanism separates detection from handling, but we still need to decide what recovery means."
+        },
+        {
+          "type": "paragraph",
+          "text": "std::invalid_argument, from <stdexcept>, is a standard-library exception type for an invalid argument. std::invalid_argument{\"Invalid quantity\"} constructs an object with a diagnostic message. It is not a function from the book's support library. Standard-library types let us explore this idea before designing our own classes. In the prediction exercises, we show fixed messages from catch; we do not depend on compiler-specific internal wording."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    try {\n        int minutos{estimar(2)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Invalid order\";\n    }\n    std::cout << \":End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The valid call returns 7, that result is printed, and catch is skipped. If an exception is thrown inside try, subsequent statements in that try are skipped until a compatible handler is found. The const reference in catch lets us inspect the object without modifying it. The variable name error does not require us to print the exception object; here we use a message from our domain."
+        },
+        {
+          "type": "output_prediction",
+          "id": "llamada_valida_con_try",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    try {\n        int minutos{estimar(5)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Invalid\";\n    }\n    std::cout << \":End\";\n    return 0;\n}\n",
+          "answers": [
+            "13:End"
+          ],
+          "explanation": "The valid call returns 13 and does not execute catch."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Failing Path Does Not Resume at the Throwing Statement"
+        },
+        {
+          "type": "output_prediction",
+          "id": "llamada_invalida_con_try",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    try {\n        std::cout << \"Start:\";\n        int minutos{estimar(11)};\n        std::cout << minutos << \":Accepted\";\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Invalid\";\n    }\n    std::cout << \":End\";\n    return 0;\n}\n",
+          "answers": [
+            "Start:Invalid:End"
+          ],
+          "explanation": "The first message has already been printed. The exception skips the minutes and Accepted output; after catch, execution reaches End."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "retorno_tras_throw",
+          "question": "A function executes throw std::invalid_argument{\"Input\"}; before its return. What should the caller expect?",
+          "options": [
+            "The argument is automatically changed to make it valid.",
+            "A normal return with an invented zero.",
+            "An exceptional transfer of control; that call produces no normal result."
+          ],
+          "correctIndex": 2,
+          "explanation": "throw does not provide the return value promised on the normal execution path."
+        },
+        {
+          "type": "fill_code",
+          "id": "palabra_que_lanza",
+          "question": "Complete only the keyword that reports an invalid argument by throwing an exception.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        ___ std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    try {\n        int resultado{estimar(-1)};\n        std::cout << resultado;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Invalid\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "throw"
+          ],
+          "explanation": "throw interrupts the normal return path and transfers handling to a compatible catch block."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Compatible catch and a Policy for What Comes Next"
+        },
+        {
+          "type": "paragraph",
+          "text": "A catch must recognize the thrown type or an appropriate, more general exception type. If no calling function catches an exception that escapes main, the program terminates through the C++ termination mechanism. Do not use that termination as a recovery strategy. In the course labs, we catch the failures we deliberately trigger."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cero_sigue_siendo_valido",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    try {\n        std::cout << estimar(0);\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Invalid\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "The empty order is within the domain. The exception represents invalid data, not a result equal to zero."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "despues_del_tratamiento",
+          "question": "A catch finishes normally, and a summary follows the try/catch. What happens?",
+          "options": [
+            "Execution reaches the following summary.",
+            "Execution necessarily restarts at the beginning of main.",
+            "The failed call is automatically retried with the same data."
+          ],
+          "correctIndex": 0,
+          "explanation": "Catching an exception does not retry the failed instruction. Continuation must be designed by the program."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build and Check Both Execution Paths"
+        },
+        {
+          "type": "note",
+          "text": "Use the default Clang 23 compiler to practice throw/catch; the alternative Clang 21 does not support this exercise. The input values are prepared in the code; change the indicated values before running it."
+        },
+        {
+          "type": "paragraph",
+          "text": "Predict and run the code with piezas set to 0, 3, and 11. Add the text Before before the call and After after the call inside try. Keep End outside try/catch. Explain which outputs are missing when the value is invalid and which ones remain. Do not try to trigger errors by dividing by zero, accessing an invalid index with [], or causing overflow."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int piezas{3};\n    try {\n        int minutos{estimar(piezas)};\n        std::cout << minutos;\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Invalid\";\n    }\n    std::cout << \":End\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab Reference Solution"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and testing your attempt. It is one possible implementation; other solutions are valid if they meet the same contract and the stated criteria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. With the concatenated messages from this reference, 0 produces Before0After:End, 3 produces Before9After:End, and 11 produces BeforeInvalid:End. Before is preserved because it was printed before the call; After and the normal result are missing if the call throws. End is preserved outside try/catch. Another separator format is acceptable if the same stages are identifiable and the exceptional path remains visible."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <stdexcept>\n\nint estimar(int piezas) {\n    if (piezas < 0 || piezas > 10) {\n        throw std::invalid_argument{\"Quantity outside 0 to 10\"};\n    }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    int piezas{3};\n    try {\n        std::cout << \"Before\";\n        int minutos{estimar(piezas)};\n        std::cout << minutos << \"After\";\n    } catch (const std::invalid_argument& error) {\n        std::cout << \"Invalid\";\n    }\n    std::cout << \":End\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Change only piezas to compare the three paths. Catching the exception allows execution to reach End; it does not retry the call or return to the following statement inside the abandoned try. The function rejects invalid values before calculating, and all deliberately triggered failures have compatible handlers."
+        }
+      ]
+    }
+  ]
+}

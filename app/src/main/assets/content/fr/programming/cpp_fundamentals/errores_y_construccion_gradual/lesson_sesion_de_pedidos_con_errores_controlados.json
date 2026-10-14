@@ -1,0 +1,172 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__sesion_de_pedidos_con_errores_controlados",
+  "title": "Construire une session de commandes avec erreurs maîtrisées",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Exigences complètes d'une session"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une session contient des nombres de pièces déjà disponibles dans une collection. Chaque quantité de 0 à 10 est acceptée. Chaque commande valide est comptée une fois, y compris la commande vide ; les minutes suivent la règle de préparation déjà établie. Les données invalides sont signalées et ne contribuent ni au nombre de commandes valides ni au total des minutes. Le traitement continue avec la valeur suivante. À la fin, affiche le nombre de commandes valides, le nombre de commandes rejetées et les minutes totales. Limite les sessions d'exercice à six valeurs pour que le bilan entier reste sûr."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans cette version, chaque donnée représente un nombre de pièces ; elle n'a besoin ni d'un identifiant ni d'un champ de progression. Concentre-toi sur la conservation du bilan et le traitement séparé de chaque erreur."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "pedido_vacio_en_sesion",
+          "question": "Dans cette session, que doit apporter une quantité valide de 0 ?",
+          "options": [
+            "Une commande valide supplémentaire et zéro minute.",
+            "Aucune commande valide, car une quantité nulle signale toujours une erreur.",
+            "Une commande rejetée supplémentaire."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'exigence distingue une commande vide valide d'une donnée hors du domaine."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_despues_de_error",
+          "question": "La session contient 2, 11 et 3. La valeur 11 est rejetée. Que doit faire le traitement ensuite ?",
+          "options": [
+            "Conserver le résultat obtenu pour 2 et continuer à traiter 3 à partir d'un état valide.",
+            "Terminer la session sans examiner 3.",
+            "Réinitialiser systématiquement tout le bilan après le rejet de 11."
+          ],
+          "correctIndex": 0,
+          "explanation": "La politique rejette la donnée incorrecte, pas les données valides précédentes ni les suivantes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire indépendamment à partir de la spécification"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant d'écrire le programme, calcule les trois éléments du bilan pour {2,11,0,3,-1}. Conçois des fonctions de validation et d'estimation, en utilisant -1 comme signal d'erreur. Dans main, enregistre chaque décision et conserve les bilans. Ne consulte pas la page suivante avant d'avoir construit et vérifié une première version. Teste ensuite une session vide, une session où toutes les données sont rejetées et le cas limite {10}. Chaque enregistrement doit identifier clairement la valeur à l'origine du diagnostic."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> piezas{2, 11, 0, 3, -1};\n    for (int cantidad : piezas) {\n        std::cout << \"Donnée=\" << cantidad << \"\\n\";\n    }\n    std::cout << \"Fin de session\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier une autre session"
+        },
+        {
+          "type": "output_prediction",
+          "id": "sesion_otros_datos",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> piezas{1, 12, 4, 0};\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        if (resultado == -1) {\n            ++rechazados;\n        } else {\n            ++validos;\n            minutos += resultado;\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos;\n    return 0;\n}\n",
+          "answers": [
+            "3:1:16"
+          ],
+          "explanation": "Les commandes de 1, 4 et 0 pièce sont acceptées et prennent respectivement 5, 11 et 0 minute. La commande de 12 pièces est rejetée."
+        },
+        {
+          "type": "output_prediction",
+          "id": "sesion_solo_rechazos",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> piezas{-1, 11};\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        if (resultado == -1) {\n            ++rechazados;\n        } else {\n            ++validos;\n            minutos += resultado;\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos;\n    return 0;\n}\n",
+          "answers": [
+            "0:2:0"
+          ],
+          "explanation": "Les deux données sont rejetées ; aucune n'entre dans le bilan des commandes valides."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "error_sumado_como_minutos",
+          "question": "Une version ajoute resultado à minutos avant de vérifier resultado==-1. Quelle exigence enfreint-elle ?",
+          "options": [
+            "L'obligation de parcourir la collection par indice.",
+            "La possibilité qu'un résultat valide soit égal à zéro.",
+            "Le total a déjà incorporé un signal d'erreur comme s'il représentait du temps valide."
+          ],
+          "correctIndex": 2,
+          "explanation": "La décision doit précéder la mise à jour qui utilise le résultat comme donnée valide."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un changement préserve l'historique des tests"
+        },
+        {
+          "type": "paragraph",
+          "text": "Élargis maintenant la borne supérieure acceptée à 12. Conserve les anciens tests et leurs attentes lorsque le comportement ne change pas. La session {1,12,4,0} comporte désormais quatre commandes valides totalisant 43 minutes ; 12 apporte 27 minutes. La valeur 13 doit toujours être rejetée. C'est un changement d'exigence accompagné d'une vérification de régression, pas seulement une modification destinée à faire réussir une sortie."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_que_debe_cambiar",
+          "question": "Si tu élargis uniquement la borne supérieure de 10 à 12 pièces, quelle attente précédente doit nécessairement changer ?",
+          "options": [
+            "12 cesse d'être rejeté et produit maintenant une estimation de 27 minutes.",
+            "Toutes les commandes de 10 pièces cessent d'être acceptées avec leur ancienne estimation.",
+            "Une commande vide commence à demander les 3 minutes de préparation."
+          ],
+          "correctIndex": 0,
+          "explanation": "Seule la borne supérieure du domaine change ; les règles de durée à l'intérieur du domaine sont conservées."
+        },
+        {
+          "type": "output_prediction",
+          "id": "recuperar_copia_en_resumen",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    int total{0};\n    int antes{total};\n    for (int aporte : std::vector<int>{2, 5}) {\n        total += aporte;\n    }\n    std::cout << antes << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "0:7"
+          ],
+          "explanation": "antes est une copie de l'état initial ; l'accumulateur change indépendamment."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour terminer cette étape, explique pourquoi chaque donnée invalide est exclue avant la mise à jour, pourquoi une erreur ne détruit pas le bilan précédent et quels tests protègent l'élargissement du domaine. La programmation avec exceptions offre une autre politique de détection et de traitement ; pour la pratiquer, utilise le compilateur Clang 23 par défaut, qui accepte les exceptions, plutôt que l'autre option Clang 21."
+        },
+        {
+          "type": "note",
+          "text": "Les fondements des erreurs, du développement et des tests sont abordés dans la source principale (Stroustrup, 2024, chapitres 4 à 6). Les exemples sont originaux, sans la bibliothèque de support PPP. La vérification du domaine précède les opérations qui en dépendent ; le dépassement de capacité n'est pas utilisé comme test d'erreur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence du laboratoire"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et testé ta tentative. C'est une implémentation possible ; d'autres solutions sont valides si elles respectent le même contrat et les critères indiqués."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. Pour {2,11,0,3,-1}, trois commandes sont acceptées et deux rejetées ; le total est 7+0+9=16 minutes. Chaque diagnostic identifie la valeur rejetée, et aucun rejet ne modifie le bilan valide précédent. {} produit 0:0:0 ; {11,-1} produit 0:2:0 ; {10} produit 1:0:23. Une version élargie à 12 accepte {1,12,4,0}, avec un bilan 4:0:43, et rejette toujours 13. Les trois champs de ces bilans sont valides:rejetées:minutes ; des étiquettes équivalentes sont admises."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> piezas{2, 11, 0, 3, -1};\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        std::cout << \"Donnée=\" << cantidad << \":\";\n        if (resultado == -1) {\n            ++rechazados;\n            std::cout << \"Invalide\\n\";\n        } else {\n            ++validos;\n            minutos += resultado;\n            std::cout << resultado << \"\\n\";\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme détermine le sens de resultado avant de l'ajouter aux totaux. Une commande vide ajoute une commande valide et zéro minute ; les données invalides ajoutent uniquement un rejet. Changer la collection pour les cas indiqués permet de tester le cas vide, les rejets et les bornes. Pour l'élargissement, ne modifie que la borne supérieure à 12 et conserve les tests qui vérifient la poursuite après une donnée invalide."
+        }
+      ]
+    }
+  ]
+}

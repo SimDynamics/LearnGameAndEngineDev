@@ -1,0 +1,172 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__sesion_de_pedidos_con_errores_controlados",
+  "title": "Build an Order Session with Controlled Errors",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Complete Requirements for an Order Session"
+        },
+        {
+          "type": "paragraph",
+          "text": "A session contains item counts already available in a collection. Each count from 0 to 10 is accepted. Every valid order is counted once, including an empty one; minutes follow the previously established setup-time rule. Invalid inputs are reported and contribute neither to the valid-order count nor to the minutes. Processing continues with the next value. At the end, display the number of valid orders, the number rejected, and the total minutes. Limit practice sessions to six values to keep the integer summary safe."
+        },
+        {
+          "type": "paragraph",
+          "text": "In this version, each value represents a number of items; it needs neither an identifier nor a progress field. Focus on preserving the summary and handling each error separately."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "pedido_vacio_en_sesion",
+          "question": "In this session, what changes should a valid quantity of 0 contribute?",
+          "options": [
+            "One more valid order and zero minutes.",
+            "No valid order, because a zero quantity always means an error.",
+            "One more rejected order."
+          ],
+          "correctIndex": 0,
+          "explanation": "The requirement distinguishes a valid empty order from an input outside the domain."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_despues_de_error",
+          "question": "The session contains 2, 11, 3. The value 11 is rejected. What does continuing require?",
+          "options": [
+            "Preserve the result from 2 and continue processing 3 from a valid state.",
+            "End the session without visiting 3.",
+            "Always reset the whole summary when 11 is rejected."
+          ],
+          "correctIndex": 0,
+          "explanation": "The policy rejects the failed value, not the earlier valid inputs or the ones that follow."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build Independently from the Specification"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before writing code, calculate the three summary fields for {2,11,0,3,-1}. Design functions for validation and estimation, using -1 as the error signal. In main, record each decision and preserve the summaries. Do not look at the next page until you have built and checked a first version. Then test an empty session, a session with only rejected orders, and the boundary case {10}. Each record must clearly identify which value produced the diagnostic."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    std::vector<int> piezas{2, 11, 0, 3, -1};\n    for (int cantidad : piezas) {\n        std::cout << \"Item count=\" << cantidad << \"\\n\";\n    }\n    std::cout << \"End of session\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check a Different Session"
+        },
+        {
+          "type": "output_prediction",
+          "id": "sesion_otros_datos",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> piezas{1, 12, 4, 0};\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        if (resultado == -1) {\n            ++rechazados;\n        } else {\n            ++validos;\n            minutos += resultado;\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos;\n    return 0;\n}\n",
+          "answers": [
+            "3:1:16"
+          ],
+          "explanation": "The orders with 1, 4, and 0 items are accepted, taking 5, 11, and 0 minutes. The order with 12 items is rejected."
+        },
+        {
+          "type": "output_prediction",
+          "id": "sesion_solo_rechazos",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> piezas{-1, 11};\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        if (resultado == -1) {\n            ++rechazados;\n        } else {\n            ++validos;\n            minutos += resultado;\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos;\n    return 0;\n}\n",
+          "answers": [
+            "0:2:0"
+          ],
+          "explanation": "Both values are rejected; neither contributes to the valid summaries."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "error_sumado_como_minutos",
+          "question": "One version adds resultado to minutos before checking resultado==-1. What requirement does that violate?",
+          "options": [
+            "The obligation to traverse the collection by index.",
+            "The possibility that a valid result equals zero.",
+            "The total has already included an error signal as though it were valid time."
+          ],
+          "correctIndex": 2,
+          "explanation": "The decision must come before an update that uses the result as valid data."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Change Preserves the History of Tests"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now extend the accepted upper boundary to 12. Keep earlier tests and their expectations when the behavior has not changed. The session {1,12,4,0} now has four valid orders totaling 43 minutes; 12 contributes 27. The value 13 must still be rejected. This is a requirement change accompanied by regression testing, not merely a change intended to make one output pass."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_que_debe_cambiar",
+          "question": "When you extend the upper boundary only from 10 to 12 items, which previous expectation must change?",
+          "options": [
+            "12 is no longer rejected and instead produces an estimate of 27 minutes.",
+            "Every order of 10 items stops being accepted under the old estimate.",
+            "An empty order begins requiring the 3 setup minutes."
+          ],
+          "correctIndex": 0,
+          "explanation": "Only the upper domain boundary changes; the time rules inside the domain are preserved."
+        },
+        {
+          "type": "output_prediction",
+          "id": "recuperar_copia_en_resumen",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint main() {\n    int total{0};\n    int antes{total};\n    for (int aporte : std::vector<int>{2, 5}) {\n        total += aporte;\n    }\n    std::cout << antes << \":\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "0:7"
+          ],
+          "explanation": "antes is a copy of the initial state; the accumulator changes independently."
+        },
+        {
+          "type": "paragraph",
+          "text": "To finish this stage, explain why each invalid value is excluded before updating the summary, why a failure does not destroy the earlier summary, and which tests protect the extended range. Exception-based programming offers another policy for detection and handling; to practice it, use the default Clang 23 compiler, which supports exceptions, rather than the alternative Clang 21."
+        },
+        {
+          "type": "note",
+          "text": "The main source covers the conceptual foundations of errors, development, and testing (Stroustrup, 2024, chapters 4–6). These are original examples, without the PPP support library. Domain checks occur before dependent operations; overflow is not used as an error test."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab Reference Solution"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and testing your attempt. It is one possible implementation; other solutions are valid if they meet the same contract and the stated criteria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. For {2,11,0,3,-1}, three orders are accepted and two rejected; the total is 7+0+9=16 minutes. Every diagnostic identifies the rejected value, and no rejection changes the earlier valid summary. {} produces 0:0:0; {11,-1} produces 0:2:0; {10} produces 1:0:23. A version extended to 12 accepts {1,12,4,0} with the summary 4:0:43 and still rejects 13. The three fields in these summaries are valid:rejected:minutes; equivalent labels are acceptable."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nbool piezas_validas(int piezas) {\n    return piezas >= 0 && piezas <= 10;\n}\n\nint estimar(int piezas) {\n    if (!piezas_validas(piezas)) { return -1; }\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::vector<int> piezas{2, 11, 0, 3, -1};\n    int validos{0};\n    int rechazados{0};\n    int minutos{0};\n    for (int cantidad : piezas) {\n        int resultado{estimar(cantidad)};\n        std::cout << \"Item count=\" << cantidad << \":\";\n        if (resultado == -1) {\n            ++rechazados;\n            std::cout << \"Invalid\\n\";\n        } else {\n            ++validos;\n            minutos += resultado;\n            std::cout << resultado << \"\\n\";\n        }\n    }\n    std::cout << validos << \":\" << rechazados << \":\" << minutos;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The program determines what resultado means before including it in the totals. An empty order adds one valid order and zero minutes; invalid inputs add only one rejection. Changing the collection to the listed cases tests empty input, rejection, and boundaries. For the extension, change only the upper boundary to 12 and preserve the tests that check continuation after an invalid value."
+        }
+      ]
+    }
+  ]
+}
