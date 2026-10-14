@@ -1,0 +1,325 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado",
+  "title": "Racine carrée : domaine et résultat approximatif",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Élever au carré et calculer une racine sont deux opérations différentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour calculer le carré d'un nombre, multiplie-le par lui-même : 3 fois 3 donne 9 et 6 fois 6 donne 36. En C++, on écrit numero * numero. Multiplier par deux, 2 * numero, est une autre opération. Si le nombre représente le côté d'un carré, son carré représente l'aire."
+        },
+        {
+          "type": "paragraph",
+          "text": "La racine carrée non négative d'une aire est le côté non négatif dont le carré produit cette aire : la racine de 36 est 6 et celle de 0 est 0. Les nombres 6 et -6 ont tous deux pour carré 36, mais la racine carrée que nous utilisons est non négative. Une aire négative n'a pas de racine carrée réelle pouvant représenter ce côté."
+        },
+        {
+          "type": "paragraph",
+          "text": "La bibliothèque fournit std::sqrt. Inclus <cmath> pour l'utiliser ; les parenthèses contiennent l'argument et l'appel produit un résultat. Nous travaillerons avec des arguments et des résultats de type double. Nous n'implémentons pas son algorithme et ne déclarons pas manuellement une fonction de bibliothèque : l'en-tête fournit son interface. Cette comparaison guidée calcule le carré et la racine d'une même donnée valide."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double numero{4.0};\n    const double cuadrado = numero * numero;\n    const double raiz = std::sqrt(numero);\n    std::cout << \"Carré : \" << cuadrado << \"\\nRacine : \" << raiz;\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__cuadrado_frente_a_raiz",
+          "question": "Prévois les deux lignes avec cette nouvelle donnée. Distingue la multiplication de l'appel à la bibliothèque.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double numero{9.0};\n    std::cout << \"Carré : \" << numero * numero\n              << \"\\nRacine : \" << std::sqrt(numero);\n    return 0;\n}\n",
+          "answers": [
+            "Carré : 81\nRacine : 3"
+          ],
+          "explanation": "9 multiplié par 9 donne 81. La racine carrée non négative de neuf est trois. L'appel ne divise pas neuf par deux et ne calcule pas son carré."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__raiz_no_negativa",
+          "question": "Les nombres 6 et -6 ont tous deux pour carré 36. Que signifie la racine carrée non négative de 36 ?",
+          "options": [
+            "Les deux solutions, puisqu'elles ont le même carré.",
+            "La valeur 6, puisque la racine choisie doit être non négative.",
+            "La valeur -6, puisqu'on annule la multiplication."
+          ],
+          "correctIndex": 1,
+          "explanation": "La racine carrée non négative est une valeur unique. Il ne faut pas la confondre avec les deux solutions de x*x=36."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier le domaine du problème avant le calcul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Notre problème accepte les aires finies comprises entre 0 et 100, bornes incluses. La limite de cent appartient à ce contrat : la bibliothèque sait aussi calculer les racines d'autres valeurs positives, mais notre application les refuse. Zéro est une aire valide qui donne un côté nul."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une valeur finie représente une quantité numérique finie. L'infini et le résultat spécial nommé « pas un nombre » (NaN) ne sont pas des quantités finies ; nul besoin de les créer ou d'étudier leur représentation pour vérifier cette propriété. std::isfinite(area), fourni par <cmath>, renvoie bool : true pour une valeur finie, false sinon. Un nombre négatif peut être fini ; la finitude n'implique pas le respect de l'intervalle du problème."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double numero{-4.0};\n    const bool finito = std::isfinite(numero);\n    const bool en_intervalo = numero >= 0.0 && numero <= 100.0;\n    std::cout << \"Fini : \" << finito\n              << \"\\nDans l'intervalle : \" << en_intervalo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette comparaison guidée utilise -4.0 : c'est une valeur finie, mais hors de 0..100. La validation de l'aire exige les deux conditions. Pour une aire rejetée, notre fonction ne doit pas appeler std::sqrt. Nous ne comptons pas sur une exception de la bibliothèque pour un argument négatif et n'exécutons pas cet appel pour démontrer le rejet."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__limite_del_problema",
+          "question": "121.0 est fini et sa racine carrée réelle existe. Que demande le contrat des aires de 0 à 100 ?",
+          "options": [
+            "La rejeter, car elle dépasse la limite du problème.",
+            "L'accepter, car toute racine carrée réelle respecte le contrat.",
+            "La rejeter, car il s'agit nécessairement d'une valeur non finie."
+          ],
+          "correctIndex": 0,
+          "explanation": "La finitude et le domaine mathématique ne remplacent pas les limites de cette application. Le rejet est décidé avant le calcul."
+        },
+        {
+          "type": "fill_code",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__nombre_isfinite",
+          "question": "Exercice guidé : écris uniquement le nom de la fonction de <cmath> qui vérifie si area est finie.",
+          "language": "cpp",
+          "code": "const bool finita = std::___(area);",
+          "answers": [
+            "isfinite"
+          ],
+          "explanation": "std::isfinite reçoit la valeur et renvoie bool. Elle ne calcule pas la racine et ne vérifie pas à elle seule l'intervalle 0..100."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un résultat approximatif demande une vérification adaptée"
+        },
+        {
+          "type": "paragraph",
+          "text": "La racine carrée de 2 n'est pas un entier : 1*1 vaut 1 et 2*2 vaut 4. Sa valeur réelle se situe entre un et deux et son développement décimal est infini. double n'offre qu'une précision finie ; std::sqrt fournit une approximation et cout n'en montre habituellement qu'une partie des chiffres. N'exige ni une chaîne décimale fixe pour une racine inexacte ni que lado*lado == area soit toujours true."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous pouvons vérifier des propriétés. Pour l'aire deux, le côté doit se trouver entre 1.4 et 1.5 : leurs carrés mathématiques sont 1.96 et 2.25. Nous mesurons aussi diferencia = lado*lado - area. Dans cet essai borné, nous acceptons une différence strictement comprise entre -0.000001 et 0.000001. C'est une tolérance choisie pour ces tests, pas une garantie universelle de précision. L'aire est ici comprise entre 0 et 100 et le côté correct entre 0 et 10 ; le produit reste donc petit."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double area{2.0};\n    const double lado = std::sqrt(area);\n    const double diferencia = lado * lado - area;\n    std::cout << \"Non négatif : \" << (lado >= 0.0)\n              << \"\\nDans la bande : \" << (lado > 1.4 && lado < 1.5)\n              << \"\\nCarré proche : \"\n              << (diferencia > -0.000001 && diferencia < 0.000001);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une bande large ne prouve pas à elle seule la validité du calcul : 1.45 est entre 1.4 et 1.5, mais son carré vaut 2.1025 et ne respecte pas la tolérance de l'essai pour une aire de deux. Les vérifications se complètent. La fonction que tu construiras doit utiliser std::sqrt ; il ne suffit pas de renvoyer un nombre quelconque qui satisfait une seule propriété."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__propiedades_de_raiz_inexacta",
+          "question": "Prévois les trois vérifications pour l'aire trois sans écrire les décimales de sa racine.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nint main() {\n    const double area{3.0};\n    const double lado = std::sqrt(area);\n    const double diferencia = lado * lado - area;\n    std::cout << \"Non négatif : \" << (lado >= 0.0)\n              << \"\\nDans la bande : \" << (lado > 1.7 && lado < 1.8)\n              << \"\\nCarré proche : \"\n              << (diferencia > -0.000001 && diferencia < 0.000001);\n    return 0;\n}\n",
+          "answers": [
+            "Non négatif : 1\nDans la bande : 1\nCarré proche : 1"
+          ],
+          "explanation": "La racine carrée non négative de trois est comprise entre 1.7 et 1.8, et son carré approximatif respecte la tolérance choisie. Les résultats affichés sont des bool ; aucune écriture décimale complète ni égalité exacte du carré n'est exigée."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__una_banda_no_demuestra_la_raiz",
+          "question": "Pour l'aire deux, un programme renvoie 1.45. Cette valeur respecte la bande 1.4..1.5, mais son carré vaut 2.1025. Que faut-il conclure ?",
+          "options": [
+            "La bande suffit, car le résultat est un double positif.",
+            "Le problème vient seulement du nombre de chiffres affichés par cout.",
+            "La bande ne suffit pas : le carré ne respecte pas la tolérance choisie."
+          ],
+          "correctIndex": 2,
+          "explanation": "La différence 0.1025 est bien supérieure à 0.000001. Une propriété large peut accepter un résultat erroné ; le contrat et une vérification plus discriminante restent nécessaires."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une fonction qui accepte ou préserve la destination"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis bool calcular_lado(double area, double& destino). Accepte uniquement les aires finies de 0 à 100. En cas d'acceptation, calcule le côté avec std::sqrt, enregistre-le dans destino et renvoie true. En cas de rejet, renvoie false sans appeler std::sqrt ni affecter destino. La fonction n'affiche rien. Le bool indique l'acceptation ; la valeur calculée est transmise par la référence modifiable."
+        },
+        {
+          "type": "paragraph",
+          "text": "area reçoit une copie de l'argument. destino est liée à un objet double modifiable de l'appelant. Si les arguments sont des objets distincts, celui qui fournit l'aire reste inchangé. On peut aussi utiliser le même objet aux deux positions : la copie de area existe avant l'exécution du corps et l'objet d'origine peut être modifié par destino. Un rejet doit le préserver dans les deux situations."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, commence avec area=25.0 et destino=-3.0. Conserve le bool et affiche Valide : B;Destination : D;Aire : A. Puis donne -4.0 à area et appelle la fonction en conservant la destination précédente : affiche Négative : B;Destination : D;Aire : A. Enfin, utilise area=101.0 et affiche Excès : B;Destination : D;Aire : A. Respecte ces étiquettes et un saut de ligne entre les trois lignes ; les nombres doivent provenir des appels et des objets observés."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant l'exécution, note le bool, la destination et l'état de l'argument après chaque appel. Teste aussi 0.0, 100.0, 16.0, 0.25, 2.0, -1.0 et 100.5, en gardant une ancienne valeur de destination observable pour les rejets. Pour deux, utilise les propriétés et la tolérance précédentes plutôt qu'une chaîne décimale. Vérifie que chaque rejet préserve la destination et que l'acceptation de zéro remplace bien une ancienne valeur non nulle."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Définis calcular_lado avant main, ou déclare sa signature puis définis-la après.\nint main() {\n    // Construis les appels, conserve leurs résultats et observe les objets.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "L'éditeur ne fournit ni signature, ni conditions, ni corps. Construis et teste avant de consulter la référence suivante. Des solutions équivalentes sont acceptées si elles vérifient toutes les conditions avant le calcul, respectent les permissions et préservent la destination en cas de rejet ; afficher des réponses constantes ne démontre pas ces contrats."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après la construction et les tests"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence commence avec une aire de 36 et une destination de -3, différentes données du premier essai. Elle utilise ensuite -2, 100.5 et zéro lors d'appels distincts qui conservent la destination de l'appel précédent. Les objets area et destino sont distincts dans ce main."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    double area{36.0};\n    double destino{-3.0};\n    const bool valida = calcular_lado(area, destino);\n    std::cout << \"Valide : \" << valida << \";Destination : \" << destino\n              << \";Aire : \" << area << \"\\n\";\n    area = -2.0;\n    const bool negativa = calcular_lado(area, destino);\n    std::cout << \"Négative : \" << negativa << \";Destination : \" << destino\n              << \";Aire : \" << area << \"\\n\";\n    area = 100.5;\n    const bool exceso = calcular_lado(area, destino);\n    std::cout << \"Excès : \" << exceso << \";Destination : \" << destino\n              << \";Aire : \" << area << \"\\n\";\n    area = 0.0;\n    const bool cero = calcular_lado(area, destino);\n    std::cout << \"Zéro : \" << cero << \";Destination : \" << destino\n              << \";Aire : \" << area << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les lignes sont Valide : 1;Destination : 6;Aire : 36, Négative : 0;Destination : 6;Aire : -2, Excès : 0;Destination : 6;Aire : 100.5 et Zéro : 1;Destination : 0;Aire : 0. La validation termine les rejets avant l'appel de bibliothèque et avant toute affectation à la destination. Zéro est accepté et remplace six ; false et un côté de longueur zéro ne signifient pas la même chose."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de ta solution : une interface et des types cohérents ; vérification de la finitude et des deux bornes avant le calcul ; std::sqrt appelé uniquement pour les aires acceptées ; destination inchangée pour tout rejet ; résultat conservé pour chaque acceptation ; aucun affichage dans la fonction ; observation ensuite dans main. Teste les bornes zéro et cent, les fractions et les rejets prévus. Une autre organisation du corps convient si elle maintient ces garanties."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver arguments, copies et permissions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le premier argument peut être un littéral, une expression ou la valeur d'un objet : il initialise le paramètre double par valeur. Le deuxième exige un objet double modifiable, car il est lié à double&. Si le même objet occupe les deux positions, le calcul lit la copie reçue comme area et peut modifier l'objet de l'appelant par destino. Note les états après chaque appel, pas seulement le nombre d'arguments."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__misma_variable_y_copia",
+          "question": "Prévois les trois lignes. Chaque appel est une instruction distincte et les arguments ne contiennent aucune modification.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    double dato{16.0};\n    const double foto = dato;\n    const bool primera = calcular_lado(dato, dato);\n    std::cout << \"Première : \" << primera << \";Donnée : \" << dato\n              << \";Copie : \" << foto << \"\\n\";\n    const bool segunda = calcular_lado(dato, dato);\n    std::cout << \"Deuxième : \" << segunda << \";Donnée : \" << dato\n              << \";Copie : \" << foto << \"\\n\";\n    double rechazada{-4.0};\n    const bool rechazo = calcular_lado(rechazada, rechazada);\n    std::cout << \"Rejet : \" << rechazo << \";Donnée : \" << rechazada;\n    return 0;\n}\n",
+          "answers": [
+            "Première : 1;Donnée : 4;Copie : 16\nDeuxième : 1;Donnée : 2;Copie : 16\nRejet : 0;Donnée : -4"
+          ],
+          "explanation": "Le premier appel reçoit une copie de seize et enregistre quatre dans dato. Le suivant reçoit maintenant quatre et enregistre deux. foto conserve la copie initiale. L'appel avec -4 est rejeté avant le calcul et ne modifie pas son unique objet."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__destino_modificable",
+          "question": "Quel appel fournit les permissions exigées par calcular_lado ?",
+          "options": [
+            "calcular_lado(9.0, lado), avec un double lado modifiable.",
+            "calcular_lado(lado, 9.0), avec lado comme premier argument.",
+            "calcular_lado(9.0, fijo), avec un const double fijo déclaré."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le littéral peut fournir l'aire par valeur. La destination doit être un objet modifiable ; ni un littéral ni un objet const ne répond à l'exigence de double&."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__argumento_expresion",
+          "question": "Prévois la ligne lorsqu'une expression fournit l'aire et qu'un objet distinct fournit la destination.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    const double base{4.0};\n    double destino{-2.0};\n    const bool aceptada = calcular_lado(base + 5.0, destino);\n    std::cout << \"Acceptée : \" << aceptada << \";Côté : \" << destino\n              << \";Base : \" << base;\n    return 0;\n}\n",
+          "answers": [
+            "Acceptée : 1;Côté : 3;Base : 4"
+          ],
+          "explanation": "L'expression fournit neuf par valeur. Le résultat est enregistré dans destino ; base n'a été que lue et reste égale à quatre."
+        },
+        {
+          "type": "note",
+          "text": "La fonction respecte son contrat quelle que soit la façon d'écrire l'argument. La copie du paramètre n'empêche pas une modification par une autre voie autorisée : dans la première prédiction, cette voie est destino, qui désigne dato."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer le contrat à une collection d'aires"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un nouveau programme utilisant calcular_lado pour examiner des aires sans transformer une racine approximative en chaîne décimale imposée. std::vector<double> est le vecteur déjà connu avec des éléments double au lieu de int ; il s'initialise et se parcourt de la même manière. Ici, la collection contient au plus huit valeurs finies comprises entre -2 et 102. Certaines peuvent ne pas respecter le contrat 0..100 de calcular_lado : elles doivent être comptées comme rejetées."
+        },
+        {
+          "type": "paragraph",
+          "text": "Commence avec les aires {0.0, 4.0, 6.25, 9.0, 2.0, -1.0, 101.0}, dans cet ordre. Compte les appels acceptés et rejetés. Parmi les appels acceptés, compte les côtés inférieurs ou égaux à 2.5. Utilise le bool de chaque appel pour décider si le résultat entre dans le rapport ; un côté nul est valide. Ni le vecteur ni son ordre ne doivent changer. calcular_lado conserve son interface et n'affiche rien."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant d'exécuter, note pour chaque aire l'acceptation prévue et si son côté appartient au groupe jusqu'à 2.5. Écris ensuite quatre lignes : Valides : N, Rejetées : N, Côtés jusqu'à 2.5 : N et Données conservées : B. Les trois N sont des décomptes calculés ; B compare les données finales à une copie initiale, y compris taille, valeurs et ordre. Cette égalité compare des copies de valeurs finies non modifiées, pas le carré d'une racine inexacte."
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste aussi une collection vide ; seulement zéro ; seulement une aire négative rejetée ; seulement un dépassement ; {100.0, 6.25, 9.0} ; et {2.0, -2.0, 102.0}. Prévois les décomptes avant chaque exécution. Le vide doit donner trois comptes nuls et préserver les données. Dans les cas mixtes, aucun appel rejeté ne doit contribuer au troisième compte. La frontière 6.25 vérifie que 2.5 est inclus ; neuf donne un côté hors de ce groupe même si son appel est accepté."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n\n// Définis calcular_lado avant main, ou déclare sa signature puis définis-la après.\nint main() {\n    // Construis la collection, les décomptes et la vérification de conservation.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Construis ce transfert avant de consulter la référence suivante. Tu peux organiser différemment les comptes et la vérification de conservation si tu respectes le contrat. Une sortie écrite comme des constantes ne prouve pas que le programme répond à de nouvelles collections ; modifie les données et compare tes prévisions à l'exécution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence du rapport et révision avec de nouvelles données"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence utilise {16.0, 1.0, 6.25, 100.0, -0.5, 100.5}, des données différentes du premier essai. Elle conserve une copie du vecteur et parcourt ses valeurs sans modifier les éléments. Elle vérifie ensuite taille, valeurs et positions. Le contrat autorisant au plus huit éléments, sa taille peut être convertie en int ; le parcours accède uniquement aux indices de zéro à cantidad-1 et fonctionne aussi lorsque cantidad est nul."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    std::vector<double> areas{16.0, 1.0, 6.25, 100.0, -0.5, 100.5};\n    const std::vector<double> copia = areas;\n    int validas{0};\n    int rechazadas{0};\n    int hasta_dos_y_medio{0};\n    for (const double area : areas) {\n        double lado{-1.0};\n        const bool aceptada = calcular_lado(area, lado);\n        if (aceptada) {\n            ++validas;\n            if (lado <= 2.5) {\n                ++hasta_dos_y_medio;\n            }\n        } else {\n            ++rechazadas;\n        }\n    }\n    bool conservados = areas.size() == copia.size();\n    // Le contrat limite la taille à huit : la conversion en int est sûre.\n    const int cantidad = static_cast<int>(areas.size());\n    if (conservados) {\n        for (int i{0}; i < cantidad; ++i) {\n            if (areas.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n    std::cout << \"Valides : \" << validas << \"\\n\"\n              << \"Rejetées : \" << rechazadas << \"\\n\"\n              << \"Côtés jusqu'à 2.5 : \" << hasta_dos_y_medio << \"\\n\"\n              << \"Données conservées : \" << conservados << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le rapport de référence compte quatre aires acceptées, deux rejetées et deux côtés inférieurs ou égaux à 2.5 : ceux des aires un et 6.25. Les données sont conservées. Critères pour ton programme : appeler calcular_lado pour chaque aire, utiliser son bool pour la classer, compter zéro parmi les acceptations, appliquer la borne incluse seulement aux résultats acceptés et préserver la collection entière et son ordre. Lire lado après un rejet ne rend pas sa valeur conservée valide. Reprends tes essais du vide, des bornes et des cas mixtes ; toute organisation équivalente respectant ces garanties convient."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__raiz_cuadrada_dominio_y_resultado_aproximado__informe_con_cero_rechazo_y_frontera",
+          "question": "Prévois les quatre lignes avec cette nouvelle collection. Distingue le rejet, un côté nul et la borne incluse 2.5.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n\nbool calcular_lado(double area, double& destino) {\n    if (!std::isfinite(area) || area < 0.0 || area > 100.0) {\n        return false;\n    }\n    const double lado = std::sqrt(area);\n    destino = lado;\n    return true;\n}\n\nint main() {\n    std::vector<double> areas{0.0, 100.0, -1.0, 6.25, 9.0};\n    const std::vector<double> copia = areas;\n    int validas{0};\n    int rechazadas{0};\n    int hasta_dos_y_medio{0};\n    for (const double area : areas) {\n        double lado{-1.0};\n        const bool aceptada = calcular_lado(area, lado);\n        if (aceptada) {\n            ++validas;\n            if (lado <= 2.5) {\n                ++hasta_dos_y_medio;\n            }\n        } else {\n            ++rechazadas;\n        }\n    }\n    bool conservados = areas.size() == copia.size();\n    // Le contrat limite la taille à huit : la conversion en int est sûre.\n    const int cantidad = static_cast<int>(areas.size());\n    if (conservados) {\n        for (int i{0}; i < cantidad; ++i) {\n            if (areas.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n    std::cout << \"Valides : \" << validas << \"\\n\"\n              << \"Rejetées : \" << rechazadas << \"\\n\"\n              << \"Côtés jusqu'à 2.5 : \" << hasta_dos_y_medio << \"\\n\"\n              << \"Données conservées : \" << conservados << \"\\n\";\n    return 0;\n}\n",
+          "answers": [
+            "Valides : 4\nRejetées : 1\nCôtés jusqu'à 2.5 : 2\nDonnées conservées : 1"
+          ],
+          "explanation": "Zéro, cent, 6.25 et neuf sont acceptés ; moins un est rejeté. Seuls les côtés des aires zéro et 6.25 sont inférieurs ou égaux à 2.5. Le parcours lit les aires et conserve leur taille, leurs valeurs et leur ordre."
+        },
+        {
+          "type": "note",
+          "text": "La lecture complémentaire traite les opérations et appels de bibliothèque, les erreurs et le domaine (Stroustrup, 2024, sections 2.4 et 4.2). La racine non négative, la finitude et la précision dépendant de l'environnement sont comparées au projet de norme C (ISO/IEC JTC 1/SC 22/WG 14, 2023, sections 7.12.7.10, 7.12.3.3 et 5.2.4.2.2) ; l'interface C++ de <cmath> figure dans N4950 et le projet HTML (Köppe et al., 2023, sections [c.math] et [cmath.syn] ; Working draft: Programming languages — C++, s. d., section [cmath.syn]). Il s'agit de références documentaires, pas de prérequis pour écrire les tests de ce problème."
+        }
+      ]
+    }
+  ]
+}

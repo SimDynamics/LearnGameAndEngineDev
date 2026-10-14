@@ -1,0 +1,282 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__conversion_comprobada_sin_perdida",
+  "title": "Conversion contrôlée sans perte d'information",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conserver une valeur ne signifie pas conserver son type"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rappelle la troncature de l'unité 2 : convertir un double en int élimine la partie fractionnaire vers zéro, à condition que la valeur tronquée tienne dans le type de destination. Avec 6.5, on obtient six ; avec -6.5, moins six. Nous voulons parfois cette troncature ; dans d'autres tâches, il faut refuser toute perte d'information. Ces choix demandent des contrats différents."
+        },
+        {
+          "type": "paragraph",
+          "text": "12.0 est un littéral double de valeur numérique douze ; 12 est un littéral int de même valeur. \"12.0\" représente du texte, pas une quantité automatiquement convertible en int. Voir cout afficher deux valeurs de la même façon ne prouve ni que leur type est identique ni qu'elles proviennent d'une écriture identique."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const double original{12.0};\n    const int candidato = static_cast<int>(original);\n    const double vuelta = static_cast<double>(candidato);\n    std::cout << \"Original : \" << original\n              << \"\\nCandidat : \" << candidato\n              << \"\\nRetour : \" << vuelta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette comparaison guidée utilise douze, une petite valeur finie : les trois lignes affichent 12. candidato est de type int ; original et vuelta sont de type double. La conversion a conservé la valeur numérique, pas le type. Ce cast est sûr pour cet exemple connu ; il faut encore décider quoi faire lorsque la donnée d'origine ne respecte pas un contrat."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__conversion_comprobada_sin_perdida__valor_tipo_y_texto",
+          "question": "Qu'est-ce qui distingue correctement 8.0, 8 et \"8.0\" dans ce problème ?",
+          "options": [
+            "Ce sont trois quantités du même type, car elles semblent représenter huit.",
+            "Les deux premiers ont la valeur huit avec des types différents ; le troisième est du texte.",
+            "Les deux premiers ont des valeurs différentes parce que leur écriture change."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le point fait partie du littéral double mais ne change pas sa valeur numérique huit. Le texte conserve des caractères ; il ne devient pas automatiquement un argument numérique pour une conversion."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier avant le cast et comparer après"
+        },
+        {
+          "type": "paragraph",
+          "text": "Notre contrat accepte seulement les valeurs finies de -100 à 100, bornes incluses. Avant la conversion en int, vérifie la finitude et ces limites. Tous les entiers de cet intervalle sont représentables en int ; cet intervalle appartient au problème et ne représente pas tout le domaine du type. Un cast ne vérifie pas lui-même la sécurité : si la valeur tronquée ne peut pas être représentée dans le type entier de destination, la conversion a un comportement indéfini. Nous n'exécutons pas cette conversion invalide pour observer un résultat."
+        },
+        {
+          "type": "paragraph",
+          "text": "Après la validation du domaine, convertis la valeur en un candidat int local puis reconvertis-le explicitement en double. L'égalité exacte entre la valeur obtenue après l'aller-retour et l'origine vérifie si la valeur numérique déjà stockée a été conservée. Ces petits entiers sont exactement représentables lorsqu'ils reviennent en double. S'ils diffèrent, une fraction a été perdue et le contrat doit rejeter l'origine. Nous n'utilisons pas la tolérance des exercices sur les racines : admettre une petite différence changerait ici l'exigence. L'exemple guidé suivant emploie un littéral fini et dans l'intervalle ; son cast est donc sûr."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const double origen{-4.5};\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n    std::cout << \"Candidat : \" << candidato\n              << \"\\nRetour : \" << vuelta\n              << \"\\nMême valeur : \" << (vuelta == origen);\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__conversion_comprobada_sin_perdida__ida_y_vuelta_de_un_negativo_integral",
+          "question": "Prévois les trois lignes pour cette nouvelle valeur. L'origine connue est finie et appartient à -100..100.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    const double origen{-6.0};\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n    std::cout << \"Candidat : \" << candidato\n              << \"\\nRetour : \" << vuelta\n              << \"\\nMême valeur : \" << (vuelta == origen);\n    return 0;\n}\n",
+          "answers": [
+            "Candidat : -6\nRetour : -6\nMême valeur : 1"
+          ],
+          "explanation": "Moins six n'a aucune partie fractionnaire à éliminer. Le candidat int et la valeur de retour double conservent le même nombre ; l'égalité est numérique et n'exige pas des types identiques."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__conversion_comprobada_sin_perdida__limite_antes_de_convertir",
+          "question": "100.5 est fini et sa troncature donnerait 100. Que demande le contrat portant sur l'origine dans -100..100 ?",
+          "options": [
+            "L'accepter puisque le candidat serait dans l'intervalle.",
+            "L'arrondir avant de vérifier le domaine de l'origine.",
+            "Le rejeter avant le cast, car l'origine dépasse cent."
+          ],
+          "correctIndex": 2,
+          "explanation": "Les limites s'appliquent à l'origine, pas au candidat tronqué. Le contrat n'accepte pas nécessairement toute valeur qui pourrait être convertie sans risque en int."
+        },
+        {
+          "type": "note",
+          "text": "std::isfinite, fourni par <cmath>, a été présenté dans la leçon précédente : retrouve cette vérification avant les casts. Ce contrat examine la valeur double reçue ; il ne détecte ni ne reconstruit une perte survenue avant l'appel, n'interprète pas une chaîne et ne conserve pas tous les détails de la représentation double. Les zéros sont acceptés selon leur valeur numérique, sans promettre de conserver leur signe ni leur écriture."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une conversion qui accepte ou préserve la destination"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis bool convertir_entero(double origen, int& destino). Accepte seulement une origine finie, entre -100 et 100 et de valeur entière, c'est-à-dire sans partie fractionnaire. En cas d'acceptation, enregistre l'entier dans destino et renvoie true. Tout rejet renvoie false sans modifier destino. La fonction n'affiche rien, n'arrondit pas et ne prétend pas couvrir l'ensemble du domaine de int. origen reçoit une valeur ; destino est liée à un objet int modifiable."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prévois où chaque rejet terminera l'appel. Vérifie la finitude et l'intervalle avant tout cast en int. Ensuite, utilise un candidat local et la comparaison d'aller-retour : un test échoué ne doit pas avoir déjà modifié la destination. Cette conversion contrôlée porte sur la valeur double reçue, pas sur ses caractères d'origine. Zéro est un entier accepté et doit remplacer une ancienne destination non nulle."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, commence avec origen=-7.0 et destino=42. Appelle la fonction et affiche Entier : B;Destination : D;Origine : O. En conservant destino entre les appels, attribue successivement 6.5, -2.25, 100.0, 100.5 et 0.0 à origen. Affiche respectivement Fraction positive, Fraction négative, Limite, Hors domaine et Zéro avec le même format, une ligne par appel. B provient du bool renvoyé ; D et O sont les valeurs des objets après l'appel. Note ces états avant d'exécuter."
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste aussi -100.0 et -100.5 pour la borne opposée ; 1.0 ; 0.5 et -0.5, dont la partie entière serait nulle ; et 99.75. Garde une ancienne destination observable pour chaque rejet. Change la valeur initiale de cette destination et vérifie que false conserve la nouvelle valeur, pas une constante choisie par la fonction. Un candidat égal à zéro ne prouve pas une acceptation."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n\n// Définis convertir_entero avant main, ou déclare sa signature et définis-la après.\nint main() {\n    // Construis les appels et observe bool, destino et origen après chacun.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Construis et vérifie ta version avant de consulter la référence suivante. L'éditeur ne fournit ni signature, ni protections, ni corps. D'autres organisations sont acceptables si chaque cast exécuté est sûr, si toute perte est rejetée selon ce contrat et si la destination change uniquement lors d'une acceptation. La fonction ne doit pas prendre sa décision à partir de l'affichage de cout."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après la construction et les vérifications"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence utilise -9, 3.75, -1.5, -100, -100.5 et zéro, des données différentes du premier essai. La comparaison d'aller-retour ne modifie pas la destination : l'affectation n'a lieu qu'après validation de la finitude, des limites et de l'égalité. Chaque appel se termine avant qu'on observe son résultat."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n    if (vuelta != origen) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    double origen{-9.0};\n    int destino{42};\n    const bool integral = convertir_entero(origen, destino);\n    std::cout << \"Entier : \" << integral << \";Destination : \" << destino\n              << \";Origine : \" << origen << \"\\n\";\n    origen = 3.75;\n    const bool positiva = convertir_entero(origen, destino);\n    std::cout << \"Fraction positive : \" << positiva << \";Destination : \" << destino\n              << \";Origine : \" << origen << \"\\n\";\n    origen = -1.5;\n    const bool negativa = convertir_entero(origen, destino);\n    std::cout << \"Fraction négative : \" << negativa << \";Destination : \" << destino\n              << \";Origine : \" << origen << \"\\n\";\n    origen = -100.0;\n    const bool frontera = convertir_entero(origen, destino);\n    std::cout << \"Limite : \" << frontera << \";Destination : \" << destino\n              << \";Origine : \" << origen << \"\\n\";\n    origen = -100.5;\n    const bool fuera = convertir_entero(origen, destino);\n    std::cout << \"Hors domaine : \" << fuera << \";Destination : \" << destino\n              << \";Origine : \" << origen << \"\\n\";\n    origen = 0.0;\n    const bool cero = convertir_entero(origen, destino);\n    std::cout << \"Zéro : \" << cero << \";Destination : \" << destino\n              << \";Origine : \" << origen << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Moins neuf est accepté et la destination passe de 42 à -9. Les deux fractions sont rejetées et conservent -9. La borne -100 est acceptée ; l'origine -100.5 est rejetée et préserve -100. Zéro est accepté et enregistre zéro. Dans tous ces appels, origen est passé par valeur et reste intact ; seul l'objet int destino peut être modifié. Le true du dernier appel ne dépend pas du caractère non nul de l'entier."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : interface cohérente ; finitude et limites de l'origine vérifiées avant le cast ; candidat et valeur de retour locaux ; comparaison exacte de la valeur reçue ; aucune affectation à la destination en cas de rejet ; acceptation de zéro et des deux bornes ; rejet des fractions des deux signes et des dépassements des deux limites ; aucun affichage dans la fonction. Le domaine réduit rend cette méthode sûre sans en faire une solution générale pour tous les types ou les entiers."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver zéro, l'argument complet et l'acceptation"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'égalité vérifie si la valeur numérique reçue est conservée exactement. Un candidat nul ne signifie pas que l'origine était nulle : par exemple, tronquer une fraction entre zéro et un peut donner ce candidat. Il ne faut pas non plus juger d'après les chiffres affichés par cout. Suis le bool d'acceptation et l'état de la destination après chaque appel."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__conversion_comprobada_sin_perdida__rechazos_con_candidato_cero",
+          "question": "Prévois les trois lignes. La fonction est celle de la référence précédente, et les appels sont des instructions distinctes.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n    if (vuelta != origen) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    int destino{8};\n    const bool positiva = convertir_entero(0.5, destino);\n    std::cout << \"Fraction positive : \" << positiva << \";Destination : \" << destino << \"\\n\";\n    const bool negativa = convertir_entero(-0.5, destino);\n    std::cout << \"Fraction négative : \" << negativa << \";Destination : \" << destino << \"\\n\";\n    const bool cero = convertir_entero(0.0, destino);\n    std::cout << \"Zéro : \" << cero << \";Destination : \" << destino;\n    return 0;\n}\n",
+          "answers": [
+            "Fraction positive : 0;Destination : 8\nFraction négative : 0;Destination : 8\nZéro : 1;Destination : 0"
+          ],
+          "explanation": "Les deux fractions donneraient un candidat nul, mais l'aller-retour diffère de leur origine et la destination huit reste inchangée. Zéro satisfait l'égalité et le domaine : la fonction renvoie true et enregistre zéro."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__conversion_comprobada_sin_perdida__igualdad_no_tolerancia",
+          "question": "Le double reçu est différent de 3.0, même s'il en est très proche. Quel critère respecte une conversion sans perte de cette valeur ?",
+          "options": [
+            "Accepter si la différence reste dans une petite tolérance.",
+            "Rejeter si la conversion en int puis le retour en double ne reproduisent pas exactement la même valeur.",
+            "Accepter si cout affiche le même texte que pour trois."
+          ],
+          "correctIndex": 1,
+          "explanation": "Cette tâche exige l'exactitude de la valeur numérique reçue. La tolérance d'un calcul approximatif et le nombre de chiffres affichés ne remplacent pas l'égalité nécessaire."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__conversion_comprobada_sin_perdida__expresion_integral_frente_a_base_fraccionaria",
+          "question": "Prévois les deux lignes. Le premier appel reçoit le résultat de l'expression entière ; le second reçoit base.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n    if (vuelta != origen) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    const double base{2.25};\n    int destino{99};\n    const bool expresion = convertir_entero(base + 0.75, destino);\n    std::cout << \"Expression : \" << expresion << \";Destination : \" << destino\n              << \";Base : \" << base << \"\\n\";\n    const bool sola = convertir_entero(base, destino);\n    std::cout << \"Base : \" << sola << \";Destination : \" << destino\n              << \";Base : \" << base;\n    return 0;\n}\n",
+          "answers": [
+            "Expression : 1;Destination : 3;Base : 2.25\nBase : 0;Destination : 3;Base : 2.25"
+          ],
+          "explanation": "2.25 plus 0.75 donne l'entier trois, qui est accepté. base seule est fractionnaire : elle est rejetée et la destination conserve trois. Lire base pendant les appels ne la modifie pas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__funciones_y_contratos__conversion_comprobada_sin_perdida__llamada_valida_no_promete_aceptacion",
+          "question": "Quel appel peut être compilé avec cette interface, même si son origine doit être rejetée lors de la vérification du contrat ?",
+          "options": [
+            "convertir_entero(3.5, cantidad), avec un objet int cantidad modifiable.",
+            "convertir_entero(3.5, fijo), avec un objet const int fijo déclaré.",
+            "convertir_entero(3.5, medida), avec un objet double medida modifiable."
+          ],
+          "correctIndex": 0,
+          "explanation": "La destination du premier appel est un int modifiable et l'appel correspond à l'interface. La fonction rejette ensuite la fraction. Un objet const ou double ne peut pas servir de int&."
+        },
+        {
+          "type": "note",
+          "text": "Un rejet n'exige pas d'écrire un marqueur spécial dans la destination. L'appelant conserve le résultat bool et décide quoi faire ; une destination précédente qui semble valide ne transforme pas un rejet en acceptation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer l'acceptation à une collection de valeurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un nouveau programme qui classe une collection de valeurs double au moyen de convertir_entero. Ici, la collection d'origine contient au plus huit valeurs finies comprises entre -102 et 102 ; la fonction conserve son contrat plus étroit de valeurs entières dans -100..100. Conserve uniquement les entiers acceptés dans un autre vector<int>, en respectant leur ordre d'arrivée. Compte les rejets et, parmi les acceptations, les valeurs égales à zéro. Préserve toute la collection d'origine et son ordre."
+        },
+        {
+          "type": "paragraph",
+          "text": "Commence avec {0.0, 2.0, -3.0, 0.5, -0.5, 100.0, 100.5}. Prépare un objet int destino de valeur 17 pour chaque appel. Utilise le bool renvoyé pour décider si cette destination doit être ajoutée aux entiers et au comptage des zéros. La fonction n'affiche rien. Prévois les éléments conservés, les rejets et les zéros avant d'exécuter ; ne déduis pas l'acceptation de la valeur nulle ou non nulle de destino."
+        },
+        {
+          "type": "paragraph",
+          "text": "Affiche quatre lignes : Entiers : suivi de chaque entier accepté et d'un point-virgule ; Rejetés : N ; Zéros acceptés : N ; Données conservées : B. B doit comparer la taille, les valeurs et l'ordre à une copie initiale. La collection vide affiche Entiers : sans nombres, deux comptes nuls et une conservation vraie. On compare les valeurs finies copiées, pas les caractères d'un fichier ni les détails internes de leur représentation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste aussi {0.0} ; {0.5} ; {-0.5} ; {-100.0,100.0} ; {-100.5,100.5} ; et {0.0,0.5,0.0,-0.5}. Les cas fractionnaires isolés et les mélanges avec zéro permettent de distinguer un rejet d'un candidat nul. Les bornes incluses et les valeurs au-delà détectent une protection mal placée. Change la destination initiale de 17 à -8 et vérifie que le rapport ne dépend pas de cette valeur."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\n// Reconstruis convertir_entero avant main, ou déclare sa signature et définis-la après.\nint main() {\n    // Construis la classification, les comptes et la vérification de conservation.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Construis ce transfert sans copier la référence suivante. Réutilise ta fonction contrôlée ; l'éditeur ne fournit ni classification ni vérification de conservation. Une solution équivalente peut organiser les étapes autrement, mais elle doit utiliser le bool d'acceptation, préserver les répétitions et l'ordre, et vérifier les cas vides, les bornes et les fractions avant de considérer le rapport comme correct."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence de classification et révision de l'exactitude"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence utilise {-100.0, -2.5, 0.0, 4.0, 100.0, 101.0}, des données différentes du premier essai. Elle garde tous les entiers acceptés, y compris zéro, et décide chaque ajout d'après le bool. La vérification de conservation retrouve std::size_t, fourni par <cstddef> et déjà utilisé pour les indices : elle vérifie d'abord les tailles, puis ne parcourt que les positions inférieures à la taille."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n    if (vuelta != origen) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::vector<double> origen{-100.0, -2.5, 0.0, 4.0, 100.0, 101.0};\n    const std::vector<double> copia = origen;\n    std::vector<int> enteros;\n    int rechazados{0};\n    int ceros{0};\n    for (const double dato : origen) {\n        int destino{17};\n        const bool aceptado = convertir_entero(dato, destino);\n        if (aceptado) {\n            enteros.push_back(destino);\n            if (destino == 0) {\n                ++ceros;\n            }\n        } else {\n            ++rechazados;\n        }\n    }\n    bool conservados = origen.size() == copia.size();\n    if (conservados) {\n        for (std::size_t i{0}; i < origen.size(); ++i) {\n            if (origen.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n    std::cout << \"Entiers :\";\n    for (const int valor : enteros) {\n        std::cout << valor << \";\";\n    }\n    std::cout << \"\\nRejetés : \" << rechazados\n              << \"\\nZéros acceptés : \" << ceros\n              << \"\\nDonnées conservées : \" << conservados << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence affiche Entiers :-100;0;4;100;, Rejetés : 2, Zéros acceptés : 1 et Données conservées : 1 sur quatre lignes. -2.5 est rejeté à cause de sa fraction et 101 parce qu'il sort de l'intervalle. Aucun n'ajoute l'ancienne destination 17 au rapport. Critères : préserver l'ordre et les répétitions des acceptations, compter séparément les rejets et les zéros, conserver toute l'origine et classer les cas vides et les bornes sans accès à des indices inexistants. Changer la destination initiale ne doit pas modifier la classification."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__funciones_y_contratos__conversion_comprobada_sin_perdida__coleccion_con_fraccion_proxima_y_ceros",
+          "question": "Prévois les quatre lignes pour cette nouvelle collection. 3.0000001 est stocké comme une valeur différente de 3.0 ; aucune tolérance n'est acceptée.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <cmath>\n#include <vector>\n#include <cstddef>\n\nbool convertir_entero(double origen, int& destino) {\n    if (!std::isfinite(origen) || origen < -100.0 || origen > 100.0) {\n        return false;\n    }\n    const int candidato = static_cast<int>(origen);\n    const double vuelta = static_cast<double>(candidato);\n    if (vuelta != origen) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nint main() {\n    std::vector<double> origen{3.0000001, 0.0, -0.5, 5.0, -100.5, 0.0, 100.0};\n    const std::vector<double> copia = origen;\n    std::vector<int> enteros;\n    int rechazados{0};\n    int ceros{0};\n    for (const double dato : origen) {\n        int destino{17};\n        const bool aceptado = convertir_entero(dato, destino);\n        if (aceptado) {\n            enteros.push_back(destino);\n            if (destino == 0) {\n                ++ceros;\n            }\n        } else {\n            ++rechazados;\n        }\n    }\n    bool conservados = origen.size() == copia.size();\n    if (conservados) {\n        for (std::size_t i{0}; i < origen.size(); ++i) {\n            if (origen.at(i) != copia.at(i)) {\n                conservados = false;\n            }\n        }\n    }\n    std::cout << \"Entiers :\";\n    for (const int valor : enteros) {\n        std::cout << valor << \";\";\n    }\n    std::cout << \"\\nRejetés : \" << rechazados\n              << \"\\nZéros acceptés : \" << ceros\n              << \"\\nDonnées conservées : \" << conservados << \"\\n\";\n    return 0;\n}\n",
+          "answers": [
+            "Entiers :0;5;0;100;\nRejetés : 3\nZéros acceptés : 2\nDonnées conservées : 1"
+          ],
+          "explanation": "La valeur proche de trois, moins un demi et le dépassement -100.5 sont rejetés. Les deux zéros, cinq et cent sont conservés dans l'ordre. L'égalité exacte vérifie la valeur reçue et le bool distingue chaque rejet d'un zéro accepté."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une séance ultérieure, reconstruis convertir_entero sans consulter son corps et utilise-la avec une collection personnelle comprenant un entier négatif, zéro, une fraction proche de zéro et une valeur hors domaine. Prévois les valeurs acceptées et la destination après les rejets, exécute et justifie chaque différence. Ne prends pas la reconnaissance d'une sortie déjà vue comme critère d'acceptation."
+        },
+        {
+          "type": "note",
+          "text": "La lecture complémentaire traite les conversions, le rétrécissement et les conversions contrôlées (Stroustrup, 2024, sections 2.9 et 7.4.7). narrow et round_to du support PPP ne sont pas des fonctions de la bibliothèque standard ; nous utilisons ici convertir_entero et les conditions d'acceptation propres à cette leçon. N4950 et le projet HTML précisent la troncature, la représentabilité et la conversion des entiers en virgule flottante (Köppe et al., 2023, section [conv.fpint] ; Working draft: Programming languages — C++, s. d., section [conv.fpint]). La finitude est décrite dans l'interface C++ de <cmath> (Working draft: Programming languages — C++, s. d., section [cmath.syn])."
+        }
+      ]
+    }
+  ]
+}
