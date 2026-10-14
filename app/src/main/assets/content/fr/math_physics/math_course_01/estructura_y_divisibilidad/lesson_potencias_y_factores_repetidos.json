@@ -1,0 +1,532 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__potencias_y_factores_repetidos",
+  "title": "Puissances : facteurs, signes et transformations",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compter les facteurs, sans additionner la base"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une puissance indique combien de fois un facteur apparaît. Dans 3², il y a deux facteurs trois : 3 × 3 = 9. Dans 3³, il y en a trois : 3 × 3 × 3 = 27. Le produit 3 × 2 = 6 et la somme 3 + 3 = 6 ont un autre sens. Écrire d'abord les facteurs permet de vérifier une petite puissance sans dépendre d'une consigne mémorisée."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencia_como_producto",
+          "prompt": "Calcule 4³ à partir des facteurs répétés.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencia_como_producto__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "64"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4³ = 4 × 4 × 4 = 64. L'exposant compte trois facteurs.",
+            "incorrect": "4 × 3 et 4 + 4 + 4 ne représentent pas cette puissance : ils répètent des termes à additionner, pas des facteurs."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escritura_potencia",
+          "prompt": "Quelle puissance représente 5 × 5 × 5 × 5 ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escritura_potencia__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4⁵",
+                  "reviewFeedback": "Dans la puissance choisie, identifie quel nombre se répète et combien de fois. Compare-les aux facteurs du produit initial."
+                },
+                {
+                  "id": "b",
+                  "label": "5⁴",
+                  "reviewFeedback": "Relie la base au facteur répété et l'exposant au nombre de ses occurrences. Vérifie que la puissance reproduit exactement le produit."
+                },
+                {
+                  "id": "c",
+                  "label": "5 × 4",
+                  "reviewFeedback": "Revois la différence entre additionner des copies à l'aide d'une multiplication et multiplier des facteurs identiques. Développe ton choix pour comparer les deux significations."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La base vaut 5 et apparaît quatre fois : 5⁴.",
+            "incorrect": "Permuter base et exposant change les facteurs. Multiplier 5 par 4 ne répète pas quatre fois le facteur cinq."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réunir des blocs de même base"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans 2³ × 2², le premier bloc contient trois facteurs deux et le deuxième en contient deux. Il y en a cinq au total : 2³ × 2² = 2⁵. Pour des exposants positifs, aᵐ × aⁿ = aᵐ⁺ⁿ, car les facteurs de même base sont réunis. Cette règle porte sur un produit : elle ne transforme pas une somme de puissances en une autre puissance."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_potencias",
+          "prompt": "Complète 3² × 3³ = 3ᵉ et calcule la valeur du produit.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_potencias__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Exposant e",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "v",
+                  "type": "numeric",
+                  "label": "Valeur",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "e": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "v": {
+                    "type": "numeric",
+                    "expected": "243"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "On réunit deux et trois facteurs trois : e = 5 et 3⁵ = 243.",
+            "incorrect": "Les exposants comptent des facteurs : on les additionne donc dans ce produit. Les multiplier donnerait six facteurs et une autre valeur."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_frente_suma_potencias",
+          "prompt": "Calcule les deux expressions et vérifie si la même transformation leur convient.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_frente_suma_potencias__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "2² × 2³",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "s",
+                  "type": "numeric",
+                  "label": "2² + 2³",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "p": {
+                    "type": "numeric",
+                    "expected": "32"
+                  },
+                  "s": {
+                    "type": "numeric",
+                    "expected": "12"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le produit vaut 32 = 2⁵ ; la somme vaut 4 + 8 = 12. Additionner les exposants ne calcule pas une somme de puissances.",
+            "incorrect": "La règle réunit des facteurs multipliés. Dans une somme, on additionne les valeurs de deux blocs déjà calculés."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Répéter un bloc de facteurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans (2³)², un bloc de trois facteurs deux se répète deux fois : (2 × 2 × 2) × (2 × 2 × 2). Il y a six facteurs, donc (2³)² = 2⁶ = 64. En général, (aᵐ)ⁿ = aᵐⁿ pour des exposants positifs : n blocs de m facteurs contiennent m × n facteurs."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencia_de_potencia",
+          "prompt": "Complète (3²)² = 3ᵉ et calcule sa valeur.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencia_de_potencia__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Exposant e",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "v",
+                  "type": "numeric",
+                  "label": "Valeur",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "e": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "v": {
+                    "type": "numeric",
+                    "expected": "81"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Deux blocs de deux facteurs trois donnent quatre facteurs : e = 4 et la valeur vaut 81.",
+            "incorrect": "Dans une puissance de puissance, on répète le bloc entier. Additionner 2 + 2 coïncide ici par hasard ; compter les blocs explique aussi la règle lorsque les exposants diffèrent."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "bloques_exponentes_distintos",
+          "prompt": "Quel exposant e complète (2²)³ = 2ᵉ ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "bloques_exponentes_distintos__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Trois blocs de deux facteurs deux contiennent six facteurs : e = 6.",
+            "incorrect": "Additionner les exposants donnerait cinq facteurs, mais l'expression contient trois blocs de deux."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Puissance d'un produit, pas d'une somme"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans (2 × 5)², on trouve deux facteurs deux et deux facteurs cinq. L'associativité et la commutativité permettent de les regrouper : (2 × 5)² = 2² × 5² = 4 × 25 = 100. Il en va de même pour d'autres exposants positifs. En revanche, (2 + 5)² = 49 tandis que 2² + 5² = 29 : le carré d'une somme n'est pas la somme des carrés."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencia_producto",
+          "prompt": "Calcule (3 × 2)³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencia_producto__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "216"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "(3 × 2)³ = 3³ × 2³ = 27 × 8 = 216. On peut aussi calculer 6³ = 216.",
+            "incorrect": "L'exposant concerne les deux facteurs. Élever uniquement le 3 à la puissance et laisser le 2 sans le répéter change le produit."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cuadrado_suma_error",
+          "prompt": "On propose (4 + 1)² = 4² + 1². Quelle évaluation est correcte ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cuadrado_suma_error__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "C'est valable, car les puissances se distribuent sur toutes les opérations.",
+                  "reviewFeedback": "Vérifie la généralisation proposée en calculant les deux membres de l'égalité. Une propriété doit être justifiée pour l'opération précise à laquelle elle s'applique."
+                },
+                {
+                  "id": "b",
+                  "label": "C'est faux : le membre gauche vaut 25 et le membre droit vaut 17.",
+                  "reviewFeedback": "Calcule indépendamment les deux valeurs indiquées par ton choix. Explique comment le regroupement influence l'opération élevée au carré."
+                },
+                {
+                  "id": "c",
+                  "label": "C'est faux, car aucune puissance ne peut contenir de parenthèses.",
+                  "reviewFeedback": "Examine le sens d'une base entre parenthèses. Justifie le calcul avec les opérations indiquées, sans inventer de restriction."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La parenthèse vaut 5 et son carré 25. Les carrés séparés donnent 16 + 1 = 17.",
+            "incorrect": "Les parenthèses sont autorisées. Ce qui ne convient pas, c'est d'appliquer à une somme une transformation justifiée pour un produit."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Bases particulières et signes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour a différent de zéro, a⁰ = 1 est compatible avec la diminution de l'exposant en divisant par a. Cela inclut les bases négatives. Zéro élevé à un exposant positif se définit par un produit de zéros. Nous n'utilisons pas 0⁰ ici : l'argument consistant à diminuer l'exposant demanderait une division par zéro."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "bases_cero_uno_y_signo",
+          "prompt": "Calcule ces puissances définies.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "bases_cero_uno_y_signo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "0³",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "(−5)⁰",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "1⁵",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "7¹",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les résultats sont 0, 1, 1 et 7. Un exposant positif répète les facteurs ; une base non nulle élevée à zéro vaut un.",
+            "incorrect": "Ne confonds pas une base nulle avec un exposant nul. Une base égale à un reste égale à un et un seul facteur sept vaut sept."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "paridad_exponente_signos",
+          "prompt": "Calcule les trois expressions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "paridad_exponente_signos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "(−2)⁴",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "(−2)³",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "−2⁴",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "16"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "-16"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Quatre facteurs négatifs se regroupent par paires et donnent 16 ; trois laissent un facteur non apparié et donnent −8. Le signe moins extérieur de −2⁴ s'applique après la puissance et donne −16.",
+            "incorrect": "Identifie d'abord toute la base. Les parenthèses et le nombre de facteurs négatifs jouent des rôles différents."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir une écriture pour une situation"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "duplicaciones",
+          "prompt": "Une culture commence avec 5 groupes, et leur nombre double à chaque étape. Avec ce schéma, combien de groupes y aura-t-il après trois étapes ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "duplicaciones__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "40"
+              },
+              "unit": "groupes"
+            }
+          ],
+          "feedback": {
+            "correct": "Chaque étape multiplie par deux : 5 × 2³ = 40 groupes. Trois étapes ne signifient pas ajouter deux trois fois.",
+            "incorrect": "La quantité change à chaque doublement : 5, 10, 20, 40. N'utilise ni 5 × 2 × 3 ni 5 + 2 + 2 + 2."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencias_estructura_mixta",
+          "prompt": "Calcule 2³ × 2² − (−2)³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencias_estructura_mixta__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "40"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le produit vaut 2⁵ = 32 et (−2)³ = −8 ; ainsi 32 − (−8) = 40.",
+            "incorrect": "Applique les règles au produit de même base et conserve le signe négatif de la puissance que l'on soustrait."
+          }
+        }
+      ]
+    }
+  ]
+}

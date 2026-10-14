@@ -1,0 +1,532 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__potencias_y_factores_repetidos",
+  "title": "Powers: Factors, Signs, and Transformations",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Count Factors, Don't Add the Base"
+        },
+        {
+          "type": "paragraph",
+          "text": "A power records how many times a factor appears. In 3² there are two factors of three: 3 × 3 = 9. In 3³ there are three: 3 × 3 × 3 = 27. The product 3 × 2 = 6 and the sum 3 + 3 = 6 have different meanings. Writing out the factors first lets us check a small power without relying on a memorized instruction."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencia_como_producto",
+          "prompt": "Calculate 4³ using its repeated factors.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencia_como_producto__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "64"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4³ = 4 × 4 × 4 = 64. The exponent counts three factors.",
+            "incorrect": "4 × 3 and 4 + 4 + 4 do not represent the power: they repeat addends, not factors."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escritura_potencia",
+          "prompt": "Which power represents 5 × 5 × 5 × 5?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escritura_potencia__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4⁵",
+                  "reviewFeedback": "In the power you selected, identify which number repeats and how many times. Compare both with the factors of the original product."
+                },
+                {
+                  "id": "b",
+                  "label": "5⁴",
+                  "reviewFeedback": "Relate the base to the repeated factor and the exponent to its number of occurrences. Check that the power reproduces the multiplication exactly."
+                },
+                {
+                  "id": "c",
+                  "label": "5 × 4",
+                  "reviewFeedback": "Review the difference between adding repeated copies by multiplication and multiplying equal factors. Expand your choice to compare the two meanings."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The base is 5 and appears four times: 5⁴.",
+            "incorrect": "Switching base and exponent changes the factors. Multiplying 5 by 4 does not repeat the factor five four times."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combine Blocks with the Same Base"
+        },
+        {
+          "type": "paragraph",
+          "text": "In 2³ × 2², the first block contains three factors of two and the second contains two. Together there are five: 2³ × 2² = 2⁵. For positive exponents, aᵐ × aⁿ = aᵐ⁺ⁿ because we combine factors with the same base. This rule applies to a product; it does not turn a sum of powers into another power."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_potencias",
+          "prompt": "Complete 3² × 3³ = 3ᵉ and calculate the product.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_potencias__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Exponent e",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "v",
+                  "type": "numeric",
+                  "label": "Value",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "e": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "v": {
+                    "type": "numeric",
+                    "expected": "243"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Two and three factors of three are combined: e = 5 and 3⁵ = 243.",
+            "incorrect": "Exponents count factors, so we add them in this product. Multiplying the exponents would give six factors and a different value."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_frente_suma_potencias",
+          "prompt": "Calculate both expressions and determine whether the same transformation applies to both.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_frente_suma_potencias__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "2² × 2³",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "s",
+                  "type": "numeric",
+                  "label": "2² + 2³",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "p": {
+                    "type": "numeric",
+                    "expected": "32"
+                  },
+                  "s": {
+                    "type": "numeric",
+                    "expected": "12"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The product is 32 = 2⁵; the sum is 4 + 8 = 12. Adding the exponents does not calculate a sum of powers.",
+            "incorrect": "The rule combines multiplied factors. In a sum, we add the values of two blocks that have already been calculated."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Repeat a Block of Factors"
+        },
+        {
+          "type": "paragraph",
+          "text": "In (2³)², a block of three factors of two repeats twice: (2 × 2 × 2) × (2 × 2 × 2). There are six factors, so (2³)² = 2⁶ = 64. In general, (aᵐ)ⁿ = aᵐⁿ for positive exponents: n blocks of m factors contain m × n factors."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencia_de_potencia",
+          "prompt": "Complete (3²)² = 3ᵉ and calculate its value.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencia_de_potencia__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "e",
+                  "type": "numeric",
+                  "label": "Exponent e",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "v",
+                  "type": "numeric",
+                  "label": "Value",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "e": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "v": {
+                    "type": "numeric",
+                    "expected": "81"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Two blocks of two factors of three make four factors: e = 4 and the value is 81.",
+            "incorrect": "When raising a power to another power, the entire block repeats. Here 2 + 2 happens to agree, but counting the blocks explains the rule for different exponents too."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "bloques_exponentes_distintos",
+          "prompt": "Which exponent e completes (2²)³ = 2ᵉ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "bloques_exponentes_distintos__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "6"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Three blocks of two factors of two contain six factors: e = 6.",
+            "incorrect": "Adding exponents would give five factors, but this expression contains three blocks of two."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Power of a Product, Not of a Sum"
+        },
+        {
+          "type": "paragraph",
+          "text": "In (2 × 5)² there are two factors of two and two factors of five. Association and commutation let us group them: (2 × 5)² = 2² × 5² = 4 × 25 = 100. The same holds for other positive exponents. In contrast, (2 + 5)² = 49 while 2² + 5² = 29: squaring a sum does not mean adding the squares."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencia_producto",
+          "prompt": "Calculate (3 × 2)³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencia_producto__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "216"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "(3 × 2)³ = 3³ × 2³ = 27 × 8 = 216. Likewise, 6³ = 216.",
+            "incorrect": "The exponent applies to both factors. Raising only the 3 while keeping the 2 unrepeated changes the product."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cuadrado_suma_error",
+          "prompt": "Someone proposes (4 + 1)² = 4² + 1². Which evaluation is correct?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cuadrado_suma_error__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is valid because powers distribute over every operation.",
+                  "reviewFeedback": "Check your generalization by calculating both sides of the equality. A property must be justified for the specific operation to which it is applied."
+                },
+                {
+                  "id": "b",
+                  "label": "It is false: the left-hand side equals 25 and the right-hand side equals 17.",
+                  "reviewFeedback": "Calculate independently the two values stated in your choice. Explain how grouping affects the operation being squared."
+                },
+                {
+                  "id": "c",
+                  "label": "It is false because no power can contain parentheses.",
+                  "reviewFeedback": "Consider the meaning of a base written in parentheses. Justify the calculation using the indicated operations instead of inventing a restriction."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The parentheses give 5, whose square is 25. The separate squares add to 16 + 1 = 17.",
+            "incorrect": "Parentheses are valid; what is invalid is applying to a sum a transformation justified for a product."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Special Bases and Signs"
+        },
+        {
+          "type": "paragraph",
+          "text": "For a different from zero, a⁰ = 1 is consistent with lowering the exponent by dividing by a. This includes negative bases. Zero raised to a positive exponent is defined by a product of zeros. We do not use 0⁰ here: the exponent-lowering argument would require division by zero."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "bases_cero_uno_y_signo",
+          "prompt": "Calculate these defined powers.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "bases_cero_uno_y_signo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "0³",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "(−5)⁰",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "1⁵",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "7¹",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The results are 0, 1, 1, and 7. A positive exponent repeats factors; the zero power of a nonzero base equals one.",
+            "incorrect": "Do not confuse a zero base with a zero exponent. One as a base stays one; a single factor of seven equals seven."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "paridad_exponente_signos",
+          "prompt": "Calculate the three expressions.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "paridad_exponente_signos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "(−2)⁴",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "(−2)³",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "−2⁴",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "16"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "-16"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Four negative factors pair up to give 16; three leave one unpaired and give −8. The outer minus in −2⁴ is applied after the power and gives −16.",
+            "incorrect": "First identify the complete base. Parentheses and the number of negative factors have different roles."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose an Expression for a Situation"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "duplicaciones",
+          "prompt": "A culture begins with 5 groups, and the number of groups doubles at each stage. Following that pattern, how many groups will there be after three stages?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "duplicaciones__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "40"
+              },
+              "unit": "groups"
+            }
+          ],
+          "feedback": {
+            "correct": "Each stage multiplies by two: 5 × 2³ = 40 groups. Three stages do not mean adding two three times.",
+            "incorrect": "The quantity updates with each doubling: 5, 10, 20, 40. Do not use 5 × 2 × 3 or 5 + 2 + 2 + 2."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencias_estructura_mixta",
+          "prompt": "Calculate 2³ × 2² − (−2)³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencias_estructura_mixta__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "40"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The product is 2⁵ = 32 and (−2)³ = −8; therefore 32 − (−8) = 40.",
+            "incorrect": "Apply the laws to the product with a shared base and preserve the negative sign of the power being subtracted."
+          }
+        }
+      ]
+    }
+  ]
+}

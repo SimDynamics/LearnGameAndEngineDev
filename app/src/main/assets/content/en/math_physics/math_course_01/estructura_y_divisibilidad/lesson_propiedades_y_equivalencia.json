@@ -1,0 +1,644 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__propiedades_y_equivalencia",
+  "title": "Properties and Equivalent Transformations",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Change the Expression Without Changing Its Value"
+        },
+        {
+          "type": "paragraph",
+          "text": "Two expressions can look different and still represent the same number. To use a transformation safely, we need to explain why it preserves the value. Properties of operations supply those reasons and help us choose easier calculations. They are not just names to memorize separately from doing arithmetic: they describe which changes are permitted."
+        },
+        {
+          "type": "paragraph",
+          "text": "Commutativity lets us swap the order of addends or factors: \\(8+5=5+8\\) and \\(8\\times5=5\\times8\\). In both cases, the order changes, not the operation. Subtraction does not have that property: \\(8-5=3\\), but \\(5-8=-3\\). Nor can we exchange the dividend and divisor and expect the same quotient."
+        },
+        {
+          "type": "paragraph",
+          "text": "Associativity lets us regroup a sum or a product without changing the order of its elements. In \\((2+7)+3=2+(7+3)\\), both sides equal 12. In \\((4\\times5)\\times2=4\\times(5\\times2)\\), both equal 40. Regrouping can create convenient tens or simpler factors."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "nombres_propiedades",
+          "prompt": "Match each transformation to the property that changes the expression.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "nombres_propiedades__relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "a",
+                  "label": "7 + 4 = 4 + 7"
+                },
+                {
+                  "id": "b",
+                  "label": "(2 + 5) + 8 = 2 + (5 + 8)"
+                },
+                {
+                  "id": "c",
+                  "label": "3 × (4 + 6) = 3 × 4 + 3 × 6"
+                },
+                {
+                  "id": "d",
+                  "label": "9 × 1 = 9"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "as",
+                  "label": "Associativity of addition"
+                },
+                {
+                  "id": "ne",
+                  "label": "Multiplicative identity"
+                },
+                {
+                  "id": "di",
+                  "label": "Distributivity"
+                },
+                {
+                  "id": "co",
+                  "label": "Commutativity of addition"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "a": "co",
+                  "b": "as",
+                  "c": "di",
+                  "d": "ne"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Swapping order uses commutativity; changing grouping uses associativity; multiplying both addends uses distributivity; multiplying by one preserves a number.",
+            "incorrect": "Look at what changed in each step. Regrouping does not swap the numbers, and distributivity connects multiplication and addition."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "asociar_producto_comodo",
+          "prompt": "Find a convenient grouping of 4 × 7 × 25: write the product of 4 and 25, then the total result.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "asociar_producto_comodo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "g",
+                  "type": "numeric",
+                  "label": "4 × 25",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "t",
+                  "type": "numeric",
+                  "label": "Total product",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "g": {
+                    "type": "numeric",
+                    "expected": "100"
+                  },
+                  "t": {
+                    "type": "numeric",
+                    "expected": "700"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Commutativity brings 4 and 25 together; associativity forms (4 × 25) × 7 = 100 × 7 = 700.",
+            "incorrect": "Changing order or grouping does not remove any factors. Keep the seven while combining 4 and 25."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Group Numbers with Their Signs"
+        },
+        {
+          "type": "paragraph",
+          "text": "A subtraction can be rewritten as adding the opposite. Thus \\(17-8+3=17+(-8)+3\\). We can now regroup or rearrange the terms of the sum while keeping each sign. A convenient grouping is \\((17+3)+(-8)=20-8=12\\). Moving the 8 and turning it into +8 without justification would be incorrect."
+        },
+        {
+          "type": "paragraph",
+          "text": "Zero is the additive identity: \\(a+0=a\\). One is the multiplicative identity: \\(a\\times1=a\\). Multiplying by zero generally does not preserve a value; it turns it into zero. Thus, zero is not a multiplicative identity. If a factor is zero, the entire product is zero regardless of the other factors."
+        },
+        {
+          "type": "paragraph",
+          "text": "Do not apply properties to operations that do not have them. For example, (18 - 7) - 2 is 9, whereas 18 - (7 - 2) is 13. Moving these parentheses changes what gets subtracted. When a transformation mixes addition and subtraction, first rewrite subtractions as sums of opposites, or explain exactly what happens to the signs."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_signos",
+          "prompt": "Calculate 14 - 9 + 6 by finding a convenient grouping.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_signos__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "11"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "14 + (-9) + 6 = (14 + 6) - 9 = 20 - 9 = 11.",
+            "incorrect": "When moving the term -9, preserve its sign. Adding 14, 9, and 6 would represent a different expression."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "falsa_asociatividad",
+          "prompt": "Someone replaces 20 - (8 - 3) with (20 - 8) - 3. Which evaluation is correct?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "falsa_asociatividad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is correct because every operation is associative.",
+                  "reviewFeedback": "Test the claimed associativity with the specific subtraction in the question. Evaluate both groupings without changing signs or the order of the numbers."
+                },
+                {
+                  "id": "b",
+                  "label": "It is incorrect: the first expression equals 15 and the second equals 9.",
+                  "reviewFeedback": "Check both values stated in your choice while respecting the parentheses. Relate the comparison to the property being tested."
+                },
+                {
+                  "id": "c",
+                  "label": "It is correct because the same numbers appear.",
+                  "reviewFeedback": "Consider whether using the same numbers guarantees the same value. Analyze how parentheses change what is subtracted in each expression."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "In 20 - (8 - 3), we subtract 5 and obtain 15. In (20 - 8) - 3, we first subtract 8 and then 3, obtaining 9.",
+            "incorrect": "Subtraction is not associative. The same numbers do not guarantee the same value when grouping changes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "agrupar_cancelando",
+          "prompt": "Calculate 27 − 13 + 8 − 27.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "agrupar_cancelando__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-5"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "This is a sum of signed terms: 27 + (−13) + 8 + (−27). The opposites 27 and −27 cancel, leaving −13 + 8 = −5.",
+            "incorrect": "Keep the sign of each term when moving it. The two occurrences of 27 are not both positive addends."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distribute and Collect Again"
+        },
+        {
+          "type": "paragraph",
+          "text": "Distributivity connects multiplication and addition: \\(a\\times(b+c)=a\\times b+a\\times c\\). If four bags each contain seven light-colored counters and three dark ones, you can count four groups of ten or count separately \\(4\\times7+4\\times3\\). Both approaches give forty counters."
+        },
+        {
+          "type": "paragraph",
+          "text": "The same idea works with subtraction: \\(23\\times19=23\\times(20-1)=460-23=437\\). The factor 23 multiplies both 20 and 1. The reverse approach collects terms sharing a common factor: \\(6\\times8+6\\times2=6\\times(8+2)=60\\). This grouping is useful because both terms contain the factor six."
+        },
+        {
+          "type": "paragraph",
+          "text": "With negative numbers, you must also distribute the sign. \\((-3)\\times(5-2)=(-3)\\times5-(-3)\\times2=-15-(-6)=-9\\). You can check by evaluating the parentheses: \\((-3)\\times3=-9\\). Rewriting an expression in two ways and obtaining the same value is a useful check, provided both paths use valid rules."
+        },
+        {
+          "type": "note",
+          "text": "An equality means that both sides have the same value. If a step changes that value, the chain is no longer a correct solution, even when its final arithmetic is done properly."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "formas_equivalentes",
+          "prompt": "Select every expression that preserves the value of 26 × 9.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "formas_equivalentes__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "26 × 10 - 26",
+                  "reviewFeedback": "Interpret multiplication by ten as ten copies. Check what the subtracted term represents in your selected expression."
+                },
+                {
+                  "id": "b",
+                  "label": "26 × 10 - 1",
+                  "reviewFeedback": "Examine the size of the correction you subtract. Relate it to the difference between nine and ten copies of the quantity."
+                },
+                {
+                  "id": "c",
+                  "label": "(20 + 6) × 9",
+                  "reviewFeedback": "Check that splitting the quantity preserves its value, then that the multiplier still applies to the entire group."
+                },
+                {
+                  "id": "d",
+                  "label": "20 × 9 + 6",
+                  "reviewFeedback": "Consider how the multiplier should affect each part of the decomposed quantity. Calculate the whole value of your choice."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "26 × 9 = 26 × (10 - 1) = 260 - 26; likewise (20 + 6) × 9 = 180 + 54. Both equal 234.",
+            "incorrect": "Distributivity must include the entire factor in each term. Check the multiplication applied to every part, not just the first."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "calculo_distributivo",
+          "prompt": "Use a convenient transformation to calculate 32 × 19.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "calculo_distributivo__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "608"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "32 × (20 - 1) = 640 - 32 = 608.",
+            "incorrect": "Do not subtract only 1 after calculating 32 × 20: the 1 is also multiplied by 32."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reunir_factor",
+          "prompt": "Calculate 7 × 12 + 7 × 8 by collecting a common factor.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reunir_factor__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "140"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "7 × (12 + 8) = 7 × 20 = 140.",
+            "incorrect": "Both terms contain 7. Collecting them adds 12 and 8 rather than multiplying those two numbers."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Complete Every Part of the Transformation"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distribuir_factor_negativo",
+          "prompt": "Complete the products and the result of (−4) × (3 + 2).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distribuir_factor_negativo__datos",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "(−4) × 3",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "(−4) × 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "r",
+                  "type": "numeric",
+                  "label": "Complete result",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "-12"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "r": {
+                    "type": "numeric",
+                    "expected": "-20"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "text": "(−4) × (3 + 2) = "
+                },
+                {
+                  "field": "a"
+                },
+                {
+                  "text": " + "
+                },
+                {
+                  "field": "b"
+                },
+                {
+                  "text": " = "
+                },
+                {
+                  "field": "r"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "This gives −12 + (−8) = −20. The factor −4 multiplies each addend.",
+            "incorrect": "Do not leave the second addend unmultiplied, and do not change the negative sign of the factor."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_comun_diferencia",
+          "prompt": "Calculate 9 × 17 − 9 × 7 by collecting the common factor.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_comun_diferencia__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "90"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9 × (17 − 7) = 9 × 10 = 90.",
+            "incorrect": "Collecting the factor preserves subtraction between the other values. Do not add 17 and 7."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Take the Opposite of a Group"
+        },
+        {
+          "type": "paragraph",
+          "text": "The opposite of a sum reverses all its terms. Since (a + b) + (−a − b) = 0, it follows that −(a + b) = −a − b. For a difference, −(a − b) = −a + b: the term being subtracted also changes to its opposite. With a = 2 and b = 5, −(2 − 5) = 3 = −2 + 5."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "opuesto_suma_diferencia",
+          "prompt": "Calculate both expressions; take the opposite of the entire group.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "opuesto_suma_diferencia__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "s",
+                  "type": "numeric",
+                  "label": "−(−4 + 7)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "−(−4 − 7)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "s": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "11"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first group equals 3, so its opposite is −3. The second equals −11, so its opposite is 11. Removing the parentheses correctly gives 4 − 7 and 4 + 7.",
+            "incorrect": "The outer minus affects the entire group. Changing only the first sign creates a different expression."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "quitar_parentesis_menos",
+          "prompt": "Which expression has the same value as 8 − (3 − 5)?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "quitar_parentesis_menos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "8 − 3 − 5",
+                  "reviewFeedback": "Check the effect of subtracting a whole group that itself contains subtraction. Evaluate your expression using the original values before removing parentheses."
+                },
+                {
+                  "id": "b",
+                  "label": "8 + 3 − 5",
+                  "reviewFeedback": "Relate each sign in your choice to the original subtraction of the whole group. Check whether changing a sign preserves the expression's value."
+                },
+                {
+                  "id": "c",
+                  "label": "8 − 3 + 5",
+                  "reviewFeedback": "Evaluate both expressions to check your selected transformation. Explain how the outer minus acts on each term in the group being subtracted."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting the group reverses both terms: 8 − 3 + 5 = 10.",
+            "incorrect": "The group 3 − 5 equals −2. Subtracting it increases eight by two; preserve the effect of the outer minus on every term."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Use the Same Operation to Recover the Unknown"
+        },
+        {
+          "type": "paragraph",
+          "text": "If we add the same quantity to both sides of an equality, the equality remains true. We can also undo a common addition: if 6 + b = 6 + c, subtracting six from both sides gives b = c. We are not merely crossing out similar-looking digits: we are applying an operation that preserves equality."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelacion_aditiva",
+          "prompt": "Find the integer that makes 9 + ? = 9 + (−4) true.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cancelacion_aditiva__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-4"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The integer is −4. Subtracting nine from both sides leaves ? = −4.",
+            "incorrect": "The two nines contribute the same amount. The unknown is the other addend, not the total sum."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "igualdad_operacion_ambos_lados",
+          "prompt": "You know that x + 5 = 2. Which step preserves equality and recovers x?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "igualdad_operacion_ambos_lados__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Add five only to the left side.",
+                  "reviewFeedback": "Consider the effect of applying an operation to only one side of an equality. Check whether this preserves balance and isolates the unknown."
+                },
+                {
+                  "id": "b",
+                  "label": "Subtract five from both sides: x = −3.",
+                  "reviewFeedback": "Check that the same operation is applied to both sides. Then verify the value of the unknown by substituting it into the original equality."
+                },
+                {
+                  "id": "c",
+                  "label": "Replace x + 5 with x × 5 without changing the other side.",
+                  "reviewFeedback": "Review the operation represented by each expression. Replacing addition with multiplication requires a justification that preserves equality."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting five from both sides reverses the addition: x + 5 − 5 = 2 − 5, giving x = −3.",
+            "incorrect": "Operating on only one side or replacing addition with multiplication changes the relationship. Check the solution using −3 + 5 = 2."
+          }
+        }
+      ]
+    }
+  ]
+}
