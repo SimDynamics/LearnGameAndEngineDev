@@ -873,6 +873,352 @@
           "text": "La forma elegida no decide por sí sola cuántas soluciones habrá. Una igualdad puede dejar una familia de pares o ser verdadera en todo su dominio; dos comparaciones pueden dejar un único valor. Resolver exige describir todos los valores que cumplen, o justificar que no queda ninguno, manteniendo el significado de las incógnitas (Gelfand & Shen, 1993, pp. 94–95). La vuelta a los datos y al paso que pudo fallar permite recuperar el razonamiento y transferirlo a otra petición (Pólya, 1957, pp. 12–15, 60–61)."
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar qué cantidad se busca"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vuelve a dos ajustes racionales x e y que cumplen ax + by = u y cx + dy = v. a, b, c, d, u y v son seis datos conocidos; sólo x e y son incógnitas. Ahora interesa S = x + y, la suma de los ajustes, sin pedirlos por separado. Recupera el resultado ya justificado para un sistema con datos y decide cómo aprovecharlo para responder esta nueva pregunta."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_el_permiso_de_division_con_datos",
+          "prompt": "Define D = ad − bc. ¿Qué afirmación describe exactamente el permiso de división del criterio estudiado, sin excluir elecciones de datos que ese criterio aceptaba?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_el_permiso_de_division_con_datos__criterio",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Exigir que D sea positiva: una diferencia negativa impide dividir."
+                },
+                {
+                  "id": "b",
+                  "label": "Exigir que D sea no nula, permitiendo coeficientes individuales cero cuando se cumpla esa condición."
+                },
+                {
+                  "id": "c",
+                  "label": "Exigir que todos los coeficientes sean no nulos, además de que D sea no nula."
+                },
+                {
+                  "id": "d",
+                  "label": "Exigir que u y v sean no nulos, sin comprobar la diferencia de productos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El permiso del criterio es D ≠ 0. Puede ser una diferencia negativa y puede haber coeficientes individuales cero. Exigir además que todos sean no nulos excluiría datos que la receta admite. Los valores de u y v no deciden si D se anula (Lang, 1971, p. 57).",
+            "incorrect": "Recupera qué cantidad aparecía como divisor. D ≠ 0 no garantiza que cada coeficiente individual sea no nulo; tampoco obliga a que D sea positiva."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producir_la_suma_en_terminos_de_datos",
+          "prompt": "Los seis datos racionales a, b, c, d, u y v cumplen D = ad − bc ≠ 0. Las condiciones son ax + by = u y cx + dy = v. Escribe una expresión de S = x + y que sea válida para todas esas elecciones de datos. No se piden una ecuación ni las dos incógnitas por separado. Puedes usar D con la definición indicada; se admiten formas equivalentes que no añadan restricciones al dominio.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producir_la_suma_en_terminos_de_datos__S",
+              "type": "math_expression_input",
+              "label": "Expresión de la suma S en términos de los datos",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "((d-c)*u+(a-b)*v)/D"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Al sumar las dos expresiones ya justificadas del par, queda S = [du − bv + av − cu]/D, equivalente a [(d − c)u + (a − b)v]/D. Otra ruta combina (d − c) veces la primera ecuación con (a − b) veces la segunda: los coeficientes de x y de y quedan ambos en D, así que produce DS = (d − c)u + (a − b)v. D no nula permite obtener la misma suma. Esa combinación determina S; no reemplaza por sí sola las dos condiciones cuando se quiere recuperar el par completo (Lang, 1971, p. 57).",
+            "incorrect": "Conserva el objetivo S = x + y y los seis datos con sus signos. Puedes recuperar las expresiones del par o formar una combinación que tenga el mismo coeficiente de x y de y. No sumes sólo u y v como si los coeficientes originales fueran todos uno."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Cambiar la cantidad buscada permite aprovechar un resultado previo sin repetir automáticamente toda su deducción. La nueva expresión debe responder a la pregunta y conservar sus condiciones de uso. Volver sobre el resultado y trasladarlo a otra petición ayuda a comprender sus conexiones y a revisar el argumento (Pólya, 1957, pp. 14–18, 60–61)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisar qué datos admite una propuesta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un apunte conserva D = ad − bc ≠ 0, usa x = (du − bv)/D y propone después y = [u − a(du − bv)/D]/b. Afirma que esta última expresión sirve para todas las elecciones de datos permitidas por D ≠ 0. Antes de aceptar la afirmación, examina cada divisor y vuelve a las condiciones originales."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_un_divisor_individual_no_garantizado",
+          "prompt": "Toma a = −2, b = 0, c = 3, d = 4, u = 3 y v = 1. Las originales son −2x = 3 y 3x + 4y = 1. Calcula D y encuentra el mismo par para las dos condiciones por cualquier ruta definida. Escribe también S = x + y y decide si la expresión del apunte para y puede evaluarse con estos datos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_un_divisor_individual_no_garantizado__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "D",
+                  "type": "numeric",
+                  "label": "Diferencia D para los datos del testigo",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x que cumple las originales",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y que cumple las originales",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "S",
+                  "type": "numeric",
+                  "label": "Suma S = x + y del par",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "propuesta",
+                  "type": "dropdown",
+                  "label": "Estado de la expresión propuesta para y con estos datos",
+                  "options": [
+                    {
+                      "id": "definida",
+                      "label": "Está definida y produce el valor de y."
+                    },
+                    {
+                      "id": "cero",
+                      "label": "El cociente 0/0 tiene valor cero."
+                    },
+                    {
+                      "id": "no_definida",
+                      "label": "No está definida: aparece un divisor cero."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "D": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-3/2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "11/8"
+                  },
+                  "S": {
+                    "type": "numeric",
+                    "expected": "-1/8"
+                  },
+                  "propuesta": {
+                    "type": "exact_text",
+                    "expected": "no_definida"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "D = (−2)·4 − 0·3 = −8. La primera original da x = −3/2; la segunda da 4y = 1 − 3(−3/2) = 11/2, por lo que y = 11/8. La suma es −12/8 + 11/8 = −1/8. Las originales producen tres y uno. En el apunte, el numerador final es 3 − (−2)(−3/2) = 0, pero el divisor b también es cero: 0/0 no está definido. Existe un par válido aunque esa expresión no pueda calcularlo.",
+            "incorrect": "Conserva los signos de los datos y usa ambas originales para el mismo par. Que b sea cero no obliga a D a ser cero ni a y a valer cero. Revisa la división del apunte antes de asignar un valor a su cociente."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparar_la_expresion_sin_excluir_datos",
+          "prompt": "Vuelve a todos los datos racionales a, b, c, d, u y v con D = ad − bc ≠ 0. Repara la propuesta escribiendo una expresión de y que sirva en todo ese dominio, sin añadir la condición b ≠ 0. Se pide una expresión en términos de los datos, no una ecuación ni sólo el valor del testigo. Puedes usar D con su definición y cualquier forma equivalente que conserve el dominio.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparar_la_expresion_sin_excluir_datos__y",
+              "type": "math_expression_input",
+              "label": "Expresión reparada de y para todos los datos admitidos",
+              "inputMode": "simple",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "parametric_rational_expression",
+                "parameters": [
+                  "a",
+                  "b",
+                  "c",
+                  "d",
+                  "u",
+                  "v"
+                ],
+                "definitions": {
+                  "D": "a*d-b*c"
+                },
+                "nonzero": [
+                  "D"
+                ],
+                "expected": "(a*v-c*u)/D"
+              }
+            },
+            {
+              "id": "reparar_la_expresion_sin_excluir_datos__diagnostico",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Hay que excluir del problema todos los datos con b = 0, aunque cumplan D ≠ 0."
+                },
+                {
+                  "id": "b",
+                  "label": "El testigo demuestra que D = 0 cuando b = 0, por lo que no existe un par solución."
+                },
+                {
+                  "id": "c",
+                  "label": "Dividir por b requiere una condición que D ≠ 0 no asegura; hay que reparar esa vía."
+                },
+                {
+                  "id": "d",
+                  "label": "Si el numerador y b son cero, podemos cancelar ambos para definir el valor de y."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La expresión y = (av − cu)/D está definida bajo el permiso original, sin dividir por b. Procede de la cancelación ya justificada y su comprobación en las dos condiciones; con el testigo obtiene (−2 − 9)/(−8) = 11/8. El diagnóstico correcto conserva los datos admitidos: la vía que divide por b necesita otra hipótesis y no sirve como fórmula para todo el dominio (Lang, 1971, p. 57).",
+            "incorrect": "Recupera una expresión que use sólo divisiones autorizadas para todas las elecciones indicadas. No salves el apunte eliminando un caso que el problema permite ni asignando un valor a 0/0. El ejemplo refuta la pretensión universal; la expresión reparada necesita la justificación general ya estudiada."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "volver_a_las_originales_segun_la_cantidad_buscada",
+          "prompt": "Considera A: x + y = 8 y 3x + 3y = 24; B: x − y = 2 y 4x − 4y = 8. Las incógnitas admiten todos los racionales. En ambos sistemas D = 0 y la receta de cocientes no está definida. Vuelve a sus originales. Calcula S = x + y con las propuestas (2, 0) y (3, 1) de B; después marca todas las afirmaciones justificadas sobre el objetivo S.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "volver_a_las_originales_segun_la_cantidad_buscada__sumas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "S con (x, y) = (2, 0)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "S con (x, y) = (3, 1)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            },
+            {
+              "id": "volver_a_las_originales_segun_la_cantidad_buscada__conclusiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A determina una misma suma S para todos sus pares, aunque no determine un único par."
+                },
+                {
+                  "id": "b",
+                  "label": "D = 0 demuestra que ninguno de los dos sistemas tiene pares solución."
+                },
+                {
+                  "id": "c",
+                  "label": "Los dos pares ofrecidos cumplen B y producen sumas distintas; B no fija una única S."
+                },
+                {
+                  "id": "d",
+                  "label": "Como la segunda ecuación repite la primera, todos los pares racionales cumplen cada sistema."
+                },
+                {
+                  "id": "e",
+                  "label": "Cuando D = 0, las condiciones originales no pueden informar ninguna cantidad derivada."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A conserva x + y = 8: todos sus pares tienen S = 8, aunque, por ejemplo, (0, 8) y (1, 7) sean pares distintos. En B, (2, 0) y (3, 1) producen diferencias dos y, en la segunda ecuación, ocho; ambos cumplen. Sus sumas son dos y cuatro, así que S no queda fijada. Repetir una condición no admite todos los pares: todavía debe cumplirse la primera. D nula impide usar aquella receta, pero el objetivo y las originales deciden lo que puede justificarse. Resolver y comprobar exige conservar las mismas asignaciones y el conjunto de soluciones, sin confundir una consecuencia con todas las condiciones (Gelfand & Shen, 1993, pp. 94–95).",
+            "incorrect": "Comprueba cada propuesta de B en sus dos originales antes de comparar sus sumas. En A, lee qué cantidad fija la primera ecuación. No extiendas la falta de permiso para dividir por D a una prohibición de razonar con las condiciones restantes."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Una recuperación completa revisa qué se busca, qué resultado previo puede utilizarse, qué divisiones siguen permitidas y qué afirman realmente las originales. Un testigo puede mostrar que una propuesta pierde datos admitidos; una justificación general sostiene la reparación. Cambiar el objetivo también puede cambiar qué información basta para responderlo (Pólya, 1957, pp. 14–18, 60–61)."
+        }
+      ]
     }
   ]
 }
