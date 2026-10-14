@@ -1,0 +1,217 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__consultas_const_y_objetos_constantes",
+  "title": "Consultations const et objets constants",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Séparer l'observation de la modification"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une classe doit distinguer les opérations qui consultent un objet de celles qui le modifient. int x() const place const après la liste des paramètres pour déclarer que cette consultation ne modifie pas l'état du point. Elle peut être appelée sur un Punto modifiable comme sur un const Punto. mover_a change les coordonnées et n'est pas déclarée const."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 5};\n    const Punto referencia{1, 3};\n    std::cout << punto.x() << \" \" << referencia.x();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "const dans la déclaration d'une variable exprime que cet objet ne doit pas être modifié par les opérations ordinaires. const sur une fonction membre indique comment cette opération peut être utilisée sur l'objet auquel elle s'applique. Ces deux positions ont des rôles différents mais liés."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une consultation n'a pas besoin d'autorisation de modification"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu souhaites consulter une coordonnée de const Punto origen{0, 0}. Quelle signature le permet ?",
+          "options": [
+            "void mover_a(int x, int y);",
+            "int x();",
+            "int x() const;"
+          ],
+          "correctIndex": 2,
+          "explanation": "Une consultation const peut être appelée sur un objet constant."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le mot-clé qui déclare cette consultation comme non modificatrice.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() ___ { return x_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    const Punto punto{4, 2};\n    std::cout << punto.x();\n    return 0;\n}\n",
+          "answers": [
+            "const"
+          ],
+          "explanation": "Ce mot-clé se place après les paramètres de la fonction membre."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{3, 7};\n    const Punto copia = punto;\n    punto.mover_a(8, 1);\n    std::cout << copia.x() << \",\" << copia.y() << \" \" << punto.x() << \",\" << punto.y();\n    return 0;\n}\n",
+          "answers": [
+            "3,7 8,1"
+          ],
+          "explanation": "La copie constante conserve l'ancienne valeur, et la consultation permet de l'observer."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le compilateur impose le respect de cette classification"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    const Punto punto{1, 2};\n    punto.mover_a(3, 4); // Erreur intentionnelle : tentative de modification d'un objet const.\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pourquoi cet appel est-il rejeté alors que les nombres sont petits ?",
+          "options": [
+            "const empêche seulement de réaffecter l'objet entier ; ses membres restent modifiables.",
+            "Les valeurs sont dans le domaine, donc une modification d'un objet const doit être autorisée.",
+            "L'opération modifie l'objet, qui a été déclaré const."
+          ],
+          "correctIndex": 2,
+          "explanation": "La restriction concerne la manière d'utiliser l'objet, pas la valeur de ces nombres."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ajouter const à la déclaration d'un objet ne choisit aucun résultat numérique et ne copie pas automatiquement son état. Son initialisation reste celle qui a été écrite ; const limite les modifications autorisées ensuite."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une consultation const impose aussi des contraintes à son implémentation"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const {\n        ++x_; // Erreur intentionnelle : une consultation const tente de modifier ce membre.\n        return x_;\n    }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 3};\n    std::cout << punto.x();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle correction préserve l'intention de la consultation x() ?",
+          "options": [
+            "Supprimer l'incrémentation et renvoyer la coordonnée actuelle.",
+            "Retirer const de x() et garder l'incrémentation.",
+            "Conserver const et déplacer l'incrémentation avant return."
+          ],
+          "correctIndex": 0,
+          "explanation": "Une consultation doit observer ; modifier nécessite une opération distincte et son propre contrat."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire à travers une référence constante"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nbool en_eje_vertical(const Punto& punto) {\n    return punto.x() == 0;\n}\n\nint main() {\n    Punto punto{0, 6};\n    bool primero = en_eje_vertical(punto);\n    punto.mover_a(2, 6);\n    std::cout << primero << \" \" << en_eje_vertical(punto);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "La fonction lit x sans copier ni modifier le point ; le bool enregistré conserve le résultat du premier appel."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dans une fonction qui reçoit const Punto&, quelle opération convient à ce modèle ?",
+          "options": [
+            "Écrire directement dans x_ depuis la fonction libre.",
+            "Consulter x() ou y().",
+            "Appeler mover_a pour modifier l'objet reçu."
+          ],
+          "correctIndex": 1,
+          "explanation": "La référence constante exprime un accès en lecture et la confidentialité préserve l'interface."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Parcourir des objets en lecture seule"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    std::vector<Punto> puntos{{1, 2}, {0, 5}};\n    for (const auto& punto : puntos) {\n        std::cout << punto.x() << \",\" << punto.y() << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "1,2;0,5;"
+          ],
+          "explanation": "Les consultations const peuvent être utilisées par les références constantes de la boucle."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ces choix se complètent : const auto& évite de copier chaque objet pour le lire et classe l'accès comme non modificateur ; les consultations de la classe rendent cette lecture possible. Une interface dépourvue de consultations const compliquerait l'utilisation d'objets qu'il faut seulement observer."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire avec une consultation constante"
+        },
+        {
+          "type": "paragraph",
+          "text": "Définis une version de Dimension avec un constructeur, des membres privés et des consultations filas() et columnas() const. Crée const Dimension fija{2, 5} et affiche 2x5. Crée une autre dimension modifiable et une opération cambiar_a qui remplace les deux valeurs. Copie la dimension initiale dans un objet const et montre que cette copie conserve ses valeurs après la modification de l'original."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construis ici le programme décrit dans la consigne.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Garde des quantités comprises entre zéro et dix. Pour vérifier la compilation, essaie d'appeler cambiar_a sur fija, identifie le refus du compilateur et retire cet appel avant d'exécuter le programme correct."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution et critères d'observation"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas() const { return filas_; }\n    int columnas() const { return columnas_; }\n    void cambiar_a(int filas, int columnas) { filas_ = filas; columnas_ = columnas; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint main() {\n    const Dimension fija{2, 5};\n    Dimension original{1, 3};\n    const Dimension copia = original;\n    original.cambiar_a(4, 2);\n    std::cout << fija.filas() << \"x\" << fija.columnas() << \"\\n\";\n    std::cout << copia.filas() << \"x\" << copia.columnas() << \" \" << original.filas() << \"x\" << original.columnas();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : les consultations const permettent de lire des objets et des références constants, ne modifient pas leurs membres et conservent le format demandé ; cambiar_a reste une opération modificatrice ; une copie est indépendante et conserve l'état qu'elle avait au moment de sa création. Aucune répartition précise des définitions n'est exigée."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que faut-il vérifier en plus de l'exécution correcte du programme ?",
+          "options": [
+            "Seulement que les consultations compilent sur des objets sans const.",
+            "Que les opérations modificatrices compilent également sur des objets const.",
+            "Que les consultations compilent sur des objets const et que les opérations modificatrices soient refusées."
+          ],
+          "correctIndex": 2,
+          "explanation": "La classification des opérations fait partie du contrat que le type doit respecter."
+        }
+      ]
+    }
+  ]
+}

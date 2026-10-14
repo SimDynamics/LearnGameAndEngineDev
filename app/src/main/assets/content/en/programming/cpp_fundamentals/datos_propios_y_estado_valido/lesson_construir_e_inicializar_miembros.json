@@ -1,0 +1,230 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__construir_e_inicializar_miembros",
+  "title": "Construct and Initialize Members",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prepare an Object When Creating It"
+        },
+        {
+          "type": "paragraph",
+          "text": "A point needs initial coordinates. Instead of creating the object and remembering to call a setup function afterward, we define a constructor. It has the same name as the type and declares no return type. Punto(int x, int y) receives the data used to establish its members before the constructor body executes."
+        },
+        {
+          "type": "paragraph",
+          "text": "The notation : x_{x}, y_{y} is a member initializer list. What comes before each brace names the member; what appears inside is the supplied value. These points accept int coordinates without any additional domain restriction: the objective here is to learn construction before adding validity rules."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{3, -2};\n    std::cout << punto.x() << \",\" << punto.y();\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Constructor Is Not a Function with a Return Type"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which declaration describes a constructor of Punto with two int coordinates?",
+          "options": [
+            "void Punto(int x, int y);",
+            "Punto(int x, int y);",
+            "int Punto(int x, int y);"
+          ],
+          "correctIndex": 1,
+          "explanation": "A constructor has the type's name and no return type."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In Punto punto{4, 1};, what performs the initial setup?",
+          "options": [
+            "The first x() query, which passes the arguments to the members.",
+            "The member declarations, without using the arguments.",
+            "The constructor that receives both arguments."
+          ],
+          "correctIndex": 2,
+          "explanation": "Data are supplied when the object is constructed, before it is used."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto a{6, 2};\n    Punto b{-1, 5};\n    std::cout << a.y() << \" \" << b.x();\n    return 0;\n}\n",
+          "answers": [
+            "2 -1"
+          ],
+          "explanation": "Each object is constructed with its own coordinates."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Initialization Is Different from Assigning Later"
+        },
+        {
+          "type": "paragraph",
+          "text": "The member initializer list establishes values when the object is constructed. Writing only assignments in the constructor body would instead prepare members after they had already begun to exist. The distinction matters especially for types that require construction data or for members that might otherwise be read before receiving a value. We use the list to express initialization directly."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the name of the member initialized from x in this constructor.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : ___{x}, y_{y} {}\n    int x() { return x_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 7};\n    std::cout << punto.x();\n    return 0;\n}\n",
+          "answers": [
+            "x_"
+          ],
+          "explanation": "x_ is the member, and x is the argument that supplies its value."
+        },
+        {
+          "type": "paragraph",
+          "text": "Members are initialized in the order in which they are declared in the class, not in the order you choose when writing the initializer list. We will keep both sequences aligned. We will not read a member that has not yet been initialized to calculate another."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construction That Requires Arguments"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto; // Intentional error: this version requires two coordinates.\n    std::cout << punto.x();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which correction preserves a request for a point at coordinates zero and four?",
+          "options": [
+            "Punto punto{};",
+            "Punto punto{4, 0};",
+            "Punto punto{0, 4};"
+          ],
+          "correctIndex": 2,
+          "explanation": "The arguments required by the constructor must be provided."
+        },
+        {
+          "type": "paragraph",
+          "text": "In this version, we have not defined a constructor that can be called without arguments. This choice lets the compiler detect forgotten initialization. If we later choose a default point, it will need a clear meaning and explicitly written initialization."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Declare and Define a Member Function"
+        },
+        {
+          "type": "paragraph",
+          "text": "We can also declare a member inside the class and define it outside. Punto::x identifies the class containing that function; a definition written as int x() without this qualification would be a separate free function, without automatic access to x_. The qualification resembles Estado::enviado, but here it identifies a member of the type."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y);\n    int x();\nprivate:\n    int x_;\n    int y_;\n};\n\nPunto::Punto(int x, int y) : x_{x}, y_{y} {}\n\nint Punto::x() {\n    return x_;\n}\n\nint main() {\n    Punto punto{8, 1};\n    std::cout << punto.x();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does Punto::Punto identify in the out-of-class definition?",
+          "options": [
+            "The constructor of the Punto class.",
+            "The public x() query of the Punto class.",
+            "A free function that returns two integers."
+          ],
+          "correctIndex": 0,
+          "explanation": "The first part qualifies the class, while the second is the constructor's name."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose a Readable Organization"
+        },
+        {
+          "type": "paragraph",
+          "text": "Defining a short query inside the class can make it easier to read. A longer function can be defined outside so that the interface remains clear. In the small programs in these lessons, both arrangements can compile in a single file. We do not claim that defining a function inside a class guarantees optimization: whether a call is inlined depends on the compiler."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() { return x_; }\n    int y() { return y_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto original{1, 9};\n    Punto copia = original;\n    original = Punto{4, 5};\n    std::cout << copia.x() << \",\" << copia.y() << \" \" << original.x() << \",\" << original.y();\n    return 0;\n}\n",
+          "answers": [
+            "1,9 4,5"
+          ],
+          "explanation": "The copy keeps the earlier members; the assignment receives another Punto that has already been constructed."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What is the difference between constructing original and later assigning another Punto to it?",
+          "options": [
+            "Construction creates the object; assignment replaces its value.",
+            "Construction replaces an object; assignment declares a new one.",
+            "Assignment changes only public members and preserves private ones."
+          ],
+          "correctIndex": 0,
+          "explanation": "Recall initialization versus assignment, now with a user-defined type."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Different Pair of Values"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define a Dimension class with two private members, filas_ and columnas_. Its constructor takes two int arguments and initializes both through a member initializer list; the filas() and columnas() queries let us read them. For this first model, we work only with quantities from zero through ten defined in the code; rejecting arguments is not yet required. Construct {2, 4} and display 2x4; then test {0, 3} and {1, 1}."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Build the program described in the exercise.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define at least one query outside the class to practice qualification. Construct two objects and demonstrate that each query reads the object on which it was called."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution and Construction Criteria"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas();\n    int columnas() { return columnas_; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint Dimension::filas() {\n    return filas_;\n}\n\nint main() {\n    Dimension dimension{2, 4};\n    std::cout << dimension.filas() << \"x\" << dimension.columnas();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: the constructor has the same name as the type and initializes both members; client code provides the arguments before querying; the out-of-class definition uses Dimension::; distinct objects retain their own pairs. This construction model is not presented as validation for arbitrary dimensions."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A member initializer list is written in a different order from the member declarations. What determines the actual initialization order?",
+          "options": [
+            "The order of the arguments supplied by main.",
+            "The order written after : in the initializer list.",
+            "The order in which members are declared."
+          ],
+          "correctIndex": 2,
+          "explanation": "Matching the written list to that order avoids incorrect expectations."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,217 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__consultas_const_y_objetos_constantes",
+  "title": "const Queries and Constant Objects",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separate Observation from Modification"
+        },
+        {
+          "type": "paragraph",
+          "text": "A class should distinguish operations that observe an object from those that change it. int x() const places const after the parameter list to declare that this query does not modify the point's state. It can be called on either a modifiable Punto or a const Punto. mover_a changes the coordinates and is not declared const."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 5};\n    const Punto referencia{1, 3};\n    std::cout << punto.x() << \" \" << referencia.x();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "const on a variable indicates that the object must not be changed through ordinary operations. const on a member function specifies how the operation can be used on the object on which it is called. These are different positions with related purposes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Query Does Not Need Permission to Modify"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You want to read one coordinate of const Punto origen{0, 0}. Which signature permits this?",
+          "options": [
+            "void mover_a(int x, int y);",
+            "int x();",
+            "int x() const;"
+          ],
+          "correctIndex": 2,
+          "explanation": "A const query can be called on a constant object."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the keyword that declares this query non-modifying.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() ___ { return x_; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    const Punto punto{4, 2};\n    std::cout << punto.x();\n    return 0;\n}\n",
+          "answers": [
+            "const"
+          ],
+          "explanation": "The keyword appears after the member function's parameters."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{3, 7};\n    const Punto copia = punto;\n    punto.mover_a(8, 1);\n    std::cout << copia.x() << \",\" << copia.y() << \" \" << punto.x() << \",\" << punto.y();\n    return 0;\n}\n",
+          "answers": [
+            "3,7 8,1"
+          ],
+          "explanation": "The constant copy retains the earlier value, and the query allows it to be observed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Compiler Enforces the Classification"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    const Punto punto{1, 2};\n    punto.mover_a(3, 4); // Intentional error: attempting to modify a const object.\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Why is that call rejected even though the numbers are small?",
+          "options": [
+            "const only prevents reassigning the entire object; its members remain modifiable.",
+            "The values are in the domain, so modification of a const object must be allowed.",
+            "The operation modifies the object, and that object was declared const."
+          ],
+          "correctIndex": 2,
+          "explanation": "The restriction concerns how the object is used, not those numerical values."
+        },
+        {
+          "type": "paragraph",
+          "text": "Adding const to an object's declaration does not choose a numeric result or automatically copy its state. The object is initialized as written; const restricts which modifications are permitted afterward."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A const Query Also Constrains Its Implementation"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const {\n        ++x_; // Intentional error: a const query tries to modify this member.\n        return x_;\n    }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    Punto punto{2, 3};\n    std::cout << punto.x();\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which correction preserves the intention of the x() query?",
+          "options": [
+            "Remove the increment and return the current coordinate.",
+            "Remove const from x() and keep the increment.",
+            "Keep const and move the increment before return."
+          ],
+          "correctIndex": 0,
+          "explanation": "A query should observe; modification needs a separate operation and its own contract."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Read Through a Constant Reference"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nbool en_eje_vertical(const Punto& punto) {\n    return punto.x() == 0;\n}\n\nint main() {\n    Punto punto{0, 6};\n    bool primero = en_eje_vertical(punto);\n    punto.mover_a(2, 6);\n    std::cout << primero << \" \" << en_eje_vertical(punto);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "The function reads x without copying or modifying the point; the saved bool keeps the result of the first call."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Inside a function receiving const Punto&, which operation is appropriate in this model?",
+          "options": [
+            "Write directly to x_ from the free function.",
+            "Call x() or y() to read the object.",
+            "Call mover_a to modify the received object."
+          ],
+          "correctIndex": 1,
+          "explanation": "The constant reference communicates read-only access, and privacy preserves the interface."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Traverse Read-Only Objects"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Punto {\npublic:\n    Punto(int x, int y) : x_{x}, y_{y} {}\n    int x() const { return x_; }\n    int y() const { return y_; }\n    void mover_a(int x, int y) { x_ = x; y_ = y; }\nprivate:\n    int x_;\n    int y_;\n};\n\nint main() {\n    std::vector<Punto> puntos{{1, 2}, {0, 5}};\n    for (const auto& punto : puntos) {\n        std::cout << punto.x() << \",\" << punto.y() << \";\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "1,2;0,5;"
+          ],
+          "explanation": "The const queries can be called through the constant references used by the loop."
+        },
+        {
+          "type": "paragraph",
+          "text": "These choices work together: const auto& avoids copying each object merely to read it and classifies access as non-modifying; the class's queries permit that reading. An interface without const queries would make it harder to use objects that should only be observed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build with a Constant Query"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define a version of Dimension with a constructor, private members, and const queries filas() and columnas(). Create const Dimension fija{2, 5} and display 2x5. Create another modifiable dimension and a cambiar_a operation that replaces both values. Copy the original dimension into a const object and show that the copy keeps its values after you modify the original."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Build the program described in the exercise.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Keep quantities between zero and ten. As a compilation check, try calling cambiar_a on fija, identify the compiler rejection, and remove that call before running the correct program."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution and Observation Criteria"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Dimension {\npublic:\n    Dimension(int filas, int columnas) : filas_{filas}, columnas_{columnas} {}\n    int filas() const { return filas_; }\n    int columnas() const { return columnas_; }\n    void cambiar_a(int filas, int columnas) { filas_ = filas; columnas_ = columnas; }\nprivate:\n    int filas_;\n    int columnas_;\n};\n\nint main() {\n    const Dimension fija{2, 5};\n    Dimension original{1, 3};\n    const Dimension copia = original;\n    original.cambiar_a(4, 2);\n    std::cout << fija.filas() << \"x\" << fija.columnas() << \"\\n\";\n    std::cout << copia.filas() << \"x\" << copia.columnas() << \" \" << original.filas() << \"x\" << original.columnas();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: const queries allow reading constant objects and references, do not change their members, and preserve the requested format; cambiar_a remains a modifying operation; a copy is independent and retains its state at the moment it was made. No particular arrangement of definitions is required."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What should be checked in addition to successfully running the correct program?",
+          "options": [
+            "Only that queries compile on objects without const.",
+            "That modifying operations also compile on const objects.",
+            "That queries compile on const objects and modifying operations are rejected."
+          ],
+          "correctIndex": 2,
+          "explanation": "How operations are classified is part of the contract that the type must uphold."
+        }
+      ]
+    }
+  ]
+}
