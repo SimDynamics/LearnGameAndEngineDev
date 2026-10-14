@@ -1,0 +1,183 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__calcular_constantes_y_distinguir_constexpr",
+  "title": "Computing Constants and Distinguishing constexpr",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Same Function Can Serve Two Contexts"
+        },
+        {
+          "type": "paragraph",
+          "text": "Marking a function constexpr allows it to be used in a constant expression when its operations and arguments satisfy the constant-evaluation rules. It does not require every call to be evaluated that way. If we declare a constexpr object, its initialization must satisfy those rules; merely hoping the compiler can optimize it is not enough."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: both arguments are between 0 and 10.\nconstexpr int total_fichas(int bloques, int por_bloque) {\n    return bloques * por_bloque;\n}\n\nint main() {\n    constexpr int modelo = total_fichas(3, 4);\n    int bloques{5};\n    int calculado = total_fichas(bloques, 2);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is 12:10. modelo requires a constant expression. The call using bloques takes an ordinary variable and is still valid without requiring constant evaluation. A compiler can optimize calculations; that optimization does not make every initialization a constant expression permitted by the language."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "funcion_y_objeto_constexpr",
+          "question": "What additional requirement does constexpr impose on the object modelo in this program?",
+          "options": [
+            "Every call to total_fichas must use the same result.",
+            "modelo can change to reuse the calculation.",
+            "Its initialization must be a valid constant expression."
+          ],
+          "correctIndex": 2,
+          "explanation": "The requirement belongs to the context that needs a constant; the function can also be called normally."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "const Alone Does Not Express the Same Requirement"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint obtener_cantidad() {\n    return 4;\n}\n\nint main() {\n    const int cantidad = obtener_cantidad();\n    std::cout << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This program displays 4 and does not allow cantidad to be assigned another value after initialization. obtener_cantidad is not constexpr: changing the declaration to constexpr int cantidad = obtener_cantidad(); causes a compilation error. A body that returns a literal does not make an ordinary function callable in that constant expression."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nor do we claim that every const object is excluded from constant expressions. A const int initialized from a constant expression, such as const int limite = 4;, can be usable in them. The type and initializer matter; the word const alone does not settle every case."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "const_con_funcion_ordinaria",
+          "question": "In the program shown, what does const mean for cantidad?",
+          "options": [
+            "It preserves the value after initialization, even though the call is not constexpr.",
+            "It forces every body of obtener_cantidad to be evaluated during compilation.",
+            "It allows cantidad in any constant expression without further requirements."
+          ],
+          "correctIndex": 0,
+          "explanation": "const restricts modification of the object. Calling an ordinary function does not satisfy the extra requirement that constexpr imposes on its initialization."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Check During Compilation"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nconstexpr int doble(int dato) {\n    return dato * 2;\n}\n\nstatic_assert(doble(3) == 6);\n\nint main() {\n    std::cout << \"Program accepted\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "static_assert checks a constant condition during compilation. If it is false, the program does not compile; if true, the assertion prints nothing itself. In this example, main prints Program accepted. If the condition fails, fix it before main can run."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_constante_falsa",
+          "question": "You change only static_assert(doble(3) == 6) to static_assert(doble(3) == 7). What happens?",
+          "options": [
+            "main prints false and continues with Program accepted.",
+            "The check fails during compilation; main does not execute.",
+            "The program enters catch after displaying the result."
+          ],
+          "correctIndex": 1,
+          "explanation": "The equality is a false constant condition and is rejected before execution. That version cannot execute main to produce output."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Function with a Loop That Can Be Constant-Evaluated"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write suma_hasta: it receives ultimo from 0 through 10 and returns the sum of integers from 1 through ultimo, inclusive. For 0, it returns 0. Use local variables and a loop, without printing or modifying the caller's objects. Declare the function constexpr and keep the precondition explicit: the keyword does not validate the domain by itself."
+        },
+        {
+          "type": "paragraph",
+          "text": "Add static_assert checks for 0→0 and 4→10. In main, initialize a constexpr object with suma_hasta(5) and also call the function with an ordinary variable containing 3. Display both results separated by a colon: 15:6. Then test 10: its sum is 55 and fits in int."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Build suma_hasta and its checks before main.\nint main() {\n    // Use the same function in both requested contexts.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "The reference appears on the next page. A closed-form formula could also meet the contract, but this exercise requires a loop to show that constant evaluation can include local variables and finite repetition."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference and the Limits of the Check"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Pre: ultimo is between 0 and 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n    int caso{3};\n    int calculado = suma_hasta(caso);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: correct results throughout 0..10, a finite loop, no output inside the function, true constant assertions, and ordinary calls remaining valid. The calculation's local variables do not become persistent state between calls; each result depends on that call's argument."
+        },
+        {
+          "type": "paragraph",
+          "text": "Temporarily change main's test case to 10: the output should be 15:55. One static_assert case does not certify all the others; test all eleven permitted values and relate the difference between consecutive sums to the last number added. Do not execute calculations outside the domain to infer a guarantee we have not established."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "consteval Requires Constant Evaluation for These Calls"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nconsteval int doble_obligatorio(int dato) {\n    return dato * 2;\n}\n\nint main() {\n    int resultado = doble_obligatorio(4);\n    std::cout << resultado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "consteval declares an immediate function. The call shown uses the constant argument 4 and must be constant-evaluated; the receiving object resultado may be an ordinary variable. The output is 8. Replacing it with int dato = 4; int resultado = doble_obligatorio(dato); inside main causes an error: dato is not a constant expression available for that call."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "consteval_y_destino",
+          "question": "Why is int resultado = doble_obligatorio(4) valid in the example?",
+          "options": [
+            "Every int variable forces constant evaluation of its initializer.",
+            "consteval turns any variable argument into a constant.",
+            "This immediate call has a valid constant argument."
+          ],
+          "correctIndex": 2,
+          "explanation": "The requirement applies to the immediate call. The object receiving its value need not be constexpr, and ordinary variable arguments are not automatically accepted."
+        },
+        {
+          "type": "paragraph",
+          "text": "constexpr is the right choice for our function suma_hasta because we want both kinds of use. consteval is appropriate when an interface must require constant evaluation. We do not measure speed here or assume the compiler always generates a call for ordinary uses."
+        },
+        {
+          "type": "note",
+          "text": "Compile-time calculation is discussed in the primary source (Stroustrup, 2024, section 7.4.9, pp. 204–205). The explanations, domains, and activities in this learning path are original."
+        }
+      ]
+    }
+  ]
+}

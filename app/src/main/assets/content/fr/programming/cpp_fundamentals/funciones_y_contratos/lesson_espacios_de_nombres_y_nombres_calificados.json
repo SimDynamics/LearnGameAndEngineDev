@@ -1,0 +1,387 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__espacios_de_nombres_y_nombres_calificados",
+  "title": "Espaces de noms et noms qualifiés",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le nom d'une fonction a aussi besoin d'un contexte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Deux parties d'un programme peuvent avoir besoin d'une fonction nommée f avec un paramètre int, mais des règles différentes. On ne peut pas résoudre cela en écrivant deux définitions de la même fonction libre dans une même portée. Un espace de noms regroupe des déclarations sous un nom : Paso::f et Eco::f désignent des fonctions distinctes malgré leur même nom court et leur même type de paramètre."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Paso {\n    int f(int valor) {\n        return valor + 2;\n    }\n}\n\nnamespace Eco {\n    int f(int valor) {\n        return valor * 3;\n    }\n}\n\nint main() {\n    std::cout << Paso::f(4) << \" \" << Eco::f(4);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 6 12. namespace Paso { ... } place la première fonction dans Paso ; namespace Eco { ... } place la seconde dans Eco. :: sépare le nom de l'espace de celui du membre. Le nom qualifié permet de choisir la fonction avant l'exécution de son corps. Il n'est pas nécessaire de créer un objet Paso ou Eco pour ces appels."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un programme a besoin de deux fonctions f(int) de comportements différents. Quelle organisation permet de les distinguer par leur appartenance ?",
+          "options": [
+            "Définir les deux comme une même fonction globale et compter sur l'ordre des appels.",
+            "Définir l'une dans Paso et l'autre dans Eco, puis appeler Paso::f ou Eco::f.",
+            "Changer uniquement les noms des paramètres des deux fonctions globales."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les espaces de noms font de Paso::f et Eco::f des entités distinctes. Changer le nom d'un paramètre ne change pas la signature et ne crée pas une autre fonction globale de même signature."
+        },
+        {
+          "type": "note",
+          "text": "Ces premiers exemples utilisent de petits arguments de 0 à 8 ; l'atelier suivant précise son propre domaine. Un namespace organise des noms ; les limites et les effets appartiennent toujours au contrat de chaque fonction."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Composer dans un espace de noms et en choisir un autre depuis l'extérieur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans Paso, avanzar_dos_veces peut trouver avanzar sans répéter Paso::. Depuis main, on choisit Paso::avanzar_dos_veces et Eco::avanzar. L'appartenance d'une fonction ne change pas la copie des paramètres ni la signification de return : retrouve ces règles en suivant les appels."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Paso {\n    int avanzar(int valor) {\n        return valor + 2;\n    }\n\n    int avanzar_dos_veces(int valor) {\n        return avanzar(avanzar(valor));\n    }\n}\n\nnamespace Eco {\n    int avanzar(int valor) {\n        return valor * 3;\n    }\n}\n\nint main() {\n    std::cout << Paso::avanzar_dos_veces(1);\n    std::cout << \" \" << Eco::avanzar(2);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le programme affiche 5 6. La fonction composée de Paso applique deux fois sa propre règle d'avancement. Elle n'utilise pas Eco::avanzar simplement parce que le nom court est identique. Un appel qualifié vers un autre espace peut participer au calcul lorsqu'on le choisit explicitement."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prévois les deux résultats de ces compositions entre espaces de noms.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Paso {\n    int avanzar(int valor) {\n        return valor + 2;\n    }\n\n    int avanzar_dos_veces(int valor) {\n        return avanzar(avanzar(valor));\n    }\n}\n\nnamespace Eco {\n    int avanzar(int valor) {\n        return valor * 3;\n    }\n}\n\nint main() {\n    std::cout << Paso::avanzar_dos_veces(Eco::avanzar(2));\n    std::cout << \" \" << Eco::avanzar(Paso::avanzar(1));\n    return 0;\n}\n",
+          "answers": [
+            "10 9"
+          ],
+          "explanation": "Eco::avanzar(2) donne 6 ; les deux avancées de Paso donnent ensuite 10. Paso::avanzar(1) donne 3, qu'Eco multiplie par 3. La qualification permet de suivre chaque règle sans confondre les noms courts identiques."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une déclaration conserve son espace de noms"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un appel nécessite toujours une déclaration visible. Ici, la signature est déclarée dans Escala avant main, tandis que la définition apparaît ensuite dans un autre bloc namespace Escala. Les deux blocs désignent le même espace de noms ; la définition appartient à Escala::transformar, pas à une fonction globale différente."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Escala {\n    int transformar(int valor);\n}\n\nint main() {\n    std::cout << Escala::transformar(3);\n    return 0;\n}\n\nnamespace Escala {\n    int transformar(int valor) {\n        return valor * 2 + 1;\n    }\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 7. Rouvrir Escala permet de poursuivre ses déclarations ; cela ne crée pas un deuxième espace Escala indépendant. Définir transformar hors de ces blocs comme fonction globale distincte ne définirait pas la fonction appelée par main. L'organisation des noms ne supprime pas l'obligation de fournir la définition."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La définition est déplacée après main tout en restant dans namespace Escala. Qu'est-ce qui permet à l'appel précédent de fonctionner ?",
+          "options": [
+            "La déclaration visible de Escala::transformar avant main, cohérente avec sa définition.",
+            "La répétition du mot transformar dans n'importe quelle portée du fichier.",
+            "L'appel d'un nom sans déclaration, puisque namespace retarde toutes les vérifications."
+          ],
+          "correctIndex": 0,
+          "explanation": "La déclaration fournit le nom qualifié, les paramètres et le retour avant l'appel. La définition ultérieure doit appartenir à cette même fonction."
+        },
+        {
+          "type": "note",
+          "text": "Dans ces programmes, les blocs namespace sont écrits en dehors des fonctions. Placer namespace Escala dans main n'est pas une manière valide de créer un espace local. #include fournit des déclarations issues des en-têtes ; namespace organise leur appartenance. Ces constructions ne se remplacent pas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une déclaration using sélectionne un nom"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, using Camino::siguiente permet d'utiliser siguiente pour les déclarations de ce nom trouvées dans Camino. Il n'y a ici qu'une seule fonction de ce nom. La deuxième règle conserve le nom Salto::siguiente. using std::cout applique la même forme au flux d'affichage de la bibliothèque."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Camino {\n    int siguiente(int valor) {\n        return valor + 3;\n    }\n\n    int inicio() {\n        return 1;\n    }\n}\n\nnamespace Salto {\n    int siguiente(int valor) {\n        return valor * 2;\n    }\n}\n\nint main() {\n    using Camino::siguiente;\n    using std::cout;\n    cout << siguiente(4) << \" \" << Salto::siguiente(4);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 7 8. La déclaration using ne définit pas un autre corps et ne copie aucune fonction. Elle ne rend pas non plus inicio, autre membre de Camino, accessible par son nom court. Camino::inicio reste un appel qualifié valide. La portée de ces déclarations using locales se termine avec le bloc ; les fonctions des espaces de noms continuent d'exister."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Après using Camino::siguiente dans main, qu'a-t-on sélectionné ?",
+          "options": [
+            "Tous les noms de Camino et Salto ont été fusionnés dans main.",
+            "Salto::siguiente a remplacé Camino::siguiente parce qu'il est écrit plus loin.",
+            "Le nom siguiente provenant de Camino est disponible ; inicio n'a pas également été sélectionné."
+          ],
+          "correctIndex": 2,
+          "explanation": "Une déclaration using désigne le membre indiqué. Son origine et les autres fonctions conservent leur appartenance ; il n'existe pas de sélection automatique du dernier espace écrit."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une directive using élargit la recherche des noms"
+        },
+        {
+          "type": "paragraph",
+          "text": "using namespace Camino est une directive using. Elle permet de considérer les noms de Camino lors d'une recherche non qualifiée dans sa portée ; elle ne désigne pas un seul membre. Dans cet exemple, siguiente et inicio sont trouvés dans Camino parce qu'aucune autre déclaration ne perturbe leur recherche."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Camino {\n    int siguiente(int valor) {\n        return valor + 3;\n    }\n\n    int inicio() {\n        return 1;\n    }\n}\n\nint main() {\n    using namespace Camino;\n    std::cout << siguiente(2) << \" \" << inicio();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 5 1. La directive ne copie pas les membres et n'en fait pas de nouvelles déclarations de main. Elle ne garantit pas non plus l'unicité de chaque nom court. Dans le contre-exemple suivant, les deux fonctions f(int) sont également viables pour f(3) : le compilateur doit rejeter le programme pour ambiguïté. Cet échec de compilation est volontaire ; aucune sortie numérique correcte n'est à prévoir."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Norte {\n    int f(int valor) {\n        return valor + 4;\n    }\n}\n\nnamespace Sur {\n    int f(int valor) {\n        return valor * 2;\n    }\n}\n\nint main() {\n    using namespace Norte;\n    using namespace Sur;\n    std::cout << f(3);\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dans le contre-exemple à deux directives, comment sélectionner expressément la règle de Sur pour cet appel ?",
+          "options": [
+            "Écrire Sur::f(3), en conservant les deux fonctions distinctes.",
+            "Inverser l'ordre des directives pour que la dernière l'emporte toujours.",
+            "Conserver f(3) et attendre l'exécution automatique des deux règles."
+          ],
+          "correctIndex": 0,
+          "explanation": "Sur::f(3) désigne la fonction voulue. L'ordre des directives ne résout pas deux candidats également viables, et un appel n'exécute pas tous ses candidats."
+        },
+        {
+          "type": "note",
+          "text": "L'ambiguïté dépend des déclarations et de l'appel : deux fonctions avec des paramètres différents peuvent former un ensemble de surcharges permettant une sélection. Ici, les deux reçoivent exactement int ; aucune ne constitue donc une meilleure candidate."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Portée et conflits : ces deux formes ne sont pas équivalentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une directive ne force pas toute recherche à choisir le membre de son espace. Dans cet exemple, le nom local limite est trouvé dans le bloc de main. Lectura::limite désigne explicitement l'autre objet, en lecture seule. La sortie montre qu'il s'agit d'objets distincts."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Lectura {\n    const int limite = 6;\n}\n\nint main() {\n    using namespace Lectura;\n    const int limite = 2;\n    std::cout << limite << \":\" << Lectura::limite;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "On obtient 2:6. Remplacer la directive par using Lectura::limite tout en conservant const int limite = 2 dans ce même bloc crée un conflit de déclarations portant le même nom. La différence dépend de la manière dont chaque forme intervient dans la portée, pas d'un choix de valeurs pendant l'exécution."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dans main, tu écris using Lectura::limite; et const int limite_local = 2;. Tu affiches limite_local, puis :, puis limite, en conservant Lectura::limite = 6. Que se passe-t-il avec ces noms distincts ?",
+          "options": [
+            "Le programme compile et affiche 2:6 ; le nom local n'entre pas en conflit avec limite.",
+            "La compilation échoue ; une déclaration using interdit toute autre déclaration locale const.",
+            "Le programme compile et affiche 6:6 ; le membre importé remplace aussi limite_local."
+          ],
+          "correctIndex": 0,
+          "explanation": "limite_local et limite sont des noms différents. La déclaration using rend disponible le limite de Lectura ; elle ne change ni la valeur ni l'identité de l'autre objet local."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sélectionner des membres précis réduit les noms impliqués, mais n'empêche pas tous les conflits : using Norte::f et using Sur::f dans le même bloc rendent encore f(3) ambigu si les deux fonctions reçoivent int. Vérifie le nom, la portée et les paramètres ; ne considère pas using comme une règle qui décide toujours à ta place."
+        },
+        {
+          "type": "note",
+          "text": "Conserve la qualification lorsqu'elle rend une décision importante explicite. Place les raccourcis locaux là où ils sont nécessaires. Une directive large dans un en-tête partagé affecte aussi le code qui l'inclut et peut provoquer des collisions dans d'autres fichiers ; nous reviendrons sur leur séparation en étudiant les en-têtes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Sélectionner un nom ne choisit pas une seule surcharge"
+        },
+        {
+          "type": "paragraph",
+          "text": "Plus tôt dans cette unité, tu as construit des fonctions de même nom avec des paramètres différents. Si Ajuste contient deux déclarations visibles de proponer, using Ajuste::proponer permet d'utiliser ce nom pour les deux. Le type des arguments choisit ensuite la surcharge à chaque appel ; la déclaration using ne précise pas de type de paramètre pour n'en sélectionner qu'une."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prévois les deux sorties en distinguant la sélection du nom et celle de la surcharge.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nnamespace Ajuste {\n    int proponer(int nivel) {\n        return nivel + 1;\n    }\n\n    double proponer(double nivel) {\n        return nivel + 0.5;\n    }\n}\n\nint main() {\n    using Ajuste::proponer;\n    std::cout << proponer(4) << \" \" << proponer(4.0);\n    return 0;\n}\n",
+          "answers": [
+            "5 4.5"
+          ],
+          "explanation": "L'argument 4 est de type int et donne 5 ; 4.0 est de type double et donne 4.5. Les deux fonctions appartiennent à Ajuste et sont visibles au moment où la déclaration using est écrite."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une déclaration using désigne les déclarations trouvées à cet endroit ; ne suppose pas qu'elle inclue automatiquement les surcharges ajoutées plus tard à l'espace de noms. Une directive peut aussi permettre de considérer des membres ultérieurs dès que leurs déclarations deviennent visibles. Garde les interfaces nécessaires aux appels visibles, sans utiliser ces raccourcis pour masquer un ordre de déclaration incorrect."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelles sont les deux décisions distinctes dans l'exemple ?",
+          "options": [
+            "using crée une copie de chaque résultat et main décide quand l'exécuter.",
+            "La partie décimale du résultat détermine l'espace de noms dont vient la fonction.",
+            "using rend disponible le nom de Ajuste et le type de chaque argument sélectionne une surcharge viable."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'origine du nom et le choix parmi les fonctions portant ce nom sont deux étapes différentes. Le type int ou double de l'argument permet de sélectionner une fonction dans cet ensemble précis."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire deux politiques qui gardent le même nom court"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un plan pour plusieurs commandes de pièces. Les données d'entrée forment un vecteur d'au plus six quantités de 0 à 20. Avant de calculer ou d'afficher les totaux, valide toute la collection avec une fonction de namespace Pedido qui ne fait que la lire. Si une quantité ou la taille sort du domaine, la seule sortie est Commande invalide. Une collection vide est valide et le programme conserve ses éléments, sa taille et son ordre."
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque commande est emballée séparément. namespace Estuches contient int necesarios(int piezas) : elle renvoie le nombre d'étuis de capacité 4 nécessaires, avec un étui supplémentaire s'il reste des pièces. namespace Cajas contient une autre int necesarios(int piezas) qui fait de même pour des boîtes de capacité 7. Une quantité nulle ne nécessite aucun récipient. N'additionne pas toutes les pièces avant l'emballage : les restes de commandes différentes ne peuvent pas partager un récipient."
+        },
+        {
+          "type": "paragraph",
+          "text": "Additionne les récipients requis pour chaque commande. Affiche Étuis : N puis Boîtes : N, une étiquette par ligne avec un espace avant le nombre. Dans main, utilise une déclaration using locale pour necesarios d'une des politiques, et qualifie les appels vers l'autre ; n'ajoute pas de directive large. Garde les données et les compteurs locaux. Les deux fonctions homonymes restent distinctes dans leurs espaces de noms respectifs."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le cas initial {1, 5, 8} produit Étuis : 5 et Boîtes : 4. {0, 4, 7, 20} donne 8 et 5. Un vecteur vide produit deux zéros ; six quantités égales à 20 donnent 30 et 18. Teste aussi {0}, {4} et {7} : prévois les résultats avant d'exécuter. -1, 21 ou une collection de sept quantités doivent produire seulement Commande invalide."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'éditeur ne fournit ni espaces de noms, ni signatures, ni conditions. Construis la validation, les deux calculs et leurs appels. Le calcul individuel exige piezas entre 0 et 20 ; main ne doit l'appeler qu'après validation. Dans ce domaine, ajouter au plus 6 pour arrondir un nombre de récipients ne dépasse pas 26, et les totaux ne dépassent pas 30 ou 18 : les opérations tiennent dans int sans supposer de largeur particulière."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint main() {\n    const std::vector<int> piezas = {1, 5, 8};\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "L'éditeur ne corrige pas automatiquement ces décisions. Compare les valeurs, les rejets, l'ordre et la préservation de la collection. Vérifie aussi l'appartenance de necesarios et quelle fonction reçoit chaque argument : deux sorties plausibles ne prouvent pas que les politiques soient bien reliées."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réviser l'appartenance et le sens après son essai"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "L'entrée valide est {1, 1}. Une version additionne d'abord les pièces et demande des récipients pour 2. Quel contrat faut-il revoir, même si les espaces de noms sont corrects ?",
+          "options": [
+            "Chaque commande n'est pas emballée séparément : les deux politiques ont besoin de deux récipients, pas d'un.",
+            "Une fonction dans un namespace ne peut pas recevoir le résultat d'une addition.",
+            "Une déclaration using change automatiquement la capacité de tous les récipients."
+          ],
+          "correctIndex": 0,
+          "explanation": "Chaque commande d'une pièce nécessite son propre récipient. L'organisation des noms ne corrige pas un regroupement différent de celui exigé par le problème."
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste {5} : Estuches exige 2 étuis et Cajas exige 1 boîte. Cela distingue les règles et révèle si les deux appels choisissent par erreur la même fonction. Teste aussi {0} pour ne pas compter un récipient inutile. Une déclaration using locale ne change ni l'argument ni la formule."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si le compilateur signale une ambiguïté, examine les candidats par leurs noms qualifiés. Ne supprime pas une politique simplement pour faire disparaître le diagnostic : choisis la bonne fonction ou limite le nom court à l'une d'elles. La validation et le contrat de calcul doivent rester respectés après la correction."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure pour comparer le plan"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence utilise {0, 7, 15}, des données différentes du premier essai. Pedido valide avant le calcul ; Estuches et Cajas conservent necesarios comme nom court dans leur portée. Une déclaration using locale sélectionne Estuches et l'appel à Cajas reste qualifié. Compare les responsabilités avant la disposition exacte du code."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    const std::vector<int> piezas = {0, 7, 15};\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Commande invalide\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n    int total_estuches = 0;\n    int total_cajas = 0;\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n    std::cout << \"Étuis : \" << total_estuches;\n    std::cout << \"\\nBoîtes : \" << total_cajas;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence produit Étuis : 6 et Boîtes : 4. Critères : les deux totaux calculés commande par commande, le rejet des entrées invalides avant le calcul, la préservation du vecteur, l'appartenance distincte des deux fonctions homonymes et une sélection sans ambiguïté. Une solution utilisant la division et la vérification du reste peut donner le même résultat que cette formule d'arrondi au supérieur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour le cas initial, les totaux valent 5 et 4 ; {0, 4, 7, 20} donne 8 et 5 ; le vide donne 0 et 0 ; six quantités de 20 donnent 30 et 18. {0} donne 0 et 0 ; {4} donne 1 et 1 ; {7} donne 2 et 1. Une valeur -1 ou 21, ou sept éléments, sont rejetés sans afficher les lignes de totaux. Il est aussi valide de choisir Cajas comme raccourci local et de qualifier Estuches si chaque politique est correctement sélectionnée."
+        },
+        {
+          "type": "note",
+          "text": "Les espaces de noms ne remplacent ni les contrats, ni les tests, ni le contrôle des effets des fonctions. Nous utilisons cette organisation pour distinguer les politiques lorsqu'elles sont composées, en conservant les permissions de passage par valeur et par référence const étudiées dans cette unité."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer les acquis et vérifier ce qui reste stable"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prévois les deux lignes pour des commandes distinctes, en conservant l'emballage indépendant.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    const std::vector<int> piezas = {3, 9, 0};\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Commande invalide\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n    int total_estuches = 0;\n    int total_cajas = 0;\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n    std::cout << \"Étuis : \" << total_estuches;\n    std::cout << \"\\nBoîtes : \" << total_cajas;\n    return 0;\n}\n",
+          "answers": [
+            "Étuis : 4\nBoîtes : 3"
+          ],
+          "explanation": "Les étuis contribuent pour 1, 3 et 0 ; les boîtes pour 1, 2 et 0. L'ordre du calcul ne change pas le choix de la fonction par chaque nom."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prévois toute la sortie lorsqu'une commande sort du domaine.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nnamespace Pedido {\n    bool datos_validos(const std::vector<int>& piezas) {\n        if (piezas.size() > 6) {\n            return false;\n        }\n        for (int cantidad : piezas) {\n            if (cantidad < 0 || cantidad > 20) {\n                return false;\n            }\n        }\n        return true;\n    }\n}\n\nnamespace Estuches {\n    int necesarios(int piezas) {\n        return (piezas + 3) / 4;\n    }\n}\n\nnamespace Cajas {\n    int necesarios(int piezas) {\n        return (piezas + 6) / 7;\n    }\n}\n\nint main() {\n    const std::vector<int> piezas = {2, -1, 4};\n    if (!Pedido::datos_validos(piezas)) {\n        std::cout << \"Commande invalide\";\n        return 0;\n    }\n\n    using Estuches::necesarios;\n    int total_estuches = 0;\n    int total_cajas = 0;\n    for (int cantidad : piezas) {\n        total_estuches += necesarios(cantidad);\n        total_cajas += Cajas::necesarios(cantidad);\n    }\n    std::cout << \"Étuis : \" << total_estuches;\n    std::cout << \"\\nBoîtes : \" << total_cajas;\n    return 0;\n}\n",
+          "answers": [
+            "Commande invalide"
+          ],
+          "explanation": "La validation examine toute la collection avant d'appeler necesarios. Aucun plan partiel n'est affiché pour 2, et la quantité négative n'est pas calculée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Explique ce que tu dois revoir si une politique change de capacité : sa règle et ses tests, sans transformer l'autre fonction necesarios en cette même politique. Explique aussi pourquoi élargir une directive using peut modifier la recherche de noms alors que le corps de la fonction précédemment appelée n'a pas changé."
+        },
+        {
+          "type": "note",
+          "text": "Les espaces de noms sont étudiés dans la référence complémentaire (Stroustrup, 2024, sections 7.6–7.6.1, pp. 209–211). Les exemples et activités sont originaux. Les détails de qualification et de using ont été comparés au projet de norme C++ (Working draft: Programming languages — C++, s. d., sections [basic.lookup.qual], [namespace.udecl] et [namespace.udir])."
+        }
+      ]
+    }
+  ]
+}

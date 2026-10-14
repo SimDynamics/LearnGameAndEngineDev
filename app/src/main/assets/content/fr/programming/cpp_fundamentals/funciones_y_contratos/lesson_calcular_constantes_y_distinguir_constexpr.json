@@ -1,0 +1,183 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__calcular_constantes_y_distinguir_constexpr",
+  "title": "Calculer des constantes et distinguer constexpr",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une même fonction peut servir dans deux contextes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le mot-clé constexpr permet d'utiliser une fonction dans une expression constante lorsque ses opérations et ses arguments respectent les règles d'évaluation constante. Il n'oblige pas à évaluer tous ses appels de cette manière. Si nous déclarons un objet constexpr, son initialisation doit respecter ces règles ; espérer simplement que le compilateur puisse l'optimiser ne suffit pas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Précondition : les deux arguments sont compris entre 0 et 10.\nconstexpr int total_fichas(int bloques, int por_bloque) {\n    return bloques * por_bloque;\n}\n\nint main() {\n    constexpr int modelo = total_fichas(3, 4);\n    int bloques{5};\n    int calculado = total_fichas(bloques, 2);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est 12:10. modelo exige une expression constante. L'appel utilisant bloques reçoit une variable ordinaire et reste valide sans imposer d'évaluation constante. Un compilateur peut optimiser des calculs ; cette optimisation ne transforme pas toute initialisation en expression constante autorisée par le langage."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "funcion_y_objeto_constexpr",
+          "question": "Quelle exigence supplémentaire constexpr impose-t-il à l'objet modelo dans ce programme ?",
+          "options": [
+            "Tous les appels de total_fichas doivent utiliser le même résultat.",
+            "modelo peut changer pour réutiliser le calcul.",
+            "Son initialisation doit être une expression constante valide."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'exigence dépend du contexte qui nécessite une constante ; la fonction autorise également les appels ordinaires."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "const n'exprime pas à lui seul la même exigence"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint obtener_cantidad() {\n    return 4;\n}\n\nint main() {\n    const int cantidad = obtener_cantidad();\n    std::cout << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce programme affiche 4 et interdit de réaffecter cantidad après son initialisation. obtener_cantidad n'est pas constexpr : remplacer la déclaration par constexpr int cantidad = obtener_cantidad(); produit une erreur de compilation. Le simple fait que le corps renvoie un littéral ne permet pas d'appeler une fonction ordinaire dans cette expression constante."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous n'affirmons pas non plus que tout objet const est exclu des expressions constantes. Un const int initialisé par une expression constante, comme const int limite = 4;, peut y être utilisable. Le type et l'initialiseur comptent ; le seul mot const ne règle pas tous les cas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "const_con_funcion_ordinaria",
+          "question": "Dans le programme présenté, que signifie const pour cantidad ?",
+          "options": [
+            "L'objet conserve sa valeur après initialisation, même si l'appel n'est pas constexpr.",
+            "Tous les corps de obtener_cantidad doivent être évalués à la compilation.",
+            "cantidad peut figurer dans n'importe quelle expression constante sans autre condition."
+          ],
+          "correctIndex": 0,
+          "explanation": "const restreint les modifications de l'objet. L'appel d'une fonction ordinaire ne respecte pas l'exigence supplémentaire de constexpr lors de l'initialisation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une vérification pendant la compilation"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nconstexpr int doble(int dato) {\n    return dato * 2;\n}\n\nstatic_assert(doble(3) == 6);\n\nint main() {\n    std::cout << \"Programme accepté\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "static_assert vérifie une condition constante pendant la compilation. Si elle vaut false, le programme ne compile pas ; si elle vaut true, l'assertion elle-même n'affiche rien. Dans cet exemple, main affiche Programme accepté. Si la condition échoue, il faut la corriger avant de pouvoir exécuter main."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "asercion_constante_falsa",
+          "question": "Tu remplaces seulement static_assert(doble(3) == 6) par static_assert(doble(3) == 7). Que se passe-t-il ?",
+          "options": [
+            "main affiche false puis poursuit avec Programme accepté.",
+            "La vérification échoue à la compilation ; main ne s'exécute pas.",
+            "Le programme entre dans catch après avoir affiché le résultat."
+          ],
+          "correctIndex": 1,
+          "explanation": "L'égalité est une condition constante fausse, rejetée avant l'exécution. Cette version ne peut pas exécuter main pour produire une sortie."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une fonction avec une boucle évaluable comme constante"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris suma_hasta : elle reçoit ultimo entre 0 et 10 et renvoie la somme des entiers de 1 à ultimo, bornes comprises. Pour 0, elle renvoie 0. Utilise des variables locales et une boucle, sans afficher ni modifier les objets de l'appelant. Déclare la fonction constexpr et conserve une précondition explicite : ce mot-clé ne valide pas le domaine à lui seul."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ajoute des static_assert pour les cas 0→0 et 4→10. Dans main, initialise un objet constexpr avec suma_hasta(5), puis appelle aussi la fonction avec une variable ordinaire contenant 3. Affiche les deux résultats séparés par deux-points : 15:6. Teste ensuite 10 : la somme vaut 55 et tient dans int."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\n// Construis suma_hasta et les vérifications avant main.\nint main() {\n    // Utilise la même fonction dans les deux contextes demandés.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "La référence figure à la page suivante. Une formule directe pourrait aussi respecter le contrat, mais cet exercice demande une boucle pour montrer que l'évaluation constante peut comporter des variables locales et des répétitions finies."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure et limites de la vérification"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Précondition : ultimo est compris entre 0 et 10.\nconstexpr int suma_hasta(int ultimo) {\n    int total{0};\n    for (int numero = 1; numero <= ultimo; ++numero) {\n        total += numero;\n    }\n    return total;\n}\n\nstatic_assert(suma_hasta(0) == 0);\nstatic_assert(suma_hasta(4) == 10);\n\nint main() {\n    constexpr int modelo = suma_hasta(5);\n    int caso{3};\n    int calculado = suma_hasta(caso);\n    std::cout << modelo << ':' << calculado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : résultats corrects pour tout 0..10, boucle finie, aucune sortie dans la fonction, assertions constantes vraies et appels ordinaires toujours possibles. Les variables locales du calcul ne deviennent pas un état persistant d'un appel à l'autre ; chaque résultat dépend de l'argument de l'appel."
+        },
+        {
+          "type": "paragraph",
+          "text": "Remplace temporairement le cas de main par 10 : le résultat doit être 15:55. Un seul cas dans static_assert ne garantit pas tous les autres ; teste les onze valeurs admises et relie la différence entre deux sommes consécutives au dernier nombre ajouté. N'exécute pas de calcul hors du domaine pour en déduire une garantie non établie."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "consteval impose l'évaluation constante dans ces appels"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nconsteval int doble_obligatorio(int dato) {\n    return dato * 2;\n}\n\nint main() {\n    int resultado = doble_obligatorio(4);\n    std::cout << resultado;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "consteval déclare une fonction immédiate. L'appel présenté utilise l'argument constant 4 et doit être évalué comme une constante ; l'objet destinataire resultado peut rester une variable ordinaire. La sortie est 8. Le remplacer dans main par int dato = 4; int resultado = doble_obligatorio(dato); provoque une erreur : dato n'est pas une expression constante disponible pour cet appel."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "consteval_y_destino",
+          "question": "Pourquoi int resultado = doble_obligatorio(4) est-il valide dans cet exemple ?",
+          "options": [
+            "Toute variable int impose l'évaluation constante de son initialiseur.",
+            "consteval transforme automatiquement n'importe quel argument variable en constante.",
+            "Cet appel immédiat possède un argument constant valide."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'exigence porte sur l'appel immédiat. L'objet qui reçoit sa valeur ne doit pas nécessairement être constexpr, et les arguments ordinaires ne sont pas automatiquement acceptés."
+        },
+        {
+          "type": "paragraph",
+          "text": "constexpr convient à notre fonction suma_hasta, car nous souhaitons les deux usages. consteval convient lorsqu'une interface doit imposer l'évaluation constante. Nous ne mesurons pas ici les performances et ne supposons pas que le compilateur génère toujours un appel pour les utilisations ordinaires."
+        },
+        {
+          "type": "note",
+          "text": "Le calcul à la compilation est présenté dans la source principale (Stroustrup, 2024, section 7.4.9, pp. 204–205). Les explications, domaines et activités de cette progression sont originaux."
+        }
+      ]
+    }
+  ]
+}
