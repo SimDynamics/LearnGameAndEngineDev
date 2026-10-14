@@ -1,0 +1,184 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__requisitos_casos_y_primera_version",
+  "title": "Clarify Requirements and Build a First Version",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Function Needs a Specific Question"
+        },
+        {
+          "type": "paragraph",
+          "text": "The request “calculate how long an order takes” leaves decisions open. How many items may it contain? What unit does the result use? Is there an initial setup time? Is an empty order accepted? If you decide these rules while fixing code, you may change what solving the problem means without noticing. Write a requirement that lets someone else distinguish a correct result from an incorrect one."
+        },
+        {
+          "type": "paragraph",
+          "text": "Our small workshop estimates minutes: it accepts between 0 and 10 items. An empty order takes 0 minutes; a nonempty order needs 3 minutes of setup plus 2 per item. The estimate does not modify orders or display messages. Data are fixed in the code for these labs; they are not interactive input. Later we will also separate reading data from processing them."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "requisito_observable",
+          "question": "Which statement defines testable behavior for an order of 4 items?",
+          "options": [
+            "Use a comment and an int to store the estimated time.",
+            "Organize the estimate into several functions with short names.",
+            "For 4 items, return 11 minutes without changing the order."
+          ],
+          "correctIndex": 2,
+          "explanation": "The result 3+2*4 and the absence of modification form a concrete promise."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "pregunta_pendiente",
+          "question": "The requirement says “accept small orders” without defining small. What must you clarify before testing acceptance?",
+          "options": [
+            "The upper limit for small and whether that value is accepted or rejected.",
+            "A shorter function name, keeping the same ambiguity.",
+            "One accepted example without defining what happens outside that example."
+          ],
+          "correctIndex": 0,
+          "explanation": "A vague category does not allow you to select tests or evaluate a result."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Manual Test Cases Before the Program"
+        },
+        {
+          "type": "paragraph",
+          "text": "Calculate the results for 0, 1, 4, and 10 items first. Zero triggers a separate rule: no setup time. One tests the first nonempty order. Four tests an ordinary case. Ten tests the upper boundary. The operation 3+2*piezas is safe in this small domain; we are not offering a function for multiplying arbitrary int values."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_vacio_estimacion",
+          "question": "According to the requirement, how many minutes does an empty order take?",
+          "options": [
+            "0, because the requirement excludes setup time for an empty order.",
+            "2, because zero counts as one item.",
+            "3, because setup time is always added."
+          ],
+          "correctIndex": 0,
+          "explanation": "The empty case has an explicit rule and must be tested separately."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_frontera_estimacion",
+          "question": "An order has 10 items, the accepted boundary. What is the result?",
+          "options": [
+            "23 minutes.",
+            "20 minutes.",
+            "13 minutes."
+          ],
+          "correctIndex": 0,
+          "explanation": "There are 3 minutes of setup and 20 minutes for the items."
+        },
+        {
+          "type": "paragraph",
+          "text": "A first version may assume valid data if it states that restriction clearly and the prototype's calls respect it. Do not confuse a limited prototype with a finished version. First we build the rule for valid data; then we add validation and an explicit error policy."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Small Prototype That Already Does Something Testable"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Prototype precondition: 0 <= piezas <= 10.\nint estimar(int piezas) {\n    if (piezas == 0) {\n        return 0;\n    }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(4);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The function has one responsibility: estimate for data in its domain. main makes two calls and displays the results. This separation makes it possible to test the calculation without copying its rule into every output statement. The next activity changes the inputs: predict from the requirement, rather than executing the code first."
+        },
+        {
+          "type": "output_prediction",
+          "id": "prototipo_otros_pedidos",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(1) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "answers": [
+            "5:23"
+          ],
+          "explanation": "The first nonempty order takes 3+2=5; the boundary takes 3+20=23."
+        },
+        {
+          "type": "fill_code",
+          "id": "conservar_preparacion",
+          "question": "Write a single decimal numeric literal of type int or double, without operations or names, that represents exactly the setup minutes for nonempty orders.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) { return 0; }\n    return ___ + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(3);\n    return 0;\n}\n",
+          "answers": [
+            "3",
+            "3.0"
+          ],
+          "answerComparison": "cpp_decimal_literal_value",
+          "explanation": "Setup takes three minutes. Both 3 and 3.0 represent that amount; here the calculation with 3.0 produces no fraction, and its int return preserves the result. A different quantity that truncates to the same integer does not meet the requirement. The per-item contribution remains 2*piezas; an empty order returns before adding it."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Extension Changes a Promise"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now the proposal is to allow up to 12 items while keeping the same times. This extension affects the domain and its tests; it does not require changing the formula for nonempty orders. Another proposal, charging setup time even for an empty order, does change an output that was previously correct. Write down which promise changes before editing."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cambio_de_dominio",
+          "question": "If the only change is accepting up to 12 items, which pair of new tests distinguishes the boundary from the first rejection?",
+          "options": [
+            "4 accepted, repeated twice.",
+            "12 accepted and 13 rejected.",
+            "0 and 1 accepted."
+          ],
+          "correctIndex": 1,
+          "explanation": "Previous cases are still useful, but they do not test the extended boundary."
+        },
+        {
+          "type": "paragraph",
+          "text": "In the lab, rebuild estimar for the original requirement without referring to the prototype. main must show cases 0, 2, 7, and 10. Check their expected results by hand. Then change only the setup time to 4 for nonempty orders: predict which results change and which stays the same. Keep calls in the range 0 to 10; data validation is covered later in this unit."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int piezas{7};\n    std::cout << \"Order of \" << piezas << \" items\\n\";\n    std::cout << \"Estimate pending\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab Reference Solution"
+        },
+        {
+          "type": "note",
+          "text": "Look at this comparison after building and testing your attempt. It is one possible implementation; other solutions are valid if they meet the same contract and the stated criteria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. A correct solution returns 0 for an empty order and 3+2*piezas for nonempty orders in the domain 0 to 10. For 0, 2, 7, 10, the results are 0, 7, 17, 23 minutes. Changing only the setup time from 3 to 4 must produce 0, 8, 18, 24: zero stays unchanged. Other organizations and labels are acceptable if they show all four cases and keep calculation separate from presentation."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    // Prototype precondition: piezas between 0 and 10.\n    if (piezas == 0) { return 0; }\n    int preparacion{3};\n    return preparacion + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"0=\" << estimar(0) << \"\\n\";\n    std::cout << \"2=\" << estimar(2) << \"\\n\";\n    std::cout << \"7=\" << estimar(7) << \"\\n\";\n    std::cout << \"10=\" << estimar(10) << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The empty case is handled before adding setup time. To test the second version, change only preparacion to 4, keep the four calls, and compare them against the new expectations. This solution is still a prototype for valid data; it does not claim that a function performs validation it has not yet implemented."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__requisitos_casos_y_primera_version",
+  "title": "Préciser les exigences et construire une première version",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une fonction a besoin d'une question précise"
+        },
+        {
+          "type": "paragraph",
+          "text": "La demande « calcule le temps nécessaire pour une commande » laisse plusieurs décisions en suspens. Combien de pièces peut-elle contenir ? Dans quelle unité exprimer le résultat ? Y a-t-il un temps de préparation initial ? Accepte-t-on une commande vide ? Si tu fixes ces règles en corrigeant le code, tu risques de modifier sans t'en rendre compte ce que signifie résoudre le problème. Écris une exigence qui permette à une autre personne de distinguer un résultat correct d'un résultat incorrect."
+        },
+        {
+          "type": "paragraph",
+          "text": "Notre petit atelier estime le temps en minutes : il accepte de 0 à 10 pièces. Une commande vide prend 0 minute ; une commande non vide demande 3 minutes de préparation, plus 2 par pièce. L'estimation ne modifie pas les commandes et n'affiche aucun message. Dans ces laboratoires, les données sont fixées dans le code ; elles ne proviennent pas d'une saisie interactive. Plus tard, nous séparerons également la lecture et le traitement des données."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "requisito_observable",
+          "question": "Quelle phrase définit un comportement vérifiable pour une commande de 4 pièces ?",
+          "options": [
+            "Utiliser un commentaire et un int pour enregistrer le temps estimé.",
+            "Organiser l'estimation en plusieurs fonctions aux noms courts.",
+            "Pour 4 pièces, renvoyer 11 minutes sans modifier la commande."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le résultat 3+2*4 et l'absence de modification constituent un engagement précis."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "pregunta_pendiente",
+          "question": "L'exigence indique « accepter les petites commandes » sans définir « petites ». Que faut-il préciser avant de vérifier l'acceptation ?",
+          "options": [
+            "La limite d'une petite commande et si cette valeur est acceptée ou refusée.",
+            "Un nom de fonction plus court, en conservant la même ambiguïté.",
+            "Un exemple accepté, sans préciser ce qui se passe en dehors de cet exemple."
+          ],
+          "correctIndex": 0,
+          "explanation": "Une catégorie vague ne permet ni de choisir des tests ni d'évaluer un résultat."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Des cas calculés à la main avant le programme"
+        },
+        {
+          "type": "paragraph",
+          "text": "Calcule d'abord les résultats pour 0, 1, 4 et 10 pièces. Zéro déclenche une règle particulière : pas de préparation. Un teste la première commande non vide. Quatre teste un cas ordinaire. Dix teste la limite supérieure. L'opération 3+2*piezas est sûre dans ce petit domaine ; nous ne proposons pas une fonction destinée à multiplier n'importe quelles valeurs int."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_vacio_estimacion",
+          "question": "Selon l'exigence, combien de minutes prend une commande vide ?",
+          "options": [
+            "0, car l'exigence exclut la préparation pour une commande vide.",
+            "2, car zéro compte comme une pièce.",
+            "3, car le temps de préparation est toujours ajouté."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le cas vide suit une règle explicite et doit être testé séparément."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "caso_frontera_estimacion",
+          "question": "Une commande contient 10 pièces, la limite acceptée. Quel est le résultat ?",
+          "options": [
+            "23 minutes.",
+            "20 minutes.",
+            "13 minutes."
+          ],
+          "correctIndex": 0,
+          "explanation": "Il faut 3 minutes de préparation et 20 minutes pour les pièces."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une première version peut supposer les données valides si elle indique clairement cette restriction et si les appels du prototype la respectent. Ne confonds pas un prototype limité et une version terminée. Nous construisons d'abord la règle pour les données valides, puis nous ajoutons la validation et une politique d'erreur explicite."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un petit prototype qui permet déjà des vérifications"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\n// Précondition du prototype : 0 <= piezas <= 10.\nint estimar(int piezas) {\n    if (piezas == 0) {\n        return 0;\n    }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(0) << \":\" << estimar(4);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction n'a qu'une responsabilité : estimer les données de son domaine. main effectue deux appels et affiche les résultats. Cette séparation permet de tester le calcul sans recopier sa règle dans chaque instruction d'affichage. L'activité suivante change les entrées : prédis le résultat à partir de l'exigence, sans commencer par exécuter le programme."
+        },
+        {
+          "type": "output_prediction",
+          "id": "prototipo_otros_pedidos",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) { return 0; }\n    return 3 + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(1) << \":\" << estimar(10);\n    return 0;\n}\n",
+          "answers": [
+            "5:23"
+          ],
+          "explanation": "La première commande non vide demande 3+2=5 ; la limite demande 3+20=23."
+        },
+        {
+          "type": "fill_code",
+          "id": "conservar_preparacion",
+          "question": "Écris un seul littéral numérique décimal de type int ou double, sans opération ni nom, représentant exactement les minutes de préparation des commandes non vides.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    if (piezas == 0) { return 0; }\n    return ___ + 2 * piezas;\n}\n\nint main() {\n    std::cout << estimar(3);\n    return 0;\n}\n",
+          "answers": [
+            "3",
+            "3.0"
+          ],
+          "answerComparison": "cpp_decimal_literal_value",
+          "explanation": "La préparation dure trois minutes. 3 et 3.0 représentent cette durée ; ici, le calcul avec 3.0 ne produit aucune partie fractionnaire et le retour int conserve le résultat. Une autre quantité tronquée au même entier ne respecte pas l'exigence. La contribution de chaque pièce reste 2*piezas ; une commande vide déclenche le retour avant cet ajout."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une extension modifie un engagement"
+        },
+        {
+          "type": "paragraph",
+          "text": "On propose maintenant d'autoriser jusqu'à 12 pièces en conservant les mêmes durées. Cette extension change le domaine et ses tests ; elle n'oblige pas à modifier la formule des commandes non vides. Une autre proposition, facturer la préparation même pour une commande vide, modifierait en revanche une sortie auparavant correcte. Indique quel engagement change avant de modifier le code."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cambio_de_dominio",
+          "question": "Si le seul changement consiste à accepter jusqu'à 12 pièces, quelle nouvelle paire de tests distingue la limite du premier refus ?",
+          "options": [
+            "4 accepté, deux fois de suite.",
+            "12 accepté et 13 refusé.",
+            "0 et 1 acceptés."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les anciens cas restent utiles, mais ils ne vérifient pas la nouvelle limite."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans le laboratoire, reconstruis estimar pour l'exigence initiale sans consulter le prototype. main doit afficher les cas 0, 2, 7 et 10. Vérifie leurs résultats à la main. Ensuite, change seulement la préparation à 4 pour les commandes non vides : prédis quels résultats changent et lequel reste identique. Garde les appels entre 0 et 10 ; la validation des données sera abordée plus loin dans cette unité."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int piezas{7};\n    std::cout << \"Commande de \" << piezas << \" pièces\\n\";\n    std::cout << \"Estimation en attente\";\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence du laboratoire"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et testé ta tentative. Ce n'est qu'une implémentation possible ; d'autres solutions sont valides si elles respectent le même contrat et les critères indiqués."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. Une solution correcte renvoie 0 pour une commande vide et 3+2*piezas pour les commandes non vides du domaine de 0 à 10. Pour 0, 2, 7 et 10, les résultats sont 0, 7, 17 et 23 minutes. En faisant passer uniquement la préparation de 3 à 4, on doit obtenir 0, 8, 18 et 24 : le zéro reste inchangé. D'autres organisations et étiquettes conviennent si elles affichent ces quatre cas et séparent le calcul de la présentation."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint estimar(int piezas) {\n    // Précondition du prototype : piezas entre 0 et 10.\n    if (piezas == 0) { return 0; }\n    int preparacion{3};\n    return preparacion + 2 * piezas;\n}\n\nint main() {\n    std::cout << \"0=\" << estimar(0) << \"\\n\";\n    std::cout << \"2=\" << estimar(2) << \"\\n\";\n    std::cout << \"7=\" << estimar(7) << \"\\n\";\n    std::cout << \"10=\" << estimar(10) << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le cas vide est traité avant l'ajout de la préparation. Pour vérifier la seconde version, change seulement preparacion à 4, conserve les quatre appels et compare les résultats aux nouvelles attentes. Cette solution reste un prototype pour des données valides ; elle ne prétend pas assurer une validation que la fonction n'implémente pas encore."
+        }
+      ]
+    }
+  ]
+}

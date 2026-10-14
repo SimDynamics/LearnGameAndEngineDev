@@ -1,0 +1,285 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa",
+  "title": "Distinguish Failures and Locate Their Cause",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Stage of Failure Changes the Investigation"
+        },
+        {
+          "type": "paragraph",
+          "text": "A compilation error prevents that version of the program from being built until source errors are fixed. A linking error can arise when a call has a declaration but the program lacks the required definition. A failure detected during execution occurs after the executable has been built. A logic error produces behavior that violates a requirement, even when the program compiles and terminates. Classification helps you choose evidence; it does not mean every failure has one obvious cause."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "declaracion_sin_definicion",
+          "question": "There is a declaration int estimar(int); and a call, but no definition of estimar anywhere in the program. Which stage normally detects the missing definition when building the executable?",
+          "options": [
+            "Linking the parts of the executable.",
+            "Normal execution of the body of estimar.",
+            "Checking the declaration and the types used in the call."
+          ],
+          "correctIndex": 0,
+          "explanation": "The declaration allows the call to be checked; the linker must resolve its definition."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "resultado_incorrecto",
+          "question": "The requirement accepts 0 items without setup time. The function always returns 3+2*piezas and the program compiles. Which case reveals a logic error?",
+          "options": [
+            "0 items.",
+            "4 items.",
+            "1 item."
+          ],
+          "correctIndex": 0,
+          "explanation": "Testing the special case exposes an omitted rule. Compilation does not verify the requirement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Read the First Useful Diagnostic"
+        },
+        {
+          "type": "paragraph",
+          "text": "The compiler reports locations and context; an initial error can trigger further diagnostics. First look for the rule that the code near the earliest relevant diagnostic violates. An undeclared name might be a typo or a scope error; do not fix it by declaring arbitrary new objects. A missing semicolon may first become apparent at the next statement. The reported location is a clue, not a guarantee that the cause is at exactly that column."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_nombre",
+          "question": "The code declares int pendientes{3}; and later writes std::cout << pendiente;. Which correction is supported by that evidence?",
+          "options": [
+            "Change only the literal printed before the name pendiente.",
+            "Use pendientes to display the declared object.",
+            "Change only the type of pendientes from int to double."
+          ],
+          "correctIndex": 1,
+          "explanation": "The mismatched names explain the diagnostic; creating another variable could conceal an error in intent."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cascada_diagnosticos",
+          "question": "After omitting a brace, several diagnostics appear in later functions. What should you check first?",
+          "options": [
+            "Inspect the braces near the first relevant failure.",
+            "Treat every diagnostic as an independent cause.",
+            "Fix the last diagnostic first as an isolated failure."
+          ],
+          "correctIndex": 0,
+          "explanation": "A structural break can cause a cascade. Correct one specific hypothesis and build again."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Trace Compares Actual and Expected Behavior"
+        },
+        {
+          "type": "paragraph",
+          "text": "For an incorrect result, keep a small input that reproduces it and the output required by the specification. Follow the state step by step from a known point. Compare a column of expected results against the actual states. If the total of three contributions looks like the final contribution, investigate resets and assignments before changing the problem's formula."
+        },
+        {
+          "type": "output_prediction",
+          "id": "total_reiniciado_en_cada_vuelta",
+          "question": "Predict the output. Preserve internal spaces and line breaks; do not add quotation marks that the program does not print.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n        std::cout << total << \";\";\n    }\n    std::cout << \"Final=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "2;3;4;Final=4"
+          ],
+          "explanation": "The trace confirms replacement, not accumulation. The final output reflects the last contribution."
+        },
+        {
+          "type": "fill_code",
+          "id": "reparacion_respaldada",
+          "question": "The goal is to add contributions 2, 3, and 4. Complete only the compound assignment operator that preserves the previous total.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total ___ aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "+="
+          ],
+          "explanation": "+= adds each contribution to the previous total; the expected result is 9."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cambiar_sin_hipotesis",
+          "question": "An output is wrong. You change the limit, the update, and the acceptance condition at the same time; now that case passes. What uncertainty remains?",
+          "options": [
+            "Only whether all three changes use clear names.",
+            "None: the same case is enough to accept all three changes.",
+            "Which change repaired the failure and what else each change altered."
+          ],
+          "correctIndex": 2,
+          "explanation": "One change per hypothesis, with comparable tests, preserves evidence about the cause."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Verify the Fix and Return to the Requirement"
+        },
+        {
+          "type": "paragraph",
+          "text": "A case that no longer fails demonstrates a specific improvement, but also test cases that previously worked. Changing a boundary to include the last element can introduce an out-of-bounds access if the former endpoint was an exclusive index. Express the intent in terms of size and valid indices before changing < to <=. Do not run invalid memory accesses to try to discover their output."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reparar_limite_de_vector",
+          "question": "v has three elements, at indices 0, 1, and 2. An indexed loop must visit each exactly once. Which condition corresponds to the exclusive endpoint 3?",
+          "options": [
+            "i == 3",
+            "i < 3",
+            "i <= 3"
+          ],
+          "correctIndex": 1,
+          "explanation": "The size is the first excluded index, not the last valid index."
+        },
+        {
+          "type": "paragraph",
+          "text": "The lab adds 2, 3, and 4 but shows an incorrect sum. First predict its actual output and write down the expected result. Fix only one cause and also test a single contribution and zero contributions. The initial code terminates and uses small values; the error is logical and can be investigated safely."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab Reference Solution"
+        },
+        {
+          "type": "note",
+          "text": "Consult this comparison after building and testing your attempt. It is one possible implementation; other solutions are valid if they meet the same contract and the stated criteria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Correctness criteria. The initial version prints 4: every assignment replaces the total. The required result for 2, 3, 4 is 9. The repair must preserve the previous accumulated total and change one specific cause. Also test one contribution {3}, which must produce 3, and no contributions, which must produce 0. You do not need to change the loop condition, values, and update all at once."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The only fix here is to replace total = aporte with total += aporte. To test a single contribution, use aporte{3} and aporte <= 3. To test none, use aporte{2} and aporte <= 1; the body is never executed and the total remains zero. Restoring the range from 2 to 4 must again produce 9."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Diagnose a Difference Without Being Given the Fix"
+        },
+        {
+          "type": "paragraph",
+          "text": "The task is to count how many elements of a collection belong to a closed interval of values: both the lower and upper bounds are included. Each occurrence counts separately, even when values repeat. The collection may contain up to eight integers from 0 to 10; the bounds are also between 0 and 10 and satisfy inferior <= superior. An empty collection counts as zero. contar_en_intervalo reads the data and returns the count, without modifying the collection or printing anything. Preserve these preconditions when changing tests."
+        },
+        {
+          "type": "paragraph",
+          "text": "The initial source contains a logic error: it uses data within the domain and terminates, but does not meet every requirement. The initial collection is {2,4,6,8,9,4}, with interval 3..8. Before running it, count by hand what the requirement demands. main must display Inside:C;Data:N, with no spaces or final newline: C is the count and N is the original collection size. Do not change the requirement to justify a different output."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare the observed output with your expectation. Then find a collection as small as possible that still reproduces the difference with the same bounds. Form a hypothesis about the cause before editing. Trace every element: its value, the condition's result, and the counter before and after. Propose a change supported by that evidence, modify one cause, and retest both the reduced case and the initial collection. Also keep a case that already worked before."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// EXPECTATION before running:\n// Reduced COUNTEREXAMPLE and expected result:\n// HYPOTHESIS before editing:\n// TRACE: value | condition | counter before | counter after\n//\n//\n//\n// Proposed CHANGE and supporting evidence:\n// REGRESSION: case | expected | observed before | observed after\n//\n//\n\n// Pre: up to 8 values from 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor < superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{2, 4, 6, 8, 9, 4};\n    const int inferior = 3;\n    const int superior = 8;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Inside:\" << dentro << \";Data:\" << datos.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "The editor comments provide space for your investigation: write after //, keep your initial hypothesis, and record whether the trace confirmed or refuted it. Save your cases and the reason for the change there. Consult the reference only after investigating and testing a fix; merely replacing the program with one that matches an output is not enough."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference for an Evidence-Based Fix"
+        },
+        {
+          "type": "note",
+          "text": "Compare only after noting your hypothesis, tracing a failing case, and testing your change. This version uses different data; also retain the initial case to evaluate your own fix."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\n// Pre: up to 8 values from 0..10; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{3, 5, 8, 8, 10};\n    const int inferior = 3;\n    const int superior = 8;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Inside:\" << dentro << \";Data:\" << datos.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference sample produces Inside:4;Data:5: it counts 3, 5, and both occurrences of 8. For the initial collection, the requirement demands Inside:4;Data:6, but the faulty source prints Inside:3;Data:6. Changing the reference collection does not replace retesting that original case."
+        },
+        {
+          "type": "paragraph",
+          "text": "A minimal counterexample is {8}, with the same bounds 3..8: the requirement counts one, but the initial program counts zero. The empty collection does not reproduce the difference: both versions count zero. In the initial trace of {2,4,6,8,9,4}, the rows value;condition;counter before→after are 2;false;0→0, 4;true;0→1, 6;true;1→2, 8;false;2→2, 9;false;2→2, and 4;true;2→3. The row for 8 lets you compare the written condition against the membership required by the specification."
+        },
+        {
+          "type": "paragraph",
+          "text": "The comparison valor < superior excludes equality with the upper bound, although the interval includes it. The minimal repair for this version changes that comparison to valor <= superior. The counter, loop, and presentation already met their responsibilities. The hypothesis is supported when the reduced case passes and previously correct cases keep their answers."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: include both interval endpoints and exclude values outside; count each occurrence exactly once; an empty collection returns zero; the result lies between zero and the collection size; data stay unchanged and calculation remains separate from output; calls respect preconditions. The investigation must preserve expectations, counterexample, hypothesis, trace, and before/after results. An equivalent expression may also fix the cause: explain which discrepancy it resolves rather than changing several rules without distinguishing their effects."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Regression and Recovery: What Each Boundary Means"
+        },
+        {
+          "type": "paragraph",
+          "text": "With the interval 3..8, these expectations help verify the fix: {} counts 0; {3} and {8} count 1; {3,8} and {8,8} count 2; {2,9} counts 0; {4,6} counts 2. {3} and {4,6} already worked before; {8} detects the missing rule. Keep all expectations when checking a new version. The empty case would also catch an attempt to hide the error by always adding one to the result."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa__intervalo_de_un_solo_valor",
+          "language": "cpp",
+          "question": "Predict the output when both bounds are equal. The precondition allows equality.",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{4, 5, 5, 6};\n    const int inferior = 5;\n    const int superior = 5;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Inside:\" << dentro << \";Data:\" << datos.size();\n    return 0;\n}\n",
+          "answers": [
+            "Inside:2;Data:4"
+          ],
+          "explanation": "The closed interval 5..5 accepts only the value five. Its two occurrences count; four and six lie outside. The collection retains all four elements."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa__limite_de_valor_y_extremo_de_indices",
+          "question": "A vector has four elements, at indices 0, 1, 2, and 3. You want to visit them all by index and select values in the closed interval 4..7. i starts at zero and increases by one. Which pair of conditions satisfies both contracts?",
+          "options": [
+            "Select with valor >= 4 && valor < 7; loop while i < 4.",
+            "Select with valor >= 4 && valor <= 7; loop while i < 4.",
+            "Select with valor >= 4 && valor <= 7; loop while i <= 4."
+          ],
+          "correctIndex": 1,
+          "explanation": "Seven is an allowed value in the closed interval. Four is the vector's first excluded index, not another element: valid indices end at three. The two conditions express boundaries with different meanings."
+        },
+        {
+          "type": "paragraph",
+          "text": "The fix does not mean <= is always preferable to <. For membership in this interval, the final value is included; for index iteration, the size is an exclusive endpoint. Return to the requirement of each comparison before editing. The previous activity asks you to choose conditions; it does not execute an out-of-range index access."
+        },
+        {
+          "type": "paragraph",
+          "text": "In another session, change the bounds to 4..7 and build your own counterexample for a version that incorrectly excludes an endpoint. Write down the expected result and your hypothesis before looking at the code. Then test an interior value, an exterior value, repetitions, and an empty collection with the repaired version. Explain which evidence identifies the cause and which cases show that the fix preserved previous behavior."
+        }
+      ]
+    }
+  ]
+}

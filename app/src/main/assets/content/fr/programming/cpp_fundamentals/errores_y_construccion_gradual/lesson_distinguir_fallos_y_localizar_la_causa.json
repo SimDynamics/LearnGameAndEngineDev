@@ -1,0 +1,285 @@
+{
+  "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa",
+  "title": "Distinguer les erreurs et en localiser la cause",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'étape de l'erreur oriente l'enquête"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une erreur de compilation empêche de construire cette version du programme tant que les problèmes du code source ne sont pas corrigés. Une erreur d'édition de liens peut apparaître lorsqu'un appel possède une déclaration, mais que la définition nécessaire manque dans le programme. Une défaillance détectée à l'exécution survient après la construction de l'exécutable. Une erreur logique produit un comportement contraire à l'exigence, même si le programme compile et se termine. Classer les erreurs aide à choisir les preuves pertinentes ; cela ne signifie pas que chacune possède une cause unique et évidente."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "declaracion_sin_definicion",
+          "question": "Il existe une déclaration int estimar(int); et un appel, mais aucune définition de estimar dans le programme. Quelle étape détecte normalement cette définition manquante lors de la construction de l'exécutable ?",
+          "options": [
+            "L'édition de liens entre les parties de l'exécutable.",
+            "L'exécution normale du corps de estimar.",
+            "L'analyse de la déclaration et des types de l'appel."
+          ],
+          "correctIndex": 0,
+          "explanation": "La déclaration permet de vérifier l'appel ; l'édition de liens doit retrouver sa définition."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "resultado_incorrecto",
+          "question": "L'exigence accepte 0 pièce sans préparation. La fonction renvoie toujours 3+2*piezas et le programme compile. Quel cas révèle une erreur logique ?",
+          "options": [
+            "0 pièce.",
+            "4 pièces.",
+            "1 pièce."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le test du cas particulier révèle une règle oubliée. La compilation ne vérifie pas l'exigence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire le premier diagnostic utile"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le compilateur indique des emplacements et du contexte ; une première erreur peut provoquer d'autres diagnostics. Cherche d'abord quelle règle le code proche du premier diagnostic pertinent enfreint. Un nom non déclaré peut venir d'une faute de frappe ou d'une portée incorrecte ; ne le corrige pas en déclarant au hasard de nouveaux objets. Un point-virgule manquant peut n'apparaître qu'à l'instruction suivante. L'emplacement signalé est un indice, pas la garantie que la cause se trouve exactement dans cette colonne."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "diagnostico_nombre",
+          "question": "Le code déclare int pendientes{3}; puis écrit std::cout << pendiente;. Quelle correction est étayée par ces éléments ?",
+          "options": [
+            "Modifier uniquement le littéral affiché avant le nom pendiente.",
+            "Utiliser pendientes pour afficher l'objet déclaré.",
+            "Changer uniquement le type de pendientes de int à double."
+          ],
+          "correctIndex": 1,
+          "explanation": "La différence entre les noms explique le diagnostic ; créer une autre donnée pourrait masquer une erreur d'intention."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cascada_diagnosticos",
+          "question": "Après l'oubli d'une accolade, plusieurs diagnostics apparaissent dans les fonctions suivantes. Que convient-il de vérifier en premier ?",
+          "options": [
+            "Examiner les accolades près de la première erreur pertinente.",
+            "Traiter chaque diagnostic comme une cause indépendante.",
+            "Réparer d'abord le dernier diagnostic comme une erreur isolée."
+          ],
+          "correctIndex": 0,
+          "explanation": "Une rupture de structure peut déclencher une cascade. Corrige une hypothèse précise, puis reconstruis le programme."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une trace compare le comportement réel au résultat attendu"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour un résultat incorrect, conserve une petite entrée qui reproduit l'erreur et le résultat exigé par l'énoncé. Suis l'état pas à pas à partir d'un point connu. Compare une colonne de résultats attendus aux états réels. Si le total de trois contributions ressemble à la dernière contribution, recherche des réinitialisations et des affectations avant de modifier la formule du problème."
+        },
+        {
+          "type": "output_prediction",
+          "id": "total_reiniciado_en_cada_vuelta",
+          "question": "Prédis la sortie. Respecte les espaces et les sauts de ligne internes ; n'ajoute pas de guillemets que le programme n'affiche pas.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n        std::cout << total << \";\";\n    }\n    std::cout << \"Final=\" << total;\n    return 0;\n}\n",
+          "answers": [
+            "2;3;4;Final=4"
+          ],
+          "explanation": "La trace confirme des remplacements, et non une somme cumulée. Le résultat final correspond à la dernière contribution."
+        },
+        {
+          "type": "fill_code",
+          "id": "reparacion_respaldada",
+          "question": "L'objectif est d'additionner les contributions 2, 3 et 4. Complète uniquement l'opérateur d'affectation composée qui conserve le total précédent.",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total ___ aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n",
+          "answers": [
+            "+="
+          ],
+          "explanation": "+= ajoute chaque contribution au total précédent ; le résultat attendu est 9."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cambiar_sin_hipotesis",
+          "question": "Une sortie est incorrecte. Tu changes simultanément la limite, la mise à jour et la condition d'acceptation ; le cas réussit maintenant. Quelle incertitude subsiste ?",
+          "options": [
+            "Il ne reste qu'à vérifier si les trois changements utilisent des noms clairs.",
+            "Aucune : le même cas suffit à valider les trois modifications.",
+            "Quel changement a corrigé l'erreur et quels autres effets chaque changement a produits."
+          ],
+          "correctIndex": 2,
+          "explanation": "Un changement par hypothèse, accompagné de tests comparables, conserve des preuves sur la cause."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier la correction et revenir à l'exigence"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un cas qui ne présente plus d'erreur démontre une amélioration précise, mais il faut aussi tester les cas qui fonctionnaient déjà. Modifier une borne pour inclure le dernier élément peut entraîner un accès hors limites si l'ancienne borne était un indice exclusif. Exprime l'intention en termes de taille et d'indices valides avant de remplacer < par <=. N'exécute pas d'accès invalides pour essayer de découvrir leur sortie."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reparar_limite_de_vector",
+          "question": "v contient trois éléments, d'indices 0, 1 et 2. Le parcours par indice doit visiter chacun une fois. Quelle condition correspond à la borne exclusive 3 ?",
+          "options": [
+            "i == 3",
+            "i < 3",
+            "i <= 3"
+          ],
+          "correctIndex": 1,
+          "explanation": "La taille est le premier indice exclu, pas le dernier indice valide."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le laboratoire additionne 2, 3 et 4, mais affiche une somme incorrecte. Commence par prédire la sortie réelle et écris le résultat attendu. Corrige une seule cause, puis teste aussi une contribution unique et zéro contribution. Le code initial se termine et utilise de petites valeurs ; l'erreur est logique et peut être examinée sans danger."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total = aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution de référence du laboratoire"
+        },
+        {
+          "type": "note",
+          "text": "Consulte cette comparaison après avoir construit et testé ta tentative. C'est une implémentation possible ; d'autres solutions sont valides si elles respectent le même contrat et les critères indiqués."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de correction. La version initiale affiche 4 : chaque affectation remplace le total. Le résultat exigé pour 2, 3 et 4 est 9. La correction doit préserver le cumul précédent et ne modifier qu'une cause précise. Teste également une contribution {3}, qui doit produire 3, et aucune contribution, qui doit produire 0. Il n'est pas nécessaire de modifier à la fois la condition, les valeurs et la mise à jour."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nint main() {\n    int total{0};\n    for (int aporte{2}; aporte <= 4; ++aporte) {\n        total += aporte;\n    }\n    std::cout << total;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La seule correction ici consiste à remplacer total = aporte par total += aporte. Pour tester une seule contribution, utilise aporte{3} et aporte <= 3. Pour n'en tester aucune, utilise aporte{2} et aporte <= 1 ; le corps ne s'exécute pas et le total reste à zéro. Rétablir le parcours de 2 à 4 doit de nouveau produire 9."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Diagnostiquer un écart sans connaître la correction"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'objectif est de compter les éléments d'une collection qui appartiennent à un intervalle fermé de valeurs : les bornes inférieure et supérieure sont incluses. Chaque occurrence compte séparément, même lorsque des valeurs se répètent. La collection accepte jusqu'à huit entiers entre 0 et 10 ; les bornes se situent également entre 0 et 10 et respectent inferior <= superior. Une collection vide compte zéro. contar_en_intervalo lit les données et renvoie le nombre d'éléments concernés, sans modifier la collection ni rien afficher. Respecte ces préconditions en changeant les tests."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le code source initial présente une erreur logique : il utilise des données appartenant au domaine et se termine, mais ne respecte pas toutes les exigences. La collection initiale est {2,4,6,8,9,4}, pour l'intervalle 3..8. Avant l'exécution, calcule à la main ce qu'exige l'énoncé. main doit afficher Dans:C;Données:N, sans espaces ni saut de ligne final : C est le résultat du comptage et N la taille initiale de la collection. Ne modifie pas l'exigence pour justifier une autre sortie."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare la sortie observée à ton attente. Cherche ensuite une collection aussi petite que possible qui reproduit encore l'écart avec les mêmes bornes. Formule une hypothèse sur la cause avant de modifier le code. Retrace chaque élément : sa valeur, le résultat de la condition et le compteur avant et après. Propose un changement étayé par ces éléments, corrige une seule cause, puis reteste le cas réduit et la collection initiale. Conserve aussi un cas qui fonctionnait déjà."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\n// ATTENTE avant exécution :\n// CONTRE-EXEMPLE réduit et résultat attendu :\n// HYPOTHÈSE avant modification :\n// TRACE : valeur | condition | compteur avant | compteur après\n//\n//\n//\n// CHANGEMENT proposé et éléments justificatifs :\n// RÉGRESSION : cas | attendu | observé avant | observé après\n//\n//\n\n// Pré : jusqu'à 8 valeurs de 0..10 ; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor < superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{2, 4, 6, 8, 9, 4};\n    const int inferior = 3;\n    const int superior = 8;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dans:\" << dentro << \";Données:\" << datos.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Les commentaires de l'éditeur servent à ton enquête : écris après //, conserve ton hypothèse initiale et indique si la trace l'a confirmée ou réfutée. Note-y les cas étudiés et la justification du changement. Ne consulte la référence qu'après avoir enquêté et testé une correction ; il ne suffit pas de remplacer le programme par un autre donnant une sortie identique."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure d'une correction étayée"
+        },
+        {
+          "type": "note",
+          "text": "Compare seulement après avoir noté ton hypothèse, retracé un cas qui échoue et testé ton changement. Cette version utilise d'autres données ; conserve aussi le cas initial pour évaluer ta propre correction."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\n// Pré : jusqu'à 8 valeurs de 0..10 ; 0 <= inferior <= superior <= 10.\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{3, 5, 8, 8, 10};\n    const int inferior = 3;\n    const int superior = 8;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dans:\" << dentro << \";Données:\" << datos.size();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'exemple de référence produit Dans:4;Données:5 : il compte 3, 5 et les deux occurrences de 8. Pour la collection initiale, l'exigence impose Dans:4;Données:6, mais le code défectueux produit Dans:3;Données:6. Changer la collection de référence ne remplace pas une nouvelle vérification de ce premier cas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un contre-exemple minimal est {8}, avec les mêmes bornes 3..8 : l'exigence compte un élément, mais le programme initial en compte zéro. Le cas vide ne reproduit pas l'écart : les deux versions comptent zéro. Dans la trace initiale de {2,4,6,8,9,4}, les lignes valeur;condition;compteur avant→après sont 2;false;0→0, 4;true;0→1, 6;true;1→2, 8;false;2→2, 9;false;2→2 et 4;true;2→3. La ligne correspondant à 8 permet de confronter la condition écrite à l'appartenance exigée par l'énoncé."
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparaison valor < superior exclut l'égalité avec la borne supérieure, alors que l'intervalle l'admet. La correction minimale de cette version consiste à remplacer cette comparaison par valor <= superior. Le compteur, le parcours et l'affichage remplissaient déjà leurs fonctions. L'hypothèse est étayée lorsque le cas réduit réussit et que les cas auparavant corrects conservent leurs réponses."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : inclure les deux bornes de l'intervalle et exclure les valeurs extérieures ; compter chaque occurrence une seule fois ; renvoyer zéro pour une collection vide ; obtenir un résultat entre zéro et la taille de la collection ; conserver les données et séparer calcul et affichage ; respecter les préconditions des appels. L'enquête doit garder les attentes, le contre-exemple, l'hypothèse, la trace et les résultats avant/après. Une expression équivalente peut également corriger la cause : explique quel écart elle résout au lieu de modifier plusieurs règles sans distinguer leurs effets."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Régression et retour aux exigences : le sens de chaque borne"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour l'intervalle 3..8, voici des attentes permettant de vérifier la correction : {} donne 0 ; {3} et {8} donnent 1 ; {3,8} et {8,8} donnent 2 ; {2,9} donne 0 ; {4,6} donne 2. {3} et {4,6} fonctionnaient déjà ; {8} détecte la règle oubliée. Conserve toutes ces attentes lors de la vérification d'une nouvelle version. Le cas vide détecterait aussi une tentative de cacher l'erreur en ajoutant systématiquement un au résultat."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa__intervalo_de_un_solo_valor",
+          "language": "cpp",
+          "question": "Prédis la sortie lorsque les deux bornes sont égales. La précondition autorise cette égalité.",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_en_intervalo(const std::vector<int>& datos, int inferior, int superior) {\n    int dentro = 0;\n    for (int valor : datos) {\n        if (valor >= inferior && valor <= superior) {\n            ++dentro;\n        }\n    }\n    return dentro;\n}\n\nint main() {\n    const std::vector<int> datos{4, 5, 5, 6};\n    const int inferior = 5;\n    const int superior = 5;\n    const int dentro = contar_en_intervalo(datos, inferior, superior);\n    std::cout << \"Dans:\" << dentro << \";Données:\" << datos.size();\n    return 0;\n}\n",
+          "answers": [
+            "Dans:2;Données:4"
+          ],
+          "explanation": "L'intervalle fermé 5..5 n'admet que la valeur cinq. Ses deux occurrences comptent ; quatre et six restent exclus. La collection conserve ses quatre éléments."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__errores_y_construccion_gradual__distinguir_fallos_y_localizar_la_causa__limite_de_valor_y_extremo_de_indices",
+          "question": "Un vector possède quatre éléments, d'indices 0, 1, 2 et 3. Tu veux tous les parcourir par indice et sélectionner les valeurs de l'intervalle fermé 4..7. i commence à zéro et augmente d'une unité. Quelle paire de conditions respecte les deux contrats ?",
+          "options": [
+            "Sélectionner avec valor >= 4 && valor < 7 ; parcourir tant que i < 4.",
+            "Sélectionner avec valor >= 4 && valor <= 7 ; parcourir tant que i < 4.",
+            "Sélectionner avec valor >= 4 && valor <= 7 ; parcourir tant que i <= 4."
+          ],
+          "correctIndex": 1,
+          "explanation": "Sept est une valeur admise dans l'intervalle fermé. Quatre est le premier indice exclu du vector, pas un élément supplémentaire : les indices valides s'arrêtent à trois. Les deux conditions expriment des bornes de sens différents."
+        },
+        {
+          "type": "paragraph",
+          "text": "La correction ne signifie pas que <= soit toujours préférable à <. Pour l'appartenance à cet intervalle, la dernière valeur est incluse ; pour un parcours par indice, la taille est une borne exclusive. Reviens à l'exigence de chaque comparaison avant de modifier le code. L'activité précédente demande de choisir des conditions ; elle n'exécute aucun accès à un indice hors limites."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une autre séance, remplace les bornes par 4..7 et construis ton propre contre-exemple d'une version qui exclut à tort une borne. Écris l'attente et l'hypothèse avant d'examiner le code. Teste ensuite un cas intérieur, un cas extérieur, des répétitions et une collection vide avec la version corrigée. Explique quels éléments identifient la cause et quels tests montrent que la correction a préservé le comportement antérieur."
+        }
+      ]
+    }
+  ]
+}
