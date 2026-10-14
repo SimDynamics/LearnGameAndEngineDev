@@ -1,0 +1,158 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__actualizar_todo_o_conservar_el_estado_anterior",
+  "title": "Update Everything or Preserve the Previous State",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tolerance Depends on the Purpose"
+        },
+        {
+          "type": "paragraph",
+          "text": "Discarding a line may be appropriate for a report that permits partial data. It may be unacceptable when replacing an entire configuration: keeping only some records changes what the load means. We now choose a different policy: all records must be valid and have unique IDs; if anything fails, preserve the entire previous collection exactly."
+        },
+        {
+          "type": "paragraph",
+          "text": "The format and domains are unchanged. The loader rejects empty, invalid, or duplicate lines. An empty sample is still a complete empty collection, and it replaces the old one. The contract returns bool; false protects the destination but does not promise to reset the source or consume data after the first rejection. In the programs we use (completo ? \"Accepted\" : \"Rejected\") to choose the report text. The expression condition ? value_if_true : value_if_false is the conditional operator: it checks the condition and evaluates only the selected alternative. Here both alternatives are strings, and parentheses keep the choice together before insertion into cout. An if/else printing each message in its branch would produce the same report; this expression changes neither the bool already obtained nor the loading policy."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "politica_segun_objetivo",
+          "question": "You want to replace a complete set of settings whose consistency depends on having every record. Which policy expresses this requirement?",
+          "options": [
+            "Accept valid records and treat rejected ones as absent.",
+            "Reject the entire load if any record cannot be validated.",
+            "Apply the first records and continue using the old settings."
+          ],
+          "correctIndex": 1,
+          "explanation": "The policy must reflect the purpose. Mixing new and old parts is not the same as accepting the complete set."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Returning false Does Not Undo Changes"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a vector, clear() removes all elements; this differs from clear() on a stream, which clears its state flags. The following code is an intentional counterexample: it empties and modifies the destination while reading. It does not meet our new guarantee. Predict its behavior to identify exactly what is lost and what is added before rejection."
+        },
+        {
+          "type": "output_prediction",
+          "id": "fallo_no_deshace_cambios",
+          "question": "Predict the output of this counterexample. The second line repeats ID 1.",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\nbool cargar_directamente(std::istream& origen, std::vector<Registro>& destino) {\n    destino.clear();\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        Registro registro{0, {0, 0}};\n        if (!leer_linea(linea, registro)\n            || contiene_id(destino, registro.id)) {\n            return false;\n        }\n        destino.push_back(registro);\n    }\n    return !origen.bad() && origen.eof();\n}\n\nint main() {\n    std::istringstream origen{\"1 [2;0]\\n1 [3;1]\\n2 [0;0]\"};\n    std::vector<Registro> destino{{9, {1, 1}}};\n    bool completo = cargar_directamente(origen, destino);\n    std::cout << (completo ? \"Accepted\" : \"Rejected\");\n    for (const Registro& registro : destino) {\n        std::cout << '|' << registro.id << ':'\n                  << registro.recuento.aceptados << ':'\n                  << registro.recuento.rechazados;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Rejected|1:2:0"
+          ],
+          "explanation": "clear() removes the previous record with ID 9. ID 1 is inserted, then its duplicate is rejected. Returning false does not undo the removal or the first insertion."
+        },
+        {
+          "type": "paragraph",
+          "text": "Checking the result at the end of main is not enough: the destination has already changed inside the function. Nor is resetting each local Registro enough; that prevents mixing the fields of one record, but does not protect the collection being modified directly."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "ambitos_de_proteccion",
+          "question": "A Registro candidate protects the fields of one line. What else is needed to protect the whole collection?",
+          "options": [
+            "An independent candidate collection until validation is complete.",
+            "A cout after each insertion to confirm the change.",
+            "A clear() on the destination before starting each line."
+          ],
+          "correctIndex": 0,
+          "explanation": "The guarantee must cover the entire state we want to preserve, not just one part of the reading."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Complete Update"
+        },
+        {
+          "type": "paragraph",
+          "text": "Implement cargar_sin_descartes with std::istream& and std::vector<Registro>&. Decide where to construct the new collection and when to assign it to the destination. Use the supplied leer_linea and contiene_id; immediately reject an invalid or repeated line. Return true only after confirming a clean end and applying the entire candidate collection."
+        },
+        {
+          "type": "paragraph",
+          "text": "In main, prepare the text 1 [2;0], then 1 [3;1], then 2 [0;0], on separate lines. The initial destination contains only {9,{1,1}}. Display Accepted or Rejected, then each destination record as |ID:aceptados:rechazados. Repeat with a different second ID and with empty text; predict what happens to the previous record in each case."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\n// Implement cargar_sin_descartes without changing the destination before accepting everything.\nint main() {\n    // Build the tests, including preservation of the previous state.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "The counterexample is provided for diagnosis, not as a correct reference. Check the entire previous state after every false result; consult the solution after your attempt."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Prepare and Apply"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\nbool cargar_sin_descartes(std::istream& origen, std::vector<Registro>& destino) {\n    std::vector<Registro> candidatos;\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        Registro registro{0, {0, 0}};\n        if (!leer_linea(linea, registro)\n            || contiene_id(candidatos, registro.id)) {\n            return false;\n        }\n        candidatos.push_back(registro);\n    }\n    if (origen.bad() || !origen.eof()) {\n        return false;\n    }\n    destino = candidatos;\n    return true;\n}\n\nint main() {\n    std::istringstream origen{\"1 [2;0]\\n1 [3;1]\\n2 [0;0]\"};\n    std::vector<Registro> destino{{9, {1, 1}}};\n    bool completo = cargar_sin_descartes(origen, destino);\n    std::cout << (completo ? \"Accepted\" : \"Rejected\");\n    for (const Registro& registro : destino) {\n        std::cout << '|' << registro.id << ':'\n                  << registro.recuento.aceptados << ':'\n                  << registro.recuento.rechazados;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The repeated-ID case produces Rejected|9:1:1. The candidate collection may have received ID 1, but it was never assigned to the destination. When its scope ends, it is destroyed; the previous record remains the only visible result. The source did advance: we did not put the characters back."
+        },
+        {
+          "type": "paragraph",
+          "text": "Change the second line to 4 [3;1]. The output becomes Accepted|1:2:0|4:3:1|2:0:0. The new complete collection replaces the previous one; its records are not added to ID 9, nor are leftovers kept. With empty text, the output is Accepted, without any records following it: an empty collection and a failure are different outcomes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: never change the destination on false, never store an invalid or repeated record, preserve order and domains, accept a complete final line without a trailing newline, check stream completion, and replace the whole collection only on true. This guarantee concerns the bool results of this loader; it does not describe every possible resource failure in every program."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare Guarantees with Distinguishing Tests"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "vacio_no_es_fallo",
+          "question": "The loader reaches EOF without obtaining any lines and without an I/O error. What does the contract require?",
+          "options": [
+            "Reject, so the previous data are always preserved.",
+            "Accept without changing the destination because there were no lines.",
+            "Accept and replace the destination with an empty collection."
+          ],
+          "correctIndex": 2,
+          "explanation": "The empty sample is allowed. true applies all its contents, even when there are no records."
+        },
+        {
+          "type": "paragraph",
+          "text": "Also test a truncated final record, an empty line in the middle, and a quantity outside 0..10. All must return false and preserve {9,{1,1}}. Changing the order of valid lines only changes their order in the new collection; the first failure may prevent examining later lines."
+        },
+        {
+          "type": "paragraph",
+          "text": "The all-or-nothing policy gives us a bound: there are ten possible IDs, and no repeated one is accepted. At most ten valid lines can be accepted. If an eleventh line is attempted, it must either be invalid or repeat an ID, so the load is rejected. The partial loader needed to count lines because it continued after each discard; this loader stops at the first rejection. This deduction bounds accepted records, not the number of characters in a line."
+        },
+        {
+          "type": "paragraph",
+          "text": "Next, integrate the same loader with your own test file opened as an ifstream. main keeps responsibility for checking opening and writing; the loader receives the borrowed stream. Keep the responsibilities separate: opening a file, interpreting records, deciding whether to accept the complete set, and displaying the result."
+        },
+        {
+          "type": "note",
+          "text": "Reading and validation are discussed in the primary source (Stroustrup, 2024, sections 9.5–9.9, pp. 264–275); this exercise draws together the types and contracts from this learning path. The model, policy, and activities are original."
+        }
+      ]
+    }
+  ]
+}

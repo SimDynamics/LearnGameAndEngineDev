@@ -1,0 +1,158 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__actualizar_todo_o_conservar_el_estado_anterior",
+  "title": "Tout mettre à jour ou conserver l'état précédent",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La tolérance dépend de l'objectif"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écarter une ligne peut convenir à un rapport autorisant des données partielles. Pour remplacer une configuration complète, cela peut être inacceptable : ne conserver que certains enregistrements modifie le sens du chargement. Nous choisissons maintenant une autre politique : tous les enregistrements doivent être valides et leurs ID uniques ; si quelque chose échoue, conserver exactement la collection précédente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le format et les domaines restent inchangés. Le chargeur rejette les lignes vides, invalides ou en double. Un échantillon vide constitue néanmoins une collection complète vide et remplace la précédente. Le contrat renvoie bool ; false protège la destination, mais ne promet ni de réinitialiser la source ni de consommer les données suivant le premier rejet. Dans les programmes, nous utilisons (completo ? \"Accepté\" : \"Rejeté\") pour choisir le texte du rapport. La forme condition ? valeur_si_vraie : valeur_si_fausse est l'opérateur conditionnel : il vérifie la condition et n'évalue que l'alternative choisie. Ici, les deux valeurs sont des textes et les parenthèses maintiennent ce choix groupé avant son insertion dans cout. Un if/else qui afficherait chaque texte dans sa branche produirait le même rapport ; cette expression ne change ni le bool déjà obtenu ni la politique de chargement."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "politica_segun_objetivo",
+          "question": "Tu veux remplacer un ensemble complet de réglages dont la cohérence dépend de tous les enregistrements. Quelle politique répond à cette exigence ?",
+          "options": [
+            "Accepter les enregistrements valides et considérer les autres comme absents.",
+            "Rejeter tout le chargement si chaque enregistrement ne peut pas être validé.",
+            "Appliquer les premiers enregistrements et conserver ensuite les anciens réglages."
+          ],
+          "correctIndex": 1,
+          "explanation": "La politique doit exprimer l'objectif. Mélanger des éléments nouveaux et anciens ne revient pas à accepter l'ensemble complet."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Renvoyer false n'annule pas les modifications"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans un vector, clear() supprime tous les éléments ; cette opération diffère de clear() sur un flux, qui efface ses indicateurs d'état. Le code suivant est un contre-exemple volontaire : il vide et modifie la destination pendant la lecture. Il ne respecte pas notre nouvelle garantie. Prédis son comportement pour déterminer précisément ce qui est perdu et ce qui est ajouté avant le rejet."
+        },
+        {
+          "type": "output_prediction",
+          "id": "fallo_no_deshace_cambios",
+          "question": "Prédis la sortie de ce contre-exemple. La deuxième ligne répète l'ID 1.",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\nbool cargar_directamente(std::istream& origen, std::vector<Registro>& destino) {\n    destino.clear();\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        Registro registro{0, {0, 0}};\n        if (!leer_linea(linea, registro)\n            || contiene_id(destino, registro.id)) {\n            return false;\n        }\n        destino.push_back(registro);\n    }\n    return !origen.bad() && origen.eof();\n}\n\nint main() {\n    std::istringstream origen{\"1 [2;0]\\n1 [3;1]\\n2 [0;0]\"};\n    std::vector<Registro> destino{{9, {1, 1}}};\n    bool completo = cargar_directamente(origen, destino);\n    std::cout << (completo ? \"Accepté\" : \"Rejeté\");\n    for (const Registro& registro : destino) {\n        std::cout << '|' << registro.id << ':'\n                  << registro.recuento.aceptados << ':'\n                  << registro.recuento.rechazados;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Rejeté|1:2:0"
+          ],
+          "explanation": "clear() supprime l'ancien enregistrement d'ID 9. L'ID 1 est inséré, puis son doublon est rejeté. Renvoyer false n'annule ni la suppression ni la première insertion."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifier uniquement le résultat à la fin de main ne suffit pas : la destination a déjà changé dans la fonction. Réinitialiser chaque Registro local ne suffit pas non plus ; cela évite de mélanger les champs d'un enregistrement, mais ne protège pas la collection modifiée directement."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "ambitos_de_proteccion",
+          "question": "Une variable candidate Registro protège les champs d'une ligne. Que manque-t-il pour protéger toute la collection ?",
+          "options": [
+            "Une collection candidate indépendante jusqu'à la fin de la validation.",
+            "Un cout après chaque insertion pour confirmer le changement.",
+            "Un clear() de la destination avant de commencer chaque ligne."
+          ],
+          "correctIndex": 0,
+          "explanation": "La garantie doit couvrir tout l'état à préserver, et pas seulement une partie de la lecture."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une mise à jour complète"
+        },
+        {
+          "type": "paragraph",
+          "text": "Implémente cargar_sin_descartes avec std::istream& et std::vector<Registro>&. Choisis où construire la nouvelle collection et à quel moment l'affecter à la destination. Utilise les fonctions fournies leer_linea et contiene_id ; rejette immédiatement une ligne invalide ou répétée. Ne renvoie true qu'après avoir vérifié une fin normale et appliqué toute la collection candidate."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, prépare le texte 1 [2;0], puis 1 [3;1], puis 2 [0;0], sur des lignes distinctes. La destination initiale ne contient que {9,{1,1}}. Affiche Accepté ou Rejeté, puis chaque enregistrement de la destination sous la forme |ID:aceptados:rechazados. Recommence avec un deuxième ID différent et avec un texte vide ; prédis ce qu'il advient de l'ancien enregistrement dans chaque cas."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\n// Implémente cargar_sin_descartes sans modifier la destination avant l'acceptation complète.\nint main() {\n    // Construis les tests, y compris la préservation de l'état précédent.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Le contre-exemple sert au diagnostic, pas de référence correcte. Vérifie tout l'état précédent après chaque résultat false ; consulte la solution après ton essai."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence ultérieure : préparer puis appliquer"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char apertura{0};\n    char separador{0};\n    char cierre{0};\n    Recuento candidato{0, 0};\n    if (!(origen >> apertura >> candidato.aceptados >> separador\n          >> candidato.rechazados >> cierre)) {\n        return origen;\n    }\n    if (apertura != '[' || separador != ';' || cierre != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nbool leer_linea(const std::string& linea, Registro& destino) {\n    std::istringstream origen{linea};\n    Registro candidato{0, {0, 0}};\n    if (!(origen >> candidato.id >> candidato.recuento)\n        || candidato.id < 0 || candidato.id > 9) {\n        return false;\n    }\n    origen >> std::ws;\n    if (!origen.eof() || origen.bad()) {\n        return false;\n    }\n    destino = candidato;\n    return true;\n}\n\nbool contiene_id(const std::vector<Registro>& registros, int id) {\n    for (const Registro& registro : registros) {\n        if (registro.id == id) {\n            return true;\n        }\n    }\n    return false;\n}\n\nbool cargar_sin_descartes(std::istream& origen, std::vector<Registro>& destino) {\n    std::vector<Registro> candidatos;\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        Registro registro{0, {0, 0}};\n        if (!leer_linea(linea, registro)\n            || contiene_id(candidatos, registro.id)) {\n            return false;\n        }\n        candidatos.push_back(registro);\n    }\n    if (origen.bad() || !origen.eof()) {\n        return false;\n    }\n    destino = candidatos;\n    return true;\n}\n\nint main() {\n    std::istringstream origen{\"1 [2;0]\\n1 [3;1]\\n2 [0;0]\"};\n    std::vector<Registro> destino{{9, {1, 1}}};\n    bool completo = cargar_sin_descartes(origen, destino);\n    std::cout << (completo ? \"Accepté\" : \"Rejeté\");\n    for (const Registro& registro : destino) {\n        std::cout << '|' << registro.id << ':'\n                  << registro.recuento.aceptados << ':'\n                  << registro.recuento.rechazados;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le cas du doublon produit Rejeté|9:1:1. La collection candidate peut avoir reçu l'ID 1, mais elle n'a jamais été affectée à la destination. À la sortie de sa portée, elle est détruite ; l'ancien enregistrement reste le seul résultat visible. La source a pourtant avancé : nous n'avons pas restitué les caractères."
+        },
+        {
+          "type": "paragraph",
+          "text": "Modifie la deuxième ligne en 4 [3;1]. La sortie devient Accepté|1:2:0|4:3:1|2:0:0. La nouvelle collection complète remplace l'ancienne ; ses enregistrements ne sont pas ajoutés à l'ID 9 et aucun reliquat n'est conservé. Avec un texte vide, la sortie est Accepté, sans enregistrements ensuite : collection vide et échec sont deux résultats distincts."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : ne jamais modifier la destination en cas de false, ne stocker aucun enregistrement invalide ou en double, respecter l'ordre et les domaines, accepter une dernière ligne complète sans saut final, vérifier la fin du flux et ne remplacer toute la collection qu'en cas de true. Cette garantie concerne les résultats bool de ce chargeur ; elle ne décrit pas tous les échecs de ressources possibles dans n'importe quel programme."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer les garanties avec des tests discriminants"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "vacio_no_es_fallo",
+          "question": "Le chargeur atteint EOF sans obtenir de ligne et sans défaillance. Que prévoit le contrat ?",
+          "options": [
+            "Rejeter pour toujours conserver les données précédentes.",
+            "Accepter sans modifier la destination puisqu'il n'y avait aucune ligne.",
+            "Accepter et remplacer la destination par une collection vide."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'échantillon vide est autorisé. true applique tout son contenu, même lorsqu'il n'y a aucun enregistrement."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ajoute un enregistrement tronqué à la fin, une ligne vide au milieu et une quantité hors de 0..10. Tous ces cas doivent renvoyer false et conserver {9,{1,1}}. Modifier l'ordre des lignes valides ne change que leur ordre dans la nouvelle collection ; le premier échec peut empêcher d'examiner les lignes suivantes."
+        },
+        {
+          "type": "paragraph",
+          "text": "La politique tout-ou-rien permet de déduire une limite : il existe dix ID possibles et aucun doublon n'est accepté. On peut donc accepter au plus dix lignes valides. Une onzième ligne est nécessairement invalide ou répète un ID, et le chargement est rejeté. Le chargeur partiel devait compter les lignes parce qu'il poursuivait après chaque rejet ; celui-ci s'arrête au premier refus. Cette déduction limite les enregistrements acceptés, pas le nombre de caractères d'une ligne."
+        },
+        {
+          "type": "paragraph",
+          "text": "Intègre ensuite le même chargeur à ton propre fichier d'essai ouvert avec ifstream. main reste responsable des vérifications d'ouverture et d'écriture ; le chargeur reçoit le flux emprunté. Garde les responsabilités distinctes : ouvrir un fichier, interpréter les enregistrements, décider de l'acceptation de l'ensemble et afficher le résultat."
+        },
+        {
+          "type": "note",
+          "text": "La lecture et la validation sont étudiées dans la source principale (Stroustrup, 2024, sections 9.5–9.9, pp. 264–275) ; cet exercice réunit les types et les contrats du parcours. Modèle, politique et activités originaux."
+        }
+      ]
+    }
+  ]
+}
