@@ -1,0 +1,211 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__una_gramatica_para_sumar_y_restar",
+  "title": "Une grammaire pour additionner et soustraire",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une règle indique quelles suites appartiennent au langage"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reconnaître les tokens ne suffit pas à interpréter 8+4;. Une grammaire décrit leur combinaison. La première étape accepte une expression formée d'un nombre suivi de zéro ou plusieurs paires composées du signe + et d'un nombre. Elle exige ensuite ; pour terminer l'opération. Ainsi 8; et 8+4+2; respectent la règle, tandis que +8;, 8+; et 8 4; ne la respectent pas."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'expression produit un int. Les tokens numériques restent dans 0..99 ; chaque résultat intermédiaire doit être compris entre -100 et 100. Le texte d'essai comporte au maximum 64 caractères ASCII. Le domaine des résultats est une règle de l'interpréteur : toute valeur en dehors de cet intervalle est rejetée, même si elle tient dans un int."
+        },
+        {
+          "type": "paragraph",
+          "text": "Répartis le travail entre des fonctions : leer_numero obtient l'opérande permis par sa règle ; leer_expresion combine les nombres ; leer_operacion vérifie le point-virgule. Chaque règle consomme les unités qui lui appartiennent et conserve le premier token destiné au niveau qui l'a appelée. Le flux conserve ainsi un état logique permettant la suite du traitement."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel cas respecte la grammaire initiale qui n'admet que des additions suivies du ; final ?",
+          "options": [
+            "6+;",
+            "6 2;",
+            "6+2+1;"
+          ],
+          "correctIndex": 2,
+          "explanation": "Chaque signe + est suivi d'un nombre et l'opération se termine par ;. Les autres séquences manquent d'un opérande ou d'un signe nécessaire."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire le premier niveau avec une boucle"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'expression commence par obtenir un nombre, puis lit une unité : si c'est +, elle obtient un autre nombre et met à jour l'accumulateur ; sinon, elle restitue l'unité au tampon et termine. Le point-virgule reste réservé à leer_operacion. La fonction de lecture numérique restitue aussi un token inattendu avant de lancer son diagnostic, afin qu'une autre politique puisse observer cette frontière."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Nombre hors domaine\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Échec du flux\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Résultat hors domaine\");\n    }\n    return candidato;\n}\n\nint leer_numero(Lector_tokens& lector) {\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Nombre attendu\");\n}\n\nint leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Point-virgule attendu\");\n    }\n    return resultado;\n}\n\nint main() {\n    Lector_tokens lector{\"8+4;\"};\n    try {\n        const int resultado = leer_operacion(lector);\n        const Token extra = lector.leer();\n        if (extra.clase != 'f') {\n            throw std::runtime_error(\"Texte supplémentaire après l’opération\");\n        }\n        std::cout << \"Résultat: \" << resultado;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Erreur: \" << error.what();\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "resultado_en_dominio vérifie chaque valeur candidate avant de l'accepter comme nouvel accumulateur. Un accumulateur compris entre -100 et 100 combiné à un nombre de 0 à 99 donne, par addition ou soustraction, une valeur candidate entre -199 et 199, représentable par tout int conforme. Cette vérification impose le domaine du langage et maintient une arithmétique sûre."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'application de cette étape accepte exactement une opération, puis vérifie la fin du texte en autorisant les séparateurs. Elle n'affiche pas le résultat avant de valider le point-virgule et l'absence d'autre unité : calculer une expression ne démontre pas que toute l'entrée respecte le format."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Justifier la consommation et la terminaison"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis la sortie de la première étape avec ces données.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Nombre hors domaine\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Échec du flux\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Résultat hors domaine\");\n    }\n    return candidato;\n}\n\nint leer_numero(Lector_tokens& lector) {\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Nombre attendu\");\n}\n\nint leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Point-virgule attendu\");\n    }\n    return resultado;\n}\n\nint main() {\n    Lector_tokens lector{\"7+12+3;\"};\n    try {\n        const int resultado = leer_operacion(lector);\n        const Token extra = lector.leer();\n        if (extra.clase != 'f') {\n            throw std::runtime_error(\"Texte supplémentaire après l’opération\");\n        }\n        std::cout << \"Résultat: \" << resultado;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Erreur: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Résultat: 22"
+          ],
+          "explanation": "On commence à 7, puis on ajoute 12 et ensuite 3. Chaque paire + et nombre met l'accumulateur à jour. Le point-virgule est restitué au niveau chargé de vérifier la fin de l'opération."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pourquoi la boucle while (true) de leer_expresion ne répète-t-elle pas indéfiniment sans avancer dans cette implémentation ?",
+          "options": [
+            "Chaque tour avec + consomme le signe et un nombre ; devant un autre token, elle le restitue et quitte la fonction.",
+            "Le token réservé garantit une nouvelle unité à chaque tour, même lorsque la règle continue après l'avoir restitué.",
+            "Restituer n'importe quel token ramène le flux au début."
+          ],
+          "correctIndex": 0,
+          "explanation": "La branche répétée consomme des unités ; celle qui en préserve une quitte la fonction. Une lecture échouée lance un diagnostic et interrompt la règle."
+        },
+        {
+          "type": "paragraph",
+          "text": "La restitution ne crée pas de boucle puisque la règle qui restitue ; cesse son exécution. Le niveau supérieur le reçoit et le consomme. Si une fonction restituait une unité puis posait sans fin la même question sans rien consommer, cette justification de progression disparaîtrait."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ajouter la soustraction préserve un ordre d'association"
+        },
+        {
+          "type": "paragraph",
+          "text": "Étends l'expression pour que chaque paire commence par + ou -. Avec -, la valeur du nombre suivant est soustraite de l'accumulateur précédent. Traiter les paires de gauche à droite rend la soustraction associative à gauche : 18-5-4 se comprend comme (18-5)-4 et donne 9. La comprendre comme 18-(5-4) donnerait 17 et constituerait une autre règle."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les parenthèses de cette explication indiquent un regroupement mathématique ; cette étape ne les accepte pas encore dans l'entrée. L'extension de la soustraction binaire ne permet pas non plus de commencer par - : toute expression débute par un nombre. Les signes unaires et les regroupements explicites recevront leurs propres règles après l'introduction de la priorité."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pour 20-6-3, quelle mise à jour doit suivre le calcul de 20-6 ?",
+          "options": [
+            "Commencer par soustraire 3 de 6, puis soustraire ce résultat de 20.",
+            "Utiliser 14 comme accumulateur puis en soustraire le nombre suivant, 3.",
+            "Relire 20 depuis le début pour chaque signe."
+          ],
+          "correctIndex": 1,
+          "explanation": "L'accumulateur résume les paires déjà traitées. La prochaine soustraction utilise 14 et 3, ce qui conserve l'association à gauche."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire l'extension à partir des règles"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'éditeur fournit le module de tokens et de tampon déjà connu. Écris tes fonctions de nombre, d'expression et d'opération pour admettre les additions et les soustractions binaires. Utilise \"17-6+4;\" comme texte initial et affiche Résultat: N seulement si l'opération est complète, que le résultat appartient à -100..100 et qu'aucun texte supplémentaire ne reste hormis les séparateurs. Intercepte les refus et affiche Erreur: suivi d'un diagnostic indiquant la règle non respectée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le premier cas doit produire Résultat: 15. \"20-6-3;\" doit donner 11, et non 17. \"0;\" donne 0 ; \"2-5;\" donne -3. \"4+;\" manque d'un nombre ; \"4 2;\" n'a pas de fin valide après l'expression ; \"4+2\" manque de ;. \"99+2;\" est refusé à cause du domaine des résultats. Une chaîne vide est refusée parce qu'elle ne contient aucune expression. \"2;3;\" est rejeté comme texte supplémentaire à ce stade limité à une seule opération."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Nombre hors domaine\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Échec du flux\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint main() {\n    Lector_tokens lector{\"17-6+4;\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Choisis les noms et l'organisation des appels ; les variables globales modifiables sont inutiles. Vérifie chaque résultat intermédiaire. Avant l'exécution, retrace la suite en indiquant l'unité restituée et la règle qui la recevra ensuite. Préserve la signification des refus même si ton diagnostic diffère de la référence. L'éditeur n'évalue pas automatiquement ces règles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la grammaire étendue après l'essai"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence calcule \"23-7+2;\", avec d'autres données. Choisir entre + et - met à jour le même accumulateur et conserve un seul point de restitution lorsqu'un token appartient à un autre niveau. Le reste du lecteur demeure inchangé."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Nombre hors domaine\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Échec du flux\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Résultat hors domaine\");\n    }\n    return candidato;\n}\n\nint leer_numero(Lector_tokens& lector) {\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Nombre attendu\");\n}\n\nint leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Point-virgule attendu\");\n    }\n    return resultado;\n}\n\nint main() {\n    Lector_tokens lector{\"23-7+2;\"};\n    try {\n        const int resultado = leer_operacion(lector);\n        const Token extra = lector.leer();\n        if (extra.clase != 'f') {\n            throw std::runtime_error(\"Texte supplémentaire après l’opération\");\n        }\n        std::cout << \"Résultat: \" << resultado;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Erreur: \" << error.what();\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare tes fonctions aux règles et aux tests, pas uniquement à ce texte. Une autre organisation peut satisfaire le contrat. En particulier, le résultat du premier cas vaut 15 ; l'association à gauche donne 11 pour 20-6-3 ; et le point-virgule est validé avant l'affichage. En cas d'échec, retrouve quelle règle a reçu le premier token qui ne lui appartenait pas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver la structure et le domaine dans d'autres cas"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis le résultat de soustractions qui rendent l'accumulateur négatif.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Nombre hors domaine\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Échec du flux\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Résultat hors domaine\");\n    }\n    return candidato;\n}\n\nint leer_numero(Lector_tokens& lector) {\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Nombre attendu\");\n}\n\nint leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Point-virgule attendu\");\n    }\n    return resultado;\n}\n\nint main() {\n    Lector_tokens lector{\"3-8+2;\"};\n    try {\n        const int resultado = leer_operacion(lector);\n        const Token extra = lector.leer();\n        if (extra.clase != 'f') {\n            throw std::runtime_error(\"Texte supplémentaire après l’opération\");\n        }\n        std::cout << \"Résultat: \" << resultado;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Erreur: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Résultat: -3"
+          ],
+          "explanation": "L'accumulateur passe de 3 à -5, puis à -3. Ces deux résultats intermédiaires restent dans le domaine."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis le diagnostic de cette implémentation lorsque le dernier opérande manque.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            int valor = actual - '0';\n            while (entrada.get(actual)) {\n                if (actual >= '0' && actual <= '9') {\n                    valor = valor * 10 + (actual - '0');\n                    if (valor > 99) {\n                        throw std::runtime_error(\"Nombre hors domaine\");\n                    }\n                } else {\n                    entrada.putback(actual);\n                    if (!entrada) {\n                        throw std::runtime_error(\"Impossible de restituer le caractère\");\n                    }\n                    return Token{'n', valor};\n                }\n            }\n            if (entrada.bad() || !entrada.eof()) {\n                throw std::runtime_error(\"Échec du flux\");\n            }\n            return Token{'n', valor};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nbool token_valido(Token token) {\n    if (token.clase == 'n') {\n        return token.valor >= 0 && token.valor <= 99;\n    }\n    const bool signo = token.clase == '+' || token.clase == '-'\n        || token.clase == '*' || token.clase == '/'\n        || token.clase == '(' || token.clase == ')' || token.clase == ';';\n    return token.valor == 0 && (signo || token.clase == 'f');\n}\n\nclass Lector_tokens {\npublic:\n    explicit Lector_tokens(const std::string& texto) : entrada_{texto} {}\n\n    Token leer() {\n        if (lleno_) {\n            lleno_ = false;\n            return guardado_;\n        }\n        return leer_token(entrada_);\n    }\n\n    void devolver(Token token) {\n        if (lleno_) {\n            throw std::runtime_error(\"Tampon occupé\");\n        }\n        if (!token_valido(token)) {\n            throw std::runtime_error(\"Token invalide\");\n        }\n        guardado_ = token;\n        lleno_ = true;\n    }\n\n    bool tiene_pendiente() const {\n        return lleno_;\n    }\n\nprivate:\n    std::istringstream entrada_;\n    bool lleno_ = false;\n    Token guardado_{'f', 0};\n};\n\nint resultado_en_dominio(int candidato) {\n    if (candidato < -100 || candidato > 100) {\n        throw std::runtime_error(\"Résultat hors domaine\");\n    }\n    return candidato;\n}\n\nint leer_numero(Lector_tokens& lector) {\n    const Token token = lector.leer();\n    if (token.clase == 'n') {\n        return token.valor;\n    }\n    lector.devolver(token);\n    throw std::runtime_error(\"Nombre attendu\");\n}\n\nint leer_expresion(Lector_tokens& lector) {\n    int izquierda = leer_numero(lector);\n    while (true) {\n        const Token token = lector.leer();\n        if (token.clase == '+') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda + derecha);\n\n        } else if (token.clase == '-') {\n            const int derecha = leer_numero(lector);\n            izquierda = resultado_en_dominio(izquierda - derecha);\n        } else {\n            lector.devolver(token);\n            return izquierda;\n        }\n    }\n}\n\nint leer_operacion(Lector_tokens& lector) {\n    const int resultado = leer_expresion(lector);\n    const Token fin = lector.leer();\n    if (fin.clase != ';') {\n        lector.devolver(fin);\n        throw std::runtime_error(\"Point-virgule attendu\");\n    }\n    return resultado;\n}\n\nint main() {\n    Lector_tokens lector{\"9-;\"};\n    try {\n        const int resultado = leer_operacion(lector);\n        const Token extra = lector.leer();\n        if (extra.clase != 'f') {\n            throw std::runtime_error(\"Texte supplémentaire après l’opération\");\n        }\n        std::cout << \"Résultat: \" << resultado;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Erreur: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Erreur: Nombre attendu"
+          ],
+          "explanation": "Après -, leer_numero rencontre ;. Elle préserve cette unité et lance le diagnostic sans produire de résultat d'opération valide."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une nouvelle opération impose un niveau supplémentaire de priorité"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le lecteur reconnaît * et /, mais cette grammaire les restitue encore comme unités étrangères et ne les accepte pas à la place de ;. Les ajouter à la boucle de + et - effectuerait tous les calculs de gauche à droite : 2+3*4 donnerait 20. La priorité arithmétique impose 14. Nous construirons donc un niveau de termes avant d'étendre la boucle extérieure."
+        },
+        {
+          "type": "note",
+          "text": "Distingue le langage disponible du projet à venir : cette étape accepte des nombres, +, -, un ; final et des séparateurs. Le lecteur peut reconnaître d'autres unités, mais la reconnaissance n'implique pas qu'une règle d'expression les admette. La traduction des règles en fonctions et la boucle d'association à gauche s'appuient sur le texte d'étude (Stroustrup, 2024, sections 5.5.1–5.5.2.3). Le domaine entier, l'acceptation d'une opération complète et les activités sont propres à ce parcours."
+        }
+      ]
+    }
+  ]
+}
