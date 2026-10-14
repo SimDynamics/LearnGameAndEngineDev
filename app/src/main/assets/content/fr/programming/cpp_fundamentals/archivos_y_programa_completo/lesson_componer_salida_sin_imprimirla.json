@@ -1,0 +1,153 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__componer_salida_sin_imprimirla",
+  "title": "Composer une sortie sans l'afficher",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Préparer les caractères et choisir leur destination"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::ostringstream, déclaré dans <sstream>, reçoit des insertions et conserve en mémoire les caractères produits. Sa méthode str() renvoie une string contenant ce texte. Contrairement à cout, insérer dans ce flux n'envoie pas le message vers la sortie standard. Tu peux construire un texte, le renvoyer, puis décider ensuite de l'afficher, de l'enregistrer ou de l'utiliser comme nom d'un fichier d'essai."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"Caisses=\" << 4 << \";État=\" << \"prêt\";\n    std::string mensaje = texto.str();\n    std::cout << mensaje;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le résultat visible est Caisses=4;État=prêt, mais seule la dernière instruction l'affiche. Les insertions précédentes construisent les caractères dans texto. Le nom mensaje conserve une chaîne, pas un flux ouvert ni une instruction à exécuter de nouveau."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "componer_no_mostrar",
+          "question": "Quelle opération envoie effectivement le message de cet exemple vers la sortie standard ?",
+          "options": [
+            "texto.str()",
+            "texto << \"Caisses=\"",
+            "std::cout << mensaje"
+          ],
+          "correctIndex": 2,
+          "explanation": "La destination de l'insertion est importante : texto accumule les caractères en mémoire ; cout les envoie à la sortie standard."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La chaîne obtenue conserve sa propre valeur"
+        },
+        {
+          "type": "output_prediction",
+          "id": "copia_antes_de_ampliar",
+          "question": "Prédis la sortie après avoir ajouté du contenu au flux.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"Tour 2\";\n    std::string anterior = texto.str();\n    texto << \" confirmé\";\n    std::cout << anterior << \"|\" << texto.str();\n    return 0;\n}\n",
+          "answers": [
+            "Tour 2|Tour 2 confirmé"
+          ],
+          "explanation": "anterior conserve la chaîne obtenue avant la deuxième insertion. Consulter le flux ensuite renvoie le contenu complété."
+        },
+        {
+          "type": "paragraph",
+          "text": "str() consulte le contenu ; elle ne le vide pas et ne l'affiche pas. Les insertions suivantes continuent dans le même flux. Ne confonds pas la copie de la string obtenue avec celle de l'objet ostringstream : ce dernier ne permet pas la copie ordinaire utilisée pour les chaînes et les enregistrements."
+        },
+        {
+          "type": "output_prediction",
+          "id": "consultar_no_reinicia",
+          "question": "Prédis la sortie. Aucun séparateur n'est ajouté entre les deux insertions dans texto.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << 4;\n    std::string primero = texto.str();\n    texto << 7;\n    std::cout << primero << \":\" << texto.str();\n    return 0;\n}\n",
+          "answers": [
+            "4:47"
+          ],
+          "explanation": "La première consultation renvoie 4 ; le flux conserve ce caractère, puis ajoute 7. Son deuxième contenu est 47."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "flujo_nuevo_por_operacion",
+          "question": "Une fonction doit composer un nouveau résumé à chaque appel. Quelle organisation évite de conserver le texte précédent ?",
+          "options": [
+            "Créer un nouvel ostringstream local à chaque appel.",
+            "Conserver le même flux sans le réinitialiser et consulter str().",
+            "Supposer que renvoyer une chaîne vide le flux."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un nouvel objet local garantit un début vide pour chaque composition."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une fonction qui renvoie du texte"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris une fonction qui reçoit validos et rechazados, des quantités connues comprises entre 0 et 10, et renvoie une string au format Valides=V;Rejetés=R. Précondition : l'appelant fournit deux quantités valides ; la fonction compose uniquement le texte et ne doit ni afficher ni modifier les données de l'appelant. Choisis son nom et crée un ostringstream local."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, appelle-la d'abord avec 2 et 1, puis avec 0 et 0. Affiche les deux résultats sur des lignes distinctes, sans que le deuxième cumule le premier. Critères : renvoyer une chaîne à chaque appel, respecter l'ordre des champs et les séparateurs, et laisser main décider quand afficher. Prépare la sortie attendue avant l'exécution."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    // Définis une fonction de composition avant main et utilise-la ici.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "N'écris pas la réponse comme une chaîne fixe pour toutes les données : les deux valeurs doivent provenir des arguments. Consulte la référence après ta tentative."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après la tentative"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nstd::string componer_resumen(int validos, int rechazados) {\n    std::ostringstream texto;\n    texto << \"Valides=\" << validos << \";Rejetés=\" << rechazados;\n    return texto.str();\n}\n\nint main() {\n    std::string primero = componer_resumen(2, 1);\n    std::string segundo = componer_resumen(0, 0);\n    std::cout << primero << \"\\n\" << segundo;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie de référence contient deux lignes : Valides=2;Rejetés=1 et Valides=0;Rejetés=0. Chaque appel crée un flux vide ; les champs sont formés à partir des arguments, et str() fournit la valeur renvoyée. La fonction ne connaît pas la destination future de cette chaîne. Tu peux choisir un autre nom de fonction ou une autre organisation si tu respectes le contrat."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie aussi un troisième appel avec 5 et 3 : il doit renvoyer Valides=5;Rejetés=3 sans modifier les deux résultats précédents. Si des données se répètent, vérifie où le flux est créé. Si le programme affiche des lignes inattendues pendant un appel, cherche une sortie mêlée par erreur à la composition. Ici, le contrat restreint les arguments ; ce test ne prouve pas la validation pour tous les entiers possibles."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le même contenu peut être envoyé vers un fichier"
+        },
+        {
+          "type": "output_prediction",
+          "id": "destino_archivo_no_es_stdout",
+          "question": "Suppose que l'ouverture et l'écriture réussissent. Quel texte apparaît sur la sortie standard de ce programme ?",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"Valides=\" << 2 << \";Rejetés=\" << 1;\n    std::string mensaje = texto.str();\n    std::ofstream salida{\"resumen_lgp.txt\"};\n    if (!salida) {\n        std::cout << \"Erreur d'ouverture\";\n        return 1;\n    }\n    salida << mensaje;\n    salida.close();\n    if (!salida) {\n        std::cout << \"Erreur d'écriture\";\n        return 1;\n    }\n    std::cout << \"Enregistré\";\n    return 0;\n}\n",
+          "answers": [
+            "Enregistré"
+          ],
+          "explanation": "Le résumé est inséré dans le fichier ; cout reçoit uniquement Enregistré. Appeler str() n'affiche pas le message."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le fichier resumen_lgp.txt contient Valides=2;Rejetés=1. Le résultat à l'écran diffère parce que le programme a choisi une destination distincte pour chaque texte. Cette séparation permet de réutiliser une composition sans la confondre avec le lieu d'affichage. Nous étudierons ensuite comment contrôler la forme de ces caractères sans la confondre avec la valeur des données."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__cerrar_reemplazar_y_anadir_datos",
+  "title": "Close, Replace, and Append Data",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Close and Observe the Result"
+        },
+        {
+          "type": "paragraph",
+          "text": "A file stream maintains an open connection while it operates. close explicitly closes that connection; the stream state lets us check whether the operation completed. When the object leaves its scope, the library also closes the file automatically if it is still open. Automatic closing prevents the file from being left open when the block ends, but it does not replace an explicit diagnostic for a writing failure."
+        },
+        {
+          "type": "paragraph",
+          "text": "That is why our tests close and check the output stream before claiming that the data are ready to read. A successful open is not enough. Nor should we read the same test file while writing may still be pending in its buffer. Scope limits where each connection is used; it does not erase the file's contents by itself."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "ambito_no_borra_archivo",
+          "question": "The salida object went out of scope after closing successfully. What disappears with that scope?",
+          "options": [
+            "The stream object; the data written are not erased for that reason.",
+            "The filename and all its contents automatically.",
+            "The need to check whether any later reader opens successfully."
+          ],
+          "correctIndex": 0,
+          "explanation": "An object's lifetime and the lifetime of stored data are different concepts. In the app, the execution directory also has its own lifecycle."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Replacing and Appending Are Different Decisions"
+        },
+        {
+          "type": "paragraph",
+          "text": "Constructing an ofstream with just a filename, as we have done, opens an output stream that replaces the previous contents of that test file. To append at the end, pass std::ios::app as the second argument. This is an opening option, not text being written. Choose according to the requirements; appending is not universally better."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Initial open error\";\n            return 1;\n        }\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Initial write error\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Second open error\";\n            return 1;\n        }\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Second write error\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Input open error\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Incomplete read\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The first stage creates 1 2. After closing it, the second appends text beginning with a space and ending in 3. That space keeps the integers separate. The reader obtains three values, giving Total=6. The two objects named salida are distinct: their declarations belong to different blocks. Each opening and writing step is checked separately."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "separador_en_anexado",
+          "question": "If only the text 3 is appended, with no space, after 1 2, what text remains?",
+          "options": [
+            "1 2 3, because app automatically separates the data.",
+            "1 23, because the written characters are concatenated.",
+            "3, because app always replaces the contents."
+          ],
+          "correctIndex": 1,
+          "explanation": "The app mode chooses where to write; it does not invent format separators."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changing the Mode Changes the Contents"
+        },
+        {
+          "type": "output_prediction",
+          "id": "segunda_apertura_reemplaza",
+          "question": "Assume the file operations succeed. This version omits app from the second open. Predict the visible diagnostic.",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Initial open error\";\n            return 1;\n        }\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Initial write error\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Second open error\";\n            return 1;\n        }\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Second write error\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Input open error\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Incomplete read\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
+          "answers": [
+            "Incomplete read"
+          ],
+          "explanation": "The second open replaces the test file and leaves a space followed by 3. The reader cannot extract three integers; values from a failed read are never added."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reiniciar_para_prueba_reproducible",
+          "question": "You want to repeat a test with the same initial file, without accumulating data from earlier runs in an environment that preserves files. Which starting action meets that goal?",
+          "options": [
+            "Open with app initially without inspecting the previous contents.",
+            "Keep whatever contents are present and check only the final sum.",
+            "Replace the test file with the expected initial data."
+          ],
+          "correctIndex": 2,
+          "explanation": "Recreating the test file establishes a known initial state. Each job is already isolated in the app, but the program also makes this preparation explicit."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Test with Two Writes"
+        },
+        {
+          "type": "paragraph",
+          "text": "First create the relative file serie_lgp.txt containing 3 4. Close it and check the write. Then reopen it to append a space followed by 5; close and check again. Read three int values from the file and calculate Total=12. Validate extraction before adding. Use distinct diagnostics to identify the failing stage, and terminate with exit code 1 if a failure occurs."
+        },
+        {
+          "type": "paragraph",
+          "text": "Try a second version that replaces the file on the second open: it should report Incomplete read, without adding values that were not obtained. In another test, keep app but omit the separating space: there should again be too few integers. Reason about the resulting characters in each version before running it."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    // Build both writes and the checked read.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Modify only test files that your program creates within its own execution. The following reference checks the requirement; it does not assume access to personal files or persistence between runs."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference and Correctness Criteria After the Attempt"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Initial open error\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Initial write error\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Second open error\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Second write error\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Input open error\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Incomplete read\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: initial contents 3 4, a second write that appends a space and 5, a checked close before each new stage, and three successful extractions before addition. The resulting contents are 3 4 5 and the sum is 12. Without app, only a space followed by 5 remains: one integer. Without the space, the result is 3 45. Both changes prevent extracting three values and must display Incomplete read without performing the addition."
+        },
+        {
+          "type": "paragraph",
+          "text": "Functions that separate the stages are also valid if they preserve these conditions. A failure ends with exit code 1; the printed text identifies the failure. A hardcoded Total=12 message does not prove that all three values were read. Explain why the opening mode, separator, and checks address different problems."
+        }
+      ]
+    }
+  ]
+}

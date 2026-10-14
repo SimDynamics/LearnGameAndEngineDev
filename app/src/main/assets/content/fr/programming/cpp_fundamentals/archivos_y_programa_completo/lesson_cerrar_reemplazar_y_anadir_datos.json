@@ -1,0 +1,143 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__cerrar_reemplazar_y_anadir_datos",
+  "title": "Fermer, remplacer et ajouter des données",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Fermer et observer le résultat"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un flux de fichier conserve une connexion ouverte pendant son utilisation. close la ferme explicitement ; l'état du flux permet de vérifier si l'opération s'est achevée. Lorsque l'objet quitte sa portée, la bibliothèque ferme également le fichier automatiquement s'il est encore ouvert. Cette fermeture automatique évite de laisser le fichier ouvert à la sortie du bloc, mais elle ne remplace pas un diagnostic explicite d'échec d'écriture."
+        },
+        {
+          "type": "paragraph",
+          "text": "C'est pourquoi nos tests ferment et vérifient le flux de sortie avant d'affirmer que les données sont prêtes à être lues. Une ouverture réussie ne suffit pas. Il ne faut pas non plus lire le même fichier d'essai tant que son écriture peut encore être en attente dans un tampon. La portée limite l'endroit où chaque connexion est utilisée ; elle n'efface pas à elle seule le contenu du fichier."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "ambito_no_borra_archivo",
+          "question": "L'objet salida a quitté sa portée après une fermeture réussie. Qu'est-ce qui disparaît avec cette portée ?",
+          "options": [
+            "L'objet flux ; les données écrites ne sont pas effacées pour cette raison.",
+            "Le nom et tout le contenu du fichier, automatiquement.",
+            "La nécessité de vérifier l'ouverture de tout lecteur ultérieur."
+          ],
+          "correctIndex": 0,
+          "explanation": "La durée de vie de l'objet et celle des données stockées sont deux notions différentes. Dans l'application, le répertoire de l'exécution a également son propre cycle de vie."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Remplacer et ajouter sont deux choix différents"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construire un ofstream avec seulement un nom, comme précédemment, ouvre un flux de sortie qui remplace le contenu antérieur de ce fichier d'essai. Pour ajouter à la fin, passe std::ios::app en deuxième argument. C'est une option d'ouverture, pas un texte écrit. Choisis selon le besoin ; ajouter n'est pas toujours préférable."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Erreur d'ouverture initiale\";\n            return 1;\n        }\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Erreur d'écriture initiale\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Erreur de seconde ouverture\";\n            return 1;\n        }\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Erreur de seconde écriture\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Erreur d'ouverture en lecture\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lecture incomplète\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La première étape crée 1 2. Après sa fermeture, la seconde ajoute un texte qui commence par un espace et se termine par 3. Cet espace sépare correctement les entiers. Le lecteur obtient trois valeurs et le résultat vaut Total=6. Les deux objets appelés salida sont distincts : leurs déclarations appartiennent à des blocs différents. Chaque ouverture et chaque écriture sont vérifiées séparément."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "separador_en_anexado",
+          "question": "Si l'on ajoute seulement le texte 3, sans espace, après 1 2, quel texte reste-t-il ?",
+          "options": [
+            "1 2 3, car app sépare automatiquement les données.",
+            "1 23, car les caractères écrits sont concaténés.",
+            "3, car app remplace toujours le contenu."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le mode app choisit où écrire ; il n'invente pas les séparateurs du format."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changer le mode change le contenu"
+        },
+        {
+          "type": "output_prediction",
+          "id": "segunda_apertura_reemplaza",
+          "question": "Suppose que les opérations sur les fichiers réussissent. Cette version omet app lors de la deuxième ouverture. Prédis le diagnostic affiché.",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Erreur d'ouverture initiale\";\n            return 1;\n        }\n        salida << \"1 2\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Erreur d'écriture initiale\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Erreur de seconde ouverture\";\n            return 1;\n        }\n        salida << \" 3\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Erreur de seconde écriture\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Erreur d'ouverture en lecture\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lecture incomplète\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n",
+          "answers": [
+            "Lecture incomplète"
+          ],
+          "explanation": "La deuxième ouverture remplace le fichier d'essai et ne laisse qu'un espace suivi de 3. Le lecteur ne peut pas extraire trois entiers ; on n'additionne jamais les destinations d'une lecture échouée."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reiniciar_para_prueba_reproducible",
+          "question": "Tu veux répéter un test avec les mêmes données initiales, sans accumuler celles des exécutions précédentes dans un environnement qui conserve les fichiers. Quelle première action convient ?",
+          "options": [
+            "Ouvrir initialement avec app sans examiner le contenu précédent.",
+            "Garder n'importe quel contenu et vérifier seulement la somme finale.",
+            "Remplacer le fichier d'essai par les données initiales prévues."
+          ],
+          "correctIndex": 2,
+          "explanation": "Recréer le fichier d'essai fixe l'état initial. Dans l'application, chaque travail est déjà isolé, mais le programme exprime aussi cette préparation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un test avec deux écritures"
+        },
+        {
+          "type": "paragraph",
+          "text": "Commence par créer le fichier relatif serie_lgp.txt avec le texte 3 4. Ferme-le et vérifie l'écriture. Rouvre-le ensuite pour ajouter un espace suivi de 5 ; ferme et vérifie à nouveau. Lis trois valeurs int depuis le fichier et calcule Total=12. Valide l'extraction avant l'addition. Utilise des diagnostics distincts pour identifier l'étape en échec et termine avec le code 1 en cas d'erreur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste une deuxième version qui remplace le contenu lors de la seconde ouverture : elle doit afficher Lecture incomplète, sans additionner des valeurs non obtenues. Dans un autre test, conserve app, mais omets l'espace séparateur : il manquera encore des entiers. Déduis les caractères restants dans chaque version avant l'exécution."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <fstream>\n#include <iostream>\n\nint main() {\n    // Construis les deux écritures et la lecture vérifiée.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Modifie uniquement les fichiers d'essai créés par ton programme au cours de sa propre exécution. La référence suivante permet de confronter le résultat aux exigences ; elle ne suppose ni accès aux fichiers personnels ni conservation entre les travaux."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence et critères de correction après la tentative"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <fstream>\n#include <iostream>\n\nint main() {\n    {\n        std::ofstream salida{\"serie_lgp.txt\"};\n        if (!salida) {\n            std::cout << \"Erreur d'ouverture initiale\";\n            return 1;\n        }\n        salida << \"3 4\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Erreur d'écriture initiale\";\n            return 1;\n        }\n    }\n    {\n        std::ofstream salida{\"serie_lgp.txt\", std::ios::app};\n        if (!salida) {\n            std::cout << \"Erreur de seconde ouverture\";\n            return 1;\n        }\n        salida << \" 5\";\n        salida.close();\n        if (!salida) {\n            std::cout << \"Erreur de seconde écriture\";\n            return 1;\n        }\n    }\n    std::ifstream entrada{\"serie_lgp.txt\"};\n    if (!entrada) {\n        std::cout << \"Erreur d'ouverture en lecture\";\n        return 1;\n    }\n    int a{0};\n    int b{0};\n    int c{0};\n    if (!(entrada >> a >> b >> c)) {\n        std::cout << \"Lecture incomplète\";\n        return 1;\n    }\n    std::cout << \"Total=\" << a + b + c;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : contenu initial 3 4, deuxième écriture ajoutant un espace et 5, fermeture vérifiée avant chaque nouvelle étape et extraction correcte de trois entiers avant l'addition. Le contenu obtenu est 3 4 5 et la somme vaut 12. Sans app, il ne reste qu'un espace suivi de 5 : un seul entier. Sans l'espace, le résultat est 3 45. Dans les deux cas, l'extraction de trois valeurs échoue et doit afficher Lecture incomplète, sans exécuter l'addition."
+        },
+        {
+          "type": "paragraph",
+          "text": "Des fonctions séparant les étapes sont également valides si elles respectent ces conditions. Un échec termine le programme avec le code 1 ; le message affiché l'identifie. Un message Total=12 codé en dur ne prouve pas que les trois données ont été lues. Explique pourquoi le mode d'ouverture, le séparateur et les vérifications répondent à des problèmes différents."
+        }
+      ]
+    }
+  ]
+}
