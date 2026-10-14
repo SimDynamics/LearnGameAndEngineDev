@@ -1,0 +1,187 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__validar_la_generacion_y_compartir_el_motor",
+  "title": "Valider la génération et partager le moteur",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les bornes constituent un contrat préalable"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le constructeur de uniform_int_distribution<int> exige minimo <= maximo. Il ne faut pas construire une distribution avec les bornes inversées pour vérifier ensuite si elle échoue : cela violerait déjà sa précondition. Nous ne pouvons pas promettre que ce constructeur lance automatiquement une exception. Valide les données avant de construire la distribution."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nos services accepteront des bornes comprises entre -12 et 12. Ce domaine est propre à l'exercice ; il ne représente pas l'intervalle maximal pris en charge par la bibliothèque. Des comparaisons suffisent pour le vérifier. Nous ne commençons pas par soustraire les bornes pour juger de la validité de l'intervalle : avec des données générales, cette soustraction pourrait ne pas être représentable."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu reçois minimo=5 et maximo=2. Quand le rejet doit-il se produire ?",
+          "options": [
+            "Avant de construire la distribution et d'obtenir des valeurs.",
+            "Après un premier tirage, pour vérifier où la valeur se situe.",
+            "Construire d'abord la distribution et compter sur une exception invalid_argument automatique."
+          ],
+          "correctIndex": 0,
+          "explanation": "La validité de l'intervalle doit être vérifiée avant la construction, par l'appelant ou par le service."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un refus ne consomme pas le moteur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rappelle-toi la détection et le traitement des erreurs : obtener reçoit le moteur par référence, valide l'intervalle et utilise ensuite la distribution. Le rejet de ses arguments survient avant toute consommation de valeurs. Pour std::mt19937, == compare des états capables de produire la même séquence future ; il ne compare pas seulement le nombre de la graine que nous avons noté."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalle invalide\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint main() {\n    std::mt19937 motor{127};\n    const std::mt19937 guardado = motor;\n    try {\n        const int dato = obtener(motor, 6, 2);\n        std::cout << \"Valeur:\" << dato;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Refusé:\" << (motor == guardado);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence guidée affiche Refusé:1 : la validation lance une exception avant la construction de la distribution. Le catch traite le rejet sans prétendre qu'une valeur a été obtenue. Copier le moteur a conservé son état courant dans un autre objet."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalle invalide\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint main() {\n    std::mt19937 motor{149};\n    const std::mt19937 anterior = motor;\n    try {\n        const int dato = obtener(motor, -13, 0);\n        std::cout << \"Valeur:\" << dato;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Hors du domaine:\" << (motor == anterior);\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Hors du domaine:1"
+          ],
+          "explanation": "Le minimum est en dehors du domaine du service, bien que les bornes soient dans le bon ordre. Aucun tirage n'est effectué."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copier un état et partager un état sont deux choix distincts"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::mt19937 copia = motor; copie l'état atteint par motor, qui peut être très éloigné de son point de départ. Ce sont ensuite deux objets distincts. Un paramètre passé par valeur reçoit une autre copie ; une référence modifiable permet de continuer à utiliser le moteur de l'appelant. Ce choix n'est pas seulement une question de concision : il modifie le contrat de l'expérience."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Intervalle invalide\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint obtener_copia(std::mt19937 motor) {\n    return obtener(motor, 0, 9);\n}\n\nint main() {\n    std::mt19937 motor{163};\n    const std::mt19937 anterior = motor;\n    const int primero = obtener_copia(motor);\n    const int segundo = obtener_copia(motor);\n    std::cout << \"Préservé:\" << (motor == anterior) << '\\n';\n    std::cout << \"Correspondent:\" << (primero == segundo);\n    return 0;\n}\n",
+          "answers": [
+            "Préservé:1\nCorrespondent:1"
+          ],
+          "explanation": "Chaque appel reçoit le même état du moteur original, qui ne change pas. Une nouvelle distribution avec les mêmes bornes est construite pour chaque copie."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Une fonction doit faire avancer le moteur de main entre les appels valides. Quel paramètre exprime ce contrat ?",
+          "options": [
+            "const std::mt19937& motor : permet de faire avancer le moteur sans le modifier.",
+            "std::mt19937 motor : chaque appel travaille sur une copie.",
+            "std::mt19937& motor : le tirage peut modifier l'objet de main."
+          ],
+          "correctIndex": 2,
+          "explanation": "Générer des données exige de faire avancer l'état. Le passage par valeur préserve le moteur de l'appelant ; const empêche cette avancée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zéro donnée exige tout de même une configuration valide"
+        },
+        {
+          "type": "paragraph",
+          "text": "Notre générateur de collections vérifiera une quantité de 0 à 20 et l'intervalle complet. Demander zéro donnée est valide si la configuration l'est : il renvoie un vecteur vide sans consommer le moteur. Nous ne traiterons pas cantidad=0 comme une permission d'accepter des bornes inversées. Cette politique conserve la même définition d'une configuration valide."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 motor{179};\n    const std::mt19937 anterior = motor;\n    const int cantidad{0};\n    const int minimo{3};\n    const int maximo{3};\n    std::vector<int> datos;\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        std::cout << \"Configuration invalide\";\n    } else {\n        std::uniform_int_distribution<int> elegir{minimo, maximo};\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(elegir(motor));\n        }\n        std::cout << datos.size() << ':' << (motor == anterior);\n    }\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "La configuration est valide et la boucle n'effectue aucune itération. Construire la distribution ne tire aucune valeur du moteur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire le générateur à partir de son contrat"
+        },
+        {
+          "type": "paragraph",
+          "text": "Implémente generar : la fonction reçoit std::mt19937& motor, int cantidad, int minimo et int maximo, et renvoie vector<int>. Elle accepte une quantité de zéro à vingt, les deux bornes de -12 à 12 et minimo <= maximo. Elle rejette les autres données avec invalid_argument avant de construire la distribution ou de consommer le moteur. Pour des données valides, elle renvoie exactement cantidad entiers appartenant à l'intervalle, dans l'ordre des tirages ; zéro donne un vecteur vide."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans main, avec la graine 191, génère quatre valeurs de -2..5 puis copie le moteur. À partir de l'original et de cette copie, génère trois nouvelles valeurs de -2..5 avec chacun. Affiche Continuation:1 si ces deux lots suivants coïncident. La copie doit avoir lieu après le premier échantillon : nous souhaitons conserver ce point de continuation. Teste aussi une quantité nulle et une configuration invalide avec minimo=5 et maximo=2 : affiche Vide:0:1 et Rejet:1, où le dernier un de chaque sortie compare le moteur avant et après. Aucun test ne doit construire l'intervalle inversé."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construis les fonctions et les tests décrits dans la consigne.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence et critères après ta tentative"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Configuration invalide\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nint main() {\n    std::mt19937 por_lotes{191};\n    const std::vector<int> primero = generar(por_lotes, 4, -2, 5);\n    std::mt19937 continuacion = por_lotes;\n    const std::vector<int> segundo = generar(por_lotes, 3, -2, 5);\n    const std::vector<int> repetido = generar(continuacion, 3, -2, 5);\n    std::cout << \"Continuation:\" << (primero.size() == 4 && segundo == repetido) << '\\n';\n    const std::mt19937 antes_vacio = por_lotes;\n    const std::vector<int> vacio = generar(por_lotes, 0, 2, 2);\n    std::cout << \"Vide:\" << vacio.size() << ':';\n    std::cout << (por_lotes == antes_vacio) << '\\n';\n    const std::mt19937 antes_error = por_lotes;\n    try {\n        const std::vector<int> datos = generar(por_lotes, 3, 5, 2);\n        std::cout << \"Accepté:\" << datos.size();\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rejet:\" << (por_lotes == antes_error);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : validation complète avant les tirages, paramètre par référence, quantité et intervalle corrects, rejet sans consommation et résultat vide sans consommation. Les lignes sont Continuation:1, Vide:0:1 et Rejet:1. Les deux lots suivants commencent avec des moteurs copiés au même instant et construisent leur distribution de la même manière. Nous n'affirmons pas que reconstruire une distribution entre les lots équivaut toujours à la conserver ; la reproductibilité exige également de maintenir ce choix."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie les bornes -12 et 12, les intervalles -12..-12 et 12..12, les quantités zéro, un et vingt, les bornes inversées, les valeurs -13 ou 13 et les quantités -1 ou 21. Un intervalle réduit à une valeur impose ce résultat ; il ne nécessite pas un nombre particulier d'avancées internes du moteur. Nous ne promettons pas que le moteur restera inchangé après tout échec possible survenant après un tirage : la garantie étudiée concerne les arguments rejetés avant tout tirage."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changer le contrat impose un autre test"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pour une demande valide de zéro donnée, le vecteur est vide. Quelle vérification supplémentaire découle du contrat de generar ?",
+          "options": [
+            "Obtenir puis écarter une valeur pour vérifier que le moteur fonctionne.",
+            "Vérifier que le moteur conserve son état puisque aucun tirage n'a eu lieu.",
+            "Vérifier que le moteur revient à sa graine initiale même s'il avait déjà avancé."
+          ],
+          "correctIndex": 1,
+          "explanation": "L'absence de tirages préserve l'état courant ; cela ne signifie pas une réinitialisation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transfert : copie un moteur après avoir produit un premier échantillon. Continue avec la copie et avec l'original en effectuant les mêmes appels et compare leurs échantillons suivants. Décide ensuite lequel des deux doit effectuer un tirage supplémentaire. Explique quels objets sont partagés, lesquels ont été copiés et quelle configuration a été validée. N'exige pas que les échantillons soient forcément différents pour démontrer que tu as choisi des procédures distinctes."
+        },
+        {
+          "type": "note",
+          "text": "La génération aléatoire est abordée dans la source principale (Stroustrup, 2024, section 4.7.5, p. 108–110). Les exigences relatives aux intervalles, aux copies, aux états et à la génération standard ont été consultées dans le brouillon de C++ (Working draft: Programming languages — C++, s. d., sections [rand.dist.uni.int] et [rand.req.eng]). Les politiques de domaine et de rejet de cette leçon sont originales."
+        }
+      ]
+    }
+  ]
+}

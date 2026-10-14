@@ -1,0 +1,184 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__combinar_ensayos_generados_y_casos_elegidos",
+  "title": "Combine Generated Trials with Handpicked Cases",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Generation Complements a Test Question"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall what makes a complete test: inputs, an expectation, and a comparison. Generating inputs addresses only the first part. To decide whether the program behaves correctly, you need an expectation derived from the requirements or a property that must hold. Looking at different numbers on the screen is not a substitute for that comparison."
+        },
+        {
+          "type": "paragraph",
+          "text": "We will work with contar_desde: it receives up to twelve integers from 0 through 9 and a minimum from 0 through 9. It returns how many values are greater than or equal to the minimum without modifying the collection. For example, in {2,4,4,7} with a minimum of four, three values are accepted. Preserve equality and duplicates: they represent distinct observations."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Before generating samples for contar_desde, which handpicked case distinguishes >= from >?",
+          "options": [
+            "Change the seed without specifying any expected outcome.",
+            "A collection containing values equal to the minimum, with an expectation that counts them.",
+            "A collection containing only values well above the minimum."
+          ],
+          "correctIndex": 1,
+          "explanation": "The equality boundary distinguishes the rules. A seed alone does not express the expected behavior."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose Boundaries a Sample May Miss"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write cases for empty input, none accepted, all accepted, and repeated values equal to the minimum. These ask different questions. A distribution may generate any of these situations within its domain, but a finite number of samples does not promise to encounter them. Handpicked cases remain necessary even when generated trials pass."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Forty generated samples pass. What can you claim without going beyond that evidence?",
+          "options": [
+            "Those samples passed; the chosen boundary cases and the contract still need to be checked.",
+            "Every combination of collection sizes, values, and minimums has been tested.",
+            "The uniform distribution guarantees that every boundary was encountered."
+          ],
+          "correctIndex": 0,
+          "explanation": "A finite sample does not establish exhaustive coverage. The set of cases and the contract must remain explicit."
+        },
+        {
+          "type": "paragraph",
+          "text": "If a failure appears, retain the actual inputs, minimum, and generation configuration. The seed helps repeat the history in the same environment; concrete inputs let you rerun the case without relying on how another library maps the sequence. Avoid changing several things before explaining the first difference."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prepare Variable Samples Without Losing Control"
+        },
+        {
+          "type": "paragraph",
+          "text": "We can generate the element count first and then the values. Each trial will have its own vector and minimum. The size distribution includes zero, but that does not require any particular trial to produce an empty sample. The limit of twelve allows us to deliberately convert size() to int and keeps the counts small."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 a{211};\n    std::mt19937 b{211};\n    std::uniform_int_distribution<int> tam_a{0, 4};\n    std::uniform_int_distribution<int> tam_b{0, 4};\n    std::uniform_int_distribution<int> val_a{0, 9};\n    std::uniform_int_distribution<int> val_b{0, 9};\n    bool iguales = true;\n    for (int intento{0}; intento < 5; ++intento) {\n        const int cantidad_a = tam_a(a);\n        const int cantidad_b = tam_b(b);\n        std::vector<int> uno;\n        std::vector<int> dos;\n        for (int i{0}; i < cantidad_a; ++i) {\n            uno.push_back(val_a(a));\n        }\n        for (int i{0}; i < cantidad_b; ++i) {\n            dos.push_back(val_b(b));\n        }\n        iguales = iguales && uno == dos;\n    }\n    std::cout << \"Repetition:\" << iguales;\n    return 0;\n}\n",
+          "answers": [
+            "Repetition:1"
+          ],
+          "explanation": "Both experiments prepare and consume their distributions in the same order. Equality of the data does not depend on their exact values."
+        },
+        {
+          "type": "paragraph",
+          "text": "The code obtains values even if an earlier comparison was false: those draws occur in statements before &&. A necessary call must not be hidden behind short-circuit evaluation that would change the generation history."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Another Way to Calculate an Expectation"
+        },
+        {
+          "type": "paragraph",
+          "text": "For each sample, we can count values that do NOT meet the minimum and subtract them from the size. This gives another representation of the requirement: accepted = observations - rejected. Do not merely copy the same condition and accumulation from the function under test; you could duplicate its bug. Nor does a second implementation alone prove that we interpreted the requirement correctly: retain manually calculated cases."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The actual count and an alternative count agree, but both exclude equality. What helps detect their shared error?",
+          "options": [
+            "Repeat only that comparison with more seeds.",
+            "Use a handpicked case with values equal to the minimum and a manual expectation that includes them.",
+            "Keep only the size, since it determines how many values meet any minimum."
+          ],
+          "correctIndex": 1,
+          "explanation": "An expectation independent of the implementation can detect a shared misunderstanding of the requirement."
+        },
+        {
+          "type": "paragraph",
+          "text": "A property can be weaker than the full requirement. A result between zero and the collection size does not distinguish every incorrect count. In this lab, we combine exact comparisons, an alternative calculation, and manual boundary cases."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build and Test the Counting Function"
+        },
+        {
+          "type": "paragraph",
+          "text": "Implement contar_desde and verificar, where verificar takes the data, minimum, and expected count and returns whether they match. Run four independent handpicked cases: empty with minimum four expects zero; {1,2} with minimum three expects zero; {4,4} with minimum four expects two; {3,4,4,5} with minimum four expects three. Display Handpicked failures:N. Do not use a chain of && that could skip tests."
+        },
+        {
+          "type": "paragraph",
+          "text": "Add esperado_por_descartes using a count of values below the minimum. Prepare an engine with seed 229 and three distributions: size 0..12, minimum 0..9, and values 0..9. In each of forty trials, draw the size first, then the minimum, then the values. Compare contar_desde with the alternative calculation and display Generated failures:N. If there is a difference, preserve and display that vector and its minimum before the summary. All loops must be finite."
+        },
+        {
+          "type": "paragraph",
+          "text": "With a correct implementation, both totals are zero. Then deliberately change >= to > in contar_desde. The manual equality cases must detect the bug; no exact number of generated failures is required. Restore the requirement and run both groups again. The change is a defined logic error, not an invalid memory access."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Build the functions and tests described in the exercise.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference After Building the Tests"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n    if (!verificar({}, 4, 0)) { ++fallos_elegidos; }\n    if (!verificar({1, 2}, 3, 0)) { ++fallos_elegidos; }\n    if (!verificar({4, 4}, 4, 2)) { ++fallos_elegidos; }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) { ++fallos_elegidos; }\n    std::cout << \"Handpicked failures:\" << fallos_elegidos << '\\n';\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cout << \"Case:\" << intento << \";Minimum:\" << minimo << \";Data:\";\n            for (int dato : datos) { std::cout << '[' << dato << ']'; }\n            std::cout << '\\n';\n        }\n    }\n    std::cout << \"Generated failures:\" << fallos_generados;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: preserve input data; include equality and duplicates; calculate correct manual expectations; execute every handpicked case; respect the size and value domains; draw size, minimum, and values in the declared order; report any mismatch together with its concrete case. The correct reference displays Handpicked failures:0 and Generated failures:0. With the > defect, two handpicked cases fail: {4,4} and {3,4,4,5}. Generated failures depend on the samples and are not an exact cross-library answer."
+        },
+        {
+          "type": "paragraph",
+          "text": "The goal is not to build a checker that recognizes only four printed answers: the functions compute from their arguments, and the generated trials add new combinations. As an additional handpicked extension, test a minimum of zero, a minimum of nine, and twelve equal values. Predict their expected results from the specification before running."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Locate an Equality Bug with Fixed Data"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_estricto(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato > minimo) { ++cantidad; }\n    }\n    return cantidad;\n}\n\nint main() {\n    const std::vector<int> datos{1, 4, 4, 9};\n    const int real = contar_estricto(datos, 4);\n    const int esperado{3};\n    std::cout << \"Actual:\" << real << \";Expected:\" << esperado;\n    std::cout << \";Matches:\" << (real == esperado);\n    return 0;\n}\n",
+          "answers": [
+            "Actual:1;Expected:3;Matches:0"
+          ],
+          "explanation": "The code counts only the nine. The requirement includes the two fours, so the fixed expectation reveals the defect."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transfer: choose another small operation, such as selecting elements that meet a condition. Prepare handpicked cases for empty input, equality, all, and none. Then generate bounded samples and check that the original is preserved, along with order and selection criteria. Save the inputs of any failure to turn it into a fixed regression case."
+        },
+        {
+          "type": "note",
+          "text": "Combining tests and generated trials is discussed in the main source (Stroustrup, 2024, sections 4.7.4–4.7.5, pp. 107–110). The tests and counting task in this lesson are original. Generated trials complement handpicked boundaries; their number does not certify exhaustive coverage."
+        }
+      ]
+    }
+  ]
+}

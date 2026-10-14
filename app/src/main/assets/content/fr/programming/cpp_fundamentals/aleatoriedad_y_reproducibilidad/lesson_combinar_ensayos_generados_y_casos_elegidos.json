@@ -1,0 +1,184 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__combinar_ensayos_generados_y_casos_elegidos",
+  "title": "Combiner des essais générés et des cas choisis",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La génération complète une question de test"
+        },
+        {
+          "type": "paragraph",
+          "text": "Rappelle-toi les éléments d'un test complet : les données, le résultat attendu et la comparaison. Générer des données ne résout que la première partie. Pour déterminer si le programme répond correctement, il faut une attente déduite de l'exigence ou une propriété qui doit être respectée. Observer différents nombres à l'écran ne remplace pas cette comparaison."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous travaillerons sur contar_desde : la fonction reçoit au maximum douze entiers de 0 à 9 et un seuil minimal de 0 à 9. Elle renvoie le nombre de données supérieures ou égales au minimum sans modifier la collection. Par exemple, dans {2,4,4,7}, avec un minimum de quatre, trois valeurs sont acceptées. Préserve l'égalité et les répétitions : ce sont des observations distinctes."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Avant de générer des échantillons pour contar_desde, quel cas choisi distingue >= de > ?",
+          "options": [
+            "Changer la graine sans préciser le résultat attendu.",
+            "Une collection comportant des valeurs égales au minimum, avec un résultat attendu qui les compte.",
+            "Une collection contenant uniquement des valeurs nettement supérieures au minimum."
+          ],
+          "correctIndex": 1,
+          "explanation": "La frontière de l'égalité distingue les deux règles. Une graine seule ne décrit pas le comportement attendu."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir des cas limites qu'un échantillon peut manquer"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prépare des cas avec une collection vide, aucun élément accepté, tous les éléments acceptés et des répétitions égales au minimum. Ils posent des questions différentes. Une distribution peut produire ces situations dans son domaine, mais un nombre fini d'échantillons ne garantit pas de les rencontrer. Les cas choisis restent nécessaires même lorsque les essais générés réussissent."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quarante échantillons générés passent les tests. Que peux-tu affirmer sans aller au-delà de cette preuve ?",
+          "options": [
+            "Ces échantillons ont réussi ; il reste à vérifier les cas limites choisis et le contrat.",
+            "Tout le domaine des tailles, valeurs et minimums a été vérifié.",
+            "La distribution uniforme garantit que chaque frontière est apparue au moins une fois."
+          ],
+          "correctIndex": 0,
+          "explanation": "Un échantillon fini ne démontre pas une couverture complète. La liste des cas et le contrat doivent rester explicites."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un échec apparaît, conserve les données concrètes, le minimum et la configuration de génération. La graine aide à répéter l'historique dans le même environnement ; les données conservées permettent de reproduire le cas sans dépendre de la transformation utilisée par une autre bibliothèque. Évite de modifier plusieurs choses avant d'expliquer la première différence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Préparer des échantillons variables sans perdre le contrôle"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous pouvons générer d'abord la quantité d'éléments, puis leurs valeurs. Chaque essai aura son propre vecteur et son minimum. La distribution des tailles comprend zéro, mais elle ne garantit pas qu'un essai particulier produise un échantillon vide. La limite de douze permet une conversion délibérée de size() vers int et maintient de petits compteurs."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 a{211};\n    std::mt19937 b{211};\n    std::uniform_int_distribution<int> tam_a{0, 4};\n    std::uniform_int_distribution<int> tam_b{0, 4};\n    std::uniform_int_distribution<int> val_a{0, 9};\n    std::uniform_int_distribution<int> val_b{0, 9};\n    bool iguales = true;\n    for (int intento{0}; intento < 5; ++intento) {\n        const int cantidad_a = tam_a(a);\n        const int cantidad_b = tam_b(b);\n        std::vector<int> uno;\n        std::vector<int> dos;\n        for (int i{0}; i < cantidad_a; ++i) {\n            uno.push_back(val_a(a));\n        }\n        for (int i{0}; i < cantidad_b; ++i) {\n            dos.push_back(val_b(b));\n        }\n        iguales = iguales && uno == dos;\n    }\n    std::cout << \"Répétition:\" << iguales;\n    return 0;\n}\n",
+          "answers": [
+            "Répétition:1"
+          ],
+          "explanation": "Les deux expériences préparent et consomment leurs distributions dans le même ordre. L'égalité des données ne dépend pas de leurs valeurs exactes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le code obtient des valeurs même si une comparaison précédente était fausse : les tirages sont effectués dans des instructions placées avant &&. Un appel nécessaire ne doit pas être caché derrière un court-circuit qui modifierait l'historique de génération."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une autre manière de calculer un résultat attendu"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour chaque échantillon, nous pouvons compter les valeurs qui ne satisfont PAS le minimum et les soustraire à la taille. Ce calcul donne une autre représentation de l'exigence : acceptés = observations - rejetés. Ne recopie pas simplement la même condition et la même accumulation que dans la fonction testée : tu pourrais reproduire son défaut. Une seconde implémentation ne prouve pas non plus que nous avons correctement interprété l'exigence ; conserve les cas calculés manuellement."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le compte réel et un compte alternatif coïncident, mais tous deux excluent l'égalité. Qu'est-ce qui permet de détecter cette erreur commune ?",
+          "options": [
+            "Répéter uniquement cette comparaison avec davantage de graines.",
+            "Utiliser un cas choisi avec des valeurs égales au minimum et une attente manuelle qui les inclut.",
+            "Ne conserver que la taille, puisqu'elle détermine combien de valeurs satisfont n'importe quel minimum."
+          ],
+          "correctIndex": 1,
+          "explanation": "Une attente indépendante du code permet de détecter une interprétation erronée commune."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une propriété peut être plus faible que l'exigence complète. Le fait qu'un résultat soit compris entre zéro et la taille ne distingue pas tous les comptes incorrects. Pour ce laboratoire, nous combinons comparaison exacte, calcul alternatif et cas limites manuels."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire et tester le comptage"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis contar_desde et verificar, où verificar reçoit les données, le minimum et la quantité attendue, puis indique s'ils correspondent. Exécute quatre cas manuels indépendants : vide avec minimum quatre attend zéro ; {1,2} avec minimum trois attend zéro ; {4,4} avec minimum quatre attend deux ; {3,4,4,5} avec minimum quatre attend trois. Affiche Échecs choisis:N. N'utilise pas une chaîne de && qui pourrait ignorer certains tests."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ajoute esperado_por_descartes en comptant les valeurs inférieures au minimum. Prépare un moteur avec la graine 229 et trois distributions : taille 0..12, minimum 0..9 et valeur 0..9. Dans chacun des quarante essais, tire d'abord la taille, ensuite le minimum et enfin les valeurs. Compare contar_desde au calcul alternatif et affiche Échecs générés:N. En cas de différence, conserve et affiche ce vecteur et son minimum avant le récapitulatif. Toutes les boucles doivent être finies."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec une implémentation correcte, les deux totaux valent zéro. Remplace ensuite volontairement >= par > dans contar_desde. Les cas manuels d'égalité doivent détecter le défaut ; aucun nombre précis d'échecs générés n'est exigé. Rétablis l'exigence et réexécute les deux groupes. Cette modification constitue une erreur logique définie, sans accès mémoire invalide."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Construis les fonctions et les tests décrits dans la consigne.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence après avoir construit les tests"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_desde(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint esperado_por_descartes(const std::vector<int>& datos, int minimo) {\n    int rechazados{0};\n    for (int dato : datos) {\n        if (dato < minimo) {\n            ++rechazados;\n        }\n    }\n    return static_cast<int>(datos.size()) - rechazados;\n}\n\nbool verificar(const std::vector<int>& datos, int minimo, int esperado) {\n    const int real = contar_desde(datos, minimo);\n    return real == esperado;\n}\n\nint main() {\n    int fallos_elegidos{0};\n    if (!verificar({}, 4, 0)) { ++fallos_elegidos; }\n    if (!verificar({1, 2}, 3, 0)) { ++fallos_elegidos; }\n    if (!verificar({4, 4}, 4, 2)) { ++fallos_elegidos; }\n    if (!verificar({3, 4, 4, 5}, 4, 3)) { ++fallos_elegidos; }\n    std::cout << \"Échecs choisis:\" << fallos_elegidos << '\\n';\n    std::mt19937 motor{229};\n    std::uniform_int_distribution<int> tamanos{0, 12};\n    std::uniform_int_distribution<int> minimos{0, 9};\n    std::uniform_int_distribution<int> valores{0, 9};\n    int fallos_generados{0};\n    for (int intento{0}; intento < 40; ++intento) {\n        const int cantidad = tamanos(motor);\n        const int minimo = minimos(motor);\n        std::vector<int> datos;\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(valores(motor));\n        }\n        const int real = contar_desde(datos, minimo);\n        const int esperado = esperado_por_descartes(datos, minimo);\n        if (real != esperado) {\n            ++fallos_generados;\n            std::cout << \"Cas:\" << intento << \";Minimum:\" << minimo << \";Données:\";\n            for (int dato : datos) { std::cout << '[' << dato << ']'; }\n            std::cout << '\\n';\n        }\n    }\n    std::cout << \"Échecs générés:\" << fallos_generados;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : conserver les données ; inclure les égalités et les répétitions ; obtenir des attentes manuelles correctes ; exécuter tous les cas choisis ; respecter les domaines de tailles et de valeurs ; consommer taille, minimum et valeurs dans l'ordre indiqué ; signaler toute différence avec son cas concret. La référence correcte affiche Échecs choisis:0 et Échecs générés:0. Avec le défaut >, deux cas choisis échouent : {4,4} et {3,4,4,5}. Les échecs générés dépendent des échantillons : ils ne constituent pas une réponse exacte commune aux bibliothèques."
+        },
+        {
+          "type": "paragraph",
+          "text": "Il ne s'agit pas de fabriquer un vérificateur qui reconnaît uniquement quatre réponses affichées : les fonctions calculent selon leurs arguments et les essais générés ajoutent de nouvelles combinaisons. Pour prolonger les cas choisis, teste un minimum de zéro, un minimum de neuf et douze valeurs identiques. Prédis les résultats depuis la consigne avant l'exécution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Localiser une erreur d'égalité avec des données fixes"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint contar_estricto(const std::vector<int>& datos, int minimo) {\n    int cantidad{0};\n    for (int dato : datos) {\n        if (dato > minimo) { ++cantidad; }\n    }\n    return cantidad;\n}\n\nint main() {\n    const std::vector<int> datos{1, 4, 4, 9};\n    const int real = contar_estricto(datos, 4);\n    const int esperado{3};\n    std::cout << \"Réel:\" << real << \";Attendu:\" << esperado;\n    std::cout << \";Correspond:\" << (real == esperado);\n    return 0;\n}\n",
+          "answers": [
+            "Réel:1;Attendu:3;Correspond:0"
+          ],
+          "explanation": "Le code ne compte que le neuf. L'exigence inclut les deux quatre ; l'attente fixe permet donc d'identifier le défaut."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transfert : choisis une autre petite opération, par exemple sélectionner les éléments répondant à une condition. Prépare des cas manuels pour le vide, l'égalité, tous et aucun. Génère ensuite des échantillons bornés et vérifie la conservation de l'original, l'ordre et le critère de sélection. Conserve les données de chaque échec afin d'en faire un cas de régression fixe."
+        },
+        {
+          "type": "note",
+          "text": "La combinaison de tests et d'essais générés est étudiée dans la source principale (Stroustrup, 2024, sections 4.7.4–4.7.5, p. 107–110). Les tests et le comptage de cette leçon sont originaux. Les essais générés complètent les cas limites choisis ; leur nombre ne certifie pas une couverture complète."
+        }
+      ]
+    }
+  ]
+}

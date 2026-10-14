@@ -1,0 +1,187 @@
+{
+  "id": "cpp_fundamentals__aleatoriedad_y_reproducibilidad__validar_la_generacion_y_compartir_el_motor",
+  "title": "Validate Generation and Share the Engine",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Bounds Are a Prerequisite Contract"
+        },
+        {
+          "type": "paragraph",
+          "text": "The constructor of uniform_int_distribution<int> requires minimo <= maximo. We must not construct a distribution with reversed bounds and then check whether it fails: doing so would already violate its precondition. We cannot promise that this constructor automatically throws an exception. Validate the inputs before constructing it."
+        },
+        {
+          "type": "paragraph",
+          "text": "Our services will accept bounds between -12 and 12. This domain belongs to the exercise; it is not the library's maximum supported range. Comparisons suffice to check it. We do not subtract the endpoints first to determine whether the interval is valid: with general inputs, that subtraction might not be representable."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You receive minimo=5 and maximo=2. Where should rejection occur?",
+          "options": [
+            "Before constructing the distribution or drawing any values.",
+            "After drawing the first value to see where it landed.",
+            "Construct the distribution first and rely on it to throw invalid_argument automatically."
+          ],
+          "correctIndex": 0,
+          "explanation": "Interval validity is a responsibility to address before constructing it, either by the caller or the service."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Rejection Does Not Consume the Engine"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall detection and handling: obtener takes the engine by reference, validates the interval, and only then uses the distribution. Rejection of its arguments happens before any values are consumed. For std::mt19937, == compares states capable of producing the same future sequence; it does not merely compare a seed number we recorded ourselves."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Invalid interval\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint main() {\n    std::mt19937 motor{127};\n    const std::mt19937 guardado = motor;\n    try {\n        const int dato = obtener(motor, 6, 2);\n        std::cout << \"Value:\" << dato;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rejected:\" << (motor == guardado);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The guided reference displays Rejected:1: validation throws before the distribution is constructed. The catch handles rejection without pretending a value was obtained. Copying the engine preserved its current state in a separate object."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Invalid interval\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint main() {\n    std::mt19937 motor{149};\n    const std::mt19937 anterior = motor;\n    try {\n        const int dato = obtener(motor, -13, 0);\n        std::cout << \"Value:\" << dato;\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Outside domain:\" << (motor == anterior);\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Outside domain:1"
+          ],
+          "explanation": "The minimum lies outside the service's domain even though the bounds are correctly ordered. No draw is performed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Copying State and Sharing State Are Different Decisions"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::mt19937 copia = motor; copies the state that motor has reached, which may be far from its starting point. They are separate objects afterward. A by-value parameter receives another copy; a modifiable reference allows the caller's engine to continue. We should not choose that form merely to avoid spelling out a type: it changes the experiment's contract."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint obtener(std::mt19937& motor, int minimo, int maximo) {\n    if (minimo < -12 || minimo > 12 || maximo < -12 || maximo > 12\n            || minimo > maximo) {\n        throw std::invalid_argument(\"Invalid interval\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    return elegir(motor);\n}\n\nint obtener_copia(std::mt19937 motor) {\n    return obtener(motor, 0, 9);\n}\n\nint main() {\n    std::mt19937 motor{163};\n    const std::mt19937 anterior = motor;\n    const int primero = obtener_copia(motor);\n    const int segundo = obtener_copia(motor);\n    std::cout << \"Preserved:\" << (motor == anterior) << '\\n';\n    std::cout << \"Match:\" << (primero == segundo);\n    return 0;\n}\n",
+          "answers": [
+            "Preserved:1\nMatch:1"
+          ],
+          "explanation": "Each call receives the same state from the original engine, which remains unchanged. Each copy uses a newly constructed distribution with the same bounds."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A function must continue the engine belonging to main across valid calls. Which parameter expresses that contract?",
+          "options": [
+            "const std::mt19937& motor: allows advancing the engine without modifying it.",
+            "std::mt19937 motor: each call works on a copy.",
+            "std::mt19937& motor: drawing can modify the object in main."
+          ],
+          "correctIndex": 2,
+          "explanation": "Generation requires advancing the state. Passing by value preserves the caller's engine; const prevents that advance."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Zero Values Still Require Valid Configuration"
+        },
+        {
+          "type": "paragraph",
+          "text": "Our collection generator will validate a count from 0 through 20 and the complete interval. Requesting zero values is valid if the configuration is valid: it returns an empty vector and does not consume the engine. We will not treat cantidad=0 as permission to accept reversed bounds. This policy keeps the same definition of a valid configuration."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    std::mt19937 motor{179};\n    const std::mt19937 anterior = motor;\n    const int cantidad{0};\n    const int minimo{3};\n    const int maximo{3};\n    std::vector<int> datos;\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        std::cout << \"Invalid configuration\";\n    } else {\n        std::uniform_int_distribution<int> elegir{minimo, maximo};\n        for (int i{0}; i < cantidad; ++i) {\n            datos.push_back(elegir(motor));\n        }\n        std::cout << datos.size() << ':' << (motor == anterior);\n    }\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "The configuration is valid, and the loop has zero iterations. Constructing the distribution does not draw a value from the engine."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build the Generator from Its Contract"
+        },
+        {
+          "type": "paragraph",
+          "text": "Implement generar: it takes std::mt19937& motor, int cantidad, int minimo, and int maximo, and returns vector<int>. Accept counts from zero through twenty, both bounds from -12 through 12, and minimo <= maximo. Reject with invalid_argument before constructing the distribution or consuming the engine. For valid inputs, return exactly cantidad integers within the interval, in draw order; zero gives an empty vector."
+        },
+        {
+          "type": "paragraph",
+          "text": "In main, with seed 191, generate four values from -2..5 and then copy the engine. Using the original and that copy, generate another three values from -2..5 each. Display Continuation:1 if those two later batches match. The copy must occur after the first sample: we want to preserve that continuation point. Also test a count of zero and an invalid configuration with minimo=5, maximo=2: display Empty:0:1 and Rejection:1, where each final one compares the engine before and after. No test should construct the reversed interval."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nint main() {\n    // Build the functions and tests described in the exercise.\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference and Criteria After Your Attempt"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <random>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<int> generar(std::mt19937& motor, int cantidad,\n                         int minimo, int maximo) {\n    if (cantidad < 0 || cantidad > 20 || minimo < -12 || minimo > 12\n            || maximo < -12 || maximo > 12 || minimo > maximo) {\n        throw std::invalid_argument(\"Invalid configuration\");\n    }\n    std::uniform_int_distribution<int> elegir{minimo, maximo};\n    std::vector<int> datos;\n    for (int i{0}; i < cantidad; ++i) {\n        datos.push_back(elegir(motor));\n    }\n    return datos;\n}\n\nint main() {\n    std::mt19937 por_lotes{191};\n    const std::vector<int> primero = generar(por_lotes, 4, -2, 5);\n    std::mt19937 continuacion = por_lotes;\n    const std::vector<int> segundo = generar(por_lotes, 3, -2, 5);\n    const std::vector<int> repetido = generar(continuacion, 3, -2, 5);\n    std::cout << \"Continuation:\" << (primero.size() == 4 && segundo == repetido) << '\\n';\n    const std::mt19937 antes_vacio = por_lotes;\n    const std::vector<int> vacio = generar(por_lotes, 0, 2, 2);\n    std::cout << \"Empty:\" << vacio.size() << ':';\n    std::cout << (por_lotes == antes_vacio) << '\\n';\n    const std::mt19937 antes_error = por_lotes;\n    try {\n        const std::vector<int> datos = generar(por_lotes, 3, 5, 2);\n        std::cout << \"Accepted:\" << datos.size();\n    } catch (const std::invalid_argument&) {\n        std::cout << \"Rejection:\" << (por_lotes == antes_error);\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: complete validation before drawing values, a reference parameter, correct count and range, rejection without consumption, and empty results without consumption. The lines are Continuation:1, Empty:0:1, and Rejection:1. Both later batches start from engines copied at the same point and construct their distributions in the same way. We do not claim that reconstructing a distribution between batches is always equivalent to preserving it; repetition also requires preserving that decision."
+        },
+        {
+          "type": "paragraph",
+          "text": "Check bounds -12 and 12, the intervals -12..-12 and 12..12, counts of zero, one, and twenty, reversed bounds, endpoints -13 or 13, and counts -1 or 21. A single-value interval forces its value; it does not require a particular number of internal engine advances. We do not promise to preserve the engine against every possible failure after a draw: the guarantee here concerns rejection of arguments before drawing."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changing the Contract Requires Another Test"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "For a valid request for zero values, the vector is empty. What additional check follows from generar's contract?",
+          "options": [
+            "Draw and discard a value to verify the engine is working.",
+            "Verify the engine retains its state because no draws occurred.",
+            "Verify the engine returns to its initial seed even if it had already advanced."
+          ],
+          "correctIndex": 1,
+          "explanation": "No draws preserve the current state; that does not mean resetting it."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transfer: copy an engine after consuming an initial sample. Continue from both the copy and the original using identical calls and compare their next samples. Then decide which one should receive an additional draw. Explain which objects are shared, which were copied, and which configuration was validated. Do not expect samples to be necessarily different merely to prove that you chose different procedures."
+        },
+        {
+          "type": "note",
+          "text": "Random generation is discussed in the main source (Stroustrup, 2024, section 4.7.5, pp. 108–110). Requirements for interval validity, copying, state, and standard generation were checked against the C++ working draft (Working draft: Programming languages — C++, n.d., sections [rand.dist.uni.int] and [rand.req.eng]). The domain and rejection policies in this lesson are original."
+        }
+      ]
+    }
+  ]
+}
