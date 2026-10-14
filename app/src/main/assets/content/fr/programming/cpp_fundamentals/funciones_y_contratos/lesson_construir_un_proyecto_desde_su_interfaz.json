@@ -1,0 +1,396 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__construir_un_proyecto_desde_su_interfaz",
+  "title": "Construire un projet à partir de son interface",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un projet à partir de ses exigences"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu vas construire un programme qui décrit l'occupation d'une étagère. Chaque petite boîte occupe 2 espaces et chaque grande boîte en occupe 5. Les quantités sont des entiers compris entre 0 et 10, bornes incluses. Le programme sera réparti en un en-tête et trois fichiers source. L'éditeur fournit la structure des fichiers, mais tu écriras les déclarations, les définitions et main."
+        },
+        {
+          "type": "paragraph",
+          "text": "Retrouve tes acquis : une déclaration permet de vérifier un appel ; une définition effectue le travail ; chaque fichier source est compilé comme une unité de traduction ; l'édition de liens réunit les définitions absentes des unités isolées. Tu vas maintenant appliquer ces idées à un projet dont la solution n'est pas encore écrite."
+        },
+        {
+          "type": "note",
+          "text": "Utilise seulement des fonctions, int, bool, std::string, des conditions et l'affichage par std::cout. Les données seront écrites dans main ; ce projet n'exige ni entrée préparée ni interaction pendant l'exécution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une interface qui exprime trois contrats"
+        },
+        {
+          "type": "paragraph",
+          "text": "cantidades_validas reçoit deux int, pequenas et grandes, et renvoie bool. Elle peut recevoir n'importe quelle valeur représentable en int. Elle renvoie true si et seulement si les deux quantités sont entre 0 et 10. Elle doit vérifier les limites avec des comparaisons, sans calculer auparavant l'occupation de valeurs rejetées."
+        },
+        {
+          "type": "paragraph",
+          "text": "espacios_ocupados reçoit les deux mêmes int et renvoie int. Elle exige des quantités valides et renvoie la somme des espaces occupés par les boîtes. Elle ne modifie pas les arguments de l'appelant. Dans le domaine autorisé, son résultat est compris entre 0 et 70."
+        },
+        {
+          "type": "paragraph",
+          "text": "descripcion_carga reçoit les deux mêmes int et renvoie std::string. Elle exige également des quantités valides. Elle renvoie Vide si aucun espace n'est occupé, Léger si l'occupation est comprise entre 1 et 20 inclus, et Lourd si elle dépasse 20. Elle doit obtenir l'occupation en appelant espacios_ocupados afin que la règle de calcul ne soit définie qu'une seule fois."
+        },
+        {
+          "type": "paragraph",
+          "text": "main doit d'abord appeler cantidades_validas. Si le résultat est false, affiche uniquement Quantités invalides et termine. Si le résultat est true, affiche deux lignes : Espaces : suivi d'un espace et du nombre occupé ; Charge : suivi d'un espace et de la description. Il ne faut jamais appeler les deux calculs avec des valeurs rejetées."
+        },
+        {
+          "type": "note",
+          "text": "Ces préconditions relèvent de la responsabilité du programme. Les écrire près d'une déclaration ne force pas le compilateur à valider automatiquement les valeurs d'entrée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Décider où chaque responsabilité doit se trouver"
+        },
+        {
+          "type": "paragraph",
+          "text": "estante.h contient la garde d'inclusion, l'inclusion de <string> et les trois déclarations. Il ne contient aucun corps de fonction. conteo.cpp inclut cet en-tête et définit cantidades_validas et espacios_ocupados. estado.cpp inclut le même en-tête et définit descripcion_carga. main.cpp inclut l'en-tête et <iostream>, puis contient le main que tu écriras."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les trois fichiers .cpp sont les sources compilées et liées. estante.h fournit les déclarations aux fichiers qui l'incluent ; ne le sélectionne pas comme quatrième source. Conserve les noms de fichiers et de fonctions indiqués, puis fais correspondre les types de chaque définition à sa déclaration."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant l'implémentation, décris avec tes propres mots le parcours d'une entrée rejetée et celui d'une entrée valide. Décide quel fichier modifier si seule la validation est incorrecte, si seul le calcul des espaces est erroné ou si seul le texte des catégories doit changer. Cette séparation permet de corriger une responsabilité sans recopier les règles à plusieurs endroits."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire de façon autonome dans plusieurs fichiers"
+        },
+        {
+          "type": "paragraph",
+          "text": "Commence avec 4 petites boîtes et 3 grandes : la sortie doit être Espaces : 23 et Charge : Lourd sur deux lignes. Complète l'en-tête, implémente les fonctions dans leurs fichiers respectifs et écris main à partir de zéro. Les commentaires de l'éditeur donnent des indications ; aucun main ni aucune définition ne sont encore terminés. Exécuter cette structure incomplète ne produit pas un programme achevé."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\n// Écris main : données, validation, appels et affichage.\n",
+          "projectFiles": [
+            {
+              "path": "estante.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Écris les trois déclarations de l'interface.\n\n#endif\n"
+            },
+            {
+              "path": "conteo.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Définis cantidades_validas et espacios_ocupados.\n"
+            },
+            {
+              "path": "estado.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Définis descripcion_carga en utilisant espacios_ocupados.\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\n// Écris main : données, validation, appels et affichage.\n"
+            }
+          ],
+          "sourceFiles": [
+            "conteo.cpp",
+            "estado.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie ensuite (0, 0) : 0 et Vide ; (0, 4) : 20 et Léger ; (3, 3) : 21 et Lourd ; (10, 10) : 70 et Lourd. Conserve les étiquettes et l'ordre des deux lignes. Teste (-1, 2), (2, -1), (11, 0) et (0, 11) : chaque cas doit afficher uniquement Quantités invalides. Modifie les données de main entre les essais sans changer les règles pour les adapter à un seul cas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de révision : l'en-tête peut être inclus indépendamment ; les trois définitions lui correspondent ; chaque fonction ordinaire possède un seul corps dans le projet ; la description réutilise le calcul ; main rejette les données avant de calculer ; les sources sélectionnées sont les trois .cpp ; toutes les sorties respectent les contrats. En cas d'échec, détermine d'abord s'il manque une déclaration, une définition ou une condition correcte."
+        },
+        {
+          "type": "note",
+          "text": "Essaie de construire et de tester avant de consulter la référence. Plusieurs implémentations sont possibles ; les critères de comportement et d'organisation permettent de les comparer sans imposer un seul texte de programme."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réviser les étapes de construction après son essai"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sur ordinateur avec g++, tu peux compiler chaque source séparément puis effectuer l'édition de liens des objets. Ces commandes montrent les étapes ; l'éditeur du projet les gère lorsque tu exécutes les sources sélectionnées."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "g++ -std=c++23 -Wall -Wextra -pedantic -c conteo.cpp -o conteo.o\ng++ -std=c++23 -Wall -Wextra -pedantic -c estado.cpp -o estado.o\ng++ -std=c++23 -Wall -Wextra -pedantic -c main.cpp -o main.o\ng++ conteo.o estado.o main.o -o estante\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Les trois fichiers source compilent séparément. En liant seulement conteo.o et main.o, la définition de descripcion_carga manque. Comment corriger ce problème ?",
+          "options": [
+            "Lier également estado.o, qui contient la définition utilisée par main.",
+            "Ajouter estado.cpp comme fichier du projet, mais le laisser hors des sources sélectionnées.",
+            "Répéter l'inclusion de estante.h dans main.cpp pour qu'elle fournisse le corps manquant."
+          ],
+          "correctIndex": 0,
+          "explanation": "La déclaration visible permet de compiler l'appel, mais le programme a besoin de la définition de descripcion_carga. Dans ce projet, elle se trouve dans estado.cpp ; son fichier objet doit participer à l'édition de liens."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel parcours respecte le contrat pour une donnée contenant 11 grandes boîtes ?",
+          "options": [
+            "Changer 11 en 10 dans main et poursuivre sans indiquer le rejet de la donnée.",
+            "Calculer les espaces et la description avant de décider d'afficher le message.",
+            "Valider les quantités et terminer avec le message avant tout appel aux calculs."
+          ],
+          "correctIndex": 2,
+          "explanation": "La donnée est hors du domaine de espacios_ocupados et descripcion_carga. La validation peut l'examiner et doit empêcher ces appels. Le contrat n'autorise pas à modifier silencieusement l'entrée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une référence : déclarations et calcul"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare cette solution à la tienne après avoir essayé de construire le projet. Dans estante.h, <string> fournit le type utilisé dans l'interface. La garde protège le contenu contre les inclusions répétées dans une même unité de traduction."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Quantités permises : chacune entre 0 et 10, bornes incluses.\nbool cantidades_validas(int pequenas, int grandes);\n// Exigent des quantités valides.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans conteo.cpp, ces mêmes déclarations sont incluses avant de définir les fonctions. Les bornes sont vérifiées sans additionner ni multiplier les quantités rejetées. Le calcul doit uniquement traiter des données qui respectent sa précondition."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n\nbool cantidades_validas(int pequenas, int grandes) {\n    return pequenas >= 0 && pequenas <= 10\n        && grandes >= 0 && grandes <= 10;\n}\n\nint espacios_ocupados(int pequenas, int grandes) {\n    return 2 * pequenas + 5 * grandes;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une référence : composition et programme principal"
+        },
+        {
+          "type": "paragraph",
+          "text": "estado.cpp utilise la déclaration de espacios_ocupados pour appeler le calcul défini dans un autre fichier source. Il conserve le cas vide séparé des autres valeurs de la catégorie Léger."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vide\";\n    }\n    if (espacios <= 20) {\n        return \"Léger\";\n    }\n    return \"Lourd\";\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "main.cpp utilise l'interface comme client. Le return du cas rejeté empêche d'atteindre les appels qui exigent des données valides. Le client n'a pas besoin de connaître les corps pour compiler ces appels."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{4};\n    const int grandes{3};\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Quantités invalides\\n\";\n        return 0;\n    }\n    std::cout << \"Espaces : \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Charge : \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si ton implémentation est différente, vérifie les mêmes tests et responsabilités. Obtenir 23 pour le premier cas ne suffit pas : le vide, l'égalité à 20, le premier cas au-dessus de la limite et le rejet de chaque quantité invalide doivent aussi être corrects."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prévoir à partir de l'interface sans recopier le premier cas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans les deux questions suivantes, utilise estante.h, conteo.cpp et estado.cpp de la référence initiale. Remplace uniquement main.cpp par le code de chaque question ; les trois sources participent toujours au projet."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Quelle sortie produit ce main lié aux fonctions de la référence initiale ?",
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cantidades_validas(10, 0) << ' '\n              << cantidades_validas(0, 11) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "La borne supérieure 10 est incluse et les deux quantités du premier cas sont valides. Le deuxième appel reçoit 11 et renvoie false. Sans boolalpha, cout affiche normalement 1 pour true et 0 pour false."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Quelles sont les deux lignes produites par ce main avec les fonctions initiales ?",
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    std::cout << espacios_ocupados(1, 2) << ' '\n              << descripcion_carga(1, 2) << '\\n';\n    std::cout << espacios_ocupados(8, 1) << ' '\n              << descripcion_carga(8, 1) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "12 Léger\n21 Lourd"
+          ],
+          "explanation": "Le premier calcul additionne 2 et 10 ; le deuxième 16 et 5. Les quantités sont valides. La description réutilise le calcul et applique la limite 20."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier les échecs contrôlés et rétablir le projet"
+        },
+        {
+          "type": "paragraph",
+          "text": "Reviens à la version fonctionnelle du projet. Introduis un seul défaut à la fois et restaure le code avant le test suivant. Ajoute d'abord un deuxième #include \"estante.h\" dans une source : le programme doit conserver ses sorties. La garde agit pendant le traitement de chaque unité ; elle ne lie pas les fichiers et ne fournit pas les corps manquants."
+        },
+        {
+          "type": "paragraph",
+          "text": "Exclus ensuite estado.cpp des sources sélectionnées, tout en le conservant comme fichier du projet. Les déclarations restent visibles et les .cpp choisis peuvent compiler, mais le lien échoue faute de définition de descripcion_carga. Sélectionne de nouveau estado.cpp. Modifie ensuite uniquement en double le type de retour de la définition de espacios_ocupados dans conteo.cpp, tout en conservant int dans estante.h : la compilation de cette source doit échouer à cause de la déclaration incompatible qu'elle inclut. Rétablis int."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "La garde de estante.h fonctionne, mais deux fichiers .cpp contiennent chacun un corps ordinaire de espacios_ocupados. Qu'est-ce qui explique le problème ?",
+          "options": [
+            "La garde fournit une définition partagée même si le corps est copié dans deux sources.",
+            "La garde empêche les inclusions répétées dans chaque unité ; elle ne réunit pas les corps dupliqués de deux sources.",
+            "Inclure l'en-tête dans les deux fichiers interdit d'y déclarer une fonction de même nom."
+          ],
+          "correctIndex": 1,
+          "explanation": "Des déclarations compatibles peuvent apparaître dans plusieurs fichiers clients. En revanche, cette fonction ordinaire exige une définition unique dans le programme. Une garde d'inclusion ne peut pas transformer deux définitions en une."
+        },
+        {
+          "type": "note",
+          "text": "Observe l'étape qui échoue et la responsabilité qui manque. Tu n'as pas besoin de mémoriser la formulation exacte d'un diagnostic : les compilateurs et éditeurs de liens peuvent la présenter différemment."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer l'organisation à une nouvelle règle"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis une deuxième version du même projet. Conserve l'interface, les limites de 0 à 10 et la répartition des responsabilités. Une petite boîte occupe désormais 3 espaces et une grande 4. Vide conserve son sens ; Léger correspond à une occupation positive jusqu'à 24 inclus ; Lourd correspond à plus de 24. La validation et les rejets gardent leur contrat."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant de modifier le code, prévois les fichiers dont les règles doivent changer et ceux qui demandent seulement de nouvelles données de test. Dans l'éditeur suivant, réécris le projet ou récupère ta construction précédente pour l'adapter. Ne recopie pas les anciens calculs sans vérifier les nouvelles conditions."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\n// Écris main : données, validation, appels et affichage.\n",
+          "projectFiles": [
+            {
+              "path": "estante.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Écris les trois déclarations de l'interface.\n\n#endif\n"
+            },
+            {
+              "path": "conteo.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Définis cantidades_validas et espacios_ocupados.\n"
+            },
+            {
+              "path": "estado.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Définis descripcion_carga en utilisant espacios_ocupados.\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\n// Écris main : données, validation, appels et affichage.\n"
+            }
+          ],
+          "sourceFiles": [
+            "conteo.cpp",
+            "estado.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Commence par (0, 6) : Espaces : 24 et Charge : Léger. Teste (7, 1) : 25 et Lourd ; (0, 0) : 0 et Vide ; (10, 10) : 70 et Lourd ; puis les quatre rejets du premier essai. Ajoute (2, 3), dont tu calculeras le résultat attendu avant d'exécuter. Ces données fixes vérifient les nouveaux poids et l'égalité à la nouvelle borne."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : mêmes signatures et permissions, règle d'occupation écrite une seule fois, description réutilisant le calcul, validation avant calcul et sorties correctes pour les deux bornes. Modifier seulement les catégories sans changer les poids ne respecte pas cette deuxième version. La référence suivante sert à vérifier après ton essai."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence du transfert, après la construction"
+        },
+        {
+          "type": "paragraph",
+          "text": "estante.h conserve les mêmes déclarations. conteo.cpp change les poids, mais pas le domaine de cantidades_validas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n\nbool cantidades_validas(int pequenas, int grandes) {\n    return pequenas >= 0 && pequenas <= 10\n        && grandes >= 0 && grandes <= 10;\n}\n\nint espacios_ocupados(int pequenas, int grandes) {\n    return 3 * pequenas + 4 * grandes;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "estado.cpp conserve l'appel au calcul et change la borne des catégories."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Vide\";\n    }\n    if (espacios <= 24) {\n        return \"Léger\";\n    }\n    return \"Lourd\";\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce main teste l'égalité à 24. Vérifie les autres cas selon les critères précédents ; (2, 3) doit occuper 18 espaces et produire Léger."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{0};\n    const int grandes{6};\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Quantités invalides\\n\";\n        return 0;\n    }\n    std::cout << \"Espaces : \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Charge : \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver la méthode sans ouvrir le projet"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu veux changer uniquement les poids des boîtes et conserver les types, le domaine et les catégories. Où se trouve la règle à modifier ?",
+          "options": [
+            "Dans la définition de espacios_ocupados dans conteo.cpp, dont descripcion_carga utilise aussi le résultat.",
+            "Dans les instructions d'affichage de main.cpp, pour transformer chaque résultat avant de le montrer.",
+            "Dans les trois déclarations de estante.h, afin que chaque client connaisse les nouveaux poids."
+          ],
+          "correctIndex": 0,
+          "explanation": "Les poids appartiennent au corps du calcul. L'interface conserve les mêmes types et la description réutilise le résultat de cette fonction. Le texte des déclarations et le format de sortie ne remplacent pas le calcul."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une prochaine séance, retrouve de mémoire les fichiers, leurs responsabilités et l'ordre valider → calculer → afficher. Puis consulte les exigences et reconstruis depuis les inclusions. Des cas de test que tu choisis doivent montrer que tu ne t'appuyais pas uniquement sur le premier cas ni sur une solution copiée."
+        },
+        {
+          "type": "note",
+          "text": "La lecture complémentaire traite les en-têtes et la comparaison entre déclarations et définitions partagées (Stroustrup, 2024, section 7.7, particulièrement 7.7.2, pp. 211–215). Cet atelier met ce mécanisme en pratique avec des fichiers .h/.cpp."
+        }
+      ]
+    }
+  ]
+}

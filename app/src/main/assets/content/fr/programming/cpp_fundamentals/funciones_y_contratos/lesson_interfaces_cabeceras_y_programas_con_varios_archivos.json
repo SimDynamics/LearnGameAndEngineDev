@@ -1,0 +1,499 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos",
+  "title": "Interfaces, en-têtes et programmes multifichiers",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un appel exige une interface ; l'exécution exige une définition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Retrouve la différence entre déclarer et définir une fonction. La déclaration communique son nom, les types des paramètres et le type de retour afin de vérifier un appel. La définition ajoute le corps qui effectue le travail. Jusqu'ici, les deux pouvaient figurer dans le même fichier. Un programme peut aussi réunir plusieurs fichiers source : le client utilise une interface commune et une autre partie fournit les définitions."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une interface n'est pas seulement une liste de types. Elle inclut le sens et le domaine que l'appelant doit respecter. Nous allons préparer des enveloppes pour des cartes : chaque enveloppe peut en contenir jusqu'à douze, et l'appelant fournit entre zéro et cent vingt cartes. Aucune fonction ne lit le clavier. Ni le calcul ni sa description n'affichent quoi que ce soit ; main choisit la présentation."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un client connaît int sobres_necesarios(int tarjetas); et appelle sobres_necesarios(25). Qu'apporte cette déclaration à elle seule ?",
+          "options": [
+            "L'algorithme permettant de calculer la quantité.",
+            "Les informations de types nécessaires pour vérifier l'appel.",
+            "L'exécution anticipée du corps pour vingt-cinq cartes."
+          ],
+          "correctIndex": 1,
+          "explanation": "La déclaration décrit comment utiliser la fonction. Son corps doit exister dans le programme assemblé pour l'exécution."
+        },
+        {
+          "type": "note",
+          "text": "Les fragments de code de cette leçon portent le nom de leur fichier. Ceux qui incluent un en-tête du projet appartiennent au projet complet ; ce ne sont pas des programmes autonomes à coller isolément dans un éditeur à fichier unique."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "sobres.h : un en-tête partagé et autonome"
+        },
+        {
+          "type": "paragraph",
+          "text": "Enregistre ce contenu sous le nom sobres.h. Un en-tête est un fichier incorporé à l'endroit où apparaît #include. Ici, il contient les déclarations que le client et l'implémentation doivent voir. Le suffixe .h est une convention courante ; nous avons choisi ce nom et devons l'utiliser exactement pour inclure le fichier."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Fichier : sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define CPP_FUNDAMENTALS_SOBRES_H\n\n#include <string>\n\n// Domaine des deux fonctions : 0 <= tarjetas <= 120.\n// Chaque enveloppe contient au plus 12 cartes.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::string figure dans l'interface ; l'en-tête inclut donc lui-même <string>. Il ne dépend pas d'une bibliothèque préalablement incluse par le client. Les lignes #ifndef, #define et #endif forment une garde d'inclusion ; nous examinerons son mécanisme après avoir suivi le projet. Le commentaire sur le domaine rappelle une responsabilité de l'appelant : les déclarations ne vérifient pas automatiquement l'intervalle."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les guillemets dans #include \"sobres.h\" désignent notre en-tête. <string> désigne un en-tête standard. La recherche concrète des fichiers dépend de la configuration des outils ; dans ce projet, les trois fichiers se trouvent dans le même dossier."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux fichiers source partagent la même déclaration"
+        },
+        {
+          "type": "paragraph",
+          "text": "sobres.cpp inclut sobres.h avant de définir les fonctions. Le compilateur peut ainsi comparer leurs types à ceux annoncés. Dans le domaine 0..120, le quotient et l'incrément restent petits ; douze n'est jamais un diviseur nul. S'il reste des cartes, il faut une enveloppe de plus, sans changer la valeur reçue."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Fichier : sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Aucune carte\";\n    }\n    if (cantidad == 1) {\n        return \"Une enveloppe\";\n    }\n    return \"Plusieurs enveloppes\";\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "main.cpp est le deuxième fichier source. Il inclut l'interface et <iostream>, nécessaire à l'affichage. Il n'inclut pas sobres.cpp. Le corps de main peut appeler les fonctions parce que leurs déclarations sont déjà visibles, même si leurs corps sont compilés à partir d'un autre fichier."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Fichier : main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le projet complet affiche Plusieurs enveloppes: 3. La description se fonde sur le calcul, mais aucune des deux fonctions auxiliaires ne dépend de cout. Si tu modifies seulement les données du client, tu peux réutiliser la même implémentation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Inclusion, compilation et édition de liens sont des étapes distinctes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors du traitement de main.cpp, #include incorpore à cet endroit le contenu pertinent de sobres.h. Cela relève du prétraitement. Le compilateur analyse ce fichier source avec ses inclusions : c'est une unité de traduction. Le traitement de sobres.cpp produit une autre unité de la même façon. Inclure l'en-tête dans les deux ne colle pas les deux fichiers .cpp ensemble."
+        },
+        {
+          "type": "paragraph",
+          "text": "Sur PC avec GCC, depuis le dossier du projet, g++ -std=c++23 -Wall -Wextra -c sobres.cpp -o sobres.o compile l'implémentation sans édition de liens. Ensuite, g++ -std=c++23 -Wall -Wextra -c main.cpp -o main.o compile le client. Les fichiers .o sont des fichiers objets produits par cet outil ; ils ne constituent pas encore le programme complet."
+        },
+        {
+          "type": "paragraph",
+          "text": "g++ sobres.o main.o -o plan_sobres.exe effectue l'édition de liens des objets et produit l'exécutable Windows. L'éditeur de liens réunit les définitions nécessaires. L'exécution de .\\plan_sobres.exe est une étape ultérieure. La forme abrégée g++ -std=c++23 -Wall -Wextra sobres.cpp main.cpp -o plan_sobres.exe demande au pilote de compiler les deux unités puis de les lier ; inclure un en-tête ne transforme pas les sources en un seul fichier."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "main.cpp inclut sobres.h et sa compilation en main.o réussit. Que manque-t-il pour exécuter les fonctions du projet ?",
+          "options": [
+            "Exécuter directement l'en-tête.",
+            "Inclure sobres.cpp dans main.cpp comme étape d'édition de liens.",
+            "Lier l'objet du client à celui qui contient les définitions."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'objet client peut faire référence aux fonctions déclarées. L'éditeur de liens doit trouver leurs définitions ; le partage de l'en-tête ne les génère pas à lui seul."
+        },
+        {
+          "type": "note",
+          "text": "Ces commandes décrivent une vérification réelle sur PC avec GCC 15.2 et C++23. Elles demandent ce compilateur et une exécution depuis le bon dossier ; ce ne sont pas des instructions destinées à la console de sortie de l'application."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ce que protège une garde d'inclusion"
+        },
+        {
+          "type": "paragraph",
+          "text": "#ifndef vérifie si le marqueur CPP_FUNDAMENTALS_SOBRES_H n'est pas encore défini pendant ce traitement. #define le définit, puis le contenu est traité jusqu'à #endif. Si le même en-tête est rencontré à nouveau dans cette unité, le marqueur existe déjà et le contenu protégé est ignoré. C'est une décision du prétraitement, pas un if exécuté lors du fonctionnement du programme."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Comparaison guidée : complète uniquement le nom du marqueur, qui doit être exactement identique à celui de #ifndef. N'ajoute ni valeur ni autre mot.",
+          "code": "// Fichier : sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define ___\n\n#include <string>\n\n// Domaine des deux fonctions : 0 <= tarjetas <= 120.\n// Chaque enveloppe contient au plus 12 cartes.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n",
+          "answers": [
+            "CPP_FUNDAMENTALS_SOBRES_H"
+          ],
+          "explanation": "La condition et la définition doivent désigner le même marqueur pour éviter une autre inclusion dans cette unité."
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque .cpp est traité séparément. Sa garde évite les répétitions dans sa propre unité de traduction ; elle ne supprime pas une définition ordinaire de fonction placée dans un en-tête et incluse par plusieurs unités. Dans notre en-tête, répéter des déclarations de fonctions compatibles serait en soi légal. La garde prépare une inclusion robuste pour des en-têtes qui peuvent évoluer, mais ne remplace pas les règles sur les définitions."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un en-tête protégé contient le corps de sobres_necesarios avec la même signature que dans notre projet. main.cpp et otro.cpp l'incluent, puis leurs objets sont liés. Que garantit la garde ?",
+          "options": [
+            "Que tous les objets partagent automatiquement une seule définition.",
+            "Que le contenu protégé n'est pas répété à l'intérieur de chaque unité traitée.",
+            "Que l'éditeur de liens élimine toute définition supplémentaire."
+          ],
+          "correctIndex": 1,
+          "explanation": "La garde agit pendant le traitement de chaque unité. Un corps inclus dans deux unités doit toujours respecter les règles de définition du programme."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier l'en-tête sans dépendre de l'ordre d'inclusion du client"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un en-tête autonome peut être inclus en premier, sans attendre que le client prépare les types utilisés. Pour vérifier sobres.h sur PC, il suffit de créer un fichier source de test qui l'inclut avant tout autre en-tête et de compiler ce fichier en objet. L'édition de liens n'est pas nécessaire pour détecter qu'il manque la déclaration de std::string."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "L'interface renvoie std::string, mais quelqu'un retire #include <string> de sobres.h parce que main.cpp inclut déjà une autre bibliothèque. Quelle correction protège le mieux les futurs clients ?",
+          "options": [
+            "Rétablir <string> dans l'en-tête qui en a besoin.",
+            "Exiger que tous les clients connaissent un ordre d'inclusion caché.",
+            "Modifier le commentaire sur le domaine pour mentionner string."
+          ],
+          "correctIndex": 0,
+          "explanation": "La dépendance appartient à l'interface qui utilise ce type. L'en-tête doit la fournir explicitement."
+        },
+        {
+          "type": "paragraph",
+          "text": "N'en déduis pas qu'un en-tête ne peut jamais contenir de définitions. Les définitions de types et de modèles, les fonctions inline et certaines constantes peuvent figurer dans des en-têtes selon leurs règles. Il n'est pas nécessaire de détailler ces règles ici. Pour nos deux fonctions libres ordinaires, nous choisissons des déclarations dans sobres.h et une définition par fonction dans sobres.cpp. Une fonction constexpr est implicitement inline, même si le mot inline n'est pas écrit : son absence apparente ne prouve pas qu'une fonction n'est pas inline. Les corps ordinaires de sobres.cpp et serie.cpp ne sont ni constexpr ni inline."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ne recopie pas non plus une déclaration séparément dans chaque .cpp. Ces copies peuvent diverger lorsqu'on n'en modifie qu'une. Inclure une interface commune chez les utilisateurs et dans l'implémentation permet de détecter tôt de nombreuses incohérences. Conserve std::string explicite dans l'interface, sans imposer une autre façon de rechercher les noms à ses utilisateurs."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réutiliser le calcul depuis un autre client"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Dans le projet d'enveloppes, remplace seulement main.cpp par ce fichier. Conserve sobres.h et sobres.cpp précédents et suppose que la compilation et l'édition de liens réussissent. Prévois toute la sortie de l'exécutable ; ce fichier ne s'exécute pas sans ses dépendances.",
+          "code": "// Fichier : main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << descripcion_sobres(1) << \": \" << sobres_necesarios(1) << \"\\n\";\n    std::cout << descripcion_sobres(12) << \": \" << sobres_necesarios(12) << \"\\n\";\n    std::cout << descripcion_sobres(13) << \": \" << sobres_necesarios(13);\n    return 0;\n}\n",
+          "answers": [
+            "Une enveloppe: 1\nUne enveloppe: 1\nPlusieurs enveloppes: 2"
+          ],
+          "explanation": "Une carte et douze cartes tiennent chacune dans une enveloppe. Treize cartes en demandent deux. Le client utilise la même interface pour chaque appel, sans dupliquer les corps."
+        },
+        {
+          "type": "paragraph",
+          "text": "Après avoir répondu, explique quel test distingue une division tronquée du nombre d'enveloppes nécessaires : treize cartes ne tiennent pas dans une seule enveloppe. Ajoute zéro et cent vingt comme tests des bornes du domaine ; vérifie à la fois le calcul et sa description. Les valeurs hors de 0..120 ne respectent pas le contrat de ce projet."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le besoin évolue vers des enveloppes contenant vingt cartes, sans changer les noms ni les types des fonctions. Que doit revoir l'auteur ?",
+          "options": [
+            "Seulement main.cpp, car la déclaration calcule la capacité d'une enveloppe.",
+            "Seulement les guillemets de l'inclusion.",
+            "Le contrat documenté, le corps du calcul et les tests, en conservant les signatures si elles représentent toujours la même opération."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le corps peut changer sans modifier la façon d'appeler la fonction, mais son sens et ses tests doivent aussi respecter la nouvelle exigence. Pour vingt-cinq cartes, deux enveloppes de vingt seraient nécessaires."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Localiser une erreur sans confondre les étapes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Utilise comme indice la première étape qui échoue. Pendant la compilation, les déclarations visibles et les types de la source traitée comptent. Pendant l'édition de liens, ce sont les définitions rassemblées qui comptent. Une ancienne sortie d'un exécutable déjà construit ne prouve pas la réussite d'une nouvelle construction qui a échoué."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu supprimes #include \"sobres.h\" de main.cpp sans ajouter de déclarations ; les appels restent. À quelle étape ce problème apparaît-il ?",
+          "options": [
+            "Pendant la compilation du client, car ces fonctions n'y sont pas déclarées.",
+            "Seulement à l'exécution, lorsque la première carte est rencontrée.",
+            "Lors de la prévision de la description, car les déclarations ne seraient que des commentaires."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'unité de traduction du client ne possède plus les déclarations nécessaires à la vérification de ses appels."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Les deux fichiers .cpp compilent, mais seul main.o est lié. Que manque-t-il ?",
+          "options": [
+            "Une deuxième étape de prétraitement pour cout.",
+            "L'objet qui fournit les définitions appelées par main.",
+            "Une valeur initiale pour le marqueur de garde à l'exécution."
+          ],
+          "correctIndex": 1,
+          "explanation": "Le client a compilé avec l'interface. L'éditeur de liens n'a pas reçu les définitions de sobres_necesarios et descripcion_sobres."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "sobres.cpp inclut l'en-tête déclarant int sobres_necesarios(int), mais définit double sobres_necesarios(int). Que faut-il corriger avant de lier ?",
+          "options": [
+            "Inclure l'en-tête deux fois pour que le résultat ait les deux types.",
+            "Changer seulement la variable de main en double.",
+            "Faire correspondre les types de retour de la déclaration et de la définition."
+          ],
+          "correctIndex": 2,
+          "explanation": "Avec les mêmes paramètres, ces types de retour sont contradictoires. La compilation de l'implémentation peut détecter l'incohérence visible."
+        },
+        {
+          "type": "paragraph",
+          "text": "Une différence de types de paramètres exige aussi de l'attention : si l'implémentation définit une fonction prenant un autre type de paramètre, C++ peut y voir une autre fonction. Cela ne fournit pas le corps de celle déclarée pour int. Ne présume pas que toutes les différences seront détectées à la même étape : vérifie toute la signature et réunis les définitions réellement utilisées."
+        },
+        {
+          "type": "note",
+          "text": "Les messages précis des diagnostics varient selon les outils. Ici, il faut expliquer la cause et l'étape, pas apprendre par cœur une formule de GCC ni exécuter un programme dont la construction a échoué."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un nouveau projet avec une autre interface"
+        },
+        {
+          "type": "paragraph",
+          "text": "Organise un nouveau projet avec serie.h, serie.cpp et main.cpp. L'appelant fournit 0 <= hechas <= total <= 40. tareas_pendientes(int hechas, int total) renvoie le nombre de tâches restantes ; estado_serie(int hechas, int total) renvoie Terminée lorsqu'il n'en reste aucune et En cours dans les autres cas du domaine. Aucune fonction auxiliaire n'affiche ni ne modifie les données. Le client affiche l'état, deux-points, un espace et le nombre restant."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant d'écrire les corps, détermine les déclarations dont les deux fichiers .cpp ont besoin, la bibliothèque utilisée par l'interface, les informations réservées à l'implémentation et l'objet qui apporte chaque définition. Écris les trois fichiers séparément. Dans main, teste (3,5), (0,0) et (5,5) dans cet ordre, avec une ligne par cas ; ajoute ensuite (0,40) et (40,40). Conserve le domaine et l'indépendance des appels."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Rappel guidé de l'interface : complète uniquement le nom du type de chaîne standard après std::. Ce fragment appartient à serie.h ; l'écrire seul ne compile ni ne lie le projet.",
+          "code": "// Fichier : serie.h\n#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n\n#include <string>\n\n// Domaine : 0 <= hechas <= total <= 40.\nint tareas_pendientes(int hechas, int total);\nstd::___ estado_serie(int hechas, int total);\n\n#endif\n",
+          "answers": [
+            "string"
+          ],
+          "explanation": "La description est une chaîne de la bibliothèque standard. Sa déclaration exige <string> dans ce même en-tête."
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères de ta construction : en-tête autonome avec garde ; même en-tête inclus dans le client et l'implémentation ; chaque définition ordinaire réunie une seule fois ; signatures cohérentes ; soustraction dans 0..40 ; séparation calcul/affichage ; série vide terminée sans tâche restante ; arguments préservés après chaque appel. Si tu disposes d'un compilateur sur PC, crée les fichiers et compile/lies le projet ; teste aussi un lien sans l'implémentation."
+        },
+        {
+          "type": "note",
+          "text": "Construis d'abord ta propre organisation de serie.h, serie.cpp et main.cpp, puis compare-la à la référence de la page suivante. Les ateliers enveloppes et séries à la fin de la leçon permettent de modifier les fichiers individuellement et de compiler/lier les deux .cpp dans l'application. Teste-y ton organisation. Un fichier unique réunissant toutes les parties vérifierait une autre structure, pas le lien entre fichiers."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence à trois fichiers après l'essai"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare chaque responsabilité à cette organisation. Il s'agit de trois fichiers d'un seul projet et non de trois programmes séparés. Les noms et les textes minimaux suffisent pour le construire sur PC."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Fichier : serie.h\n#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n\n#include <string>\n\n// Domaine : 0 <= hechas <= total <= 40.\nint tareas_pendientes(int hechas, int total);\nstd::string estado_serie(int hechas, int total);\n\n#endif\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Fichier : serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminée\";\n    }\n    return \"En cours\";\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// Fichier : main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'exécutable affiche En cours: 2, Terminée: 0 et Terminée: 0 sur des lignes distinctes. Les cas (0,40) et (40,40) doivent donner quarante et zéro tâche restante, avec les états correspondants. D'autres organisations de corps respectant l'interface et les critères sont acceptées ; conserver les noms de fichiers ne prouve pas que les unités compilent et sont liées."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour le vérifier sur PC : g++ -std=c++23 -Wall -Wextra serie.cpp main.cpp -o serie.exe. Une vérification supplémentaire compile chaque .cpp en objet avant le lien, pour distinguer les étapes. N'ajoute pas l'en-tête comme un troisième fichier source contenant main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transférer l'interface et diagnostiquer une duplication"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Dans le projet de séries, remplace uniquement main.cpp par ce fichier et conserve serie.h et serie.cpp de la référence. Après compilation et édition de liens, quelle sortie obtient-on ?",
+          "code": "// Fichier : main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(0, 8) << \": \" << tareas_pendientes(0, 8) << \"\\n\";\n    std::cout << estado_serie(8, 8) << \": \" << tareas_pendientes(8, 8);\n    return 0;\n}\n",
+          "answers": [
+            "En cours: 8\nTerminée: 0"
+          ],
+          "explanation": "La première série conserve huit tâches restantes ; la deuxième aucune. Les corps viennent de la même implémentation, pas de la déclaration visible dans main."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelqu'un copie le corps ordinaire de tareas_pendientes dans serie.h et le retire de serie.cpp. La garde est correcte ; les deux .cpp incluent l'en-tête et sont liés. Que faut-il revoir ?",
+          "options": [
+            "Si main a besoin d'un autre appel pour choisir entre les deux corps.",
+            "Si la garde doit cesser de protéger l'en-tête.",
+            "Si cette définition ordinaire apparaît dans une seule unité du programme, tout en gardant la déclaration partagée."
+          ],
+          "correctIndex": 2,
+          "explanation": "La garde n'agit pas entre unités différentes. Dans cette organisation, le corps doit revenir dans l'implémentation et l'interface conserve la déclaration."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une autre séance, reconstruis une petite interface à partir de son utilisation et explique ce que sait le client avant la compilation. Teste un changement de données sans toucher aux corps et un changement de besoins conservant la signature. Vérifie chaque étape avant de te fier à la sortie. Consulte cette référence après avoir rédigé ta propre organisation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un pont vers les modules du langage"
+        },
+        {
+          "type": "paragraph",
+          "text": "La lecture de référence distingue en-têtes et modules (Stroustrup, 2024, section 7.7). L'inclusion d'un en-tête incorpore du texte au traitement de chaque source. Un module C++ offre une interface du langage avec des déclarations exportées que le client importe ; il ne consiste pas à coller son fichier source avec #include. Cette distinction montre deux mécanismes différents d'organisation des interfaces."
+        },
+        {
+          "type": "paragraph",
+          "text": "Préparer et construire des modules exige une configuration adaptée du compilateur et du projet. Les ateliers suivants utilisent des en-têtes et des fichiers .cpp. Remplacer #include par import ne transforme pas ces projets en modules : chaque mécanisme a sa propre organisation et son processus de construction."
+        },
+        {
+          "type": "note",
+          "text": "L'organisation des interfaces, les en-têtes, l'inclusion et la vérification de cohérence sont abordés dans la référence complémentaire (Stroustrup, 2024, section 7.7, pp. 211–215, notamment 7.7.2, pp. 213–215). Les projets d'enveloppes et de séries sont originaux. Les détails de constexpr et inline ont été comparés au projet de norme C++ (Working draft: Programming languages — C++, s. d., section [dcl.constexpr], paragraphe 1)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Atelier : construire et modifier le projet d'enveloppes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ces fichiers conservent les sources des pages 2 et 3. Avant d'exécuter, prévois la sortie pour 25 cartes et identifie la source qui fournit chaque définition. Compile sobres.cpp et main.cpp ; sobres.h est inclus depuis eux. Le résultat doit être Plusieurs enveloppes: 3. Sélectionne les fichiers pour lire et modifier chaque responsabilité sans fusionner les trois contenus en un seul fichier source."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "// Fichier : main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "sobres.h",
+              "initialCode": "// Fichier : sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define CPP_FUNDAMENTALS_SOBRES_H\n\n#include <string>\n\n// Domaine des deux fonctions : 0 <= tarjetas <= 120.\n// Chaque enveloppe contient au plus 12 cartes.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n"
+            },
+            {
+              "path": "sobres.cpp",
+              "initialCode": "// Fichier : sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"Aucune carte\";\n    }\n    if (cantidad == 1) {\n        return \"Une enveloppe\";\n    }\n    return \"Plusieurs enveloppes\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "// Fichier : main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "sobres.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Change uniquement tarjetas dans main.cpp et vérifie les bornes : 0 donne Aucune carte: 0 ; 12, Une enveloppe: 1 ; 13, Plusieurs enveloppes: 2 ; 25, Plusieurs enveloppes: 3 ; 120, Plusieurs enveloppes: 10. Garde le domaine 0..120. Rétablis ensuite 25 et change la capacité à 20 dans sobres.cpp : modifie la division et le reste, ainsi que le commentaire sur le besoin dans sobres.h, sans changer ses déclarations. Le résultat devient Plusieurs enveloppes: 2. La nouvelle exécution doit employer les modifications courantes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Rétablis la capacité 12 et effectue les tests séparément. Retire de main.cpp l'inclusion nécessaire de sobres.h : les appels n'ont plus de déclarations visibles et la compilation du client échoue. Rétablis-la ; puis retire de sobres.h la déclaration d'une fonction utilisée par main pour constater un autre échec de compilation. Rétablis l'en-tête. Ne sélectionne que main.cpp pour compiler : les appels sont maintenant reconnus, mais l'objet de sobres.cpp manque et le lien échoue faute de définitions. Rétablis les deux fichiers source et vérifie la sortie initiale."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour observer une définition dupliquée, déplace le corps ordinaire de sobres_necesarios depuis sobres.cpp vers sobres.h, en conservant la garde et sans le marquer inline. Les deux .cpp incluent alors ce corps et leurs objets fournissent deux définitions : compiler chaque fichier ne suffit pas, et l'édition de liens doit échouer. La garde protège l'inclusion dans chaque unité, elle ne coordonne pas différentes unités. Replace le corps dans sobres.cpp et vérifie à nouveau le projet valide."
+        },
+        {
+          "type": "note",
+          "text": "Avant chaque essai, indique la sortie ou le diagnostic attendu ainsi que le fichier concerné. Changer de fichier et rouvrir l'atelier doivent conserver les modifications et la sélection des sources. Rétablis les essais volontairement incorrects avant de passer au suivant : chaque modification pourra ainsi expliquer un résultat précis."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Atelier de transfert : serie.h, serie.cpp et main.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ce projet conserve exactement les trois sources de la référence de la page 10. Compare ta construction à cette interface et déplace tes corps dans le fichier correspondant. Avec serie.cpp et main.cpp sélectionnés, prévois et exécute (3,5), (0,0) et (5,5) : les sorties sont En cours: 2, Terminée: 0 et Terminée: 0 sur des lignes distinctes. L'en-tête n'est pas compilé comme troisième source."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "// Fichier : main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "serie.h",
+              "initialCode": "// Fichier : serie.h\n#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n\n#include <string>\n\n// Domaine : 0 <= hechas <= total <= 40.\nint tareas_pendientes(int hechas, int total);\nstd::string estado_serie(int hechas, int total);\n\n#endif\n"
+            },
+            {
+              "path": "serie.cpp",
+              "initialCode": "// Fichier : serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Terminée\";\n    }\n    return \"En cours\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "// Fichier : main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "serie.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Ajoute (0,40) et (40,40) au client, sur des lignes séparées : les résultats attendus sont En cours: 40 et Terminée: 0. Répète aussi les données de la prédiction page 11, (0,8) et (8,8), sans changer l'implémentation. Explique pourquoi aucun appel ne modifie les arguments des suivants et comment le client utilise la même interface avec d'autres données."
+        },
+        {
+          "type": "paragraph",
+          "text": "Répète un test pour chaque étape : écris mal un nom de fonction dans main.cpp pour obtenir une erreur de compilation ; rétablis le client et exclue serie.cpp des sources sélectionnées pour constater une définition manquante à l'édition de liens ; rétablis les deux sources et vérifie la sortie. Si tu déplaces le corps ordinaire de tareas_pendientes dans l'en-tête, comme à la page 11, les deux objets le définissent et le lien échoue malgré la garde. Replace le corps dans l'implémentation."
+        },
+        {
+          "type": "note",
+          "text": "Justifie chaque résultat avec le contrat : 0 <= hechas <= total <= 40, déclarations partagées, signatures cohérentes et une seule définition ordinaire par fonction. Modifier le projet, compiler les sources, les lier et observer une exécution correcte sont des vérifications distinctes. Ces projets utilisent l'inclusion d'en-têtes pour partager les déclarations."
+        }
+      ]
+    }
+  ]
+}

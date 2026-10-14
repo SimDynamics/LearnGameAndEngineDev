@@ -1,0 +1,396 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__construir_un_proyecto_desde_su_interfaz",
+  "title": "Building a Project from Its Interface",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Project from Requirements"
+        },
+        {
+          "type": "paragraph",
+          "text": "You will build a program to describe the space occupied on a shelf. Each small box takes 2 spaces, and each large box takes 5. Quantities are integers between 0 and 10, inclusive. The program will be split into one header and three source files. The editor contains the file structure, but you will write the declarations, definitions, and main."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall what you already know: a declaration makes it possible to check a call; a definition performs the work; each source file is compiled as a translation unit; linking combines the definitions missing from individual units. Now you will apply those ideas to a project whose solution has not yet been written."
+        },
+        {
+          "type": "note",
+          "text": "Use only functions, int, bool, std::string, conditions, and output through std::cout. Data are written in main; this project needs neither prepared input nor interaction during execution."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Interface Expressing Three Contracts"
+        },
+        {
+          "type": "paragraph",
+          "text": "cantidades_validas receives two int values, pequenas and grandes, and returns bool. It may receive any value representable as int. It returns true exactly when both quantities are between 0 and 10. It must check the bounds using comparisons without first calculating the space occupied by rejected quantities."
+        },
+        {
+          "type": "paragraph",
+          "text": "espacios_ocupados receives the same two int values and returns int. It requires valid quantities and returns the total space occupied by the boxes. It does not modify the caller's arguments. In the permitted domain, its result lies between 0 and 70."
+        },
+        {
+          "type": "paragraph",
+          "text": "descripcion_carga receives the same two int values and returns std::string. It also requires valid quantities. It returns Empty when no space is occupied, Light when at least one and at most 20 spaces are occupied, and Heavy when more than 20 are occupied. It must obtain the occupied space by calling espacios_ocupados so that the calculation rule is defined in only one place."
+        },
+        {
+          "type": "paragraph",
+          "text": "main must call cantidades_validas first. If it returns false, print only Invalid quantities and end. If it returns true, display two lines: Spaces: followed by a space and the occupied count; Load: followed by a space and the description. The two calculations must never be called with rejected quantities."
+        },
+        {
+          "type": "note",
+          "text": "These preconditions are the program's responsibilities. Writing them next to a declaration does not make the compiler validate input values automatically."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decide Where Each Responsibility Belongs"
+        },
+        {
+          "type": "paragraph",
+          "text": "estante.h contains the include guard, <string> include, and three function declarations. It contains no function bodies. conteo.cpp includes that header and defines cantidades_validas and espacios_ocupados. estado.cpp includes the same header and defines descripcion_carga. main.cpp includes the header and <iostream>, and contains the main function you will write."
+        },
+        {
+          "type": "paragraph",
+          "text": "All three .cpp files are compiled and linked as source files. estante.h provides declarations when included by a source; do not select it as a fourth source. Preserve the specified filenames and function names, and make each definition's types match its declaration."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before implementing, describe in your own words the execution path for a rejected input and a valid input. Decide which file to change if only validation is wrong, only the occupied-space calculation is wrong, or only the category text is wrong. This separation lets you fix one responsibility without duplicating rules in several places."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build Independently Across Multiple Files"
+        },
+        {
+          "type": "paragraph",
+          "text": "Start with 4 small boxes and 3 large boxes: the output must be Spaces: 23 and Load: Heavy on two lines. Complete the header, implement the functions in their own files, and write main from scratch. The editor comments are guidance; there is no completed main or any definitions yet. Running the unfinished skeleton does not produce a completed program."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\n// Write main: data, validation, calls, and output.\n",
+          "projectFiles": [
+            {
+              "path": "estante.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Write the interface's three declarations.\n\n#endif\n"
+            },
+            {
+              "path": "conteo.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Define cantidades_validas and espacios_ocupados.\n"
+            },
+            {
+              "path": "estado.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Define descripcion_carga using espacios_ocupados.\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\n// Write main: data, validation, calls, and output.\n"
+            }
+          ],
+          "sourceFiles": [
+            "conteo.cpp",
+            "estado.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Next check (0, 0): 0 and Empty; (0, 4): 20 and Light; (3, 3): 21 and Heavy; (10, 10): 70 and Heavy. Preserve the labels and the two-line order. Test (-1, 2), (2, -1), (11, 0), and (0, 11): each must display only Invalid quantities. Change data in main between runs; do not alter the rule to fit one case."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria for reviewing your project: the header can be included independently; all three definitions agree with it; each ordinary function has exactly one body in the project; the description reuses the calculation; main rejects invalid input before calculating; the selected sources are all three .cpp files; and every output meets the contracts. If the build fails, first determine whether a declaration, definition, or correct condition is missing."
+        },
+        {
+          "type": "note",
+          "text": "Try to build and test before moving on to the reference. Several implementations are valid; behavioral and organizational criteria let you compare them without requiring identical source code."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review the Build Stages After Your Attempt"
+        },
+        {
+          "type": "paragraph",
+          "text": "In a desktop environment with g++, you can compile each source separately and then link the objects. These commands show the stages; the project editor handles them when running the selected sources."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "g++ -std=c++23 -Wall -Wextra -pedantic -c conteo.cpp -o conteo.o\ng++ -std=c++23 -Wall -Wextra -pedantic -c estado.cpp -o estado.o\ng++ -std=c++23 -Wall -Wextra -pedantic -c main.cpp -o main.o\ng++ conteo.o estado.o main.o -o estante\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The three sources compile separately. Linking only conteo.o and main.o leaves descripcion_carga unresolved. What fixes this problem?",
+          "options": [
+            "Also link estado.o, which contains the definition used by main.",
+            "Add estado.cpp as a project file but leave it out of the selected sources.",
+            "Repeat the estante.h include in main.cpp so that it provides the missing body."
+          ],
+          "correctIndex": 0,
+          "explanation": "A visible declaration lets the call compile, but the program needs the definition of descripcion_carga. In this project, it lives in estado.cpp; its object must participate in linking."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which execution path satisfies the contract when the input includes 11 large boxes?",
+          "options": [
+            "Change 11 to 10 in main and continue without reporting that the input was rejected.",
+            "Calculate spaces and description before deciding whether to display the notice.",
+            "Validate the quantities and end with the notice before calling either calculation."
+          ],
+          "correctIndex": 2,
+          "explanation": "The data are outside the domain of espacios_ocupados and descripcion_carga. Validation may inspect them and must prevent those calls. The contract does not permit silently correcting the input."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Reference: Declarations and Calculation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare this solution with yours after attempting the project. In estante.h, <string> provides the type that appears in the interface. The guard limits the content to one inclusion per translation unit."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Allowed quantities: each from 0 to 10, inclusive.\nbool cantidades_validas(int pequenas, int grandes);\n// Require valid quantities.\nint espacios_ocupados(int pequenas, int grandes);\nstd::string descripcion_carga(int pequenas, int grandes);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "In conteo.cpp, those same declarations are included before the functions are defined. The bounds are checked without adding or multiplying rejected quantities. The calculation only needs to handle values that satisfy its precondition."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n\nbool cantidades_validas(int pequenas, int grandes) {\n    return pequenas >= 0 && pequenas <= 10\n        && grandes >= 0 && grandes <= 10;\n}\n\nint espacios_ocupados(int pequenas, int grandes) {\n    return 2 * pequenas + 5 * grandes;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Reference: Composition and the Main Program"
+        },
+        {
+          "type": "paragraph",
+          "text": "estado.cpp uses the declaration of espacios_ocupados to call the calculation defined in another source. It keeps the empty case separate from the rest of the Light category."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Empty\";\n    }\n    if (espacios <= 20) {\n        return \"Light\";\n    }\n    return \"Heavy\";\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "main.cpp is the interface's client. Returning on rejection prevents reaching the calls that require valid data. It does not need to know the bodies to compile those calls."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{4};\n    const int grandes{3};\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Invalid quantities\\n\";\n        return 0;\n    }\n    std::cout << \"Spaces: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Load: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "If your implementation differs, check it against the same tests and responsibilities. Obtaining 23 for the initial case is not enough: the empty case, the exact boundary at 20, the first case above it, and rejection of each invalid quantity must also work."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Predict from the Interface, Not by Copying the First Case"
+        },
+        {
+          "type": "paragraph",
+          "text": "For the next two questions, use estante.h, conteo.cpp, and estado.cpp from the original reference. Replace only main.cpp with the code of each question; the same three source files still make up the project."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "What output does this main produce when linked with the original reference?",
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    std::cout << cantidades_validas(10, 0) << ' '\n              << cantidades_validas(0, 11) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "The upper bound 10 is included and both values in the first call are valid. The second call receives 11 and returns false. Without boolalpha, cout normally prints 1 for true and 0 for false."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "What two lines does this main produce with the original functions?",
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    std::cout << espacios_ocupados(1, 2) << ' '\n              << descripcion_carga(1, 2) << '\\n';\n    std::cout << espacios_ocupados(8, 1) << ' '\n              << descripcion_carga(8, 1) << '\\n';\n    return 0;\n}\n",
+          "answers": [
+            "12 Light\n21 Heavy"
+          ],
+          "explanation": "The first calculation adds 2 and 10; the second adds 16 and 5. Both use valid quantities. The description obtains the same result and applies the boundary 20."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Test Controlled Failures and Restore the Project"
+        },
+        {
+          "type": "paragraph",
+          "text": "Return to the working project. Introduce only one failure at a time and restore correct code before the next test. First add a second #include \"estante.h\" in one source: the project must retain its output. The guard acts when each translation unit is processed; it does not link files or supply missing bodies."
+        },
+        {
+          "type": "paragraph",
+          "text": "Next, exclude estado.cpp from the selected sources while keeping it as a project file. Declarations remain visible and the selected .cpp files can compile, but linking fails because the definition of descripcion_carga is missing. Select estado.cpp again. Then change only the definition's return type of espacios_ocupados to double in conteo.cpp while keeping int in estante.h: that source must fail compilation because it includes an incompatible declaration. Restore int."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The estante.h include guard works, but two .cpp files each contain an ordinary body of espacios_ocupados. What explains the problem?",
+          "options": [
+            "The guard supplies a common definition even when the body is copied into two source files.",
+            "The guard prevents repeated inclusion inside each unit; it does not merge duplicate bodies from different sources.",
+            "Including the header in both files forbids declaring a function of the same name there."
+          ],
+          "correctIndex": 1,
+          "explanation": "Compatible declarations can appear in several clients. But this ordinary function needs a single definition in the program. An include guard cannot turn two definitions into one."
+        },
+        {
+          "type": "note",
+          "text": "Observe which stage fails and which responsibility is missing. There is no need to memorize exact diagnostic wording: compilers and linkers may phrase the messages differently."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer the Organization to a New Rule"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now build a second version of the same project. Keep the interface, the 0..10 input bounds, and the allocation of responsibilities. Each small box now occupies 3 spaces and each large box 4. Empty retains its meaning; Light means positive occupancy up to and including 24; Heavy means more than 24. Validation and rejection follow the same contract."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before editing, predict which files need rule changes and which only need new test data. In the next editor, rebuild the project or retrieve your earlier implementation and adapt it. Do not reuse the old calculations without checking the new conditions."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include \"estante.h\"\n#include <iostream>\n\n// Write main: data, validation, calls, and output.\n",
+          "projectFiles": [
+            {
+              "path": "estante.h",
+              "initialCode": "#ifndef CPP_FUNDAMENTALS_ESTANTE_H\n#define CPP_FUNDAMENTALS_ESTANTE_H\n\n#include <string>\n\n// Write the interface's three declarations.\n\n#endif\n"
+            },
+            {
+              "path": "conteo.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Define cantidades_validas and espacios_ocupados.\n"
+            },
+            {
+              "path": "estado.cpp",
+              "initialCode": "#include \"estante.h\"\n\n// Define descripcion_carga using espacios_ocupados.\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include \"estante.h\"\n#include <iostream>\n\n// Write main: data, validation, calls, and output.\n"
+            }
+          ],
+          "sourceFiles": [
+            "conteo.cpp",
+            "estado.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Start with (0, 6): Spaces: 24 and Load: Light. Test (7, 1): 25 and Heavy; (0, 0): 0 and Empty; (10, 10): 70 and Heavy; and the four rejected cases from the first attempt. Add (2, 3), calculating its expected result before running. The fixed test data check the new weights and equality at the new boundary."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: unchanged signatures and permissions, the space-occupancy rule written once, a description that reuses that calculation, validation before computing, and correct outputs at both boundaries. Changing only the classification without changing the box weights does not satisfy the second version. The next-page reference is for review after your attempt."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer Reference, After Building"
+        },
+        {
+          "type": "paragraph",
+          "text": "estante.h retains the same declarations. conteo.cpp changes the weights without changing the input domain in cantidades_validas."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n\nbool cantidades_validas(int pequenas, int grandes) {\n    return pequenas >= 0 && pequenas <= 10\n        && grandes >= 0 && grandes <= 10;\n}\n\nint espacios_ocupados(int pequenas, int grandes) {\n    return 3 * pequenas + 4 * grandes;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "estado.cpp retains the call to the calculation and changes the category boundary."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n\nstd::string descripcion_carga(int pequenas, int grandes) {\n    const int espacios{espacios_ocupados(pequenas, grandes)};\n    if (espacios == 0) {\n        return \"Empty\";\n    }\n    if (espacios <= 24) {\n        return \"Light\";\n    }\n    return \"Heavy\";\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This main tests equality at 24. Repeat the other cases against the criteria above; (2, 3) must occupy 18 spaces and produce Light."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include \"estante.h\"\n#include <iostream>\n\nint main() {\n    const int pequenas{0};\n    const int grandes{6};\n    if (!cantidades_validas(pequenas, grandes)) {\n        std::cout << \"Invalid quantities\\n\";\n        return 0;\n    }\n    std::cout << \"Spaces: \" << espacios_ocupados(pequenas, grandes) << '\\n';\n    std::cout << \"Load: \" << descripcion_carga(pequenas, grandes) << '\\n';\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall the Method Without the Project Open"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You want to change only the box weights while keeping the types, domain, and category rule. Where is the calculation you need to edit?",
+          "options": [
+            "In the definition of espacios_ocupados in conteo.cpp, whose result descripcion_carga also uses.",
+            "In main.cpp's output statements, to transform each result before displaying it.",
+            "In all three declarations in estante.h, so every client knows the new weights."
+          ],
+          "correctIndex": 0,
+          "explanation": "The weights belong in the calculation body. The interface keeps the same types, and the description reuses the function's result. Declaration text and output formatting cannot replace the actual calculation."
+        },
+        {
+          "type": "paragraph",
+          "text": "In another session, recall the filenames, responsibilities, and the sequence validate → calculate → display without opening the project. Then consult the requirements and rebuild from the includes. Use test cases you choose yourself to show that you did not merely memorize the initial input or paste a complete solution."
+        },
+        {
+          "type": "note",
+          "text": "The supporting reading covers headers and checking shared declarations against definitions (Stroustrup, 2024, section 7.7, especially 7.7.2, pp. 211–215). This exercise applies that mechanism using .h/.cpp files."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,499 @@
+{
+  "id": "cpp_fundamentals__funciones_y_contratos__interfaces_cabeceras_y_programas_con_varios_archivos",
+  "title": "Interfaces, Headers, and Multi-File Programs",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Call Needs an Interface; Execution Needs a Definition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall the difference between declaring a function and defining it. A declaration communicates its name, parameter types, and return type so a call can be checked. A definition adds the body that performs the work. Until now, both could appear in one file. A program can also combine several source files: a client uses a shared interface and another part supplies the definitions."
+        },
+        {
+          "type": "paragraph",
+          "text": "An interface is more than a list of types. It includes the meaning and valid domain that the caller must respect. We will prepare envelopes for cards: each envelope holds up to twelve cards, and the caller supplies between zero and one hundred twenty cards. No function reads keyboard input. Neither the calculation nor its description prints anything; main chooses what to display."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A client knows int sobres_necesarios(int tarjetas); and calls sobres_necesarios(25). What does that declaration provide on its own?",
+          "options": [
+            "The algorithm for calculating the quantity.",
+            "The type information needed to check the call.",
+            "Early execution of the body for twenty-five cards."
+          ],
+          "correctIndex": 1,
+          "explanation": "The declaration describes how to use the function. Its body must be present in the program assembled for execution."
+        },
+        {
+          "type": "note",
+          "text": "Code fragments in this lesson are labeled with their filenames. Those that include a project header belong to the complete project; they are not presented as standalone programs to paste into a single-file editor."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "sobres.h: A Shared, Self-Contained Header"
+        },
+        {
+          "type": "paragraph",
+          "text": "Save this content as sobres.h. A header is a file incorporated where #include appears. Here it contains the declarations that both the client and implementation must see. The .h suffix is a common convention; we chose this name and must use it exactly when including the file."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// File: sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define CPP_FUNDAMENTALS_SOBRES_H\n\n#include <string>\n\n// Domain of both functions: 0 <= tarjetas <= 120.\n// Each envelope holds up to 12 cards.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::string appears in the interface, so the header itself includes <string>. It does not depend on its user having previously included another library. The #ifndef, #define, and #endif lines form a guard; we will examine its mechanism after tracing the project. The domain comment reminds us of the caller's responsibility: the declarations do not automatically validate the range."
+        },
+        {
+          "type": "paragraph",
+          "text": "The quotes in #include \"sobres.h\" identify our own header. <string> identifies a standard header. Actual file lookup depends on the tool configuration; in this project our three files are in the same folder."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Source Files Share the Same Declaration"
+        },
+        {
+          "type": "paragraph",
+          "text": "sobres.cpp includes sobres.h before defining the functions. This allows the compiler to compare their types against the declared interface. In the 0..120 domain, the quotient and increment are small; twelve is never a zero divisor. A remainder requires one more envelope without changing the received value."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// File: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"No cards\";\n    }\n    if (cantidad == 1) {\n        return \"One envelope\";\n    }\n    return \"Multiple envelopes\";\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "main.cpp is the second source file. It includes the interface and <iostream>, which it needs for display. It does not include sobres.cpp. The body of main can call the functions because their declarations are already visible, even though the bodies are compiled from another file."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// File: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The complete project produces Multiple envelopes: 3. The description uses the calculated result, but neither helper function depends on cout. If you change only the client's data, you can reuse the same implementation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Inclusion, Compilation, and Linking Are Separate Stages"
+        },
+        {
+          "type": "paragraph",
+          "text": "When main.cpp is processed, #include incorporates the relevant content of sobres.h at that point. This is preprocessing. The compiler analyzes that source file together with its inclusions as one translation unit. Processing sobres.cpp forms another unit in the same way. Including the header in both does not paste the two .cpp files together."
+        },
+        {
+          "type": "paragraph",
+          "text": "On a PC with GCC, from the project folder, g++ -std=c++23 -Wall -Wextra -c sobres.cpp -o sobres.o compiles the implementation without linking. Then g++ -std=c++23 -Wall -Wextra -c main.cpp -o main.o compiles the client. The .o files are objects produced by that tool; they do not yet form the complete program."
+        },
+        {
+          "type": "paragraph",
+          "text": "g++ sobres.o main.o -o plan_sobres.exe links the objects and produces a Windows executable. The linker gathers the necessary definitions. Running .\\plan_sobres.exe is a later step. The shorter form g++ -std=c++23 -Wall -Wextra sobres.cpp main.cpp -o plan_sobres.exe tells the driver to compile both units and link them; including a header does not turn the sources into one file."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "main.cpp includes sobres.h and compiles successfully to main.o. What do you still need to execute this project's functions?",
+          "options": [
+            "Execute the header directly.",
+            "Include sobres.cpp inside main.cpp as the linking step.",
+            "Link the client's object with the object containing the definitions."
+          ],
+          "correctIndex": 2,
+          "explanation": "The client object can refer to declared functions. Linking must find their definitions; sharing the header does not generate them."
+        },
+        {
+          "type": "note",
+          "text": "These commands describe an actual check on a PC with GCC 15.2 and C++23. They require that compiler and execution from the appropriate directory; they are not instructions for the app's output console."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "What an Include Guard Protects"
+        },
+        {
+          "type": "paragraph",
+          "text": "#ifndef checks whether CPP_FUNDAMENTALS_SOBRES_H has not yet been defined during this processing. #define sets it, and the contents are processed through #endif. If the header is encountered again in the same translation unit, the marker already exists and the protected content is skipped. This is a preprocessing decision, not an if executed while the program runs."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Guided comparison: fill in only the marker name, which must exactly match #ifndef. Do not add a value or extra words.",
+          "code": "// File: sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define ___\n\n#include <string>\n\n// Domain of both functions: 0 <= tarjetas <= 120.\n// Each envelope holds up to 12 cards.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n",
+          "answers": [
+            "CPP_FUNDAMENTALS_SOBRES_H"
+          ],
+          "explanation": "The condition and definition must refer to the same marker to prevent another inclusion within that unit."
+        },
+        {
+          "type": "paragraph",
+          "text": "Each .cpp is processed separately. Its guard prevents repetition within its own translation unit; it does not remove an ordinary function definition placed in a header and included by different units. In our header, repeated compatible function declarations would themselves be legal. The guard prepares a robust inclusion mechanism for headers that may grow, but does not replace the rules for definitions."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A guarded header contains the body of sobres_necesarios, keeping our project's signature. main.cpp and otro.cpp include it, and both objects are linked. What has the guard guaranteed?",
+          "options": [
+            "That all objects automatically share one definition.",
+            "That the protected content is not repeated within each translation unit.",
+            "That the linker discards every extra definition."
+          ],
+          "correctIndex": 1,
+          "explanation": "The guard acts while each unit is processed. A body included in two units must still obey the program's definition rules."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check the Header Without Relying on the Client's Include Order"
+        },
+        {
+          "type": "paragraph",
+          "text": "A self-contained header can be included first, without expecting the client to prepare types that the header uses. To check sobres.h on a PC, create a test source that includes it before any other header and compile that source to an object. Linking is not necessary to discover that std::string is no longer declared."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The interface returns std::string, but somebody removes #include <string> from sobres.h because main.cpp already includes another library. Which correction best protects future clients?",
+          "options": [
+            "Restore <string> inside the header that needs it.",
+            "Require every client to know a hidden include order.",
+            "Change the domain comment to mention string."
+          ],
+          "correctIndex": 0,
+          "explanation": "The dependency belongs to the interface that uses the type. The header should supply it explicitly."
+        },
+        {
+          "type": "paragraph",
+          "text": "Do not conclude that a header can never contain definitions. Type and template definitions, inline functions, and certain constants can belong in headers under their respective rules. We do not need to develop those rules here. For these two ordinary free functions, we choose declarations in sobres.h and one definition of each function in sobres.cpp. A constexpr function is implicitly inline even without the written inline keyword: not seeing that keyword does not prove a function is not inline. The ordinary bodies in sobres.cpp and serie.cpp shown here are neither constexpr nor inline."
+        },
+        {
+          "type": "paragraph",
+          "text": "Do not copy the declaration separately into every .cpp either. The copies may diverge when only one is edited. Including the same interface in both users and implementation helps detect many mismatches early. Keep std::string explicit in the interface, without forcing clients to change how names are looked up."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reuse the Calculation from Another Client"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Replace only main.cpp in the envelope project with this file. Keep the earlier sobres.h and sobres.cpp, assuming compilation and linking succeed. Predict the executable's full output; this file cannot run without its dependencies.",
+          "code": "// File: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    std::cout << descripcion_sobres(1) << \": \" << sobres_necesarios(1) << \"\\n\";\n    std::cout << descripcion_sobres(12) << \": \" << sobres_necesarios(12) << \"\\n\";\n    std::cout << descripcion_sobres(13) << \": \" << sobres_necesarios(13);\n    return 0;\n}\n",
+          "answers": [
+            "One envelope: 1\nOne envelope: 1\nMultiple envelopes: 2"
+          ],
+          "explanation": "One card and twelve cards each fit in one envelope. Thirteen require two. The client uses the same interface for every call without duplicating the bodies."
+        },
+        {
+          "type": "paragraph",
+          "text": "After answering, explain which test distinguishes truncated division from the number of complete envelopes needed: thirteen cards do not fit in just one envelope. Add zero and one hundred twenty as domain-boundary tests; check both the calculation and its description. Inputs outside 0..120 are not part of this project's contract."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The requirement changes to envelopes holding twenty cards, while keeping the function names and types. What should this project's author review?",
+          "options": [
+            "Only main.cpp, because the declaration calculates envelope capacity.",
+            "Only the quotes around the include.",
+            "The documented contract, calculation body, and tests, preserving the signatures if they still represent the same operation."
+          ],
+          "correctIndex": 2,
+          "explanation": "Changing a body can preserve how it is called, but its meaning and tests must also match the requirement. Twenty-five cards would need two envelopes of twenty."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Locate a Failure Without Confusing Its Stages"
+        },
+        {
+          "type": "paragraph",
+          "text": "Use the first stage that fails to finish as evidence. During compilation, visible declarations and the types in the processed source matter. During linking, the assembled definitions matter. Old output from an executable built earlier does not establish that a failed new build succeeded."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You remove #include \"sobres.h\" from main.cpp without adding declarations; the calls remain. At what stage does this cause a problem?",
+          "options": [
+            "When compiling the client, because those functions are not declared there.",
+            "Only at runtime, when the first card is encountered.",
+            "When predicting the description, because declarations are only comments."
+          ],
+          "correctIndex": 0,
+          "explanation": "The client's translation unit lacks the declarations required to check its calls."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Both .cpp files compile, but only main.o is linked. What is missing?",
+          "options": [
+            "A second preprocessing pass for cout.",
+            "The object that provides the definitions called by main.",
+            "An initial value for the guard marker at runtime."
+          ],
+          "correctIndex": 1,
+          "explanation": "The client compiled with the interface. The linker did not receive the definitions of sobres_necesarios and descripcion_sobres."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "sobres.cpp includes the header declaring int sobres_necesarios(int), but defines double sobres_necesarios(int). What should be fixed before linking?",
+          "options": [
+            "Include the header twice so the return can have both types.",
+            "Change only main's variable to double.",
+            "Make the declaration's and definition's return types agree."
+          ],
+          "correctIndex": 2,
+          "explanation": "With the same parameters, these return types conflict. Compiling the implementation can reveal the visible mismatch."
+        },
+        {
+          "type": "paragraph",
+          "text": "A parameter-type mismatch needs additional attention: if the implementation defines a function with a different parameter type, C++ may treat it as a different function. That does not supply the body of the function declared for int. Do not assume that every mismatch is detected at the same stage: check the complete signature and assemble the definitions actually used."
+        },
+        {
+          "type": "note",
+          "text": "Exact diagnostic wording varies by tool. Here you must explain the cause and stage, not memorize a GCC message or run a program whose build failed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a New Project with Another Interface"
+        },
+        {
+          "type": "paragraph",
+          "text": "Organize a new project with serie.h, serie.cpp, and main.cpp. The caller supplies 0 <= hechas <= total <= 40. tareas_pendientes(int hechas, int total) returns the remaining task count; estado_serie(int hechas, int total) returns Finished when none remain and In progress otherwise, within the domain. Neither helper prints nor modifies the input. The client displays the status, a colon, a space, and the remaining count."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before writing bodies, decide which declarations both .cpp files need, which library the interface uses, what information may remain only in the implementation, and which object provides each definition. Write the three files separately. In main test (3,5), (0,0), and (5,5), in that order, one case per line; then add (0,40) and (40,40). Preserve the domain and independence of calls."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Guided interface recall: enter only the standard string type's name after std::. This fragment belongs in serie.h; writing it alone does not compile or link the project.",
+          "code": "// File: serie.h\n#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n\n#include <string>\n\n// Domain: 0 <= hechas <= total <= 40.\nint tareas_pendientes(int hechas, int total);\nstd::___ estado_serie(int hechas, int total);\n\n#endif\n",
+          "answers": [
+            "string"
+          ],
+          "explanation": "The description is a standard-library string. The declaration needs <string> within that same header."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria for your implementation: a self-contained, guarded header; the same header included by client and implementation; each ordinary definition assembled once; matching declaration and definition signatures; subtraction within 0..40; separation of calculation from display; an empty completed series with zero tasks pending; and every call preserving its arguments. If you have a compiler on a PC, create the files and compile/link the project; also try linking without the implementation."
+        },
+        {
+          "type": "note",
+          "text": "First build your own organization of serie.h, serie.cpp, and main.cpp; then compare it with the reference on the next page. The envelope and series labs at the end of this lesson let you edit individual files and compile/link both .cpp files inside the app. Test your organization there. A single file with all the pieces combined would check a different organization, not linking across files."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Three-File Reference After Your Attempt"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare each responsibility against this organization. These are three files of one project, not three separate programs. The minimal names and texts are sufficient to build it on a PC."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// File: serie.h\n#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n\n#include <string>\n\n// Domain: 0 <= hechas <= total <= 40.\nint tareas_pendientes(int hechas, int total);\nstd::string estado_serie(int hechas, int total);\n\n#endif\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// File: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Finished\";\n    }\n    return \"In progress\";\n}\n"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "// File: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The executable displays In progress: 2, Finished: 0, and Finished: 0 on separate lines. Cases (0,40) and (40,40) must produce forty and zero pending tasks with the corresponding statuses. Other body organizations meeting the interface and criteria are accepted; preserving filenames alone does not demonstrate that the units compile and link."
+        },
+        {
+          "type": "paragraph",
+          "text": "To verify on a PC: g++ -std=c++23 -Wall -Wextra serie.cpp main.cpp -o serie.exe. An additional check compiles each .cpp to an object before linking, to distinguish the stages. Do not add the header as if it were a third source file containing main."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer the Interface and Diagnose Duplication"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "In the series project, replace only main.cpp with this file and retain the reference serie.h and serie.cpp. After compiling and linking the project, what output does it produce?",
+          "code": "// File: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(0, 8) << \": \" << tareas_pendientes(0, 8) << \"\\n\";\n    std::cout << estado_serie(8, 8) << \": \" << tareas_pendientes(8, 8);\n    return 0;\n}\n",
+          "answers": [
+            "In progress: 8\nFinished: 0"
+          ],
+          "explanation": "The first series has eight tasks remaining; the second has none. The bodies come from the same implementation, not from the declaration visible in main."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Someone copies the ordinary body of tareas_pendientes into serie.h and removes it from serie.cpp. The guard is correct; both .cpp files include the header and are linked. What must they review?",
+          "options": [
+            "Whether main needs another call to choose between the two bodies.",
+            "Whether the guard should stop protecting the header.",
+            "Whether that ordinary definition appears in only one program translation unit, retaining the shared declaration."
+          ],
+          "correctIndex": 2,
+          "explanation": "The guard does not act across different translation units. For this organization, the body belongs back in the implementation and the interface retains the declaration."
+        },
+        {
+          "type": "paragraph",
+          "text": "In another session, rebuild a small interface from its use and explain what the client knows before compilation. Test a change of data without changing bodies and a change of requirements that keeps the signature. Check each stage before trusting the output. Consult this reference after writing your organization."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Bridge Toward Language Modules"
+        },
+        {
+          "type": "paragraph",
+          "text": "The study reference distinguishes headers from modules (Stroustrup, 2024, section 7.7). Including a header incorporates text when each source is processed. A C++ module offers a language interface with exported declarations that the client imports; it does not paste the module source file through #include. That distinction helps identify two different mechanisms for organizing interfaces."
+        },
+        {
+          "type": "paragraph",
+          "text": "Preparing and building modules requires corresponding compiler and project configuration. The following labs use headers and .cpp files. Replacing #include with import does not convert those projects into modules: each mechanism needs its own organization and build process."
+        },
+        {
+          "type": "note",
+          "text": "Interface organization, headers, inclusion, and consistency checking are covered in the supporting reading (Stroustrup, 2024, section 7.7, pp. 211–215, especially 7.7.2, pp. 213–215). The envelope and series projects are original to this lesson. The details of constexpr and inline were checked against the C++ working draft (Working draft: Programming languages — C++, n.d., section [dcl.constexpr], paragraph 1)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lab: Build and Modify the Envelope Project"
+        },
+        {
+          "type": "paragraph",
+          "text": "These files retain the sources from pages 2 and 3. Before executing, predict the output for 25 cards and identify which source provides each definition. Compile sobres.cpp and main.cpp; sobres.h is included from them. The result should be Multiple envelopes: 3. Select files to read and edit each responsibility without combining all three texts into one source file."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "// File: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "sobres.h",
+              "initialCode": "// File: sobres.h\n#ifndef CPP_FUNDAMENTALS_SOBRES_H\n#define CPP_FUNDAMENTALS_SOBRES_H\n\n#include <string>\n\n// Domain of both functions: 0 <= tarjetas <= 120.\n// Each envelope holds up to 12 cards.\nint sobres_necesarios(int tarjetas);\nstd::string descripcion_sobres(int tarjetas);\n\n#endif\n"
+            },
+            {
+              "path": "sobres.cpp",
+              "initialCode": "// File: sobres.cpp\n#include \"sobres.h\"\n\nint sobres_necesarios(int tarjetas) {\n    int completos = tarjetas / 12;\n    if (tarjetas % 12 != 0) {\n        ++completos;\n    }\n    return completos;\n}\n\nstd::string descripcion_sobres(int tarjetas) {\n    const int cantidad = sobres_necesarios(tarjetas);\n    if (cantidad == 0) {\n        return \"No cards\";\n    }\n    if (cantidad == 1) {\n        return \"One envelope\";\n    }\n    return \"Multiple envelopes\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "// File: main.cpp\n#include \"sobres.h\"\n#include <iostream>\n\nint main() {\n    const int tarjetas = 25;\n    std::cout << descripcion_sobres(tarjetas) << \": \"\n        << sobres_necesarios(tarjetas);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "sobres.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Change only tarjetas in main.cpp and compare the boundaries: 0 produces No cards: 0; 12, One envelope: 1; 13, Multiple envelopes: 2; 25, Multiple envelopes: 3; 120, Multiple envelopes: 10. Keep the 0..120 domain. Then restore 25 and change envelope capacity to 20 in sobres.cpp: update both the division and remainder, and the requirement comment in sobres.h, preserving its declarations. The result should be Multiple envelopes: 2. The next run must use the current edits."
+        },
+        {
+          "type": "paragraph",
+          "text": "Restore capacity 12 and perform each check separately. Remove the necessary sobres.h inclusion from main.cpp: the calls lack visible declarations and client compilation fails. Restore it; then remove the declaration of a function used by main from sobres.h to observe another compilation failure. Restore the header. Select only main.cpp for compilation: the calls can now be recognized, but the sobres.cpp object is missing and linking fails because its definitions are absent. Restore both source selections and check the original output."
+        },
+        {
+          "type": "paragraph",
+          "text": "To observe a duplicate definition, move the ordinary body of sobres_necesarios from sobres.cpp into sobres.h, keeping the guard and without marking it inline. Both .cpp files then include this body, so their objects provide two definitions: compiling each source is not enough, and linking must fail. The guard protects inclusion within each unit; it does not coordinate different units. Move the body back to sobres.cpp and verify the valid project again."
+        },
+        {
+          "type": "note",
+          "text": "Before each test, identify the expected output or diagnostic and the responsible file. Switching files and reopening the lab must retain edits and source selection. Restore intentionally faulty test cases before moving on: this lets each change explain a specific result."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer Lab: serie.h, serie.cpp, and main.cpp"
+        },
+        {
+          "type": "paragraph",
+          "text": "This project retains exactly the three sources from the reference on page 10. Compare your construction against that interface and place your bodies in the appropriate files. With serie.cpp and main.cpp selected, predict and execute (3,5), (0,0), and (5,5): the output is In progress: 2, Finished: 0, and Finished: 0 on separate lines. The header is not compiled as a third source."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "// File: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n",
+          "projectFiles": [
+            {
+              "path": "serie.h",
+              "initialCode": "// File: serie.h\n#ifndef CPP_FUNDAMENTALS_SERIE_H\n#define CPP_FUNDAMENTALS_SERIE_H\n\n#include <string>\n\n// Domain: 0 <= hechas <= total <= 40.\nint tareas_pendientes(int hechas, int total);\nstd::string estado_serie(int hechas, int total);\n\n#endif\n"
+            },
+            {
+              "path": "serie.cpp",
+              "initialCode": "// File: serie.cpp\n#include \"serie.h\"\n\nint tareas_pendientes(int hechas, int total) {\n    return total - hechas;\n}\n\nstd::string estado_serie(int hechas, int total) {\n    if (tareas_pendientes(hechas, total) == 0) {\n        return \"Finished\";\n    }\n    return \"In progress\";\n}\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "// File: main.cpp\n#include \"serie.h\"\n#include <iostream>\n\nint main() {\n    std::cout << estado_serie(3, 5) << \": \" << tareas_pendientes(3, 5) << \"\\n\";\n    std::cout << estado_serie(0, 0) << \": \" << tareas_pendientes(0, 0) << \"\\n\";\n    std::cout << estado_serie(5, 5) << \": \" << tareas_pendientes(5, 5);\n    return 0;\n}\n"
+            }
+          ],
+          "sourceFiles": [
+            "serie.cpp",
+            "main.cpp"
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Add (0,40) and (40,40) to the client, keeping one line per case: expect In progress: 40 and Finished: 0. Also try the prediction inputs from page 11, (0,8) and (8,8), without changing the implementation. Explain why none of the calls changes the arguments for later calls and how the client uses the same interface with other data."
+        },
+        {
+          "type": "paragraph",
+          "text": "Repeat one test of each stage: misspell a function name in main.cpp to observe a compilation error; restore the client and exclude serie.cpp from selected sources to observe the missing definition during linking; restore both sources and verify the output. Moving the ordinary body of tareas_pendientes into the header, as in the question on page 11, makes both objects define it, so linking fails despite the guard. Restore the body to the implementation."
+        },
+        {
+          "type": "note",
+          "text": "Justify every result with the contract: 0 <= hechas <= total <= 40, shared declarations, matching signatures, and one ordinary definition per function. Editing the project, compiling its sources, linking, and observing a valid execution are separate checks. These projects use header inclusion to share declarations."
+        }
+      ]
+    }
+  ]
+}
