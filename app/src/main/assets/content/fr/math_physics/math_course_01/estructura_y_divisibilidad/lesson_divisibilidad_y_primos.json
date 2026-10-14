@@ -1,0 +1,710 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__divisibilidad_y_primos",
+  "title": "Facteurs, multiples, parité et nombres premiers",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une division qui tombe juste"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous disons qu'un entier non nul divise un autre entier lorsque ce dernier peut s'écrire comme son produit par un entier. Par exemple, 4 divise 28 car \\(28=4\\times7\\). Les nombres 4 et 7 sont des facteurs de 28 ; nous disons aussi que 28 est un multiple de 4 et de 7. Ce sont plusieurs manières de décrire la même relation, et non deux calculs sans lien."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans cette leçon, nous énumérerons les diviseurs positifs. Ceux de 12 sont 1, 2, 3, 4, 6 et 12. Chacun donne un quotient entier. Cinq ne divise pas 12, car aucun entier multiplié par cinq ne donne douze. Une division sans reste indique la divisibilité ; le fait de pouvoir écrire un quotient sous forme de fraction ne fait pas automatiquement du diviseur un facteur entier."
+        },
+        {
+          "type": "paragraph",
+          "text": "Zéro n'est jamais un diviseur autorisé. Cependant, zéro est un multiple de tout entier non nul : cet entier multiplié par zéro donne zéro. Dans les problèmes de cycles qui se rejoignent, nous chercherons le premier multiple commun positif, car zéro représente le départ et non une nouvelle coïncidence."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "completar_factor",
+          "prompt": "Complète le facteur qui montre que 9 divise 63 : 9 × ? = 63.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "completar_factor__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9 × 7 = 63. Le facteur 7 est un entier et prouve la divisibilité.",
+            "incorrect": "N'additionne pas des 9 pour retrouver 63. Il faut chercher un facteur d'un produit."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisores_30",
+          "prompt": "Sélectionne tous les diviseurs positifs de 30 figurant dans la liste.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisores_30__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4",
+                  "reviewFeedback": "Vérifie si des groupes de quatre permettent de répartir exactement le total. Un diviseur doit donner un quotient entier, sans reste."
+                },
+                {
+                  "id": "b",
+                  "label": "5",
+                  "reviewFeedback": "Essaie de répartir le total en groupes de cinq. Justifie la divisibilité par un produit d'entiers qui retrouve le total."
+                },
+                {
+                  "id": "c",
+                  "label": "6",
+                  "reviewFeedback": "Détermine combien de groupes de six formeraient exactement le total. Distingue une division exacte d'une approximation décimale."
+                },
+                {
+                  "id": "d",
+                  "label": "12",
+                  "reviewFeedback": "Examine le partage proposé en groupes de douze. Pouvoir effectuer une division ne suffit pas : le nombre de groupes doit être entier."
+                },
+                {
+                  "id": "e",
+                  "label": "15",
+                  "reviewFeedback": "Vérifie les groupes de quinze par le produit correspondant. La condition de diviseur impose de retrouver exactement la quantité de départ."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "30 = 5 × 6 = 6 × 5 = 15 × 2. Les quotients avec 4 et 12 ne sont pas entiers.",
+            "incorrect": "Un nombre inférieur à 30 n'est pas nécessairement un diviseur de 30. Il doit donner un quotient entier et permettre de retrouver 30 par multiplication."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisibilidad_cero_y_negativos",
+          "prompt": "Sélectionne toutes les affirmations vraies selon la définition d'un diviseur non nul.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisibilidad_cero_y_negativos__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5 divise −20 parce que −20 = 5 × (−4).",
+                  "reviewFeedback": "Examine le rôle du multiplicateur négatif dans cette égalité. La définition exige un multiplicateur entier et un diviseur différent de zéro."
+                },
+                {
+                  "id": "b",
+                  "label": "7 divise 0 parce que 0 = 7 × 0.",
+                  "reviewFeedback": "Vérifie l'égalité proposée avec un multiplicateur nul. Distingue le nombre divisé du nombre proposé comme diviseur."
+                },
+                {
+                  "id": "c",
+                  "label": "0 est un diviseur autorisé de 7.",
+                  "reviewFeedback": "Examine le rôle de zéro dans l'affirmation choisie. Compare-le à l'obligation d'avoir un diviseur non nul."
+                },
+                {
+                  "id": "d",
+                  "label": "4 divise 10 parce que n'importe quel quotient est considéré comme entier.",
+                  "reviewFeedback": "Réexamine la condition d'un quotient entier. Le simple fait d'écrire une division ou son résultat décimal ne suffit pas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le multiplicateur entier peut être négatif ou nul. Le diviseur reste non nul ; 10 n'est pas le produit de quatre par un entier.",
+            "incorrect": "Zéro peut être un multiple, mais pas un diviseur autorisé. Écrire un quotient ne suffit pas : le facteur qui prouve la divisibilité doit être un entier."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pairs et impairs : former des groupes de deux"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un entier est pair s'il est multiple de 2, c'est-à-dire s'il peut s'écrire \\(2\\times k\\) pour un entier \\(k\\). Dans une collection d'objets, si un objet reste sans partenaire après la formation de paires, la quantité est impaire. En général, un entier est impair s'il peut s'écrire \\(2\\times k+1\\). Ces formes incluent les positifs, les négatifs et zéro. Zéro est pair car \\(0=2\\times0\\)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La somme de deux nombres pairs est paire : réunir deux collections organisées en paires conserve ces paires. La somme de deux impairs est également paire : chaque collection possède un objet isolé et les deux objets forment une nouvelle paire. En additionnant un pair et un impair, il reste un objet isolé et le résultat est impair. Le regroupement d'objets par deux illustre ces propriétés."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour inclure aussi les négatifs, utilisons les formes précédentes : \\(2k+2m=2(k+m)\\), \\((2k+1)+(2m+1)=2(k+m+1)\\) et \\(2k+(2m+1)=2(k+m)+1\\). Les lettres k et m représentent des entiers quelconques. Les deux premières sommes valent deux fois un entier et sont donc paires. La troisième possède une unité de plus qu'un pair et est donc impaire. Ces justifications couvrent tous les entiers."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour tester la divisibilité par 2, nous regardons le dernier chiffre, car chaque dizaine contient déjà cinq paires. Pour 5, le dernier chiffre doit être 0 ou 5 ; pour 10, il doit être 0. Ces critères dépendent de la numération décimale et ne remplacent pas la définition par un produit entier."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pares_suma",
+          "prompt": "Un nombre est impair et un autre est également impair. Que pouvons-nous affirmer de leur somme ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pares_suma__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Elle est paire : la somme peut s'écrire comme deux fois un entier.",
+                  "reviewFeedback": "Représente chaque terme impair comme deux fois un entier plus une unité. Réunis les unités restantes et justifie la forme obtenue."
+                },
+                {
+                  "id": "b",
+                  "label": "Elle est impaire : toute somme conserve la parité de ses termes.",
+                  "reviewFeedback": "Vérifie la prétendue conservation de parité avec une somme de nombres impairs de ton choix. Examine ensuite comment se regroupent les unités restantes."
+                },
+                {
+                  "id": "c",
+                  "label": "On ne peut pas savoir sans connaître les chiffres.",
+                  "reviewFeedback": "Réfléchis aux informations déjà fournies par le mot impair. Utilise une représentation générale des termes pour déterminer si leurs chiffres sont nécessaires."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Écrire les deux impairs comme 2k+1 et 2m+1 donne 2(k+m+1), deux fois un entier. La somme est donc paire, même si un terme est négatif.",
+            "incorrect": "Une somme ne conserve pas toujours la parité de chaque terme. La forme 2(k+m+1) justifie le résultat pour toute paire d'impairs, sans connaître leurs chiffres."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pourquoi la somme des chiffres fonctionne"
+        },
+        {
+          "type": "paragraph",
+          "text": "On peut vérifier la divisibilité par 3 en additionnant les chiffres. Pour 258, leur somme est 15 et les deux nombres sont multiples de 3. La raison est qu'une dizaine se décompose en neuf plus un et une centaine en quatre-vingt-dix-neuf plus un : 258 = 2 × 99 + 5 × 9 + 15. Les deux premiers termes sont déjà multiples de 3 ; il suffit donc d'examiner 15."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "criterios_decimales",
+          "prompt": "Sélectionne tous les nombres divisibles par 3.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "criterios_decimales__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "327",
+                  "reviewFeedback": "Applique à 327 le critère décimal de divisibilité par trois. Explique pourquoi la somme de ses chiffres permet de le vérifier."
+                },
+                {
+                  "id": "b",
+                  "label": "328",
+                  "reviewFeedback": "Calcule la somme des chiffres de 328 et vérifie sa divisibilité par trois. Ne te fie pas uniquement au dernier chiffre."
+                },
+                {
+                  "id": "c",
+                  "label": "111",
+                  "reviewFeedback": "Vérifie le critère de divisibilité par trois pour 111. Relie la somme de ses chiffres à un partage exact."
+                },
+                {
+                  "id": "d",
+                  "label": "430",
+                  "reviewFeedback": "Examine les chiffres de 430 avec le bon critère. Se terminer par zéro ne suffit pas à prouver la divisibilité par trois."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "327 a pour somme de chiffres 12 et 111 a pour somme 3 ; les deux sont multiples de 3. Pour 328, la somme vaut 13, et pour 430, elle vaut 7.",
+            "incorrect": "Le dernier chiffre ne détermine pas à lui seul la divisibilité par trois. Additionne tous les chiffres et vérifie si leur somme est multiple de trois."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_criterios_juntos",
+          "prompt": "Quel nombre est divisible simultanément par 2, par 3 et par 5 ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tres_criterios_juntos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "335",
+                  "reviewFeedback": "Vérifie séparément les trois critères demandés pour 335. Satisfaire l'un d'eux ne suffit pas à établir la condition simultanée."
+                },
+                {
+                  "id": "b",
+                  "label": "312",
+                  "reviewFeedback": "Applique à 312 chacun des tests de divisibilité cités. Vérifie leur conjonction avant de valider ton choix."
+                },
+                {
+                  "id": "c",
+                  "label": "330",
+                  "reviewFeedback": "Vérifie indépendamment les trois critères pour 330. Justifie ton choix avec les propriétés décimales de chacun."
+                },
+                {
+                  "id": "d",
+                  "label": "301",
+                  "reviewFeedback": "Examine 301 selon les trois conditions demandées. Une affirmation conjointe exige de vérifier chaque condition, pas seulement d'observer les chiffres."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "330 est pair, se termine par zéro et la somme de ses chiffres vaut six. Il satisfait les trois conditions.",
+            "incorrect": "335 est divisible par cinq, mais pas par deux ou trois. 312 est divisible par deux et trois, mais pas par cinq. 301 ne satisfait pas les trois."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Nombres premiers : des facteurs qui ne se décomposent plus"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un naturel supérieur à un est premier si ses seuls diviseurs positifs sont un et lui-même. Sept est premier ; douze est composé parce qu'il possède d'autres diviseurs et s'écrit comme un produit de deux entiers supérieurs à un. Un n'est pas premier : il ne possède qu'un diviseur positif, lui-même. Il n'est pas non plus composé."
+        },
+        {
+          "type": "paragraph",
+          "text": "Deux est le seul nombre premier pair. Tout nombre pair supérieur à deux possède le diviseur deux en plus de un et de lui-même. Pour trouver tous les diviseurs, il est utile de former des paires de facteurs : 24 = 1 × 24 = 2 × 12 = 3 × 8 = 4 × 6. Ces paires donnent 1, 2, 3, 4, 6, 8, 12 et 24, sans oublier les grands facteurs."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous pouvons justifier que 19 est premier sans tester toutes les divisions jusqu'à 18. Si les deux facteurs valaient au moins 5, leur produit serait au moins 25, supérieur à 19. Ainsi, un facteur différent de un devrait être 2, 3 ou 4. Aucun ne divise 19 : un produit de deux entiers supérieurs à un est donc exclu."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "uno_no_primo",
+          "prompt": "Pourquoi 1 n'est-il pas premier ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "uno_no_primo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Parce que tous les nombres impairs sont composés.",
+                  "reviewFeedback": "Vérifie si le fait d'être impair suffit à classer un nombre comme premier ou composé. Compare cette généralisation à la définition fondée sur les diviseurs positifs distincts."
+                },
+                {
+                  "id": "b",
+                  "label": "Parce qu'il est trop petit pour être multiplié.",
+                  "reviewFeedback": "Revois ce qu'exige la définition d'un nombre premier. Sa taille ou la possibilité de le multiplier ne remplacent pas ce critère."
+                },
+                {
+                  "id": "c",
+                  "label": "Parce qu'un premier possède deux diviseurs positifs distincts, alors que 1 n'en possède qu'un.",
+                  "reviewFeedback": "Compte les diviseurs positifs distincts du nombre. Vérifie que ta justification utilise exactement la condition imposée par la définition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La définition exige un nombre supérieur à un ayant exactement deux diviseurs positifs : un et lui-même.",
+            "incorrect": "Des impairs peuvent être premiers, comme 3 et 7. La taille n'empêche pas de multiplier 1 ; c'est le nombre de diviseurs qui compte."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "primalidad_29",
+          "prompt": "Quelle conclusion concernant 29 est correctement justifiée ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "primalidad_29__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il est composé parce qu'il se termine par 9.",
+                  "reviewFeedback": "Examine si se terminer par neuf garantit une décomposition en facteurs supérieurs à un. Cherche une justification de divisibilité, pas une ressemblance visuelle."
+                },
+                {
+                  "id": "b",
+                  "label": "Il est premier : il n'est divisible ni par 2, 3, 4 ou 5, et deux facteurs valant au moins 6 donneraient au moins 36.",
+                  "reviewFeedback": "Vérifie que le raisonnement couvre tous les facteurs possibles. Les diviseurs testés et la borne sur les autres facteurs doivent justifier la conclusion sans laisser de cas ouverts."
+                },
+                {
+                  "id": "c",
+                  "label": "Il est premier parce qu'il est impair.",
+                  "reviewFeedback": "Distingue le fait d'être impair du fait d'être premier. Vérifie si la propriété citée exclut tous les facteurs possibles supérieurs à un."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Si 29 possédait deux facteurs supérieurs à un, l'un d'eux devrait être entre 2 et 5. Aucun ne le divise : 29 est donc premier.",
+            "incorrect": "Se terminer par 9 ne décide pas de la primalité : 9 est composé, tandis que 19 et 29 sont premiers. Être impair ne suffit pas non plus : 15 est impair et composé."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Trouver tous les diviseurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Former des paires de facteurs évite d'oublier les grands diviseurs. Pour 16, ces paires sont 1 × 16, 2 × 8 et 4 × 4. Quatre apparaît aux deux endroits de la dernière paire, mais il ne constitue qu'un seul diviseur. Les diviseurs positifs sont 1, 2, 4, 8 et 16."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisores_completos_28",
+          "prompt": "Sélectionne tous les diviseurs positifs de 28. La liste comprend toutes les réponses correctes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisores_completos_28__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "1",
+                  "reviewFeedback": "Vérifie le diviseur un à l'aide de l'égalité de produit correspondante. La décision doit respecter la définition, même si ce diviseur semble particulier."
+                },
+                {
+                  "id": "b",
+                  "label": "2",
+                  "reviewFeedback": "Vérifie si deux peut reconstituer le total avec un multiplicateur entier. Justifie ta décision par un partage exact."
+                },
+                {
+                  "id": "c",
+                  "label": "3",
+                  "reviewFeedback": "Examine le quotient du total par trois. La divisibilité exige un quotient entier exact, sans arrondi ni approximation."
+                },
+                {
+                  "id": "d",
+                  "label": "4",
+                  "reviewFeedback": "Teste le diviseur quatre avec une multiplication qui doit retrouver le total. Vérifie l'exactitude avant de retenir ton choix."
+                },
+                {
+                  "id": "e",
+                  "label": "5",
+                  "reviewFeedback": "Examine le partage du total en groupes de cinq. Relie ta décision à l'exigence d'un quotient entier sans reste."
+                },
+                {
+                  "id": "f",
+                  "label": "7",
+                  "reviewFeedback": "Vérifie le regroupement par sept au moyen d'une égalité entre entiers. Ne décide pas d'après la proximité ou la taille du diviseur."
+                },
+                {
+                  "id": "g",
+                  "label": "8",
+                  "reviewFeedback": "Examine le partage en groupes de huit. Former quelques groupes complets ne suffit pas si des éléments restent."
+                },
+                {
+                  "id": "h",
+                  "label": "14",
+                  "reviewFeedback": "Vérifie si quatorze possède un multiplicateur entier permettant d'obtenir le total. Justifie ton choix avec cette vérification."
+                },
+                {
+                  "id": "i",
+                  "label": "28",
+                  "reviewFeedback": "Examine le cas où le diviseur est égal au nombre divisé. Utilise la même définition que pour tout autre diviseur positif."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d",
+                  "f",
+                  "h",
+                  "i"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les paires 1 × 28, 2 × 14 et 4 × 7 donnent tous les diviseurs. Ni 3, ni 5, ni 8 ne permettent d'obtenir 28 avec un facteur entier.",
+            "incorrect": "Ne te limite pas aux petits facteurs de chaque paire et ne sélectionne pas un nombre uniquement parce qu'il est inférieur à 28."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisores_cuadrado",
+          "prompt": "Combien de diviseurs positifs distincts possède 25 ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisores_cuadrado__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Ses diviseurs sont 1, 5 et 25 : trois. La paire 5 × 5 répète un même diviseur ; elle n'en crée pas deux distincts.",
+            "incorrect": "Compte les valeurs distinctes, pas leurs apparitions dans les produits. Le cinq n'est répertorié qu'une fois."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Classer en justifiant"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "bandejas",
+          "prompt": "On veut placer 36 pièces sur des plateaux pouvant en contenir 9, sans aucun reste. Combien de plateaux complets obtient-on ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "bandejas__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "4"
+              },
+              "unit": "plateaux"
+            }
+          ],
+          "feedback": {
+            "correct": "36 = 9 × 4. On remplit quatre plateaux et l'absence de reste démontre que 9 divise 36.",
+            "incorrect": "Il faut trouver le nombre de groupes, pas le nombre total de pièces. Vérifie en multipliant ton résultat par 9."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Le diagramme rassemble les nombres pairs et les multiples de trois. Son centre représente deux conditions simultanées. Après avoir appris à le lire, nous pouvons aussi décider où placer un nombre qui n'y figure pas encore."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_criterios",
+          "prompt": "Observe les nombres de 1 à 12. Lesquels sont à la fois pairs et multiples de 3 ?",
+          "representations": [
+            {
+              "type": "venn_diagram",
+              "universeLabel": "Nombres de 1 à 12",
+              "leftLabel": "Pairs",
+              "rightLabel": "Multiples de 3",
+              "leftOnly": "2\n4\n8\n10",
+              "intersection": "6\n12",
+              "rightOnly": "3\n9",
+              "outside": "1, 5, 7, 11"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_criterios__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "3, 6, 9 et 12",
+                  "reviewFeedback": "Vérifie chacun des nombres de la liste choisie selon les deux propriétés. Le mot simultanément exige que tous satisfassent les deux conditions."
+                },
+                {
+                  "id": "b",
+                  "label": "6 et 12",
+                  "reviewFeedback": "Vérifie les nombres choisis en les comparant aux deux propriétés du diagramme. Justifie leur emplacement par l'appartenance simultanée."
+                },
+                {
+                  "id": "c",
+                  "label": "2, 4, 8 et 10",
+                  "reviewFeedback": "Examine si les nombres sélectionnés satisfont aussi la deuxième condition. Une région exclusive exprime une différence qu'il faut interpréter."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "6 et 12 se trouvent dans la zone commune : ils sont divisibles par 2 et par 3.",
+            "incorrect": "3 et 9 sont multiples de 3, mais impairs. 2, 4, 8 et 10 sont pairs, mais pas multiples de 3. Les deux conditions sont nécessaires pour être au centre."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_numero_nuevo",
+          "prompt": "Sur un diagramme des nombres pairs et des multiples de trois, où placerais-tu 18 ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_numero_nuevo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Uniquement parmi les pairs.",
+                  "reviewFeedback": "La région choisie affirme une appartenance et exclut l'autre. Vérifie ces deux affirmations pour le nombre avant de garder cet emplacement."
+                },
+                {
+                  "id": "b",
+                  "label": "Dans l'intersection : il satisfait les deux conditions.",
+                  "reviewFeedback": "L'emplacement choisi exige deux propriétés simultanées. Vérifie séparément leurs définitions et relie les deux résultats à la région."
+                },
+                {
+                  "id": "c",
+                  "label": "Uniquement parmi les multiples de trois.",
+                  "reviewFeedback": "Revois les deux affirmations contenues dans le mot uniquement. L'emplacement exige de vérifier l'appartenance ainsi que l'exclusion."
+                },
+                {
+                  "id": "d",
+                  "label": "En dehors des deux ensembles.",
+                  "reviewFeedback": "La région choisie signifie qu'aucune des deux propriétés n'est présente. Compare cette affirmation aux critères de divisibilité du nombre."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "18 = 2 × 9 et 18 = 3 × 6 : il satisfait donc les deux conditions.",
+            "incorrect": "Pour le placer, il faut examiner les deux conditions. Être pair n'empêche pas d'être aussi multiple de trois."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "primo_o_compuesto_con_prueba",
+          "prompt": "Quelle affirmation est correctement justifiée ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "primo_o_compuesto_con_prueba__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "35 est premier parce qu'il se termine par cinq.",
+                  "reviewFeedback": "Vérifie ce que le dernier chiffre démontre sur la divisibilité du nombre choisi. Pour le classer, compare cette information à la définition d'un nombre premier."
+                },
+                {
+                  "id": "b",
+                  "label": "37 est premier : il n'est divisible ni par 2, 3, 4, 5 ou 6, et deux facteurs valant au moins 7 donneraient au moins 49.",
+                  "reviewFeedback": "Vérifie si le raisonnement couvre tous les facteurs possibles. Justifie la borne et l'examen des diviseurs inférieurs à celle-ci."
+                },
+                {
+                  "id": "c",
+                  "label": "39 est premier parce qu'il est impair.",
+                  "reviewFeedback": "Examine si la parité suffit à prouver la primalité. Détermine quels facteurs supérieurs à un restent possibles."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Si 37 était composé, l'un de ses facteurs serait compris entre 2 et 6. Aucun ne le divise. Les nombres 35 = 5 × 7 et 39 = 3 × 13 sont composés.",
+            "incorrect": "Être impair ou se terminer par cinq ne démontre pas qu'un nombre est premier. Une preuve doit exclure tous les facteurs suffisamment petits."
+          }
+        }
+      ]
+    }
+  ]
+}

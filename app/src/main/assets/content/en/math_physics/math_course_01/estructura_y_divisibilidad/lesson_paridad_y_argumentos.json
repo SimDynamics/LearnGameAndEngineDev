@@ -1,0 +1,390 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__paridad_y_argumentos",
+  "title": "Parity: Recognizing Patterns and Justifying Them",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Forms Work with Negative Numbers Too"
+        },
+        {
+          "type": "paragraph",
+          "text": "Being even means having a factor of two. The form 2k makes that factor visible without knowing the digits. Being odd means being one more than an even number: 2k + 1. The integer k may be negative or zero. For example, −8 = 2 × (−4), −7 = 2 × (−4) + 1, and 0 = 2 × 0."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "paridad_negativa",
+          "prompt": "Find the integers k in these representations.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "paridad_negativa__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "−12 = 2k",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "−11 = 2k + 1",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "In both cases k = −6. The number −12 is even and −11 is odd; a negative sign does not prevent parity classification.",
+            "incorrect": "The letter represents an integer that may be negative. For the odd number, first remove the extra one, then find the factor of two."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_paridad",
+          "prompt": "Which argument correctly classifies zero?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_paridad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is odd because there are no pairs of objects.",
+                  "reviewFeedback": "Relate the absence of objects to the arithmetic definition of parity. Check whether the impossibility you assume actually follows from that definition."
+                },
+                {
+                  "id": "b",
+                  "label": "It is even because 0 = 2 × 0.",
+                  "reviewFeedback": "Examine the equation supporting your choice. Check whether the multiplier belongs to the set of integers required by the definition of even."
+                },
+                {
+                  "id": "c",
+                  "label": "It has no parity because it is not positive.",
+                  "reviewFeedback": "Reconsider which numbers parity applies to. The condition of being positive must be checked against the definition rather than added without justification."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The product-based definition includes zero: it is a multiple of two and therefore even.",
+            "incorrect": "Parity is defined for all integers, not just positive ones. Zero pairs correspond to zero objects with none left over."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Addition and Subtraction Without Calculating Large Numbers"
+        },
+        {
+          "type": "paragraph",
+          "text": "Two even numbers add to an even number; so do two odd numbers, because their unpaired units make a pair. An even and an odd number add to an odd number. Subtraction follows the same parity pattern: the opposite of an even number is even, and the opposite of an odd number is odd, so subtraction can be interpreted as adding the opposite."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resta_paridad",
+          "prompt": "Without calculating the full difference, what can you conclude about 2047 − 1359?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resta_paridad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is odd because both final digits are odd.",
+                  "reviewFeedback": "Review whether subtracting two numbers with the same parity produces the parity you claim. Represent both as twice an integer plus any leftover unit."
+                },
+                {
+                  "id": "b",
+                  "label": "It is even because one odd number is subtracted from another.",
+                  "reviewFeedback": "Represent both numbers in the general odd-number form and subtract them symbolically. Justify the final form without calculating the entire difference."
+                },
+                {
+                  "id": "c",
+                  "label": "We cannot tell without calculating everything.",
+                  "reviewFeedback": "Consider what the final digits already tell you about parity. Use that property in a general subtraction before demanding the full calculation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "It is an odd number plus the opposite of an odd number: a sum of two odd numbers, therefore even. The difference is 688, confirming the pattern.",
+            "incorrect": "Both numbers are odd, but subtraction does not preserve the parity of a single term. The pattern gives an answer before the complete calculation."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_paridad_general",
+          "prompt": "If p is an even integer and q is an odd integer, which reasoning proves that p + q is odd?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "suma_paridad_general__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "p + q = 2k + (2m + 1) = 2(k + m) + 1.",
+                  "reviewFeedback": "Check what the integers represented by the letters mean. Verify that each equality preserves value and proves the statement for every case."
+                },
+                {
+                  "id": "b",
+                  "label": "All large numbers are odd.",
+                  "reviewFeedback": "Compare the statement about size with the definition of odd. A proof covering every case needs a property that does not depend on magnitude."
+                },
+                {
+                  "id": "c",
+                  "label": "An example such as 2 + 3 = 5 proves every case by itself.",
+                  "reviewFeedback": "Distinguish checking an example from proving a general statement. Consider what your argument establishes for values other than those in the example."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Twice an integer plus one is exactly the definition of odd. It applies to all integers k and m.",
+            "incorrect": "An example illustrates the idea but does not cover all integers. Magnitude does not determine parity."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Parity of Products"
+        },
+        {
+          "type": "paragraph",
+          "text": "If one factor is even, the product contains its factor of two: (2k)b = 2(kb). It is therefore even whether b is odd, negative, or zero. If both factors are odd, write one as 2k + 1: (2k + 1)b = 2kb + b. The first term is even and b is odd; the sum, and hence the product, is odd."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_impares",
+          "prompt": "What can you conclude about the product of two odd integers?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_impares__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is always even because there are two factors.",
+                  "reviewFeedback": "Consider whether the number of factors determines the product's parity. Represent an odd factor and analyze its effect on the product."
+                },
+                {
+                  "id": "b",
+                  "label": "It is odd; one factor can be written as an even number plus one, making the product even plus odd.",
+                  "reviewFeedback": "Develop the selected reasoning using general representations of odd numbers. Check that it proves parity for any two integers of the given kind."
+                },
+                {
+                  "id": "c",
+                  "label": "It can have either parity without any condition.",
+                  "reviewFeedback": "Consider the information supplied by each factor's parity. Use a general representation to see whether the product's parity remains unrestricted."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The product's structure shows an even part plus an odd part. The factors' signs do not change this conclusion.",
+            "incorrect": "Counting two factors is not the same as counting pairs of units. A product of odd numbers, such as 3 × 5, has no factor of two."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_tres_factores_paridad",
+          "prompt": "Without calculating the full product, which statement describes (−15) × 8 × 7?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_tres_factores_paridad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is negative and even.",
+                  "reviewFeedback": "Check the sign of the product and its parity separately. Count the negative factors and examine the contribution of the even factor."
+                },
+                {
+                  "id": "b",
+                  "label": "It is positive and odd.",
+                  "reviewFeedback": "Justify independently the two properties in your answer. The sign and parity depend on different conditions on the factors."
+                },
+                {
+                  "id": "c",
+                  "label": "It is negative and odd.",
+                  "reviewFeedback": "Review both the signs and divisibility by two of the product. Establishing one property does not automatically justify the other."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "One negative factor gives a negative sign; the factor 8 guarantees even parity. These are independent decisions.",
+            "incorrect": "The sign does not determine parity. Eight supplies a factor of two to the whole product."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Squares and What We Can Deduce"
+        },
+        {
+          "type": "paragraph",
+          "text": "A square is the product of an integer by itself. If the integer is even, its square is even; if it is odd, the product of two odd factors is odd. The conclusion also works backward: if a square is even, its integer base cannot be odd, because that would make its square odd. Therefore the base is even."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "paridad_cuadrado_reciproca",
+          "prompt": "You know that n is an integer and n² is odd. Which conclusion is certain?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "paridad_cuadrado_reciproca__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "n must be positive.",
+                  "reviewFeedback": "Review what a square reveals about its base's sign. Distinguish this information from the given condition on parity."
+                },
+                {
+                  "id": "b",
+                  "label": "n is even.",
+                  "reviewFeedback": "Examine how to write the square of an even integer. Compare the parity that would result with what is known about the square."
+                },
+                {
+                  "id": "c",
+                  "label": "n is odd, though it could be negative.",
+                  "reviewFeedback": "Check the implication by considering both possible parities of the base. Separately, ask whether the given condition restricts its sign."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "If n were even, its square would be even. Thus n must be odd. For example, (−3)² is also odd.",
+            "incorrect": "A square's parity does not determine the sign of its base. The certain conclusion concerns parity."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencias_menos_uno",
+          "prompt": "Calculate these powers without multiplying many factors one by one.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencias_menos_uno__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "(−1)⁶",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "(−1)⁷",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Six negative signs pair up to give 1. With seven, one negative sign remains: −1.",
+            "incorrect": "The base has magnitude one; only its sign changes according to whether the number of factors is even or odd."
+          }
+        }
+      ]
+    }
+  ]
+}

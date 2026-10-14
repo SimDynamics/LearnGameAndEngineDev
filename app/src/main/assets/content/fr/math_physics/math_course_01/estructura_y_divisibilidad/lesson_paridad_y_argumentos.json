@@ -1,0 +1,390 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__paridad_y_argumentos",
+  "title": "Parité : reconnaître des motifs et justifier",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les formes fonctionnent aussi avec les négatifs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Être pair signifie posséder un facteur deux. La forme 2k permet de reconnaître ce facteur sans connaître les chiffres. Être impair signifie avoir une unité de plus qu'un pair : 2k + 1. L'entier k peut être négatif ou nul. Par exemple, −8 = 2 × (−4), −7 = 2 × (−4) + 1 et 0 = 2 × 0."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "paridad_negativa",
+          "prompt": "Complète les entiers k de ces représentations.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "paridad_negativa__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "−12 = 2k",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "−11 = 2k + 1",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dans les deux cas, k = −6. −12 est pair et −11 est impair ; un signe négatif n'empêche pas de déterminer la parité.",
+            "incorrect": "La lettre représente un entier qui peut être négatif. Pour le nombre impair, retire d'abord l'unité supplémentaire, puis trouve le facteur de deux."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_paridad",
+          "prompt": "Quel argument classe correctement zéro ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_paridad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il est impair parce qu'il n'y a aucune paire d'objets.",
+                  "reviewFeedback": "Relie l'absence d'objets à la définition arithmétique de la parité. Vérifie si l'impossibilité que tu supposes découle réellement de cette définition."
+                },
+                {
+                  "id": "b",
+                  "label": "Il est pair parce que 0 = 2 × 0.",
+                  "reviewFeedback": "Examine l'égalité qui justifie ton choix. Vérifie si le multiplicateur appartient à l'ensemble des entiers exigé par la définition de pair."
+                },
+                {
+                  "id": "c",
+                  "label": "Il n'a pas de parité parce qu'il n'est pas positif.",
+                  "reviewFeedback": "Reconsidère l'ensemble de nombres concernés par la parité. La condition d'être positif doit être comparée à la définition, pas ajoutée sans justification."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La définition par un produit inclut zéro : il est multiple de deux et donc pair.",
+            "incorrect": "La parité est définie pour tous les entiers, pas seulement les positifs. Zéro paire correspond à zéro objet, sans reste."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Additionner et soustraire sans calculer de grands nombres"
+        },
+        {
+          "type": "paragraph",
+          "text": "Deux pairs donnent une somme paire ; deux impairs aussi, car leurs unités isolées forment une paire. Un pair et un impair donnent une somme impaire. La soustraction suit le même schéma de parité : l'opposé d'un pair est pair et l'opposé d'un impair est impair ; soustraire revient donc à ajouter cet opposé."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resta_paridad",
+          "prompt": "Sans calculer toute la différence, que peux-tu affirmer de 2047 − 1359 ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resta_paridad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Le résultat est impair parce que les deux derniers chiffres sont impairs.",
+                  "reviewFeedback": "Vérifie si soustraire deux nombres de même parité conserve la propriété que tu annonces. Représente-les comme le double d'un entier avec l'unité restante."
+                },
+                {
+                  "id": "b",
+                  "label": "Le résultat est pair parce qu'on soustrait un impair à un autre impair.",
+                  "reviewFeedback": "Représente les deux nombres sous leur forme générale impaire, puis effectue symboliquement la soustraction. Justifie la forme finale sans calculer toute la différence."
+                },
+                {
+                  "id": "c",
+                  "label": "Impossible de décider sans tout calculer.",
+                  "reviewFeedback": "Examine les informations que les derniers chiffres fournissent déjà sur la parité. Applique-les à une soustraction générale avant d'exiger le calcul complet."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "C'est un impair auquel on ajoute l'opposé d'un impair : une somme de deux impairs, donc paire. La différence vaut 688 et confirme le schéma.",
+            "incorrect": "Les deux nombres sont impairs, mais la soustraction ne conserve pas la parité d'un seul terme. La règle permet de décider avant d'effectuer le calcul complet."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_paridad_general",
+          "prompt": "Si p est un entier pair et q un entier impair, qu'est-ce qui justifie que p + q soit impair ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "suma_paridad_general__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "p + q = 2k + (2m + 1) = 2(k + m) + 1.",
+                  "reviewFeedback": "Vérifie le sens des entiers représentés par les lettres. Assure-toi que chaque égalité conserve la valeur et justifie tous les cas."
+                },
+                {
+                  "id": "b",
+                  "label": "Tous les grands nombres sont impairs.",
+                  "reviewFeedback": "Compare l'affirmation portant sur la taille avec la définition d'impair. Pour justifier tous les cas, il faut une propriété indépendante de la grandeur."
+                },
+                {
+                  "id": "c",
+                  "label": "Un exemple tel que 2 + 3 = 5 démontre à lui seul tous les cas.",
+                  "reviewFeedback": "Distingue la vérification d'un exemple de la démonstration d'une affirmation générale. Examine ce que ton argument garantit pour d'autres valeurs."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La forme deux fois un entier plus un correspond exactement à la définition d'impair. Elle fonctionne pour tous les entiers k et m.",
+            "incorrect": "Un exemple illustre l'idée, mais ne couvre pas tous les entiers. La grandeur ne détermine pas la parité."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Parité des produits"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un facteur est pair, le produit contient son facteur deux : (2k)b = 2(kb). Il est donc pair même si b est impair, négatif ou nul. Si les deux facteurs sont impairs, écrivons l'un d'eux 2k + 1 : (2k + 1)b = 2kb + b. Le premier terme est pair et b est impair ; leur somme et donc le produit sont impairs."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_impares",
+          "prompt": "Que peux-tu affirmer du produit de deux entiers impairs ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_impares__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il est toujours pair parce qu'il y a deux facteurs.",
+                  "reviewFeedback": "Vérifie si le nombre de facteurs détermine la parité du produit. Représente un facteur impair et analyse son influence sur le produit."
+                },
+                {
+                  "id": "b",
+                  "label": "Il est impair : on peut décomposer l'un des facteurs en un pair plus un et le produit devient pair plus impair.",
+                  "reviewFeedback": "Développe le raisonnement choisi avec des représentations générales de nombres impairs. Vérifie qu'il justifie la parité pour n'importe quelle paire d'entiers concernés."
+                },
+                {
+                  "id": "c",
+                  "label": "Il peut avoir n'importe quelle parité sans aucune condition.",
+                  "reviewFeedback": "Considère les informations fournies par la parité de chaque facteur. Examine, avec une représentation générale, si elles laissent indéterminée la parité du produit."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La structure du produit démontre qu'il reste une partie paire plus une partie impaire. Le signe des facteurs ne change pas cette conclusion.",
+            "incorrect": "Compter deux facteurs n'est pas compter des paires d'unités. Le produit de deux impairs, comme 3 × 5, ne possède pas de facteur deux."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_tres_factores_paridad",
+          "prompt": "Sans calculer le produit complet, quelle affirmation décrit (−15) × 8 × 7 ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_tres_factores_paridad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Il est négatif et pair.",
+                  "reviewFeedback": "Vérifie séparément le signe du produit et sa parité. Compte les facteurs négatifs et examine l'apport du facteur pair."
+                },
+                {
+                  "id": "b",
+                  "label": "Il est positif et impair.",
+                  "reviewFeedback": "Justifie indépendamment les deux propriétés annoncées par ton choix. Le signe et la parité dépendent de conditions différentes sur les facteurs."
+                },
+                {
+                  "id": "c",
+                  "label": "Il est négatif et impair.",
+                  "reviewFeedback": "Réexamine les signes ainsi que la divisibilité du produit par deux. Établir une propriété ne garantit pas que l'autre soit justifiée."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Un seul facteur négatif donne un signe négatif ; le facteur 8 garantit que le produit est pair. Ce sont deux décisions indépendantes.",
+            "incorrect": "Le signe ne détermine pas la parité. Le huit conserve un facteur deux dans le produit entier."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les carrés et ce qu'ils permettent de déduire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un carré est le produit d'un entier par lui-même. Si cet entier est pair, le produit est pair ; s'il est impair, le produit de deux impairs est impair. La conclusion fonctionne aussi en sens inverse : si un carré est pair, sa base entière ne peut pas être impaire, car alors le carré serait impair. La base est donc paire."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "paridad_cuadrado_reciproca",
+          "prompt": "On sait que n est entier et que n² est impair. Quelle conclusion est certaine ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "paridad_cuadrado_reciproca__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "n est nécessairement positif.",
+                  "reviewFeedback": "Réexamine les informations qu'un carré conserve sur le signe de sa base. Distingue-les de la condition donnée sur la parité."
+                },
+                {
+                  "id": "b",
+                  "label": "n est pair.",
+                  "reviewFeedback": "Examine comment s'écrit le carré d'un entier pair. Compare la parité qui en résulterait avec l'information connue sur le carré."
+                },
+                {
+                  "id": "c",
+                  "label": "n est impair, mais pourrait être négatif.",
+                  "reviewFeedback": "Vérifie l'implication en examinant les deux parités possibles de la base. Détermine séparément si l'information limite aussi son signe."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Si n était pair, son carré serait pair. Ainsi, n doit être impair. Par exemple, (−3)² est également impair.",
+            "incorrect": "La parité du carré ne détermine pas le signe de sa base. La conclusion certaine concerne la parité."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencias_menos_uno",
+          "prompt": "Calcule ces puissances sans multiplier de nombreux facteurs un par un.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencias_menos_uno__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "(−1)⁶",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "(−1)⁷",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Six signes négatifs s'associent par paires et donnent 1. Avec sept, il reste un signe négatif : −1.",
+            "incorrect": "La base a pour grandeur un ; seul le signe varie selon la parité du nombre de facteurs."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,710 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__divisibilidad_y_primos",
+  "title": "Factors, Multiples, Parity, and Prime Numbers",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Exact Division"
+        },
+        {
+          "type": "paragraph",
+          "text": "We say that a nonzero integer divides another integer if the latter can be written as the product of that nonzero integer and an integer. For example, 4 divides 28 because \\(28=4\\times7\\). Both 4 and 7 are factors of 28; we also say that 28 is a multiple of 4 and 7. These are different ways of describing the same relationship, not two unrelated calculations."
+        },
+        {
+          "type": "paragraph",
+          "text": "We will list positive divisors in this lesson. The divisors of 12 are 1, 2, 3, 4, 6, and 12. Each gives an integer quotient. Five is not a divisor of 12 because no integer multiplied by five produces twelve. Division with no remainder indicates divisibility; the fact that a quotient can be represented by a fraction does not automatically make the divisor an integer factor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Zero is never an allowed divisor. However, zero is a multiple of every nonzero integer: that integer multiplied by zero equals zero. In problems where cycles coincide, we will look for the first positive common multiple because zero represents the starting point, not a new coincidence."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "completar_factor",
+          "prompt": "Complete the factor that shows 9 divides 63: 9 × ? = 63.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "completar_factor__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9 × 7 = 63. The factor 7 is an integer, proving divisibility.",
+            "incorrect": "Do not add 9 to reach 63. You are looking for a factor in a product."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisores_30",
+          "prompt": "Select all the listed positive divisors of 30.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisores_30__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4",
+                  "reviewFeedback": "Check whether groups of four divide the stated total exactly. A divisor must produce an integer quotient, with no remainder."
+                },
+                {
+                  "id": "b",
+                  "label": "5",
+                  "reviewFeedback": "Try grouping the total into groups of five. Justify divisibility with a product of integers that recovers the total."
+                },
+                {
+                  "id": "c",
+                  "label": "6",
+                  "reviewFeedback": "Find how many groups of six make up the total. Distinguish exact division from a decimal approximation when deciding divisibility."
+                },
+                {
+                  "id": "d",
+                  "label": "12",
+                  "reviewFeedback": "Examine the proposed grouping into twelve. Performing division is not enough: the number of groups must be an integer."
+                },
+                {
+                  "id": "e",
+                  "label": "15",
+                  "reviewFeedback": "Check groups of fifteen using the corresponding product. The divisor criterion requires reconstructing the original total exactly."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "30 = 5 × 6 = 6 × 5 = 15 × 2. The quotients with 4 and 12 are not integers.",
+            "incorrect": "A number smaller than 30 is not necessarily a divisor of 30. It must give an integer quotient and recover 30 through multiplication."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisibilidad_cero_y_negativos",
+          "prompt": "Select all true statements under the definition of a nonzero divisor.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisibilidad_cero_y_negativos__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5 divides −20 because −20 = 5 × (−4).",
+                  "reviewFeedback": "Examine the role of the negative multiplier in this equality. The definition requires an integer multiplier and a nonzero divisor."
+                },
+                {
+                  "id": "b",
+                  "label": "7 divides 0 because 0 = 7 × 0.",
+                  "reviewFeedback": "Check the equality with a multiplier of zero. Distinguish the dividend from the number proposed as divisor."
+                },
+                {
+                  "id": "c",
+                  "label": "0 is a permitted divisor of 7.",
+                  "reviewFeedback": "Examine the role played by zero in your selected statement. Compare it with the nonzero-divisor requirement."
+                },
+                {
+                  "id": "d",
+                  "label": "4 divides 10 because any quotient counts as an integer.",
+                  "reviewFeedback": "Reconsider the condition that the quotient be an integer. Merely writing a division or its decimal result does not meet that condition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "An integer factor may be negative or zero. The divisor remains nonzero; 10 cannot be written as four times an integer.",
+            "incorrect": "Zero may be a multiple but not an allowed divisor. Writing a quotient is not enough: the factor establishing divisibility must be an integer."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Even and Odd: Grouping into Pairs"
+        },
+        {
+          "type": "paragraph",
+          "text": "An integer is even if it is a multiple of 2, meaning it can be written \\(2\\times k\\) for some integer \\(k\\). In a collection of objects, a leftover item after making pairs indicates an odd number. More generally, an integer is odd if it can be written \\(2\\times k+1\\). These forms include positive, negative, and zero values. Zero is even because \\(0=2\\times0\\)."
+        },
+        {
+          "type": "paragraph",
+          "text": "The sum of two even numbers is even: combining two collections arranged in pairs preserves the pairs. The sum of two odd numbers is also even: each collection has one loose item, and together the two items form a new pair. Adding an even and an odd number leaves one loose item, so the result is odd. Pairing collections of objects illustrates these ideas."
+        },
+        {
+          "type": "paragraph",
+          "text": "To include negative numbers too, use the forms above: \\(2k+2m=2(k+m)\\), \\((2k+1)+(2m+1)=2(k+m+1)\\), and \\(2k+(2m+1)=2(k+m)+1\\). The letters k and m stand for arbitrary integers. The first two sums are twice an integer and therefore even. The third is one greater than an even number, so it is odd. This proves all three statements for every integer."
+        },
+        {
+          "type": "paragraph",
+          "text": "To test divisibility by 2, look at the last digit because each group of ten already contains five pairs. For 5, the last digit must be 0 or 5; for 10, it must be 0. These rules depend on the decimal system and do not replace the definition using an integer product."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pares_suma",
+          "prompt": "One number is odd and another is also odd. What can we conclude about their sum?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pares_suma__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is even: the sum can be written as twice an integer.",
+                  "reviewFeedback": "Represent each odd addend as twice an integer plus one. Combine the leftover units and justify the resulting form."
+                },
+                {
+                  "id": "b",
+                  "label": "It is odd: every sum preserves the parity of its addends.",
+                  "reviewFeedback": "Test the supposed preservation of parity with a sum of odd numbers of your choice. Then consider what happens to their leftover units."
+                },
+                {
+                  "id": "c",
+                  "label": "We cannot tell without knowing the digits.",
+                  "reviewFeedback": "Consider what the word odd already tells you. Use a general representation of the addends to decide whether their digits are needed."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Writing the odd numbers as 2k+1 and 2m+1 gives 2(k+m+1), twice an integer. The sum is even, even if either term is negative.",
+            "incorrect": "A sum does not always preserve the parity of each addend. The form 2(k+m+1) justifies the result for any two odd numbers; their digits are not needed."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Why the Sum-of-Digits Rule Works"
+        },
+        {
+          "type": "paragraph",
+          "text": "Divisibility by 3 can be checked by adding the digits. For 258, the digit sum is 15, and both are multiples of 3. This works because a ten can be separated into nine plus one, and a hundred into ninety-nine plus one: 258 = 2 × 99 + 5 × 9 + 15. The first two terms are already multiples of 3, so checking 15 is enough."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "criterios_decimales",
+          "prompt": "Select all numbers divisible by 3.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "criterios_decimales__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "327",
+                  "reviewFeedback": "Apply the decimal divisibility-by-three test to 327. Explain why adding its digits is a valid test."
+                },
+                {
+                  "id": "b",
+                  "label": "328",
+                  "reviewFeedback": "Check the digit sum of 328 and whether it is divisible by three. Do not decide from the last digit alone."
+                },
+                {
+                  "id": "c",
+                  "label": "111",
+                  "reviewFeedback": "Apply the divisibility-by-three rule to 111. Relate the sum of its digits to exact grouping."
+                },
+                {
+                  "id": "d",
+                  "label": "430",
+                  "reviewFeedback": "Evaluate the digits of 430 using the correct test. Ending in zero alone does not establish divisibility by three."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "327 has a digit sum of 12, and 111 has a sum of 3; both are multiples of 3. For 328 the sum is 13 and for 430 it is 7.",
+            "incorrect": "The last digit alone does not determine divisibility by three. Add all the digits and check whether the sum is a multiple of three."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_criterios_juntos",
+          "prompt": "Which number is divisible by 2, 3, and 5 at the same time?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tres_criterios_juntos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "335",
+                  "reviewFeedback": "Check the three requested tests separately for 335. Satisfying one does not prove the combined condition."
+                },
+                {
+                  "id": "b",
+                  "label": "312",
+                  "reviewFeedback": "Apply each divisibility test in the question to 312. Check the entire conjunction before accepting your selection."
+                },
+                {
+                  "id": "c",
+                  "label": "330",
+                  "reviewFeedback": "Verify the three tests independently for 330. Justify your choice using the decimal properties underlying each test."
+                },
+                {
+                  "id": "d",
+                  "label": "301",
+                  "reviewFeedback": "Analyze 301 against all three required conditions. A combined statement needs a check of each condition, not an impression based on its digits."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "330 is even, ends in zero, and has a digit sum of six. It satisfies all three conditions.",
+            "incorrect": "335 passes the test for five but not for two or three. 312 passes two and three but not five. 301 does not satisfy all three."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prime Numbers: Factors That Cannot Be Broken Down Further"
+        },
+        {
+          "type": "paragraph",
+          "text": "A natural number greater than one is prime if its only positive divisors are one and itself. Seven is prime; twelve is composite because it has other divisors and can be written as a product of two integers greater than one. One is not prime: it has only one positive divisor, itself. Nor is one composite."
+        },
+        {
+          "type": "paragraph",
+          "text": "Two is the only even prime. Any even integer greater than two has two as a divisor besides one and itself. To list all divisors, form factor pairs: 24 = 1 × 24 = 2 × 12 = 3 × 8 = 4 × 6. These pairs give 1, 2, 3, 4, 6, 8, 12, and 24 without overlooking the larger factors."
+        },
+        {
+          "type": "paragraph",
+          "text": "We can prove that 19 is prime without trying every division up to 18. If both factors were at least 5, their product would be at least 25, greater than 19. Thus, a factor other than one would have to be 2, 3, or 4. None divides 19, ruling out a product of two integers greater than one."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "uno_no_primo",
+          "prompt": "Why is 1 not prime?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "uno_no_primo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Because every odd number is composite.",
+                  "reviewFeedback": "Check whether being odd determines whether a number is prime or composite. Compare that generalization with the definition based on distinct positive divisors."
+                },
+                {
+                  "id": "b",
+                  "label": "Because it is too small to multiply.",
+                  "reviewFeedback": "Review what the definition of prime requires. A number's size or whether it can be multiplied does not replace that criterion."
+                },
+                {
+                  "id": "c",
+                  "label": "Because a prime has two distinct positive divisors and 1 has only one.",
+                  "reviewFeedback": "Count the distinct positive divisors of the number. Verify that your reasoning uses precisely the condition in the definition of prime."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The definition requires being greater than one and having exactly two positive divisors: one and the number itself.",
+            "incorrect": "Odd numbers may be prime, such as 3 and 7. Size does not prevent multiplying 1; the reason is its number of divisors."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "primalidad_29",
+          "prompt": "Which conclusion about 29 is properly justified?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "primalidad_29__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is composite because it ends in 9.",
+                  "reviewFeedback": "Check whether ending in nine guarantees a factorization into factors greater than one. Look for a divisibility argument, not a visual pattern."
+                },
+                {
+                  "id": "b",
+                  "label": "It is prime: it is not divisible by 2, 3, 4, or 5, and two factors each at least 6 would produce at least 36.",
+                  "reviewFeedback": "Check whether the argument covers every possible factor. The divisors tested and the bound for remaining factors must establish the conclusion without leaving cases open."
+                },
+                {
+                  "id": "c",
+                  "label": "It is prime because it is odd.",
+                  "reviewFeedback": "Review the difference between being odd and being prime. Decide whether the stated property rules out all factors greater than one."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "If 29 had two factors greater than one, one would have to lie between 2 and 5. None divides it, so it is prime.",
+            "incorrect": "Ending in 9 does not establish primality: 9 is composite, while 19 and 29 are prime. Being odd is not enough either: 15 is odd and composite."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Find Every Divisor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Forming factor pairs helps avoid missing larger divisors. For 16, the pairs are 1 × 16, 2 × 8, and 4 × 4. Four appears on both sides of the last pair, but it is one divisor. The positive divisors are 1, 2, 4, 8, and 16."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisores_completos_28",
+          "prompt": "Select all positive divisors of 28. The list includes every correct answer.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisores_completos_28__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "1",
+                  "reviewFeedback": "Check the divisor one using the corresponding product equation. The decision must follow the definition even if this divisor seems special."
+                },
+                {
+                  "id": "b",
+                  "label": "2",
+                  "reviewFeedback": "Check whether two can complete the total with an integer multiplier. Explain the exact grouping supporting your decision."
+                },
+                {
+                  "id": "c",
+                  "label": "3",
+                  "reviewFeedback": "Examine the quotient when the total is divided by three. Divisibility requires an exact integer, not a rounded value or approximation."
+                },
+                {
+                  "id": "d",
+                  "label": "4",
+                  "reviewFeedback": "Test four as a divisor with a multiplication that must recover the total. Check exactness before accepting the choice."
+                },
+                {
+                  "id": "e",
+                  "label": "5",
+                  "reviewFeedback": "Evaluate grouping the total in fives. Link your decision to the condition of an integer quotient with no remainder."
+                },
+                {
+                  "id": "f",
+                  "label": "7",
+                  "reviewFeedback": "Check grouping by seven using an integer equality. Avoid deciding based on closeness or on the divisor's size."
+                },
+                {
+                  "id": "g",
+                  "label": "8",
+                  "reviewFeedback": "Check grouping into eights. Being able to form some full groups is not enough if any objects remain ungrouped."
+                },
+                {
+                  "id": "h",
+                  "label": "14",
+                  "reviewFeedback": "Verify whether fourteen has an integer multiplier that produces the total. Use that check to justify your choice."
+                },
+                {
+                  "id": "i",
+                  "label": "28",
+                  "reviewFeedback": "Examine the case when the divisor equals the number being divided. Use the same definition as for any other positive divisor."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d",
+                  "f",
+                  "h",
+                  "i"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The pairs 1 × 28, 2 × 14, and 4 × 7 provide every divisor. Neither 3, 5, nor 8 produces 28 with an integer factor.",
+            "incorrect": "Do not consider only the smaller number in each factor pair, and do not select a number just because it is smaller than 28."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisores_cuadrado",
+          "prompt": "How many distinct positive divisors does 25 have?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisores_cuadrado__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "3"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The divisors are 1, 5, and 25: three. The pair 5 × 5 repeats the same divisor, not two distinct ones.",
+            "incorrect": "Count distinct values, not appearances in products. Five is listed only once."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Classify with a Reason"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "bandejas",
+          "prompt": "You want to arrange 36 pieces in trays holding 9 each, with none left over. How many full trays can you fill?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "bandejas__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "4"
+              },
+              "unit": "trays"
+            }
+          ],
+          "feedback": {
+            "correct": "36 = 9 × 4. Four trays are filled, and the absence of a remainder proves that 9 divides 36.",
+            "incorrect": "You are looking for the number of groups, not the total number of pieces. Check by multiplying your answer by 9."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "The diagram shows even numbers and multiples of three. Its center represents two conditions holding simultaneously. Once we know how to read it, we can also decide where a number not yet displayed belongs."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_criterios",
+          "prompt": "Look at the numbers 1 through 12. Which numbers are both even and multiples of 3?",
+          "representations": [
+            {
+              "type": "venn_diagram",
+              "universeLabel": "Numbers from 1 to 12",
+              "leftLabel": "Even",
+              "rightLabel": "Multiples of 3",
+              "leftOnly": "2\n4\n8\n10",
+              "intersection": "6\n12",
+              "rightOnly": "3\n9",
+              "outside": "1, 5, 7, 11"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_criterios__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "3, 6, 9, and 12",
+                  "reviewFeedback": "Check each number in your chosen list against both properties. The word simultaneously requires every item to satisfy both conditions."
+                },
+                {
+                  "id": "b",
+                  "label": "6 and 12",
+                  "reviewFeedback": "Check your chosen list by comparing each member with both properties in the diagram. Justify its placement by simultaneous membership."
+                },
+                {
+                  "id": "c",
+                  "label": "2, 4, 8, and 10",
+                  "reviewFeedback": "Check whether the selected elements also satisfy the second condition. Membership in an exclusive region expresses a distinction you need to interpret."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "6 and 12 are in the shared region: both are divisible by 2 and by 3.",
+            "incorrect": "3 and 9 are multiples of 3 but not even. 2, 4, 8, and 10 are even but not multiples of 3. Both conditions are required to be in the center."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_numero_nuevo",
+          "prompt": "In a diagram of even numbers and multiples of three, where would 18 belong?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_numero_nuevo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "In even numbers only.",
+                  "reviewFeedback": "The selected region asserts membership in one set and exclusion from the other. Test both statements for the number before keeping that placement."
+                },
+                {
+                  "id": "b",
+                  "label": "In the intersection: it satisfies both conditions.",
+                  "reviewFeedback": "The chosen placement requires two properties at once. Check their definitions separately for the number and connect both results to the region."
+                },
+                {
+                  "id": "c",
+                  "label": "In multiples of three only.",
+                  "reviewFeedback": "Review both claims expressed by the word only in your choice. Placement requires checking membership and exclusion."
+                },
+                {
+                  "id": "d",
+                  "label": "Outside both.",
+                  "reviewFeedback": "The selected region means neither property holds. Compare that claim with the relevant divisibility tests."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "18 = 2 × 9 and 18 = 3 × 6, so it satisfies both conditions.",
+            "incorrect": "Placement requires checking both conditions. Being even does not prevent a number from also being a multiple of three."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "primo_o_compuesto_con_prueba",
+          "prompt": "Which statement is properly justified?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "primo_o_compuesto_con_prueba__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "35 is prime because it ends in five.",
+                  "reviewFeedback": "Check what the final digit tells you about divisibility of the selected number. Classification must compare that information with the definition of prime."
+                },
+                {
+                  "id": "b",
+                  "label": "37 is prime: it is not divisible by 2, 3, 4, 5, or 6, and two factors each at least 7 would produce at least 49.",
+                  "reviewFeedback": "Check that the argument covers every possible factor. Justify the stated bound and the tests of divisors below it."
+                },
+                {
+                  "id": "c",
+                  "label": "39 is prime because it is odd.",
+                  "reviewFeedback": "Consider whether parity alone proves primality. Check which possibilities for factors greater than one are left open by this argument."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "If 37 were composite, one of its factors would lie between 2 and 6. None divides it. The numbers 35 = 5 × 7 and 39 = 3 × 13 are composite.",
+            "incorrect": "Being odd or ending in five does not prove primality. A proof must rule out all sufficiently small possible factors."
+          }
+        }
+      ]
+    }
+  ]
+}
