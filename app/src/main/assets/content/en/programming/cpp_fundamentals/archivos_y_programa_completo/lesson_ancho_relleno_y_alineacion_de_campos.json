@@ -1,0 +1,244 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__ancho_relleno_y_alineacion_de_campos",
+  "title": "Field Width, Fill, and Alignment",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Minimum Field Width"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::setw(n), from <iomanip>, requests a minimum of n character positions for the next field. If the representation is shorter, padding fills the extra positions; if it is longer, the entire representation is displayed. It does not convert the value, truncate text, or limit how many digits an integer can contain. We will start with space padding and right alignment."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(4) << 7 << \"]|[\" << std::setw(4) << 12345 << \"]\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The guided comparison produces [   7]|[12345]: three spaces and one digit in the first field; five digits in the second, even though its minimum was four. The brackets make the boundaries visible. Preserve the spaces inside the brackets in predictions; no spaces are requested outside the delimiters."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(3) << 12 << \"]|[\" << std::setw(3) << 1234 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[ 12]|[1234]"
+          ],
+          "explanation": "The first field needs one space; the second grows because its contents exceed the minimum."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Width Is Consumed by the Next Field"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(4) << 8 << \"]|[\" << 9 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[   8]|[9]"
+          ],
+          "explanation": "The width of four applies to eight; nine does not receive another setw."
+        },
+        {
+          "type": "paragraph",
+          "text": "The number, string, and character insertions used here consume the width and reset it to zero. That is why setw must be repeated before each field that needs it. This differs from hex, fixed, or setprecision, which remain active until changed."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(4) << \":\" << 7 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[   :7]"
+          ],
+          "explanation": "The string : is the next field and consumes the width before seven is inserted."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You want to reserve four positions for the integer. Where should you put setw(4) if you also insert a label?",
+          "options": [
+            "After inserting the label and before the integer.",
+            "Once at the start of main for every field.",
+            "Before inserting the label, followed by any integer."
+          ],
+          "correctIndex": 0,
+          "explanation": "The label also consumes a pending width; setw must be placed next to the intended field."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose the Fill Character"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setfill('0') << std::setw(4) << 7 << \"]|[\"\n        << std::setw(4) << 12 << \"]\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The guided comparison produces [0007]|[0012]. setfill changes the stream's fill character and persists; setw is still needed for each field. The added zeros are report characters: the integer seven does not become another type or an octal literal in the source code."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setfill('.') << std::setw(3) << 4 << \"]|[\"\n        << std::setw(3) << 25 << \"]|[\" << 6 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[..4]|[.25]|[6]"
+          ],
+          "explanation": "The dot remains the fill character, but no width is requested for the third integer."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the fill character inside the quotes to produce leading zeros.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setfill('___') << std::setw(3) << 5 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "The character 0 produces two padding zeros before the digit five."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Manipulators Configure Formatting but Are Not Fields"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(4) << std::setfill('0') << 9 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[0009]"
+          ],
+          "explanation": "setfill configures padding without inserting a field; the pending width is used to display nine."
+        },
+        {
+          "type": "paragraph",
+          "text": "The formatting controls in these examples change the stream's state before displaying a value. Inserting another manipulator between setw and the data is not the same as inserting a label or character. Examine each element of the insertion chain and identify whether it configures formatting or produces characters."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which control must be repeated for each field with a width of four?",
+          "options": [
+            "setw, because the next field consumes that width.",
+            "hex, because each number restores decimal formatting.",
+            "setfill, because the fill character is always reset."
+          ],
+          "correctIndex": 0,
+          "explanation": "setw describes a pending width; the other settings persist."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Left and Right Are Persistent States"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::left << std::setw(5) << \"Sun\" << \"]|[\"\n        << std::right << std::setw(5) << 7 << \"]\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The guided comparison produces [Sun  ]|[    7]. left places padding after the content; right places it before. Both settings also persist in the stream. We can align labels to the left and quantities to the right by changing the mode before their respective fields."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::left << std::setfill('.') << std::setw(4) << \"A\" << \"]|[\"\n        << std::setw(4) << 2 << \"]|[\" << std::right << std::setw(4) << 2 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[A...]|[2...]|[...2]"
+          ],
+          "explanation": "Left alignment persists for two; right changes where the last padding characters appear."
+        },
+        {
+          "type": "note",
+          "text": "The tables use ASCII characters to make position counting straightforward. In these fields, setw counts character positions; it is not a tool for determining the visual width of arbitrary Unicode text on a screen."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prepare Reusable Rows"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write a function that receives an ASCII label of up to eight characters and an int quantity from zero through one thousand. It returns [LABEL]|[QUANTITY]. The first field requests at least six positions, left-aligned; the second requests at least three, right-aligned. Use space padding without truncating fields that exceed those minimums. Display rows for \"Sun\" and 4, and for \"Hallway\" and 1000. Also test an empty label and a quantity of zero."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Build the program requested in the exercise here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predict the number of interior spaces in each field. The function composes with a local stream, does not print, and does not change the caller's format. There is no single required implementation of the body; the observable contract is what matters."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference and Width Criteria"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string fila(const std::string& etiqueta, int cantidad) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << etiqueta\n        << \"]|[\" << std::right << std::setw(3) << cantidad << \"]\";\n    return texto.str();\n}\n\nint main() {\n    std::cout << fila(\"Sun\", 4) << \"\\n\" << fila(\"Hallway\", 1000) << \"\\n\" << fila(\"\", 0);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference lines are [Sun   ]|[  4], [Hallway]|[1000], and [      ]|[  0]. Criteria: labels are left-aligned, quantities are right-aligned; each field receives its own width; the fill character is a space; longer contents remain intact; arguments are used rather than replaced by fixed strings; each call returns only its own row. Test the exact six-character boundary with \"Studio\"."
+        },
+        {
+          "type": "paragraph",
+          "text": "Minimum width does not validate a quantity's numeric domain. In this exercise, the caller supplies permitted quantities. If another program needed to reject data, that check would belong to its contract before composing the row."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Restore Precision, Base, and Width Separately"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"[\" << std::fixed << std::setprecision(2) << std::setfill('.')\n        << std::setw(7) << 3.5 << \"]|[\" << 27 << \"]\";\n    std::cout << texto.str();\n    return 0;\n}\n",
+          "answers": [
+            "[...3.50]|[27]"
+          ],
+          "explanation": "3.50 has four characters and receives three dots; the next integer has no pending width and does not acquire two decimal places."
+        },
+        {
+          "type": "paragraph",
+          "text": "In a later session, explain what each request controls: base for integers, mode and precision for double, minimum width for a field, and the character and side used for padding. Prepare another example that distinguishes a persistent setting from one consumed by the next field. Verify the prediction after explaining it."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,244 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__ancho_relleno_y_alineacion_de_campos",
+  "title": "Largeur, remplissage et alignement des champs",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Largeur minimale d'un champ"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::setw(n), de <iomanip>, demande au moins n positions de caractères pour le champ suivant. Si la représentation en occupe moins, le remplissage complète les positions manquantes ; si elle en occupe davantage, elle s'affiche entièrement. Ce manipulateur ne convertit pas la valeur, ne tronque pas le texte et ne limite pas le nombre de chiffres d'un entier. Nous commencerons avec des espaces de remplissage et un alignement à droite."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(4) << 7 << \"]|[\" << std::setw(4) << 12345 << \"]\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparaison guidée produit [   7]|[12345] : trois espaces et un chiffre dans le premier champ ; cinq chiffres dans le second, même si le minimum demandé était de quatre. Les crochets rendent les limites visibles. Dans les prédictions, conserve les espaces à l'intérieur des crochets ; aucun espace n'est demandé à l'extérieur des délimiteurs."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(3) << 12 << \"]|[\" << std::setw(3) << 1234 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[ 12]|[1234]"
+          ],
+          "explanation": "Le premier champ a besoin d'un espace ; le second s'élargit parce que son contenu dépasse le minimum."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La largeur est consommée par le champ suivant"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(4) << 8 << \"]|[\" << 9 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[   8]|[9]"
+          ],
+          "explanation": "La largeur de quatre s'applique à huit ; neuf ne reçoit pas d'autre setw."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les insertions de nombres, de chaînes ou de caractères utilisées ici consomment la largeur et la remettent à zéro. Voilà pourquoi il faut répéter setw avant chaque champ qui en a besoin. Ce comportement diffère de hex, fixed ou setprecision, qui restent actifs jusqu'à leur modification."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(4) << \":\" << 7 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[   :7]"
+          ],
+          "explanation": "La chaîne : est le champ suivant et consomme la largeur avant l'insertion de sept."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Tu veux réserver quatre positions pour l'entier. Où placer setw(4) si tu insères aussi une étiquette ?",
+          "options": [
+            "Après l'insertion de l'étiquette et avant l'entier.",
+            "Une seule fois au début de main pour tous les champs.",
+            "Avant l'insertion de l'étiquette, puis n'importe quel entier."
+          ],
+          "correctIndex": 0,
+          "explanation": "L'étiquette consomme également une largeur en attente ; le placement doit correspondre au champ choisi."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir le caractère de remplissage"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setfill('0') << std::setw(4) << 7 << \"]|[\"\n        << std::setw(4) << 12 << \"]\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparaison guidée produit [0007]|[0012]. setfill change le caractère de remplissage du flux et reste actif ; setw demeure nécessaire pour chaque champ. Les zéros ajoutés sont des caractères du rapport : l'entier sept ne change ni de type ni en littéral octal dans le code source."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setfill('.') << std::setw(3) << 4 << \"]|[\"\n        << std::setw(3) << 25 << \"]|[\" << 6 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[..4]|[.25]|[6]"
+          ],
+          "explanation": "Le point reste le caractère de remplissage, mais aucune largeur n'est demandée pour le troisième entier."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le caractère de remplissage entre les apostrophes afin de produire des zéros initiaux.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setfill('___') << std::setw(3) << 5 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Le caractère 0 produit deux zéros de remplissage avant le chiffre cinq."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les manipulateurs configurent, mais ne sont pas des champs"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::setw(4) << std::setfill('0') << 9 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[0009]"
+          ],
+          "explanation": "setfill configure le remplissage sans insérer de champ ; la largeur en attente sert à afficher neuf."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans ces exemples, les contrôles de formatage modifient l'état du flux avant d'afficher une valeur. Insérer un autre manipulateur entre setw et la donnée n'est pas la même chose qu'insérer une étiquette ou un caractère. Examine chaque élément de la chaîne d'insertions et indique s'il configure le format ou produit des caractères."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel contrôle faut-il répéter pour chaque champ d'une largeur de quatre ?",
+          "options": [
+            "setw, car le champ suivant consomme cette largeur.",
+            "hex, car chaque nombre rétablit le décimal.",
+            "setfill, car le caractère de remplissage est toujours réinitialisé."
+          ],
+          "correctIndex": 0,
+          "explanation": "setw définit une largeur en attente ; les autres configurations persistent."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les alignements à gauche et à droite persistent"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::left << std::setw(5) << \"Sol\" << \"]|[\"\n        << std::right << std::setw(5) << 7 << \"]\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparaison guidée produit [Sol  ]|[    7]. left place les caractères de remplissage après le contenu ; right les place avant. Ces réglages restent également actifs dans le flux. On peut aligner les étiquettes à gauche et les quantités à droite en changeant de mode avant les champs correspondants."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << \"[\" << std::left << std::setfill('.') << std::setw(4) << \"A\" << \"]|[\"\n        << std::setw(4) << 2 << \"]|[\" << std::right << std::setw(4) << 2 << \"]\";\n    return 0;\n}\n",
+          "answers": [
+            "[A...]|[2...]|[...2]"
+          ],
+          "explanation": "L'alignement à gauche persiste pour deux ; right modifie l'emplacement du remplissage final."
+        },
+        {
+          "type": "note",
+          "text": "Ces tableaux utilisent des caractères ASCII pour faciliter le comptage des positions. Dans ces champs, setw mesure des positions de caractères ; il ne sert pas à déterminer la largeur visuelle d'un texte Unicode quelconque sur un écran."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Préparer des lignes réutilisables"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris une fonction qui reçoit une étiquette ASCII de huit caractères au maximum et une quantité int de zéro à mille. Elle renvoie [ÉTIQUETTE]|[QUANTITÉ]. Le premier champ demande au moins six positions, alignées à gauche ; le second en demande au moins trois, alignées à droite. Utilise des espaces de remplissage sans tronquer les champs plus longs que ces minimums. Affiche des lignes pour « Sol » et 4, puis « Couloir » et 1000. Teste aussi une étiquette vide et la quantité zéro."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construis ici le programme demandé par l'exercice.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prédis le nombre d'espaces intérieurs dans chaque champ. La fonction compose avec un flux local, n'affiche rien et ne change pas le format de l'appelant. Il n'existe pas une seule manière d'écrire son corps ; c'est le contrat observable qui est évalué."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence et critères de largeur"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string fila(const std::string& etiqueta, int cantidad) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << etiqueta\n        << \"]|[\" << std::right << std::setw(3) << cantidad << \"]\";\n    return texto.str();\n}\n\nint main() {\n    std::cout << fila(\"Sol\", 4) << \"\\n\" << fila(\"Couloir\", 1000) << \"\\n\" << fila(\"\", 0);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les lignes de référence sont [Sol   ]|[  4], [Couloir]|[1000] et [      ]|[  0]. Critères : les étiquettes sont alignées à gauche, les quantités à droite ; chaque champ reçoit sa propre largeur ; le remplissage est un espace ; les contenus longs sont conservés intégralement ; les arguments sont utilisés sans être remplacés par des chaînes fixes ; chaque appel renvoie uniquement sa propre ligne. Vérifie la limite exacte de six caractères avec « Studio »."
+        },
+        {
+          "type": "paragraph",
+          "text": "La largeur minimale ne valide pas le domaine numérique d'une quantité. Dans cet exercice, l'appelant fournit des quantités autorisées. Si un autre programme devait rejeter des données, cette vérification relèverait de son contrat avant la composition de la ligne."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rétablir séparément précision, base et largeur"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::ostringstream texto;\n    texto << \"[\" << std::fixed << std::setprecision(2) << std::setfill('.')\n        << std::setw(7) << 3.5 << \"]|[\" << 27 << \"]\";\n    std::cout << texto.str();\n    return 0;\n}\n",
+          "answers": [
+            "[...3.50]|[27]"
+          ],
+          "explanation": "3.50 comporte quatre caractères et reçoit trois points ; l'entier suivant n'a aucune largeur en attente et n'acquiert pas deux décimales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une session ultérieure, explique ce que contrôle chaque réglage : la base pour les entiers, le mode et la précision pour double, la largeur minimale d'un champ, ainsi que le caractère et le côté du remplissage. Prépare un autre exemple qui distingue un réglage persistant d'un réglage consommé par le champ suivant. Vérifie la prédiction après l'avoir justifiée."
+        }
+      ]
+    }
+  ]
+}

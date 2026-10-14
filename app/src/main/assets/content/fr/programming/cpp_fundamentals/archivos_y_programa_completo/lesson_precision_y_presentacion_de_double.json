@@ -1,0 +1,245 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__precision_y_presentacion_de_double",
+  "title": "Précision et présentation de double",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Une même valeur admet plusieurs présentations"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une mesure de type double possède une valeur stockée. Le flux choisit les caractères à afficher pour cette valeur. Une sortie plus courte peut omettre des détails ; une sortie plus longue peut montrer davantage de chiffres. Aucune ne modifie la variable elle-même ni ne rend plus exact le calcul qui l'a produite. Nous choisirons des formats et vérifierons aussi la valeur qui reste disponible."
+        },
+        {
+          "type": "paragraph",
+          "text": "std::fixed affiche une notation décimale avec un nombre choisi de chiffres après le point. std::scientific affiche un chiffre avant le point et une puissance de dix. std::defaultfloat rétablit la notation générale, qui choisit la forme décimale ou scientifique selon la grandeur et la précision. setprecision(n), de <iomanip>, contrôle la précision ; sa signification dépend du format actif."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 12.5;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n        << std::scientific << medida << \"|\" << std::defaultfloat << std::setprecision(3) << medida;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette comparaison guidée produit 12.50|1.25e+01|12.5. Les trois parties représentent douze et demi. Nous expliquerons la notation scientifique et ce que compte chaque précision avant d'utiliser d'autres données."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprendre l'exposant depuis le début"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans 1.25e+01, e+01 signifie multiplier par dix : le résultat est 12.5. e+02 indiquerait une multiplication par cent. Dans 1.25e-01, on divise par dix : 0.125. e-02 indiquerait une division par cent. Les zéros écrits dans +01 ou -01 font partie du texte de l'exposant ; ils ne changent pas la signification de un. Ne confonds pas ce e avec un chiffre hexadécimal : ici, il désigne un facteur décimal."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 0.125;\n    std::cout << std::scientific << std::setprecision(2) << medida;\n    return 0;\n}\n",
+          "answers": [
+            "1.25e-01"
+          ],
+          "explanation": "L'affichage présente 1.25 divisé par dix, ce qui conserve la valeur 0.125."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle valeur décimale représente 2.50e+02 ?",
+          "options": [
+            "Deux et demi.",
+            "Vingt-cinq.",
+            "Deux cent cinquante."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'exposant positif deux multiplie 2.50 par cent."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La précision ne compte pas toujours la même chose"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec fixed, setprecision(2) demande deux chiffres après le point : 8.8125 s'affiche sous la forme 8.81. Avec scientific, il demande aussi deux chiffres après le point, mais dans la partie avant e : 8.81e+00. Avec defaultfloat, il demande deux chiffres significatifs au total : cette valeur s'affiche sous la forme 8.8. Le signe et les caractères de l'exposant ne sont pas comptés comme des chiffres significatifs."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les chiffres significatifs expriment le détail numérique à partir du premier chiffre non nul. Dans 0.0125, le 1, le 2 et le 5 constituent trois chiffres significatifs ; les zéros précédents ne servent qu'à placer le point. La notation générale n'impose pas toujours d'ajouter des zéros jusqu'à la précision demandée : 2 peut s'afficher comme 2 même si davantage de chiffres sont autorisés."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 4.3125;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n        << std::scientific << medida << \"|\" << std::defaultfloat << medida;\n    return 0;\n}\n",
+          "answers": [
+            "4.31|4.31e+00|4.3"
+          ],
+          "explanation": "fixed et scientific utilisent deux chiffres après le point ; la notation générale utilise deux chiffres significatifs au total."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "fixed et setprecision(2) sont actifs. Que compte le deux ?",
+          "options": [
+            "Deux caractères de largeur pour le champ entier.",
+            "Deux chiffres au total, y compris ceux avant le point.",
+            "Deux chiffres après le point dans la représentation."
+          ],
+          "correctIndex": 2,
+          "explanation": "La précision de fixed ne correspond ni à la largeur ni au nombre total de chiffres."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Arrondir la présentation conserve la donnée"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 6.9375;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\";\n    std::cout << std::defaultfloat << std::setprecision(6) << medida * 16;\n    return 0;\n}\n",
+          "answers": [
+            "6.94|111"
+          ],
+          "explanation": "La présentation courte arrondit, mais le calcul utilise 6.9375 et non le texte 6.94."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les exemples utilisent de petites valeurs choisies pour vérifier la sortie sans dépendre d'une décision d'arrondi exactement à mi-chemin. La représentation d'un double peut aussi approximer la donnée initiale ; demander davantage de chiffres à l'affichage ne supprime pas cette approximation. Sépare le calcul du formatage du rapport."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un flux affiche 6.94 pour une variable qui conserve 6.9375. Qu'a fait setprecision(2) avec fixed ?",
+          "options": [
+            "Il a limité les chiffres de cette représentation affichée.",
+            "Il a changé le mode de calcul des opérations suivantes.",
+            "Il a affecté 6.94 à la variable."
+          ],
+          "correctIndex": 0,
+          "explanation": "Le manipulateur agit sur le flux ; il ne réalise pas d'affectation à la donnée."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le format et la précision persistent séparément"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 8.8125;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n        << std::defaultfloat << medida << \"|\" << std::setprecision(6) << medida;\n    return 0;\n}\n",
+          "answers": [
+            "8.81|8.8|8.8125"
+          ],
+          "explanation": "defaultfloat change le format, mais conserve la précision de deux. Elle ne passe à six qu'ensuite."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le manipulateur qui quitte fixed et revient à la notation générale.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << 3.5 << \"|\"\n        << std::___ << std::setprecision(6) << 3.5;\n    return 0;\n}\n",
+          "answers": [
+            "defaultfloat"
+          ],
+          "explanation": "defaultfloat sélectionne le mode général. Un autre réglage permet de changer la précision."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un nouveau flux commence en mode général avec une précision de six. Écrire defaultfloat ne rétablit pas toute la configuration initiale : à lui seul, il ne change ni la précision, ni le remplissage, ni la base des entiers. Choisis délibérément les réglages dont ton rapport a besoin."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La précision n'ajoute pas de décimales à un int"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(2) << 27 << \"|\" << 3.5;\n    return 0;\n}\n",
+          "answers": [
+            "27|3.50"
+          ],
+          "explanation": "L'int conserve sa représentation entière ; fixed et la précision s'appliquent ici au double."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::fixed << std::setprecision(0) << 6.9375 << \"|\"\n        << std::setprecision(2) << 0.0;\n    return 0;\n}\n",
+          "answers": [
+            "7|0.00"
+          ],
+          "explanation": "Zéro chiffre après le point laisse la représentation arrondie à sept ; un double nul avec deux chiffres s'affiche comme 0.00."
+        },
+        {
+          "type": "note",
+          "text": "Ces programmes ne changent pas les paramètres régionaux : ils utilisent le point décimal et les noms de format du C++ standard. Un tableau de sortie est du texte produit, pas une modification du type des données."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Composer trois présentations en un seul appel"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis une fonction qui reçoit un double connu entre zéro et vingt et renvoie F=valeur;S=valeur;G=valeur. F utilise fixed avec deux chiffres après le point ; S utilise scientific avec deux chiffres après le point ; G utilise le mode général avec deux chiffres significatifs. La fonction n'affiche rien et ne modifie pas la donnée de l'appelant. Dans main, affiche les compositions de 8.8125 et 6.9375 sur des lignes distinctes, puis vérifie que la première donnée multipliée par seize donne toujours cent quarante et un."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construis ici le programme demandé par l'exercice.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prédis tous les champs avant de compiler. Teste aussi zéro et douze, qui permettent de distinguer les zéros ajoutés après le point décimal de l'exposant. Chaque appel doit commencer une nouvelle composition, indépendamment du format de cout."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence et critères de présentation"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string presentar(double dato) {\n    std::ostringstream texto;\n    texto << \"F=\" << std::fixed << std::setprecision(2) << dato\n        << \";S=\" << std::scientific << dato\n        << \";G=\" << std::defaultfloat << dato;\n    return texto.str();\n}\n\nint main() {\n    double primero = 8.8125;\n    std::cout << presentar(primero) << \"\\n\" << presentar(6.9375) << \"\\n\";\n    std::cout << std::defaultfloat << std::setprecision(6) << primero * 16;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les lignes de référence sont F=8.81;S=8.81e+00;G=8.8, F=6.94;S=6.94e+00;G=6.9 et 141. Critères : chaque champ sélectionne le mode et la précision corrects ; la fonction renvoie une chaîne sans l'afficher ; les appels n'accumulent pas le texte précédent ; le calcul ultérieur utilise la donnée d'origine. Pour zéro : F=0.00;S=0.00e+00;G=0. Pour douze : F=12.00;S=1.20e+01;G=12. Une organisation différente qui conserve le contrat est valable."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    double medida = 2.0;\n    std::cout << std::fixed << std::setprecision(2) << medida << \"|\"\n        << std::scientific << medida << \"|\" << std::defaultfloat << std::setprecision(6) << medida;\n    return 0;\n}\n",
+          "answers": [
+            "2.00|2.00e+00|2"
+          ],
+          "explanation": "La notation générale n'impose pas deux zéros décimaux ; la valeur deux est la même dans les trois représentations."
+        }
+      ]
+    }
+  ]
+}
