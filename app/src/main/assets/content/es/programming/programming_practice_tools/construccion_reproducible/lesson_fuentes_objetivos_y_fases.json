@@ -1,0 +1,132 @@
+{
+  "id": "programming_practice_tools__construccion_reproducible__fuentes_objetivos_y_fases",
+  "title": "Fuentes, objetivos y fases de CMake (en desarrollo)",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar lo que escribes de lo que produce la construcción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una construcción reproducible necesita más que recordar dónde quedó un ejecutable. Debemos conservar las fuentes, la descripción del proyecto, las herramientas elegidas y las opciones utilizadas. CMake permite describir proyectos y preparar las reglas con las que otra herramienta coordina su construcción. Primero distinguiremos los objetos de ese proceso; después los utilizaremos en un proyecto real."
+        },
+        {
+          "type": "paragraph",
+          "text": "Llamaremos directorio de fuentes al lugar que conserva main.cpp y CMakeLists.txt. El primero contiene nuestro programa C++; el segundo describe su construcción con el lenguaje de CMake. El directorio de construcción recibe reglas generadas, comprobaciones y productos obtenidos. Elegimos directorios distintos para mantener separados esos papeles; también pueden existir varios directorios de construcción para unas mismas fuentes (Scott, 2025, pp. 7–8)."
+        },
+        {
+          "type": "code",
+          "language": "text",
+          "code": "proyecto/\n  fuente/\n    CMakeLists.txt\n    main.cpp\n  construccion/\n    ... productos generados ...\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este árbol describe una organización de ejemplo, no una instrucción para mover tu repositorio ni para borrar carpetas. La separación no depende de esos nombres: una carpeta llamada salida no se convierte en fuente o producto sólo por su nombre. Importa quién mantiene sus archivos y cómo se obtienen."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "modificar_la_descripcion_conservada",
+          "question": "Quieres cambiar qué fuentes forman el programa. ¿Dónde debes conservar esa decisión para que una nueva configuración pueda recuperarla?",
+          "options": [
+            "Sólo dentro de la regla generada de una construcción anterior.",
+            "En la descripción CMakeLists.txt que mantienes junto a las fuentes.",
+            "Sólo en el nombre elegido para la carpeta de construcción."
+          ],
+          "correctIndex": 1,
+          "explanation": "La descripción mantenida es entrada de la configuración. Una regla generada puede volver a producirse; editarla como única versión de una decisión pierde la relación con la fuente que la originaba. Cambiar un nombre de carpeta tampoco selecciona archivos C++."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Configurar y generar no equivalen a construir tu aplicación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Configurar interpreta la descripción del proyecto, establece opciones y comprueba las herramientas habilitadas. Generar produce reglas para la herramienta de construcción seleccionada, como Ninja. Normalmente una invocación de CMake realiza ambas fases, pero sus funciones son diferentes. La construcción posterior usa esas reglas para actualizar los productos necesarios (Scott, 2025, pp. 8–10)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Al habilitar C++, project puede comprobar el compilador construyendo y enlazando pequeños programas de prueba. Eso no significa que ya se haya compilado nuestra aplicación. También puede haber configuraciones sin cambios que reutilicen comprobaciones anteriores; leer un mensaje de éxito exige identificar a qué paso corresponde (Scott, 2025, pp. 14–15)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "alcance_del_exito_de_configuracion",
+          "question": "La configuración y la generación terminaron correctamente. Todavía no se ha solicitado construir el objetivo. ¿Qué conclusión corresponde a esa evidencia?",
+          "options": [
+            "Se procesó la descripción y se generaron reglas; falta construir consulta y ejecutar sus casos.",
+            "Las comprobaciones de C++ ya tradujeron main.cpp; sólo falta ejecutar el programa obtenido.",
+            "La configuración creó consulta.exe, aunque todavía no conocemos su comportamiento."
+          ],
+          "correctIndex": 0,
+          "explanation": "El éxito pertenece a las fases realizadas. Puede incluir pruebas internas del compilador, pero no demuestra que se haya construido o ejecutado nuestro programa ni que cumpla su contrato."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "compilador_durante_configuracion",
+          "question": "Aparece una comprobación satisfactoria del compilador durante la configuración. ¿Qué interpretación evita confundir las fases?",
+          "options": [
+            "Es la compilación de main.cpp; consulta queda actualizado sin pedir su construcción.",
+            "Puede comprobar el compilador con un programa auxiliar; la construcción de consulta sigue pendiente.",
+            "Si llamó al compilador, la aplicación ya pasó la construcción aunque aún no haya reglas generadas."
+          ],
+          "correctIndex": 1,
+          "explanation": "Las comprobaciones de herramientas tienen sus propios programas y propósito. Hay que distinguirlos de main.cpp y del objetivo que describe nuestra aplicación."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Proyecto, objetivo y archivo no son el mismo nombre"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el siguiente ejemplo CMakeLists.txt usa tres instrucciones. cmake_minimum_required declara la versión mínima de CMake admitida por la descripción: 3.20 es el perfil de este ejemplo, no la versión de C++. project da nombre al proyecto y habilita C++, escrito CXX en el lenguaje de CMake. add_executable define el objetivo consulta a partir de main.cpp (Scott, 2025, pp. 13–15)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\nadd_executable(consulta main.cpp)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "El proyecto se llama Existencias y el objetivo consulta. El archivo ejecutable usa por defecto el nombre del objetivo con las convenciones de la plataforma: en el entorno Windows de este ejemplo será consulta.exe. No deduzcas que el proyecto y el archivo deben llamarse igual. La descripción mostrada aún no fija un estándar de C++ ni todas las opciones de un entorno; esos datos también deberán declararse al construir nuestro proyecto de trabajo."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "nombre_para_el_objetivo",
+          "question": "Para la descripción mostrada, ¿qué nombre identifica el objetivo ejecutable que debe pedirse a la herramienta de construcción?",
+          "options": [
+            "main.cpp, porque el nombre de la fuente identifica el objetivo que se construye.",
+            "Existencias, porque project elige el nombre del objetivo ejecutable.",
+            "consulta, porque add_executable define con ese nombre el objetivo ejecutable."
+          ],
+          "correctIndex": 2,
+          "explanation": "project y add_executable tienen papeles distintos. consulta identifica el objetivo; main.cpp es una de sus entradas. El nombre del archivo resultante depende también de la plataforma y de posibles propiedades."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "archivo_que_no_es_fuente_cpp",
+          "question": "¿Qué distingue correctamente los dos archivos mantenidos en fuente/?",
+          "options": [
+            "CMake interpreta CMakeLists.txt; el compilador C++ traduce main.cpp al construir consulta.",
+            "El compilador C++ interpreta CMakeLists.txt y lo usa para traducir main.cpp.",
+            "CMake interpreta ambos archivos; el compilador sólo elige el nombre de consulta.exe."
+          ],
+          "correctIndex": 0,
+          "explanation": "Son lenguajes y papeles distintos. Añadir CMakeLists.txt a un editor de archivos no significa que el compilador C++ interprete sus instrucciones. Las decisiones de ese archivo sólo quedan comprobadas cuando participa CMake."
+        },
+        {
+          "type": "paragraph",
+          "text": "El siguiente trabajo consistirá en preparar los archivos, fijar las herramientas y opciones, configurar y generar, construir consulta y ejecutar el resultado con casos conocidos. Guardaremos por separado las evidencias de cada fase y volveremos a construir después de un cambio. Leer esta descripción prepara esas decisiones; la práctica con el proyecto es una parte necesaria de su aprendizaje."
+        }
+      ]
+    }
+  ]
+}

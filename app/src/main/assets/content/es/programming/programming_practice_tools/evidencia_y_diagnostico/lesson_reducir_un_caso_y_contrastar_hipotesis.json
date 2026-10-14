@@ -1,0 +1,379 @@
+{
+  "id": "programming_practice_tools__evidencia_y_diagnostico__reducir_un_caso_y_contrastar_hipotesis",
+  "title": "Reducir un caso y contrastar hipótesis (en desarrollo)",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un resultado pertenece a una llamada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya sabes relacionar una observación con la fuente, la construcción y el ejecutable utilizados. Ahora investigaremos un fallo que depende de la historia de llamadas dentro de una misma ejecución. El objetivo es elegir pruebas que distingan explicaciones, reducir el caso conservando el fallo y comprobar una reparación fuera de la situación inicial."
+        },
+        {
+          "type": "paragraph",
+          "text": "contar_altos recibe un vector<int> datos y un int minimo. Devuelve cuántos elementos de ese vector son mayores o iguales que minimo. Cada llamada debe contar exclusivamente sus propios datos: no incorpora resultados de llamadas anteriores. En estos experimentos los valores están entre 0 y 9 y minimo entre 1 y 9. Las colecciones son pequeñas y el recuento cabe en int."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, contar_altos({1, 4, 7}, 4) debe devolver 2: califican 4 y 7. Con un vector vacío el resultado requerido es 0, cualquiera que sea el mínimo admitido. Calculamos estos resultados desde la consigna, sin usar como oráculo lo que imprima la versión investigada."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "contar_solo_datos_de_la_llamada",
+          "question": "Una llamada anterior contó {5} con mínimo 5. Ahora consultas {0, 3} con mínimo 5. Según el contrato, ¿qué debe devolver esta segunda llamada?",
+          "options": [
+            "1, porque conserva el resultado de la llamada anterior.",
+            "0, porque ninguno de sus dos datos alcanza el mínimo.",
+            "2, porque debe contar cualquier elemento presente."
+          ],
+          "correctIndex": 1,
+          "explanation": "El contrato exige un recuento independiente por llamada. Ni 0 ni 3 alcanzan 5; el resultado anterior no forma parte de esta consulta."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una coincidencia deja abiertas varias hipótesis"
+        },
+        {
+          "type": "paragraph",
+          "text": "Imagina que una primera prueba, ejecutada desde un comienzo nuevo, consulta {6} con mínimo 5 y devuelve 1. Esa observación coincide con el requisito, pero no explica cómo lo obtuvo el programa. Consideraremos dos hipótesis concretas: H_frontera cuenta por llamada, pero usa > en vez de >=; H_arrastre usa >=, pero suma los recuentos a un total que conserva entre llamadas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ambas hipótesis predicen 1 para esa primera consulta: 6 supera 5 y no había un recuento anterior. No podemos elegir entre ellas repitiendo ese único caso. Formular una hipótesis no significa que sea cierta: sirve para anticipar qué deberíamos observar si lo fuera."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "coincidencia_no_selecciona_la_causa",
+          "question": "La consulta inicial {6}, mínimo 5, produjo 1. ¿Qué permite concluir ese dato?",
+          "options": [
+            "La comparación utiliza >=, porque el resultado coincide con el requisito.",
+            "Cada llamada empieza con el contador a cero, porque la primera devolvió 1.",
+            "Las dos hipótesis siguen siendo compatibles con esa observación."
+          ],
+          "correctIndex": 2,
+          "explanation": "6 está por encima del límite y es la primera llamada. La prueba no examina ni la igualdad con el mínimo ni la posible dependencia de llamadas anteriores."
+        },
+        {
+          "type": "paragraph",
+          "text": "También podríamos sospechar que se ejecutó otra revisión. En este caso ya hemos comprobado la correspondencia entre la fuente investigada, la construcción satisfactoria y el artefacto ejecutado. Usaremos ese dato para descartar esa explicación aquí; en otro caso tendríamos que verificarlo otra vez. La procedencia comprobada reduce hipótesis, pero no demuestra que el código sea correcto."
+        },
+        {
+          "type": "note",
+          "text": "Reproducir el problema, reunir observaciones precisas y contrastar los supuestos antes de culpar al entorno forman parte del método de depuración estudiado en la fuente. Los datos y los modelos de este caso son propios (Thomas & Hunt, 2020, tema 20, pp. 90–97)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir una prueba que distinga los modelos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una prueba aporta información para esta pregunta cuando las hipótesis prevén comportamientos diferentes. Queremos examinar tanto la frontera como lo que ocurre después de una llamada que contó un dato. Cada experimento empieza con un proceso nuevo. Dentro de él mantendremos las llamadas consecutivas: reiniciar entre ellas cambiaría la situación investigada."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "elegir_experimento_discriminante",
+          "question": "¿Qué experimento examina la igualdad con el mínimo y, después, si queda un recuento de la llamada anterior?",
+          "options": [
+            "Consultar {6} con mínimo 5; reiniciar el proceso y repetir esa misma consulta.",
+            "En el mismo proceso, consultar primero {2} con mínimo 2 y después un vector vacío con mínimo 2.",
+            "Consultar dos vectores vacíos con mínimo 2, comenzando un proceso nuevo para cada uno."
+          ],
+          "correctIndex": 1,
+          "explanation": "El primer dato está justo en la frontera y la segunda llamada no tiene datos que contar. Las otras propuestas no combinan una igualdad que deba contar con una consulta posterior dentro del mismo proceso."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "predecir_modelos_antes_de_observar",
+          "question": "Para la secuencia {2}, mínimo 2; después {}, mínimo 2, ¿qué parejas predicen H_frontera y H_arrastre, en ese orden? Ambas empiezan desde un proceso nuevo.",
+          "options": [
+            "H_frontera: 0:0; H_arrastre: 1:1.",
+            "H_frontera: 1:0; H_arrastre: 1:0.",
+            "H_frontera: 0:1; H_arrastre: 1:0."
+          ],
+          "correctIndex": 0,
+          "explanation": "Con >, el 2 no cuenta y el vacío tampoco. Con >= y un total conservado, el 2 incrementa ese total a 1 y la segunda llamada lo devuelve sin incrementarlo. Estas predicciones son distintas y se fijan antes de ejecutar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Según el requisito, la pareja esperada es 1:0. Mantén separados tres registros: el resultado requerido, lo que predice cada hipótesis y lo que realmente observarás. Si una observación contradice un modelo, ese modelo concreto queda descartado bajo las condiciones que acabamos de fijar; no hemos probado que no pueda existir otro defecto distinto."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Observar lo que la implementación conserva"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta es la implementación investigada. La declaración int acumulado{0}; está fuera de las funciones: prepara un contador antes de empezar main. Las llamadas a contar_altos utilizan ese mismo contador; no vuelven a ejecutar su declaración exterior. El cuerpo de la función incrementa acumulado cuando un dato califica y devuelve el valor que haya quedado."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por tanto, debemos seguir tanto los argumentos de cada llamada como el valor de acumulado antes y después. No hace falta estudiar direcciones ni gestión de memoria para observar esta diferencia entre preparar el programa una vez y ejecutar el cuerpo de una función varias veces."
+        },
+        {
+          "type": "output_prediction",
+          "id": "observar_secuencia_minima",
+          "language": "cpp",
+          "question": "Predice la salida de esta implementación, no la pareja requerida por el contrato. Las dos llamadas pertenecen a la misma ejecución.",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "1:1"
+          ],
+          "explanation": "La primera llamada encuentra un dato válido e incrementa acumulado de 0 a 1. El vector de la segunda está vacío, así que no hay incrementos; sin embargo, la función devuelve el 1 conservado. El requisito pedía 1:0. La observación coincide con H_arrastre y contradice H_frontera para esta prueba."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "localizar_dato_que_excede_la_consulta",
+          "question": "La segunda llamada recibe un vector vacío y devuelve 1. ¿Qué contradicción con el requisito permite localizar el problema?",
+          "options": [
+            "El mínimo 2 no se puede utilizar con una colección vacía.",
+            "El programa debía cambiar >= por > para contar el vector vacío.",
+            "La respuesta incluye un recuento que no procede de los datos de esta llamada."
+          ],
+          "correctIndex": 2,
+          "explanation": "Un vector vacío tiene cero datos que puedan calificar, tanto con > como con >=. El 1 procede de la llamada anterior: cambiar sólo la comparación no explica por qué se devuelve un recuento para una consulta sin datos."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reducir conservando la propiedad que falla"
+        },
+        {
+          "type": "paragraph",
+          "text": "El informe original podría contener una primera consulta {0, 2, 6, 9} con mínimo 2 y una segunda {0, 1} con mínimo 2. El requisito prevé 3:0; esta implementación devuelve 3:3. Investigar muchos datos a la vez puede distraer. Queremos conservar la contradicción: la segunda consulta devuelve un recuento anterior que no le corresponde."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reducir no exige conservar literalmente el número 3. Puedes eliminar datos de una reproducción y volver a calcular desde el requisito qué debería ocurrir. Comprueba después si persiste la misma clase de contradicción. No des por supuesto que quitar datos conserva un fallo: a veces el defecto depende de varios elementos o de su combinación."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reduccion_conserva_reproduccion",
+          "question": "Con la implementación mostrada y empezando cada propuesta desde un proceso nuevo, ¿qué reproducción más pequeña conserva el recuento indebido en una llamada posterior?",
+          "options": [
+            "Consultar {2}, mínimo 2; iniciar otro proceso y consultar {}, mínimo 2.",
+            "Consultar {}, mínimo 2; después {}, mínimo 2, sin reiniciar el proceso.",
+            "Consultar {2}, mínimo 2; después {}, mínimo 2, sin reiniciar el proceso."
+          ],
+          "correctIndex": 2,
+          "explanation": "La primera propuesta inicia otro proceso entre consultas: requiere 1:0 y devuelve 1:0, por lo que ya no reproduce el fallo. En la segunda, ambas colecciones están vacías y el contador permanece a cero: produce 0:0. La tercera conserva las llamadas dentro del mismo proceso: requiere 1:0, pero devuelve 1:1 y sí reproduce el recuento arrastrado. Una reproducción pequeña debe conservar la situación que causaba la contradicción."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "limite_de_la_reduccion",
+          "question": "¿Qué ocurre si quitas el único dato {2} de la primera consulta de la reproducción pequeña y mantienes las dos llamadas?",
+          "options": [
+            "Ambas devuelven 0; esta reducción ya no reproduce el fallo observado.",
+            "El fallo permanece porque dos llamadas bastan siempre para acumular algo.",
+            "La segunda devuelve 1 porque el programa conserva el valor de minimo."
+          ],
+          "correctIndex": 0,
+          "explanation": "Con dos vectores vacíos el contador permanece a cero. Para esta implementación, la reproducción necesita una llamada que incremente el total y otra posterior que muestre el recuento indebido. Hay otras reproducciones pequeñas válidas con un dato que califique; no imponemos {2} como única forma posible."
+        },
+        {
+          "type": "note",
+          "text": "El objetivo de reducir es facilitar una reproducción verificable, no transformar la entrada hasta que la prueba pase. La búsqueda de una reproducción pequeña y la comprobación de supuestos se apoyan en el tema de depuración; esta reducción concreta es original (Thomas & Hunt, 2020, tema 20, pp. 91–96)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un control que cambia sólo el orden"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compara ahora dos experimentos. Cada uno comienza con acumulado a cero, al iniciar un proceso nuevo. En el primero el orden fue {2} y después {}. En el segundo conservamos las colecciones, el mínimo y el código, pero invertimos el orden: primero {} y después {2}. Dentro de cada experimento no reiniciamos entre llamadas."
+        },
+        {
+          "type": "output_prediction",
+          "id": "control_invertir_orden",
+          "language": "cpp",
+          "question": "Predice la salida de la implementación investigada al invertir el orden de las dos consultas.",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({}, 2);\n    const int segunda = contar_altos({2}, 2);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "0:1"
+          ],
+          "explanation": "El vacío inicial no incrementa acumulado y devuelve 0. Después, el dato 2 incrementa el total a 1 y devuelve 1. En este orden concreto la salida coincide con lo requerido, aunque el código sigue siendo el mismo que fallaba con el orden anterior."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "control_no_equivale_a_reparacion",
+          "question": "El control de orden produjo 0:1, tal como pide el contrato para esas dos consultas. ¿Cómo debes interpretar esa coincidencia?",
+          "options": [
+            "Es una reparación por cambiar la secuencia; usa siempre ese orden para las consultas.",
+            "Es una prueba que pasa sin cambiar la función; conserva también el caso que fallaba.",
+            "Es un problema de igualdad; sustituye >= por > y prueba ese mismo orden."
+          ],
+          "correctIndex": 1,
+          "explanation": "El contador arrastrado sólo contradice este contrato cuando un recuento anterior contamina una consulta posterior. El control ayuda a entender la dependencia del orden, pero no modifica la implementación ni invalida el caso que falla."
+        },
+        {
+          "type": "paragraph",
+          "text": "Probar desde un comienzo conocido permite comparar experimentos; mantener las llamadas dentro de un mismo proceso permite examinar su historia. Son decisiones diferentes. Si reinicias el programa antes de cada llamada, desaparece precisamente la condición que queríamos investigar. Anota qué cambiaste, qué mantuviste y qué observación discrimina tus hipótesis."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar y poner a prueba tu explicación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Repara contar_altos para que cada consulta obtenga el recuento de sus propios datos. Conserva la comparación >=, las cinco consultas de main y el cálculo real de los resultados. Puedes cambiar la organización del contador. No sustituyas el trabajo por números constantes ni reinicies el programa entre consultas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de ejecutar, deduce los resultados desde el contrato. La reproducción pequeña requiere Minimo:1:0. Después, las consultas {8, 1, 5} con mínimo 5; {6, 7} con mínimo 5; y {} con mínimo 9 requieren Nuevo:2:2:0. Las cinco llamadas pertenecen a una sola ejecución. La segunda tanda examina una consulta no vacía después de otra que ya contó datos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe una explicación breve: qué dependencia causaba el error, qué modificaste y por qué las consultas posteriores ya no incorporan los recuentos anteriores. Después de verificar ambas tandas, invierte el orden de las dos consultas no vacías de la segunda; deduce primero lo esperado y comprueba que los resultados siguen correspondiendo a cada consulta."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    // Repara el recuento sin cambiar el contrato ni las consultas.\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "El laboratorio es abierto: distintas implementaciones pueden cumplir este contrato. La siguiente página ofrece una solución de referencia, después de tu intento."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una referencia con recuento propio por llamada"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    int cantidad{0};\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++cantidad;\n        }\n    }\n    return cantidad;\n}\n\nint main() {\n    const int primera = contar_altos({2}, 2);\n    const int segunda = contar_altos({}, 2);\n    std::cout << \"Minimo:\" << primera << ':' << segunda << '\\n';\n\n    const int tercera = contar_altos({8, 1, 5}, 5);\n    const int cuarta = contar_altos({6, 7}, 5);\n    const int quinta = contar_altos({}, 9);\n    std::cout << \"Nuevo:\" << tercera << ':' << cuarta << ':' << quinta;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "cantidad se declara dentro del cuerpo de contar_altos. Cada llamada ejecuta su inicialización a cero, recorre únicamente los datos recibidos y devuelve su propio resultado. No necesita el total que hubiera dejado otra llamada. La salida calculada es Minimo:1:0 y, en la siguiente línea, Nuevo:2:2:0."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios de corrección: contar también los datos iguales al mínimo, contar cada elemento válido una vez, devolver 0 para el vacío y conservar independencia de las llamadas anteriores. Esta solución local es una forma clara de expresar esa independencia. En este programa secuencial, restablecer el contador exterior al entrar en cada llamada, antes de recorrer, también puede satisfacer el contrato; compruébalo con los casos, sin confundir esa reparación con reiniciar el proceso entre consultas."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "reparacion_frente_a_cambiar_la_prueba",
+          "question": "¿Qué diferencia hay entre preparar un recuento desde cero dentro de cada llamada y ejecutar cada consulta en un proceso distinto?",
+          "options": [
+            "Una repara la función; la otra evita la secuencia de llamadas que exponía el fallo.",
+            "Las dos reparan la función: cada consulta debe ejecutarse siempre sin historia previa.",
+            "La primera conserva la causa; la segunda prueba la independencia entre llamadas."
+          ],
+          "correctIndex": 0,
+          "explanation": "El requisito permite varias consultas en una misma ejecución. La reparación debe funcionar en ese contexto. Reiniciar el programa entre consultas puede hacer que la versión defectuosa parezca correcta, porque borra la condición que la prueba tenía que conservar."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pasar el caso pequeño no basta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Otra persona añade únicamente un retorno especial para el vector vacío. Su versión ya devuelve 1:0 en la reproducción pequeña, pero deja el contador exterior para los vectores no vacíos. Antes de dar esa reparación por buena, usa una situación que también exponga el recuento arrastrado sin depender del vacío."
+        },
+        {
+          "type": "output_prediction",
+          "id": "contraprueba_de_retorno_especial",
+          "language": "cpp",
+          "question": "Predice la salida de esta reparación parcial para las dos consultas no vacías. Calcula aparte lo que exige el contrato.",
+          "code": "#include <iostream>\n#include <vector>\n\nint acumulado{0};\n\nint contar_altos(std::vector<int> datos, int minimo) {\n    if (datos.empty()) {\n        return 0;\n    }\n    for (int valor : datos) {\n        if (valor >= minimo) {\n            ++acumulado;\n        }\n    }\n    return acumulado;\n}\n\nint main() {\n    const int primera = contar_altos({8, 1, 5}, 5);\n    const int segunda = contar_altos({6, 7}, 5);\n    std::cout << primera << ':' << segunda;\n    return 0;\n}\n",
+          "answers": [
+            "2:4"
+          ],
+          "explanation": "La primera llamada cuenta 8 y 5 y deja acumulado en 2. La segunda cuenta 6 y 7, los añade a ese total y devuelve 4. El contrato exige 2:2. El caso vacío pasó por una salida especial; la dependencia que contaminaba otras consultas permaneció."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "variacion_refuta_reparacion_parcial",
+          "question": "La reproducción pequeña pasa y la contraprueba no vacía produce 2:4 en vez de 2:2. ¿Qué acción se justifica?",
+          "options": [
+            "Revisar el contador para que cada llamada compute sus datos, y repetir el caso inicial y la variación.",
+            "Conservar el contador y el retorno especial, y limitar las pruebas siguientes al vector vacío.",
+            "Conservar el código y sustituir el resultado esperado de la segunda consulta por el total observado."
+          ],
+          "correctIndex": 0,
+          "explanation": "El resultado esperado procede del requisito: en {6, 7} sólo hay dos datos. Una reparación debe explicar y corregir la causa, además de conservar el caso que detectó el fallo. Ajustar el oráculo al resultado defectuoso haría que la prueba dejara de examinar el contrato."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva la reproducción pequeña, el informe original y la variación no vacía como casos posteriores de comprobación. Cuando cambies la función otra vez, sirven para detectar si reaparece esa dependencia. Más adelante estudiaremos cómo organizar y automatizar pruebas; aquí ya puedes justificar las entradas y los resultados sin asumir un marco de pruebas."
+        },
+        {
+          "type": "note",
+          "text": "Probar los supuestos en el contexto concreto y conservar un caso que detecte la reaparición del fallo son principios de la fuente. Este recuento, la reparación parcial y la contraprueba son actividades originales (Thomas & Hunt, 2020, tema 20, pp. 96–97; tema 51, p. 278)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El contrato decide si conservar historia es un fallo"
+        },
+        {
+          "type": "paragraph",
+          "text": "No concluyas que cualquier dato conservado entre llamadas es incorrecto. Imagina ahora otro encargo: registrar_visita debe devolver el número de visitas registradas desde el inicio del programa. Para las tres llamadas de este experimento, el contrato exige los números 1, 2 y 3. Es una intención diferente del recuento independiente de una colección."
+        },
+        {
+          "type": "output_prediction",
+          "id": "estado_conservado_con_otro_contrato",
+          "language": "cpp",
+          "question": "Predice la salida. ¿Coincide con la intención de registrar visitas desde el comienzo de esta ejecución?",
+          "code": "#include <iostream>\n\nint numero_visita{0};\n\nint registrar_visita() {\n    ++numero_visita;\n    return numero_visita;\n}\n\nint main() {\n    const int primera = registrar_visita();\n    const int segunda = registrar_visita();\n    const int tercera = registrar_visita();\n    std::cout << primera << ':' << segunda << ':' << tercera;\n    return 0;\n}\n",
+          "answers": [
+            "1:2:3"
+          ],
+          "explanation": "Cada llamada incrementa el mismo numero_visita y devuelve el total alcanzado. Ahora conservar esa historia expresa precisamente el requisito; preparar a cero en cada llamada haría que todas devolvieran 1."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "no_convertir_causa_en_regla_absoluta",
+          "question": "¿Qué juicio une correctamente los dos programas estudiados?",
+          "options": [
+            "Ambos deben conservar sus contadores porque los enteros exteriores son siempre correctos.",
+            "Ambos deben usar un contador nuevo por llamada porque conservar historia siempre es un error.",
+            "contar_altos necesita independencia por consulta; registrar_visita necesita continuidad entre llamadas."
+          ],
+          "correctIndex": 2,
+          "explanation": "No juzgamos una organización sólo por su apariencia. Contrastamos el resultado con el contrato y con el contexto de uso. La misma conservación de historia que contaminaba una consulta es necesaria para numerar las visitas de una ejecución."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para transferir el método a otro fallo, empieza por el resultado requerido y la procedencia del programa. Formula hipótesis que produzcan predicciones comprobables. Elige datos que las separen; reduce conservando la reproducción; cambia una condición relevante a la vez. Después contrasta la reparación con el caso inicial y con una variación que pudiera refutar tu explicación. Si los datos no distinguen dos hipótesis, conserva la duda y busca otra observación."
+        }
+      ]
+    }
+  ]
+}
