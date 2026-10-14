@@ -1,0 +1,817 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__sustituir_una_relacion_sin_perder_condiciones",
+  "title": "Sustituir una relación sin perder condiciones",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una relación permite reemplazar una incógnita"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya sabes comprobar que un mismo par satisface dos condiciones y transformar una ecuación sin cambiar sus soluciones. Buscaremos ahora los pares mediante sustitución: expresar una incógnita con ayuda de la otra y usar esa relación en la segunda ecuación. Salvo una restricción del contexto, x e y pueden tomar valores racionales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera x − y = 3 y 2x + y = 12. La primera equivale a x = y + 3: sumar y en ambos miembros conserva su condición. Para cualquier par que cumpla esa primera relación, x y y + 3 son la misma cantidad. En la segunda podemos entonces reemplazar cada aparición de x por y + 3, sin cambiar si ese par la cumple. Queda 2(y + 3) + y = 12, mientras conservamos x = y + 3."
+        },
+        {
+          "type": "paragraph",
+          "text": "Distribuir y reunir da 3y + 6 = 12; restar seis y dividir por tres obtiene y = 2. La relación conservada da x = 5. En las originales, 5 − 2 = 3 y 2·5 + 2 = 12. Cualquier solución tendría que llevar a esos valores, y ese par cumple las dos condiciones: así justificamos tanto que funciona como que no faltan otras soluciones (Lang, 1971, pp. 53–55)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_relacion_entra_en_la_otra",
+          "prompt": "Trabaja con x − y = −2 y x + 2y = 7. Usa la primera para expresar x según y. Después reemplaza x en la segunda, reúne y resuelve. Escribe el coeficiente de y que queda a la izquierda, y los valores finales de x e y.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_relacion_entra_en_la_otra__expresion",
+              "type": "math_expression_input",
+              "label": "Expresión que reemplaza a x en función de y",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y-2"
+              }
+            },
+            {
+              "id": "una_relacion_entra_en_la_otra__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_y",
+                  "type": "numeric",
+                  "label": "Coeficiente de y tras reunir en el izquierdo",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor final de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor final de y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_y": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera relación da x = y − 2. Reemplazar x en la segunda produce (y − 2) + 2y = 7, o 3y − 2 = 7. De ahí y = 3 y luego x = 1. En las originales, 1 − 3 = −2 y 1 + 2·3 = 7: el mismo par cumple ambas.",
+            "incorrect": "Sumar y a x − y = −2 deja x = y − 2. Sustituye esa expresión completa donde aparece x, conserva el −2 y usa la primera relación para recuperar x después de calcular y."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conservar_la_relacion_al_sustituir",
+          "prompt": "Para ese mismo sistema, ¿qué descripción conserva las dos condiciones tras reemplazar x en la segunda?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conservar_la_relacion_al_sustituir__sistema",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Conservar sólo el valor encontrado para y, dejando que x tome cualquier racional."
+                },
+                {
+                  "id": "b",
+                  "label": "Conservar la primera relación despejada junto con la segunda, donde se reemplazó x."
+                },
+                {
+                  "id": "c",
+                  "label": "Cambiar las dos condiciones por x = y, porque ya hay una sola letra en la cuenta."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La segunda condición simplificada permite hallar y, y la primera sigue relacionando x con ese valor. Sin conservar esa relación, una elección incompatible de x podría cumplir la cuenta reducida pero fallar en el sistema original.",
+            "incorrect": "Hacer una cuenta con una sola incógnita no elimina la relación que conecta las dos cantidades. La sustitución sirve para resolverlas, no para dejar una de ellas libre por accidente."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir una relación sin imponer una única ruta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Suele convenir despejar una incógnita cuyo coeficiente sea uno o menos uno, porque requiere menos cuentas. También es válido dividir por cualquier coeficiente conocido distinto de cero. Esa elección es una estrategia; no convierte las otras rutas correctas en errores. Elige una que puedas justificar y conserva la relación usada para reconstruir el par."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si despejas y, reemplaza y donde aparezca; si despejas x, reemplaza x. La expresión que obtienes sigue dependiendo de la otra incógnita. Todavía no es un valor numérico independiente. Buscar otra ruta puede ayudarte a revisar el razonamiento y entender cómo se conectan las condiciones (Pólya, 1957, pp. 14–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "varios_despejes_correctos_para_elegir",
+          "prompt": "En el sistema 2x + y = 8 y x − 3y = −3, marca todos los despejes válidos de la ecuación que se indica.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "varios_despejes_correctos_para_elegir__rutas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "De 2x + y = 8: y = 8 − 2x."
+                },
+                {
+                  "id": "b",
+                  "label": "De x − 3y = −3: x = 3y − 3."
+                },
+                {
+                  "id": "c",
+                  "label": "De 2x + y = 8: x = 8 − 2y."
+                },
+                {
+                  "id": "d",
+                  "label": "De x − 3y = −3: y = (x + 3)/3."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "a resta 2x en ambos miembros. b suma 3y en ambos miembros. d reordena como 3y = x + 3 y divide por tres. Son rutas válidas; d no deja de serlo por incluir un cociente. c cambia los coeficientes y no expresa la primera condición.",
+            "incorrect": "Mantén qué cantidad multiplica cada coeficiente. Si despejas x de la primera, tendrías que dividir 8 − y por dos; no puedes intercambiar el papel de x e y."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_con_el_despeje_elegido",
+          "prompt": "Resuelve ese sistema por una de las rutas válidas. Escribe x e y y calcula los miembros izquierdos originales con el mismo par, en el orden de las ecuaciones dadas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_con_el_despeje_elegido__par",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor de 2x + y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor de x − 3y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una ruta usa y = 8 − 2x en la segunda: x − 3(8 − 2x) = −3, de donde 7x − 24 = −3 y x = 3. Después y = 2. Otra usa x = 3y − 3 en la primera y obtiene 7y − 6 = 8, con el mismo par. Las comprobaciones originales dan ocho y menos tres.",
+            "incorrect": "Conserva los paréntesis al sustituir una expresión de varios términos. Después recupera la otra incógnita y comprueba ambas condiciones originales, no sólo la ecuación reducida."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reemplazar una expresión completa, también con fracciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un despeje puede contener sumas, restas o fracciones. Al reemplazar una incógnita, esa expresión ocupa el lugar completo de la cantidad que nombraba. Los paréntesis conservan qué términos se multiplican o restan juntos. Los denominadores que usaremos siguen siendo datos constantes distintos de cero."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sustituir_una_relacion_fraccionaria",
+          "prompt": "Resuelve x/2 + y = 5/2 junto con x − y = 1. Usa únicamente la primera condición para escribir una expresión de y en función de x; después usa ambas para hallar el par. Comprueba los miembros izquierdos originales con esos valores.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sustituir_una_relacion_fraccionaria__despeje",
+              "type": "math_expression_input",
+              "label": "Expresión de y en función de x, usando sólo la primera condición",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "5/2-x/2"
+              }
+            },
+            {
+              "id": "sustituir_una_relacion_fraccionaria__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor de x/2 + y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor de x − y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "7/3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "4/3"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera da y = 5/2 − x/2. Reemplazar y en la segunda deja x − (5/2 − x/2) = 1, o (3/2)x − 5/2 = 1. Así x = 7/3 y luego y = 4/3. En las originales, 7/6 + 4/3 = 5/2 y 7/3 − 4/3 = 1. Los paréntesis hacen que restar −x/2 aporte +x/2.",
+            "incorrect": "Despejar y requiere restar x/2, sin alterar el 5/2. En x − y, restar toda la expresión de y cambia el signo de sus dos términos. Usa fracciones exactas y vuelve a las ecuaciones originales."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_resta_de_toda_la_expresion",
+          "prompt": "En otro sistema, la primera relación es 2x + y = 7 y la segunda x − 3y = 1. Se despejó y y se reemplazó en la segunda como x − 3(7 − 2x) = 1. ¿Qué expansión conserva esa condición?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_resta_de_toda_la_expresion__expansion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "x − 21 + 6x = 1."
+                },
+                {
+                  "id": "b",
+                  "label": "x − 7 + 2x = 1."
+                },
+                {
+                  "id": "c",
+                  "label": "x − 21 − 6x = 1."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El factor −3 multiplica a siete y también a −2x: aporta −21 y +6x. Por eso queda x − 21 + 6x = 1. La relación y = 7 − 2x sigue conservada para recuperar y una vez resuelta la cuenta.",
+            "incorrect": "Distribuye el factor completo, con su signo. El producto de −3 por −2x es +6x; omitir el tres o cambiar sólo un término modificaría la condición."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuando la cuenta reducida es identidad o contradicción"
+        },
+        {
+          "type": "paragraph",
+          "text": "No todos los sistemas determinan un único par. Con x + y = 6 y 2x + 2y = 12, la primera da x = 6 − y y la segunda se convierte en 2(6 − y) + 2y = 12. Al calcular queda 12 = 12. Esa identidad no deja libre cualquier par: todavía se exige x = 6 − y. Cada racional elegido para y produce un par de esa relación, de modo que hay infinitos pares, pero todos deben sumar seis."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la segunda condición fuera 2x + 2y = 13, la misma sustitución dejaría 12 = 13. Ningún par puede cumplir esa comparación y la relación original a la vez. La cuenta distingue entre una condición repetida y una contradicción; no autoriza a borrar la ecuación conservada (Lang, 1971, pp. 54–55)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_resultados_al_conservar_una_relacion",
+          "prompt": "Clasifica cada sistema en el dominio de los pares racionales. A: x − 2y = 4 y 3x − 6y = 12. B: x − 2y = 4 y 3x − 6y = 15. C: x − 2y = 4 y 3x − 5y = 12. En cada caso conserva la primera relación al sustituir en la segunda.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tres_resultados_al_conservar_una_relacion__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Conjunto de soluciones de A",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un par racional"
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Ningún par racional"
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Infinitos pares racionales"
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Conjunto de soluciones de B",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un par racional"
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Ningún par racional"
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Infinitos pares racionales"
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Conjunto de soluciones de C",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un par racional"
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Ningún par racional"
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Infinitos pares racionales"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "exact_text",
+                    "expected": "infinitos"
+                  },
+                  "b": {
+                    "type": "exact_text",
+                    "expected": "ninguno"
+                  },
+                  "c": {
+                    "type": "exact_text",
+                    "expected": "unico"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las tres primeras relaciones dan x = 2y + 4. A deja 12 = 12 y conserva los infinitos pares que cumplen esa relación. B deja 12 = 15 y no admite ninguno. C da y + 12 = 12, de donde y = 0 y x = 4: un solo par. Que y valga cero es una solución normal, no significa que no exista solución.",
+            "incorrect": "Reemplaza x por 2y + 4 en cada segunda ecuación, distribuye y reúne. Una identidad deja la relación conservada; una contradicción impide cualquier par; un coeficiente no nulo permite hallar y y reconstruir x."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_identidad_no_permite_cualquier_par",
+          "prompt": "Para el sistema A anterior, se propone y = −1/2. Usa la relación conservada para calcular x y decide qué descripción expresa el conjunto completo de soluciones racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_identidad_no_permite_cualquier_par__ejemplo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x para el y propuesto",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "una_identidad_no_permite_cualquier_par__conjunto",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Todos los pares de racionales, sin relación entre x e y."
+                },
+                {
+                  "id": "b",
+                  "label": "Todos los pares racionales que cumplen x − 2y = 4."
+                },
+                {
+                  "id": "c",
+                  "label": "Sólo el par que utiliza el y propuesto en esta actividad."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con y = −1/2, x = 2·(−1/2) + 4 = 3. Ese par cumple x − 2y = 4 y 3x − 6y = 12. Es un ejemplo de la familia: para cada otro racional permitido de y, la relación determina su x. No se limita a este par ni se extiende a pares que no cumplen la relación.",
+            "incorrect": "La igualdad 12 = 12 surgió después de usar x = 2y + 4. No olvides esa condición. Elegir un valor de y permite construir un ejemplo, pero no convierte ese ejemplo en el único."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Localizar un reemplazo incorrecto y recuperar el método"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una sustitución debe usar una igualdad entre la incógnita que reemplazas y su expresión. No basta con que esa expresión aparezca en algún despeje. Si un cálculo da un par, compruébalo en las dos ecuaciones originales: puede cumplir una y fallar en la otra. Ese contraste ayuda a localizar qué condición se perdió, en vez de repetir sin cambios la misma cuenta (Pólya, 1957, pp. 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reemplazar_la_incognita_equivocada",
+          "prompt": "Para x + y = 9 y 3x − 2y = 7, un apunte despeja x = 9 − y pero cambia la segunda condición a 3x − 2(9 − y) = 7. Junto con la primera obtiene el par propuesto x = 7, y = 2. Identifica el primer error y calcula los miembros izquierdos originales con esa propuesta.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reemplazar_la_incognita_equivocada__diagnostico",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El despeje de x es correcto, pero se reemplazó y por una expresión que la primera relación identifica con x."
+                },
+                {
+                  "id": "b",
+                  "label": "El primer despeje debía ser x = 9 + y, por lo que el error está antes de sustituir."
+                },
+                {
+                  "id": "c",
+                  "label": "No hay error: cumplir la primera condición basta para resolver el sistema."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            },
+            {
+              "id": "reemplazar_la_incognita_equivocada__propuesta",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor original de x + y con el par propuesto",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor original de 3x − 2y con el par propuesto",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "9"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "17"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El despeje x = 9 − y es válido, pero 9 − y debe reemplazar x, no y. La propuesta cumple 7 + 2 = 9, mientras que 3·7 − 2·2 = 17 y no siete. La sustitución correcta es 3(9 − y) − 2y = 7. También se podría despejar y = 9 − x y reemplazar y correctamente.",
+            "incorrect": "Pregunta qué incógnita es igual a la expresión que usas. Después evalúa el mismo par en las originales: una comprobación fallida no se corrige ignorando esa ecuación."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_la_sustitucion_sin_cadena",
+          "prompt": "Resuelve (x − 2y)/3 = 1 junto con x + y = −3 por una ruta que puedas justificar. Escribe el par y comprueba ambos miembros izquierdos originales. Las incógnitas son racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_la_sustitucion_sin_cadena__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor de (x − 2y)/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor de x + y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una ruta multiplica la primera por tres: x − 2y = 3, de donde x = 2y + 3. Sustituir en la segunda da 3y + 3 = −3, así que y = −2 y x = −1. Las originales dan (−1 − 2·(−2))/3 = 1 y −1 + (−2) = −3. Los valores negativos están permitidos en este dominio.",
+            "incorrect": "Multiplicar por tres debe afectar a ambos miembros de la primera ecuación. Conserva el signo de −3 en la segunda y usa la relación despejada para recuperar la otra incógnita. No cambies un valor negativo por su magnitud."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Volver de las dos cantidades al contexto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un montaje utiliza bloques completos de dos tamaños. Cada bloque pequeño tiene masa de dos kilogramos y cada grande de tres. Se necesitan diez bloques en total y la masa total exacta debe ser veinticuatro kilogramos. Llamamos x al número de bloques pequeños e y al de grandes. Ambos son enteros no negativos; por el total de diez, ninguno puede superar diez."
+        },
+        {
+          "type": "paragraph",
+          "text": "Las dos incógnitas tienen la misma unidad de conteo, pero cada una aporta una masa distinta. Una ecuación expresará el total de bloques y otra la masa total. Seleccionar unidades y conservar qué cantidad representa cada letra permite conectar el modelo con los datos, como en los problemas con dos incógnitas de la referencia (Lang, 1971, pp. 55–56)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_condiciones_para_bloques_y_masa",
+          "prompt": "Escribe una ecuación para el total de bloques y otra para la masa total, usando x para los pequeños e y para los grandes. Resuelve luego esas dos condiciones y escribe los conteos obtenidos. Revisa que sean enteros del dominio.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_condiciones_para_bloques_y_masa__conteo",
+              "type": "math_expression_input",
+              "label": "Ecuación que expresa sólo el total de bloques",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "x+y=10"
+              }
+            },
+            {
+              "id": "dos_condiciones_para_bloques_y_masa__masa",
+              "type": "math_expression_input",
+              "label": "Ecuación que expresa sólo la masa total, en kilogramos",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2x+3y=24"
+              }
+            },
+            {
+              "id": "dos_condiciones_para_bloques_y_masa__cantidades",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "pequenos",
+                  "type": "numeric",
+                  "label": "Número de bloques pequeños",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "grandes",
+                  "type": "numeric",
+                  "label": "Número de bloques grandes",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "pequenos": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "grandes": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las condiciones son x + y = 10 y 2x + 3y = 24. De la primera, x = 10 − y; sustituir en la segunda da 20 − 2y + 3y = 24, de donde y = 4 y x = 6. Se comprueban diez bloques y 12 + 12 = 24 kg. Los conteos son enteros no negativos dentro del límite dado.",
+            "incorrect": "No sumes una masa con un número de bloques como si fueran la misma cantidad. El primer total cuenta bloques; el segundo multiplica cada conteo por su masa por bloque. Conserva cuál tamaño nombra cada letra."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_restriccion_adicional_sin_borrar_los_totales",
+          "prompt": "Después se informa que sólo hay tres bloques grandes disponibles. Se mantienen los dos totales originales y los bloques deben seguir completos. ¿Qué conclusión respeta ahora todas las condiciones?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_restriccion_adicional_sin_borrar_los_totales__conclusion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Se puede tomar un bloque grande menos sin revisar el número de bloques ni la masa total."
+                },
+                {
+                  "id": "b",
+                  "label": "No hay montaje posible con todos los datos: el par que exigen los dos totales rebasa la disponibilidad."
+                },
+                {
+                  "id": "c",
+                  "label": "Dividir un bloque grande resuelve el problema sin modificar el dominio de bloques completos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los dos totales determinan el único par de seis bloques pequeños y cuatro grandes. La nueva disponibilidad exige y ≤ 3 y ese par no la cumple. No existe un segundo par que mantenga ambos totales. Quitar o dividir un bloque cambiaría una condición; no es una solución del problema que se planteó.",
+            "incorrect": "La condición adicional debe cumplirse junto con las anteriores. Revisa el conteo de grandes que el sistema determina y distingue respetar los datos de reemplazarlos por otros."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Resolver por sustitución conserva una relación, reduce la otra y reconstruye los mismos valores para ambas incógnitas. La vuelta a las originales comprueba el par; la equivalencia de los pasos justifica que no se perdió otro. Si aparece identidad o contradicción, interpreta el conjunto completo y la relación que permanece. Si hay contexto, revisa después unidades, dominio y datos adicionales (Gelfand & Shen, 1993, pp. 94–95; Pólya, 1957, pp. 14–15)."
+        }
+      ]
+    }
+  ]
+}

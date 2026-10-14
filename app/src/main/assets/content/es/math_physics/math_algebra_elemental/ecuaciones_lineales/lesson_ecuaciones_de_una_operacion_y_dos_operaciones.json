@@ -1,0 +1,994 @@
+{
+  "id": "math_algebra_elemental__ecuaciones_lineales__ecuaciones_de_una_operacion_y_dos_operaciones",
+  "title": "Ecuaciones de una operación y dos operaciones",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir la operación que deshace una suma"
+        },
+        {
+          "type": "paragraph",
+          "text": "En esta lección practicarás ecuaciones cuya incógnita admite todos los números racionales, salvo que un contexto indique otra restricción. Los coeficientes que multiplican a la incógnita serán constantes racionales distintas de cero. Ya conocemos la razón del método: realizar una misma operación reversible en ambos miembros conserva exactamente las soluciones (Gelfand & Shen, 1993, pp. 94–95). Ahora debes elegir y ejecutar los pasos, sin depender siempre de una cadena escrita."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para resolver x + 7 = −3, restamos siete a ambos miembros. Queda x = −3 − 7 = −10. La comprobación utiliza la ecuación original: −10 + 7 = −3. El signo de la solución se obtiene al calcular; una incógnita racional puede ser negativa."
+        },
+        {
+          "type": "paragraph",
+          "text": "En x − 7 = −3 la operación que cancela la resta es sumar siete. Así, x = −3 + 7 = 4. Mira qué se hace con la incógnita: restar y sumar una misma cantidad son operaciones inversas. En x + b = c podemos sumar el opuesto de b a ambos miembros, también cuando b es negativo."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inversa_de_una_suma_fraccionaria",
+          "prompt": "Resuelve p + 2/3 = −1/2. Escribe la cantidad que sumarás a ambos miembros para dejar p sola y la solución obtenida. Después compruébala en la igualdad original.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "inversa_de_una_suma_fraccionaria__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cantidad",
+                  "type": "numeric",
+                  "label": "Cantidad sumada a ambos miembros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución para p",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cantidad": {
+                    "type": "numeric",
+                    "expected": "-2/3"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "-7/6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se suma −2/3 a los dos miembros. Entonces p = −1/2 − 2/3 = −7/6. La comprobación da −7/6 + 2/3 = −7/6 + 4/6 = −1/2. La misma suma aplicada a ambos miembros permite regresar restando −2/3.",
+            "incorrect": "Busca el opuesto de +2/3, no su inverso multiplicativo. Conserva el signo de −1/2 y utiliza un denominador común antes de sumar. La comprobación debe volver a p + 2/3 = −1/2."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_sumas_y_restas_sin_cadena",
+          "prompt": "Resuelve cada ecuación en los racionales y escribe su solución: x + 9 = −4; y − 7/3 = −5/6; z + 5/4 = 5/4. Elige las operaciones por tu cuenta y comprueba cada resultado en su ecuación original.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_sumas_y_restas_sin_cadena__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Solución de x + 9 = −4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Solución de y − 7/3 = −5/6",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Solución de z + 5/4 = 5/4",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-13"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar nueve da x = −13. Sumar 7/3 da y = −5/6 + 14/6 = 9/6 = 3/2. Restar 5/4 da z = 0. En las originales: −13 + 9 = −4; 3/2 − 7/3 = −5/6; 0 + 5/4 = 5/4. Una solución puede ser negativa, fraccionaria o cero.",
+            "incorrect": "Distingue la suma de nueve de la resta de 7/3. Cancela cada operación aplicando su inversa a ambos miembros. Si las dos cantidades constantes son iguales en z + 5/4 = 5/4, restarlas deja cero; no queda 5/4."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deshacer un producto o un cociente"
+        },
+        {
+          "type": "paragraph",
+          "text": "En −(3/4)x = 9/8 dividimos los dos miembros por −3/4. Esto equivale a multiplicarlos por su inverso −4/3: x = (9/8)(−4/3) = −3/2. El inverso conserva el signo del número al invertir la fracción. La comprobación da (−3/4)(−3/2) = 9/8 (Lang, 1971, pp. 42–43)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En x/5 = −2/3, multiplicar ambos miembros por cinco deja x = −10/3. En −x = 2, el coeficiente es −1: dividir ambos miembros por −1 da x = −2. No confundas el opuesto que cancela una suma con el inverso que convierte un factor en uno. Los factores de esta lección son no nulos, así que sus inversos están definidos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "inverso_de_un_coeficiente_negativo",
+          "prompt": "Resuelve (−5/6)r = −7/3 multiplicando ambos miembros por el inverso del coeficiente. Escribe ese factor, la solución para r y el valor del miembro izquierdo original con ella.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "inverso_de_un_coeficiente_negativo__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "factor",
+                  "type": "numeric",
+                  "label": "Factor multiplicado en ambos miembros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución para r",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Valor de (−5/6)r con la solución",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "factor": {
+                    "type": "numeric",
+                    "expected": "-6/5"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "14/5"
+                  },
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "-7/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El factor es −6/5, pues (−6/5)(−5/6) = 1. El derecho se convierte en (−7/3)(−6/5) = 14/5. La sustitución comprueba (−5/6)(14/5) = −7/3. Una solución positiva puede proceder de dividir dos cantidades negativas.",
+            "incorrect": "Conserva el signo negativo al invertir −5/6. Aplica ese factor también al miembro derecho y reduce el producto de fracciones. Comprueba con el coeficiente original, no con el inverso."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_productos_y_cocientes",
+          "prompt": "Resuelve sin una cadena indicada: 5u = −7; −v = 3/2; w/(−4) = −3/8; (−2/5)z = 0. Escribe cada solución y revísala por sustitución.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_productos_y_cocientes__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "u",
+                  "type": "numeric",
+                  "label": "Solución de 5u = −7",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "v",
+                  "type": "numeric",
+                  "label": "Solución de −v = 3/2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "w",
+                  "type": "numeric",
+                  "label": "Solución de w/(−4) = −3/8",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Solución de (−2/5)z = 0",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "u": {
+                    "type": "numeric",
+                    "expected": "-7/5"
+                  },
+                  "v": {
+                    "type": "numeric",
+                    "expected": "-3/2"
+                  },
+                  "w": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dividir por cinco da u = −7/5; dividir por −1 da v = −3/2. Multiplicar por −4 da w = (−3/8)(−4) = 3/2. Dividir cero por −2/5 da z = 0. En las originales los resultados son −7, 3/2, −3/8 y cero, respectivamente. El coeficiente −2/5 es no nulo: su división determina z = 0.",
+            "incorrect": "Identifica si la incógnita está multiplicada o dividida por la constante. En −v está multiplicada por −1. En el último caso se divide por el coeficiente −2/5, nunca por la solución cero."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deshacer dos operaciones en un orden útil"
+        },
+        {
+          "type": "paragraph",
+          "text": "En −4x + 3 = 11, el miembro izquierdo multiplica x por −4 y después suma tres. Una ruta breve deshace primero la suma: restar tres a ambos miembros deja −4x = 8. Después dividimos por −4 y obtenemos x = −2. La comprobación vuelve al principio: −4(−2) + 3 = 8 + 3 = 11."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para ax + b = c, donde a, b y c son constantes racionales y a es distinta de cero, esa ruta deja primero ax = c − b y después x = (c − b)/a. El resultado es racional. Cada paso conserva las soluciones; la forma final muestra una única, incluso si el valor obtenido es negativo o cero (Lang, 1971, pp. 37–38, 42–45). Las letras a, b y c nombran datos fijos: aquí sólo x es la incógnita."
+        },
+        {
+          "type": "paragraph",
+          "text": "No es obligatorio empezar siempre restando la constante. Dividir primero por a también es válido si se divide todo el miembro izquierdo y todo el derecho. Elegimos el orden que facilita el cálculo y verificamos cada paso; una regla de elección práctica no convierte los otros caminos reversibles en errores."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "operacion_que_aisla_un_producto",
+          "prompt": "En 3r − 5 = 10 queremos que, tras un único paso, el miembro izquierdo sea exactamente 3r, sin término constante. ¿Qué operación en ambos miembros logra ese objetivo?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "operacion_que_aisla_un_producto__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sumar cinco a ambos miembros."
+                },
+                {
+                  "id": "b",
+                  "label": "Restar cinco a ambos miembros."
+                },
+                {
+                  "id": "c",
+                  "label": "Dividir ambos miembros por tres."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Sumar cinco deja 3r = 15, y luego dividir por tres da r = 5. Dividir primero por tres sería una transformación válida, pero dejaría r − 5/3 = 10/3: no cumple el objetivo de conservar exactamente 3r como miembro izquierdo.",
+            "incorrect": "Busca qué cancela el término −5. La pregunta pide una forma concreta después del primer paso. Una operación reversible puede ser válida y, aun así, no producir esa forma."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cadena_con_dos_operaciones_racionales",
+          "prompt": "Resuelve (2/3)t − 5/4 = 1/12. Primero suma una cantidad para dejar sólo el producto (2/3)t; después multiplica por el inverso de su coeficiente. Escribe esa suma, el derecho tras sumarla, el factor posterior, la solución y el valor del miembro izquierdo original.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cadena_con_dos_operaciones_racionales__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "suma",
+                  "type": "numeric",
+                  "label": "Cantidad sumada a ambos miembros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Miembro derecho después de la suma",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "factor",
+                  "type": "numeric",
+                  "label": "Factor que convierte el coeficiente 2/3 en uno",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución para t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "comprobacion",
+                  "type": "numeric",
+                  "label": "Valor de (2/3)t − 5/4 con la solución",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "suma": {
+                    "type": "numeric",
+                    "expected": "5/4"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "4/3"
+                  },
+                  "factor": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "comprobacion": {
+                    "type": "numeric",
+                    "expected": "1/12"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Sumamos 5/4: (2/3)t = 1/12 + 15/12 = 4/3. Multiplicamos ambos miembros por 3/2 y queda t = 2. En la original, (2/3) × 2 − 5/4 = 16/12 − 15/12 = 1/12. Se deshizo primero la resta y luego el producto.",
+            "incorrect": "Para cancelar −5/4 suma +5/4, conservando el 1/12 del derecho. El inverso de 2/3 es 3/2. La comprobación debe incluir tanto el producto como la resta que aparecían originalmente."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Signos, coeficiente uno y solución cero"
+        },
+        {
+          "type": "paragraph",
+          "text": "En −x − 2 = 5, sumar dos a ambos miembros deja −x = 7. El coeficiente de x es −1: dividir por −1 da x = −7. Comprueba: −(−7) − 2 = 5. En x − 2 = 5, en cambio, sumar dos ya deja x = 7 porque el coeficiente es uno. Escribir o no escribir ese uno no cambia el producto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si en ax + b = c resulta c − b = 0 y a es no nula, dividir por a da x = 0. No se divide por la solución: se divide por el coeficiente conocido. El cero puede ser una solución perfectamente válida."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_operaciones_sin_cadena_indicada",
+          "prompt": "Resuelve en los racionales: 4x + 7 = −5; −y + 3 = 3; z − 3/2 = −7/4; (−3/5)r − 2 = 1. Escribe cada solución, eligiendo por tu cuenta las operaciones, y comprueba en las originales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_operaciones_sin_cadena_indicada__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Solución de 4x + 7 = −5",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Solución de −y + 3 = 3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Solución de z − 3/2 = −7/4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "r",
+                  "type": "numeric",
+                  "label": "Solución de (−3/5)r − 2 = 1",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "-1/4"
+                  },
+                  "r": {
+                    "type": "numeric",
+                    "expected": "-5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se obtiene 4x = −12 y x = −3; −y = 0 y y = 0; z = −7/4 + 6/4 = −1/4; (−3/5)r = 3 y r = −5. Las comprobaciones son −12 + 7 = −5; −0 + 3 = 3; −1/4 − 6/4 = −7/4; (−3/5)(−5) − 2 = 3 − 2 = 1.",
+            "incorrect": "Revisa por separado la constante y el coeficiente. En −y, dividir por −1 mantiene cero como resultado. En la ecuación de z el coeficiente es uno; basta deshacer la resta. En la de r, sumar dos deja un producto con coeficiente negativo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficiente_fraccionario_y_solucion_negativa",
+          "prompt": "Resuelve (−7/4)q + 2/3 = 11/6 sin una cadena indicada. Escribe la solución y calcula cada miembro original con ella. El producto con q y la solución pueden tener signos distintos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficiente_fraccionario_y_solucion_negativa__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución para q",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Miembro izquierdo original con la solución",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Miembro derecho original",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "-2/3"
+                  },
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "11/6"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "11/6"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar 2/3 deja (−7/4)q = 11/6 − 4/6 = 7/6. Dividir por −7/4 da q = (7/6)(−4/7) = −2/3. El producto de dos negativos vale 7/6; al sumar 2/3 se obtiene 11/6. La igualdad original queda comprobada.",
+            "incorrect": "El derecho del producto es positivo después de restar 2/3, mientras que su coeficiente es negativo. Conserva el signo al invertir −7/4. Sustituye luego en los dos miembros originales."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Diagnosticar el primer paso que falla"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando una comprobación falla, vuelve a los pasos y localiza el primero que cambió la condición o se calculó mal. Una operación posterior puede estar bien calculada sobre una ecuación que ya era incorrecta. Reparar sólo el último número no explica el error inicial."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "division_que_pierde_un_signo",
+          "prompt": "Un apunte parte de −3t + 4 = 10. Escribe primero −3t = 6 y después t = 2. Señala el primer error, resuelve correctamente la ecuación original y calcula su miembro izquierdo con la solución corregida.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "division_que_pierde_un_signo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El primer paso: había que sumar cuatro en vez de restarlos."
+                },
+                {
+                  "id": "b",
+                  "label": "El segundo paso: al dividir por el coeficiente −3 se perdió su signo."
+                },
+                {
+                  "id": "c",
+                  "label": "No hay error porque seis dividido por tres es dos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            },
+            {
+              "id": "division_que_pierde_un_signo__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución corregida para t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "comprobacion",
+                  "type": "numeric",
+                  "label": "Miembro izquierdo de −3t + 4 = 10 con la solución corregida",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "comprobacion": {
+                    "type": "numeric",
+                    "expected": "10"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar cuatro está bien y deja −3t = 6. El divisor debe ser −3: t = 6/(−3) = −2. En la original, −3(−2) + 4 = 10. La propuesta del apunte, t = 2, daría −2 en el miembro izquierdo y no cumple.",
+            "incorrect": "Revisa el coeficiente completo, incluido su signo. No hay que corregir la resta que produjo seis: el fallo aparece al deshacer el producto por −3."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "multiplicar_sin_olvidar_la_constante",
+          "prompt": "Otro apunte intenta resolver (1/2)u + 3 = 7. Dice «multiplico ambos miembros por dos», escribe u + 3 = 14 y luego u = 11. Identifica el primer error. Escribe qué constante debía quedar junto a u al multiplicar todo el miembro izquierdo, la solución correcta y el valor del miembro izquierdo original.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "multiplicar_sin_olvidar_la_constante__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "En u + 3 = 14: faltó multiplicar también la constante tres por dos."
+                },
+                {
+                  "id": "b",
+                  "label": "En u = 11: catorce menos tres no es once."
+                },
+                {
+                  "id": "c",
+                  "label": "Multiplicar una ecuación por dos es inválido aunque se haga en los dos miembros."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            },
+            {
+              "id": "multiplicar_sin_olvidar_la_constante__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Constante junto a u después de multiplicar todo el izquierdo por dos",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución correcta para u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "comprobacion",
+                  "type": "numeric",
+                  "label": "Valor de (1/2)u + 3 con la solución correcta",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "comprobacion": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplicar ambos miembros por dos produce u + 6 = 14; después restar seis da u = 8. También podemos restar tres primero: (1/2)u = 4 y u = 8. En la original, (1/2) × 8 + 3 = 7. El cálculo 14 − 3 = 11 era correcto, pero partía de una ecuación mal transformada.",
+            "incorrect": "La multiplicación actúa sobre el miembro completo: 2[(1/2)u + 3] = u + 6. Distingue el primer paso incorrecto de una cuenta posterior que sí está bien calculada."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reconocer más de una ruta válida"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dividir al principio puede dejar una fracción junto a la incógnita; eso no invalida la ruta. Para comparar dos caminos, revisa la operación aplicada al miembro entero, la constante resultante y la solución final. Distribuir un factor numérico o deshacer primero ese factor también permite abordar un grupo ya conocido (Lang, 1971, pp. 37–38)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_cadenas_reversibles",
+          "prompt": "Selecciona todas las cadenas válidas para resolver (−2/3)r + 5/6 = −1/2. Cada flecha describe el resultado de realizar la operación indicada en ambos miembros.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_cadenas_reversibles__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Restar 5/6: (−2/3)r = −4/3. Multiplicar por −3/2: r = 2."
+                },
+                {
+                  "id": "b",
+                  "label": "Multiplicar por −3/2: r − 5/4 = 3/4. Sumar 5/4: r = 2."
+                },
+                {
+                  "id": "c",
+                  "label": "Multiplicar por −3/2: r + 5/6 = 3/4. Restar 5/6: r = −1/12."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las dos primeras cadenas son válidas. En la segunda, −3/2 también multiplica al término 5/6, que se convierte en −5/4. La tercera omite ese producto. Para r = 2, la original da −4/3 + 5/6 = −1/2. Las dos cadenas válidas conservan todas las soluciones y terminan en r = 2.",
+            "incorrect": "No descartes una cadena sólo porque divide o multiplica antes de eliminar la constante. Calcula el efecto sobre cada término del miembro izquierdo; dejar el 5/6 intacto al multiplicar todo el miembro cambia la condición."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_operaciones_con_un_grupo",
+          "prompt": "Resuelve (−5/2)(q + 3/5) = −1 en los racionales. Elige entre deshacer primero el factor exterior o distribuirlo y resolver la forma resultante. Escribe la solución y calcula el miembro izquierdo original con ella.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_operaciones_con_un_grupo__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución para q",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "comprobacion",
+                  "type": "numeric",
+                  "label": "Valor de (−5/2)(q + 3/5) con la solución",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "-1/5"
+                  },
+                  "comprobacion": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dividir por −5/2 deja q + 3/5 = 2/5; restar 3/5 da q = −1/5. Si distribuyes primero, obtienes (−5/2)q − 3/2 = −1; sumar 3/2 y dividir por −5/2 da el mismo resultado. En la original, (−5/2)(−1/5 + 3/5) = (−5/2)(2/5) = −1.",
+            "incorrect": "El factor exterior multiplica todo el grupo. Si lo deshaces primero, el miembro izquierdo queda q + 3/5; si distribuyes, la constante se convierte en −3/2. Conserva una ruta coherente y comprueba en el grupo original."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Práctica acumulada: decidir sin una ruta indicada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora están mezcladas sumas, restas, productos, cocientes y combinaciones. Antes de calcular, identifica la última operación que se hace con la incógnita y el coeficiente con su signo. Recupera también los grupos: restar un número negativo equivale a sumar su opuesto. Elige un camino reversible y comprueba el resultado en la escritura original."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "practica_acumulada_con_signos_y_fracciones",
+          "prompt": "Resuelve cada ecuación sin una cadena indicada: x − (−4) = 1/3; (−7/3)y = 14/9; (−1/2)z + 4/3 = 1/6. Escribe las soluciones y comprueba cada una en su original.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "practica_acumulada_con_signos_y_fracciones__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Solución de x − (−4) = 1/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Solución de (−7/3)y = 14/9",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Solución de (−1/2)z + 4/3 = 1/6",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-11/3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-2/3"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "7/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "x − (−4) es x + 4: restar cuatro da x = 1/3 − 12/3 = −11/3. Dividir por −7/3 da y = −2/3. En la tercera, restar 4/3 deja (−1/2)z = −7/6 y dividir por −1/2 da z = 7/3. Las originales quedan: −11/3 − (−4) = 1/3; (−7/3)(−2/3) = 14/9; −7/6 + 8/6 = 1/6.",
+            "incorrect": "En la primera no cambies x − (−4) por x − 4. En las otras, conserva los coeficientes negativos completos al dividir. La última requiere deshacer tanto una suma como un producto."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "practica_acumulada_con_cociente_y_cero",
+          "prompt": "Resuelve por tu cuenta: r/6 − 5/8 = −1/8; −s − 7/4 = −5/4; (5/2)t − 3 = −3. Escribe las soluciones y comprueba en las originales, sin redondear los valores racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "practica_acumulada_con_cociente_y_cero__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "r",
+                  "type": "numeric",
+                  "label": "Solución de r/6 − 5/8 = −1/8",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "s",
+                  "type": "numeric",
+                  "label": "Solución de −s − 7/4 = −5/4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "t",
+                  "type": "numeric",
+                  "label": "Solución de (5/2)t − 3 = −3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "r": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "s": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "t": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Sumar 5/8 deja r/6 = 4/8 = 1/2; multiplicar por seis da r = 3. Sumar 7/4 deja −s = 2/4 = 1/2; dividir por −1 da s = −1/2. Sumar tres deja (5/2)t = 0; dividir por 5/2 da t = 0. Las originales comparan 3/6 − 5/8 = −1/8; −(−1/2) − 7/4 = −5/4; (5/2) × 0 − 3 = −3.",
+            "incorrect": "Después de cancelar la constante, revisa si debes multiplicar por seis, dividir por −1 o dividir por 5/2. Mantén las fracciones exactas. Que el derecho de un producto sea cero no impide dividir por su coeficiente no nulo."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir el método a una regla de lectura"
+        },
+        {
+          "type": "paragraph",
+          "text": "En un banco de pruebas se programa un indicador con esta regla: toma la temperatura real expresada en grados Celsius, multiplica su valor numérico por 3/2 y después resta cuatro. El resultado se muestra también en grados Celsius. Esta regla se ha fijado para el ensayo; no describe una conversión entre escalas. Llamamos t al valor numérico de la temperatura real. El ensayo admite temperaturas racionales entre −20 y 20 grados Celsius, incluidos ambos extremos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "temperatura_a_partir_de_una_lectura",
+          "prompt": "El indicador del ensayo marca −10. Construye la condición a partir de su regla y resuélvela mediante pasos reversibles, sin una cadena indicada. Escribe la temperatura real t, en grados Celsius, y la lectura que produce al comprobarla. Elige además qué justifica que la solución sea única en el dominio indicado.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "temperatura_a_partir_de_una_lectura__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "temperatura",
+                  "type": "numeric",
+                  "label": "Temperatura real t, en grados Celsius",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "lectura",
+                  "type": "numeric",
+                  "label": "Lectura del indicador con esa temperatura, en grados Celsius",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "temperatura": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "lectura": {
+                    "type": "numeric",
+                    "expected": "-10"
+                  }
+                }
+              }
+            },
+            {
+              "id": "temperatura_a_partir_de_una_lectura__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Una cadena reversible llega a una igualdad con la incógnita aislada; sustituir la temperatura propuesta en la regla la comprueba."
+                },
+                {
+                  "id": "b",
+                  "label": "La sustitución de la temperatura propuesta basta por sí sola para descartar cualquier otra temperatura."
+                },
+                {
+                  "id": "c",
+                  "label": "Una temperatura negativa no puede ser solución, aunque el dominio la permita."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La condición es (3/2)t − 4 = −10. Sumar cuatro da (3/2)t = −6; dividir por 3/2 da t = −4. La comprobación produce (3/2)(−4) − 4 = −6 − 4 = −10. −4 es racional y está entre −20 y 20, así que pertenece al dominio indicado. La cadena reversible termina en una igualdad con una única solución; la sustitución confirma que esa temperatura produce la lectura buscada.",
+            "incorrect": "Respeta el orden de la regla: primero el producto por 3/2 y después la resta de cuatro. Construye la igualdad con la lectura −10, resuélvela y vuelve a la regla original. La comprobación acredita una propuesta; la cadena reversible hasta una sola temperatura justifica que no faltan otras."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La fluidez consiste en reconocer la operación, elegir una inversa definida, aplicarla al miembro completo y calcular con cuidado. Una comprobación en la original puede detectar un signo perdido o una constante olvidada. La justificación de los pasos explica por qué la solución encontrada es la única; en un contexto, también debemos respetar el dominio y las unidades."
+        }
+      ]
+    }
+  ]
+}

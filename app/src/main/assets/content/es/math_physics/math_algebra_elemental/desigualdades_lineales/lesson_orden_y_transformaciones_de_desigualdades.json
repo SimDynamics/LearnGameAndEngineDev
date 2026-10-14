@@ -1,0 +1,822 @@
+{
+  "id": "math_algebra_elemental__desigualdades_lineales__orden_y_transformaciones_de_desigualdades",
+  "title": "Orden y transformaciones de desigualdades",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una desigualdad expresa una condición de orden"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya has trabajado con dominios y ecuaciones equivalentes. Ahora usaremos condiciones de orden: a < b significa que a es menor que b, y a > b que es mayor. a ≤ b admite también a = b; a ≥ b admite también esa igualdad. Los símbolos < y > expresan desigualdades estrictas, mientras que ≤ y ≥ incluyen el caso de igualdad. Como en las ecuaciones, cada letra conserva su dominio: aquí serán todos los racionales, salvo una restricción explícita del contexto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entre números negativos, estar más cerca de cero puede significar ser mayor. Por ejemplo, −3/4 > −5/4 porque (−3/4) − (−5/4) = 1/2 es positivo. En general, a < b equivale a que b − a sea positivo. También puedes ubicar los números en la recta: el menor está a la izquierda del mayor (Lang, 1971, p. 75)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una inecuación es una desigualdad con una incógnita cuya condición queremos resolver. Resolver x < 2 exige describir todos los racionales menores que dos; no sólo escoger uno de ellos. En x ≤ 2 también se permite x = 2. La frontera es la misma, pero incluirla o excluirla cambia el conjunto de soluciones."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "leer_orden_en_el_valor_limite",
+          "prompt": "Con r = −1/2, marca todas las afirmaciones verdaderas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "leer_orden_en_el_valor_limite__verdaderas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "r < 0"
+                },
+                {
+                  "id": "b",
+                  "label": "r ≤ −1/2"
+                },
+                {
+                  "id": "c",
+                  "label": "r > −1/2"
+                },
+                {
+                  "id": "d",
+                  "label": "r ≥ −1/2"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−1/2 es menor que cero. Además, es igual a −1/2, por lo que cumplen tanto ≤ como ≥ respecto de ese mismo valor. La condición estricta r > −1/2 falla en la frontera.",
+            "incorrect": "Sustituye el valor indicado sin cambiarlo. Una igualdad satisface ≤ y ≥, pero no satisface < ni >."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "la_diferencia_justifica_el_orden",
+          "prompt": "Toma a = −7/4 y b = −1/4. Calcula b − a y elige la relación verdadera entre a y b.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "la_diferencia_justifica_el_orden__dato",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Valor de b − a",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "la_diferencia_justifica_el_orden__comparacion",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Relación en a [símbolo] b",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<"
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">"
+                    },
+                    {
+                      "id": "igual",
+                      "label": "="
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "signo": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "b − a = −1/4 − (−7/4) = 3/2, que es positivo; por ello a < b. En la recta, −7/4 está a la izquierda de −1/4. El tamaño del numerador sin su signo no determina el orden.",
+            "incorrect": "Restar a = −7/4 significa sumar 7/4. Usa la diferencia b − a para decidir: positiva significa que b es mayor que a."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Sumar o restar lo mismo conserva el sentido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si a < b, entonces b − a > 0. Al sumar una misma cantidad c, la diferencia entre los nuevos miembros es (b + c) − (a + c) = b − a. Sigue siendo positiva, así que a + c < b + c. Para regresar basta restar c. Por eso ambas condiciones son equivalentes. Restar una misma cantidad también conserva el sentido, aunque esa cantidad sea negativa (Lang, 1971, pp. 75–76, 80)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La razón también vale para ≤: cuando los miembros son iguales, sumarles lo mismo mantiene la igualdad; cuando uno es menor, mantiene ese orden. Al sumar o restar no se intercambian < y >, ni ≤ y ≥. El signo de la cantidad sumada no altera esta regla."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sumar_una_cantidad_negativa",
+          "prompt": "La comparación −2 < −1 es verdadera. Suma −5 a ambos miembros, escribe los nuevos valores y elige su relación.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sumar_una_cantidad_negativa__miembros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Nuevo miembro izquierdo",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Nuevo miembro derecho",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "sumar_una_cantidad_negativa__relacion",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Relación entre los nuevos miembros",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<"
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">"
+                    },
+                    {
+                      "id": "igual",
+                      "label": "="
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "signo": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Queda −7 < −6. Sumar −5 desplazó ambos números por igual; su diferencia siguió siendo uno. Una suma negativa conserva el sentido igual que una suma positiva.",
+            "incorrect": "Calcula −2 + (−5) y −1 + (−5). No confundas sumar un negativo con multiplicar por un negativo: son operaciones distintas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "restar_para_aislar_en_una_inecuacion",
+          "prompt": "En x + 5 < −1 resta cinco de ambos miembros. La forma final es x < un límite. Escribe ese límite y decide si se permite el valor de la frontera.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "restar_para_aislar_en_una_inecuacion__limite",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Límite a la derecha de x <",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "restar_para_aislar_en_una_inecuacion__frontera",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Se permite la frontera porque restar convierte < en ≤."
+                },
+                {
+                  "id": "b",
+                  "label": "La frontera queda excluida porque la condición sigue siendo estricta."
+                },
+                {
+                  "id": "c",
+                  "label": "Sólo se permite la frontera; todos los demás valores quedan excluidos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar cinco da x < −6. El sentido y el carácter estricto se conservan. En la frontera, el miembro izquierdo original sería igual a −1 y no menor que −1; por eso se excluye.",
+            "incorrect": "Aplica la resta también al miembro derecho: −1 − 5. Una resta igual en ambos miembros no añade el caso de igualdad."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un factor positivo conserva el orden y permite regresar"
+        },
+        {
+          "type": "paragraph",
+          "text": "Supón a < b y un dato racional k > 0. La diferencia b − a es positiva; su producto por k también es positivo. Al distribuir, k(b − a) = kb − ka, de modo que ka < kb. Multiplicar por un mismo factor positivo conserva el sentido. Como 1/k también es positivo, multiplicar por él permite regresar y conserva todas las soluciones (Lang, 1971, pp. 75–76)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dividir por un número positivo es multiplicar por su inverso positivo, así que sigue la misma regla. El caso de igualdad también se conserva: a ≤ b lleva a ka ≤ kb si k > 0. Aquí el factor es un dato con signo conocido; no una expresión de signo incierto."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escalar_con_un_factor_positivo",
+          "prompt": "Partimos de −9/2 < −3/2. Multiplica ambos miembros por 2/3, escribe los productos y elige la relación que conservan.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escalar_con_un_factor_positivo__productos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Producto del miembro izquierdo",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Producto del miembro derecho",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "escalar_con_un_factor_positivo__sentido",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Relación entre los productos",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<"
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">"
+                    },
+                    {
+                      "id": "igual",
+                      "label": "="
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "signo": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los productos son −3 y −1, con −3 < −1. El factor 2/3 es positivo aunque los miembros sean negativos; conserva el orden. Multiplicar por 3/2 recuperaría la comparación inicial.",
+            "incorrect": "El signo del factor que aplicas es el que decide la regla. Que los miembros sean negativos no convierte 2/3 en un factor negativo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dividir_un_coeficiente_positivo",
+          "prompt": "En (3/2)x ≥ −9 divide ambos miembros por 3/2. Escribe el límite obtenido y elige cómo queda la condición de x, sin omitir el caso de igualdad.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dividir_un_coeficiente_positivo__limite",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Límite obtenido al dividir",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "dividir_un_coeficiente_positivo__sentido",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "x es mayor o igual que el límite."
+                },
+                {
+                  "id": "b",
+                  "label": "x es menor o igual que el límite."
+                },
+                {
+                  "id": "c",
+                  "label": "x es estrictamente mayor que el límite."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dividir −9 por 3/2 da −6. Como el divisor es positivo, queda x ≥ −6. En x = −6, el miembro izquierdo original vale −9 y la igualdad está permitida.",
+            "incorrect": "Dividir por 3/2 equivale a multiplicar por 2/3. Conserva ≥: no inviertas el sentido ni elimines la frontera."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un factor negativo invierte el sentido"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si a < b, la diferencia b − a es positiva. Con un dato k < 0, el producto k(b − a) es negativo. Al distribuir, kb − ka < 0, lo cual significa kb < ka: el producto que estaba a la izquierda queda mayor que el de la derecha. Por eso ka > kb. El sentido se invierte al multiplicar por un negativo; no es una regla que dependa sólo de probar algunos números (Lang, 1971, pp. 75–76)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El inverso de un negativo es también negativo. Para regresar, multiplicamos por 1/k e invertimos el sentido otra vez. Así se conservan todas las soluciones. Dividir por un negativo sigue la misma regla. La igualdad no deja de estar permitida si antes lo estaba: a ≤ b se transforma en ka ≥ kb cuando k < 0."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "productos_por_un_factor_negativo",
+          "prompt": "Parte de −4/3 < 2/3. Multiplica ambos miembros por −3/2. Escribe los productos y elige su relación verdadera.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "productos_por_un_factor_negativo__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Producto del miembro izquierdo",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Producto del miembro derecho",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "productos_por_un_factor_negativo__sentido",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "signo",
+                  "type": "dropdown",
+                  "label": "Relación entre los productos",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "<"
+                    },
+                    {
+                      "id": "mayor",
+                      "label": ">"
+                    },
+                    {
+                      "id": "igual",
+                      "label": "="
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "signo": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los productos son dos y menos uno, y cumplen 2 > −1. El factor −3/2 es negativo, por lo que invierte el sentido. Su inverso −2/3 también es negativo; al aplicarlo se recupera el orden inicial.",
+            "incorrect": "Calcula los productos con los signos correspondientes. Un producto positivo a la izquierda y uno negativo a la derecha no puede mantener el símbolo <."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "despejar_dividiendo_por_un_negativo",
+          "prompt": "En −(2/3)u < 4 divide ambos miembros por −2/3. Escribe el límite y elige cómo queda la condición de u.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "despejar_dividiendo_por_un_negativo__limite",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Límite obtenido al dividir",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  }
+                }
+              }
+            },
+            {
+              "id": "despejar_dividiendo_por_un_negativo__sentido",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "u es estrictamente menor que el límite."
+                },
+                {
+                  "id": "b",
+                  "label": "u es estrictamente mayor que el límite."
+                },
+                {
+                  "id": "c",
+                  "label": "u es mayor o igual que el límite."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cociente de cuatro entre −2/3 es −6. Al dividir por un negativo, < se convierte en >: queda u > −6. La frontera sigue excluida; con u = −6 el miembro izquierdo original valdría cuatro, y cuatro no es menor que cuatro.",
+            "incorrect": "Dividir por −2/3 equivale a multiplicar por −3/2. Invierte el sentido y conserva que la comparación es estricta."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cero no permite una transformación reversible"
+        },
+        {
+          "type": "paragraph",
+          "text": "El factor cero no tiene inverso. Además, cambia la información de maneras distintas según el símbolo. En x ≤ 4, multiplicar los dos miembros por cero y mantener ≤ deja 0 ≤ 0, verdadera para cualquier x: ya no impone el límite original. En x < 4, esa misma operación y el símbolo < dejarían 0 < 0, falsa para cualquier x: se pierden incluso valores que sí cumplían. No es una regla válida para obtener una condición equivalente."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para multiplicar o dividir una desigualdad mediante las reglas anteriores, conoce el signo del dato y exige que no sea cero. Si es positivo, conserva el sentido; si es negativo, inviértelo. No dividas entre cero ni decidas el signo mirando únicamente los miembros. Al revisar un paso dudoso, busca un valor que ponga a prueba precisamente esa transformación (Pólya, 1957, pp. 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_borra_un_limite_no_estricto",
+          "prompt": "Un apunte reemplaza x ≤ 4 por 0 ≤ 0 porque multiplicó ambos miembros por cero. Prueba x = 5. ¿Qué comparación demuestra que no conservó las soluciones?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_borra_un_limite_no_estricto__contraejemplo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Las dos condiciones son falsas cuando x = 5."
+                },
+                {
+                  "id": "b",
+                  "label": "La condición original es falsa, pero 0 ≤ 0 es verdadera; el paso añadió un valor que no cumplía."
+                },
+                {
+                  "id": "c",
+                  "label": "Las dos condiciones son verdaderas porque x puede tomar cualquier racional."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cinco no cumple x ≤ 4. Sin embargo, 0 ≤ 0 es verdadera aunque la letra represente cinco. El paso borró el límite y añadió valores no permitidos por la condición original.",
+            "incorrect": "Evalúa por separado la condición original y la que quedó. El símbolo ≤ acepta la igualdad entre los ceros, pero eso no convierte cinco en un número menor o igual que cuatro."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_pierde_soluciones_estrictas",
+          "prompt": "Otro apunte reemplaza x < 4 por 0 < 0 al multiplicar ambos miembros por cero. Ahora prueba x = 0. ¿Qué ocurre?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_pierde_soluciones_estrictas__contraejemplo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Ambas condiciones son verdaderas porque todos los números valen cero al multiplicarlos por cero."
+                },
+                {
+                  "id": "b",
+                  "label": "Ambas condiciones son falsas porque x vale cero."
+                },
+                {
+                  "id": "c",
+                  "label": "La original es verdadera y 0 < 0 es falsa; se perdió una solución de la condición original."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cero es menor que cuatro, así que x = 0 cumple la condición original. Pero cero no es menor que sí mismo. Mantener < al multiplicar por cero no preservó ni siquiera ese caso verdadero.",
+            "incorrect": "No confundas x = 0 con los miembros reducidos. Compara cero con cuatro en la original y cero con cero en la segunda."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir el paso, conservar la frontera y atender al contexto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya puedes justificar pasos en una inecuación sin aplicar de memoria una regla de «cambiar de lado». Decide qué suma, resta, producto o cociente haces en ambos miembros; si hay un factor, comprueba su signo. Conserva la diferencia entre comparación estricta y no estricta. Después describe todas las soluciones permitidas por el dominio y revisa el límite en la condición original."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pares_de_condiciones_equivalentes",
+          "prompt": "Marca todos los pares que tienen exactamente las mismas soluciones racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pares_de_condiciones_equivalentes__pares",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "x − 3 < 2 y x < 5."
+                },
+                {
+                  "id": "b",
+                  "label": "−4x ≤ 8 y x ≥ −2."
+                },
+                {
+                  "id": "c",
+                  "label": "−4x ≤ 8 y x ≤ −2."
+                },
+                {
+                  "id": "d",
+                  "label": "x + 4 ≥ 4 y x > 0."
+                },
+                {
+                  "id": "e",
+                  "label": "3x > 6 y x > 2."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En a se suma tres en ambos miembros. En b se divide por −4 y se invierte ≤ en ≥. En e se divide por tres, positivo. c conserva indebidamente el sentido al dividir por un negativo; d elimina la frontera x = 0, que sí cumplía la condición original.",
+            "incorrect": "Comprueba operación y frontera por separado. Dividir por −4 requiere invertir el sentido; restar cuatro conserva el símbolo ≥ y el caso de igualdad."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "carga_con_limite_incluido_y_dominio",
+          "prompt": "Un paquete ya pesa 3/4 kg. Se puede añadir una carga m, racional y no negativa. El peso total no debe superar 5/4 kg, y el límite está permitido. La condición es 3/4 + m ≤ 5/4. Escribe la carga máxima, en kilogramos, y marca todas las propuestas permitidas entre las ofrecidas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "carga_con_limite_incluido_y_dominio__maximo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "carga",
+                  "type": "numeric",
+                  "label": "Carga máxima añadida, en kilogramos",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "carga": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "carga_con_limite_incluido_y_dominio__propuestas",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "m = −1/4 kg."
+                },
+                {
+                  "id": "b",
+                  "label": "m = 0 kg."
+                },
+                {
+                  "id": "c",
+                  "label": "m = 1/4 kg."
+                },
+                {
+                  "id": "d",
+                  "label": "m = 1/2 kg."
+                },
+                {
+                  "id": "e",
+                  "label": "m = 3/4 kg."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar 3/4 de ambos miembros da m ≤ 1/2. El dominio añade m ≥ 0. Entre las propuestas cumplen cero, un cuarto y un medio de kilogramo; un medio está incluido porque deja el peso total exactamente en 5/4 kg. −1/4 satisface la desigualdad algebraica, pero no representa añadir una carga no negativa. Otros racionales entre cero y un medio también sirven: las propuestas no agotan el conjunto.",
+            "incorrect": "El límite se aplica al peso total, no sólo a lo añadido. Resta el peso previo, conserva que se permite igualdad y revisa por separado la condición m ≥ 0."
+          }
+        }
+      ]
+    }
+  ]
+}

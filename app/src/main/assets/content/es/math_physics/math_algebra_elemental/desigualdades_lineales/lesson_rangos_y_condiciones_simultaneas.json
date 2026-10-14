@@ -1,0 +1,1524 @@
+{
+  "id": "math_algebra_elemental__desigualdades_lineales__rangos_y_condiciones_simultaneas",
+  "title": "Rangos y condiciones simultáneas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos condiciones para el mismo valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta ahora resolvimos condiciones como x < 1 o x ≥ −2. Si ambas deben cumplirse a la vez, buscamos un mismo valor que satisfaga las dos. Podemos escribirlo como −2 ≤ x < 1. Esta desigualdad doble abrevia −2 ≤ x y x < 1; no basta comprobar sólo una parte."
+        },
+        {
+          "type": "paragraph",
+          "text": "−2 es la cota inferior y uno la superior. El intervalo reúne todos los valores entre ellas que respetan sus extremos: aquí incluye −2 y excluye uno. Trabajaremos únicamente con racionales, salvo que un contexto restrinja más el dominio. Usaremos las desigualdades para escribir los rangos (Lang, 1971, pp. 78–79)."
+        },
+        {
+          "type": "paragraph",
+          "text": "En una recta numérica los valores aumentan hacia la derecha. El punto lleno incluye la marca; el punto hueco la excluye. Una semirrecta coloreada con flecha señala valores que continúan hacia ese lado. Las marcas visibles ayudan a leer la escala, pero no son los únicos valores: entre enteros también hay racionales como −1/2. Las dos rectas siguientes muestran por separado las condiciones para el mismo x."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_condiciones_en_dos_rectas",
+          "prompt": "Observa las condiciones representadas. Selecciona todos los racionales ofrecidos que pertenecen a las dos semirrectas a la vez.",
+          "representations": [
+            {
+              "type": "text",
+              "text": "Primera condición: x ≥ −2."
+            },
+            {
+              "type": "math_number_line",
+              "min": -4,
+              "max": 4,
+              "step": 1,
+              "value": -2,
+              "closed": true,
+              "direction": "right"
+            },
+            {
+              "type": "text",
+              "text": "Segunda condición: x < 1."
+            },
+            {
+              "type": "math_number_line",
+              "min": -4,
+              "max": 4,
+              "step": 1,
+              "value": 1,
+              "closed": false,
+              "direction": "left"
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_condiciones_en_dos_rectas__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "−3"
+                },
+                {
+                  "id": "b",
+                  "label": "−2"
+                },
+                {
+                  "id": "c",
+                  "label": "−1/2"
+                },
+                {
+                  "id": "d",
+                  "label": "0"
+                },
+                {
+                  "id": "e",
+                  "label": "1"
+                },
+                {
+                  "id": "f",
+                  "label": "3/2"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−2, −1/2 y cero cumplen x ≥ −2 y x < 1. −3 falla la primera condición; uno y 3/2 fallan la segunda. El punto lleno permite −2; el hueco excluye uno. Cumplir sólo una de las condiciones no permite pertenecer al rango común.",
+            "incorrect": "Lee primero el valor de cada punto y después el lado coloreado. Conserva únicamente los valores que funcionan en las dos rectas, con sus respectivos extremos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "leer_cotas_e_inclusion",
+          "prompt": "Para −7/4 < t ≤ 5/4, escribe las cotas inferior y superior y decide si se incluye cada extremo. Las cotas describen los límites; el rango también contiene racionales entre ellas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "leer_cotas_e_inclusion__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior para t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Cota superior para t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo inferior",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo superior",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-7/4"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "5/4"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La cota inferior es −7/4 y se excluye porque la primera comparación es estricta. La superior es 5/4 y se incluye por ≤. Cero está dentro del rango, pero no es uno de sus extremos.",
+            "incorrect": "Lee las dos comparaciones por separado: t debe ser mayor que −7/4 y menor o igual que 5/4. Conserva cuál de las dos admite igualdad."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tipos de extremos y rangos con una sola cota"
+        },
+        {
+          "type": "paragraph",
+          "text": "Con cotas diferentes, un intervalo abierto excluye sus dos extremos y uno cerrado incluye ambos. Un intervalo mixto incluye uno y excluye el otro; también se llama semiabierto o semicerrado. Los nombres indican la inclusión de extremos, sin eliminar los valores interiores (Lang, 1971, p. 78)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_los_extremos",
+          "prompt": "Clasifica cada rango por la inclusión de sus extremos: −3 ≤ x < 4; 1/2 < y < 2; −2 ≤ z ≤ −1.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_los_extremos__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "dropdown",
+                  "label": "Tipo de extremos de −3 ≤ x < 4",
+                  "options": [
+                    {
+                      "id": "abierto",
+                      "label": "Se excluyen los dos extremos."
+                    },
+                    {
+                      "id": "cerrado",
+                      "label": "Se incluyen los dos extremos."
+                    },
+                    {
+                      "id": "mixto",
+                      "label": "Se incluye sólo uno de los extremos."
+                    }
+                  ]
+                },
+                {
+                  "id": "y",
+                  "type": "dropdown",
+                  "label": "Tipo de extremos de 1/2 < y < 2",
+                  "options": [
+                    {
+                      "id": "abierto",
+                      "label": "Se excluyen los dos extremos."
+                    },
+                    {
+                      "id": "cerrado",
+                      "label": "Se incluyen los dos extremos."
+                    },
+                    {
+                      "id": "mixto",
+                      "label": "Se incluye sólo uno de los extremos."
+                    }
+                  ]
+                },
+                {
+                  "id": "z",
+                  "type": "dropdown",
+                  "label": "Tipo de extremos de −2 ≤ z ≤ −1",
+                  "options": [
+                    {
+                      "id": "abierto",
+                      "label": "Se excluyen los dos extremos."
+                    },
+                    {
+                      "id": "cerrado",
+                      "label": "Se incluyen los dos extremos."
+                    },
+                    {
+                      "id": "mixto",
+                      "label": "Se incluye sólo uno de los extremos."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "exact_text",
+                    "expected": "mixto"
+                  },
+                  "y": {
+                    "type": "exact_text",
+                    "expected": "abierto"
+                  },
+                  "z": {
+                    "type": "exact_text",
+                    "expected": "cerrado"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El primero es mixto: incluye −3 y excluye cuatro. El segundo es abierto: excluye 1/2 y dos. El tercero es cerrado: incluye −2 y −1. Todos contienen también los racionales interiores.",
+            "incorrect": "Decide por separado si se admite cada extremo. No llames cerrado a un rango sólo porque incluya uno de ellos, ni abierto sólo porque excluya uno."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Entre dos cotas racionales distintas hay valores interiores. Si a < b, el punto medio m = (a + b)/2 es racional. Las diferencias m − a y b − m valen (b − a)/2, positivas. Por eso a < m < b, incluso si ambos extremos se excluyen. Construir un punto medio produce un valor interior; no afirma que sea el único."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_un_punto_medio",
+          "prompt": "Calcula el punto medio de las cotas 2/3 y 5/6. Escribe además cuánto supera a la inferior y cuánto le falta para la superior. Así compruebas que está dentro del rango 2/3 ≤ x < 5/6.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_un_punto_medio__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "medio",
+                  "type": "numeric",
+                  "label": "Punto medio de las dos cotas",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sobre_inferior",
+                  "type": "numeric",
+                  "label": "Punto medio menos cota inferior",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "hasta_superior",
+                  "type": "numeric",
+                  "label": "Cota superior menos punto medio",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "medio": {
+                    "type": "numeric",
+                    "expected": "3/4"
+                  },
+                  "sobre_inferior": {
+                    "type": "numeric",
+                    "expected": "1/12"
+                  },
+                  "hasta_superior": {
+                    "type": "numeric",
+                    "expected": "1/12"
+                  }
+                }
+              }
+            },
+            {
+              "id": "construir_un_punto_medio__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El punto medio es racional y ambas diferencias positivas lo sitúan dentro; puede haber otros valores interiores."
+                },
+                {
+                  "id": "b",
+                  "label": "Sólo el punto medio puede cumplir dos cotas."
+                },
+                {
+                  "id": "c",
+                  "label": "Excluir el extremo superior elimina todos los valores interiores."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La media es (2/3 + 5/6)/2 = (3/2)/2 = 3/4. Las dos diferencias son 1/12, positivas, así que cumple las dos condiciones. La pregunta pidió ese punto medio específico; el rango admite otros racionales interiores.",
+            "incorrect": "Suma las cotas con denominador común y divide la suma por dos. Comprueba después cada diferencia. Excluir un extremo no excluye lo que está estrictamente entre las cotas."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Un rango también puede estar limitado sólo por uno de los lados. En x > −5/3 hay una cota inferior y ninguna superior: se admiten racionales cada vez mayores. En x ≤ 4 sólo hay una cota superior. Estos rangos sin límite por uno de los lados también se llaman intervalos infinitos; la falta de cota no es un número ni un extremo que se pueda alcanzar (Lang, 1971, p. 79). Aquí «infinito» se refiere a continuar sin cota por un lado. Un intervalo acotado con cotas diferentes también contiene infinitos racionales: podemos construir nuevos puntos medios entre uno interior y una cota, sin alcanzarla."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "identificar_una_cota_sin_inventar_la_otra",
+          "prompt": "Para x > −5/3, escribe el límite numérico indicado, decide su inclusión y señala por qué lado no hay cota.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "identificar_una_cota_sin_inventar_la_otra__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "cota",
+                  "type": "numeric",
+                  "label": "Límite numérico indicado en la condición",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "inclusion",
+                  "type": "dropdown",
+                  "label": "Inclusión de esa cota",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "falta",
+                  "type": "dropdown",
+                  "label": "Cota que no existe en esta condición",
+                  "options": [
+                    {
+                      "id": "superior",
+                      "label": "No hay cota superior."
+                    },
+                    {
+                      "id": "inferior",
+                      "label": "No hay cota inferior."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Hay cotas inferior y superior."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "cota": {
+                    "type": "numeric",
+                    "expected": "-5/3"
+                  },
+                  "inclusion": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "falta": {
+                    "type": "exact_text",
+                    "expected": "superior"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El límite numérico indicado es −5/3, excluida por >. No hay cota superior: cualquier racional mayor que −5/3 cumple, por grande que sea. Cero puede pertenecer, pero no reemplaza una cota ausente.",
+            "incorrect": "Distingue el límite explícito de la dirección en que el rango continúa. No sustituyas la ausencia de una cota por cero ni por una respuesta numérica ficticia."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Intersecar significa conservar lo que es común"
+        },
+        {
+          "type": "paragraph",
+          "text": "La intersección de dos rangos reúne los valores que pertenecen a ambos. Para −2 ≤ x < 3 y 1 < x ≤ 4, el rango común es 1 < x < 3. El uno falla la segunda condición y el tres falla la primera; los valores interiores cumplen las dos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si hay dos cotas inferiores, la mayor impone la exigencia más fuerte. Si hay dos superiores, la menor la impone. Un extremo resultante se incluye sólo si su valor cumple todas las condiciones. Una comparación estricta cuyo límite está más lejos puede aceptar ese extremo; no basta ver que aparece un símbolo < o > en alguna parte."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "intersecar_dos_rangos_acotados",
+          "prompt": "Interseca −5/4 < x ≤ 7/4 y −1/2 ≤ x < 5/2 en el dominio racional. Escribe las cotas del rango común y la inclusión de sus extremos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "intersecar_dos_rangos_acotados__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior del rango común",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Cota superior del rango común",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo inferior común",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo superior común",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "7/4"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La cota inferior más exigente es −1/2 y la superior más exigente es 7/4. −1/2 supera −5/4 y está permitido por la segunda condición; 7/4 está permitido por la primera y es menor que 5/2. Por tanto, el rango común es −1/2 ≤ x ≤ 7/4, con los dos extremos incluidos.",
+            "incorrect": "Compara las cotas inferiores entre sí y después las superiores. Prueba cada extremo seleccionado en los dos rangos originales; una desigualdad estricta más débil no lo excluye automáticamente."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_exigencia_estricta_en_la_misma_cota",
+          "prompt": "Deben cumplirse x ≥ −1, x > −1 y x ≤ 2 a la vez. Escribe las cotas que permanecen y la inclusión de sus extremos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_exigencia_estricta_en_la_misma_cota__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior común",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Cota superior común",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusión de la cota inferior común",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusión de la cota superior común",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las dos exigencias inferiores tienen el mismo límite, pero x > −1 excluye −1. El resultado es −1 < x ≤ 2. Dos cumple también las restricciones inferiores y está admitido por la superior. Cuando las cotas coinciden, basta que una condición excluya su extremo para que no pertenezca a la intersección.",
+            "incorrect": "Cumplir x ≥ −1 no basta si también se exige x > −1. Revisa por separado la inclusión de cada extremo; la exclusión inferior no obliga a excluir el superior."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "interseccion_sin_cota_superior",
+          "prompt": "Interseca x ≥ 1/3 y x > −2/3. Escribe el límite inferior que permanece, su inclusión y el lado que continúa sin cota.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "interseccion_sin_cota_superior__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior común",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "inclusion",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo inferior común",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "falta",
+                  "type": "dropdown",
+                  "label": "Lado que sigue sin cota",
+                  "options": [
+                    {
+                      "id": "superior",
+                      "label": "No hay cota superior."
+                    },
+                    {
+                      "id": "inferior",
+                      "label": "No hay cota inferior."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Hay cotas inferior y superior."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "1/3"
+                  },
+                  "inclusion": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "falta": {
+                    "type": "exact_text",
+                    "expected": "superior"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La exigencia x ≥ 1/3 es más fuerte. Un tercio también supera −2/3, por lo que está incluido. La solución es x ≥ 1/3, sin cota superior. La condición estricta con límite menor no excluye el extremo de la condición más fuerte.",
+            "incorrect": "Determina cuál de las restricciones inferiores exige valores mayores. Prueba su extremo en la otra condición y conserva que ninguna impone un límite por arriba."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cotas coincidentes, rangos vacíos y ausencia de restricciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si la cota inferior supera a la superior, no existe un valor que satisfaga ambas: el rango común está vacío. Si las cotas coinciden en un racional a y las dos incluyen igualdad, sólo queda x = a. Si alguna excluye ese mismo valor, no queda ninguno. Esta revisión distingue un único valor de un rango con valores interiores."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una condición verdadera para todos los racionales no impone una restricción al intersectarla con otra. Si ambas son verdaderas para todos, permanecen todos. Una condición falsa para todos deja la intersección vacía. En estos casos describimos la categoría; no inventamos cotas numéricas."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_cotas_coincidentes_o_cruzadas",
+          "prompt": "Clasifica las soluciones racionales de cada conjunto de condiciones: −1 ≤ x ≤ −1; −1 < y ≤ −1; 4 ≤ z < 3; r + 4 ≥ r + 3 junto con 2r − 1 < 2r + 3.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_cotas_coincidentes_o_cruzadas__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coinciden",
+                  "type": "dropdown",
+                  "label": "Soluciones de −1 ≤ x ≤ −1",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Cumple un único racional."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No cumple ningún racional."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Cumplen varios racionales, pero no todos."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Cumplen todos los racionales."
+                    }
+                  ]
+                },
+                {
+                  "id": "exclusion",
+                  "type": "dropdown",
+                  "label": "Soluciones de −1 < y ≤ −1",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Cumple un único racional."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No cumple ningún racional."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Cumplen varios racionales, pero no todos."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Cumplen todos los racionales."
+                    }
+                  ]
+                },
+                {
+                  "id": "cruzadas",
+                  "type": "dropdown",
+                  "label": "Soluciones de 4 ≤ z < 3",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Cumple un único racional."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No cumple ningún racional."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Cumplen varios racionales, pero no todos."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Cumplen todos los racionales."
+                    }
+                  ]
+                },
+                {
+                  "id": "sin_restriccion",
+                  "type": "dropdown",
+                  "label": "Soluciones de las dos condiciones con r",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Cumple un único racional."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No cumple ningún racional."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Cumplen varios racionales, pero no todos."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Cumplen todos los racionales."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coinciden": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  },
+                  "exclusion": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "cruzadas": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "sin_restriccion": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera permite sólo −1. La segunda necesitaría superar −1 y no superarlo a la vez: ninguna solución. En la tercera no se puede ser al menos cuatro y menor que tres. Las condiciones con r se reducen a 4 ≥ 3 y −1 < 3, ambas verdaderas, así que cumplen todos los racionales.",
+            "incorrect": "Si las cotas coinciden, comprueba la igualdad en las dos partes. Si están invertidas, las exigencias son incompatibles. En las condiciones con r, cancela términos iguales mediante restas reversibles y decide la verdad de lo que queda."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_inecuaciones_que_fijan_un_valor",
+          "prompt": "Resuelve simultáneamente (x − 1)/2 ≥ 3/4 y 3 − x ≥ 1/2. Escribe la cota inferior que impone la primera, la superior que impone la segunda y clasifica el conjunto común en los racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_inecuaciones_que_fijan_un_valor__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior obtenida de la primera inecuación",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Cota superior obtenida de la segunda inecuación",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "categoria",
+                  "type": "dropdown",
+                  "label": "Cantidad de soluciones racionales comunes",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Cumple un único racional."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No cumple ningún racional."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Cumplen varios racionales, pero no todos."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Cumplen todos los racionales."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "categoria": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplicar la primera por dos y sumar uno da x ≥ 5/2. En la segunda, restar tres deja −x ≥ −5/2; dividir por −1 invierte el sentido y da x ≤ 5/2. Las dos cotas incluyen igualdad, así que el único valor es 5/2. En las originales produce 3/4 ≥ 3/4 y 1/2 ≥ 1/2.",
+            "incorrect": "Resuelve las dos condiciones para el mismo x. Revisa la inversión al dividir por −1 en la segunda; después decide si la igualdad en las cotas está permitida."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Generar rangos al resolver dos comparaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "−1 < 2x + 3 ≤ 7 contiene dos condiciones: −1 < 2x + 3 y 2x + 3 ≤ 7. Restar tres en cada una produce −4 < 2x ≤ 4. Dividir por dos, positivo, deja −2 < x ≤ 2. La forma abreviada permite seguir las dos comparaciones, pero cada paso debe justificarse en ambas (Lang, 1971, pp. 75–78, 80)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Con un factor negativo se invierten los dos sentidos. En 1 ≤ −2x + 3 < 7, restar tres da −2 ≤ −2x < 4. Dividir por −2 deja 1 ≥ x > −2. Leído con la cota menor a la izquierda, es −2 < x ≤ 1. El extremo excluido −2 procede de la comparación estricta con siete; el incluido uno procede de la comparación no estricta con uno."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_una_condicion_doble",
+          "prompt": "Resuelve −3/4 ≤ (1/2)t + 1/4 < 5/4 en los racionales. Escribe las cotas inferior y superior para t y la inclusión de cada extremo. Puedes resolver las dos partes por separado.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_una_condicion_doble__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior para t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Cota superior para t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo inferior para t",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo superior para t",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar 1/4 deja −1 ≤ t/2 < 1. Multiplicar por dos conserva los sentidos y da −2 ≤ t < 2. La frontera inferior produce igualdad en la comparación no estricta; la superior produce igualdad en la estricta y se excluye.",
+            "incorrect": "Aplica la resta a las dos comparaciones. Multiplicar por dos, positivo, no invierte el orden. Conserva qué extremo provenía de una igualdad admitida."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "invertir_y_reordenar_los_extremos",
+          "prompt": "Resuelve 0 ≤ −(3/2)u + 1 < 3. Escribe el rango de u con su cota inferior primero, y decide la inclusión de los dos extremos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "invertir_y_reordenar_los_extremos__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior para u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Cota superior para u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo inferior para u",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo superior para u",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "-4/3"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "2/3"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar uno da −1 ≤ −(3/2)u < 2. Dividir por −3/2 invierte las dos comparaciones: 2/3 ≥ u > −4/3. Reordenando la lectura queda −4/3 < u ≤ 2/3. Con u = −4/3 el cálculo original vale tres y falla < 3; con u = 2/3 vale cero y cumple 0 ≤ 0.",
+            "incorrect": "Invierte los dos sentidos al dividir por el dato negativo. Después reordena los extremos conservando su inclusión: no cambies sólo los números ni sólo una de las comparaciones."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Practicar y revisar qué condición se perdió"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para resolver varias exigencias, puedes transformar cada una por un camino propio y después intersectar sus soluciones. Comprueba los extremos del resultado en todas las condiciones originales. Revisar el dato o paso que se omitió puede descubrir el error con más claridad que repetir la misma cadena (Pólya, 1957, pp. 13–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_condiciones_simultaneas_por_cuenta_propia",
+          "prompt": "Deben cumplirse (2x − 1)/3 > 1/2, 5 − x ≥ 2 y x/2 + 1 ≤ 3 a la vez. Resuelve por una ruta propia y escribe las cotas del rango común, con su inclusión.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_condiciones_simultaneas_por_cuenta_propia__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior común para x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Cota superior común para x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo inferior común",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo superior común",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "5/4"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera da x > 5/4; la segunda, x ≤ 3; la tercera, x ≤ 4. La cota superior tres es más exigente que cuatro. Queda 5/4 < x ≤ 3. El extremo inferior falla la comparación estricta de la primera; tres cumple las tres originales. Resolver la condición más débil sigue siendo útil para comprobar que no añade una exclusión.",
+            "incorrect": "Resuelve cada condición sin perder sus grupos ni el sentido al dividir por −1 en la segunda. Después conserva la exigencia inferior y la más fuerte de las superiores. No omitas una condición antes de justificar que es más débil."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnosticar_cumplir_una_en_vez_de_ambas",
+          "prompt": "Para x > 1 y x ≤ 3, un apunte dice que basta cumplir una de las dos condiciones. Marca todas las propuestas que realmente cumplen ambas y selecciona el diagnóstico correcto.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnosticar_cumplir_una_en_vez_de_ambas__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "0"
+                },
+                {
+                  "id": "b",
+                  "label": "1"
+                },
+                {
+                  "id": "c",
+                  "label": "2"
+                },
+                {
+                  "id": "d",
+                  "label": "3"
+                },
+                {
+                  "id": "e",
+                  "label": "4"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c",
+                  "d"
+                ]
+              }
+            },
+            {
+              "id": "diagnosticar_cumplir_una_en_vez_de_ambas__diagnostico",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El apunte conserva valores que fallan una exigencia; pertenecer al rango común requiere cumplir las dos."
+                },
+                {
+                  "id": "b",
+                  "label": "Si un valor satisface una condición, automáticamente satisface la otra."
+                },
+                {
+                  "id": "c",
+                  "label": "La coincidencia de una propuesta correcta demuestra que el apunte conserva todas las soluciones."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dos y tres cumplen las dos. Cero y uno cumplen x ≤ 3 pero fallan x > 1; cuatro cumple x > 1 pero falla x ≤ 3. Por ejemplo, cero refuta el apunte. La intersección completa es 1 < x ≤ 3 porque conserva precisamente las dos exigencias; no se justifica sólo contando las propuestas de la lista.",
+            "incorrect": "Prueba cada propuesta en las dos condiciones, sin escoger la que le conviene. Un contraejemplo basta para refutar el apunte; describir todas las soluciones exige conservar las dos restricciones."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir el rango a un dominio con significado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una ilustración de ancho x centímetros debe servir en dos plantillas. x admite racionales no negativos. La primera añade 3/2 cm de márgenes al ancho y exige un total de al menos seis centímetros. La segunda añade 5/2 cm y exige un total menor que once centímetros. Deben funcionar las dos plantillas con la misma ilustración."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_ancho_compatible_con_dos_plantillas",
+          "prompt": "Construye las condiciones de las dos plantillas y resuélvelas sin una cadena indicada. Escribe las cotas del ancho común en centímetros y la inclusión de sus extremos. Revisa después el dominio no negativo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_ancho_compatible_con_dos_plantillas__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior del ancho x, en centímetros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Cota superior del ancho x, en centímetros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusión del ancho inferior",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusión del ancho superior",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "17/2"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las condiciones son x + 3/2 ≥ 6 y x + 5/2 < 11. Restar cada margen da x ≥ 9/2 y x < 17/2. El ancho debe cumplir 9/2 ≤ x < 17/2 cm; todos esos valores son no negativos. El inferior permite alcanzar los seis centímetros de la primera plantilla; el superior alcanzaría once en la segunda y se excluye.",
+            "incorrect": "Suma cada margen al mismo ancho x y compara con el total permitido en su plantilla. «Al menos» admite igualdad; «menor que» la excluye. Las cotas finales representan centímetros de ilustración, no los anchos totales con márgenes."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "En un juego de mesa, una reserva tiene n fichas, un entero no negativo. Su puntuación es n + 2 y debe ser al menos ocho. Su consumo es 2n + 1 unidades de energía y debe ser menor que dieciocho. Las dos exigencias se comparan en sus respectivas unidades y deben cumplirse a la vez."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_rango_racional_y_una_reserva_entera",
+          "prompt": "Resuelve las dos exigencias del juego y conserva el dominio de fichas completas. Selecciona todas las reservas permitidas entre las ofrecidas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_rango_racional_y_una_reserva_entera__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5 fichas"
+                },
+                {
+                  "id": "b",
+                  "label": "6 fichas"
+                },
+                {
+                  "id": "c",
+                  "label": "7 fichas"
+                },
+                {
+                  "id": "d",
+                  "label": "8 fichas"
+                },
+                {
+                  "id": "e",
+                  "label": "15/2 fichas"
+                },
+                {
+                  "id": "f",
+                  "label": "17/2 fichas"
+                },
+                {
+                  "id": "g",
+                  "label": "9 fichas"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "n + 2 ≥ 8 da n ≥ 6; 2n + 1 < 18 da n < 17/2. En los racionales queda 6 ≤ n < 17/2. En el dominio entero no negativo sólo se permiten seis, siete u ocho fichas. 15/2 satisface las cuentas, pero no cuenta fichas completas. 17/2 alcanza dieciocho unidades y se excluye, además de no ser entero.",
+            "incorrect": "Resuelve las dos comparaciones y después revisa cuáles propuestas son enteras. Cumplir un rango racional no basta para contar fichas completas. Conserva que la cota del consumo es estricta."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_punto_racional_puede_fallar_en_otro_dominio",
+          "prompt": "Un ajuste exige n ≥ 5/2 y n ≤ 5/2 a la vez. Clasifica las soluciones primero si n admite todos los racionales y después si n cuenta un número entero no negativo de piezas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_punto_racional_puede_fallar_en_otro_dominio__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "racionales",
+                  "type": "dropdown",
+                  "label": "Soluciones en todos los racionales",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Cumple un único valor del dominio."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No cumple ningún valor del dominio."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Cumplen varios valores, pero no todos los del dominio."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Cumplen todos los valores del dominio."
+                    }
+                  ]
+                },
+                {
+                  "id": "piezas",
+                  "type": "dropdown",
+                  "label": "Soluciones como número entero no negativo de piezas",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Cumple un único valor del dominio."
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "No cumple ningún valor del dominio."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Cumplen varios valores, pero no todos los del dominio."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Cumplen todos los valores del dominio."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "racionales": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  },
+                  "piezas": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las cotas coinciden y ambas incluyen la igualdad: en los racionales sólo queda 5/2. Ese valor no es entero, así que no queda ningún número permitido de piezas. Redondearlo cambiaría una de las exigencias; el dominio debe revisarse después de intersectar.",
+            "incorrect": "Comprueba primero si el valor común está incluido en las dos condiciones. Después pregunta si pertenece al dominio contextual. «Ninguna» describe ausencia de valores permitidos, no el número cero."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Conservar lo común exige usar todas las condiciones para el mismo valor, respetar cada extremo y revisar el dominio. Un dibujo o una lista de propuestas ayuda a examinar el resultado; la resolución de cada condición y la intersección justifican el rango completo. Revisar también las unidades devuelve sentido a sus cotas (Pólya, 1957, pp. 15, 60–61)."
+        }
+      ]
+    }
+  ]
+}
