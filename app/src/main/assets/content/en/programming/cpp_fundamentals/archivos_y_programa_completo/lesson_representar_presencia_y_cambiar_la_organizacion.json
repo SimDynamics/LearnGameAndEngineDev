@@ -1,0 +1,171 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__representar_presencia_y_cambiar_la_organizacion",
+  "title": "Represent Presence and Change the Organization",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Files and Memory Serve Different Needs"
+        },
+        {
+          "type": "paragraph",
+          "text": "A file stores records in a particular order. The program can keep them in a vector of records, which is useful for traversing their order of acceptance, or rearrange them to look up an ID directly. Interpreting characters and choosing an in-memory representation are related decisions, but they do not have to use the same structure."
+        },
+        {
+          "type": "paragraph",
+          "text": "For the small ID domain 0..9, we can reserve ten cells. Each position denotes its ID; every Celda stores a bool named presente and a Recuento. Having a reserved cell does not mean we received a record. A Recuento {0,0} can also belong to a present, valid record."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cero_y_ausencia",
+          "question": "A received ID has aceptados=0 and rechazados=0. How do we distinguish that record from an ID not received in this table?",
+          "options": [
+            "Use presente independently of the quantities.",
+            "Use aceptados==0 as a marker for absence.",
+            "Use rechazados==0 to discard both cases."
+          ],
+          "correctIndex": 0,
+          "explanation": "Zeros are permitted values. We need to represent the record's existence separately."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Initialize Cells and Inspect Their State"
+        },
+        {
+          "type": "output_prediction",
+          "id": "presente_con_ceros",
+          "question": "Predict the output. The example changes one cell directly to demonstrate what it represents.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nint main() {\n    std::vector<Celda> tabla(10, Celda{false, {0, 0}});\n    tabla.at(7) = Celda{true, {0, 0}};\n    std::cout << tabla.at(3).presente << ':'\n              << tabla.at(7).presente << ':'\n              << tabla.at(7).recuento.aceptados;\n    return 0;\n}\n",
+          "answers": [
+            "0:1:0"
+          ],
+          "explanation": "Cell 3 is still absent. Cell 7 is present, and its aceptados quantity is zero. Reserving ten cells does not create ten present records."
+        },
+        {
+          "type": "paragraph",
+          "text": "The parenthesized construction requests ten copies of Celda{false,{0,0}}. They are independent values: changing cell 7 does not change the others. We use at() with known valid positions here. Functions receiving an ID must check it before accessing the table."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "posicion_y_identidad",
+          "question": "The input contains ID 7 first, then ID 2. When traversing the table in ascending position order, in what order will those IDs appear?",
+          "options": [
+            "7 then 2, because the table preserves file order.",
+            "2 then 7, because each position corresponds to its ID.",
+            "Only 2, because the second record always replaces the first."
+          ],
+          "correctIndex": 1,
+          "explanation": "The table preserves the relationship between ID and Recuento, but not arrival order."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build Insertion and Lookup with Clear Contracts"
+        },
+        {
+          "type": "paragraph",
+          "text": "Implement insertar: it receives a table by reference and a Registro by const reference. It returns false without changing the table if it does not have ten cells, the ID is outside 0..9, the quantities are outside 0..10, or the cell is already present. On true, that cell becomes present with the supplied count; the other cells do not change."
+        },
+        {
+          "type": "paragraph",
+          "text": "Implement consultar: it receives the table by const reference, an ID by value, and a Recuento destination by reference. It returns false and preserves the destination if the table does not have ten cells, the ID is out of range, or the cell is absent. On true, it copies that cell's count to the destination. The tables in this exercise are created with every cell absent and then changed only through insertar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Create a table with all cells absent. Try inserting {7,{0,0}}, then {7,{1,1}}, then {10,{1,1}}. Display the three bool values separated by colons. Look up ID 7 with destination {9,9} and display bool:aceptados:rechazados. Reset that destination to {9,9}, look up ID 3, and display the same fields. Predict the three output lines before running."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\n// Implement insertar and consultar before main.\nint main() {\n    // Build the table and tests without modifying cells directly.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "Celda is a public struct: the functions express our contracts, but they cannot prevent other code from bypassing them by modifying its fields. Protection through a private interface, which you have already studied, would be another design decision. Consult the reference after your attempt."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference and Access Boundaries"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\nint main() {\n    std::vector<Celda> tabla(10, Celda{false, {0, 0}});\n    bool primero = insertar(tabla, Registro{7, {0, 0}});\n    bool repetido = insertar(tabla, Registro{7, {1, 1}});\n    bool fuera = insertar(tabla, Registro{10, {1, 1}});\n    std::cout << primero << ':' << repetido << ':' << fuera << '\\n';\n    Recuento resultado{9, 9};\n    bool encontrado = consultar(tabla, 7, resultado);\n    std::cout << encontrado << ':' << resultado.aceptados\n              << ':' << resultado.rechazados << '\\n';\n    resultado = Recuento{9, 9};\n    bool ausente = consultar(tabla, 3, resultado);\n    std::cout << ausente << ':' << resultado.aceptados\n              << ':' << resultado.rechazados;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The three expected lines are 1:0:0, 1:0:0, and 0:9:9. The repeated insertion preserves the stored zero quantity; ID 10 is rejected before at() is called. Looking up an absent cell does not assign zeros to the destination: it keeps its earlier value."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: validate size and domains before indexing, preserve the other cells, reject duplicates without replacement, keep presence independent of the values, and look up records without modifying the table. Test valid IDs 0 and 9, invalid IDs -1 and 10, quantities -1 and 11, and a table with nine cells. Do not use invalid access to find out whether an ID was allowed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convert a Collection Without Losing Guarantees"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build convertir: it receives a vector<Registro> by const reference and a vector<Celda> destination by reference. It must prepare ten new cells, insert all records using the earlier functions, and assign them to the destination only when all insertions succeed. An invalid or duplicate record returns false and preserves the entire previous table."
+        },
+        {
+          "type": "paragraph",
+          "text": "Start with records in this order: {7,{0,0}} and {2,{3,1}}. Then traverse IDs 0..9 and display only present records as ID:aceptados:rechazados, one per line. The representation has changed the traversal order but must preserve the associated values. Then test a duplicate and an empty collection."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\n// Implement convertir before main.\nint main() {\n    // Build tests for conversion and for preserving the destination on false.\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "The reference for this extension is on the next page. Decide when to update the destination; do not clear the previous table until you know that the entire conversion is valid."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conversion Reference and Choice of Structure"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <vector>\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Celda {\n    bool presente;\n    Recuento recuento;\n};\n\nbool insertar(std::vector<Celda>& tabla, const Registro& registro) {\n    if (tabla.size() != 10 || registro.id < 0 || registro.id > 9\n        || !recuento_valido(registro.recuento)) {\n        return false;\n    }\n    Celda& celda = tabla.at(registro.id);\n    if (celda.presente) {\n        return false;\n    }\n    celda = Celda{true, registro.recuento};\n    return true;\n}\n\nbool consultar(const std::vector<Celda>& tabla, int id, Recuento& destino) {\n    if (tabla.size() != 10 || id < 0 || id > 9) {\n        return false;\n    }\n    const Celda& celda = tabla.at(id);\n    if (!celda.presente) {\n        return false;\n    }\n    destino = celda.recuento;\n    return true;\n}\n\nbool convertir(const std::vector<Registro>& registros, std::vector<Celda>& destino) {\n    std::vector<Celda> candidatos(10, Celda{false, {0, 0}});\n    for (const Registro& registro : registros) {\n        if (!insertar(candidatos, registro)) {\n            return false;\n        }\n    }\n    destino = candidatos;\n    return true;\n}\n\nint main() {\n    const std::vector<Registro> registros{{7, {0, 0}}, {2, {3, 1}}};\n    std::vector<Celda> tabla;\n    if (!convertir(registros, tabla)) {\n        std::cout << \"Conversion rejected\";\n        return 1;\n    }\n    for (int id = 0; id < 10; ++id) {\n        Recuento recuento{0, 0};\n        if (consultar(tabla, id, recuento)) {\n            std::cout << id << ':' << recuento.aceptados\n                      << ':' << recuento.rechazados << '\\n';\n        }\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output has two lines: 2:3:1 and 7:0:0. The record with ID 7 does not disappear because its quantities are zero. For an empty collection, the conversion accepts ten absent cells. With two records sharing an ID, it returns false and preserves the entire previous table: test that condition with a different earlier record."
+        },
+        {
+          "type": "paragraph",
+          "text": "This table provides direct access to one cell per ID and reserves all ten positions, even if only one record exists. A vector of records stores only accepted records and preserves their order. The choice depends on lookup patterns and domain density. We do not automatically extend this table to an enormous range, nor do we claim that the file format requires this organization."
+        },
+        {
+          "type": "paragraph",
+          "text": "Extension criteria: change the organization without changing the ID–Recuento association, represent absence explicitly, and protect the destination until conversion completes. A report requiring the original order must preserve it or use the corresponding collection; it cannot reconstruct it from the ID-indexed table alone."
+        },
+        {
+          "type": "note",
+          "text": "Representation and its transformation are covered in the primary source (Stroustrup, 2024, sections 9.9.1 and 9.9.3, pp. 270–275). Domain, representation, and activities are original to this learning path."
+        }
+      ]
+    }
+  ]
+}
