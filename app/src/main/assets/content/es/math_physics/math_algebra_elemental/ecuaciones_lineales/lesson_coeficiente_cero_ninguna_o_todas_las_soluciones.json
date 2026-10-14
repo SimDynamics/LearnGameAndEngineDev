@@ -1,0 +1,1034 @@
+{
+  "id": "math_algebra_elemental__ecuaciones_lineales__coeficiente_cero_ninguna_o_todas_las_soluciones",
+  "title": "Coeficiente cero: ninguna o todas las soluciones",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La reducción puede terminar sin una incógnita visible"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta aquí has resuelto ecuaciones cuyo coeficiente final de la incógnita era distinto de cero. A veces, al reunir términos, ese coeficiente queda en cero. Entonces la conclusión depende de la igualdad que queda, no de buscar a toda costa un valor aislado. Salvo que un contexto lo restrinja, seguimos trabajando con todos los números racionales."
+        },
+        {
+          "type": "paragraph",
+          "text": "En 4x + 1 = 4x + 9, restar 4x a ambos miembros deja 1 = 9. Esta igualdad es falsa para cualquier x: cambiar su valor no cambia el uno ni el nueve. La ecuación no tiene soluciones. En cambio, 4x + 1 = 4x + 1 deja 1 = 1 al restar 4x a ambos miembros. Como esa igualdad es verdadera para cualquier x, todos los racionales son soluciones de la segunda ecuación."
+        },
+        {
+          "type": "paragraph",
+          "text": "Concluir que no hay soluciones también resuelve una ecuación, siempre que el razonamiento lo justifique. Resolver exige encontrar todas sus soluciones o demostrar que no existe ninguna; no exige que siempre aparezca un número como respuesta (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sin_letra_dos_conclusiones",
+          "prompt": "Dos ecuaciones se han reducido mediante pasos equivalentes. En una queda 3 = 8 y en la otra 3 = 3. Clasifica sus soluciones en el dominio de todos los racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sin_letra_dos_conclusiones__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "falsa",
+                  "type": "dropdown",
+                  "label": "Ecuación que terminó en 3 = 8",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Una solución racional"
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Ninguna solución racional"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales son soluciones"
+                    }
+                  ]
+                },
+                {
+                  "id": "verdadera",
+                  "type": "dropdown",
+                  "label": "Ecuación que terminó en 3 = 3",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Una solución racional"
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Ninguna solución racional"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales son soluciones"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "falsa": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "verdadera": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3 = 8 es siempre falsa, así que la primera no tiene soluciones. 3 = 3 es siempre verdadera, así que la segunda admite todos los racionales. Los pasos equivalentes conservan esas conclusiones para las ecuaciones originales.",
+            "incorrect": "Que desaparezca la letra no decide por sí solo. Revisa si la igualdad restante es verdadera o falsa: ningún valor puede cambiar los números que quedaron."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "la_letra_desaparecida",
+          "prompt": "Una ecuación terminó en 0 = 0 mediante transformaciones equivalentes. Su dominio son todos los racionales. ¿Qué significa el cero que aparece?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "la_letra_desaparecida__lectura",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La incógnita debe valer cero porque los dos miembros valen cero."
+                },
+                {
+                  "id": "b",
+                  "label": "La igualdad se cumple para cualquier racional; no selecciona un único valor de la incógnita."
+                },
+                {
+                  "id": "c",
+                  "label": "No hay soluciones porque ya no aparece la incógnita."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los ceros son los valores de los miembros reducidos. No son una orden de asignar cero a la incógnita. La igualdad se cumple sin distinguir entre cero, uno, una fracción u otro racional.",
+            "incorrect": "Distingue el valor de un miembro del valor propuesto para la incógnita. Una igualdad siempre verdadera admite todo el dominio, aunque la letra haya desaparecido."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Por qué 0x no permite despejar dividiendo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Multiplicar por cero da cero para cualquier racional: 0x = 0. Por eso 0x = 6 es imposible, mientras que 0x = 0 se cumple para todos los racionales. Dividir ambos miembros por el coeficiente sólo está permitido cuando ese coeficiente es distinto de cero: cero no tiene inverso multiplicativo (Lang, 1971, pp. 14–15, 37, 42–45)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, 5t − 2t = 3t queda 3t = 3t al reunir términos y luego 0 = 0 al restar 3t. En 5t − 2t = 3t + 4, los mismos pasos dejan 0 = 4. En ambos casos usamos sumas o restas reversibles; la diferencia está en la constante que queda, no en elegir t = 0."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_producto_y_propuesta",
+          "prompt": "Comprueba ambas ecuaciones con t = −2/3 y luego clasifícalas para todos los racionales. Primera: 5t − 2t = 3t. Segunda: 5t − 2t = 3t + 4.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_producto_y_propuesta__miembros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera_izq",
+                  "type": "numeric",
+                  "label": "Miembro izquierdo de la primera",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera_der",
+                  "type": "numeric",
+                  "label": "Miembro derecho de la primera",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_izq",
+                  "type": "numeric",
+                  "label": "Miembro izquierdo de la segunda",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_der",
+                  "type": "numeric",
+                  "label": "Miembro derecho de la segunda",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera_izq": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "primera_der": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "segunda_izq": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "segunda_der": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "cero_producto_y_propuesta__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "dropdown",
+                  "label": "Conjunto de soluciones de la primera",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Una solución racional"
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Ninguna solución racional"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales son soluciones"
+                    }
+                  ]
+                },
+                {
+                  "id": "segunda",
+                  "type": "dropdown",
+                  "label": "Conjunto de soluciones de la segunda",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Una solución racional"
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Ninguna solución racional"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales son soluciones"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  },
+                  "segunda": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con t = −2/3, los miembros de la primera valen −2 y −2; en la segunda valen −2 y 2. La clasificación general se justifica al reducirlas: 0 = 0 es siempre verdadera y 0 = 4 siempre falsa. Probar ese valor ayuda a revisar, pero no sustituye el argumento para todo el dominio.",
+            "incorrect": "Reúne 5t − 2t como 3t y calcula con el signo de t. Después resta 3t en los dos miembros: la verdad o falsedad de la igualdad restante decide el conjunto completo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dividir_el_coeficiente_cero",
+          "prompt": "Un apunte pasa de 0x = 0 a x = 0 y afirma que dividió por el coeficiente de x. ¿Qué revisión conserva la condición original?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dividir_el_coeficiente_cero__reparacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Dividir por uno produce x = 0 y justifica el apunte."
+                },
+                {
+                  "id": "b",
+                  "label": "No se puede dividir por cero; 0x = 0 admite todos los racionales, no sólo cero."
+                },
+                {
+                  "id": "c",
+                  "label": "El apunte funciona si se prohíben únicamente los valores negativos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dividir por cero no es una operación definida. Dividir por uno dejaría 0x = 0, sin aislar x. Tanto x = 0 como x = 1 o x = −1/2 cumplen la condición original; reducirla a x = 0 perdería soluciones.",
+            "incorrect": "El coeficiente es cero, no uno. Comprueba qué ocurre al multiplicar por cero un valor positivo y uno negativo: ambos satisfacen 0x = 0."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un criterio después de reunir y conservar el dominio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si las transformaciones equivalentes dejan ax = d, donde a y d son datos racionales, hay tres posibilidades. Si a ≠ 0, dividir por a da la única solución x = d/a. Si a = 0 y d = 0, todos los racionales cumplen la igualdad. Si a = 0 y d ≠ 0, ningún racional la cumple. Es el coeficiente reunido de la incógnita el que cuenta, no cualquier cero que aparezca durante el trabajo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, 0x + 2x = 6 no es una ecuación sin soluciones ni una identidad. Al reunir queda 2x = 6 y el coeficiente es dos, que no es cero. Su única solución es x = 3. El término 0x desaparece, pero 2x permanece."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_resultados_de_ax",
+          "prompt": "Clasifica estas ecuaciones para todos los racionales. En cada una, la letra x tiene el mismo dominio.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tres_resultados_de_ax__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "no_nulo",
+                  "type": "dropdown",
+                  "label": "(−3/2)x = 0",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Una solución racional"
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Ninguna solución racional"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales son soluciones"
+                    }
+                  ]
+                },
+                {
+                  "id": "cero_igual",
+                  "type": "dropdown",
+                  "label": "0x = 0",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Una solución racional"
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Ninguna solución racional"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales son soluciones"
+                    }
+                  ]
+                },
+                {
+                  "id": "cero_distinto",
+                  "type": "dropdown",
+                  "label": "0x = −5/2",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Una solución racional"
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Ninguna solución racional"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales son soluciones"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "no_nulo": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  },
+                  "cero_igual": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  },
+                  "cero_distinto": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En la primera, el coeficiente −3/2 es distinto de cero: dividir por él da x = 0, una solución. La segunda es siempre verdadera y la tercera siempre falsa. Un segundo miembro cero no basta para concluir que todos los valores sirven.",
+            "incorrect": "Revisa primero el coeficiente de x. Si es distinto de cero, el cociente está definido aunque el segundo miembro sea cero. Si el coeficiente es cero, compara la constante restante con cero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_termino_cero_no_borra_el_otro",
+          "prompt": "Resuelve 0q + 4q = −6 y decide cuántas soluciones racionales tiene.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_termino_cero_no_borra_el_otro__valor",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Valor de q",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "-3/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "un_termino_cero_no_borra_el_otro__tipo",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Ninguna: cualquier término 0q hace imposible la ecuación."
+                },
+                {
+                  "id": "b",
+                  "label": "Todos los racionales: al desaparecer 0q no queda ninguna condición."
+                },
+                {
+                  "id": "c",
+                  "label": "Una: al reunir queda un coeficiente distinto de cero para q."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "0q + 4q = 4q, por lo que 4q = −6 da q = −3/2. Al sustituir, el miembro izquierdo vale −6. El coeficiente reunido es cuatro y permite dividir, así que la solución es única.",
+            "incorrect": "Un término de coeficiente cero aporta cero, pero no borra los demás. Conserva 4q y divide −6 por cuatro."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distribuir antes de decidir qué coeficiente queda"
+        },
+        {
+          "type": "paragraph",
+          "text": "Que un coeficiente desaparezca puede quedar oculto por un paréntesis. En 2(v + 5) = 2v + 9, distribuir da 2v + 10 = 2v + 9; restar 2v deja 10 = 9. Ningún racional puede volver verdadera esa igualdad. El diez se obtiene multiplicando también el cinco, no sólo el término v."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para describir una reducción sin saltos, primero distribuye y reúne dentro de cada miembro. Después resta el término con la incógnita del miembro derecho en ambos miembros, y resta la constante del miembro izquierdo en ambos. Así obtendrás ax = d, con todos los términos con x a la izquierda y la constante a la derecha. Hay otras rutas válidas; las preguntas siguientes fijan esta para que puedas revisar cada resultado intermedio."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distribuir_y_clasificar_con_coeficiente_cero",
+          "prompt": "Trabaja con −3(x + 2) = −3x + 5. Distribuye en el izquierdo. Luego resta −3x de ambos miembros y resta la constante que quedó en el izquierdo. Escribe los datos de cada forma y clasifica el resultado para todos los racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distribuir_y_clasificar_con_coeficiente_cero__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_distribuido",
+                  "type": "numeric",
+                  "label": "Coeficiente de x tras distribuir a la izquierda",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "const_distribuida",
+                  "type": "numeric",
+                  "label": "Constante tras distribuir a la izquierda",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "coef_final",
+                  "type": "numeric",
+                  "label": "Coeficiente a en ax = d al reunir a la izquierda",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "const_final",
+                  "type": "numeric",
+                  "label": "Constante d en ax = d",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_distribuido": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "const_distribuida": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "coef_final": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "const_final": {
+                    "type": "numeric",
+                    "expected": "11"
+                  }
+                }
+              }
+            },
+            {
+              "id": "distribuir_y_clasificar_con_coeficiente_cero__tipo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "soluciones",
+                  "type": "dropdown",
+                  "label": "Conjunto de soluciones",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Una solución racional"
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Ninguna solución racional"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales son soluciones"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "soluciones": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distribuir da −3x − 6 = −3x + 5. Restar −3x deja −6 = 5, y restar −6 deja 0x = 11. La igualdad es imposible para cualquier racional. El signo negativo multiplica tanto a x como al dos del paréntesis.",
+            "incorrect": "Recupera primero el producto (−3)·2, que es −6. Restar −3x significa sumar 3x en ambos miembros. Después sumar seis convierte −6 = 5 en 0 = 11; no dividas entre cero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "fraccion_distribuida_y_todas_las_soluciones",
+          "prompt": "Ahora reduce (3/4)(4x − 8) = 3x − 6 siguiendo la misma ruta: distribuye, resta el término con x del derecho en ambos miembros y luego resta la constante izquierda. Clasifica para todos los racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion_distribuida_y_todas_las_soluciones__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_distribuido",
+                  "type": "numeric",
+                  "label": "Coeficiente de x tras distribuir a la izquierda",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "const_distribuida",
+                  "type": "numeric",
+                  "label": "Constante tras distribuir a la izquierda",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "coef_final",
+                  "type": "numeric",
+                  "label": "Coeficiente a en ax = d al reunir a la izquierda",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "const_final",
+                  "type": "numeric",
+                  "label": "Constante d en ax = d",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_distribuido": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "const_distribuida": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "coef_final": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "const_final": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            },
+            {
+              "id": "fraccion_distribuida_y_todas_las_soluciones__tipo",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "soluciones",
+                  "type": "dropdown",
+                  "label": "Conjunto de soluciones",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Una solución racional"
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Ninguna solución racional"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales son soluciones"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "soluciones": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El producto de 3/4 por 4x es 3x y su producto por −8 es −6. Queda 3x − 6 = 3x − 6, y los pasos indicados llevan a 0x = 0. Todo racional satisface la ecuación original; no se obtiene únicamente x = 0.",
+            "incorrect": "Multiplica 3/4 por los dos términos del paréntesis. Tras cancelar 3x, compara las constantes: iguales admiten todo el dominio, distintas no admiten ningún valor."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Clasificar con autonomía y revisar una conclusión"
+        },
+        {
+          "type": "paragraph",
+          "text": "Elige ahora los pasos sin que una ruta esté fijada. Conserva la ecuación original para comprobar tu conclusión. Si la reducción deja un coeficiente cero, revisa la distribución y las constantes antes de decidir. Si deja un coeficiente no nulo, revisa el cociente y sustitúyelo en ambos miembros originales. Conviene examinar el punto más débil del argumento, en lugar de repetir mecánicamente toda la cuenta (Pólya, 1957, pp. 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificacion_independiente_con_signos_y_fracciones",
+          "prompt": "Resuelve y clasifica cada condición en todos los racionales. A: −2(y − 3) = −2y + 6. B: (3z − 2)/4 = 3z/4 − 1. C: −(w + 1)/3 = (2w − 5)/6. En C escribe también la solución que obtengas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificacion_independiente_con_signos_y_fracciones__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Soluciones de A",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Una solución racional"
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Ninguna solución racional"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales son soluciones"
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Soluciones de B",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Una solución racional"
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Ninguna solución racional"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales son soluciones"
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Soluciones de C",
+                  "options": [
+                    {
+                      "id": "una",
+                      "label": "Una solución racional"
+                    },
+                    {
+                      "id": "ninguna",
+                      "label": "Ninguna solución racional"
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales son soluciones"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  },
+                  "b": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "c": {
+                    "type": "exact_text",
+                    "expected": "una"
+                  }
+                }
+              }
+            },
+            {
+              "id": "clasificacion_independiente_con_signos_y_fracciones__valor",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "w",
+                  "type": "numeric",
+                  "label": "Solución de C",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "w": {
+                    "type": "numeric",
+                    "expected": "3/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A distribuye como −2y + 6 = −2y + 6 y admite todos los racionales. En B, multiplicar por cuatro da 3z − 2 = 3z − 4, que exigiría −2 = −4 y no tiene soluciones. En C, multiplicar por seis da −2(w + 1) = 2w − 5; de allí −4w = −3 y w = 3/4. Al sustituir en C, ambos miembros valen −7/12.",
+            "incorrect": "En A, el producto de dos negativos aporta +6. En B, multiplica también el −1 por cuatro. En C, el signo menos afecta a w y a uno; calcula ambos miembros con tu propuesta para revisar el resultado."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_sustitucion_no_clasifica_el_conjunto",
+          "prompt": "Dos apuntes prueban únicamente w = 0. En 4w + 3 = 3, ese valor cumple y el primer apunte concluye «todos los racionales sirven». En 4w + 3 = 11, ese valor falla y el segundo concluye «no hay soluciones». Resuelve ambas ecuaciones y revisa los apuntes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_sustitucion_no_clasifica_el_conjunto__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Solución de 4w + 3 = 3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Solución de 4w + 3 = 11",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "una_sustitucion_no_clasifica_el_conjunto__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Ambas conclusiones están justificadas por esa sustitución."
+                },
+                {
+                  "id": "b",
+                  "label": "Ambas conclusiones confunden un valor probado con el conjunto completo; las dos ecuaciones tienen una sola solución."
+                },
+                {
+                  "id": "c",
+                  "label": "La primera tiene todos los racionales como soluciones, pero la segunda tiene una sola."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar tres y dividir por cuatro da w = 0 en la primera y w = 2 en la segunda. La primera prueba confirmó una solución, no todas; la segunda descartó sólo w = 0, no los demás valores. El coeficiente cuatro es distinto de cero en ambas.",
+            "incorrect": "Resolver describe todos los valores que cumplen. Un acierto aislado no demuestra que cualquiera sirva, y un fallo aislado no demuestra que ninguno sirva. Reduce cada ecuación con operaciones reversibles."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Todas significa todas las permitidas por el dominio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una ecuación puede cumplirse para todos los racionales y, sin embargo, un problema permitir sólo algunos de ellos. El conjunto de soluciones del problema debe respetar ese dominio. Una condición adicional también puede reducir las posibilidades: hay que atender a todos los datos, no únicamente a la igualdad que acabamos de simplificar."
+        },
+        {
+          "type": "paragraph",
+          "text": "En un simulador, el ajuste r expresa una longitud en milímetros y sólo puede tomar los valores 0, 1/2 y 1. Las medidas calculadas L = 2(r + 3) y R = 2r + 6 también se expresan en milímetros. El número tres dentro del paréntesis representa tres milímetros; el factor dos no tiene unidad. Para que los dos cálculos coincidan, el problema exige L = R."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "identidad_con_tres_ajustes_permitidos",
+          "prompt": "Calcula L para los tres ajustes permitidos y decide cuáles cumplen L = R. Mantén el dominio del simulador: r sólo puede ser 0, 1/2 o 1.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "identidad_con_tres_ajustes_permitidos__medidas",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "r_cero",
+                  "type": "numeric",
+                  "label": "L, en milímetros, cuando r = 0",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "r_medio",
+                  "type": "numeric",
+                  "label": "L, en milímetros, cuando r = 1/2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "r_uno",
+                  "type": "numeric",
+                  "label": "L, en milímetros, cuando r = 1",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "r_cero": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "r_medio": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "r_uno": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            },
+            {
+              "id": "identidad_con_tres_ajustes_permitidos__conjunto",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Los tres ajustes permitidos: 0, 1/2 y 1."
+                },
+                {
+                  "id": "b",
+                  "label": "Únicamente r = 0, porque al reducir aparece cero."
+                },
+                {
+                  "id": "c",
+                  "label": "Todos los racionales, incluidos los ajustes que el simulador no permite."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distribuir muestra L = 2r + 6, exactamente la fórmula de R. La igualdad se cumple en los tres ajustes permitidos, con medidas seis, siete y ocho milímetros. La identidad no autoriza al simulador a usar valores ajenos a su dominio.",
+            "incorrect": "Primero compara las fórmulas, y después conserva la lista de ajustes permitidos. Un valor puede satisfacer la igualdad algebraica y quedar fuera de las opciones del problema."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_condicion_adicional_selecciona_un_ajuste",
+          "prompt": "El mismo simulador mantiene r ∈ {0, 1/2, 1} y la condición L = R. Ahora se exige además que L mida 7 mm. Escribe el ajuste que cumple todas las condiciones y el valor de R correspondiente.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_condicion_adicional_selecciona_un_ajuste__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ajuste",
+                  "type": "numeric",
+                  "label": "Ajuste r, en milímetros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "medida_r",
+                  "type": "numeric",
+                  "label": "Medida R, en milímetros",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ajuste": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "medida_r": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La condición L = R sigue siendo verdadera para todos los ajustes permitidos, pero L = 7 exige 2(r + 3) = 7. Restar seis y dividir por dos da r = 1/2, que pertenece al dominio. Con él R = 2·(1/2) + 6 = 7 mm. Así se satisfacen simultáneamente todos los datos.",
+            "incorrect": "La igualdad entre L y R no incorpora por sí sola la medida requerida de siete milímetros. Añade esa condición al modelo y revisa que el ajuste obtenido pertenezca a la lista permitida."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Para continuar, conserva esta distinción: la reducción equivalente determina qué valores cumplen la ecuación; el dominio y las demás condiciones determinan cuáles responden al problema. Cuando aparezca 0x, revisa la constante restante antes de decidir si hay ninguna o todas las soluciones. Cuando el coeficiente sea distinto de cero, todavía puedes despejar y comprobar."
+        }
+      ]
+    }
+  ]
+}

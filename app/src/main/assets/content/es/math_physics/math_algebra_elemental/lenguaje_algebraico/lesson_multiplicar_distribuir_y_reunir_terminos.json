@@ -1,0 +1,1149 @@
+{
+  "id": "math_algebra_elemental__lenguaje_algebraico__multiplicar_distribuir_y_reunir_terminos",
+  "title": "Multiplicar, distribuir y reunir términos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer los términos y sus coeficientes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta lección continúa los opuestos, las restas y los paréntesis: combinaremos esas ideas con multiplicación y distributividad. Las letras representan números racionales, salvo un dominio más restringido indicado en un contexto. Trabajaremos con productos de un número por una letra y con constantes, para justificar cómo cambia una escritura sin cambiar su valor."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para reconocer los términos de una suma, lee primero las restas como sumas de opuestos. En 6x − x + 4 obtenemos 6x + (−x) + 4: los términos completos, con su signo, son 6x, −x y cuatro. El factor numérico de un término con letra se llama coeficiente. En 6x es seis; en −x es −1, porque −x = (−1)x. Cuatro es un término constante: no contiene x. Esta lectura de factores y términos conserva sus signos (Gelfand & Shen, 1993, p. 45)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La escritura x significa 1x: su coeficiente es uno, aunque no esté escrito. En 0x el coeficiente es cero y el término vale cero para cualquier x. Esto no exige que x sea cero; lo que anula el producto es su factor numérico. Identificar el coeficiente tampoco equivale a evaluar el término con un dato."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficientes_visibles_y_ocultos",
+          "prompt": "Escribe el coeficiente de t en cada término. Incluye el signo y la fracción cuando corresponda.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficientes_visibles_y_ocultos__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "uno",
+                  "type": "numeric",
+                  "label": "Coeficiente en t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "menos_uno",
+                  "type": "numeric",
+                  "label": "Coeficiente en −t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "cero",
+                  "type": "numeric",
+                  "label": "Coeficiente en 0t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "fraccion",
+                  "type": "numeric",
+                  "label": "Coeficiente en (−3/2)t",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "uno": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "menos_uno": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "cero": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "fraccion": {
+                    "type": "numeric",
+                    "expected": "-3/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "t = 1t y −t = (−1)t. En 0t el factor es cero; en (−3/2)t es −3/2. Los coeficientes se leen en la escritura, sin escoger t.",
+            "incorrect": "No confundas el factor numérico con la letra ni descartes el signo. Los factores uno y menos uno suelen escribirse sin la cifra uno."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficiente_y_valor_del_termino",
+          "prompt": "En el término −3x, identifica el coeficiente de x y calcula el valor del término con x = −2/3. Después indica qué muestra ese resultado.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficiente_y_valor_del_termino__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coeficiente de x en −3x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Valor de −3x con x = −2/3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "coeficiente_y_valor_del_termino__lectura",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Un coeficiente negativo obliga a que el término sea negativo."
+                },
+                {
+                  "id": "b",
+                  "label": "El término puede valer un número positivo aunque su coeficiente sea negativo."
+                },
+                {
+                  "id": "c",
+                  "label": "Una sustitución fraccionaria cambia el coeficiente de −3 a otro número."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El coeficiente es −3, pero con x = −2/3 el término vale dos. El signo del coeficiente no fija por sí solo el signo del producto: interviene también el valor de x.",
+            "incorrect": "Distingue el factor numérico escrito delante de la letra del valor que obtiene todo el producto al sustituir x."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Multiplicar todo el grupo"
+        },
+        {
+          "type": "paragraph",
+          "text": "En 3(2x + 5), el factor tres multiplica la cantidad completa 2x + 5. La distributiva permite escribir 3 × (2x) + 3 × 5. La asociatividad reúne los factores numéricos del primer producto: 3 × (2 × x) = (3 × 2)x. Por tanto, 3(2x + 5) = 6x + 15 para cualquier racional x."
+        },
+        {
+          "type": "paragraph",
+          "text": "Estas propiedades no están limitadas a valores enteros positivos de la letra. La multiplicación de racionales conserva la asociatividad, la conmutatividad, la distributividad y los productos por uno y cero (Lang, 1971, pp. 15–17, 37). Así podemos justificar una transformación con propiedades, sin convertir una tabla de casos en una demostración de todos los racionales."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distribuir_y_multiplicar_factores",
+          "prompt": "Completa la identidad: el primer hueco es el coeficiente de t después de multiplicar; el segundo es el término constante. El factor cuatro actúa sobre todo el paréntesis.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distribuir_y_multiplicar_factores__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coeficiente de t tras distribuir el cuatro",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Término constante tras distribuir el cuatro",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "4(3t + 2) = "
+                },
+                {
+                  "field": "coeficiente"
+                },
+                {
+                  "text": "t + "
+                },
+                {
+                  "field": "constante"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "4 × 3t = 12t y 4 × 2 = 8. Se multiplican tanto el término con letra como el constante: 4(3t + 2) = 12t + 8.",
+            "incorrect": "Reúne los factores cuatro y tres en el término con t. El dos también está dentro del grupo, así que recibe el factor cuatro."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_que_olvida_la_constante",
+          "prompt": "Un apunte afirma que 4(q + 7) = 4q + 7 para cualquier racional q. Evalúa los dos miembros con q = 0 y elige la revisión que corresponde.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_que_olvida_la_constante__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Valor de 4(q + 7) con q = 0",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Valor de 4q + 7 con q = 0",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "28"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            },
+            {
+              "id": "factor_que_olvida_la_constante__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El factor exterior debe multiplicar también al sumando constante."
+                },
+                {
+                  "id": "b",
+                  "label": "Debe cambiarse el dominio para impedir que q valga cero."
+                },
+                {
+                  "id": "c",
+                  "label": "El siete puede mantenerse porque no contiene una letra."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los miembros valen veintiocho y siete: el dato permitido refuta la identidad propuesta. El factor cuatro debe multiplicar también al siete; la escritura correcta es 4q + 28.",
+            "incorrect": "Sustituye sin corregir previamente el apunte. El sumando siete está dentro del grupo que recibe el factor cuatro."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distribuir factores negativos y fraccionarios"
+        },
+        {
+          "type": "paragraph",
+          "text": "En −2(3x − 4), el factor negativo también afecta a los dos términos. Lee primero el grupo como 3x + (−4): el resultado es (−2) × 3x + (−2) × (−4), es decir, −6x + 8. El término constante cambia de signo porque el producto de los dos factores negativos es positivo. No es una excepción a la distributiva: es la misma propiedad aplicada a números con signo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un factor fraccionario actúa de la misma manera. (1/2)(6x + 3) = 3x + 3/2: se multiplica cada término, sin redondear ni descartar una fracción. Los productos por −1 toman el opuesto del grupo completo; por cero, lo anulan completo. Estas razones se mantienen en los racionales por las propiedades de la multiplicación (Lang, 1971, pp. 16–17, 37)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_negativo_fraccionario",
+          "prompt": "Completa la identidad para todos los racionales r. El primer hueco contiene el coeficiente de r; el segundo, el término constante. Incluye sus signos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_negativo_fraccionario__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coeficiente de r tras multiplicar por −3/2",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Término constante tras multiplicar por −3/2",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "(−3/2)(4r − 2) = ("
+                },
+                {
+                  "field": "coeficiente"
+                },
+                {
+                  "text": ")r + ("
+                },
+                {
+                  "field": "constante"
+                },
+                {
+                  "text": ")"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "(−3/2) × 4r = −6r y (−3/2) × (−2) = 3. La identidad es (−3/2)(4r − 2) = −6r + 3.",
+            "incorrect": "Multiplica el factor completo por cada término del grupo. El segundo término es menos dos, no dos; su signo forma parte del producto."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "el_cero_actua_sobre_el_grupo",
+          "prompt": "Selecciona todas las expresiones que tienen el mismo valor que 0(3x + 2) para cualquier racional x.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "el_cero_actua_sobre_el_grupo__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "2"
+                },
+                {
+                  "id": "b",
+                  "label": "0x"
+                },
+                {
+                  "id": "c",
+                  "label": "0x + 2"
+                },
+                {
+                  "id": "d",
+                  "label": "0"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El cero multiplica ambos términos: 0 × 3x + 0 × 2 = 0 + 0. Tanto cero como 0x valen cero para cualquier x.",
+            "incorrect": "El término constante está dentro del grupo y también recibe el factor cero. No puede conservarse como si sólo se multiplicara la letra."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reunir términos es leer la distributiva al revés"
+        },
+        {
+          "type": "paragraph",
+          "text": "En 7x − 3x, los dos términos comparten el factor x. La distributiva leída al revés da 7x − 3x = (7 − 3)x = 4x. Se suman los coeficientes con sus signos; la letra sigue representando la misma cantidad. No se suman los nombres de las letras ni se sustituye x por el resultado cuatro."
+        },
+        {
+          "type": "paragraph",
+          "text": "La razón es general: si c y d son dos coeficientes racionales, cx + dx = (c + d)x. Llamamos términos semejantes a los que comparten la misma parte con letra; en este tramo, esa parte es una letra sin otros factores variables. También pueden ser semejantes aunque uno tenga coeficiente negativo o aunque los coeficientes sean fracciones. Reunir los términos que comparten su parte literal conserva el valor (Gelfand & Shen, 1993, p. 45). También se admite x = 0: la distributiva no exige que el factor común sea distinto de cero."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reunir_coeficientes_racionales",
+          "prompt": "Reúne los tres términos semejantes. Completa el coeficiente de x para que la identidad sea válida para cualquier racional x; recuerda que el último x tiene coeficiente uno.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reunir_coeficientes_racionales__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coeficiente de x tras reunir los tres términos",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "(5/6)x − (1/3)x + x = ("
+                },
+                {
+                  "field": "coeficiente"
+                },
+                {
+                  "text": ")x"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5/6 − 1/3 + 1 = 5/6 − 2/6 + 6/6 = 9/6 = 3/2. La distributiva inversa reúne el factor x y deja (3/2)x.",
+            "incorrect": "Suma los factores numéricos con sus signos. Usa un denominador común para los coeficientes; el x final aporta uno, no cero."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficiente_cero_al_reunir",
+          "prompt": "Reúne los términos de x − x + 8. Escribe el coeficiente que queda delante de x y el término constante. Después decide qué puede afirmarse para el dominio de todos los racionales x.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficiente_cero_al_reunir__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coeficiente de x después de reunir x − x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Término constante que queda",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            },
+            {
+              "id": "coeficiente_cero_al_reunir__alcance",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La transformación sólo es válida si x vale cero."
+                },
+                {
+                  "id": "b",
+                  "label": "El término constante debe eliminarse junto con los dos términos con x."
+                },
+                {
+                  "id": "c",
+                  "label": "El valor es ocho para cualquier racional x porque su coeficiente queda en cero."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los coeficientes uno y menos uno suman cero: x − x + 8 = 0x + 8 = 8. Esto vale para cualquier racional x; no exige fijar x en cero.",
+            "incorrect": "x y −x son términos con coeficientes opuestos. El ocho no se multiplica por x ni desaparece al cancelar esos dos términos."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separar los términos con letra de los constantes"
+        },
+        {
+          "type": "paragraph",
+          "text": "En 2x + 7 − x − 3, conservamos los signos al agrupar: (2x − x) + (7 − 3). Los términos con x dan x y los constantes dan cuatro. Así queda x + 4. Esa agrupación usa la suma y los opuestos de la lección anterior; no convierte el cuatro en un factor de x."
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos sumar los términos constantes entre sí porque son números. Podemos reunir los coeficientes de los términos que comparten x. Lo que no podemos hacer para todos los racionales es reemplazar una constante por otro múltiplo de la letra. 3x + 2 y 3x + 2x son expresiones distintas: en la segunda, el dos también multiplica a x."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "agrupar_dos_clases_de_terminos",
+          "prompt": "Reúne los términos de −2t + 7 + 5t − 9. El primer hueco es el coeficiente de t y el segundo el término constante, con su signo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "agrupar_dos_clases_de_terminos__numeros",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coeficiente de t tras reunir −2t y 5t",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Término constante tras sumar siete y menos nueve",
+                  "hint": "?",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "segments": [
+                {
+                  "text": "−2t + 7 + 5t − 9 = ("
+                },
+                {
+                  "field": "coeficiente"
+                },
+                {
+                  "text": ")t + ("
+                },
+                {
+                  "field": "constante"
+                },
+                {
+                  "text": ")"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−2 + 5 = 3 reúne el factor t. Siete menos nueve da −2 como constante. La expresión resultante es 3t − 2, válida para cualquier racional t.",
+            "incorrect": "Conserva el signo de cada término antes de agrupar. La constante se calcula aparte; no se incorpora al coeficiente de t."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "constante_no_es_otro_coeficiente",
+          "prompt": "Un apunte afirma 3x + 2 = 5x para cualquier racional x. Evalúa ambos miembros con x = 1 y con x = 0; selecciona la conclusión justificada.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "constante_no_es_otro_coeficiente__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "izq_uno",
+                  "type": "numeric",
+                  "label": "Valor de 3x + 2 con x = 1",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_uno",
+                  "type": "numeric",
+                  "label": "Valor de 5x con x = 1",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izq_cero",
+                  "type": "numeric",
+                  "label": "Valor de 3x + 2 con x = 0",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "der_cero",
+                  "type": "numeric",
+                  "label": "Valor de 5x con x = 0",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "izq_uno": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "der_uno": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "izq_cero": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "der_cero": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            },
+            {
+              "id": "constante_no_es_otro_coeficiente__conclusion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La igualdad no es una identidad, aunque se cumpla con x = 1."
+                },
+                {
+                  "id": "b",
+                  "label": "La igualdad es una identidad porque hay una comprobación favorable."
+                },
+                {
+                  "id": "c",
+                  "label": "Debe prohibirse x = 0 para que tres y dos puedan sumarse como coeficientes."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con uno ambos miembros valen cinco. Con cero valen dos y cero: este dato permitido refuta la identidad. El dos es un término constante, no un coeficiente de otro término con x.",
+            "incorrect": "No conviertas el término dos en 2x. Una coincidencia particular con x = 1 no permite reunir términos de distinta clase para todo el dominio."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Letras diferentes necesitan una relación adicional"
+        },
+        {
+          "type": "paragraph",
+          "text": "En 2a + 3b, con a y b racionales sin otra relación indicada, los términos no comparten la misma parte con letra. No podemos escribir 5a para todos los pares. Tampoco podemos sumar las letras como si formaran un nombre nuevo. Los nombres distintos permiten distinguir cantidades; no obligan a que sus valores sean distintos ni iguales."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un modelo establece b = a, entonces sí podemos sustituir b por a y reunir 2a + 3a = 5a para ese contexto. Si establece b = 2a, la sustitución produce 2a + 3(2a) = 8a. Lo que autoriza la reunión es la relación dada, no una coincidencia numérica observada en un único par de valores."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "letras_distintas_y_un_dato",
+          "prompt": "Con a = −1/2 y b = 3/2, calcula 2a + 3b y 5a. Decide después qué demuestra este par permitido de valores sobre la afirmación 2a + 3b = 5a para todos los racionales a y b.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "letras_distintas_y_un_dato__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "original",
+                  "type": "numeric",
+                  "label": "Valor de 2a + 3b",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "reunida",
+                  "type": "numeric",
+                  "label": "Valor de 5a",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "original": {
+                    "type": "numeric",
+                    "expected": "7/2"
+                  },
+                  "reunida": {
+                    "type": "numeric",
+                    "expected": "-5/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "letras_distintas_y_un_dato__conclusion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La afirmación es una identidad porque los coeficientes suman cinco."
+                },
+                {
+                  "id": "b",
+                  "label": "El dato refuta la afirmación universal, aunque en otros pares puedan coincidir."
+                },
+                {
+                  "id": "c",
+                  "label": "El dato es inadmisible porque letras distintas deben tener el mismo valor."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2 × (−1/2) + 3 × (3/2) = −1 + 9/2 = 7/2, mientras 5a = −5/2. Son diferentes: no podemos sustituir siempre b por a sin una relación que lo permita.",
+            "incorrect": "Usa cada letra con su propio valor. Los factores dos y tres no pueden sumarse en un solo coeficiente de a mientras el segundo término conserve b."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reunir_con_una_relacion_dada",
+          "prompt": "Para la expresión 4u + 2v, relaciona cada conjunto de condiciones con una expresión equivalente para todos los pares racionales permitidos. Usa cada destino una sola vez y completa las tres relaciones. No se pide elegir un par numérico particular.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reunir_con_una_relacion_dada__relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "opuestos",
+                  "label": "Se establece v = −u"
+                },
+                {
+                  "id": "sin_relacion",
+                  "label": "No se establece relación adicional entre u y v"
+                },
+                {
+                  "id": "iguales",
+                  "label": "Se establece v = u"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "original",
+                  "label": "4u + 2v"
+                },
+                {
+                  "id": "seis",
+                  "label": "6u"
+                },
+                {
+                  "id": "dos",
+                  "label": "2u"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "opuestos": "dos",
+                  "sin_relacion": "original",
+                  "iguales": "seis"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con v = −u, 4u + 2v se puede reunir como 2u. Con v = u, se puede reunir como 6u. La expresión original también conserva el valor con esas relaciones, pero en este emparejamiento debe reservarse al caso sin relación adicional: es el único destino que sirve para todos los pares de ese caso, y cada destino se usa una vez.",
+            "incorrect": "Empieza por el caso sin relación adicional: no permite reemplazar v por u ni por su opuesto para todos los pares. Ese caso necesita la expresión original. Después usa cada destino restante una sola vez y aplica la relación dada en los otros casos."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combinar productos con grupos que se restan"
+        },
+        {
+          "type": "paragraph",
+          "text": "En 3(x − 2) − (x + 4) aparecen dos acciones sobre grupos. El factor tres distribuye en el primero: 3x − 6. Restar el segundo grupo toma su opuesto: −x − 4. Juntas, las acciones dan 3x − 6 − x − 4 = 2x − 10. Se conserva el signo de cada término antes de reunir."
+        },
+        {
+          "type": "paragraph",
+          "text": "La misma idea funciona con factores negativos o fraccionarios y con coeficientes que quedan en uno, menos uno o cero. Antes de calcular una reducción, identifica qué factor actúa sobre cada grupo, cuáles son los términos resultantes y qué partes comparten la letra. Una sustitución puede comprobar la lectura, mientras las propiedades justifican todos los valores del dominio."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "combinar_distribuciones_y_constantes",
+          "prompt": "Para −2(3t − 1) + 4(t + 2) − 5, escribe una expresión equivalente para todos los racionales t. Además, indica el coeficiente de t y el término constante después de distribuir y reunir. Se admiten formas equivalentes de la expresión.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "combinar_distribuciones_y_constantes__expresion",
+              "type": "math_expression_input",
+              "label": "Expresión equivalente del resultado",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "-2t+5"
+              }
+            },
+            {
+              "id": "combinar_distribuciones_y_constantes__partes",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coeficiente de t tras reunir todos los términos con t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Término constante después de reunir",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El primer producto da −6t + 2 y el segundo 4t + 8. Al reunir con menos cinco queda (−6 + 4)t + (2 + 8 − 5) = −2t + 5. La identidad se justifica por distribución y reunión de términos, sin escoger t.",
+            "incorrect": "Cada factor exterior afecta a todos los términos de su grupo. Después reúne los términos con t y calcula por separado la suma de constantes con sus signos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_factor_y_grupo_resta",
+          "prompt": "Un apunte cambia (1/2)(4x − 6) − (x − 5) por 2x − 6 − x + 5. Evalúa ambas escrituras con x = −3/2 y elige qué debe revisarse.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_factor_y_grupo_resta__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "original",
+                  "type": "numeric",
+                  "label": "Valor de (1/2)(4x − 6) − (x − 5)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "apunte",
+                  "type": "numeric",
+                  "label": "Valor de 2x − 6 − x + 5",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "original": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "apunte": {
+                    "type": "numeric",
+                    "expected": "-5/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "recuperar_factor_y_grupo_resta__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El factor 1/2 debe multiplicar también al menos seis."
+                },
+                {
+                  "id": "b",
+                  "label": "La resta de x − 5 debe convertirse en menos x menos cinco."
+                },
+                {
+                  "id": "c",
+                  "label": "El factor 1/2 sólo es válido cuando x es un entero positivo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La expresión original vale 1/2 y el apunte −5/2. Restar x − 5 sí produce −x + 5. El error está en el primer grupo: multiplicar menos seis por 1/2 da menos tres. La reducción correcta es x + 2.",
+            "incorrect": "Conserva las dos escrituras durante la comprobación. El factor 1/2 multiplica también al término constante; la resta exterior actúa sobre los dos términos del segundo grupo."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir las propiedades a un desplazamiento"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera el modelo de movimientos con signo de la lección anterior. En una recta orientada, el este es positivo. Una ficha realiza dos avances hacia el este de la misma longitud y luego un retroceso hacia el oeste. x mide una longitud racional no negativa en metros. Cada avance mide x/2 + 2 metros y el retroceso x + 3 metros; estas cantidades son positivas incluso con x = 0."
+        },
+        {
+          "type": "paragraph",
+          "text": "El desplazamiento total suma los avances y resta el retroceso: describe el cambio entre la posición inicial y la final. La distancia recorrida suma las longitudes de los tres movimientos. Distingue estas dos cantidades al construir el modelo y al reunir sus términos. La misma definición de x debe conservarse en todos los grupos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modelo_de_dos_avances_y_un_regreso",
+          "prompt": "La ficha hace dos avances, cada uno de x/2 + 2 metros, y después un retroceso de x + 3 metros. x es una longitud racional no negativa, medida en metros. Escribe una expresión del desplazamiento total con signo y completa su coeficiente de x y su término constante tras reunir. Se admiten expresiones equivalentes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelo_de_dos_avances_y_un_regreso__expresion",
+              "type": "math_expression_input",
+              "label": "Desplazamiento total con signo, en metros",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2*(x/2+2)-(x+3)"
+              }
+            },
+            {
+              "id": "modelo_de_dos_avances_y_un_regreso__partes",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coeficiente de x en el desplazamiento reducido",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Término constante del desplazamiento, en metros",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dos avances dan 2(x/2 + 2) = x + 4. El retroceso resta el grupo x + 3, por lo que el desplazamiento es x + 4 − x − 3 = 1 metro hacia el este. El coeficiente de x queda en cero y la constante en uno. La identidad conserva el modelo para todos los valores permitidos.",
+            "incorrect": "Cuenta los dos avances y resta el retroceso completo. Conserva la unidad metro y reúne el coeficiente de x aparte de los términos constantes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_el_movimiento_con_fracciones",
+          "prompt": "Con x = 1/2 metro, calcula cuánto suman los dos avances, cuánto mide el retroceso, el desplazamiento total con signo y la distancia recorrida. Escribe todos los valores en metros.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_el_movimiento_con_fracciones__valores",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "avances",
+                  "type": "numeric",
+                  "label": "Longitud conjunta de los dos avances",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "retroceso",
+                  "type": "numeric",
+                  "label": "Longitud del retroceso",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "desplazamiento",
+                  "type": "numeric",
+                  "label": "Desplazamiento total con signo",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "distancia",
+                  "type": "numeric",
+                  "label": "Distancia recorrida sumando las tres longitudes",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "avances": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  },
+                  "retroceso": {
+                    "type": "numeric",
+                    "expected": "7/2"
+                  },
+                  "desplazamiento": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "distancia": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada avance mide 1/4 + 2 = 9/4 metros; los dos suman 9/2. El retroceso mide 7/2. La diferencia es un metro hacia el este y la suma de longitudes es ocho metros. La reducción del modelo explica el desplazamiento; esta sustitución lo comprueba con un dato permitido.",
+            "incorrect": "Cuenta los dos avances antes de compararlos con el retroceso. Para el desplazamiento resta las longitudes de sentidos opuestos; para la distancia recorrida suma las tres longitudes positivas."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Reunir términos permite reconocer qué aporta cada coeficiente y qué queda como constante, conservando los valores y las condiciones del modelo. Justifica las transformaciones con los factores y las propiedades; comprueba un dato cuando ayude a detectar un error. Una cuenta favorable no sustituye la razón general que conserva la expresión."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,923 @@
+{
+  "id": "math_algebra_elemental__ecuaciones_lineales__modelos_lineales_y_revision_de_condiciones",
+  "title": "Modelos lineales y revisión de condiciones",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La ecuación debe conservar la pregunta del problema"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya puedes resolver ecuaciones lineales y distinguir una solución única, ninguna o todas las soluciones de un dominio. Ahora integrarás esas herramientas con el planteamiento: qué se busca, qué se conoce, qué valores se permiten y qué cantidades deben compararse. Las situaciones usarán racionales, denominadores constantes no nulos y productos de una incógnita por cantidades conocidas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una palabra aislada no decide la operación. Primero comprende la relación completa, define la incógnita con su unidad y separa las condiciones que deben cumplirse. Después escribe expresiones que describan las cantidades y una igualdad que represente el objetivo. Esta lectura por partes debe conservar el significado global del problema (Pólya, 1957, pp. 173–175)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, un marco rectangular tiene ancho w centímetros y largo cinco centímetros mayor. El perímetro, que es la suma de sus cuatro lados, debe ser treinta centímetros. Los dos lados cortos miden w y los dos largos w + 5. Por tanto, 2w + 2(w + 5) = 30 compara el perímetro calculado con el requerido. El dominio es w racional positivo: el ancho no puede ser cero ni negativo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Distribuir y reunir da 4w + 10 = 30; restar diez y dividir por cuatro obtiene w = 5. El largo es diez. En las cantidades originales, 5 + 10 + 5 + 10 = 30 cm, y ambos tipos de lados son positivos. La equivalencia de las ecuaciones justifica que no quedaron otras soluciones; la revisión del marco comprueba que ese resultado representa lo pedido (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_el_alcance_de_un_resultado",
+          "prompt": "Para el ejemplo del marco, selecciona las afirmaciones correctas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_el_alcance_de_un_resultado__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La solución w mide el largo porque es el lado mayor."
+                },
+                {
+                  "id": "b",
+                  "label": "La comprobación del perímetro suma los cuatro lados."
+                },
+                {
+                  "id": "c",
+                  "label": "El dominio exige un ancho positivo, además de cumplir la igualdad."
+                },
+                {
+                  "id": "d",
+                  "label": "El valor treinta se compara con la suma de dos lados adyacentes."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "w se definió como ancho; el largo es w + 5. El perímetro suma cuatro lados, no sólo dos. El modelo debe conservar tanto la igualdad de longitudes totales como el dominio positivo de cada lado.",
+            "incorrect": "Lee qué cantidad nombra w antes de interpretar el resultado. Después reconstruye el perímetro desde los cuatro lados y distingue esa comprobación de la restricción de positividad."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una misma incógnita coordina dos posiciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una prueba sobre un carril recto se fija un mismo origen para medir posiciones en metros. Al comenzar, el marcador A está a tres metros del origen y el B a quince. A avanza dos metros por segundo y B avanza medio metro por segundo, ambos en la dirección de posiciones crecientes. Esos avances mantienen una proporción constante también durante fracciones de segundo: avance por segundo multiplicado por tiempo da avance en metros."
+        },
+        {
+          "type": "paragraph",
+          "text": "Llamamos t al tiempo transcurrido desde ese mismo inicio, medido en segundos. La prueba observa tiempos racionales desde cero hasta diez segundos, incluidos los extremos. Buscamos cuándo coinciden las posiciones, no cuándo recorren la misma distancia desde sus lugares iniciales. Para escribir la posición final hay que sumar posición inicial y avance."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_posiciones_y_encuentro",
+          "prompt": "Escribe las posiciones de A y B en metros en función de t. Después construye una ecuación para que coincidan. Se admiten expresiones e igualdades equivalentes con la misma definición de t.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_posiciones_y_encuentro__a",
+              "type": "math_expression_input",
+              "label": "Posición de A, en metros",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3+2t"
+              }
+            },
+            {
+              "id": "construir_posiciones_y_encuentro__b",
+              "type": "math_expression_input",
+              "label": "Posición de B, en metros",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "15+t/2"
+              }
+            },
+            {
+              "id": "construir_posiciones_y_encuentro__encuentro",
+              "type": "math_expression_input",
+              "label": "Ecuación para la misma posición",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3+2t=15+t/2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A está en 3 + 2t metros y B en 15 + t/2 metros. La condición 3 + 2t = 15 + t/2 compara posiciones medidas desde el mismo origen en el mismo instante. Igualar únicamente 2t y t/2 olvidaría que comenzaron en lugares diferentes.",
+            "incorrect": "Cada expresión necesita la posición inicial y el avance. Medio metro por segundo produce t/2 metros en t segundos. El signo igual debe comparar las posiciones completas, no los avances por separado."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_comprobar_el_encuentro",
+          "prompt": "Resuelve la condición de encuentro por una ruta que puedas justificar. Escribe el tiempo t en segundos y la posición de cada marcador en ese instante. Revisa que el tiempo pertenezca al intervalo observado.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_comprobar_el_encuentro__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "tiempo",
+                  "type": "numeric",
+                  "label": "Tiempo t en segundos",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Posición de A en metros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Posición de B en metros",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "tiempo": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "a": {
+                    "type": "numeric",
+                    "expected": "19"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "19"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una ruta resta t/2 y resta tres: (3/2)t = 12. Multiplicar por 2/3 da t = 8 s. A está en 3 + 2 × 8 = 19 m, y B en 15 + 8/2 = 19 m. Ocho pertenece al intervalo de cero a diez; los pasos reversibles muestran que no hay otro tiempo racional de encuentro en este modelo.",
+            "incorrect": "El resultado de la ecuación mide tiempo, no posición. Evalúa después las dos expresiones originales con ese mismo tiempo. Conserva los puntos de partida y comprueba también el intervalo permitido."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Si el tiempo propuesto hiciera iguales los avances pero no las posiciones, habría resuelto otra pregunta. Una sustitución debe volver a las cantidades originales y a todas las condiciones, no sólo a una línea abreviada del cálculo. Revisar resultado y argumento cumple funciones distintas (Pólya, 1957, pp. 12–15, 60–61)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La condición adicional también decide la validez"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un recipiente A contiene veinticuatro litros de agua y otro B contiene seis. B tiene capacidad para treinta litros. Se transfieren x litros de A a B sin pérdidas y sin añadir agua externa. x es un racional entre cero y veinticuatro litros: no se extrae más agua de la disponible y B puede recibir toda esa cantidad. Queremos que, al terminar, A contenga el doble de agua que B."
+        },
+        {
+          "type": "paragraph",
+          "text": "La misma transferencia reduce una cantidad y aumenta la otra. Elegir una incógnita con significado estable permite relacionar partes del problema antes de transformar una ecuación. Después hay que comprobar las cantidades físicas, sus unidades y las restricciones originales (Lang, 1971, pp. 47–48)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_dos_volumenes_relacionados",
+          "prompt": "Escribe los volúmenes finales de A y B en litros. Después construye la igualdad que expresa que A contiene el doble que B. Conserva x como litros transferidos de A hacia B.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_dos_volumenes_relacionados__a",
+              "type": "math_expression_input",
+              "label": "Volumen final de A, en litros",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "24-x"
+              }
+            },
+            {
+              "id": "construir_dos_volumenes_relacionados__b",
+              "type": "math_expression_input",
+              "label": "Volumen final de B, en litros",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "6+x"
+              }
+            },
+            {
+              "id": "construir_dos_volumenes_relacionados__condicion",
+              "type": "math_expression_input",
+              "label": "Ecuación para la relación final",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "24-x=2(6+x)"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los volúmenes finales son 24 − x y 6 + x litros. El doble del volumen de B es 2(6 + x), así que una condición correcta es 24 − x = 2(6 + x). El factor dos multiplica todo el volumen final de B, incluidos sus seis litros iniciales.",
+            "incorrect": "La misma x sale de A y entra en B. No uses dos valores distintos ni dupliques sólo el agua transferida: la condición compara los volúmenes finales completos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_la_transferencia",
+          "prompt": "Resuelve la condición y escribe los litros que se transfieren y los volúmenes finales. Comprueba el doble solicitado y la capacidad disponible.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_la_transferencia__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "transferencia",
+                  "type": "numeric",
+                  "label": "Litros transferidos x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Litros finales en A",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Litros finales en B",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "transferencia": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "a": {
+                    "type": "numeric",
+                    "expected": "20"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "10"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distribuir da 24 − x = 12 + 2x; sumar x y restar doce obtiene 12 = 3x, y x = 4. A queda con veinte litros y B con diez: veinte es el doble de diez y el total sigue siendo treinta. Cuatro está dentro del dominio; diez no supera la capacidad de B.",
+            "incorrect": "Resuelve con la misma incógnita en ambos miembros y vuelve a calcular los dos volúmenes. Deben conservar el total inicial y cumplir la relación, sin negativos ni exceso de capacidad."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "anadir_un_limite_a_la_transferencia",
+          "prompt": "Se añade una condición a ese mismo problema: durante la operación sólo se permite transferir como máximo tres litros. ¿Qué conclusión respeta ahora todas las condiciones?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "anadir_un_limite_a_la_transferencia__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Transferir tres litros sigue cumpliendo la relación requerida."
+                },
+                {
+                  "id": "b",
+                  "label": "Transferir cuatro litros es válido porque cumple la igualdad."
+                },
+                {
+                  "id": "c",
+                  "label": "No hay transferencia admisible que cumpla las dos condiciones."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La igualdad tiene como única solución x = 4, pero el límite adicional exige x ≤ 3. Por tanto, no hay solución en el dominio contextual nuevo. Elegir tres litros deja veintiuno en A y nueve en B; veintiuno no es el doble de nueve. La igualdad sigue teniendo solución racional, aunque el problema completo no admite esa transferencia.",
+            "incorrect": "No sustituyas un objetivo exacto por una cantidad cercana. Compara la solución algebraica con el límite nuevo y revisa si alguna otra propuesta podría cumplir la misma igualdad."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una solución racional puede incumplir un conteo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un patrón se forma con doce grupos completos de puntos. Cada grupo pequeño contiene tres puntos y cada grupo grande contiene cinco. No se dividen grupos ni se combinan partes de dos grupos para formar otro. Llamamos n al número de grupos grandes: un entero entre cero y doce, incluidos los extremos. Queremos obtener exactamente cincuenta puntos."
+        },
+        {
+          "type": "paragraph",
+          "text": "El total de grupos es conocido. Si n de ellos son grandes, los restantes son pequeños. Esa relación permite describir ambas partes usando una sola incógnita. No hemos creado una segunda incógnita independiente; el total fija cómo se relacionan las partes (Lang, 1971, p. 47)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "componer_dos_tipos_de_grupo",
+          "prompt": "Escribe cuántos grupos pequeños quedan en función de n, una expresión para el total de puntos y una ecuación que imponga el objetivo de cincuenta. Conserva n como número de grupos grandes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "componer_dos_tipos_de_grupo__pequenos",
+              "type": "math_expression_input",
+              "label": "Número de grupos pequeños",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "12-n"
+              }
+            },
+            {
+              "id": "componer_dos_tipos_de_grupo__total",
+              "type": "math_expression_input",
+              "label": "Total de puntos del patrón",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "5n+3(12-n)"
+              }
+            },
+            {
+              "id": "componer_dos_tipos_de_grupo__objetivo",
+              "type": "math_expression_input",
+              "label": "Ecuación para cincuenta puntos",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "5n+3(12-n)=50"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Hay 12 − n grupos pequeños. Los grandes aportan 5n puntos y los pequeños 3(12 − n); el total es 5n + 3(12 − n). Igualarlo a cincuenta expresa el objetivo. La letra n cuenta grupos grandes, no puntos grandes.",
+            "incorrect": "Recupera la definición de n y el total de doce grupos. La cantidad de puntos de cada tipo multiplica su número de grupos. Sumarlos no cambia las unidades: ambas aportaciones cuentan puntos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_reconstruir_el_patron",
+          "prompt": "Resuelve el modelo y escribe n. Calcula después cuántos puntos aportan los grupos grandes y cuántos los pequeños. Revisa que los números de grupos sean enteros admitidos y que sus aportaciones sumen cincuenta.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_reconstruir_el_patron__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "grandes",
+                  "type": "numeric",
+                  "label": "Número n de grupos grandes",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "puntos_grandes",
+                  "type": "numeric",
+                  "label": "Puntos aportados por los grupos grandes",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "puntos_pequenos",
+                  "type": "numeric",
+                  "label": "Puntos aportados por los grupos pequeños",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "grandes": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "puntos_grandes": {
+                    "type": "numeric",
+                    "expected": "35"
+                  },
+                  "puntos_pequenos": {
+                    "type": "numeric",
+                    "expected": "15"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distribuir da 5n + 36 − 3n = 50, o 2n + 36 = 50; restar treinta y seis y dividir por dos obtiene n = 7. Quedan cinco grupos pequeños. Las aportaciones son 5 × 7 = 35 y 3 × 5 = 15 puntos: cincuenta en total. Ambos conteos son enteros no negativos y suman doce grupos.",
+            "incorrect": "No confundas el número de grupos con su aporte de puntos. Después de resolver n, calcula también los grupos pequeños como doce menos n y verifica los dos totales diferentes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cambiar_el_objetivo_conservando_el_dominio",
+          "prompt": "Se mantiene el mismo patrón de doce grupos completos, pero ahora se piden cuarenta y nueve puntos. Resuelve la nueva igualdad en los racionales y decide si esa solución permite construir el patrón.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cambiar_el_objetivo_conservando_el_dominio__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "racional",
+                  "type": "numeric",
+                  "label": "Solución racional n para el nuevo objetivo",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "racional": {
+                    "type": "numeric",
+                    "expected": "13/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "cambiar_el_objetivo_conservando_el_dominio__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí: cualquier solución racional cuenta grupos completos."
+                },
+                {
+                  "id": "b",
+                  "label": "No: el valor obtenido no cuenta una cantidad entera de grupos."
+                },
+                {
+                  "id": "c",
+                  "label": "Sí: redondear al entero más cercano conserva los cuarenta y nueve puntos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El total se reduce a 36 + 2n. Para cuarenta y nueve puntos, 2n = 13 y n = 13/2. Ese número no pertenece al dominio entero, así que el patrón solicitado no existe bajo estas condiciones. Redondear a seis da cuarenta y ocho puntos y redondear a siete da cincuenta. También puedes recuperar la paridad: treinta y seis más el doble de un entero siempre es par.",
+            "incorrect": "Resuelve primero la igualdad sin redondear y después interpreta n como conteo de grupos completos. El objetivo exacto y el dominio deben cumplirse a la vez."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos registros pueden repetir la misma información"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una sesión se diseña con períodos de la misma duración p segundos. p es un racional positivo. Dos registros describen la duración total mediante agrupaciones diferentes; ninguno aporta todavía una medición del total. Usar dos escrituras no garantiza disponer de dos condiciones independientes que determinen p."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "registros_que_no_fijan_la_duracion",
+          "prompt": "Lee los dos registros. Escribe sus duraciones totales en función de p, una igualdad que compare ambas y la conclusión que corresponde a esa comparación.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Registro",
+                "Descripción de la duración total"
+              ],
+              "rows": [
+                [
+                  "A",
+                  "Tres períodos de p segundos más seis segundos."
+                ],
+                [
+                  "B",
+                  "Dos grupos de p + 3 segundos y otro período de p segundos."
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "registros_que_no_fijan_la_duracion__a",
+              "type": "math_expression_input",
+              "label": "Duración total según el registro A, en segundos",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6"
+              }
+            },
+            {
+              "id": "registros_que_no_fijan_la_duracion__b",
+              "type": "math_expression_input",
+              "label": "Duración total según el registro B, en segundos",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2(p+3)+p"
+              }
+            },
+            {
+              "id": "registros_que_no_fijan_la_duracion__comparacion",
+              "type": "math_expression_input",
+              "label": "Igualdad entre las duraciones descritas",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6=2(p+3)+p"
+              }
+            },
+            {
+              "id": "registros_que_no_fijan_la_duracion__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Se determina un único p por haber tres períodos."
+                },
+                {
+                  "id": "b",
+                  "label": "Cada p del dominio cumple la comparación, sin quedar determinado."
+                },
+                {
+                  "id": "c",
+                  "label": "Ningún p cumple porque los registros usan grupos distintos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A describe 3p + 6 segundos y B describe 2(p + 3) + p, que también vale 3p + 6. Su comparación es una identidad para cada p permitido. Los registros son compatibles, pero no dicen cuánto dura cada período. Por ejemplo, p = 1 y p = 2 producen sesiones distintas que cumplen la comparación.",
+            "incorrect": "Distribuye y reúne antes de decidir qué impone la igualdad. Dos maneras de describir la misma cantidad pueden ser compatibles sin seleccionar una duración particular."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "En este caso la insuficiencia se demuestra con la relación completa: todos los p positivos la satisfacen. No se corrige escogiendo un número cómodo ni suponiendo que la cantidad de períodos determina su duración. Una condición adicional debe aportar información que no estuviera ya en las dos escrituras."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_dato_que_si_determina_el_periodo",
+          "prompt": "Se añade una medición exacta: la sesión completa dura dieciocho segundos. Construye la condición que usa este nuevo dato y resuélvela. Escribe p y la duración de cada grupo de p + 3 segundos del registro B.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_dato_que_si_determina_el_periodo__condicion",
+              "type": "math_expression_input",
+              "label": "Ecuación que utiliza la duración total medida",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6=18"
+              }
+            },
+            {
+              "id": "un_dato_que_si_determina_el_periodo__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "periodo",
+                  "type": "numeric",
+                  "label": "Duración p en segundos",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "grupo",
+                  "type": "numeric",
+                  "label": "Duración de cada grupo de p + 3 segundos",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "periodo": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "grupo": {
+                    "type": "numeric",
+                    "expected": "7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La condición nueva es 3p + 6 = 18, o una igualdad equivalente. Restar seis y dividir por tres da p = 4 s. Cada grupo de p + 3 dura siete segundos; B suma 7 + 7 + 4 = 18 s. El registro A da 3 × 4 + 6 = 18 s. El dato medido sí selecciona una duración positiva única.",
+            "incorrect": "La medición se refiere a toda la sesión, no a un período aislado. Igualar p directamente a dieciocho cambiaría lo observado. Usa una expresión total que ya hayas interpretado."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La inconsistencia no se resuelve inventando una incógnita"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora dos reportes pretenden describir la duración total exacta de una misma prueba. En los dos, cada uno de los tres períodos dura p segundos; p es racional positivo. El reporte A describe seis segundos fuera de esos períodos. El B agrupa dos segundos con cada período y añade además un segundo al cierre. No sabemos cuál reporte corresponde fielmente a la prueba real."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_reportes_incompatibles",
+          "prompt": "Escribe las duraciones de A y B en función de p y la igualdad que exigiría que ambos reportes coincidieran. Calcula también la diferencia «duración de B menos duración de A», en segundos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comparar_reportes_incompatibles__a",
+              "type": "math_expression_input",
+              "label": "Duración total según A, en segundos",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6"
+              }
+            },
+            {
+              "id": "comparar_reportes_incompatibles__b",
+              "type": "math_expression_input",
+              "label": "Duración total según B, en segundos",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3(p+2)+1"
+              }
+            },
+            {
+              "id": "comparar_reportes_incompatibles__coincidencia",
+              "type": "math_expression_input",
+              "label": "Ecuación para que coincidan los reportes",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3p+6=3(p+2)+1"
+              }
+            },
+            {
+              "id": "comparar_reportes_incompatibles__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Duración de B menos duración de A, en segundos",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "B describe 3(p + 2) + 1 = 3p + 7 segundos; A describe 3p + 6. Su diferencia es uno para cada p. Exigir igualdad reduce la condición a 6 = 7, que es falsa. Por eso ningún p puede hacer coincidir esos reportes bajo las condiciones indicadas.",
+            "incorrect": "En B, los dos segundos se suman dentro de cada uno de los tres grupos y el segundo de cierre se añade una sola vez. Reúne esas constantes y resta las duraciones completas para comparar lo que realmente describen."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La situación difiere de los registros anteriores: allí todas las duraciones permitidas cumplían y faltaba un dato que seleccionara una. Aquí ninguna duración permitida cumple la comparación. Añadir una medición de p no puede convertir seis en siete; hace falta revisar los datos o el alcance de las descripciones, sin eliminar una condición arbitrariamente."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "que_permita_inferir_la_incompatibilidad",
+          "prompt": "Selecciona todas las conclusiones justificadas por la comparación de estos dos reportes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "que_permita_inferir_la_incompatibilidad__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Medir p hará compatibles los dos registros sin corregirlos."
+                },
+                {
+                  "id": "b",
+                  "label": "El reporte A es verdadero por tener la escritura más corta."
+                },
+                {
+                  "id": "c",
+                  "label": "Ningún p del dominio hace coincidir las duraciones descritas."
+                },
+                {
+                  "id": "d",
+                  "label": "La incompatibilidad no identifica por sí sola cuál reporte es fiel."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La diferencia constante de un segundo impide la coincidencia para cualquier p. Eso demuestra que ambos reportes no pueden ser descripciones exactas de la misma duración, pero no revela cuál es fiel a la prueba. La longitud de una fórmula no acredita sus datos.",
+            "incorrect": "Separa lo que demuestra la igualdad de lo que necesitaría una observación adicional. Elegir un valor de p no corrige una diferencia que no depende de él; tampoco permite escoger un reporte por su apariencia."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Para localizar el problema, vuelve a las partes descritas: qué incluye cada registro, qué unidad usa y qué afirma que mide. Esa revisión del significado y de los puntos débiles del argumento aporta más que repetir la misma cuenta sin examen (Pólya, 1957, pp. 60–61, 173–177)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transferir el método a otra cantidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos paneles rectangulares se colocan sin solaparse. El panel A tiene tres centímetros de altura y un ancho desconocido x centímetros. El panel B tiene dos centímetros de altura y es cuatro centímetros más ancho que A. El espacio reservado para A permite un ancho de hasta doce centímetros. x es racional positivo y no supera doce."
+        },
+        {
+          "type": "paragraph",
+          "text": "En este problema usamos la regla dada para un rectángulo: su área es base por altura. Si esas longitudes se expresan en centímetros, el área se expresa en centímetros cuadrados. Las alturas son conocidas; sólo los anchos dependen de x, así que no multiplicaremos dos incógnitas. Queremos que los dos paneles reúnan exactamente sesenta centímetros cuadrados de área."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_areas_con_alturas_conocidas",
+          "prompt": "Escribe el área de cada panel en centímetros cuadrados en función de x. Después construye una ecuación para el área total requerida. Conserva x como el ancho de A en centímetros.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_areas_con_alturas_conocidas__a",
+              "type": "math_expression_input",
+              "label": "Área de A, en centímetros cuadrados",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3x"
+              }
+            },
+            {
+              "id": "construir_areas_con_alturas_conocidas__b",
+              "type": "math_expression_input",
+              "label": "Área de B, en centímetros cuadrados",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2(x+4)"
+              }
+            },
+            {
+              "id": "construir_areas_con_alturas_conocidas__total",
+              "type": "math_expression_input",
+              "label": "Ecuación para sesenta centímetros cuadrados",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "3x+2(x+4)=60"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A tiene área 3x cm². El ancho de B es x + 4, así que su área es 2(x + 4) cm². Sin solapamiento, el total se obtiene sumando ambas áreas: 3x + 2(x + 4) = 60. El dato cuatro compara anchos; no se añade directamente como área.",
+            "incorrect": "Mantén la definición de x y las unidades. Construye primero el ancho de B, aplica después su altura conocida y suma áreas del mismo tipo. No confundas centímetros de diferencia con centímetros cuadrados de superficie."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_revisar_areas_originales",
+          "prompt": "Resuelve el modelo por una ruta propia. Escribe el ancho x y el área de cada panel. Comprueba el total de superficie y la restricción del espacio reservado para A.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_revisar_areas_originales__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "ancho",
+                  "type": "numeric",
+                  "label": "Ancho x del panel A en centímetros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Área de A en centímetros cuadrados",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Área de B en centímetros cuadrados",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "ancho": {
+                    "type": "numeric",
+                    "expected": "52/5"
+                  },
+                  "a": {
+                    "type": "numeric",
+                    "expected": "156/5"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "144/5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distribuir da 3x + 2x + 8 = 60, o 5x + 8 = 60; restar ocho y dividir por cinco obtiene x = 52/5 cm. A tiene 3 × 52/5 = 156/5 cm². B tiene ancho 72/5 cm y área 2 × 72/5 = 144/5 cm². Las áreas suman 300/5 = 60 cm². El ancho de A es positivo y menor que doce: 52/5 < 60/5.",
+            "incorrect": "Vuelve a las dimensiones originales al comprobar cada área. El resultado de la ecuación es un ancho; hay que multiplicarlo por la altura correspondiente para obtener una superficie. Conserva también el límite de doce centímetros."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Un modelo completo conecta datos, significado y cálculo. Una igualdad puede determinar una solución, dejar todas las del dominio o resultar incompatible; además, el contexto puede excluir un resultado algebraico. Elige un plan que puedas justificar, comprueba las cantidades originales y revisa cada condición adicional antes de aceptar una respuesta."
+        }
+      ]
+    }
+  ]
+}

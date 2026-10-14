@@ -1,0 +1,1187 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__eliminar_una_incognita_y_conservar_el_sistema",
+  "title": "Eliminar una incógnita y conservar el sistema",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Sumar para que una incógnita se cancele"
+        },
+        {
+          "type": "paragraph",
+          "text": "En un sistema, el mismo par (x, y) debe satisfacer las dos ecuaciones. Hasta ahora has usado una relación para sustituir una incógnita. Otra posibilidad es combinar las ecuaciones de modo que sus términos con una de las letras sumen cero. En esta lección trabajamos con x e y racionales, salvo las restricciones expresas de un contexto."
+        },
+        {
+          "type": "paragraph",
+          "text": "En 3x + 2y = 14 y x − 2y = 2, suma los miembros izquierdos entre sí y los derechos entre sí. Como 2y + (−2y) = 0, obtienes 4x = 16. De ahí x = 4. Conserva, por ejemplo, x − 2y = 2: al poner x = 4 resulta y = 1. Las originales dan 3·4 + 2·1 = 14 y 4 − 2·1 = 2."
+        },
+        {
+          "type": "paragraph",
+          "text": "Todo par que cumpla las originales cumple también la suma. La ecuación 4x = 16, por sí sola, todavía no relaciona y con x. El método de eliminación combina condiciones para obtener una cuenta más sencilla y usa otra ecuación para recuperar la segunda incógnita y revisar ambas condiciones (Lang, 1971, pp. 53–54)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelar_por_suma_y_recuperar_el_par",
+          "prompt": "Resuelve 5x + 3y = 19 y x − 3y = −1. En esta práctica, suma las dos ecuaciones para cancelar y. Escribe el coeficiente de x y el miembro derecho de esa suma; recupera el par y calcula los dos miembros izquierdos originales con él.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cancelar_por_suma_y_recuperar_el_par__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_x",
+                  "type": "numeric",
+                  "label": "Coeficiente de x en la suma",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Miembro derecho de la suma",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor de 5x + 3y con el par encontrado",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor de x − 3y con el par encontrado",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_x": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "18"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "4/3"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "19"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Sumar da 6x = 18 y, por tanto, x = 3. En x − 3y = −1 queda 3 − 3y = −1: y = 4/3. Al comprobar, 5·3 + 3·(4/3) = 19 y 3 − 3·(4/3) = −1. El mismo par satisface las dos originales.",
+            "incorrect": "Suma también los miembros derechos: 19 + (−1). Después usa una de las originales para recuperar y. Una solución fraccionaria es admisible en nuestro dominio; no la redondees antes de comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Conservar una ecuación permite volver atrás"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el sistema anterior, reemplaza 5x + 3y = 19 por la suma 6x = 18, y conserva x − 3y = −1. Este nuevo sistema conserva exactamente los mismos pares: las originales producen la suma, y del nuevo sistema podemos recuperar la primera restando la ecuación conservada a la suma. Es decir, 6x − (x − 3y) = 18 − (−1) vuelve a dar 5x + 3y = 19."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta vuelta atrás explica por qué no perdemos una condición. No basta con decir que la suma es cierta: debemos conservar información suficiente para reconstruir las dos originales. La comprobación de un par y la justificación de que el procedimiento no deja otras soluciones cumplen papeles distintos (Lang, 1971, pp. 53–55; Pólya, 1957, pp. 14–15)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_la_ecuacion_que_se_reemplazo",
+          "prompt": "Otro sistema reducido conserva 9x = 22 y 3x − 4y = −2. Resta la segunda ecuación completa a la primera. Completa los coeficientes y el miembro derecho de la relación recuperada, escrita como (coeficiente de x)x + (coeficiente de y)y = miembro derecho.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_la_ecuacion_que_se_reemplazo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_x",
+                  "type": "numeric",
+                  "label": "Coeficiente de x al recuperar la relación",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "coef_y",
+                  "type": "numeric",
+                  "label": "Coeficiente de y al recuperar la relación",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Miembro derecho de la relación recuperada",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_x": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "coef_y": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "24"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9x − (3x − 4y) = 6x + 4y, porque el signo menos afecta a los dos términos del grupo. A la derecha, 22 − (−2) = 24. Conservar 3x − 4y = −2 junto con 6x + 4y = 24 permite volver a obtener 9x = 22 mediante una suma.",
+            "incorrect": "Resta el miembro izquierdo entero, con paréntesis, y el derecho entero. El término −4y pasa a +4y al restarlo; también se resta −2 a la derecha."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "la_suma_aislada_admite_un_par_ajeno",
+          "prompt": "El par (3, 0) cumple 6x = 18. Calcula sus valores de 5x + 3y y x − 3y. Después elige qué demuestra este par respecto al sistema original 5x + 3y = 19, x − 3y = −1.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "la_suma_aislada_admite_un_par_ajeno__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor de 5x + 3y para (3, 0)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor de x − 3y para (3, 0)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "15"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            },
+            {
+              "id": "la_suma_aislada_admite_un_par_ajeno__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Cumplir la suma basta para cumplir siempre las dos condiciones originales."
+                },
+                {
+                  "id": "b",
+                  "label": "La suma aislada puede admitir pares que el sistema original rechaza; hay que conservar otra condición."
+                },
+                {
+                  "id": "c",
+                  "label": "Sumar ecuaciones es imposible cuando una de ellas tiene un miembro derecho negativo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El par da 15 y 3, que no son 19 y −1. Es un contraejemplo a que la suma aislada sea equivalente al sistema. Conservar x − 3y = −1 evita aceptar ese par ajeno.",
+            "incorrect": "Una consecuencia de las condiciones no contiene necesariamente toda su información. Sustituye el mismo par en ambas originales: acertar sólo 6x = 18 no acredita que sea una solución del sistema."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Restar una ecuación completa"
+        },
+        {
+          "type": "paragraph",
+          "text": "También puedes cancelar coeficientes iguales mediante una resta. En 4x − 5y = −2 y 4x + 3y = 14, resta la primera a la segunda: (4x + 3y) − (4x − 5y) = 14 − (−2). Queda 8y = 16; así y = 2 y una original da x = 2. Comprueba: 4·2 − 5·2 = −2 y 4·2 + 3·2 = 14."
+        },
+        {
+          "type": "paragraph",
+          "text": "El signo menos afecta al miembro completo que restas. En particular, −(−5y) = +5y y −(−2) = +2. El orden elegido cambia el signo de la ecuación resultante, pero ambos órdenes pueden ser válidos si las cuentas y la ecuación conservada son coherentes. La eliminación puede cancelar x o y: las letras no tienen un orden obligatorio (Lang, 1971, pp. 53–54)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "restar_coeficientes_iguales",
+          "prompt": "Trabaja con 7x − 2y = −4 y 7x + 5y = 10. En este ejercicio resta la primera ecuación a la segunda para cancelar x. Escribe el coeficiente de y y el miembro derecho resultantes; después recupera x e y.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "restar_coeficientes_iguales__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_y",
+                  "type": "numeric",
+                  "label": "Coeficiente de y al restar primera a segunda",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Miembro derecho al restar primera a segunda",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_y": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "14"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La resta es 7y = 14: y = 2. En la primera, 7x − 4 = −4, de donde x = 0. Las originales dan −4 y 10. Cero es un valor normal de la incógnita; aquí no hace desaparecer el sistema.",
+            "incorrect": "Escribe (7x + 5y) − (7x − 2y) antes de quitar los paréntesis. El miembro derecho es 10 − (−4). Usa una ecuación original para recuperar la letra que se canceló."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "detectar_una_resta_de_signos_incorrecta",
+          "prompt": "En 2x − 3y = 5 y 2x − y = 1, alguien resta la primera a la segunda y escribe −y − 3y = 1 − 5. Identifica el error y realiza correctamente esa resta. Da el coeficiente de y, el miembro derecho y el par solución.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "detectar_una_resta_de_signos_incorrecta__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El término restado era −3y, por lo que corresponde −y − (−3y)."
+                },
+                {
+                  "id": "b",
+                  "label": "La resta está bien; sólo falta cambiar 1 − 5 por 5 − 1."
+                },
+                {
+                  "id": "c",
+                  "label": "No se puede restar porque los términos con y son negativos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            },
+            {
+              "id": "detectar_una_resta_de_signos_incorrecta__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_y",
+                  "type": "numeric",
+                  "label": "Coeficiente de y en la resta correcta",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Miembro derecho en la resta correcta",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_y": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar −3y añade 3y: −y + 3y = 2y. Así 2y = −4, luego y = −2. La segunda da 2x + 2 = 1, de donde x = −1/2. Las comprobaciones son 2·(−1/2) − 3·(−2) = 5 y 2·(−1/2) − (−2) = 1.",
+            "incorrect": "El error ocurre antes de resolver: no se restó el signo del término completo. Conserva el orden segunda menos primera en ambos miembros. Después recupera x y comprueba las dos condiciones."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Preparar coeficientes compatibles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si los coeficientes todavía no se cancelan, puedes multiplicar una ecuación completa por un número conocido distinto de cero. Es una transformación reversible: dividir por ese mismo número recupera la ecuación. Multiplica cada término y el miembro derecho; no cambies sólo el término que deseas cancelar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera 4x + y = 7 y 3x − 2y = −3. Para cancelar y, multiplica la primera por dos y suma la segunda: (8x + 2y) + (3x − 2y) = 14 + (−3), o 11x = 11. Para cancelar x, otra ruta es tres veces la primera menos cuatro veces la segunda: (12x + 3y) − (12x − 8y) = 21 − (−12), o 11y = 33. Ambas rutas llevan al mismo par, (1, 3), al usar una ecuación original."
+        },
+        {
+          "type": "paragraph",
+          "text": "Conserva la segunda original además de la combinación. En la primera ruta, restar la segunda a la combinación y dividir por dos recupera la primera. En la otra, sumar cuatro veces la segunda y dividir por tres la recupera. Por eso las dos rutas conservan el sistema entero. Elegir coeficientes cómodos puede ahorrar cuentas, pero no hay una única letra que debas eliminar (Lang, 1971, pp. 53–54; Pólya, 1957, pp. 14–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "varias_combinaciones_conservan_y_eliminan",
+          "prompt": "Llama E1 a 2x + 3y = 4 y E2 a 5x − 2y = −9. Marca todos los planes que cancelan una incógnita y permiten recuperar E1 al conservar también E2. Cada suma o resta se aplica a los miembros completos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "varias_combinaciones_conservan_y_eliminan__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Reemplazar E1 por cinco veces E1 menos dos veces E2; conservar E2."
+                },
+                {
+                  "id": "b",
+                  "label": "Reemplazar E1 por dos veces E1 más tres veces E2; conservar E2."
+                },
+                {
+                  "id": "c",
+                  "label": "Reemplazar E1 por menos cinco veces E1 más dos veces E2; conservar E2."
+                },
+                {
+                  "id": "d",
+                  "label": "Reemplazar E1 por tres veces E1 menos dos veces E2; conservar E2."
+                },
+                {
+                  "id": "e",
+                  "label": "Reemplazar E1 por cero veces E1, que da 0 = 0; conservar E2."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "a obtiene 19y = 38; b obtiene 19x = −19; c obtiene −19y = −38. En cada caso puedes recuperar E1 usando E2 y un divisor conocido no nulo. d sí conserva el sistema junto con E2, pero queda −4x + 13y = 30 y no cancela ninguna incógnita: no cumple el objetivo solicitado. e borra la primera condición y no permite recuperarla.",
+            "incorrect": "Distingue dos objetivos: conservar el sistema y cancelar una de sus letras. Una combinación puede cumplir el primero sin cumplir el segundo. Multiplicar E1 por cero borra información; no es una preparación reversible."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_con_la_cancelacion_elegida",
+          "prompt": "Resuelve este nuevo sistema: 3x + 2y = 4 y 4x − 3y = 11. Elige una cancelación válida, o cualquier otra ruta equivalente que puedas justificar. Escribe el par y los valores de los miembros izquierdos originales, en el orden de las ecuaciones dadas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_con_la_cancelacion_elegida__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor de 3x + 2y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor de 4x − 3y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "11"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El par es (2, −1). Por ejemplo, tres veces la primera más dos veces la segunda da 17x = 34; la primera recupera y = −1. Las originales dan 3·2 + 2·(−1) = 4 y 4·2 − 3·(−1) = 11. Puedes obtener el mismo par mediante otra ruta que conserve las dos condiciones.",
+            "incorrect": "Puedes elegir qué incógnita cancelar. Después recupera la otra con una relación conservada y comprueba el mismo par en ambas originales. Un miembro derecho negativo no impide sumar, restar ni escalar ecuaciones."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los racionales y los factores negativos siguen las mismas reglas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los coeficientes pueden ser fracciones. A veces puedes sumar directamente porque los coeficientes de una letra ya son opuestos. También puedes quitar denominadores multiplicando cada ecuación por un denominador constante conocido no nulo. Son opciones de cálculo, no condiciones distintas sobre los pares. Un factor negativo es válido para una igualdad siempre que multipliques ambos miembros completos y puedas dividir para volver atrás (Lang, 1971, pp. 37–38, 53–54)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelar_con_coeficientes_fraccionarios",
+          "prompt": "Resuelve x/2 + y/3 = −3/4 y 3x/2 − y/3 = 7/4. Elige tu ruta: puedes aprovechar los términos opuestos con y o transformar primero las fracciones. Escribe x, y y los dos miembros izquierdos originales con el par obtenido.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cancelar_con_coeficientes_fraccionarios__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor de x/2 + y/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor de 3x/2 − y/3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "-3/4"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "7/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La suma da 2x = 1, así x = 1/2. En la primera queda 1/4 + y/3 = −3/4; de ahí y = −3. Al revisar, 1/4 − 1 = −3/4 y 3/4 + 1 = 7/4. El dominio racional permite los valores encontrados; no hace falta convertirlos en decimales aproximados.",
+            "incorrect": "Si sumas directamente, suma también las fracciones de los derechos. Si quitas denominadores, multiplica todos los términos y el derecho de cada ecuación. Recupera el par y evalúa las originales, no sólo las ecuaciones transformadas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "escalar_por_un_numero_negativo",
+          "prompt": "En 3x − 2y = 1 y 6x + y = 5, multiplica la primera ecuación por −2 y súmala a la segunda. Escribe el coeficiente de y y el miembro derecho de la combinación. Después recupera el par.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "escalar_por_un_numero_negativo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coef_y",
+                  "type": "numeric",
+                  "label": "Coeficiente de y tras sumar menos dos veces la primera y la segunda",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Miembro derecho de esa combinación",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coef_y": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "x": {
+                    "type": "numeric",
+                    "expected": "11/15"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3/5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplicar la primera por −2 da −6x + 4y = −2. Al sumar la segunda queda 5y = 3, por lo que y = 3/5. La primera da 3x = 11/5 y x = 11/15. Comprueba: 3·(11/15) − 2·(3/5) = 1 y 6·(11/15) + 3/5 = 5.",
+            "incorrect": "El factor −2 cambia también −2y a +4y y el derecho a −2. La combinación cancela x, pero todavía necesitas una original para recuperarlo. Mantén las fracciones exactas al comprobar."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cuando la combinación deja una identidad o una contradicción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cancelar una letra puede llevar a que también se cancele la otra. Si queda 0 = 0, esa combinación no añade una restricción: todavía hay que cumplir la ecuación conservada. Si queda 0 igual a un número distinto de cero, ningún par puede cumplir las originales. Estas conclusiones dependen de haber conservado el sistema mediante pasos reversibles; no se obtienen borrando deliberadamente una ecuación con un factor cero (Lang, 1971, pp. 54–55)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, conservar 2x − y = 7 después de una combinación que da 0 = 0 deja todos los pares que cumplen esa relación. Cada y racional determina x = (7 + y)/2; hay infinitos pares, pero no todos los pares racionales. El par (0, 0) falla porque 2·0 − 0 no es 7."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_sin_borrar_la_relacion",
+          "prompt": "Los tres sistemas tienen como primera ecuación x + 3y = 2. Sus segundas ecuaciones son: A, 2x + 6y = 4; B, 2x + 6y = 5; C, 2x + 5y = 4. Resta dos veces la primera a la segunda en cada caso, conserva la primera y clasifica el conjunto de pares racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_sin_borrar_la_relacion__tipos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "dropdown",
+                  "label": "Conjunto de pares solución del sistema A",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un par racional"
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Ningún par racional"
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Infinitos pares racionales que cumplen la relación conservada"
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "dropdown",
+                  "label": "Conjunto de pares solución del sistema B",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un par racional"
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Ningún par racional"
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Infinitos pares racionales que cumplen la relación conservada"
+                    }
+                  ]
+                },
+                {
+                  "id": "c",
+                  "type": "dropdown",
+                  "label": "Conjunto de pares solución del sistema C",
+                  "options": [
+                    {
+                      "id": "unico",
+                      "label": "Un par racional"
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Ningún par racional"
+                    },
+                    {
+                      "id": "infinitos",
+                      "label": "Infinitos pares racionales que cumplen la relación conservada"
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "exact_text",
+                    "expected": "infinitos"
+                  },
+                  "b": {
+                    "type": "exact_text",
+                    "expected": "ninguno"
+                  },
+                  "c": {
+                    "type": "exact_text",
+                    "expected": "unico"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A deja 0 = 0 junto con x + 3y = 2: hay infinitos pares de esa relación. B deja 0 = 1: no hay ninguno. C deja −y = 0, así y = 0 y la primera da x = 2: hay un único par. Que una solución tenga una coordenada cero no significa que todos los pares sean soluciones.",
+            "incorrect": "Compara también los derechos después de la combinación. Una identidad no borra la primera ecuación conservada. Una contradicción rechaza todos los pares. Si queda un coeficiente no nulo para una letra, resuelve y recupera la otra."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "relacion_que_permanece_con_infinitos_pares",
+          "prompt": "En el sistema A anterior, escribe una ecuación lineal que describa exactamente todos los pares que aún deben admitirse. Después toma y = 1/3, recupera x y calcula los miembros izquierdos de las dos originales, x + 3y = 2 y 2x + 6y = 4. La ecuación debe describir la familia completa, no sólo el par que comprobarás.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "relacion_que_permanece_con_infinitos_pares__relacion",
+              "type": "math_expression_input",
+              "label": "Ecuación que describe la familia completa de pares del sistema A",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "x+3y=2"
+              }
+            },
+            {
+              "id": "relacion_que_permanece_con_infinitos_pares__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x cuando y = 1/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor de x + 3y para ese par",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor de 2x + 6y para ese par",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La relación que permanece es x + 3y = 2; también sirven formas equivalentes, como x = 2 − 3y. Para y = 1/3 resulta x = 1. Entonces 1 + 3·(1/3) = 2 y 2·1 + 6·(1/3) = 4. La familia contiene ese par y todos los demás pares de la relación; 0 = 0 por sí sola admitiría pares ajenos.",
+            "incorrect": "Conserva la condición original que sigue relacionando las letras. Escribir sólo x = 1 describiría menos pares, y escribir sólo 0 = 0 admitiría más. Una comprobación concreta sirve para revisar la familia, no para reemplazar su ecuación."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Resolver sin una cadena indicada"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora elige tú cómo preparar y combinar las ecuaciones. Antes de calcular, identifica qué incógnita conviene cancelar y qué ecuación conservarás para recuperarla. Si decides sustituir en lugar de eliminar, también puedes hacerlo: el objetivo de estos dos ejercicios es resolver y justificar el sistema, sin imponer una ruta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si eliminas, escribe primero la operación entre ecuaciones completas. Revisa si realmente se canceló la letra elegida y si multiplicaste todos los términos y los derechos. Si sustituyes, conserva la relación usada y reemplaza la incógnita correspondiente por la expresión completa. Al recuperar el par, comprueba las dos originales. Volver a leer el paso más delicado y contrastar el resultado con las condiciones iniciales ayuda a localizar un error que repetir la misma cuenta podría ocultar (Pólya, 1957, pp. 14–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_un_sistema_con_un_grupo",
+          "prompt": "Resuelve (x + 2y)/3 = −1 y 2x − y = 4 en los racionales. No se indica qué letra cancelar ni qué método usar. Escribe el par y los miembros izquierdos originales, manteniendo el grupo y la división por tres en la primera comprobación.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_un_sistema_con_un_grupo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor de (x + 2y)/3",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor de 2x − y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El par es (1, −2). Una ruta multiplica la primera por tres: x + 2y = −3. Súmale dos veces la segunda y queda 5x = 5; luego y = −2. Las comprobaciones originales son (1 + 2·(−2))/3 = −1 y 2·1 − (−2) = 4. Cada preparación y combinación conserva el sistema junto con una ecuación suficiente para volver atrás.",
+            "incorrect": "El divisor tres afecta al grupo completo. Puedes quitarlo de forma reversible, pero el derecho también se multiplica por tres. Recupera la otra letra y verifica con el mismo par, no mezclando valores de distintos intentos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_conservar_fracciones_exactas",
+          "prompt": "Resuelve 2x + 5y = 1 y 3x − y = −2. Elige una ruta válida y conserva las fracciones exactas. Escribe x, y y los valores de los miembros izquierdos originales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_conservar_fracciones_exactas__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor de 2x + 5y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor de 3x − y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-9/17"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "7/17"
+                  },
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Sumar cinco veces la segunda a la primera da 17x = −9. Así x = −9/17, y la segunda recupera y = 7/17. Las originales dan (−18 + 35)/17 = 1 y (−27 − 7)/17 = −2. No hace falta redondear: las fracciones permiten comprobar exactamente las condiciones.",
+            "incorrect": "Hay más de una ruta correcta. Si una combinación no cancela la letra prevista, revisa sus coeficientes antes de continuar. Los resultados fraccionarios son admisibles; una aproximación decimal puede impedir la comprobación exacta."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir condiciones, resolver y revisar el dominio"
+        },
+        {
+          "type": "paragraph",
+          "text": "En una mezcla de tintas para un ensayo, llamamos x a los litros de tinta A e y a los litros de tinta B. x e y son racionales no negativos. Cada litro de A aporta dos gramos de un marcador, y cada litro de B aporta cinco gramos. El modelo supone que los volúmenes se suman y que la cantidad de marcador es la suma de esas aportaciones. Se necesitan tres litros en total con nueve gramos de marcador."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribe una condición para el volumen y otra para la cantidad de marcador. Los términos de cada condición deben tener las mismas unidades: litros en una y gramos en la otra. Resolver el sistema da un candidato; después revisa simultáneamente las igualdades, las unidades y las restricciones sobre las cantidades. Una respuesta algebraica debe responder al problema planteado y usar todos sus datos pertinentes (Lang, 1971, pp. 55–56; Pólya, 1957, pp. 12–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_y_resolver_una_mezcla",
+          "prompt": "Usa x para los litros de A e y para los litros de B del ensayo descrito. Escribe las dos ecuaciones lineales completas: una que exprese sólo la condición de volumen y otra que exprese sólo la de marcador. Después resuelve por una ruta válida y calcula el volumen y el marcador totales con el mismo par. No sustituyas una condición completa por el valor final de una sola incógnita.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_y_resolver_una_mezcla__volumen",
+              "type": "math_expression_input",
+              "label": "Ecuación de la condición de volumen total, en litros",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "x+y=3"
+              }
+            },
+            {
+              "id": "construir_y_resolver_una_mezcla__contenido",
+              "type": "math_expression_input",
+              "label": "Ecuación de la condición de marcador total, en gramos",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2x+5y=9"
+              }
+            },
+            {
+              "id": "construir_y_resolver_una_mezcla__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Litros de tinta A",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Litros de tinta B",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "volumen",
+                  "type": "numeric",
+                  "label": "Volumen total, en litros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "marcador",
+                  "type": "numeric",
+                  "label": "Cantidad total de marcador, en gramos",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "volumen": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "marcador": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las condiciones son x + y = 3 y 2x + 5y = 9, o ecuaciones equivalentes a cada una por separado. Restar dos veces la condición de volumen a la de marcador cancela x y da 3y = 3; así y = 1 y x = 2. El par usa cantidades racionales no negativas, suma tres litros y aporta 2·2 + 5·1 = 9 gramos. Conservar la ecuación de volumen permite volver atrás y reconstruir ambas condiciones.",
+            "incorrect": "El coeficiente de cada volumen en la condición de marcador depende de su tinta. Comprueba también las unidades y el dominio. Dar sólo x o sólo y no expresa una condición completa sobre todos los pares posibles."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_una_disponibilidad_adicional",
+          "prompt": "Para el mismo ensayo, sólo queda medio litro de B. Se mantienen los objetivos de tres litros y nueve gramos de marcador. Alguien propone (x, y) = (5/2, 1/2), que respeta la disponibilidad. Calcula el volumen y el marcador de ese par; después decide si hay una mezcla admisible que cumpla a la vez las dos condiciones originales y la nueva disponibilidad.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_una_disponibilidad_adicional__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "volumen",
+                  "type": "numeric",
+                  "label": "Volumen del par (5/2, 1/2), en litros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "marcador",
+                  "type": "numeric",
+                  "label": "Marcador del par (5/2, 1/2), en gramos",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "volumen": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "marcador": {
+                    "type": "numeric",
+                    "expected": "15/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "revisar_una_disponibilidad_adicional__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí; respetar la disponibilidad y el volumen basta, aunque cambie la cantidad de marcador."
+                },
+                {
+                  "id": "b",
+                  "label": "No; el único par de las dos condiciones originales necesita más B de la disponible, y el par propuesto falla en el marcador."
+                },
+                {
+                  "id": "c",
+                  "label": "Sí; basta redondear el marcador del par propuesto a nueve gramos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El par propuesto suma 5/2 + 1/2 = 3 litros, pero aporta 2·(5/2) + 5·(1/2) = 15/2 gramos, que no son nueve. Las transformaciones reversibles de las dos condiciones originales dan el único par (2, 1); necesita un litro de B y sólo hay medio. Por tanto, ninguna mezcla cumple simultáneamente el modelo y la disponibilidad. Cambiar o redondear un dato no arregla esa incompatibilidad.",
+            "incorrect": "Respeta todas las condiciones, no sólo la nueva. La comprobación debe usar el mismo par para volumen y marcador. La unicidad se justifica por las transformaciones del sistema; una propuesta que falla, por sí sola, no demostraría que ningún otro par sirve."
+          }
+        }
+      ]
+    }
+  ]
+}

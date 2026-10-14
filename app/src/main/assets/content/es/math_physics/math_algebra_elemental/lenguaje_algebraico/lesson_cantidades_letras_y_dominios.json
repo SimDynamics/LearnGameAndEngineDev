@@ -1,0 +1,1010 @@
+{
+  "id": "math_algebra_elemental__lenguaje_algebraico__cantidades_letras_y_dominios",
+  "title": "Cantidades, letras y valores permitidos",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una escritura para muchas situaciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este curso continúa las operaciones, fracciones, signos y propiedades del curso anterior. Aprenderás a expresar relaciones con letras, transformar expresiones con razones válidas, resolver ecuaciones y desigualdades lineales y coordinar condiciones en sistemas sencillos. Antes de despejar nada, necesitamos saber qué representa cada letra y qué valores admite. Si una cuenta con fracciones o signos te detiene, recupera esa operación: la letra no sustituye su comprensión."
+        },
+        {
+          "type": "paragraph",
+          "text": "En un taller se entregan bolsas cerradas con tres tornillos cada una, además de siete tornillos sueltos por pedido. Con dos bolsas hay 3 × 2 + 7 tornillos; con cinco, 3 × 5 + 7. La parte que cambia es la cantidad de bolsas. Llamaremos n al número de bolsas del pedido. Entonces 3n + 7 representa el número total de tornillos. En esta escritura, 3n significa 3 multiplicado por n."
+        },
+        {
+          "type": "paragraph",
+          "text": "La letra n representa un número, no una bolsa. El significado completo es «número de bolsas del pedido». Una letra permite mantener una relación mientras cambia el valor al que se aplica; también puede nombrar una cantidad cuyo valor todavía buscamos. El paso de cantidades descritas con palabras a letras se apoya en esta lectura de la notación, con ejemplos propios (Gelfand & Shen, 1993, pp. 15–17)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "significado_de_n",
+          "prompt": "En la relación del taller, ¿qué representa n?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "significado_de_n__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El número de tornillos que contiene una bolsa."
+                },
+                {
+                  "id": "b",
+                  "label": "El número de bolsas que contiene el pedido."
+                },
+                {
+                  "id": "c",
+                  "label": "El número de tornillos que contiene el pedido."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "n cuenta las bolsas. Tres es el número de tornillos por bolsa, y 3n + 7 cuenta todos los tornillos del pedido.",
+            "incorrect": "Distingue la cantidad que varía de la cantidad por bolsa y del total. La definición de la letra indica qué cuenta n."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cambiar el valor conservando la relación"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sustituir significa poner un valor en todos los lugares ocupados por la letra. Si n vale cuatro, 3n + 7 se convierte en 3 × 4 + 7 y vale diecinueve. El factor tres y los siete tornillos sueltos siguen presentes. No se suma tres a cuatro: la multiplicación está indicada por la escritura 3n."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una expresión como 3n + 7 describe un cálculo. No tiene un único valor numérico mientras n pueda cambiar. Esta tabla recoge algunos pedidos; no pretende enumerarlos todos. También se permite un pedido de cero bolsas y siete tornillos sueltos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "otros_pedidos",
+          "prompt": "Completa los totales para pedidos de una bolsa y de seis bolsas, siempre con siete tornillos sueltos.",
+          "representations": [
+            {
+              "type": "math_table",
+              "headers": [
+                "Bolsas n",
+                "Tornillos 3n + 7"
+              ],
+              "rows": [
+                [
+                  0,
+                  7
+                ],
+                [
+                  2,
+                  13
+                ],
+                [
+                  5,
+                  22
+                ]
+              ]
+            }
+          ],
+          "tools": [],
+          "responses": [
+            {
+              "id": "otros_pedidos__totales",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "una",
+                  "type": "numeric",
+                  "label": "Tornillos con una bolsa",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "seis",
+                  "type": "numeric",
+                  "label": "Tornillos con seis bolsas",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "una": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "seis": {
+                    "type": "numeric",
+                    "expected": "25"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Para una bolsa: 3 × 1 + 7 = 10. Para seis: 3 × 6 + 7 = 25. Cambia n; la relación y las cantidades fijas se conservan.",
+            "incorrect": "Cuenta primero los tornillos de las bolsas y añade los siete sueltos una sola vez. No se añaden siete por cada bolsa."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "producto_no_suma",
+          "prompt": "Al sustituir n por ocho en 3n + 7, una persona escribe 3 + 8 + 7. ¿Qué debe corregir?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "producto_no_suma__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Debe sustituir 3 + 8 por 3 × 8."
+                },
+                {
+                  "id": "b",
+                  "label": "Debe sustituir el siete por ocho."
+                },
+                {
+                  "id": "c",
+                  "label": "Debe multiplicar la suma completa por tres."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La expresión correcta es 3 × 8 + 7. El error está en leer 3n como suma; siete sigue siendo la cantidad suelta.",
+            "incorrect": "La letra sustituye la cantidad de bolsas. No cambia el dato siete ni coloca los tornillos sueltos dentro de las bolsas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los valores permitidos también forman parte del problema"
+        },
+        {
+          "type": "paragraph",
+          "text": "En aritmética podríamos calcular 3 × 1,5 + 7. Pero el taller entrega bolsas cerradas completas: un pedido no puede contener una bolsa y media. Tampoco una cantidad negativa de bolsas. En este modelo n puede valer cero, uno, dos y los demás enteros no negativos. Llamamos dominio al conjunto de valores permitidos para una letra en la situación estudiada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Hay que distinguir dos preguntas: «¿Puede calcularse la expresión con este número?» y «¿Está permitido este número en el problema?». Un cálculo puede estar definido y dar un resultado correcto, pero describir un pedido que las condiciones excluyen. En otros modelos sí se admiten fracciones o valores negativos."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dominio_bolsas",
+          "prompt": "Selecciona todos los valores que pueden representar n en un pedido de bolsas completas del taller.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dominio_bolsas__valores",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "1,5"
+                },
+                {
+                  "id": "b",
+                  "label": "0"
+                },
+                {
+                  "id": "c",
+                  "label": "−2"
+                },
+                {
+                  "id": "d",
+                  "label": "9"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cero y nueve son cantidades enteras no negativas de bolsas. 1,5 exige una bolsa fraccionada y −2 no cuenta un pedido de bolsas.",
+            "incorrect": "El cálculo 3n + 7 no decide por sí solo qué pedidos existen. Aplica las condiciones: bolsas completas, ninguna cantidad negativa y cero permitido."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "calculo_y_modelo",
+          "prompt": "Con n = −1, la expresión 3n + 7 vale cuatro. ¿Qué conclusión es válida para el taller?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "calculo_y_modelo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El cálculo es incorrecto porque contiene un número negativo."
+                },
+                {
+                  "id": "b",
+                  "label": "El resultado positivo permite pedir menos una bolsa."
+                },
+                {
+                  "id": "c",
+                  "label": "El cálculo es correcto, pero n = −1 no describe un pedido permitido."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3 × (−1) + 7 = 4 es una cuenta válida. La interpretación como cantidad de bolsas falla porque −1 queda fuera del dominio del modelo.",
+            "incorrect": "El signo del resultado no cambia las condiciones de la entrada. Las operaciones con negativos siguen siendo válidas, aunque este contexto no admita una cantidad negativa de bolsas."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una letra no impone siempre el mismo dominio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una cinta uniforme cuesta doce pesos por metro y puede cortarse en fracciones de metro. Si l representa su longitud medida en metros, 12l representa el precio medido en pesos. Aquí l puede ser cero, un entero positivo o una fracción positiva. La unidad y la posibilidad de cortar la cinta explican por qué 1,5 sí es admisible."
+        },
+        {
+          "type": "paragraph",
+          "text": "En cambio, si T representa una temperatura en grados Celsius, un valor negativo no significa que haya menos de cero objetos: indica una temperatura bajo el cero de esa escala. El nombre de la letra no decide estas diferencias. Las decide su definición junto con las condiciones del modelo."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cinta_fraccionaria",
+          "prompt": "La cinta cuesta doce pesos por metro. Para l = 3/4 m, escribe el precio y, para l = 5/2 m, escribe el precio correspondiente.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cinta_fraccionaria__precios",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "corta",
+                  "type": "numeric",
+                  "label": "Precio de 3/4 m, en pesos",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "larga",
+                  "type": "numeric",
+                  "label": "Precio de 5/2 m, en pesos",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "corta": {
+                    "type": "numeric",
+                    "expected": "9"
+                  },
+                  "larga": {
+                    "type": "numeric",
+                    "expected": "30"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12 × 3/4 = 9 y 12 × 5/2 = 30. Ambas longitudes pertenecen al dominio porque se permiten cortes fraccionarios.",
+            "incorrect": "Sustituye la longitud completa, incluida su fracción. Multiplicar por una fracción no equivale a conservar sólo su numerador ni a descartarla por no ser entera."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "significado_y_unidad",
+          "prompt": "Relaciona cada letra definida con un valor que su contexto admite. Usa cada valor una sola vez y completa las tres relaciones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "significado_y_unidad__relaciones",
+              "type": "math_matching_drag",
+              "sources": [
+                {
+                  "id": "bolsas",
+                  "label": "n: cantidad de bolsas completas, sin cantidades negativas"
+                },
+                {
+                  "id": "longitud",
+                  "label": "l: longitud en metros, con cortes fraccionarios"
+                },
+                {
+                  "id": "temperatura",
+                  "label": "T: temperatura en grados Celsius"
+                }
+              ],
+              "targets": [
+                {
+                  "id": "negativo",
+                  "label": "−4"
+                },
+                {
+                  "id": "fraccion",
+                  "label": "1/2"
+                },
+                {
+                  "id": "cero",
+                  "label": "0"
+                }
+              ],
+              "validator": {
+                "type": "matching",
+                "expected": {
+                  "bolsas": "cero",
+                  "longitud": "fraccion",
+                  "temperatura": "negativo"
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Entre las opciones, sólo cero cuenta bolsas completas no negativas. Al usar cada valor una sola vez, quedan 1/2 para la longitud y −4 para la temperatura. Cero también podría representar una longitud o una temperatura, pero aquí se necesita para completar la relación de las bolsas.",
+            "incorrect": "Empieza por el contexto más restringido: entre estos valores, sólo cero cuenta bolsas completas no negativas. Después evita asignar una longitud negativa."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La misma letra conserva el mismo valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dentro de una evaluación, todas las apariciones de la misma letra representan el mismo número. En x + x, si x vale cinco, debemos escribir 5 + 5. No podemos decidir que la primera x sea cinco y la segunda dos. En otra evaluación podemos escoger otro valor, pero debemos volver a sustituirlo en todos los lugares."
+        },
+        {
+          "type": "paragraph",
+          "text": "Es útil escribir paréntesis al sustituir un valor negativo o fraccionario. Con x = −3, la expresión x × (x + 2) se evalúa como (−3) × ((−3) + 2). Primero el segundo factor vale −1; después el producto vale 3. El signo negativo pertenece al valor sustituido, y el paréntesis original sigue agrupando x + 2."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sustitucion_consistente",
+          "prompt": "Evalúa x + x para x = −4 y x × (x + 2) para x = −5.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sustitucion_consistente__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "suma",
+                  "type": "numeric",
+                  "label": "x + x con x = −4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "producto",
+                  "type": "numeric",
+                  "label": "x × (x + 2) con x = −5",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "suma": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "producto": {
+                    "type": "numeric",
+                    "expected": "15"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En la primera evaluación aparecen dos veces −4: su suma es −8. En la segunda aparecen dos veces −5: (−5) × (−3) = 15.",
+            "incorrect": "Sustituye cada aparición por el valor de su propia evaluación. Conserva el paréntesis y calcula su interior antes del producto."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "letra_cambiada",
+          "prompt": "Para evaluar t − (t + 4) con t = 6, alguien escribe 6 − (2 + 4). ¿Dónde pierde el significado de la letra?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "letra_cambiada__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Al poner un número en lugar de la primera t."
+                },
+                {
+                  "id": "b",
+                  "label": "Al conservar el paréntesis después de sustituir."
+                },
+                {
+                  "id": "c",
+                  "label": "Al usar dos valores distintos para t en la misma evaluación."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La segunda t también debe sustituirse por seis. La evaluación correcta es 6 − (6 + 4) = −4.",
+            "incorrect": "La primera sustitución y el paréntesis son válidos. Una sola letra tiene un valor estable dentro de esta evaluación."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos letras pueden tener el mismo valor"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si a representa el número de fichas de una caja y b el de otra, a + b representa el total. Tener nombres distintos permite distinguir las cajas, pero no obliga a que contengan cantidades distintas. Es posible que a y b valgan cuatro. Tampoco podemos sumar sus letras como si formaran el nombre de un número nuevo: ab, cuando se usa la notación algebraica ordinaria, representa un producto."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para evaluar una expresión con dos letras necesitas los dos valores, salvo que puedas justificar que alguno no afecta al resultado. Con a = 5 y b = 2, a − b vale tres. Con a = 2 y b = 5, vale menos tres. Intercambiar los datos puede cambiar el resultado: recupera la diferencia entre suma y resta."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_datos",
+          "prompt": "En un problema puramente numérico, a = 5/2 y b = −1/2. Evalúa a + b y a − b.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_datos__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "suma",
+                  "type": "numeric",
+                  "label": "a + b",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "resta",
+                  "type": "numeric",
+                  "label": "a − b",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "suma": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "resta": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La suma es 5/2 − 1/2 = 2. La resta es 5/2 − (−1/2) = 6/2 = 3: restar un negativo equivale a sumar su opuesto.",
+            "incorrect": "Usa ambos valores completos. En la resta, el signo de b forma parte del número que se resta."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_letras_iguales",
+          "prompt": "¿Puede a + b valer ocho cuando a y b representan las cantidades de fichas de dos cajas?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_letras_iguales__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí: por ejemplo, a = 4 y b = 4."
+                },
+                {
+                  "id": "b",
+                  "label": "No: letras distintas deben tener valores distintos."
+                },
+                {
+                  "id": "c",
+                  "label": "Sí, pero sólo si una de las cajas está vacía."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cuatro fichas en cada caja dan ocho en total. Las letras distinguen cantidades; no imponen una desigualdad entre ellas.",
+            "incorrect": "Comprueba un par de valores admisibles. El nombre diferente no es una condición que prohíba la igualdad."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La definición de la letra decide la traducción"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una reserva de equipo cuesta cinco pesos de apertura y dos pesos por cada hora de uso. Se cobran fracciones de hora y el modelo no considera descuentos. Si h representa el tiempo medido en horas, el precio medido en pesos se expresa como 5 + 2h. Si en cambio m representa el tiempo medido en minutos, una hora corresponde a sesenta minutos: el precio es 5 + 2(m/60). No podemos reutilizar el factor dos sin conservar su unidad."
+        },
+        {
+          "type": "paragraph",
+          "text": "La misma situación admite nombres distintos para la misma cantidad: podríamos usar t en lugar de h si definimos t como tiempo en horas. Cambiar el nombre de forma consistente no cambia el precio. Cambiar la unidad exige ajustar la relación. No confundas renombrar una letra con cambiar el dato que representa."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "horas_y_minutos",
+          "prompt": "Evalúa la tarifa para h = 3/2 horas y para m = 90 minutos. Escribe ambos precios en pesos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "horas_y_minutos__precios",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "horas",
+                  "type": "numeric",
+                  "label": "Precio usando horas",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "minutos",
+                  "type": "numeric",
+                  "label": "Precio usando minutos",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "horas": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "minutos": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "3/2 horas son noventa minutos. 5 + 2 × 3/2 = 8 y 5 + 2 × (90/60) = 8. Una traducción coherente conserva el precio.",
+            "incorrect": "Antes de multiplicar por la tarifa por hora, convierte los minutos a horas. La apertura se cobra una sola vez."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "misma_situacion_otra_letra",
+          "prompt": "t representa tiempo en horas y m representa tiempo en minutos. Selecciona todas las expresiones que dan el precio de esta reserva.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "misma_situacion_otra_letra__expresiones",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "5 + 2m"
+                },
+                {
+                  "id": "b",
+                  "label": "5 + 2t"
+                },
+                {
+                  "id": "c",
+                  "label": "(5 + 2)t"
+                },
+                {
+                  "id": "d",
+                  "label": "5 + 2(m/60)"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5 + 2t usa horas; 5 + 2(m/60) convierte minutos a horas. (5 + 2)t cobraría la apertura por cada hora.",
+            "incorrect": "La unidad del tiempo debe coincidir con la tarifa. Además, el cargo de apertura no depende de la duración."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una operación también puede restringir el dominio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta ahora algunas restricciones venían del contexto, como contar bolsas completas. También existen restricciones aritméticas. La expresión 6/q sólo puede evaluarse si q no vale cero: dividir entre cero no está definido. Si q no cuenta objetos y el problema permite números racionales no nulos, tanto q = −2 como q = 3/2 son admisibles."
+        },
+        {
+          "type": "paragraph",
+          "text": "Una expresión no es una promesa de que cualquier sustitución funcionará. Antes de calcular, revisa las condiciones del contexto y las operaciones que aparecen. Un valor puede superar una revisión y fallar la otra. Por ejemplo, cero es una cantidad posible de bolsas, pero no serviría como divisor si un cálculo exigiera dividir por esa cantidad."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisor_con_letra",
+          "prompt": "En 6/q, q puede ser cualquier racional distinto de cero. Evalúa la expresión para q = −2 y para q = 3/2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisor_con_letra__cocientes",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "negativo",
+                  "type": "numeric",
+                  "label": "6/q con q = −2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "fraccionario",
+                  "type": "numeric",
+                  "label": "6/q con q = 3/2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "negativo": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "fraccionario": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "6 ÷ (−2) = −3 y 6 ÷ (3/2) = 6 × (2/3) = 4. Ser negativo o fraccionario no impide ser un divisor no nulo.",
+            "incorrect": "La restricción es q distinto de cero. Recupera el signo del cociente y el inverso del divisor fraccionario."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cero_en_dos_contextos",
+          "prompt": "Selecciona la explicación correcta sobre cero.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cero_en_dos_contextos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Siempre debe excluirse porque una letra sólo representa números positivos."
+                },
+                {
+                  "id": "b",
+                  "label": "Puede contar bolsas, pero debe excluirse cuando la letra aparece como divisor."
+                },
+                {
+                  "id": "c",
+                  "label": "Siempre debe admitirse porque cero es un número."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El dominio depende de las condiciones y de las operaciones. Contar ninguna bolsa es válido en el modelo del taller; dividir entre cero no lo es.",
+            "incorrect": "Pertenecer a los números no basta para cumplir todas las condiciones de una expresión o de un problema."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comprender la condición antes de calcular"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una persona quiere alquilar el equipo durante un tiempo todavía desconocido y gastar exactamente once pesos. Llamemos h a la duración medida en horas. Sabemos la apertura de cinco pesos y la tarifa de dos pesos por hora. Lo que buscamos es un valor de h que haga que 5 + 2h sea once. La letra conserva su significado aunque su valor sea desconocido."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero identifica qué cantidad buscas, qué datos conoces y qué condición debe cumplirse. Después elige una manera de relacionarlos, realiza el cálculo y comprueba su resultado en la situación original. Estas preguntas orientan el trabajo; no son un algoritmo que resuelva automáticamente cualquier problema (Pólya, 1957, pp. 5–7, 14–18)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Podemos reservar los cinco pesos de apertura: quedan seis para pagar el tiempo. A dos pesos por hora, corresponden tres horas. Sustituir h por tres comprueba la condición: 5 + 2 × 3 = 11. Más adelante escribiremos y transformaremos ecuaciones para justificar de forma general esta búsqueda. Ahora interesa distinguir la cantidad buscada de una propuesta y de la comprobación."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_propuesta",
+          "prompt": "Para la misma tarifa, el presupuesto exacto es ahora catorce pesos. Se propone h = 9/2 horas. Calcula el precio de esa propuesta e indica si cumple el presupuesto.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_propuesta__precio",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "precio",
+                  "type": "numeric",
+                  "label": "Precio propuesto, en pesos",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "precio": {
+                    "type": "numeric",
+                    "expected": "14"
+                  }
+                }
+              }
+            },
+            {
+              "id": "comprobar_propuesta__condicion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "No cumple el presupuesto exacto."
+                },
+                {
+                  "id": "b",
+                  "label": "Sí cumple el presupuesto exacto."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5 + 2 × 9/2 = 5 + 9 = 14. La duración es no negativa y se permiten fracciones de hora: cumple el dominio y el presupuesto.",
+            "incorrect": "Sustituye 9/2 como un único número. Comprueba también que la duración sea admisible, antes de comparar el precio con catorce."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dato_faltante",
+          "prompt": "Un segundo negocio informa sólo que cobra cinco pesos de apertura. No informa la tarifa por hora. ¿Puede reutilizarse 5 + 2h para calcular su precio?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dato_faltante__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí: cualquier alquiler con apertura tiene la misma tarifa."
+                },
+                {
+                  "id": "b",
+                  "label": "Sí: una letra permite elegir libremente todos los datos faltantes."
+                },
+                {
+                  "id": "c",
+                  "label": "No: falta conocer la relación entre duración y cargo de uso."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La letra puede representar la duración, pero no convierte el dos en un dato conocido. Debemos conocer la tarifa y sus condiciones para calcular el precio.",
+            "incorrect": "Distingue nombrar una cantidad de conocer una ley. Un dato de apertura no determina cómo se cobra el tiempo."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el significado en otro contexto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cierra un momento los ejemplos anteriores. Para leer una expresión nueva, define las cantidades y sus unidades, establece los valores admitidos, reconoce las operaciones y sustituye de forma consistente. Comprueba que el resultado responda a la pregunta. Si sólo recuerdas una cuenta de bolsas o una tarifa, cambia el contexto para recuperar la idea que las conecta."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un registro de temperatura anota T grados Celsius al inicio. Durante una etapa la temperatura aumenta dos grados y durante otra disminuye cinco. La temperatura final se expresa como T + 2 − 5. El valor inicial puede ser negativo: aquí no contamos objetos. La expresión permite evaluar distintos registros sin cambiar el significado de T."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "temperatura_transferencia",
+          "prompt": "Evalúa T + 2 − 5 para T = −4 y para T = 1/2. Escribe las temperaturas finales en grados Celsius.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "temperatura_transferencia__finales",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "fria",
+                  "type": "numeric",
+                  "label": "Con T = −4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "fraccionaria",
+                  "type": "numeric",
+                  "label": "Con T = 1/2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fria": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "fraccionaria": {
+                    "type": "numeric",
+                    "expected": "-5/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−4 + 2 − 5 = −7. Para 1/2: 1/2 + 2 − 5 = 1/2 − 3 = −5/2. Las dos evaluaciones conservan el cambio total de menos tres grados.",
+            "incorrect": "Conserva el signo del valor inicial y los signos de los cambios. No impongas el dominio de contar bolsas a una temperatura."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "definicion_incompleta",
+          "prompt": "Un apunte muestra 4z + 6 sin decir qué mide z ni qué valores puede tomar. ¿Qué podemos afirmar?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "definicion_incompleta__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Puede evaluarse con z = 2, pero falta la definición para interpretar el resultado en un contexto."
+                },
+                {
+                  "id": "b",
+                  "label": "z debe contar objetos completos porque aparece multiplicada por cuatro."
+                },
+                {
+                  "id": "c",
+                  "label": "El seis establece que z sólo puede tomar seis valores distintos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Como cálculo, 4 × 2 + 6 vale catorce. Para saber si representa un costo, una longitud u otra cantidad, necesitamos la definición y las condiciones.",
+            "incorrect": "Los números de una expresión no fijan automáticamente unidades ni un dominio contextual. Evalúa e interpreta como tareas relacionadas que requieren información distinta."
+          }
+        }
+      ]
+    }
+  ]
+}

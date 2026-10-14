@@ -1,0 +1,878 @@
+{
+  "id": "math_algebra_elemental__recuperacion_y_transferencia__elegir_relaciones_y_recuperar_el_razonamiento_algebraico",
+  "title": "Elegir relaciones y recuperar el razonamiento algebraico",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leer qué debe entregar una respuesta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Los problemas siguientes mezclan conocimientos del curso. Antes de calcular, decide qué se pide: una cantidad que depende de un dato, un valor que cumpla un objetivo, todos los valores permitidos o varias cantidades que deban satisfacer condiciones a la vez. Define las letras cuando las necesites, conserva sus unidades y revisa qué datos restringen la respuesta. Esa lectura del objetivo, los datos y la condición prepara un plan propio (Pólya, 1957, pp. 5–7)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "distinguir_cuatro_objetivos_al_leer",
+          "prompt": "Elige la forma de trabajo que responde directamente a cada objetivo. No hace falta efectuar cálculos: distingue qué información debe entregar la respuesta.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "distinguir_cuatro_objetivos_al_leer__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "importe_variable",
+                  "type": "dropdown",
+                  "label": "Calcular un importe según una duración que puede cambiar, sin fijar un importe objetivo.",
+                  "options": [
+                    {
+                      "id": "expresion",
+                      "label": "Una expresión para calcular una cantidad."
+                    },
+                    {
+                      "id": "ecuacion",
+                      "label": "Una ecuación que exige un valor exacto."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Desigualdades para describir valores permitidos."
+                    },
+                    {
+                      "id": "simultaneas",
+                      "label": "Condiciones simultáneas sobre dos cantidades desconocidas."
+                    }
+                  ]
+                },
+                {
+                  "id": "importe_exacto",
+                  "type": "dropdown",
+                  "label": "Buscar una duración que produzca exactamente el importe indicado.",
+                  "options": [
+                    {
+                      "id": "expresion",
+                      "label": "Una expresión para calcular una cantidad."
+                    },
+                    {
+                      "id": "ecuacion",
+                      "label": "Una ecuación que exige un valor exacto."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Desigualdades para describir valores permitidos."
+                    },
+                    {
+                      "id": "simultaneas",
+                      "label": "Condiciones simultáneas sobre dos cantidades desconocidas."
+                    }
+                  ]
+                },
+                {
+                  "id": "duraciones_permitidas",
+                  "type": "dropdown",
+                  "label": "Describir todas las duraciones con un importe al menos igual a un límite y menor que otro.",
+                  "options": [
+                    {
+                      "id": "expresion",
+                      "label": "Una expresión para calcular una cantidad."
+                    },
+                    {
+                      "id": "ecuacion",
+                      "label": "Una ecuación que exige un valor exacto."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Desigualdades para describir valores permitidos."
+                    },
+                    {
+                      "id": "simultaneas",
+                      "label": "Condiciones simultáneas sobre dos cantidades desconocidas."
+                    }
+                  ]
+                },
+                {
+                  "id": "dos_cantidades",
+                  "type": "dropdown",
+                  "label": "Hallar dos cantidades desconocidas que satisfagan dos datos exactos sobre el mismo par.",
+                  "options": [
+                    {
+                      "id": "expresion",
+                      "label": "Una expresión para calcular una cantidad."
+                    },
+                    {
+                      "id": "ecuacion",
+                      "label": "Una ecuación que exige un valor exacto."
+                    },
+                    {
+                      "id": "rango",
+                      "label": "Desigualdades para describir valores permitidos."
+                    },
+                    {
+                      "id": "simultaneas",
+                      "label": "Condiciones simultáneas sobre dos cantidades desconocidas."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "importe_variable": {
+                    "type": "exact_text",
+                    "expected": "expresion"
+                  },
+                  "importe_exacto": {
+                    "type": "exact_text",
+                    "expected": "ecuacion"
+                  },
+                  "duraciones_permitidas": {
+                    "type": "exact_text",
+                    "expected": "rango"
+                  },
+                  "dos_cantidades": {
+                    "type": "exact_text",
+                    "expected": "simultaneas"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Un cálculo que depende de una duración se describe con una expresión. Exigir un importe exacto conduce a una ecuación. Dos límites de importe requieren conservar comparaciones y describir el rango que cumple ambas. Dos cantidades relacionadas por dos datos se revisan como un mismo par en condiciones simultáneas. La forma se elige por el objetivo, no por contar números en el relato.",
+            "incorrect": "Vuelve a lo que la respuesta debe informar: calcular una cantidad no es todavía exigirle un resultado; una frontera no es el conjunto completo; dos datos sobre un par no deben resolverse cambiando ese par."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "calcular_lo_disponible_sin_fijar_un_resultado",
+          "prompt": "Una carpeta dispone de catorce MB. Su parte fija ocupa dos MB y cada fotografía completa ocupa 3/2 MB. n cuenta las fotografías y admite los enteros desde cero hasta ocho. Escribe con n un cálculo que informe los MB disponibles para cualquier propuesta de ese dominio. Calcula además lo disponible cuando n = 2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "calcular_lo_disponible_sin_fijar_un_resultado__relacion",
+              "type": "math_expression_input",
+              "label": "Escritura con n que calcula los MB disponibles",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "12-3n/2"
+              }
+            },
+            {
+              "id": "calcular_lo_disponible_sin_fijar_un_resultado__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "disponible",
+                  "type": "numeric",
+                  "label": "MB disponibles cuando n = 2",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "disponible": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Lo ocupado es 2 + (3/2)n MB, por lo que quedan 14 − (2 + (3/2)n) = 12 − (3/2)n MB. Con dos fotografías quedan 12 − 3 = 9 MB. No se impuso una cantidad final de MB disponibles: la escritura debe calcularla según n, sin fijar aquí n mediante una igualdad.",
+            "incorrect": "Separa capacidad total, parte fija y espacio de las fotografías. Resta lo ocupado completo de la capacidad; todos los términos deben expresar MB. Una cantidad calculada no necesita un objetivo adicional para tener significado."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Atender a todos los datos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora cambia la situación y también puede cambiar el tipo de respuesta. Las letras se fijan en los campos de modelo para que cada escritura mantenga la cantidad que nombra. Cada relación debe conservar cantidades y unidades coherentes (Lang, 1971, pp. 47–48). La traducción atiende al sentido completo del dato; la misma palabra puede intervenir en relaciones distintas (Pólya, 1957, pp. 173–175)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "saldos_despues_de_un_cambio",
+          "prompt": "Dos marcadores de un juego tienen inicialmente x e y puntos y suman catorce. Los puntos pueden ser racionales. Se transfieren tres puntos del primero al segundo y, después del cambio, el segundo debe tener el doble que el primero. Los dominios iniciales son x ≥ 3 e y ≥ 0. Escribe por separado la relación que expresa sólo el total inicial y la que expresa sólo la comparación posterior. Cada campo debe describir su dato por sí solo. Halla después x e y por una ruta válida y comprueba los datos y dominios.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "saldos_despues_de_un_cambio__total",
+              "type": "math_expression_input",
+              "label": "Relación del total inicial",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "x+y=14"
+              }
+            },
+            {
+              "id": "saldos_despues_de_un_cambio__comparacion",
+              "type": "math_expression_input",
+              "label": "Relación de los puntos después de transferir",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y+3=2(x-3)"
+              }
+            },
+            {
+              "id": "saldos_despues_de_un_cambio__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primero",
+                  "type": "numeric",
+                  "label": "Puntos iniciales del primero, x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segundo",
+                  "type": "numeric",
+                  "label": "Puntos iniciales del segundo, y",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primero": {
+                    "type": "numeric",
+                    "expected": "23/3"
+                  },
+                  "segundo": {
+                    "type": "numeric",
+                    "expected": "19/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El total inicial exige x + y = 14. Después de transferir quedan x − 3 e y + 3, por lo que y + 3 = 2(x − 3). Una ruta sustituye y = 14 − x: 17 − x = 2x − 6 lleva a 3x = 23. Así x = 23/3 e y = 19/3. Los saldos posteriores son 14/3 y 28/3; el segundo es el doble del primero. Los iniciales suman catorce y respetan x ≥ 3 e y ≥ 0.",
+            "incorrect": "El doble se exige después del cambio, con las cantidades modificadas, no con los saldos iniciales. Conserva que lo que sale del primero entra en el segundo. No sustituyas uno de los datos por el valor final aislado de una letra."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_todos_los_ajustes_permitidos",
+          "prompt": "La regla de otro juego asigna una puntuación S = 5 − 2t, donde t es un ajuste racional no negativo y S se mide en puntos. Se permite una puntuación al menos igual a 1/2 y menor que 7/2. Describe todos los ajustes permitidos mediante sus cotas, ordenadas de menor a mayor, y la inclusión de cada extremo. Elige tus pasos sin una cadena indicada.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "elegir_todos_los_ajustes_permitidos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior del ajuste t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Cota superior del ajuste t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusión del ajuste inferior",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusión del ajuste superior",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "3/4"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "9/4"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Se deben cumplir 1/2 ≤ 5 − 2t y 5 − 2t < 7/2 a la vez. La primera da t ≤ 9/4 y la segunda t > 3/4, al invertir el sentido cuando se divide por −2. El rango completo es 3/4 < t ≤ 9/4, dentro del dominio no negativo. En la cota inferior S = 7/2 y se excluye; en la superior S = 1/2 y se incluye.",
+            "incorrect": "Relaciona los dos límites con la misma puntuación. Revisa el sentido al dividir por un número negativo y prueba cada extremo en la condición original correspondiente. Un solo valor interior no describe todos los ajustes admitidos."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Volver al objetivo que cambió"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "exigir_una_disponibilidad_precisa",
+          "prompt": "Vuelve a la carpeta de catorce MB, con dos MB fijos y fotografías de 3/2 MB. Ahora deben quedar exactamente 9/2 MB disponibles. n conserva su significado y dominio entero de cero a ocho. Escribe una relación con n que exija ese objetivo y determina cuántas fotografías cumplen. Se admiten formas equivalentes de la relación y cualquier ruta válida para hallar el número.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "exigir_una_disponibilidad_precisa__relacion",
+              "type": "math_expression_input",
+              "label": "Relación que exige la disponibilidad indicada",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "12-3n/2=9/2"
+              }
+            },
+            {
+              "id": "exigir_una_disponibilidad_precisa__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "fotografias",
+                  "type": "numeric",
+                  "label": "Número de fotografías que cumple el objetivo",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "fotografias": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El objetivo exige 12 − (3/2)n = 9/2, equivalente a 3n = 15 o n = 5. Con cinco fotografías se ocupan 2 + 15/2 = 19/2 MB y quedan 14 − 19/2 = 9/2 MB. El conteo es entero y está entre cero y ocho. A diferencia de calcular lo disponible para cualquier n, ahora hay una condición que selecciona el conteo.",
+            "incorrect": "Conserva que 9/2 son MB disponibles, no MB ocupados ni un número de fotografías. La relación debe expresar ese objetivo; después revisa el valor obtenido con las cantidades originales."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_una_decision_tras_un_signo",
+          "prompt": "En el juego de puntuación S = 5 − 2t, con t racional no negativo, una nueva petición exige S > 1. Un apunte pasa a −2t > −4 y después afirma t > 2. Identifica el primer error y recupera todos los ajustes realmente permitidos: cotas, inclusión y puntuación original cuando t = 3.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_una_decision_tras_un_signo__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El error fue restar cinco a ambos miembros antes de dividir."
+                },
+                {
+                  "id": "b",
+                  "label": "El sentido debía invertirse al dividir ambos miembros por −2."
+                },
+                {
+                  "id": "c",
+                  "label": "El error fue permitir un ajuste racional en un dominio que siempre debe ser entero."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            },
+            {
+              "id": "recuperar_una_decision_tras_un_signo__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior del ajuste t en su dominio",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Cota superior que permanece",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusión del ajuste inferior",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusión del ajuste superior",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "prueba",
+                  "type": "numeric",
+                  "label": "Puntuación S cuando t = 3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "prueba": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar cinco fue correcto. Dividir por −2 debe invertir el sentido: t < 2. Junto con t ≥ 0, las soluciones son 0 ≤ t < 2. La frontera t = 2 produce S = 1 y no cumple la exigencia estricta. Con t = 3, que el apunte aceptaría, S = 5 − 6 = −1 y tampoco cumple. Revisar esa propuesta ayuda a localizar el error, pero el rango se justifica con las transformaciones y el dominio.",
+            "incorrect": "Revisa qué operación se aplicó y cuál es el signo del divisor. Conserva tanto la condición del objetivo como la no negatividad de t; no aceptes una dirección únicamente porque quedó escrita en el apunte."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Las comparaciones deben conservar su sentido o invertirlo según el signo de la operación, y los extremos deben responder a la condición original. Comprobar una propuesta que un apunte acepta puede revelar una contradicción, pero describir todas las soluciones requiere recuperar el razonamiento completo (Lang, 1971, pp. 75–76, 78; Pólya, 1957, pp. 60–61)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguir el cálculo de la propuesta"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "describir_todas_las_propuestas_de_la_carpeta",
+          "prompt": "La carpeta conserva catorce MB de capacidad, dos MB fijos y 3/2 MB por fotografía. Ahora se quieren más de cinco MB disponibles. n cuenta fotografías completas de cero a ocho. Para organizar la cuenta, considera primero 0 ≤ n ≤ 8 en los racionales y describe el rango que cumple el nuevo objetivo: cotas e inclusión. Después vuelve al dominio de fotografías completas e informa su mayor conteo permitido.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "describir_todas_las_propuestas_de_la_carpeta__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior del rango racional previo",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Cota superior del rango racional previo",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo inferior",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusión del extremo superior",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "maximo_entero",
+                  "type": "numeric",
+                  "label": "Mayor número permitido de fotografías completas",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "0"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "14/3"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "maximo_entero": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La exigencia es 12 − (3/2)n > 5, equivalente a n < 14/3. Con 0 ≤ n ≤ 8 queda 0 ≤ n < 14/3 en los racionales. Su extremo superior se excluye porque dejaría exactamente cinco MB. Al regresar al dominio entero, todos los conteos permitidos son 0, 1, 2, 3 y 4. Con cuatro quedan seis MB; con cinco quedan 9/2 y se incumple este nuevo objetivo. El rango racional de la cuenta no autoriza fraccionar fotografías.",
+            "incorrect": "El objetivo cambió: «más de cinco» no pide quedar exactamente en cinco ni volver al conteo de la petición anterior. Resuelve primero la comparación, conserva la cota de dominio y después selecciona los enteros que realmente pertenecen al rango."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "un_cambio_de_objetivo_deja_una_familia",
+          "prompt": "Vuelve a los dos marcadores: inicialmente x + y = 14, con x ≥ 3 e y ≥ 0, y se transfieren tres puntos del primero al segundo. Ahora el segundo saldo posterior debe ser al menos igual al primero y menor que su doble. Los puntos son racionales. Describe todos los pares permitidos informando las cotas de x y su inclusión; y debe conservar la relación del total. Selecciona también todas las propuestas ofrecidas que cumplen todos los datos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "un_cambio_de_objetivo_deja_una_familia__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "inferior",
+                  "type": "numeric",
+                  "label": "Cota inferior del saldo inicial x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "superior",
+                  "type": "numeric",
+                  "label": "Cota superior del saldo inicial x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "incluye_inferior",
+                  "type": "dropdown",
+                  "label": "Inclusión del saldo inferior",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                },
+                {
+                  "id": "incluye_superior",
+                  "type": "dropdown",
+                  "label": "Inclusión del saldo superior",
+                  "options": [
+                    {
+                      "id": "incluido",
+                      "label": "Se incluye el extremo."
+                    },
+                    {
+                      "id": "excluido",
+                      "label": "Se excluye el extremo."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "inferior": {
+                    "type": "numeric",
+                    "expected": "23/3"
+                  },
+                  "superior": {
+                    "type": "numeric",
+                    "expected": "10"
+                  },
+                  "incluye_inferior": {
+                    "type": "exact_text",
+                    "expected": "excluido"
+                  },
+                  "incluye_superior": {
+                    "type": "exact_text",
+                    "expected": "incluido"
+                  }
+                }
+              }
+            },
+            {
+              "id": "un_cambio_de_objetivo_deja_una_familia__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(9, 5)"
+                },
+                {
+                  "id": "b",
+                  "label": "(21/2, 7/2)"
+                },
+                {
+                  "id": "c",
+                  "label": "(15/2, 13/2)"
+                },
+                {
+                  "id": "d",
+                  "label": "(8, 6)"
+                },
+                {
+                  "id": "e",
+                  "label": "(9, 6)"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El total conserva y = 14 − x. Después de transferir se exige y + 3 ≥ x − 3 y y + 3 < 2(x − 3). Reemplazar y da 17 − x ≥ x − 3, o x ≤ 10, y 17 − x < 2x − 6, o x > 23/3. Los pares completos son (x, 14 − x) con 23/3 < x ≤ 10; estos también cumplen los dominios iniciales. Hay una familia de pares, no un único par. De la lista, (9, 5) y (8, 6) cumplen. (21/2, 7/2) falla la comparación inferior; (15/2, 13/2) falla la superior estricta; (9, 6) no suma catorce.",
+            "incorrect": "Relaciona y con el mismo x mediante el total antes de resolver ambas comparaciones. Conserva el cambio de tres puntos y prueba cada extremo. Una propuesta que cumple las comparaciones pero no el total no pertenece a la familia."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Justificar el conjunto completo"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_propuesta_no_determina_todo_el_conjunto",
+          "prompt": "Dos cálculos con q racional son A = 3(q − 2) + 5 y B = 3q − 1. Se exige que sus resultados coincidan. Un apunte comprueba q = 0 y afirma que ésa es la única solución. Revisa las formas originales y elige la conclusión que puede justificarse para todos los racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_propuesta_no_determina_todo_el_conjunto__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Todos los racionales cumplen: distribuir en A obtiene exactamente la misma expresión que B."
+                },
+                {
+                  "id": "b",
+                  "label": "Sólo q = 0 cumple, porque fue el único valor que se comprobó."
+                },
+                {
+                  "id": "c",
+                  "label": "No hay solución, porque una escritura contiene un paréntesis y la otra no."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distribuir da A = 3q − 6 + 5 = 3q − 1 = B para cualquier racional q. La comprobación de cero acredita esa propuesta, pero no justificó por sí sola ni unicidad ni totalidad. La transformación general prueba que todos los racionales del dominio cumplen.",
+            "incorrect": "Una comprobación particular no examina otros valores. Compara las dos expresiones mediante propiedades válidas en todo el dominio antes de decidir qué conjunto satisface la condición."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_exigencias_y_dos_dominios",
+          "prompt": "Una elección r debe cumplir 3r − 2 ≥ 5/2 y 5 − 2r ≥ 2 a la vez. Primero r admite racionales no negativos; después se conserva exactamente el mismo criterio, pero r sólo admite enteros no negativos. Clasifica las elecciones de cada dominio y escribe el valor que cumple en el dominio racional. Elige tu ruta y conserva ambos requisitos.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_exigencias_y_dos_dominios__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "racionales",
+                  "type": "dropdown",
+                  "label": "Elecciones que cumplen en los racionales no negativos",
+                  "options": [
+                    {
+                      "id": "un_valor",
+                      "label": "Exactamente un valor."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Ningún valor."
+                    },
+                    {
+                      "id": "varios",
+                      "label": "Más de un valor."
+                    }
+                  ]
+                },
+                {
+                  "id": "enteros",
+                  "type": "dropdown",
+                  "label": "Elecciones que cumplen en los enteros no negativos",
+                  "options": [
+                    {
+                      "id": "un_valor",
+                      "label": "Exactamente un valor."
+                    },
+                    {
+                      "id": "ninguno",
+                      "label": "Ningún valor."
+                    },
+                    {
+                      "id": "varios",
+                      "label": "Más de un valor."
+                    }
+                  ]
+                },
+                {
+                  "id": "valor_racional",
+                  "type": "numeric",
+                  "label": "Valor permitido en el dominio racional",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "racionales": {
+                    "type": "exact_text",
+                    "expected": "un_valor"
+                  },
+                  "enteros": {
+                    "type": "exact_text",
+                    "expected": "ninguno"
+                  },
+                  "valor_racional": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera exigencia da r ≥ 3/2. La segunda da r ≤ 3/2 al dividir por −2. En los racionales no negativos queda sólo r = 3/2, que produce 5/2 y 2 en las originales. Ese valor no es entero, así que no queda ninguna elección en el segundo dominio. No se redondea: uno falla la primera condición y dos falla la segunda.",
+            "incorrect": "Resuelve cada comparación sin borrar la otra y toma lo que cumplen simultáneamente. Revisa si el conjunto obtenido pertenece al dominio pedido; cambiar el dominio no cambia los requisitos originales."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "La forma elegida no decide por sí sola cuántas soluciones habrá. Una igualdad puede dejar una familia de pares o ser verdadera en todo su dominio; dos comparaciones pueden dejar un único valor. Resolver exige describir todos los valores que cumplen, o justificar que no queda ninguno, manteniendo el significado de las incógnitas (Gelfand & Shen, 1993, pp. 94–95). La vuelta a los datos y al paso que pudo fallar permite recuperar el razonamiento y transferirlo a otra petición (Pólya, 1957, pp. 12–15, 60–61)."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,631 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__reducir_tres_condiciones_y_recuperar_tres_valores",
+  "title": "Reducir tres condiciones y recuperar tres valores",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Tres valores conservan tres papeles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una situación puede requerir tres cantidades desconocidas. Ahora llamaremos x, y y z a sus valores y escribiremos la terna en el orden (x, y, z). La terna (1, −2, 3) asigna uno a x, menos dos a y y tres a z. Cambiar el orden cambia las asignaciones, aunque aparezcan los mismos números. Esta notación no exige interpretar coordenadas ni dibujar una figura."
+        },
+        {
+          "type": "paragraph",
+          "text": "En un sistema abstracto de esta lección, las tres incógnitas admiten todos los racionales. Una solución simultánea mantiene la misma terna en cada condición. En un contexto, cada componente debe pertenecer además al dominio de la cantidad que representa. Tres letras no obligan a valores diferentes, positivos ni enteros por sí solas."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conservar_el_orden_de_tres_valores",
+          "prompt": "Calcula 2x − y + z con las ternas (1, −2, 3) y (3, −2, 1), escritas en el orden (x, y, z).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conservar_el_orden_de_tres_valores__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor con (1, −2, 3)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "intercambiada",
+                  "type": "numeric",
+                  "label": "Valor con (3, −2, 1)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "intercambiada": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con (1, −2, 3), 2x − y + z = 2 − (−2) + 3 = 7. Con (3, −2, 1), vale 6 − (−2) + 1 = 9. El segundo valor sigue asignado a y, pero x y z intercambiaron sus papeles.",
+            "incorrect": "Identifica primero cuál componente corresponde a cada letra. Restar el valor negativo de y suma su opuesto; no cambies el orden para facilitar una cuenta."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "que_acredita_una_solucion_de_tres_condiciones",
+          "prompt": "¿Qué revisión acredita que una terna propuesta es solución simultánea de tres ecuaciones en los dominios indicados?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "que_acredita_una_solucion_de_tres_condiciones__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Que cada ecuación funcione con alguna terna, aunque se cambien los valores entre ellas."
+                },
+                {
+                  "id": "b",
+                  "label": "Que la primera ecuación funcione, porque la propuesta ya contiene tres números."
+                },
+                {
+                  "id": "c",
+                  "label": "Que la misma terna pertenezca a los dominios y haga verdaderas las tres ecuaciones."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada incógnita conserva su valor al comprobar las tres condiciones. La cantidad de números escritos no acredita una solución y no permite omitir una ecuación. Los dominios siguen formando parte del problema.",
+            "incorrect": "Recupera el criterio aprendido para dos incógnitas: una sola asignación debe satisfacer todas las condiciones. Añadir una tercera cantidad amplía la revisión."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reducir a dos incógnitas sin olvidar la primera condición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya sabes reducir sistemas de dos incógnitas. Para tres, elegiremos dos combinaciones que eliminen la misma incógnita; así obtendremos un sistema de dos cantidades que podemos tratar con esos métodos. Después recuperaremos la tercera cantidad y comprobaremos las tres condiciones originales. La reducción sucesiva y la recuperación son el propósito del tramo de tres incógnitas de la referencia (Lang, 1971, pp. 57–59)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Trabajemos en los racionales con A: x + y + z = 9; B: x − y + 2z = 7; C: 2x + y − z = 3. Conservar A y reemplazar B por B − A da −2y + z = −2. Conservar A y reemplazar C por C − 2A da −y − 3z = −15. En ambos reemplazos se restan los miembros izquierdos y también los derechos; en 2A se multiplican todos los términos y el nueve por dos."
+        },
+        {
+          "type": "paragraph",
+          "text": "El sistema transformado conserva A junto con las dos relaciones nuevas. Cualquier solución original las cumple. A la inversa, sumar A a la nueva segunda relación recupera B; sumar 2A a la nueva tercera recupera C. Así no perdimos ni añadimos ternas. Las dos relaciones sin x, por sí solas, no conservan toda la información: A será necesaria para recuperar x. Revisar si cada reducción mantiene las condiciones evita ampliar indebidamente el conjunto de soluciones (Pólya, 1957, pp. 55–56)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Resolvemos −2y + z = −2 y −y − 3z = −15 con lo ya aprendido. La primera da z = 2y − 2. Sustituir en la otra produce −y − 3(2y − 2) = −15, es decir, −7y + 6 = −15. De ahí y = 3 y z = 4. A permite recuperar x = 9 − y − z = 2. La terna es (2, 3, 4)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La comprobación en las originales da 2 + 3 + 4 = 9; 2 − 3 + 2 × 4 = 7; 2 × 2 + 3 − 4 = 3. Estos cálculos acreditan que la terna funciona. La reversibilidad de los reemplazos y la resolución de las dos relaciones reducidas justifican que no falta otra terna. No llegamos a esa conclusión sólo por contar tres ecuaciones."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "conservar_una_condicion_al_reducir_tres",
+          "prompt": "Después de obtener B − A y C − 2A en este ejemplo, ¿qué información debemos conservar para describir un sistema equivalente al original?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "conservar_una_condicion_al_reducir_tres__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sólo las dos relaciones nuevas sin x; entonces x puede elegirse sin restricción."
+                },
+                {
+                  "id": "b",
+                  "label": "La condición A y las dos relaciones nuevas, que permiten recuperar B y C."
+                },
+                {
+                  "id": "c",
+                  "label": "La condición A y una sola relación nueva, porque ya aparecen las tres letras."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "A conecta x con y y z. Las otras dos relaciones conservan la información restante y permiten recuperar B y C mediante las operaciones inversas. Quitar una condición sin justificar que se deduce de las conservadas puede admitir ternas que antes no cumplían.",
+            "incorrect": "Identifica qué relación usarás para recuperar x y qué información permite reconstruir cada ecuación original. Contar letras no reemplaza conservar condiciones."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Formar dos relaciones nuevas y recuperar la terna"
+        },
+        {
+          "type": "paragraph",
+          "text": "En el siguiente sistema llamamos A a x + y + z = 11, B a 2x − y + z = 5 y C a x + 2y − z = 5. Las tres incógnitas son racionales. Conservar A permite reemplazar B por B − 2A y C por C − A. Ambos reemplazos eliminan x y dejan relaciones entre y y z. Puedes escribir esas relaciones en formas equivalentes; el nombre del campo fija cuál operación se está representando."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_reducciones_con_una_condicion_conservada",
+          "prompt": "Escribe la ecuación que resulta de B − 2A y la que resulta de C − A. Cada resta afecta a ambos miembros completos. Conserva A, resuelve el sistema y recupera la terna; para hallar los valores finales puedes continuar por una ruta válida de tu elección.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_reducciones_con_una_condicion_conservada__b_menos_dos_a",
+              "type": "math_expression_input",
+              "label": "Relación equivalente a B − 2A",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "-3y-z=-17"
+              }
+            },
+            {
+              "id": "dos_reducciones_con_una_condicion_conservada__c_menos_a",
+              "type": "math_expression_input",
+              "label": "Relación equivalente a C − A",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y-2z=-6"
+              }
+            },
+            {
+              "id": "dos_reducciones_con_una_condicion_conservada__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Valor de z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "B − 2A da −3y − z = −17, equivalente a 3y + z = 17. C − A da y − 2z = −6. Una ruta usa z = 17 − 3y: y − 2(17 − 3y) = −6 lleva a 7y = 28 y y = 4. Después z = 5 y A da x = 2. Las originales valen once, cinco y cinco con (2, 4, 5). También puedes resolver las relaciones reducidas por eliminación.",
+            "incorrect": "Multiplica los tres términos y el once al formar 2A. Conserva los signos al restar B − 2A y C − A. Las relaciones nuevas sólo determinan y y z; usa A para recuperar x y vuelve a las originales."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "otras_rutas_conservan_las_tres_condiciones",
+          "prompt": "Para este mismo sistema, selecciona todos los planes que eliminan x de dos relaciones y conservan información suficiente para recuperar las tres originales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "otras_rutas_conservan_las_tres_condiciones__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Conservar C, reemplazar A por A − C y B por B − 2C."
+                },
+                {
+                  "id": "b",
+                  "label": "Conservar A, reemplazar B por B − 2A y C por C − A."
+                },
+                {
+                  "id": "c",
+                  "label": "Conservar sólo B − 2A; elegir después los demás valores sin otra condición."
+                },
+                {
+                  "id": "d",
+                  "label": "Usar un valor distinto de x en cada ecuación para obtener cuentas fáciles."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los dos primeros planes conservan una condición con x y dos diferencias que lo eliminan. Conservar C permite recuperar A sumando C a A − C, y B sumando 2C a B − 2C. Conservar A permite las recuperaciones ya justificadas. No hay una condición única que deba elegirse como apoyo.",
+            "incorrect": "Examina qué letra se cancela y cómo recuperarías cada original. Un solo reemplazo sin las otras condiciones pierde información; cambiar la asignación entre ecuaciones deja de tratar una solución simultánea."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Racionales y una ruta elegida por ti"
+        },
+        {
+          "type": "paragraph",
+          "text": "La extensión a tres incógnitas no cambia las reglas de las fracciones ni de los signos. Un denominador constante conocido no nulo puede quitarse multiplicando la ecuación completa. Después puedes sustituir o eliminar en las relaciones que obtengas. Elige qué letra reducir primero y qué condiciones conservar, sin perder ninguna original. Los ejercicios de tres incógnitas de la referencia también incluyen coeficientes racionales y la preparación de denominadores (Lang, 1971, p. 59)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_una_terna_racional_sin_cadena",
+          "prompt": "Resuelve x/2 + y − z = 0, x − 2y + z = −9/2 y 2x + y + 2z = −3/2. Las tres incógnitas admiten todos los racionales. Escribe x, y y z exactos; elige una ruta justificable y comprueba las tres condiciones originales con tu terna.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_una_terna_racional_sin_cadena__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Valor de z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una ruta multiplica la primera por dos: x + 2y − 2z = 0. Restarla de la segunda da −4y + 3z = −9/2; restar dos veces esa primera transformada de la tercera da −3y + 6z = −3/2. Duplicar la primera relación reducida y restar la otra lleva a −5y = −15/2, así que y = 3/2. Entonces z = 1/2 y x = −2. Las originales dan −1 + 3/2 − 1/2 = 0; −2 − 3 + 1/2 = −9/2; −4 + 3/2 + 1 = −3/2.",
+            "incorrect": "Puedes empezar por quitar el dos de la primera ecuación, pero multiplica todos sus términos y su miembro derecho. Si eliges otra ruta, conserva las relaciones usadas. No cambies el signo de x ni reemplaces las fracciones por redondeos."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Un resultado negativo es normal en este dominio abstracto. La comprobación de la terna se suma a la justificación de los pasos; no la sustituye. Si una cuenta no coincide, revisa primero una distribución, una resta completa o una condición que puedas haber dejado fuera, en vez de repetir sin cambios todo el cálculo (Pólya, 1957, pp. 12–15, 60–61)."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Detectar cuándo se perdió una condición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una reducción útil no consiste en quedarse con menos datos por comodidad. Las nuevas relaciones deben conservar información suficiente para recuperar las condiciones iniciales. Escribir una terna después de una cuenta correcta no prueba que esa terna sea solución del sistema completo. Preguntarte si usaste todos los datos permite examinar un punto débil del argumento (Pólya, 1957, pp. 55–56, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnosticar_una_condicion_que_no_se_uso",
+          "prompt": "El sistema es x + y + z = 6, x − y + z = 2 y 2x + y − z = 3. Un apunte resta la segunda de la primera, obtiene 2y = 4 y y = 2; usa la primera para obtener x + z = 4; elige x = 1, pone z = 3 y anuncia una solución única. Calcula los tres miembros izquierdos originales con (1, 2, 3) e identifica el primer paso que dejó de justificar la solución completa.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnosticar_una_condicion_que_no_se_uso__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor de x + y + z",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor de x − y + z",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "tercera",
+                  "type": "numeric",
+                  "label": "Valor de 2x + y − z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "tercera": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "diagnosticar_una_condicion_que_no_se_uso__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Restar las dos primeras ecuaciones es inválido incluso si la resta afecta a ambos miembros."
+                },
+                {
+                  "id": "b",
+                  "label": "Elegir x sin usar la tercera condición deja una restricción sin aplicar; la terna no satisface el sistema completo."
+                },
+                {
+                  "id": "c",
+                  "label": "La terna debe rechazarse únicamente porque sus componentes son distintas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las dos primeras reducciones son correctas: y = 2 y x + z = 4. Pero elegir x = 1 aún no usa la tercera condición. La propuesta da seis y dos en las primeras, pero uno en la tercera, que exige tres. Tampoco se había justificado que esa elección fuera única. Tres valores escritos no sustituyen el dato que falta aplicar.",
+            "incorrect": "Comprueba cada original con la misma terna antes de aceptar el anuncio. Localiza el paso que convirtió una relación con valores todavía posibles en una elección no justificada; una resta correcta anterior no garantiza todo lo que viene después."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_la_terna_tras_el_diagnostico",
+          "prompt": "Resuelve ahora las tres condiciones originales del diagnóstico, sin aceptar la elección arbitraria del apunte. Escribe la terna racional completa por una ruta válida y compruébala en las tres ecuaciones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_la_terna_tras_el_diagnostico__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "x",
+                  "type": "numeric",
+                  "label": "Valor de x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "y",
+                  "type": "numeric",
+                  "label": "Valor de y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "z",
+                  "type": "numeric",
+                  "label": "Valor de z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "x": {
+                    "type": "numeric",
+                    "expected": "5/3"
+                  },
+                  "y": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "z": {
+                    "type": "numeric",
+                    "expected": "7/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La relación y = 2 reduce las otras dos a x + z = 4 y 2x − z = 1. Su suma da 3x = 5, así que x = 5/3 y z = 7/3. La terna (5/3, 2, 7/3) da 6, 2 y 3 en las originales. Se usó la tercera condición para determinar lo que las dos primeras dejaban pendiente.",
+            "incorrect": "Recupera una relación válida del apunte, pero incorpora la condición que faltaba. Después de hallar x y z, vuelve a todas las originales; no compruebes sólo las dos que la propuesta anterior ya cumplía."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Interpretar tres cantidades y volver al contexto"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un lote usa cuentas completas de tres colores. x cuenta las rojas, y las verdes y z las azules. Cada roja tiene masa de un gramo, cada verde de dos y cada azul de cuatro. Se necesitan trece cuentas y veintinueve gramos en total; además, debe haber una roja más que azules. Sólo hay cuatro cuentas azules disponibles. El modelo supone que las masas individuales se suman."
+        },
+        {
+          "type": "paragraph",
+          "text": "Aquí damos las condiciones algebraicas: x + y + z = 13 cuenta objetos; x + 2y + 4z = 29 expresa la masa total en gramos; x − z = 1 expresa la diferencia de conteos. Las tres incógnitas son enteros no negativos y el inventario exige z ≤ 4. Los coeficientes de masa convierten cuentas a gramos antes de sumarlas. Interpretaremos y resolveremos este modelo dado, manteniendo distintos el total de objetos, el de masa y la comparación."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_un_modelo_dado_de_tres_conteos",
+          "prompt": "Resuelve las tres ecuaciones dadas para el lote. Escribe los conteos de rojas, verdes y azules por una ruta válida. Comprueba las tres igualdades, la integridad de los conteos y el límite de cuatro azules.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_un_modelo_dado_de_tres_conteos__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "rojas",
+                  "type": "numeric",
+                  "label": "Número de cuentas rojas, x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "verdes",
+                  "type": "numeric",
+                  "label": "Número de cuentas verdes, y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "azules",
+                  "type": "numeric",
+                  "label": "Número de cuentas azules, z",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "rojas": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "verdes": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "azules": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una ruta conserva x = z + 1. El total de objetos da y = 12 − 2z. Sustituir ambos en la masa produce z + 1 + 2(12 − 2z) + 4z = 29, de donde z = 4. Entonces x = 5 e y = 4. Se obtienen 5 + 4 + 4 = 13 cuentas, 5 + 8 + 16 = 29 gramos y 5 − 4 = 1. Los tres conteos son enteros no negativos y z = 4 respeta el límite inclusive.",
+            "incorrect": "Puedes usar primero la comparación entre rojas y azules, o reducir de otra manera. Conserva los tres objetivos y qué color corresponde a cada letra. El candidato debe cumplir también el inventario: una igualdad numérica no elimina esa restricción."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_terna_correcta_puede_rebasar_un_inventario",
+          "prompt": "En una nueva petición se cambia únicamente la masa total a treinta y un gramos. Se mantienen trece cuentas, una roja más que azules y como máximo cuatro azules. Se propone (x, y, z) = (7, 0, 6). Comprueba las nuevas ecuaciones y decide si esa propuesta es admisible.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_terna_correcta_puede_rebasar_un_inventario__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí: cumplir las tres ecuaciones permite usar más azules que las disponibles."
+                },
+                {
+                  "id": "b",
+                  "label": "No: un conteo cero de verdes está siempre fuera del dominio no negativo."
+                },
+                {
+                  "id": "c",
+                  "label": "No: aunque cumple las tres ecuaciones con conteos enteros no negativos, usa seis azules y sólo hay cuatro."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con (7, 0, 6), el total es trece cuentas, la masa 7 + 0 + 24 = 31 gramos y la diferencia 7 − 6 = 1. El cero de verdes está permitido; la propuesta falla por z = 6 > 4. Esta comprobación descarta la terna por un dato contextual, sin cambiar lo que exige cada ecuación.",
+            "incorrect": "Revisa por separado las igualdades y los dominios. Un cero puede contar la ausencia de un color; exceder una disponibilidad incumple una condición aunque las cuentas algebraicas sean correctas."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Reducir a dos incógnitas, recuperar la tercera y volver a las originales organiza la extensión sin añadir un método completamente distinto. Una ruta puede eliminar primero otra letra si conserva las condiciones y permite regresar. La comprobación de una terna, la justificación de que no quedan otras y la revisión del contexto siguen siendo tareas relacionadas, con propósitos propios (Lang, 1971, pp. 57–59; Pólya, 1957, pp. 14–15, 60–61)."
+        }
+      ]
+    }
+  ]
+}

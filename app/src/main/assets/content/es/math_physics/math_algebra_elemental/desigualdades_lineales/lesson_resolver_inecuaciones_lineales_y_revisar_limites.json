@@ -1,0 +1,1323 @@
+{
+  "id": "math_algebra_elemental__desigualdades_lineales__resolver_inecuaciones_lineales_y_revisar_limites",
+  "title": "Resolver inecuaciones lineales y revisar límites",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Resolver significa describir todos los valores que cumplen"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya conocemos las reglas de orden y las operaciones reversibles. Ahora las combinaremos para resolver inecuaciones lineales: la incógnita aparece multiplicada por constantes y sumada a otros términos, sin potencias mayores que uno. Trabajaremos en los racionales, salvo una restricción explícita del contexto; los denominadores serán constantes distintas de cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "En 5x − 4 ≤ 11, sumar cuatro a ambos miembros da 5x ≤ 15. Dividir por cinco, que es positivo, conserva el sentido y deja x ≤ 3. No hemos obtenido sólo el número tres: las soluciones son todos los racionales menores o iguales que tres. Los pasos equivalentes justifican esa descripción completa (Lang, 1971, pp. 75–77)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El límite o frontera es tres. Sustituirlo produce 11 ≤ 11, así que está incluido. Con x = 2 el izquierdo vale seis y cumple; con x = 4 vale dieciséis y falla. Estas comprobaciones revisan valores concretos. La cadena reversible, no una lista finita de pruebas, justifica cuáles son todas las soluciones."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_operaciones_y_frontera_estricta",
+          "prompt": "Resuelve (3/2)u + 5/4 < 2 en los racionales. Escribe el límite y selecciona cómo quedan todas las soluciones. Calcula también el miembro izquierdo original cuando u toma exactamente ese límite.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_operaciones_y_frontera_estricta__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Límite para u",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Descripción de las soluciones para u",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                },
+                {
+                  "id": "frontera",
+                  "type": "numeric",
+                  "label": "Miembro izquierdo original en la frontera",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  },
+                  "frontera": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar 5/4 deja (3/2)u < 3/4. Dividir por 3/2, positivo, da u < 1/2. En la frontera, (3/2)(1/2) + 5/4 = 2. La comparación 2 < 2 es falsa: la frontera no está incluida. Cumplen exactamente los racionales menores que 1/2.",
+            "incorrect": "Cancela primero la constante o elige otra ruta reversible sobre el miembro completo. Revisa el signo del divisor y conserva que la comparación original es estricta; igualar los miembros no basta para cumplir <."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperar_una_ruta_con_coeficiente_positivo",
+          "prompt": "Resuelve r/4 − 2 ≥ −5/2 y x + 5/3 ≤ 2/3. Elige tus pasos. Para cada incógnita escribe la frontera y la descripción completa de sus soluciones racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperar_una_ruta_con_coeficiente_positivo__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite_r",
+                  "type": "numeric",
+                  "label": "Límite para r",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_r",
+                  "type": "dropdown",
+                  "label": "Soluciones de la inecuación con r",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                },
+                {
+                  "id": "limite_x",
+                  "type": "numeric",
+                  "label": "Límite para x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_x",
+                  "type": "dropdown",
+                  "label": "Soluciones de la inecuación con x",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite_r": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  },
+                  "sentido_r": {
+                    "type": "exact_text",
+                    "expected": "mayor_igual"
+                  },
+                  "limite_x": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "sentido_x": {
+                    "type": "exact_text",
+                    "expected": "menor_igual"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Sumar dos en la primera deja r/4 ≥ −1/2; multiplicar por cuatro da r ≥ −2. En la segunda, restar 5/3 da x ≤ −1. Ambos factores son positivos y ambos símbolos incluyen la igualdad. Las fronteras sustituidas producen igualdades verdaderas con ≥ o ≤.",
+            "incorrect": "Una frontera negativa no obliga a invertir el sentido. Importa el signo del factor por el que multiplicas o divides. En la segunda el coeficiente de x es uno, y una resta no cambia ≤."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El signo del coeficiente decide la inversión"
+        },
+        {
+          "type": "paragraph",
+          "text": "Para −(4/3)x + 1/2 ≥ 5/6, restar 1/2 deja −(4/3)x ≥ 1/3. El divisor −4/3 es negativo: dividimos e invertimos ≥ a ≤. Queda x ≤ −1/4. La igualdad sigue permitida. El signo que decide la inversión es el del divisor, aunque la frontera obtenida sea negativa (Lang, 1971, pp. 75–77)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dividir_por_un_coeficiente_negativo",
+          "prompt": "Resuelve −(5/2)t − 3/4 ≤ 7/4. Suma primero 3/4 a ambos miembros. Escribe el derecho que queda frente al producto, el límite final y cómo quedan las soluciones de t.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dividir_por_un_coeficiente_negativo__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Derecho tras sumar 3/4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Límite para t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Soluciones para t",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  },
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor_igual"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La suma da −(5/2)t ≤ 5/2. Dividir por −5/2 invierte el sentido: t ≥ −1. En la frontera, el izquierdo original es 5/2 − 3/4 = 7/4, y se permite la igualdad. La descripción incluye todos los racionales mayores o iguales que −1.",
+            "incorrect": "Calcula 7/4 + 3/4 y después divide por el coeficiente completo −5/2. Conserva el caso de igualdad al invertir: ≤ se convierte en ≥."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando sospechas de una cadena, revisa el paso que parece más débil y prueba un valor que distinga las dos condiciones. Eso puede localizar un error; después debes reparar su justificación general, no limitarte a repetir las cuentas (Pólya, 1957, pp. 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_division_que_no_invierte",
+          "prompt": "Un apunte cambia −3r + 2 < 8 por −3r < 6 y después por r < −2. Identifica el primer error. Selecciona el sentido correcto respecto de la frontera −2 y calcula el izquierdo original con r = −3, valor que el apunte aceptaría.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_division_que_no_invierte__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Restar dos al principio debía invertir el símbolo."
+                },
+                {
+                  "id": "b",
+                  "label": "Al dividir por −3 faltó invertir el símbolo."
+                },
+                {
+                  "id": "c",
+                  "label": "No hay error porque el límite tiene signo negativo."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            },
+            {
+              "id": "una_division_que_no_invierte__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Soluciones correctas respecto de la frontera indicada",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                },
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Miembro izquierdo original con r = −3",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  },
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "11"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La resta está bien. La división por −3 exige r > −2. Con r = −3, el izquierdo original vale once y 11 < 8 es falsa, aunque −3 < −2 era verdadera. Ese contraejemplo refuta el apunte; la regla de división por un negativo justifica la corrección para todos los racionales.",
+            "incorrect": "Distingue restar una cantidad de dividir por ella. La suma o resta conserva el sentido; la división por un negativo lo invierte. Revisa el valor propuesto en la inecuación original."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reunir términos de los dos miembros"
+        },
+        {
+          "type": "paragraph",
+          "text": "En 2x + 5 > 5x − 1, restar 5x de ambos miembros y restar cinco deja −3x > −6. Dividir por −3 da x < 2. Otra ruta resta 2x a ambos miembros y suma uno: 6 > 3x. Dividir por tres da 2 > x, que expresa también x < 2. Los caminos válidos describen el mismo conjunto de soluciones."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para cada valor propuesto, restar un mismo término con la incógnita quita la misma cantidad en los dos miembros y conserva el orden. Reunir términos dentro de un miembro usa las identidades ya justificadas. Ahora aplicamos esas acciones a condiciones de orden, manteniendo su sentido salvo una multiplicación o división por un negativo (Lang, 1971, pp. 75–77, 81)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reunir_y_resolver_con_dos_miembros",
+          "prompt": "Resuelve 7x − 3 ≥ 2x + 4 restando 2x de ambos miembros y después sumando tres. Escribe el límite y las soluciones racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reunir_y_resolver_con_dos_miembros__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Límite para x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Soluciones para x",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "7/5"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor_igual"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los pasos pedidos dejan 5x ≥ 7. Dividir por cinco conserva ≥ y obtiene x ≥ 7/5. En la frontera, ambos miembros originales valen 34/5, así que está incluida.",
+            "incorrect": "Resta el término completo 2x también en el izquierdo y suma tres también en el derecho. El coeficiente que queda es cinco, positivo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "rutas_equivalentes_para_la_misma_inecuacion",
+          "prompt": "Selecciona todas las cadenas válidas para −4u + 3 ≤ u − 2. No se exige empezar reuniendo u en un lado determinado.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "rutas_equivalentes_para_la_misma_inecuacion__revision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sumar 4u: 3 ≤ 5u − 2. Sumar dos y dividir por cinco: 1 ≤ u."
+                },
+                {
+                  "id": "b",
+                  "label": "Restar u: −5u + 3 ≤ −2. Restar tres y dividir por −5: u ≥ 1."
+                },
+                {
+                  "id": "c",
+                  "label": "Restar u y restar tres: −5u ≤ −5. Dividir por −5: u ≤ 1."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las dos primeras son válidas y describen u ≥ 1. En la primera se divide por un positivo; en la segunda se divide por un negativo y se invierte el sentido. La tercera omite esa inversión. Escribir 1 ≤ u o u ≥ 1 expresa el mismo orden.",
+            "incorrect": "Revisa el signo del divisor en cada ruta y lee qué número queda a cada lado. Elegir un lado distinto para reunir la letra no es un error."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficientes_fraccionarios_en_ambos_miembros",
+          "prompt": "Resuelve −(1/2)r + 3/4 > (1/4)r − 3/2 por una ruta propia. Escribe el límite y el conjunto de soluciones mediante su sentido respecto de ese límite.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficientes_fraccionarios_en_ambos_miembros__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Límite para r",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Soluciones para r",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar (1/4)r y restar 3/4 da −(3/4)r > −9/4. Dividir por −3/4 invierte > y deja r < 3. En r = 3 los miembros originales son iguales a −3/4; la comparación estricta los excluye. Otras rutas reversibles llevan a la misma descripción.",
+            "incorrect": "Reúne los coeficientes −1/2 y −1/4 con sus signos. Una resta no invierte el orden; la división posterior por el coeficiente negativo sí lo hace."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distribuir y eliminar denominadores constantes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las identidades de expresiones siguen disponibles. En 4 − 2(x − 1) ≤ x + 9, distribuir da 6 − 2x ≤ x + 9. Restar x y restar seis deja −3x ≤ 3; dividir por −3 obtiene x ≥ −1. La distribución sustituyó una expresión por otra del mismo valor; la división negativa invirtió el sentido. Son acciones diferentes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un denominador constante puede quitarse multiplicando los dos miembros completos por un múltiplo no nulo de los denominadores. Si eliges uno positivo, conservas el sentido; si eliges uno negativo, lo inviertes. Mantén el alcance de cada numerador y multiplica también los términos que no tienen fracción. Las reglas de orden dependen del signo del factor conocido (Lang, 1971, pp. 75–77)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "grupos_con_denominadores_constantes",
+          "prompt": "Resuelve (2t − 1)/3 + 1/2 > (t + 2)/2. Multiplica primero ambos miembros por seis; después distribuye, reúne y resuelve. Escribe la frontera y todas las soluciones mediante su sentido respecto de ella.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "grupos_con_denominadores_constantes__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Límite para t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Soluciones para t",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "5"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Multiplicar por seis conserva > y da 2(2t − 1) + 3 > 3(t + 2). Al distribuir queda 4t + 1 > 3t + 6; restar 3t y restar uno produce t > 5. En la frontera ambos miembros originales valen 7/2, así que la desigualdad estricta no la admite.",
+            "incorrect": "Multiplica también el término 1/2 por seis. El grupo 2t − 1 recibe el factor dos y el grupo t + 2 recibe tres. Mantén > durante las sumas y restas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparar_una_constante_al_eliminar_denominadores",
+          "prompt": "Para (x + 1)/4 ≤ (x − 2)/3, un apunte dice que multiplica ambos miembros por doce y escribe 3x + 1 ≤ 4x − 8. Identifica el primer error, escribe la constante correcta del izquierdo después de distribuir y resuelve la inecuación original: frontera y sentido.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparar_una_constante_al_eliminar_denominadores__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El factor tres debía multiplicar también el uno del numerador izquierdo."
+                },
+                {
+                  "id": "b",
+                  "label": "Multiplicar por doce debía invertir ≤ porque hay una resta en el derecho."
+                },
+                {
+                  "id": "c",
+                  "label": "La multiplicación por doce es inválida aunque se aplique a ambos miembros."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            },
+            {
+              "id": "reparar_una_constante_al_eliminar_denominadores__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Constante correcta del miembro izquierdo tras distribuir",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Límite correcto para x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Soluciones de la inecuación original",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "mayor_igual"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El paso correcto es 3(x + 1) ≤ 4(x − 2), y después 3x + 3 ≤ 4x − 8. Restar 3x y sumar ocho deja 11 ≤ x, equivalente a x ≥ 11. En la frontera la original compara 12/4 ≤ 9/3, es decir 3 ≤ 3. Doce es positivo; la resta dentro del numerador no cambia el signo de ese factor.",
+            "incorrect": "Localiza qué términos reciben el factor tres y cuáles reciben cuatro. Repara el primer paso antes de continuar. El signo que gobierna el sentido es el del multiplicador doce, no el de una constante del numerador."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Si la letra se cancela, interpreta la condición que queda"
+        },
+        {
+          "type": "paragraph",
+          "text": "Al distribuir y reunir puede desaparecer el término con letra. En 2x + 5 ≥ 2(x + 1) + 1, el derecho es 2x + 3. Restar 2x en ambos miembros deja 5 ≥ 3, verdadera. La misma resta es reversible para cada racional: todos ellos cumplen la original. No multiplicamos por cero ni dividimos por un coeficiente nulo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cuando queda una comparación entre constantes, decide su verdad. Si es verdadera, cumplen todos los valores del dominio estudiado; si es falsa, no cumple ninguno. La desaparición de x no impone x = 0. En estos casos no hay una frontera única que debamos rellenar con un número."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "clasificar_tras_cancelar_la_letra",
+          "prompt": "Resuelve cada condición en los racionales mediante distribuciones y restas reversibles. Clasifica sus soluciones: 3(x − 2) > 3x − 6; −(1/2)(2x − 4) ≤ −x + 2; 4 − 2x < −2(x − 3); (3/4)x + 2 ≥ (3/4)x + 7/2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "clasificar_tras_cancelar_la_letra__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "estricta_identica",
+                  "type": "dropdown",
+                  "label": "Soluciones de 3(x − 2) > 3x − 6",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "Ningún racional cumple."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales cumplen."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Sólo una parte de los racionales cumple."
+                    }
+                  ]
+                },
+                {
+                  "id": "no_estricta_identica",
+                  "type": "dropdown",
+                  "label": "Soluciones de −(1/2)(2x − 4) ≤ −x + 2",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "Ningún racional cumple."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales cumplen."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Sólo una parte de los racionales cumple."
+                    }
+                  ]
+                },
+                {
+                  "id": "constantes_ordenadas",
+                  "type": "dropdown",
+                  "label": "Soluciones de 4 − 2x < −2(x − 3)",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "Ningún racional cumple."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales cumplen."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Sólo una parte de los racionales cumple."
+                    }
+                  ]
+                },
+                {
+                  "id": "constantes_que_fallan",
+                  "type": "dropdown",
+                  "label": "Soluciones de (3/4)x + 2 ≥ (3/4)x + 7/2",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "Ningún racional cumple."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los racionales cumplen."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Sólo una parte de los racionales cumple."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "estricta_identica": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  },
+                  "no_estricta_identica": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  },
+                  "constantes_ordenadas": {
+                    "type": "exact_text",
+                    "expected": "todas"
+                  },
+                  "constantes_que_fallan": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La primera se reduce a 0 > 0, falsa: ninguna solución. La segunda se reduce a 0 ≤ 0, verdadera: todas. La tercera queda 4 < 6, verdadera: todas. La última queda 2 ≥ 7/2, falsa: ninguna. En cada caso se cancelaron términos iguales restando la misma expresión a ambos miembros; no se multiplicó la condición por cero.",
+            "incorrect": "Distribuye sobre todas las partes de cada grupo y después cancela términos iguales con una resta en ambos miembros. Lee con cuidado el símbolo que queda: una comparación estricta de un número consigo mismo es falsa; una no estricta es verdadera."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cancelar_no_es_multiplicar_por_cero",
+          "prompt": "¿Qué justifica que 2x + 5 ≥ 2x + 3 tenga todos los racionales como soluciones?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cancelar_no_es_multiplicar_por_cero__revision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Restar 2x en ambos miembros deja 5 ≥ 3, verdadera, y sumar 2x permite regresar."
+                },
+                {
+                  "id": "b",
+                  "label": "Multiplicar los dos miembros por cero borra cualquier restricción de forma equivalente."
+                },
+                {
+                  "id": "c",
+                  "label": "Basta comprobar una propuesta y ver que funciona."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La resta reversible conserva el conjunto completo y deja una comparación verdadera para cualquier x. Multiplicar por cero sería otra operación, sin vuelta, y una sola sustitución no prueba una afirmación sobre todos los racionales.",
+            "incorrect": "Distingue cancelar términos mediante una resta de anular los miembros con un producto por cero. Revisa la operación concreta y su vuelta; luego interpreta la comparación residual."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisar la frontera y practicar de manera autónoma"
+        },
+        {
+          "type": "paragraph",
+          "text": "La frontera de una inecuación lineal con coeficiente final no nulo es el valor que iguala sus miembros. Si el símbolo es estricto, ese valor falla; si incluye igualdad, cumple. Prueba también valores a uno y otro lado cuando revises un cálculo. Eso ayuda a descubrir un sentido invertido, pero la justificación de todas las soluciones sigue siendo la cadena de condiciones equivalentes (Pólya, 1957, pp. 13–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "misma_frontera_distinta_inclusion",
+          "prompt": "Compara −(3/2)x + 1/2 < −1 con −(3/2)x + 1/2 ≤ −1. Al resolver, sus condiciones son x > 1 y x ≥ 1, respectivamente. Calcula el izquierdo original con x = 1, x = 0 y x = 2. Decide si la frontera se admite en cada una de las dos inecuaciones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "misma_frontera_distinta_inclusion__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "frontera",
+                  "type": "numeric",
+                  "label": "Miembro izquierdo original con x = 1",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "debajo",
+                  "type": "numeric",
+                  "label": "Miembro izquierdo original con x = 0",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "encima",
+                  "type": "numeric",
+                  "label": "Miembro izquierdo original con x = 2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "estricta",
+                  "type": "dropdown",
+                  "label": "¿Se admite la frontera en la inecuación con <?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí, se admite."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No, se excluye."
+                    }
+                  ]
+                },
+                {
+                  "id": "inclusiva",
+                  "type": "dropdown",
+                  "label": "¿Se admite la frontera en la inecuación con ≤?",
+                  "options": [
+                    {
+                      "id": "si",
+                      "label": "Sí, se admite."
+                    },
+                    {
+                      "id": "no",
+                      "label": "No, se excluye."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "frontera": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "debajo": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "encima": {
+                    "type": "numeric",
+                    "expected": "-5/2"
+                  },
+                  "estricta": {
+                    "type": "exact_text",
+                    "expected": "no"
+                  },
+                  "inclusiva": {
+                    "type": "exact_text",
+                    "expected": "si"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con x = 1 el izquierdo vale −1: −1 < −1 es falsa y −1 ≤ −1 es verdadera. Con x = 0 vale 1/2 y falla en ambas; con x = 2 vale −5/2 y cumple en ambas. La frontera coincide, pero incluirla cambia las soluciones. La división por −3/2 explica que cumplan valores mayores que uno.",
+            "incorrect": "Calcula el producto negativo antes de sumar 1/2. Después compara con −1, distinguiendo < de ≤. Un valor puede estar en la frontera sin pertenecer al conjunto de soluciones."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_tres_inecuaciones_por_cuenta_propia",
+          "prompt": "Resuelve en los racionales, sin una cadena indicada: 2x − 5 ≥ 3(x − 4); (y − 2)/5 < (2y + 1)/3; −4 + (3/2)z > (5/2)z − 1. Para cada una escribe la frontera y las soluciones respecto de ella. Revisa el límite en cada original.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_tres_inecuaciones_por_cuenta_propia__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite_x",
+                  "type": "numeric",
+                  "label": "Frontera para x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_x",
+                  "type": "dropdown",
+                  "label": "Soluciones de la inecuación con x",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                },
+                {
+                  "id": "limite_y",
+                  "type": "numeric",
+                  "label": "Frontera para y",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_y",
+                  "type": "dropdown",
+                  "label": "Soluciones de la inecuación con y",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                },
+                {
+                  "id": "limite_z",
+                  "type": "numeric",
+                  "label": "Frontera para z",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido_z",
+                  "type": "dropdown",
+                  "label": "Soluciones de la inecuación con z",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite_x": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "sentido_x": {
+                    "type": "exact_text",
+                    "expected": "menor_igual"
+                  },
+                  "limite_y": {
+                    "type": "numeric",
+                    "expected": "-11/7"
+                  },
+                  "sentido_y": {
+                    "type": "exact_text",
+                    "expected": "mayor"
+                  },
+                  "limite_z": {
+                    "type": "numeric",
+                    "expected": "-3"
+                  },
+                  "sentido_z": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En la primera, distribuir y reunir deja −x ≥ −7, así que x ≤ 7. En la segunda, multiplicar por quince da 3(y − 2) < 5(2y + 1); reunir produce −7y < 11, de donde y > −11/7. En la tercera queda −z > 3, así que z < −3. Las fronteras igualan los miembros originales: nueve en la primera, −5/7 en la segunda y −17/2 en la tercera. Sólo la primera permite esa igualdad.",
+            "incorrect": "Conserva los grupos al distribuir y al eliminar denominadores. Revisa el signo del coeficiente final, no sólo el símbolo original. En estas tres rutas ese coeficiente es negativo, por lo que la división invierte el sentido."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Regresar al dominio y a las unidades del problema"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un ensayo de impresión ocupa media hora de preparación y tres cuartos de hora por cada lote completo. Debe terminar en menos de 23/4 horas; alcanzar exactamente ese tiempo no está permitido. Llamamos n al número de lotes completos: un entero no negativo. Construye primero la condición de duración, resuélvela en los racionales y después conserva únicamente los valores del dominio del problema."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tiempo_disponible_y_lotes_completos",
+          "prompt": "A partir de los datos del ensayo, determina la frontera racional y el sentido de la condición para n. Escribe también el mayor número permitido de lotes completos y la duración total, en horas, con ese número. Elige tu ruta sin una cadena preparada.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tiempo_disponible_y_lotes_completos__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Frontera racional para n",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Soluciones racionales respecto de la frontera",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                },
+                {
+                  "id": "maximo",
+                  "type": "numeric",
+                  "label": "Mayor número permitido de lotes completos",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "duracion",
+                  "type": "numeric",
+                  "label": "Duración en horas con ese máximo",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "menor"
+                  },
+                  "maximo": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "duracion": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La condición es 1/2 + (3/4)n < 23/4. Restar 1/2 deja (3/4)n < 21/4; dividir por 3/4 da n < 7. En el contexto cumplen exactamente los enteros no negativos menores que siete. El máximo es seis lotes y su duración es 1/2 + (3/4) × 6 = 5 horas. Siete daría 23/4 horas y falla porque el límite es estricto. Una cantidad fraccionaria de lotes no pertenece al dominio.",
+            "incorrect": "Incluye la preparación una vez y el tiempo por lote multiplicado por n. No confundas la frontera racional con el máximo entero permitido: el símbolo estricto excluye alcanzar la frontera. La duración final se expresa en horas, no en lotes."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "El dominio también puede excluir todas las soluciones de una condición que sí admite racionales. Un segundo ensayo exige tres minutos de preparación y dos observaciones de t minutos cada una. Su duración total no debe superar dos minutos. t es una duración racional no negativa. Comprueba si los datos permiten realizarlo."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_condicion_imposible_en_su_contexto",
+          "prompt": "Construye y resuelve primero la condición del segundo ensayo en todos los racionales. Escribe su frontera y sentido. Después clasifica las soluciones que permanecen al exigir que t sea una duración no negativa.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_condicion_imposible_en_su_contexto__resultados",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "limite",
+                  "type": "numeric",
+                  "label": "Frontera al resolver en todos los racionales",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "sentido",
+                  "type": "dropdown",
+                  "label": "Soluciones racionales respecto de la frontera",
+                  "options": [
+                    {
+                      "id": "menor",
+                      "label": "La incógnita es menor que el límite."
+                    },
+                    {
+                      "id": "mayor",
+                      "label": "La incógnita es mayor que el límite."
+                    },
+                    {
+                      "id": "menor_igual",
+                      "label": "La incógnita es menor o igual que el límite."
+                    },
+                    {
+                      "id": "mayor_igual",
+                      "label": "La incógnita es mayor o igual que el límite."
+                    }
+                  ]
+                },
+                {
+                  "id": "contexto",
+                  "type": "dropdown",
+                  "label": "Soluciones permitidas en el dominio de duraciones",
+                  "options": [
+                    {
+                      "id": "ninguna",
+                      "label": "Ningún valor del dominio cumple."
+                    },
+                    {
+                      "id": "todas",
+                      "label": "Todos los valores del dominio cumplen."
+                    },
+                    {
+                      "id": "parte",
+                      "label": "Sólo una parte de los valores del dominio cumple."
+                    }
+                  ]
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "limite": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "sentido": {
+                    "type": "exact_text",
+                    "expected": "menor_igual"
+                  },
+                  "contexto": {
+                    "type": "exact_text",
+                    "expected": "ninguna"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La condición es 3 + 2t ≤ 2. Restar tres y dividir por dos da t ≤ −1/2. Hay racionales que cumplen, pero ninguno es no negativo, así que el ensayo no tiene una duración permitida. También puede verse que la preparación sola ya supera los dos minutos disponibles. No desapareció la letra al reunir: la falta de soluciones del contexto procede de su dominio.",
+            "incorrect": "Separa el conjunto de soluciones racionales de las duraciones que tienen sentido en el problema. Una frontera negativa no autoriza un tiempo negativo. No escribas cero como sustituto de «ninguna»: con t = 0 la preparación ya dura tres minutos."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Una resolución completa combina condiciones equivalentes, interpretación de una frontera estricta o inclusiva y revisión del dominio. Las unidades permiten devolver sentido al cálculo. Cuando algo falla, contrasta el punto débil o busca otra ruta justificada; comprobar el resultado y revisar el argumento son tareas complementarias (Pólya, 1957, pp. 15, 60–61)."
+        }
+      ]
+    }
+  ]
+}

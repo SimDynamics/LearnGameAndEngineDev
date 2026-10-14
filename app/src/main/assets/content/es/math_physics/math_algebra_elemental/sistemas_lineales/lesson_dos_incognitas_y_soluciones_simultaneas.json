@@ -1,0 +1,1187 @@
+{
+  "id": "math_algebra_elemental__sistemas_lineales__dos_incognitas_y_soluciones_simultaneas",
+  "title": "Dos incógnitas y soluciones simultáneas",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos valores con dos papeles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Hasta ahora muchas situaciones podían describirse con una incógnita y cantidades relacionadas con ella. Otras requieren nombrar dos cantidades que todavía no conocemos. Antes de relacionarlas mediante condiciones, cada una necesita su definición, su unidad y su dominio. Esta lección prepara el significado de las soluciones simultáneas; las técnicas para buscarlas se desarrollarán después."
+        },
+        {
+          "type": "paragraph",
+          "text": "Si x mide la longitud de un cordón A y y la de otro B, en centímetros, las letras nombran cantidades diferentes. Antes de añadir una relación entre ellas, ambas longitudes pueden elegirse dentro de sus dominios positivos. Eso no obliga a que sus valores sean distintos: los dos cordones podrían medir lo mismo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Escribiremos los valores en el orden (x, y). El par (4, 7) asigna cuatro a x y siete a y; el par (7, 4) intercambia esas asignaciones. El orden conserva el papel de cada cantidad. El par no es una suma ni un único valor: reúne dos datos que se usarán juntos en cada condición."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "orden_de_los_valores_en_un_par",
+          "prompt": "Para los pares (2, 3) y (3, 2), escritos en orden (x, y), calcula x − 2y. Escribe el resultado con cada par; las diferencias de longitud se miden en centímetros.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "orden_de_los_valores_en_un_par__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primero",
+                  "type": "numeric",
+                  "label": "x − 2y con el par (2, 3)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "intercambiado",
+                  "type": "numeric",
+                  "label": "x − 2y con el par (3, 2)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primero": {
+                    "type": "numeric",
+                    "expected": "-4"
+                  },
+                  "intercambiado": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con (2, 3), x − 2y = 2 − 2 × 3 = −4. Con (3, 2), vale 3 − 2 × 2 = −1. Intercambiar los valores cambia qué cantidad ocupa cada papel. Una diferencia negativa no convierte en negativas las longitudes positivas de los cordones.",
+            "incorrect": "Asigna primero el primer valor a x y el segundo a y. Multiplica el valor de y por dos antes de restarlo. Conserva el orden aunque el par contenga los mismos dos números."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "dos_letras_no_exigen_valores_distintos",
+          "prompt": "¿Qué interpretación del par (5, 5), en orden (x, y), es correcta para los dos cordones?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "dos_letras_no_exigen_valores_distintos__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El par es inválido porque dos incógnitas deben tener valores diferentes."
+                },
+                {
+                  "id": "b",
+                  "label": "Las dos longitudes valen cinco centímetros, aunque nombran cordones distintos."
+                },
+                {
+                  "id": "c",
+                  "label": "El par asigna diez centímetros a una única longitud al sumar sus componentes."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "x e y nombran dos cantidades, pero pueden tener el mismo valor. Aquí ambas longitudes son cinco centímetros. No se suman los componentes al interpretar el par ni se exige que sean distintos.",
+            "incorrect": "Distingue el nombre de una cantidad de su valor. Dos cantidades diferentes pueden coincidir numéricamente y deben conservar sus papeles al comprobar una relación."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Una ecuación selecciona pares"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora trabajamos sin un contexto de longitudes: x e y pueden ser cualesquiera racionales. Un par es solución de x + y = 8 cuando sus dos valores hacen verdadera esa igualdad. Por ejemplo, (1, 7), (3, 5) y (−2, 10) la cumplen. En una ecuación con dos incógnitas, una propuesta debe asignar un valor a cada una (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta condición no determina un único par: sus distintos ejemplos suman ocho. Saber sólo el valor de x no da una propuesta completa hasta relacionarlo con y. Tampoco una sustitución correcta de un par demuestra que se hayan encontrado todas las soluciones de la ecuación."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "seleccionar_pares_para_una_condicion",
+          "prompt": "Selecciona todos los pares de la lista que cumplen x + y = 8. El orden es (x, y) y ambos valores admiten todos los racionales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "seleccionar_pares_para_una_condicion__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(5, 5)"
+                },
+                {
+                  "id": "b",
+                  "label": "(0, 8)"
+                },
+                {
+                  "id": "c",
+                  "label": "(3/2, 13/2)"
+                },
+                {
+                  "id": "d",
+                  "label": "(−1, 9)"
+                },
+                {
+                  "id": "e",
+                  "label": "(8, 0)"
+                },
+                {
+                  "id": "f",
+                  "label": "(4, 4)"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "d",
+                  "e",
+                  "f"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las sumas de (0, 8), (3/2, 13/2), (−1, 9), (8, 0) y (4, 4) valen ocho. El par (5, 5) suma diez. Cero, negativos y fracciones están admitidos en este dominio abstracto; cada componente mantiene su lugar.",
+            "incorrect": "Comprueba la suma con cada par sin añadir restricciones que no se indicaron. Este dominio no cuenta objetos completos ni exige longitudes positivas."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "alcance_de_comprobar_un_par",
+          "prompt": "Para x − y = 4 se propone el par (−1/2, −9/2). Calcula el miembro izquierdo y decide qué acredita esa comprobación.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "alcance_de_comprobar_un_par__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor",
+                  "type": "numeric",
+                  "label": "Valor de x − y con el par propuesto",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            },
+            {
+              "id": "alcance_de_comprobar_un_par__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Acredita que éste es el único par racional que puede cumplir."
+                },
+                {
+                  "id": "b",
+                  "label": "Acredita que el par propuesto es una solución de la ecuación."
+                },
+                {
+                  "id": "c",
+                  "label": "Acredita que cualquier par de racionales cumple la ecuación."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−1/2 − (−9/2) = 8/2 = 4. Eso comprueba esta propuesta. No excluye otros pares ni afirma que todos cumplan. Por ejemplo, (4, 0) también satisface x − y = 4.",
+            "incorrect": "Restar un negativo suma su opuesto. Después separa probar una propuesta de justificar una afirmación sobre todo el conjunto de soluciones."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Dos condiciones se cumplen con el mismo par"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un sistema reúne condiciones que deben cumplirse a la vez. Considera x + y = 11 y x − y = 5 en los racionales. El par (8, 3) satisface ambas: 8 + 3 = 11 y 8 − 3 = 5. Para comprobar una solución simultánea se mantienen los mismos valores de x e y en todas las ecuaciones (Lang, 1971, pp. 53–55)."
+        },
+        {
+          "type": "paragraph",
+          "text": "El par (7, 4) cumple la suma, pero su diferencia es tres. El par (6, 1) cumple la diferencia, pero su suma es siete. Usar (7, 4) en una ecuación y (6, 1) en la otra no construye una solución común: se cambiaron las cantidades entre condiciones."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_ambas_con_dos_propuestas",
+          "prompt": "Para el sistema x + y = 11 y x − y = 5, revisa los pares (3/2, 19/2) y (11/2, 1/2). Calcula suma y diferencia con cada uno; después decide si alguno de estos dos pares satisface ambas condiciones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_ambas_con_dos_propuestas__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "suma_a",
+                  "type": "numeric",
+                  "label": "x + y con (3/2, 19/2)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "diferencia_a",
+                  "type": "numeric",
+                  "label": "x − y con (3/2, 19/2)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "suma_b",
+                  "type": "numeric",
+                  "label": "x + y con (11/2, 1/2)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "diferencia_b",
+                  "type": "numeric",
+                  "label": "x − y con (11/2, 1/2)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "suma_a": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "diferencia_a": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "suma_b": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "diferencia_b": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            },
+            {
+              "id": "comprobar_ambas_con_dos_propuestas__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "El primero satisface las dos condiciones."
+                },
+                {
+                  "id": "b",
+                  "label": "El segundo satisface las dos condiciones."
+                },
+                {
+                  "id": "c",
+                  "label": "Ninguno de estos dos pares satisface ambas condiciones."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El primer par da suma once y diferencia −8: sólo cumple la primera ecuación. El segundo da suma seis y diferencia cinco: sólo cumple la segunda. Ninguno es solución común. Esta revisión no dice que el sistema carezca de soluciones: ya comprobamos (8, 3).",
+            "incorrect": "Usa cada par completo en las dos ecuaciones. No combines la suma correcta de una propuesta con la diferencia correcta de otra para afirmar que existe un par común."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cada_ecuacion_se_revisiona_por_separado",
+          "prompt": "¿Qué revisión basta para acreditar que un par propuesto es una solución simultánea de este sistema?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cada_ecuacion_se_revisiona_por_separado__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Comprobar las dos ecuaciones con los mismos valores propuestos de x e y."
+                },
+                {
+                  "id": "b",
+                  "label": "Comprobar la primera con un par y la segunda con cualquier otro que funcione."
+                },
+                {
+                  "id": "c",
+                  "label": "Comprobar únicamente la ecuación que contenga más operaciones."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una solución simultánea asigna un solo valor a cada incógnita y conserva esa asignación en todas las condiciones. La longitud de una escritura no autoriza omitir otra ecuación.",
+            "incorrect": "Piensa en las cantidades que se mantienen durante la revisión. Cada condición debe ser verdadera con la misma propuesta completa, no con propuestas independientes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Otra escritura puede conservar la misma condición"
+        },
+        {
+          "type": "paragraph",
+          "text": "Considera x + 2y = 12 y 3x + 6y = 36 en los racionales. Multiplicar la primera por tres obtiene la segunda; dividir la segunda por tres recupera la primera. Por eso seleccionan los mismos pares. Escribirlas juntas no añade una restricción diferente sobre las dos incógnitas (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La identidad 3(x + 2y) = 3x + 6y se cumple con cualquier par porque distribuye un factor. Pero el sistema exige además que x + 2y sea doce. Una comparación de escrituras que termine en 0 = 0 no permite borrar esa condición original ni declarar libres todos los pares."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "pares_de_dos_condiciones_equivalentes",
+          "prompt": "Selecciona todos los pares de la lista que cumplen simultáneamente x + 2y = 12 y 3x + 6y = 36. El dominio es racional para ambas componentes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pares_de_dos_condiciones_equivalentes__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(2, 5)"
+                },
+                {
+                  "id": "b",
+                  "label": "(1, 2)"
+                },
+                {
+                  "id": "c",
+                  "label": "(0, 6)"
+                },
+                {
+                  "id": "d",
+                  "label": "(−2, 7)"
+                },
+                {
+                  "id": "e",
+                  "label": "(3/2, 21/4)"
+                },
+                {
+                  "id": "f",
+                  "label": "(4, 4)"
+                },
+                {
+                  "id": "g",
+                  "label": "(12, 12)"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c",
+                  "d",
+                  "e",
+                  "f"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Los pares (2, 5), (0, 6), (−2, 7), (3/2, 21/4) y (4, 4) hacen que x + 2y valga doce. El miembro izquierdo de la segunda ecuación es entonces el triple: treinta y seis. (1, 2) da cinco y quince; (12, 12) da treinta y seis y ciento ocho. Ambas condiciones conservan la relación original entre x e y.",
+            "incorrect": "Comprueba primero una de las condiciones y usa la relación de multiplicar por tres para contrastar la otra. Que la segunda repita la primera no significa que cualquier par satisfaga esa primera condición."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_identidad_no_borra_la_condicion",
+          "prompt": "Un apunte obtiene 0 = 0 al comparar las formas anteriores y afirma que el par (1, 3) puede aceptarse sin otra revisión. Calcula los miembros izquierdos originales y decide si ese par es solución del sistema.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_identidad_no_borra_la_condicion__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera",
+                  "type": "numeric",
+                  "label": "Valor de x + 2y con (1, 3)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda",
+                  "type": "numeric",
+                  "label": "Valor de 3x + 6y con (1, 3)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "segunda": {
+                    "type": "numeric",
+                    "expected": "21"
+                  }
+                }
+              }
+            },
+            {
+              "id": "una_identidad_no_borra_la_condicion__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí: la comparación 0 = 0 hace verdaderas todas las propuestas."
+                },
+                {
+                  "id": "b",
+                  "label": "Sí: basta con que los miembros calculados estén relacionados por un factor tres."
+                },
+                {
+                  "id": "c",
+                  "label": "No: el par incumple las condiciones originales, aunque las escrituras sean equivalentes."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con (1, 3), los miembros izquierdos valen siete y veintiuno, diferentes de doce y treinta y seis. Los cálculos están relacionados por tres, pero no cumplen los valores exigidos. La identidad entre dos formas no sustituye la condición que ambas describen.",
+            "incorrect": "Vuelve a los números que cada ecuación exige. Conservar una relación entre expresiones y satisfacer el objetivo de una ecuación son afirmaciones diferentes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El mismo problema puede nombrar sus dos partes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera el patrón ya trabajado: doce grupos completos, unos con cinco puntos y otros con tres, reúnen cincuenta puntos. Antes llamábamos n al número de grupos grandes y escribíamos 12 − n para los pequeños. Ahora llamamos x al número de grupos grandes e y al de pequeños; ambos son enteros no negativos desde cero hasta doce."
+        },
+        {
+          "type": "paragraph",
+          "text": "La condición x + y = 12 cuenta grupos. La condición 5x + 3y = 50 cuenta puntos. Cada igualdad compara cantidades de la misma clase. Usar dos letras permite nombrar las dos partes, pero no elimina la relación impuesta por el total de grupos. La conexión entre una descripción de una incógnita y otra de dos debe conservar todas las cantidades del problema (Lang, 1971, pp. 55–56)."
+        },
+        {
+          "type": "paragraph",
+          "text": "La solución ya acreditada n = 7 se representa ahora como (x, y) = (7, 5). Comprobarla da siete más cinco grupos, y 5 × 7 + 3 × 5 puntos. Esto recupera un resultado anterior; todavía no estamos desarrollando una técnica general para buscar pares de cualquier sistema."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "intercambiar_conteos_cambia_su_papel",
+          "prompt": "Un registro intercambia los conteos y propone (x, y) = (5, 7). Calcula el número de grupos y el total de puntos. Después decide qué condición cumple ese par.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "intercambiar_conteos_cambia_su_papel__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "grupos",
+                  "type": "numeric",
+                  "label": "Número de grupos x + y con (5, 7)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "puntos",
+                  "type": "numeric",
+                  "label": "Total de puntos 5x + 3y con (5, 7)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "grupos": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "puntos": {
+                    "type": "numeric",
+                    "expected": "46"
+                  }
+                }
+              }
+            },
+            {
+              "id": "intercambiar_conteos_cambia_su_papel__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Cumple ambas condiciones porque conserva los dos números."
+                },
+                {
+                  "id": "b",
+                  "label": "Cumple sólo la condición del total de puntos."
+                },
+                {
+                  "id": "c",
+                  "label": "Cumple sólo la condición del total de grupos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cinco más siete son doce grupos, pero 5 × 5 + 3 × 7 = 25 + 21 = 46 puntos. El intercambio conserva la suma de conteos, no el peso de cada tipo. La letra x debe seguir contando los grupos de cinco puntos.",
+            "incorrect": "Cada coeficiente indica cuántos puntos aporta un grupo del tipo correspondiente. La suma de grupos puede mantenerse después de un intercambio mientras cambia el total de puntos."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir cada condición con su propio significado"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un montaje une, sin solapamiento, dos piezas A de la misma longitud x centímetros y una pieza B de longitud y centímetros. La longitud total debe ser diecisiete centímetros. Además, cada pieza B debe medir dos centímetros más que una pieza A. x e y son racionales positivos: describen longitudes completas antes de la unión."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los datos imponen dos condiciones sobre el mismo par de longitudes. La cantidad de piezas A afecta al total; la comparación entre B y A relaciona las longitudes de una pieza de cada tipo. Separar esas partes del relato permite construir condiciones precisas sin confundirlas (Pólya, 1957, pp. 173–175)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modelar_total_y_diferencia_de_longitudes",
+          "prompt": "Escribe por separado la ecuación de la longitud total y la ecuación que exige que B mida dos centímetros más que A. Cada campo debe representar su condición por sí sola, con las definiciones de x e y; se admiten formas equivalentes de esa condición.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelar_total_y_diferencia_de_longitudes__total",
+              "type": "math_expression_input",
+              "label": "Condición de diecisiete centímetros totales",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "2x+y=17"
+              }
+            },
+            {
+              "id": "modelar_total_y_diferencia_de_longitudes__comparacion",
+              "type": "math_expression_input",
+              "label": "Condición de B dos centímetros mayor que A",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y=x+2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La longitud total es 2x + y, así que la primera condición es 2x + y = 17. La segunda es y = x + 2, equivalente a y − x = 2. Las unidades de cada igualdad son centímetros. Cambiar la escritura conserva el significado; intercambiar los objetivos de los campos no lo conserva.",
+            "incorrect": "Cuenta las dos piezas A al expresar el total. Para la segunda condición, conserva que B es la pieza más larga. Escribe una ecuación por cada dato nombrado, sin reemplazarlo por una condición distinta del sistema."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_una_propuesta_del_montaje",
+          "prompt": "Se propone (x, y) = (4, 6) para ese montaje. Calcula 2x + y y y − x. Después decide si la propuesta cumple las dos condiciones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_una_propuesta_del_montaje__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Longitud total con (4, 6), en centímetros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Longitud de B menos la de A, en centímetros",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "total": {
+                    "type": "numeric",
+                    "expected": "14"
+                  },
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "revisar_una_propuesta_del_montaje__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Cumple sólo la condición de la diferencia de longitudes."
+                },
+                {
+                  "id": "b",
+                  "label": "Cumple sólo la condición de la longitud total."
+                },
+                {
+                  "id": "c",
+                  "label": "Cumple las dos condiciones del montaje."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las piezas sumarían 2 × 4 + 6 = 14 cm, no diecisiete. B sería dos centímetros más larga porque 6 − 4 = 2 cm. Ambas longitudes son positivas, pero la propuesta incumple una de las igualdades y no es solución del montaje.",
+            "incorrect": "Que las longitudes sean admitidas y cumplan una comparación no garantiza que cumplan el total. Evalúa ambas condiciones con los mismos valores."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "seleccionar_propuestas_para_el_montaje",
+          "prompt": "Selecciona todos los pares de la lista que respetan el dominio y cumplen las dos condiciones del montaje: 2x + y = 17 y y = x + 2.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "seleccionar_propuestas_para_el_montaje__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(1/2, 16)"
+                },
+                {
+                  "id": "b",
+                  "label": "(5, 7)"
+                },
+                {
+                  "id": "c",
+                  "label": "(4, 6)"
+                },
+                {
+                  "id": "d",
+                  "label": "(−1, 19)"
+                },
+                {
+                  "id": "e",
+                  "label": "(7, 5)"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "De estas propuestas, (5, 7) cumple 2 × 5 + 7 = 17 y 7 = 5 + 2, con longitudes positivas. (1/2, 16) cumple el total pero no la comparación; (4, 6) cumple la comparación pero no el total. (−1, 19) tiene además una longitud fuera del dominio. (7, 5) incumple las dos ecuaciones. La revisión selecciona los pares válidos de la lista, sin reemplazar una justificación general de todas las soluciones.",
+            "incorrect": "Mantén el orden (x, y), revisa la positividad y comprueba cada igualdad. No aceptes una propuesta sólo porque satisface una de las condiciones."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "El dominio puede ser diferente para cada cantidad"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un pedido de cable combina bobinas cerradas de ocho metros cada una y una longitud suelta. x cuenta bobinas completas: un entero no negativo. y mide los metros sueltos: un racional no negativo. El pedido debe contener veintiséis metros en total y añadir dos metros sueltos por cada bobina cerrada."
+        },
+        {
+          "type": "paragraph",
+          "text": "Los productos conocidos convierten conteos en longitudes: ocho metros por bobina multiplicado por x bobinas da 8x metros. También dos metros sueltos por bobina multiplicado por x da la longitud suelta requerida. No se suma directamente un conteo de bobinas con una cantidad de metros."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "modelar_un_conteo_y_una_longitud",
+          "prompt": "Escribe las dos condiciones del pedido: veintiséis metros en total y dos metros sueltos por cada bobina. Conserva las definiciones y los dominios distintos de x e y.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "modelar_un_conteo_y_una_longitud__total",
+              "type": "math_expression_input",
+              "label": "Condición de veintiséis metros totales",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "8x+y=26"
+              }
+            },
+            {
+              "id": "modelar_un_conteo_y_una_longitud__suelto",
+              "type": "math_expression_input",
+              "label": "Condición de dos metros sueltos por bobina",
+              "keyboard": "ALGEBRA",
+              "validator": {
+                "type": "equivalent_expression",
+                "expected": "y=2x"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La condición total es 8x + y = 26. La longitud suelta requerida es 2x, así que la otra condición es y = 2x. Ambas igualdades comparan metros; x sigue siendo un conteo entero y y una longitud que puede ser fraccionaria.",
+            "incorrect": "Multiplica cada bobina por sus ocho metros antes de sumar la longitud suelta. El requisito de dos metros por bobina relaciona y con el mismo valor de x."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cumplir_igualdades_no_sustituye_el_dominio",
+          "prompt": "Se propone (x, y) = (13/5, 26/5) para el pedido. Calcula 8x + y y y − 2x. Después decide si este par puede aceptarse en el contexto.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "cumplir_igualdades_no_sustituye_el_dominio__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "total",
+                  "type": "numeric",
+                  "label": "Valor de 8x + y, en metros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "diferencia",
+                  "type": "numeric",
+                  "label": "Valor de y − 2x, en metros",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "total": {
+                    "type": "numeric",
+                    "expected": "26"
+                  },
+                  "diferencia": {
+                    "type": "numeric",
+                    "expected": "0"
+                  }
+                }
+              }
+            },
+            {
+              "id": "cumplir_igualdades_no_sustituye_el_dominio__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sí: cumplir las igualdades permite ignorar los dominios."
+                },
+                {
+                  "id": "b",
+                  "label": "No: y debe ser entero por acompañar a otra incógnita."
+                },
+                {
+                  "id": "c",
+                  "label": "No: x no cuenta una cantidad entera de bobinas cerradas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "8 × 13/5 + 26/5 = 130/5 = 26, y 26/5 − 2 × 13/5 = 0. El par cumple las dos ecuaciones en los racionales, pero x = 13/5 no pertenece al dominio entero de bobinas. y = 26/5 sí sería una longitud admitida por su propio dominio. Esta comprobación descarta la propuesta contextual; no hemos desarrollado aquí una búsqueda de todos los pares.",
+            "incorrect": "Revisa por separado las dos igualdades y el dominio de cada componente. Una longitud fraccionaria puede ser válida mientras un conteo fraccionario de objetos completos no lo es."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Pares racionales fuera de un contexto de conteos"
+        },
+        {
+          "type": "paragraph",
+          "text": "Volvemos a un sistema abstracto: (3/2)x + y = 7/4 y x + 2y = 9/2. Los dominios de x e y son todos los racionales. No se han impuesto positividad ni integridad; esas restricciones necesitan proceder de los datos de un contexto, no de la presencia de dos letras."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "revisar_fracciones_con_la_misma_asignacion",
+          "prompt": "Comprueba los pares A = (−1/2, 5/2) y B = (1/2, 1). Calcula los miembros izquierdos de las dos ecuaciones con cada par y selecciona la conclusión correcta sobre estas propuestas.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "revisar_fracciones_con_la_misma_asignacion__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera_a",
+                  "type": "numeric",
+                  "label": "(3/2)x + y con el par A",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_a",
+                  "type": "numeric",
+                  "label": "x + 2y con el par A",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera_b",
+                  "type": "numeric",
+                  "label": "(3/2)x + y con el par B",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_b",
+                  "type": "numeric",
+                  "label": "x + 2y con el par B",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera_a": {
+                    "type": "numeric",
+                    "expected": "7/4"
+                  },
+                  "segunda_a": {
+                    "type": "numeric",
+                    "expected": "9/2"
+                  },
+                  "primera_b": {
+                    "type": "numeric",
+                    "expected": "7/4"
+                  },
+                  "segunda_b": {
+                    "type": "numeric",
+                    "expected": "5/2"
+                  }
+                }
+              }
+            },
+            {
+              "id": "revisar_fracciones_con_la_misma_asignacion__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "A es solución común; B cumple sólo la primera ecuación."
+                },
+                {
+                  "id": "b",
+                  "label": "B es solución común; A se rechaza por su valor negativo."
+                },
+                {
+                  "id": "c",
+                  "label": "Las dos propuestas son soluciones comunes porque cumplen la primera ecuación."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con A, (3/2)(−1/2) + 5/2 = −3/4 + 10/4 = 7/4 y −1/2 + 2 × 5/2 = 9/2. Con B, 3/4 + 1 = 7/4, pero 1/2 + 2 = 5/2, no 9/2. A es una solución común admitida en estos dominios; B sólo cumple la primera condición.",
+            "incorrect": "Mantén los signos al multiplicar racionales y usa el mismo par en ambas expresiones. Compara cada valor con el miembro derecho de su ecuación; no añadas aquí un dominio de conteos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "los_dominios_proceden_de_las_definiciones",
+          "prompt": "¿Por qué el par A se admite en este sistema abstracto aunque una propuesta fraccionaria de bobinas se rechazara en el problema anterior?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "los_dominios_proceden_de_las_definiciones__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Una fracción sólo puede admitirse en la segunda componente."
+                },
+                {
+                  "id": "b",
+                  "label": "Los dominios dados aquí admiten ambos racionales; las bobinas exigían un conteo entero."
+                },
+                {
+                  "id": "c",
+                  "label": "Al reunir dos ecuaciones dejan de importar los dominios."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El significado de cada incógnita decide su dominio. Aquí ambas admiten todos los racionales; en el pedido x contaba bobinas cerradas. Tener dos ecuaciones no elimina restricciones ni las crea por sí solo.",
+            "incorrect": "Recupera qué representa cada letra y qué valores permite el enunciado. El formato del par no impone una regla universal de positividad o integridad."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el criterio sin mezclar propuestas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una revisión autónoma organiza el trabajo: fija el orden del par, conserva los valores, comprueba cada condición original y contrasta cada dominio. El objetivo es que puedas dirigir esa revisión sin depender siempre de una cadena ya preparada (Pólya, 1957, pp. 12–15, 60–61)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnosticar_dos_revisiones_aisladas",
+          "prompt": "Para x − y = 1 y 3x + y = 9, un apunte usa (2, 1) en la primera ecuación y (1, 6) en la segunda. Calcula los dos miembros izquierdos con cada par. Después elige qué conclusión permiten esas revisiones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "diagnosticar_dos_revisiones_aisladas__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "primera_a",
+                  "type": "numeric",
+                  "label": "x − y con (2, 1)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_a",
+                  "type": "numeric",
+                  "label": "3x + y con (2, 1)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "primera_b",
+                  "type": "numeric",
+                  "label": "x − y con (1, 6)",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "segunda_b",
+                  "type": "numeric",
+                  "label": "3x + y con (1, 6)",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "primera_a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "segunda_a": {
+                    "type": "numeric",
+                    "expected": "7"
+                  },
+                  "primera_b": {
+                    "type": "numeric",
+                    "expected": "-5"
+                  },
+                  "segunda_b": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            },
+            {
+              "id": "diagnosticar_dos_revisiones_aisladas__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Los dos pares juntos constituyen una solución común."
+                },
+                {
+                  "id": "b",
+                  "label": "Las revisiones no acreditan un mismo par que cumpla las dos ecuaciones."
+                },
+                {
+                  "id": "c",
+                  "label": "El sistema carece de soluciones porque esas dos propuestas fallan."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con (2, 1) se obtiene uno y siete; con (1, 6), −5 y nueve. Cada propuesta cumple sólo una ecuación. Eso no demuestra que el sistema no tenga soluciones: (5/2, 3/2) cumple diferencia uno y 3 × 5/2 + 3/2 = 9. Comprobar un par común acredita esa propuesta; una búsqueda y justificación generales se desarrollarán después.",
+            "incorrect": "No cambies de par entre condiciones para completar una revisión favorable. Fallar con dos propuestas tampoco examina todos los pares posibles del dominio."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comprobar_un_sistema_nuevo_sin_ruta_indicada",
+          "prompt": "En los racionales, selecciona todos los pares de la lista que cumplen x + y = 7 y 2x + y = 10. Usa cada propuesta completa en ambas ecuaciones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "comprobar_un_sistema_nuevo_sin_ruta_indicada__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "(3, 4)"
+                },
+                {
+                  "id": "b",
+                  "label": "(4, 3)"
+                },
+                {
+                  "id": "c",
+                  "label": "(2, 6)"
+                },
+                {
+                  "id": "d",
+                  "label": "(−1, 8)"
+                },
+                {
+                  "id": "e",
+                  "label": "(0, 10)"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "De esta lista, (3, 4) cumple 3 + 4 = 7 y 2 × 3 + 4 = 10. (4, 3) y (−1, 8) cumplen sólo la primera ecuación; (2, 6) y (0, 10) cumplen sólo la segunda. Todas las componentes son racionales admitidas, pero cada igualdad aporta una revisión necesaria.",
+            "incorrect": "Comprueba los dos cálculos con cada par. Un valor cero o negativo no se descarta por su aspecto en este dominio; lo que decide es que cumpla las condiciones."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Has preparado el significado de un sistema y de una solución común. Las próximas lecciones desarrollarán procedimientos para encontrar y justificar todas las soluciones. Mantén estos criterios: dos ecuaciones no garantizan dos condiciones distintas; una identidad obtenida durante una revisión no borra la ecuación original; un par debe conservar su orden, satisfacer todas las condiciones y pertenecer a los dominios indicados."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1129 @@
+{
+  "id": "math_algebra_elemental__ecuaciones_lineales__incognita_en_ambos_miembros_y_fracciones",
+  "title": "Incógnita en ambos miembros y fracciones",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reunir la incógnita sin perder soluciones"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ya justificaste las transformaciones reversibles y resolviste ecuaciones con una o dos operaciones. Ahora combinaremos esas ideas con términos en ambos miembros, paréntesis y fracciones. Las incógnitas admiten todos los racionales, salvo una restricción explícita del contexto. Todos los denominadores de esta lección son constantes distintas de cero."
+        },
+        {
+          "type": "paragraph",
+          "text": "En 7x − 4 = 3x + 8 no basta con cancelar una operación alrededor de x: hay dos términos que dependen de ella. Podemos restar 3x de ambos miembros porque esa expresión está definida para cada racional x. Queda 4x − 4 = 8; sumar cuatro a ambos da 4x = 12; dividir por cuatro da x = 3. Las vueltas recuperan las condiciones anteriores, así que no se perdió ni se añadió ninguna solución (Gelfand & Shen, 1993, pp. 94–95)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reunir 7x y −3x dentro del miembro izquierdo utiliza una identidad: 7x − 3x = 4x para cualquier x. Restar 3x a los dos miembros es otra acción: cambia los cálculos comparados conservando las soluciones. No es que un término atraviese el signo igual y cambie de signo por sí solo; detrás de la escritura abreviada hay una operación aplicada a ambos miembros."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reunir_primero_los_terminos",
+          "prompt": "En 9t + 2 = 5t − 6, resta 5t a ambos miembros y después resta dos a ambos. Escribe el coeficiente y el número de la forma que queda antes de dividir. Finalmente escribe la solución.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reunir_primero_los_terminos__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coeficiente de t después de las dos restas",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Número del miembro derecho antes de dividir",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución t de la ecuación original",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "4"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-8"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "-2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Las dos restas dan 9t + 2 − 5t − 2 = 5t − 6 − 5t − 2, que se reduce a 4t = −8. Dividir por cuatro da t = −2. En la ecuación original, ambos miembros valen −16. Sumar dos y después 5t permite regresar por los pasos de resta.",
+            "incorrect": "Aplica la resta de 5t también al miembro derecho y la resta de dos también al izquierdo. Reúne los términos con t sin perder sus signos. El número −6 también recibe la resta de dos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "transformaciones_que_reunen_la_letra",
+          "prompt": "Partimos de 6u − 5 = 2u + 7. Selecciona las ecuaciones que resultan de restar un mismo término con u a ambos miembros y reunirlo correctamente.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "transformaciones_que_reunen_la_letra__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "4u − 5 = 2u + 7"
+                },
+                {
+                  "id": "b",
+                  "label": "4u − 5 = 7"
+                },
+                {
+                  "id": "c",
+                  "label": "−5 = −4u + 7"
+                },
+                {
+                  "id": "d",
+                  "label": "−5 = 4u + 7"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar 2u a ambos miembros produce 4u − 5 = 7. Restar 6u a ambos produce −5 = −4u + 7. Ambas rutas son reversibles. La primera alternativa resta 2u sólo en un miembro; la última resta mal 2u − 6u.",
+            "incorrect": "Reconstruye la misma resta en los dos miembros. No basta con que desaparezca una letra de un lado: la transformación debe ser la misma en los dos y la reunión debe conservar los signos."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un coeficiente negativo también permite resolver"
+        },
+        {
+          "type": "paragraph",
+          "text": "En 2x + 5 = 7x − 10 podemos restar 2x a ambos miembros: 5 = 5x − 10. Sumar diez y dividir por cinco da x = 3. También es válido restar 7x: −5x + 5 = −10; restar cinco da −5x = −15; dividir por −5 da x = 3. Elegir dónde reunir la incógnita puede simplificar el cálculo, pero un coeficiente negativo no invalida el método."
+        },
+        {
+          "type": "paragraph",
+          "text": "La garantía es que el factor usado para dividir sea distinto de cero, no que sea positivo. Conservar los signos suele ser más importante que seguir una dirección fija. Si escribes una resta en lugar de hablar de «pasar al otro lado», puedes revisar qué se hizo y cómo deshacerlo (Lang, 1971, pp. 42, 44–45)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coeficiente_negativo_sin_cambiar_el_metodo",
+          "prompt": "Resuelve −4t + 1 = 2t − 11 restando 2t de ambos miembros y después restando uno. Escribe el coeficiente y el número antes de dividir, la solución t y el valor común de los miembros originales con esa solución.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coeficiente_negativo_sin_cambiar_el_metodo__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coeficiente de t antes de dividir",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Número del miembro derecho antes de dividir",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "valor_comun",
+                  "type": "numeric",
+                  "label": "Valor de cada miembro original al sustituir t",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "-6"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-12"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "valor_comun": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar 2t da −6t + 1 = −11; restar uno da −6t = −12. Dividir ambos miembros por −6 obtiene t = 2. La comprobación original da −4 × 2 + 1 = −7 y 2 × 2 − 11 = −7.",
+            "incorrect": "En el miembro izquierdo se reúnen −4t y −2t. Conserva también que el derecho es −11 − 1. Al dividir un negativo entre otro negativo se obtiene un positivo; luego comprueba en los dos miembros originales."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_un_lado_y_comprobar",
+          "prompt": "Resuelve −3r − 5 = −r + 4 en los racionales. Escoge dónde reunir r. Escribe la solución y evalúa con ella cada miembro original; no necesitas usar la misma ruta del ejemplo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "elegir_un_lado_y_comprobar__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución r",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Valor del miembro izquierdo original",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Valor del miembro derecho original",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "-9/2"
+                  },
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "17/2"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "17/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una ruta suma r a ambos miembros y obtiene −2r − 5 = 4; sumar cinco da −2r = 9; dividir por −2 da r = −9/2. También se puede sumar 3r y reunir r a la derecha. En la original ambos miembros valen 17/2. Las rutas válidas dan la misma solución porque conservan el conjunto completo.",
+            "incorrect": "Trata −r como (−1)r al reunirlo. Después de obtener una propuesta, compruébala en los miembros originales. Si sus valores difieren, busca el primer paso cuyo signo o cuya operación no se conserve."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los paréntesis se abren antes de reunir términos"
+        },
+        {
+          "type": "paragraph",
+          "text": "En −2(3x − 1) = x + 9, distribuir el factor negativo da −6x + 2 = x + 9: el producto de −2 por −1 es positivo. Restar x de ambos miembros da −7x + 2 = 9; restar dos, −7x = 7; dividir por −7, x = −1. La comprobación en la original da ocho en los dos miembros."
+        },
+        {
+          "type": "paragraph",
+          "text": "Distribuir es sustituir una expresión por otra del mismo valor; no exige modificar también el otro miembro. En cambio, sumar, restar, multiplicar o dividir toda la ecuación exige la misma operación en ambos. Distinguir estas acciones evita «compensar» en el otro lado una simplificación que ya conserva el valor del primero."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparar_la_distribucion_antes_de_resolver",
+          "prompt": "Para resolver 3(2t − 5) = 4t + 1, un apunte escribe estas líneas: primero 6t − 5 = 4t + 1; después 2t − 5 = 1 restando 4t a ambos miembros; finalmente 2t = 6 sumando cinco a ambos. Localiza el primer error. Corrige el término constante que debía resultar al distribuir y resuelve la ecuación original.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparar_la_distribucion_antes_de_resolver__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La resta de 4t en la segunda línea."
+                },
+                {
+                  "id": "b",
+                  "label": "La suma de cinco en la tercera línea."
+                },
+                {
+                  "id": "c",
+                  "label": "La distribución de tres en la primera línea."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            },
+            {
+              "id": "reparar_la_distribucion_antes_de_resolver__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Término constante correcto después de distribuir en el izquierdo",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución t de la ecuación original",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "-15"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "8"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El primer error es distribuir tres sólo sobre 2t: también debía multiplicar −5. La ecuación correcta es 6t − 15 = 4t + 1. Restar 4t y sumar quince da 2t = 16; dividir por dos da t = 8. En la original, 3(16 − 5) = 33 y 4 × 8 + 1 = 33. Las operaciones posteriores del apunte eran reversibles, pero se aplicaban a una ecuación ya alterada.",
+            "incorrect": "Busca la primera línea que deje de representar la condición original, no únicamente un resultado final extraño. Un factor exterior multiplica todos los términos del grupo, incluida su constante."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "combinar_resta_y_distribucion",
+          "prompt": "Resuelve 5 − (2v − 3) = 3(v + 1) − 4. Escribe la solución v y los dos valores obtenidos al sustituirla en los miembros originales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "combinar_resta_y_distribucion__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución v",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Valor del miembro izquierdo original",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Valor del miembro derecho original",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "9/5"
+                  },
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "22/5"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "22/5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La resta del grupo da 5 − 2v + 3 = 8 − 2v; el otro miembro da 3v + 3 − 4 = 3v − 1. Sumar 2v y sumar uno a ambos miembros obtiene 9 = 5v, de donde v = 9/5. En la original se comparan 22/5 y 22/5.",
+            "incorrect": "Recupera los opuestos al restar un grupo: se restan 2v y −3, por lo que el segundo efecto es sumar tres. Distribuye también el tres del miembro derecho antes de reunir sus constantes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Los coeficientes fraccionarios también se reúnen"
+        },
+        {
+          "type": "paragraph",
+          "text": "En (3/4)x + 1/2 = (1/4)x − 3/2 podemos restar (1/4)x a ambos miembros sin eliminar antes los denominadores. La resta de coeficientes da (1/2)x + 1/2 = −3/2. Restar 1/2 produce (1/2)x = −2; multiplicar ambos miembros por dos da x = −4. Los dos miembros originales valen −5/2 con esa propuesta."
+        },
+        {
+          "type": "paragraph",
+          "text": "El número 3/4 es un coeficiente completo, y x/4 significa (1/4)x. Al reunir términos se suman o restan esos factores racionales: no se restan sus denominadores. Las propiedades y los inversos que justificaban las transformaciones anteriores también se aplican a estos factores (Lang, 1971, pp. 37–38, 42–45)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reunir_coeficientes_fraccionarios",
+          "prompt": "En (5/6)u − 2/3 = (1/3)u + 5/6, resta (1/3)u a ambos miembros y después suma 2/3 a ambos. Escribe el coeficiente y el número de la ecuación obtenida; resuélvela.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reunir_coeficientes_fraccionarios__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "coeficiente",
+                  "type": "numeric",
+                  "label": "Coeficiente de u antes de usar su inverso",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Número del miembro derecho antes de usar el inverso",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución u de la ecuación original",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "coeficiente": {
+                    "type": "numeric",
+                    "expected": "1/2"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "3/2"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "5/6 − 1/3 = 5/6 − 2/6 = 1/2. En el derecho, 5/6 + 2/3 = 5/6 + 4/6 = 3/2. Queda (1/2)u = 3/2; multiplicar por dos da u = 3. La original compara 11/6 con 11/6.",
+            "incorrect": "Recupera la resta y la suma de racionales con denominador común. Reunir coeficientes no cambia esa regla: 1/3 debe escribirse como 2/6 antes de restarlo de 5/6."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "la_fraccion_no_obliga_a_otra_inversion",
+          "prompt": "Para continuar desde (1/2)u = 3/2, selecciona todas las operaciones que dejan el coeficiente de u igual a uno y conservan las soluciones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "la_fraccion_no_obliga_a_otra_inversion__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Sumar 1/2 a ambos miembros."
+                },
+                {
+                  "id": "b",
+                  "label": "Dividir ambos miembros por 1/2."
+                },
+                {
+                  "id": "c",
+                  "label": "Multiplicar ambos miembros por 1/2."
+                },
+                {
+                  "id": "d",
+                  "label": "Multiplicar ambos miembros por dos."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dividir por 1/2 equivale a multiplicar por dos. Ambas operaciones hacen que el coeficiente pase a uno y llevan a u = 3. Sumar 1/2 no convierte un producto en u; multiplicar por 1/2 deja el coeficiente en 1/4.",
+            "incorrect": "Hay dos formas de expresar una misma operación inversa. Comprueba primero qué le sucede al coeficiente; después aplica la misma operación al miembro derecho."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Eliminar denominadores significa multiplicar todo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Otra ruta utiliza un múltiplo común de los denominadores. En (r − 2)/4 + 1/3 = (r + 1)/6, multiplicar ambos miembros por doce permite escribir 3(r − 2) + 4 = 2(r + 1). Se multiplicó el miembro izquierdo completo, incluida la fracción 1/3. Doce es no nulo: dividir por doce devuelve la ecuación original, por lo que la transformación conserva todas las soluciones (Lang, 1971, pp. 43–45)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora distribuir da 3r − 6 + 4 = 2r + 2, es decir, 3r − 2 = 2r + 2. Restar 2r y sumar dos produce r = 4. En la original, (4 − 2)/4 + 1/3 = 1/2 + 1/3 = 5/6, y (4 + 1)/6 = 5/6. Multiplicar por un múltiplo común evita operar con fracciones después; no elimina la necesidad de conservar los signos y los paréntesis."
+        },
+        {
+          "type": "paragraph",
+          "text": "También podríamos multiplicar por veinticuatro, o por −12: las transformaciones seguirían siendo reversibles y quitarían estos denominadores. El mínimo múltiplo entero positivo suele producir números menores. Es una elección conveniente, no una obligación para que el método sea válido."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "multiplicar_el_miembro_completo",
+          "prompt": "Para (2t − 1)/6 + 3/4 = (t + 2)/4, multiplicamos ambos miembros por doce. ¿Cuál es la ecuación obtenida después de cancelar los denominadores constantes, antes de abrir los paréntesis?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "multiplicar_el_miembro_completo__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "2(2t − 1) + 3/4 = 3(t + 2)"
+                },
+                {
+                  "id": "b",
+                  "label": "2(2t − 1) + 9 = t + 2"
+                },
+                {
+                  "id": "c",
+                  "label": "2(2t − 1) + 9 = 3(t + 2)"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Doce dividido entre seis da dos, y doce dividido entre cuatro da tres. Por eso quedan 2(2t − 1), nueve y 3(t + 2). La suma 3/4 también se multiplica por doce; el miembro derecho recibe el factor completo.",
+            "incorrect": "Multiplicar todo un miembro exige distribuir el factor sobre cada sumando. En el derecho también hay que conservar el cociente doce entre cuatro."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_tras_eliminar_denominadores",
+          "prompt": "Continúa la ecuación del ejercicio anterior: abre los paréntesis, reúne términos y resuelve. Escribe t y evalúa los dos miembros de la ecuación original que todavía contiene fracciones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_tras_eliminar_denominadores__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución t",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Valor del miembro izquierdo original",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Valor del miembro derecho original",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "-1"
+                  },
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "1/4"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "1/4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distribuir produce 4t − 2 + 9 = 3t + 6, o 4t + 7 = 3t + 6. Restar 3t y restar siete da t = −1. En la original, (−2 − 1)/6 + 3/4 = −1/2 + 3/4 = 1/4, y (−1 + 2)/4 = 1/4.",
+            "incorrect": "No evalúes sólo la ecuación multiplicada: vuelve a los miembros originales. Para reunir sus fracciones al comprobar, conserva que el numerador izquierdo pasa a ser −3."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Elegir entre dos rutas válidas"
+        },
+        {
+          "type": "paragraph",
+          "text": "Antes de calcular, mira qué dificulta la escritura: términos repetidos, un grupo completo multiplicado o denominadores constantes. Puedes distribuir primero, reunir coeficientes racionales directamente o multiplicar toda la ecuación por un múltiplo común. La preferencia debe ayudarte a controlar el cálculo; no cambia qué transformaciones son válidas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Por ejemplo, en 2(3x − 1) = (5/2)(x + 4), una ruta distribuye y obtiene 6x − 2 = (5/2)x + 10. Restar (5/2)x y sumar dos produce (7/2)x = 12, de donde x = 24/7. Otra ruta multiplica primero ambos miembros por dos: 4(3x − 1) = 5(x + 4). Distribuir, restar 5x y sumar cuatro da 7x = 24, con la misma solución. En los miembros originales se obtiene 130/7 en ambos casos."
+        },
+        {
+          "type": "paragraph",
+          "text": "La primera ruta usa menos números grandes, pero conserva fracciones intermedias; la segunda deja coeficientes enteros después de multiplicar. Comparar rutas justificadas permite elegir sin depender de una receta única (Lang, 1971, pp. 37–38). Un plan útil debe seguirse comprobando sus pasos y revisarse si aparece una dificultad (Pólya, 1957, pp. 8–13)."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factores_que_eliminan_dos_denominadores",
+          "prompt": "En (a − 1)/2 = (a + 3)/5 queremos eliminar ambos denominadores mediante una sola multiplicación de los dos miembros. Selecciona todos los factores de la lista que lo consiguen; no se exige que sea el menor.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factores_que_eliminan_dos_denominadores__decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Dos."
+                },
+                {
+                  "id": "b",
+                  "label": "Diez."
+                },
+                {
+                  "id": "c",
+                  "label": "Veinte."
+                },
+                {
+                  "id": "d",
+                  "label": "Cinco."
+                },
+                {
+                  "id": "e",
+                  "label": "Menos diez."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "c",
+                  "e"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Diez, veinte y menos diez son múltiplos de dos y de cinco y son no nulos. Cada uno quita ambos denominadores mediante una multiplicación reversible. Multiplicar por dos deja en el derecho un factor 2/5; multiplicar por cinco deja en el izquierdo un factor 5/2.",
+            "incorrect": "Distingue dos condiciones: el factor debe ser no nulo para poder regresar y, si buscamos coeficientes enteros en este paso, debe ser múltiplo de ambos denominadores. No se pidió un factor único."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_con_una_ruta_propia",
+          "prompt": "Resuelve (a − 1)/2 = (a + 3)/5 por una ruta que puedas justificar. Escribe la solución a y el valor de cada miembro original con ella.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_con_una_ruta_propia__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución a",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Valor del miembro izquierdo original",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Valor del miembro derecho original",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "11/3"
+                  },
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "4/3"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "4/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una ruta multiplica por diez: 5(a − 1) = 2(a + 3). Distribuir da 5a − 5 = 2a + 6; restar 2a y sumar cinco da 3a = 11, y a = 11/3. Ambos miembros originales valen 4/3. Reunir primero los coeficientes fraccionarios también es una ruta válida.",
+            "incorrect": "Elige un camino y revisa todas sus operaciones. Al comprobar, calcula a − 1 y a + 3 antes de dividir cada grupo por su denominador original."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recuperar el método y contrastar una propuesta"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora elige los pasos sin una cadena preparada. Antes de empezar, identifica los grupos completos y las constantes. Durante el cálculo, separa las simplificaciones dentro de un miembro de las operaciones aplicadas a los dos. Una propuesta fraccionaria es tan admisible como una entera en el dominio racional; debe comprobarse, no redondearse."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_sin_una_cadena_preparada",
+          "prompt": "Resuelve 5 − 2(x − 3) = (x + 1)/2. Elige tu ruta y escribe la solución, junto con los valores de los dos miembros originales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_sin_una_cadena_preparada__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Valor del miembro izquierdo original",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Valor del miembro derecho original",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "21/5"
+                  },
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "13/5"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "13/5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una ruta simplifica el izquierdo como 11 − 2x y multiplica ambos miembros por dos: 22 − 4x = x + 1. Restar x y restar veintidós da −5x = −21; dividir por −5 da x = 21/5. En la original, 5 − 2(21/5 − 3) = 13/5, y (21/5 + 1)/2 = 13/5. Multiplicar por dos antes de distribuir también permite llegar al mismo resultado.",
+            "incorrect": "La resta de 2(x − 3) distribuye un factor −2, no sólo dos. Al eliminar el denominador derecho también hay que multiplicar todo el izquierdo. Usa luego la ecuación original para revisar los signos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "una_propuesta_no_se_acepta_por_su_forma",
+          "prompt": "Un apunte propone u = 5/2 para (u + 2)/3 − (u − 1)/4 = 1. Calcula el miembro izquierdo con esa propuesta y decide si cumple. Después resuelve la ecuación original y escribe su solución.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "una_propuesta_no_se_acepta_por_su_forma__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "valor_propuesto",
+                  "type": "numeric",
+                  "label": "Miembro izquierdo original con u = 5/2",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución u de la ecuación original",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "valor_propuesto": {
+                    "type": "numeric",
+                    "expected": "9/8"
+                  },
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            },
+            {
+              "id": "una_propuesta_no_se_acepta_por_su_forma__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "La propuesta cumple porque todos los denominadores son constantes."
+                },
+                {
+                  "id": "b",
+                  "label": "La propuesta no cumple: el miembro izquierdo calculado no coincide con uno."
+                },
+                {
+                  "id": "c",
+                  "label": "La propuesta no cumple porque el dominio racional excluye fracciones."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Con u = 5/2, el izquierdo es (9/2)/3 − (3/2)/4 = 3/2 − 3/8 = 9/8, distinto de uno. Para resolver, multiplicar por doce da 4(u + 2) − 3(u − 1) = 12. Reunir términos da u + 11 = 12, así que u = 1. La comprobación original es 3/3 − 0/4 = 1. El error de la propuesta no consiste en ser fraccionaria, sino en no satisfacer la igualdad.",
+            "incorrect": "Calcula primero ambos numeradores con la propuesta dada, conserva la resta entre fracciones y compáralas con uno. Después resuelve desde la condición original: no arregles una propuesta incorrecta redondeándola."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Comprobar una propuesta y resolver toda la ecuación son tareas distintas. La sustitución detecta si ese valor funciona; una cadena de condiciones equivalentes hasta una incógnita aislada justifica también que no se omitieron otras soluciones. Una fracción bien escrita, una respuesta entera o una forma breve no sustituyen esas revisiones."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Traducir una comparación de dos planes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dos servicios ficticios calculan el precio de un trayecto mediante una cuota fija y una cantidad por kilómetro. El plan A cobra tres unidades monetarias de cuota fija y 5/2 unidades monetarias por kilómetro; el plan B cobra nueve de cuota fija y 3/2 por kilómetro. Buscamos la distancia para la que los precios totales sean iguales. Los cálculos de este modelo son exactos, sin redondeos."
+        },
+        {
+          "type": "paragraph",
+          "text": "Define d como la distancia en kilómetros: un racional no negativo. Cada total combina una constante y un producto por d. No estamos comparando sólo las cuotas ni sólo las cantidades por kilómetro; la igualdad debe comparar los dos precios completos para la misma distancia."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "construir_la_comparacion_completa",
+          "prompt": "Selecciona la condición que compara correctamente los dos precios totales del modelo.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "construir_la_comparacion_completa__decision",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "3 + (5/2)d = 9 + (3/2)d"
+                },
+                {
+                  "id": "b",
+                  "label": "3 + (5/2)d = (3/2)d"
+                },
+                {
+                  "id": "c",
+                  "label": "3 + (5/2)d = 9 − (3/2)d"
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Cada total suma la cuota fija y el producto de la cantidad por kilómetro por d. En ambos usamos la misma distancia. Omitir nueve elimina la cuota fija del plan B; restar (3/2)d convertiría su cobro por kilómetro en una disminución.",
+            "incorrect": "Vuelve al significado de cada cantidad: una cuota fija se suma una vez y la cantidad por kilómetro se multiplica por la distancia. No pierdas una parte del precio al compararlo."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resolver_y_devolver_el_sentido_al_resultado",
+          "prompt": "Resuelve la condición correcta del ejercicio anterior y calcula el precio de cada plan con la distancia obtenida. Escribe la distancia en kilómetros y los dos precios en unidades monetarias.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resolver_y_devolver_el_sentido_al_resultado__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "distancia",
+                  "type": "numeric",
+                  "label": "Distancia d en kilómetros",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "precio_a",
+                  "type": "numeric",
+                  "label": "Precio total del plan A",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "precio_b",
+                  "type": "numeric",
+                  "label": "Precio total del plan B",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "distancia": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "precio_a": {
+                    "type": "numeric",
+                    "expected": "18"
+                  },
+                  "precio_b": {
+                    "type": "numeric",
+                    "expected": "18"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Restar (3/2)d a ambos miembros da 3 + d = 9; restar tres da d = 6. Con seis kilómetros, el plan A cobra 3 + (5/2) × 6 = 18 y el B cobra 9 + (3/2) × 6 = 18. Seis pertenece al dominio no negativo; los pasos reversibles muestran que no hay otra distancia racional con precios iguales en este modelo.",
+            "incorrect": "La solución de la ecuación representa kilómetros, no un precio. Evalúa después cada fórmula completa para obtener sus unidades monetarias. Revisa también que la distancia hallada sea no negativa."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Este resultado compara exclusivamente el modelo dado. Comprender qué representa la incógnita permite interpretar la solución y comprobar su dominio; operar correctamente con las letras no elimina esa tarea."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir una condición y volver a resolverla"
+        },
+        {
+          "type": "paragraph",
+          "text": "También puedes trabajar desde una solución deseada. Si falta una constante, sustituye el valor propuesto para descubrir qué constante haría verdadera la igualdad. Después resuelve la ecuación completada: comprobar un valor deseado por sí solo todavía no demuestra que sea el único."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "completar_un_dato_y_justificar_la_solucion",
+          "prompt": "Elegimos una constante racional k en (2/3)x + k = (1/6)x − 1 para que la solución sea x = −4. Escribe k y los valores que toman los dos miembros con x = −4. Después, por tu cuenta, reúne los términos de la ecuación completada y comprueba que lleva precisamente a esa solución.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "completar_un_dato_y_justificar_la_solucion__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "constante",
+                  "type": "numeric",
+                  "label": "Constante k que completa la condición",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Miembro izquierdo completado con x = −4",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Miembro derecho con x = −4",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "constante": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "-5/3"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-5/3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "El derecho con x = −4 vale −2/3 − 1 = −5/3. El izquierdo es −8/3 + k, así que k debe valer uno. Al resolver la ecuación completada, restar (1/6)x y restar uno da (1/2)x = −2; multiplicar por dos da x = −4. La cadena reversible confirma la unicidad, además de la comprobación pedida.",
+            "incorrect": "Sustituye primero el valor deseado de x en los dos productos, conservando sus signos. La constante faltante tiene que igualar los miembros; luego verifica la ecuación completa con las mismas transformaciones justificadas que antes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "integrar_tres_denominadores_y_dos_miembros",
+          "prompt": "Resuelve (2x + 3)/5 + (x − 1)/2 = (3x + 4)/4 − 1. Escoge el método que te ayude a controlar los grupos y los signos. Escribe la solución y evalúa los miembros originales.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "integrar_tres_denominadores_y_dos_miembros__numeros",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "solucion",
+                  "type": "numeric",
+                  "label": "Solución x",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "izquierdo",
+                  "type": "numeric",
+                  "label": "Valor del miembro izquierdo original",
+                  "keyboard": "FRACTION"
+                },
+                {
+                  "id": "derecho",
+                  "type": "numeric",
+                  "label": "Valor del miembro derecho original",
+                  "keyboard": "FRACTION"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "solucion": {
+                    "type": "numeric",
+                    "expected": "-2/3"
+                  },
+                  "izquierdo": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  },
+                  "derecho": {
+                    "type": "numeric",
+                    "expected": "-1/2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Una ruta multiplica los dos miembros por veinte: 4(2x + 3) + 10(x − 1) = 5(3x + 4) − 20. Distribuir y reunir da 18x + 2 = 15x; restar 15x y restar dos produce 3x = −2, así que x = −2/3. En la original, el izquierdo vale 1/3 − 5/6 = −1/2 y el derecho 1/2 − 1 = −1/2. Multiplicar también la constante −1 fue indispensable.",
+            "incorrect": "Al eliminar denominadores, conserva el alcance de cada numerador completo y multiplica también la constante del derecho. Revisa por separado cada distribución y cada reunión; una propuesta debe cumplir la igualdad original, no sólo una línea intermedia."
+          }
+        },
+        {
+          "type": "paragraph",
+          "text": "Las rutas de esta práctica terminan en un coeficiente distinto de cero que permite aislar la incógnita. Al estudiar otros casos revisaremos qué ocurre cuando los términos con letra se cancelan por completo. Conserva desde ahora la pregunta central: ¿qué permite justificar que la condición nueva tiene exactamente las mismas soluciones que la anterior?"
+        }
+      ]
+    }
+  ]
+}
