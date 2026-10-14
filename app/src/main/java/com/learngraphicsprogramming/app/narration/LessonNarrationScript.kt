@@ -6,7 +6,14 @@ import org.json.JSONObject
 
 /** Gate indices refer to text items, before the selected engine splits sentences. */
 data class NarrationTextGate(val blockIndex: Int, val start: Int, val endExclusive: Int)
-data class LessonNarrationScript(val texts: List<String>, val gates: List<NarrationTextGate>) {
+/** In-memory provenance derived while extracting the existing lesson text. */
+data class NarrationTextOrigin(val blockIndex: Int, val feedback: Boolean = false)
+
+data class LessonNarrationScript(
+    val texts: List<String>,
+    val gates: List<NarrationTextGate>,
+    val origins: List<NarrationTextOrigin> = emptyList()
+) {
     companion object {
         private val codeExercises = setOf("multiple_choice", "fill_code", "inline_fill_code",
             "output_prediction", "order_code", "drag_fill_code")
@@ -24,16 +31,21 @@ data class LessonNarrationScript(val texts: List<String>, val gates: List<Narrat
                 ?: return LessonNarrationScript(emptyList(), emptyList())
             val texts = mutableListOf<String>()
             val gates = mutableListOf<NarrationTextGate>()
+            val origins = mutableListOf<NarrationTextOrigin>()
+            fun append(items: List<String>, blockIndex: Int, feedback: Boolean = false) {
+                texts += items
+                origins += List(items.size) { NarrationTextOrigin(blockIndex, feedback) }
+            }
             fun authored(block: JSONObject): List<String> {
                 val one = JSONObject().put("pages", JSONArray().put(JSONObject().put("blocks", JSONArray().put(block))))
                 return LessonNarrationText.page(one, 0, language, forKokoro, instruction)
             }
             fun paragraph(text: String, mode: String = "auto") = authored(JSONObject()
                 .put("type", "paragraph").put("text", text).put("mathMode", mode))
-            if (pageIndex == 0) texts += paragraph(lesson.optString("title", ""))
+            if (pageIndex == 0) append(paragraph(lesson.optString("title", "")), -1)
             for (index in 0 until blocks.length()) {
                 val block = blocks.optJSONObject(index) ?: continue
-                texts += authored(block)
+                append(authored(block), index)
                 val type = block.optString("type", "")
                 if (!isExercise(type)) continue
                 val start = texts.size
@@ -47,11 +59,13 @@ data class LessonNarrationScript(val texts: List<String>, val gates: List<Narrat
                     NarrationLanguage.FRENCH -> "Correct."
                     else -> "Correct."
                 }
-                texts += paragraph(heading)
-                if (success.isNotBlank()) texts += paragraph(success, block.optString("mathMode", "auto"))
+                append(paragraph(heading), index, feedback = true)
+                if (success.isNotBlank()) {
+                    append(paragraph(success, block.optString("mathMode", "auto")), index, feedback = true)
+                }
                 gates += NarrationTextGate(index, start, texts.size)
             }
-            return LessonNarrationScript(texts, gates)
+            return LessonNarrationScript(texts, gates, origins)
         }
     }
 }

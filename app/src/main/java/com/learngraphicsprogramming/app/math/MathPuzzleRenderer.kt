@@ -3,8 +3,10 @@ package com.learngraphicsprogramming.app.math
 import android.content.Context
 import android.graphics.Color
 import android.view.View
+import android.view.ViewGroup
 import android.view.Gravity
 import android.widget.LinearLayout
+import android.widget.TextView
 import com.learngraphicsprogramming.app.AppearanceSettingsRepository
 import com.learngraphicsprogramming.app.AppearanceUi
 import com.learngraphicsprogramming.app.ExerciseAnswerIdentity
@@ -25,6 +27,9 @@ class MathPuzzleRenderer(
     private val onCompletionChanged: (Boolean) -> Unit
 ) {
     val view = MathWidgetUi.column(context)
+    private val readableTexts = mutableListOf<TextView>()
+    /** Existing prompt/representation views only; response controls and feedback stay independent. */
+    val narrationTextViews: List<TextView> get() = readableTexts.toList()
     private val accent = AppearanceSettingsRepository.getRouteAccentColor(context, routeId)
     val fullscreenButton = MathWidgetUi.icon(context, R.drawable.ic_code_fullscreen, context.getString(R.string.math_ui_fullscreen))
     private val checkButton = MathWidgetUi.button(context, context.getString(R.string.math_ui_check), accent).apply {
@@ -53,8 +58,8 @@ class MathPuzzleRenderer(
         toolbar.addView(fullscreenButton)
         toolbar.addView(resetButton)
         view.addView(toolbar)
-        view.addView(MathWidgetUi.text(context, spec.prompt, true))
-        spec.representations.forEach { view.addView(MathRepresentationRenderer.render(context, it, accent)) }
+        addReadableRepresentation(MathWidgetUi.text(context, spec.prompt, true))
+        spec.representations.forEach { addReadableRepresentation(MathRepresentationRenderer.render(context, it, accent)) }
         spec.tools.forEachIndexed { index, tool ->
             if (tool.optBoolean("interactive", false)) {
                 val type = when (tool.getString("type")) {
@@ -72,7 +77,7 @@ class MathPuzzleRenderer(
                 initialTools[id] = control.answer()
                 view.addView(MathWidgetUi.text(context, tool.optString("label", context.getString(R.string.math_ui_auxiliary_tool))))
                 view.addView(control.view)
-            } else view.addView(MathRepresentationRenderer.render(context, tool, accent))
+            } else addReadableRepresentation(MathRepresentationRenderer.render(context, tool, accent))
         }
         spec.responses.forEach { response ->
             val control = MathInputControls.create(context, response, accent, ::changed)
@@ -380,6 +385,19 @@ class MathPuzzleRenderer(
         if (responseDrafts.length() > 0) state.put("responseDrafts", responseDrafts)
         if (toolDrafts.length() > 0) state.put("toolDrafts", toolDrafts)
         ProgressRepository.saveExerciseState(context, routeId, lessonId, pageIndex, blockIndex, state)
+    }
+
+    private fun addReadableRepresentation(representation: View) {
+        view.addView(representation)
+        fun collect(candidate: View) {
+            if (candidate.isClickable || candidate.isLongClickable ||
+                candidate is android.widget.EditText || candidate is android.widget.Button) return
+            if (candidate is TextView && !candidate.text.isNullOrBlank()) readableTexts += candidate
+            if (candidate is ViewGroup) {
+                for (index in 0 until candidate.childCount) collect(candidate.getChildAt(index))
+            }
+        }
+        collect(representation)
     }
 
     companion object {

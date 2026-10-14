@@ -29,7 +29,8 @@ import java.util.UUID
 class LessonNarrationController(
     context: Context,
     private val onState: (Boolean) -> Unit,
-    private val onError: (String) -> Unit
+    private val onError: (String) -> Unit,
+    private val onProgress: (NarrationPlaybackProgress) -> Unit = {}
 ) {
     private val uiContext: Context get() = UiLanguageSettings.localizedContext(appContext)
     private fun s(id: Int, vararg args: Any): String = uiContext.getString(id, *args)
@@ -102,6 +103,21 @@ class LessonNarrationController(
     private var activePageIdentity = ""
     private var waitingForExercise = false
 
+    private fun progressSnapshot(phase: NarrationPlaybackPhase,
+                                 pageIdentity: String = activePageIdentity) = NarrationPlaybackProgress(
+        pageIdentity, generation, index, segments.size, phase, resumeKey, offset.coerceAtLeast(0L)
+    )
+
+    /** UI observation must never interrupt audio, synthesis or bookmark updates. */
+    private fun publishProgress(progress: NarrationPlaybackProgress) = onMain {
+        runCatching { onProgress(progress) }.onFailure {
+            android.util.Log.w("LessonNarration", "Playback observer failed", it)
+        }
+    }
+
+    private fun publishProgress(phase: NarrationPlaybackPhase) =
+        publishProgress(progressSnapshot(phase))
+
     /** A changed answer only changes playback permission, never the pre-render queue. */
     fun updateSolvedExercises(pageIdentity: String, correctBlocks: Set<Int>) = onMain {
         if (closed || pageIdentity != activePageIdentity) return@onMain
@@ -117,6 +133,7 @@ class LessonNarrationController(
             offset = permitted.positionMs
             waitingForExercise = shouldWait && gate.blockedByAnswer(index)
             rememberPlaybackPosition()
+            publishProgress(NarrationPlaybackPhase.POSITION_CHANGED)
         }
         if (waitingForExercise && gate.canPlay(index)) {
             val key = resumeKey
@@ -153,6 +170,7 @@ class LessonNarrationController(
         foregroundPlayback = null
         releaseFocus()
         onState(false)
+        publishProgress(NarrationPlaybackPhase.FINISHED)
     }
 
     // Bookmarks are bounded metadata. Only explicit playback owns and updates one.
@@ -228,7 +246,10 @@ class LessonNarrationController(
     ) = onMain {
         if (closed) return@onMain
         val selected = NarrationSettingsRepository.forLanguage(appContext, language)
-        if (!selected.enabled) return@onMain
+        if (!selected.enabled) {
+            publishProgress(progressSnapshot(NarrationPlaybackPhase.UNAVAILABLE, pageIdentity))
+            return@onMain
+        }
         val prepared = narrationParts(segments, selected)
         val key = playbackIdentity(pageIdentity, selected, prepared)
         if (this.segments.isNotEmpty() && resumeKey == key && this.language == language &&
@@ -252,8 +273,15 @@ class LessonNarrationController(
                           correctBlocks: Set<Int> = emptySet()): Boolean {
         stopInternal()
         settings = selected
-        if (!settings.enabled) return false
-        if (prepared.isEmpty()) { onError(s(R.string.narration_no_text)); return false }
+        if (!settings.enabled) {
+            publishProgress(progressSnapshot(NarrationPlaybackPhase.UNAVAILABLE, pageIdentity))
+            return false
+        }
+        if (prepared.isEmpty()) {
+            publishProgress(progressSnapshot(NarrationPlaybackPhase.UNAVAILABLE, pageIdentity))
+            onError(s(R.string.narration_no_text))
+            return false
+        }
         language = selected.language
         activePageIdentity = pageIdentity
         segments = prepared.map { Segment(it) }.toMutableList()
@@ -271,6 +299,7 @@ class LessonNarrationController(
         waitingForExercise = false
         directory = File(appContext.cacheDir,"lesson-narration-" + UUID.randomUUID())
         if (selected.engine != NarrationEngine.ANDROID) preservePagePriority(prepared,selected)
+        publishProgress(if (finished) NarrationPlaybackPhase.FINISHED else NarrationPlaybackPhase.PREPARED)
         return true
     }
 
@@ -349,6 +378,9 @@ class LessonNarrationController(
         foregroundPlayback = null
         releaseFocus()
         if (wasPlaying) onState(false)
+        if (segments.isNotEmpty()) {
+            publishProgress(if (finished) NarrationPlaybackPhase.FINISHED else NarrationPlaybackPhase.PAUSED)
+        }
     }
 
     private fun resume() {
@@ -361,6 +393,7 @@ class LessonNarrationController(
         NarrationPlaybackOwner.acquire(this) { pause() }
         if (!acquireFocus()) {
             NarrationPlaybackOwner.release(this)
+            publishProgress(NarrationPlaybackPhase.UNAVAILABLE)
             onState(false); onError(s(R.string.narration_focus_error)); return
         }
         if (!resumeStore.owns(key,resumeOwner)) {
@@ -384,9 +417,13 @@ class LessonNarrationController(
         }
         foregroundPlayback = foregroundPlayback ?: NarrationWorkPriority.beginInteractive()
         onState(true)
+        publishProgress(NarrationPlaybackPhase.BUFFERING)
         if (playerReady) {
             applyRate()
-            if (!finished && playing) runCatching { player?.start() }.onFailure { fail(s(R.string.narration_resume_error)) }
+            if (!finished && playing) runCatching {
+                player?.start()
+                if (player != null) publishProgress(NarrationPlaybackPhase.PLAYING)
+            }.onFailure { fail(s(R.string.narration_resume_error)) }
         } else ensureSegment(index)
         rememberPlaybackPosition()
         main.removeCallbacks(playbackCheckpoint)
@@ -408,6 +445,7 @@ class LessonNarrationController(
         playbackGate?.restart()
         index = 0; offset = 0
         rememberPlaybackPosition()
+        publishProgress(NarrationPlaybackPhase.RESTARTED)
         resume()
     }
 
@@ -446,7 +484,7 @@ class LessonNarrationController(
         val previous = settings
         settings = NarrationSettingsRepository.forLanguage(appContext, language)
         if (!settings.enabled) {
-            stopInternal(releaseNeuralResources = true)
+            stopInternal(releaseNeuralResources = true, phase = NarrationPlaybackPhase.UNAVAILABLE)
             return@onMain
         }
         if (settings.engine != previous.engine || settings.kokoroVoice != previous.kokoroVoice ||
@@ -492,7 +530,9 @@ class LessonNarrationController(
         val target = if (position < 0) desired else playbackGate?.clamp(desired) ?: desired
         index = target.segment; offset = target.positionMs
         rememberPlaybackPosition()
+        publishProgress(NarrationPlaybackPhase.POSITION_CHANGED)
         if (playing && playbackGate?.blockedByAnswer(index) == true) waitForExercise()
+        if (playing) publishProgress(NarrationPlaybackPhase.BUFFERING)
         ensureSegment(index)
     }
 
@@ -818,7 +858,10 @@ class LessonNarrationController(
                     try {
                         playerReady = true
                         applyRate()
-                        if (!finished && playing && player === media) media.start()
+                        if (!finished && playing && player === media) {
+                            media.start()
+                            publishProgress(NarrationPlaybackPhase.PLAYING)
+                        }
                         rememberPlaybackPosition()
                         if (index+1 < segments.size) ensureSegment(index+1)
                         if (index+2 < segments.size) ensureSegment(index+2)
@@ -839,6 +882,7 @@ class LessonNarrationController(
             media.setOnCompletionListener {
                 if (closed || finished || !playing || generation != currentGeneration || index != currentIndex || player !== media) return@setOnCompletionListener
                 playbackGate?.completedNaturally(currentIndex)
+                publishProgress(NarrationPlaybackPhase.SEGMENT_COMPLETED)
                 rememberPlaybackPosition()
                 if (index < segments.lastIndex) selectSegment(index+1,0) else finishPage()
             }
@@ -887,7 +931,10 @@ class LessonNarrationController(
     }
     private fun isCurrent(request: Synthesis): Boolean = !closed &&
         request.generation == generation && request.configuration == configuration
-    private fun fail(message: String) { stopInternal(); if (!closed) onError(message) }
+    private fun fail(message: String) {
+        stopInternal(phase = NarrationPlaybackPhase.UNAVAILABLE)
+        if (!closed) onError(message)
+    }
 
     private fun releasePlayer() {
         playerReady = false
@@ -895,7 +942,9 @@ class LessonNarrationController(
         player = null
     }
 
-    private fun stopInternal(releaseNeuralResources: Boolean = false) {
+    private fun stopInternal(releaseNeuralResources: Boolean = false,
+                             phase: NarrationPlaybackPhase = NarrationPlaybackPhase.STOPPED) {
+        val stoppedProgress = progressSnapshot(phase)
         rememberPlaybackPosition()
         main.removeCallbacks(playbackCheckpoint)
         NarrationPlaybackOwner.release(this)
@@ -931,6 +980,9 @@ class LessonNarrationController(
             if (previous != null) cleanup(previous)
         }
         if (wasPlaying) onState(false)
+        if (stoppedProgress.pageIdentity.isNotEmpty() || stoppedProgress.segmentCount > 0) {
+            publishProgress(stoppedProgress.copy(generation = generation))
+        }
     }
 
     /** Never remove a persistent audio file on stop, voice change or cancellation. */
