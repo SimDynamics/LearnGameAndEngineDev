@@ -1,0 +1,592 @@
+{
+  "id": "math_course_01__fracciones_y_equivalencia__sumar_y_restar_fracciones",
+  "title": "Additionner et soustraire des unités fractionnaires",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'addition conserve la taille des parts"
+        },
+        {
+          "type": "paragraph",
+          "text": "Trois septièmes d'une longueur plus deux septièmes de cette même longueur donnent cinq septièmes. On additionne le nombre de parts en conservant leur taille : \\(\\frac{3}{7}+\\frac{2}{7}=\\frac{5}{7}\\). Si l'on additionnait les dénominateurs, on écrirait cinq quatorzièmes et chaque part deviendrait deux fois plus petite. Cela ne décrirait plus la réunion des segments d'origine."
+        },
+        {
+          "type": "paragraph",
+          "text": "La même idée fonctionne avec des quantités négatives. Moins cinq neuvièmes plus deux neuvièmes donnent moins trois neuvièmes : on part d'une variation négative de cinq parts et on en compense deux. Lorsque les parts ont la même taille, le signe du résultat dépend des numérateurs. Zéro neuvième vaut zéro, ce n'est pas une division indéterminée."
+        },
+        {
+          "type": "paragraph",
+          "text": "Avant d'additionner des fractions de quantités physiques, vérifie aussi l'unité de mesure. Un quart de litre et un quart de mètre ne peuvent pas être additionnés comme une seule quantité. Ici, nous travaillerons avec des mesures de même nature et de même unité, ou avec des nombres sans unité physique. Le dénominateur commun permet d'égaliser la taille des parts, mais ne corrige pas le mélange de grandeurs différentes."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "misma_particion",
+          "prompt": "Calcule 4/11+6/11.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "10/11"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Quatre onzièmes plus six onzièmes donnent dix onzièmes : 10/11. Chaque part conserve sa taille.",
+            "incorrect": "10/22 transforme des onzièmes en vingt-deuxièmes. 24/121 calcule un produit, pas une somme."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une unité fractionnaire commune"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour additionner cinq douzièmes et un huitième, il faut exprimer les deux en parts égales. Des vingt-quatrièmes conviennent : cinq douzièmes représentent dix vingt-quatrièmes et un huitième représente trois vingt-quatrièmes. Ainsi, \\(\\frac{5}{12}+\\frac{1}{8}=\\frac{10}{24}+\\frac{3}{24}=\\frac{13}{24}\\). Le résultat doit dépasser cinq douzièmes, car on ajoute une quantité positive."
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu peux choisir un dénominateur commun en multipliant les dénominateurs, ou utiliser leur plus petit commun multiple pour travailler avec de plus petits nombres. Dans les deux cas, multiplie le numérateur et le dénominateur par le facteur nécessaire. Changer seulement le dénominateur ne prépare pas l'addition : cela modifie le terme additionné. Si le résultat possède ensuite des facteurs communs, tu peux le simplifier sans changer sa valeur."
+        },
+        {
+          "type": "paragraph",
+          "text": "La formule générale résume ce raisonnement : pour des dénominateurs non nuls, \\(\\frac{a}{b}+\\frac{c}{d}=\\frac{ad+bc}{bd}\\). Les produits ad et bc ne sont pas une astuce isolée : ils convertissent chaque terme additionné en parts de taille 1/(bd). Utiliser des nombres concrets ou imaginer des partages aide à conserver le sens lorsque le calcul devient plus long."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "denominador_veinte",
+          "prompt": "Additionne 3/10 + 1/4 et écris le résultat sous forme irréductible avec un dénominateur positif.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Somme irréductible : numérateur"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Somme irréductible : dénominateur positif"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "20"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "3/10 = 6/20 et 1/4 = 5/20. Leur somme est 11/20, déjà irréductible.",
+            "incorrect": "4/14 mélange les numérateurs et les dénominateurs de parts de tailles différentes. 4/20 change les dénominateurs sans transformer les numérateurs. Il faut six vingtièmes et cinq vingtièmes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnostico_denominadores",
+          "prompt": "On propose 2/5 + 1/3 = 3/8. Choisis l'explication qui identifie l'erreur et donne le résultat correct.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "explicacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Ces parts n'ont pas la même taille ; la conversion en quinzièmes donne 6/15 + 5/15 = 11/15.",
+                  "reviewFeedback": "Vérifie que le raisonnement conserve chaque terme lors du changement de partage. Examine ce qui permet de réunir ensuite les numérateurs."
+                },
+                {
+                  "id": "b",
+                  "label": "Il suffit de simplifier 3/8 ; on obtient alors 11/15.",
+                  "reviewFeedback": "Ton explication suppose qu'une simplification change la valeur. Revois ce qui reste inchangé quand on simplifie une fraction et vérifie si cela peut corriger la somme proposée."
+                },
+                {
+                  "id": "c",
+                  "label": "C'est correct parce qu'on a additionné en haut et en bas.",
+                  "reviewFeedback": "Ton explication additionne les dénominateurs comme s'ils comptaient les parts prises. Distingue la taille des parts du nombre de parts réunies."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les cinquièmes et les tiers doivent être convertis dans une même unité fractionnaire. La somme correcte est 11/15, supérieure à chacun des termes positifs.",
+            "incorrect": "3/8 est déjà irréductible, mais représente un autre nombre ; la simplification ne peut pas le transformer en 11/15. Accepter l'addition en haut et en bas confond équivalence et addition."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Soustraire, c'est additionner l'opposé"
+        },
+        {
+          "type": "paragraph",
+          "text": "La soustraction conserve le sens appris avec les entiers. Soustraire un tiers signifie additionner son opposé, moins un tiers. Pour \\(\\frac{7}{8}-\\frac{1}{3}\\), utilise des vingt-quatrièmes : 21/24 − 8/24 = 13/24. Soustraire une quantité négative est différent : 1/4 − (−1/2) = 1/4 + 1/2 = 3/4. Les parenthèses précisent quel nombre est soustrait."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie le résultat avant de simplifier. En ajoutant une quantité positive à un nombre négatif, on peut rester sous zéro si l'augmentation ne suffit pas à le compenser. Lorsqu'on soustrait deux fractions positives, détermine laquelle est la plus grande pour prévoir le signe. Cette prévision peut révéler un numérateur de mauvais signe, même si le dénominateur commun est correct."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_negativa",
+          "prompt": "Calcule −5/6 + 1/4 et écris sa forme irréductible. Vérifie d'abord si l'ajout d'un quart suffit à atteindre zéro.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Résultat irréductible : numérateur"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Résultat irréductible : dénominateur positif"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "12"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "−5/6 = −10/12 et 1/4 = 3/12 ; il reste −7/12. Un quart ne compense pas cinq sixièmes, donc le résultat est négatif.",
+            "incorrect": "−4/10 additionne encore les dénominateurs. 7/12 perd le signe : la variation négative est plus grande que la positive. Conserve le signe de −10 en ajoutant trois."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ordenar_razonamiento",
+          "prompt": "Mets dans l'ordre les étapes du calcul 4/9 − 1/6. Le choix de parts communes doit précéder leur soustraction.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pasos",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "Choisir des dix-huitièmes, car 18 est un multiple de 9 et de 6."
+                },
+                {
+                  "id": "b",
+                  "label": "Écrire 4/9 = 8/18 et 1/6 = 3/18."
+                },
+                {
+                  "id": "c",
+                  "label": "Soustraire 8/18 − 3/18 = 5/18."
+                },
+                {
+                  "id": "d",
+                  "label": "Vérifier que le résultat est positif et inférieur à 4/9."
+                }
+              ],
+              "initialOrder": [
+                "c",
+                "a",
+                "d",
+                "b"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "On choisit d'abord une taille commune, puis on transforme chaque fraction, on soustrait les parts et on vérifie le résultat.",
+            "incorrect": "Tu ne peux pas soustraire les numérateurs de neuvièmes et de sixièmes comme s'ils utilisaient la même unité. La vérification du signe et de la grandeur évalue un résultat déjà calculé ; elle ne remplace pas sa construction."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "medida_restante",
+          "prompt": "Il y avait 11/12 L et on retire 2/5 L. Combien de litres reste-t-il ? On retire une quantité fixe exprimée en litres.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "31/60"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "11/12−2/5 = 55/60−24/60 = 31/60 L. Le résultat est positif et inférieur à 11/12 L.",
+            "incorrect": "On ne retire pas les deux cinquièmes du contenu : on enlève 2/5 L. Convertir seulement les dénominateurs change les mesures."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Signes, zéro et expressions à plusieurs termes"
+        },
+        {
+          "type": "paragraph",
+          "text": "Soustraire une quantité négative équivaut à additionner son opposé. Par exemple, −1/2−(−3/4) = −2/4+3/4 = 1/4 : le résultat traverse zéro. En revanche, −3/4−1/2 s'éloigne de zéro vers la gauche. Le signe entre les termes et le signe du terme soustrait remplissent des fonctions différentes."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "restar_negativo",
+          "prompt": "Calcule 2/9−(−5/6) sous forme irréductible avec un dénominateur positif.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numérateur de la forme irréductible"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Dénominateur positif"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "19"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "18"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "Soustraire −5/6 revient à ajouter 5/6. En dix-huitièmes, 4/18+15/18 = 19/18, supérieur à un.",
+            "incorrect": "Changer seulement le signe du numérateur final ignore l'opération. Le résultat doit dépasser 2/9 parce qu'on soustrait un nombre négatif."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cruzar_cero",
+          "prompt": "Calcule −7/10+4/5.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/10"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−7/10+8/10 = 1/10. L'augmentation positive dépasse la distance initiale à zéro.",
+            "incorrect": "La présence d'un terme négatif ne garantit pas un résultat négatif. Compare d'abord leurs valeurs absolues en utilisant des dixièmes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_cero",
+          "prompt": "Calcule 5/12+(−10/24).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "0"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "10/24 = 5/12. Ce sont des opposés, donc leur somme vaut zéro.",
+            "incorrect": "Zéro est un résultat valable. Le dénominateur commun reste non nul ; un numérateur nul ne produit pas 0/0."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resta_negativa",
+          "prompt": "Calcule 3/8−7/12 sous forme irréductible avec un dénominateur positif.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numérateur de la forme irréductible"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Dénominateur positif"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-5"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "24"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "9/24−14/24 = −5/24. On retire une quantité supérieure à celle du départ, donc le résultat numérique est négatif.",
+            "incorrect": "5/24 ne respecte pas le sens de la soustraction. On ne soustrait pas séparément les numérateurs et les dénominateurs."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_sumandos",
+          "prompt": "Calcule 7/6−5/8+1/12.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "En vingt-quatrièmes : 28/24−15/24+2/24 = 15/24 = 5/8. Chaque signe reste attaché à son terme.",
+            "incorrect": "Soustraire 5/8+1/12 modifierait le regroupement de l'énoncé. Le dernier terme est ajouté."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_dos_caminos",
+          "prompt": "Pour 3/4+5/6, Ana utilise le dénominateur 12 et Bruno utilise 24. Sélectionne toutes les affirmations valables.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Ana obtient 9/12+10/12 = 19/12.",
+                  "reviewFeedback": "Pour le calcul choisi, vérifie les facteurs utilisés pour transformer chaque terme et assure-toi que les parts obtenues ont la même taille."
+                },
+                {
+                  "id": "b",
+                  "label": "Bruno obtient 18/24+20/24 = 38/24, équivalent à 19/12.",
+                  "reviewFeedback": "Pour le calcul choisi, revois chaque équivalence et la simplification finale. Distingue un dénominateur commun valable d'un dénominateur qui minimise le travail."
+                },
+                {
+                  "id": "c",
+                  "label": "Bruno a tort parce qu'il n'a pas utilisé le plus petit dénominateur commun.",
+                  "reviewFeedback": "Pour l'affirmation choisie, examine la condition que doit remplir un dénominateur commun et la fonction distincte du mot « plus petit »."
+                },
+                {
+                  "id": "d",
+                  "label": "Les deux doivent obtenir un résultat inférieur à un.",
+                  "reviewFeedback": "Pour l'affirmation choisie, compare la somme à l'unité en tenant compte de la grandeur de chaque terme. Ne généralise pas à partir du fait que chacun est une fraction propre."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12 et 24 sont des dénominateurs communs. Les deux méthodes conservent les termes ; la somme dépasse un.",
+            "incorrect": "Le plus petit dénominateur commun réduit le travail, mais d'autres dénominateurs communs sont valables. La somme de deux fractions propres peut être impropre."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_operacion_medida",
+          "prompt": "Un récipient contient 3/4 L. Cas A : on ajoute 1/6 L. Cas B : on retire 1/6 L. Saisis les deux volumes finaux.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Volume final A, en L"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Volume final B, en L"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "11/12"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "7/12"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Dans le cas A, il reste 11/12 L et dans le cas B, 7/12 L. La même quantité connue exige des opérations différentes selon l'action.",
+            "incorrect": "Les données seules ne déterminent pas s'il faut additionner ou soustraire : cela dépend de l'ajout ou du retrait. Dans les deux cas, on convertit les parts en douzièmes."
+          }
+        }
+      ]
+    }
+  ]
+}

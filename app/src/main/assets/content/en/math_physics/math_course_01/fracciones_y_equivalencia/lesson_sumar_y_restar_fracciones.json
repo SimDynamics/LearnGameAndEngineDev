@@ -1,0 +1,592 @@
+{
+  "id": "math_course_01__fracciones_y_equivalencia__sumar_y_restar_fracciones",
+  "title": "Adding and Subtracting Fractional Units",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Addition Preserves the Size of the Parts"
+        },
+        {
+          "type": "paragraph",
+          "text": "Three sevenths of a length plus two sevenths of that same length make five sevenths. We add the number of parts and keep their size: \\(\\frac{3}{7}+\\frac{2}{7}=\\frac{5}{7}\\). If we added the denominators, we would write five fourteenths and make each part half as large. That would not describe joining the original segments."
+        },
+        {
+          "type": "paragraph",
+          "text": "The same idea works with negative quantities. Negative five ninths plus two ninths equals negative three ninths: you start with a negative change of five parts and offset two of them. When the parts are the same size, the numerators determine the sign of the result. Zero ninths equals zero, not an indeterminate division."
+        },
+        {
+          "type": "paragraph",
+          "text": "Before adding fractions of physical quantities, also check the measurement unit. One quarter of a liter and one quarter of a meter cannot be added as a single quantity. Here we will work with measurements of the same kind and unit, or with numbers that have no physical unit. A common denominator resolves differences in part sizes, but it cannot fix a mixture of different kinds of quantity."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "misma_particion",
+          "prompt": "Calculate 4/11+6/11.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "10/11"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Four elevenths plus six elevenths make ten elevenths: 10/11. Each part keeps its size.",
+            "incorrect": "10/22 changes elevenths into twenty-seconds. 24/121 calculates a product, not a sum."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Common Fractional Unit"
+        },
+        {
+          "type": "paragraph",
+          "text": "To add five twelfths and one eighth, express both in equal-sized parts. Twenty-fourths work: five twelfths are ten twenty-fourths and one eighth is three twenty-fourths. Thus, \\(\\frac{5}{12}+\\frac{1}{8}=\\frac{10}{24}+\\frac{3}{24}=\\frac{13}{24}\\). The result must exceed five twelfths because we added a positive quantity."
+        },
+        {
+          "type": "paragraph",
+          "text": "You may choose a common denominator by multiplying the denominators, or use their least common multiple to work with smaller numbers. In either case, multiply both the numerator and denominator by the required factor. Changing only the denominator does not prepare the addition: it changes the addend. If common factors remain in the result, you can simplify it without changing its value."
+        },
+        {
+          "type": "paragraph",
+          "text": "The general formula summarizes this reasoning: for nonzero denominators, \\(\\frac{a}{b}+\\frac{c}{d}=\\frac{ad+bc}{bd}\\). The products ad and bc are not an unrelated trick: they convert each addend into parts of size 1/(bd). Using specific numbers or mentally picturing the partitions helps preserve their meaning as the calculations grow longer."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "denominador_veinte",
+          "prompt": "Add 3/10 + 1/4 and write the result in simplest form with a positive denominator.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Simplified sum: numerator"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Simplified sum: positive denominator"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "11"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "20"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "3/10 = 6/20 and 1/4 = 5/20. Their sum is 11/20, already in simplest form.",
+            "incorrect": "4/14 combines numerators and denominators of different-sized parts. 4/20 changes the denominators without adjusting the numerators. You need six twentieths and five twentieths."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "diagnostico_denominadores",
+          "prompt": "Someone proposes 2/5 + 1/3 = 3/8. Choose the explanation that identifies the mistake and gives the correct result.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "explicacion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "These parts are not the same size; converting to fifteenths gives 6/15 + 5/15 = 11/15.",
+                  "reviewFeedback": "Check that the reasoning preserves each addend when changing the partition. Verify what allows the numerators to be combined afterward."
+                },
+                {
+                  "id": "b",
+                  "label": "We only need to simplify 3/8; doing so gives 11/15.",
+                  "reviewFeedback": "Your explanation assumes that simplifying changes the value. Reconsider what remains unchanged when a fraction is simplified, and check whether that can repair the proposed sum."
+                },
+                {
+                  "id": "c",
+                  "label": "It is correct because both the top and bottom were added.",
+                  "reviewFeedback": "Your explanation adds denominators as though they counted how many parts were taken. Distinguish the size of each part from the number of parts being joined."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Fifths and thirds must be converted into the same fractional unit. The correct sum is 11/15, greater than either positive addend.",
+            "incorrect": "3/8 is already in simplest form, but it represents a different number; simplifying cannot turn it into 11/15. Accepting addition of the top and bottom confuses equivalence with addition."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Subtraction Means Adding the Opposite"
+        },
+        {
+          "type": "paragraph",
+          "text": "Subtraction keeps the meaning learned with integers. Subtracting one third means adding its opposite, negative one third. For \\(\\frac{7}{8}-\\frac{1}{3}\\), use twenty-fourths: 21/24 − 8/24 = 13/24. Subtracting a negative quantity is different: 1/4 − (−1/2) = 1/4 + 1/2 = 3/4. Parentheses clarify which number is being subtracted."
+        },
+        {
+          "type": "paragraph",
+          "text": "Check the result before simplifying. When you add a positive quantity to a negative number, you may remain below zero if the increase does not fully offset it. When subtracting two positive fractions, decide which is greater to predict the sign. This prediction can reveal a numerator with the wrong sign even if the common denominator was calculated correctly."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_negativa",
+          "prompt": "Calculate −5/6 + 1/4 and write the result in simplest form. First check whether adding one quarter is enough to reach zero.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "resultado",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Simplified result: numerator"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Simplified result: positive denominator"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-7"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "12"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "−5/6 = −10/12 and 1/4 = 3/12; the result is −7/12. One quarter does not offset five sixths, so the result is negative.",
+            "incorrect": "−4/10 adds the denominators again. 7/12 loses the sign: the negative change is larger than the positive one. Keep the sign of −10 when adding three."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ordenar_razonamiento",
+          "prompt": "Put the steps for calculating 4/9 − 1/6 in order. Choosing a common part size must come before subtracting the parts.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "pasos",
+              "type": "math_ordering_drag",
+              "items": [
+                {
+                  "id": "a",
+                  "label": "Choose eighteenths, because 18 is a multiple of both 9 and 6."
+                },
+                {
+                  "id": "b",
+                  "label": "Write 4/9 = 8/18 and 1/6 = 3/18."
+                },
+                {
+                  "id": "c",
+                  "label": "Subtract 8/18 − 3/18 = 5/18."
+                },
+                {
+                  "id": "d",
+                  "label": "Check that the result is positive and less than 4/9."
+                }
+              ],
+              "initialOrder": [
+                "c",
+                "a",
+                "d",
+                "b"
+              ],
+              "validator": {
+                "type": "order",
+                "expected": [
+                  "a",
+                  "b",
+                  "c",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "First choose a common part size, then convert each fraction, subtract the parts, and check the result.",
+            "incorrect": "You cannot subtract numerators in ninths and sixths as if they used the same unit. Checking the sign and size evaluates a result already calculated; it does not replace the calculation."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "medida_restante",
+          "prompt": "There were 11/12 L, and 2/5 L were removed. How many liters remain? A fixed volume in liters is removed.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "31/60"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "11/12−2/5 = 55/60−24/60 = 31/60 L. The result is positive and less than 11/12 L.",
+            "incorrect": "We are not taking two fifths of the contents: we are removing 2/5 L. Converting only denominators changes the measurements."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Signs, Zero, and Expressions with Multiple Terms"
+        },
+        {
+          "type": "paragraph",
+          "text": "Subtracting a negative quantity is equivalent to adding its opposite. For example, −1/2−(−3/4) = −2/4+3/4 = 1/4: the result crosses zero. By contrast, −3/4−1/2 moves farther left from zero. The sign between terms and the sign of the term being subtracted play different roles."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "restar_negativo",
+          "prompt": "Calculate 2/9−(−5/6) in simplest form with a positive denominator.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerator in simplest form"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Positive denominator"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "19"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "18"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "Subtracting −5/6 adds 5/6. In eighteenths, 4/18+15/18 = 19/18, greater than one.",
+            "incorrect": "Merely changing the sign of the final numerator ignores the operation. The result must exceed 2/9 because a negative number is subtracted."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "cruzar_cero",
+          "prompt": "Calculate −7/10+4/5.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "1/10"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "−7/10+8/10 = 1/10. The positive increase exceeds the original distance from zero.",
+            "incorrect": "The presence of a negative term does not guarantee a negative result. First compare their magnitudes using tenths."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "suma_cero",
+          "prompt": "Calculate 5/12+(−10/24).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "0"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "10/24 = 5/12. They are opposites, so their sum is zero.",
+            "incorrect": "Zero is a valid result. The common denominator remains nonzero; a zero numerator does not produce 0/0."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "resta_negativa",
+          "prompt": "Calculate 3/8−7/12 in simplest form with a positive denominator.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "fraccion",
+              "type": "math_equation_fill_blanks",
+              "fields": [
+                {
+                  "id": "num",
+                  "type": "numeric",
+                  "label": "Numerator in simplest form"
+                },
+                {
+                  "id": "den",
+                  "type": "numeric",
+                  "label": "Positive denominator"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "num": {
+                    "type": "numeric",
+                    "expected": "-5"
+                  },
+                  "den": {
+                    "type": "numeric",
+                    "expected": "24"
+                  }
+                }
+              },
+              "segments": [
+                {
+                  "field": "num"
+                },
+                {
+                  "text": "/"
+                },
+                {
+                  "field": "den"
+                }
+              ]
+            }
+          ],
+          "feedback": {
+            "correct": "9/24−14/24 = −5/24. More is removed than the initial amount, so the numerical result is negative.",
+            "incorrect": "5/24 loses the meaning of the subtraction. Numerators and denominators are not subtracted separately."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_sumandos",
+          "prompt": "Calculate 7/6−5/8+1/12.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "FRACTION",
+              "validator": {
+                "type": "numeric",
+                "expected": "5/8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "In twenty-fourths: 28/24−15/24+2/24 = 15/24 = 5/8. Each sign stays attached to its term.",
+            "incorrect": "Subtracting 5/8+1/12 would change the grouping in the prompt. The last term is added."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "comparar_dos_caminos",
+          "prompt": "For 3/4+5/6, Ana uses denominator 12 and Bruno uses 24. Select all valid statements.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "decision",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Ana obtains 9/12+10/12 = 19/12.",
+                  "reviewFeedback": "For the selected calculation, check the factors used to convert each addend and confirm that the resulting parts have the same size."
+                },
+                {
+                  "id": "b",
+                  "label": "Bruno obtains 18/24+20/24 = 38/24, equivalent to 19/12.",
+                  "reviewFeedback": "For the selected calculation, check each equivalence and the final simplification. Distinguish a valid common denominator from one that minimizes the work."
+                },
+                {
+                  "id": "c",
+                  "label": "Bruno is wrong because he did not use the least common denominator.",
+                  "reviewFeedback": "For the selected statement, examine what a common denominator must satisfy and the separate purpose of the word \"least.\""
+                },
+                {
+                  "id": "d",
+                  "label": "Both must obtain a result less than one.",
+                  "reviewFeedback": "For the selected statement, compare the sum with one, considering the size of both addends. Do not generalize from the fact that each addend is a proper fraction."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12 and 24 are common denominators. Both approaches preserve the addends; the sum exceeds one.",
+            "incorrect": "The least common denominator reduces the work, but other common denominators are valid. Adding two proper fractions can produce an improper fraction."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "elegir_operacion_medida",
+          "prompt": "A container holds 3/4 L. Case A: 1/6 L is added. Case B: 1/6 L is removed. Enter both final volumes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Final volume A, in L"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Final volume B, in L"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "11/12"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "7/12"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Case A ends with 11/12 L and case B with 7/12 L. The same known quantity calls for different operations depending on the action.",
+            "incorrect": "The numbers alone do not determine whether to add or subtract: the action of adding or removing does. In both cases, the parts are converted to twelfths."
+          }
+        }
+      ]
+    }
+  ]
+}
