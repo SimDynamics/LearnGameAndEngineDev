@@ -1,0 +1,247 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada",
+  "title": "Construire un lecteur d'entrée préparée",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "L'entrée arrive dans cin ; le programme décide quoi accepter"
+        },
+        {
+          "type": "paragraph",
+          "text": "Tu as déjà utilisé istringstream pour lire du texte défini dans le code et cin pour l'entrée préparée. Nous allons combiner std::cin comme lecteur extérieur avec un istringstream local chargé de valider chaque ligne. Nous pourrons modifier les données sans modifier le code source du programme."
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris toute l'entrée avant l'exécution. Le programme reçoit ce texte dès le début et rencontre EOF lorsqu'il est épuisé. Ce n'est pas une console permettant de répondre pendant l'exécution. Une entrée entièrement vide fournit EOF ; elle n'oblige pas à attendre une réponse supplémentaire."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous construirons le registre d'occupation d'un petit entrepôt. Chaque exécution commence avec trois places occupées, reçoit des mouvements ligne par ligne et ne conserve que ceux qui sont acceptés. L'entrée n'est pas affichée automatiquement : le programme décide de toute sortie visible."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e01",
+          "question": "Tu veux vérifier deux séquences de mouvements avec la même implémentation. Que faut-il modifier entre les exécutions ?",
+          "options": [
+            "Le champ Entrée préparée, tout en conservant le code du lecteur.",
+            "Uniquement une étiquette cout : cela remplace les données lues par cin.",
+            "Une chaîne dans le code ; cin lit automatiquement cette chaîne."
+          ],
+          "correctIndex": 0,
+          "explanation": "Entrée préparée fournit ses données à cin. Modifier l'affichage ne modifie pas ces données, et une string locale n'alimente pas cin à elle seule. Chaque exécution recommence à son état initial."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Définir l'opération avant de la lire"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une opération occupe exactement une ligne au format entrées:sorties. Les deux valeurs sont lues comme des int au moyen de >> ; le séparateur doit être le caractère :. Les blancs ignorés par l'extraction formatée, tels que les espaces ou les tabulations autour des champs, sont autorisés. Ainsi, 2:1, +2 : 01 et  2 : 1  représentent les mêmes valeurs. Nous n'imposons pas encore la grammaire des chiffres du futur interpréteur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Chaque quantité doit être comprise entre 0 et 3. La nouvelle occupation se calcule par occupation précédente + entrées - sorties et doit rester comprise entre 0 et 6 inclus. Ce contrat vérifie le résultat global du mouvement ; il n'exige pas un état intermédiaire après les entrées. Seule une ligne complète et valide valide la nouvelle occupation et incrémente le compteur d'acceptations. L'état reçu par l'analyseur doit être compris entre 0 et 6 : main l'initialise à 3 et préserve cet invariant en ne validant que les mouvements corrects."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les motifs de rejet suivent un ordre afin qu'une entrée comportant plusieurs erreurs ne reçoive qu'un diagnostic : Aucune donnée lorsqu'aucun champ n'existe ; Format invalide si la séquence int, :, int complète n'a pas pu être lue ; Données supplémentaires s'il reste du texte autre que des blancs ; Hors du domaine si une quantité n'appartient pas à 0..3 ; Capacité invalide si le résultat est hors de 0..6. Une ligne de zéro caractère et une ligne composée uniquement de blancs sont des strings distinctes, mais reçoivent toutes deux Aucune donnée dans ce contrat."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par exemple, 2:1 reste contient des données supplémentaires, alors que 2: exige un champ manquant. Ce ne sont pas des échecs de lecture extérieure : getline a pu obtenir correctement les deux lignes. Préserve l'occupation précédente pour chaque rejet diagnostiqué."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e02",
+          "question": "L'occupation actuelle est 5 et l'entrée est 4:0 avis. Selon l'ordre du contrat, quels diagnostic et état conviennent ?",
+          "options": [
+            "Hors du domaine ; occupation 5.",
+            "Acceptée ; occupation 9.",
+            "Données supplémentaires ; occupation 5."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le résidu avis est détecté avant la vérification du domaine des quantités. La ligne entière est rejetée et ne valide pas 9 ni ne modifie l'occupation précédente de 5."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Fin de la source et fin d'une ligne sont deux questions différentes"
+        },
+        {
+          "type": "paragraph",
+          "text": "getline peut obtenir la dernière ligne même en l'absence d'un saut final. Si des caractères ont été lus avant d'atteindre EOF, cette ligne doit être analysée. Si la tentative suivante ne produit aucune nouvelle ligne, n'invente pas une opération vide. En revanche, un saut de ligne disponible peut terminer une ligne de zéro caractère qui doit être analysée."
+        },
+        {
+          "type": "paragraph",
+          "text": "EOF ne démontre pas que les champs d'une opération sont complets. Le programme suivant utilise un petit texte local pour distinguer l'obtention d'une ligne de l'extraction des trois champs. La vraie source du laboratoire sera cin ; les indicateurs des deux objets lecteurs restent indépendants."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e03",
+          "language": "cpp",
+          "question": "Prédis les cinq valeurs : ligne obtenue, EOF du flux extérieur, champs complets, EOF du flux local et échec local. Les bool sont affichés sous forme de 0 ou 1.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream origen{\"1:\"};\n    std::string linea;\n    const bool obtenida = static_cast<bool>(std::getline(origen, linea));\n    std::istringstream campos{linea};\n    int primero = 0;\n    char separador = ' ';\n    int segundo = 0;\n    const bool completa = static_cast<bool>(campos >> primero >> separador >> segundo);\n    std::cout << obtenida << \" \" << origen.eof() << \" \"\n              << completa << \" \" << campos.eof() << \" \" << campos.fail();\n    return 0;\n}\n",
+          "answers": [
+            "1 1 0 1 1"
+          ],
+          "explanation": "getline obtient les caractères 1: avant EOF ; sa lecture est donc évaluée à true. L'analyse locale ne trouve pas le second entier : elle atteint EOF et active l'indicateur d'échec. La ligne existe, mais l'opération est incomplète."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsque la lecture extérieure s'arrête, bad() ou un échec sans EOF signalent un problème de la source, pas une opération mal écrite. EOF normal termine la session, même si le dernier appel à getline active aussi fail parce qu'il n'a rien obtenu de nouveau. Détermine d'abord si une ligne a été lue, puis valide son contenu. N'utilise pas while (!cin.eof()) pour créer de fausses tentatives."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construction autonome : accepter les mouvements depuis l'entrée réelle"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris le lecteur complet à partir de l'éditeur minimal. Utilise cin pour obtenir une ligne par tour et un analyseur local pour cette ligne. Sépare l'analyse et la décision d'acceptation dans une fonction recevant const std::string& et l'état par référence. Elle peut renvoyer un enum class représentant les résultats du contrat, comme les types d'alternatives déjà construits. Choisis les noms et l'organisation des fonctions ; ne lis pas le flux extérieur à l'intérieur de l'analyseur local."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'occupation initiale est 3, et le compteur d'acceptations commence à 0. Pour chaque ligne obtenue, affiche le diagnostic, le séparateur exact  | Occupées: , puis l'occupation après la décision. Une ligne valide utilise Acceptée comme diagnostic. À la fin par EOF, affiche Acceptées: A, puis Occupées: N, une ligne par étiquette et un espace après les deux-points. Chaque ligne de sortie se termine par un saut de ligne."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les rejets de données permettent de poursuivre avec la ligne suivante, et la session se termine avec le code 0. Si la source porte bad() ou si la lecture s'arrête sans EOF, affiche uniquement Échec de la source comme dernier message et termine avec le code 1, sans récapitulatif normal ; conserve les mouvements déjà acceptés. Nous ne provoquerons pas de panne physique par des données incorrectes. Les tests contiennent au plus 8 lignes de 40 caractères ASCII, avec des quantités écrites de -20 à 99. Les vérifications 0..3 et 0..6 doivent précéder la validation de l'état."
+        },
+        {
+          "type": "paragraph",
+          "text": "Entrée préparée contient sept lignes. La deuxième contient un espace et une tabulation ; la dernière n'a pas de saut final. Prédis la sortie entière avant l'exécution. Pour le cas initial, elle est exactement :\nAcceptée | Occupées: 4\nAucune donnée | Occupées: 4\nFormat invalide | Occupées: 4\nDonnées supplémentaires | Occupées: 4\nHors du domaine | Occupées: 4\nCapacité invalide | Occupées: 4\nAcceptée | Occupées: 1\nAcceptées: 2\nOccupées: 1"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    return 0;\n}\n",
+          "initialStandardInput": "2:1\n \t\nx:2\n1:2 reste\n4:0\n3:0\n0:3"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ne code pas les sept mouvements ni leurs résultats en dur dans la source. Conserve le code pendant que tu modifies Entrée préparée. Une implémentation qui ne fait que reproduire cette sortie ne remplit pas l'objectif de lecture, validation, récupération et conservation de l'état."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Concevoir des tests qui distinguent les erreurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec une entrée vide, aucun diagnostic d'opération n'apparaît : seules les lignes Acceptées: 0 et Occupées: 3 sont affichées. Un saut de ligne unique produit une ligne Aucune donnée, suivie du même récapitulatif. Avec 0:0 sans saut final, la ligne est Acceptée et comptée, même si l'occupation reste à 3. Ajouter un seul saut final à 0:0 ne crée pas de ligne supplémentaire ; deux sauts laissent une ligne vide à la suite."
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste séparément 2:, q:1 et 2;1 : ils doivent produire Format invalide. Les entrées 2:1x et 2:1 0 produisent Données supplémentaires. -1:0 et 0:4 produisent Hors du domaine. Prédis les diagnostics avant l'exécution et vérifie qu'ils préservent tous l'occupation 3. La représentation +2 : 01 est autorisée et laisse l'occupation à 4."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour les bornes de l'occupation, utilise 3:0 suivi de 1:0 : la première ligne atteint 6 et la seconde est rejetée avec Capacité invalide, sans changer 6. Dans une nouvelle exécution, utilise 0:3 suivi de 0:1 : l'occupation atteint 0 et reste à 0 après le second mouvement. Ne confonds pas une borne valide avec la première valeur qui la dépasse."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour vérifier la récupération, utilise q:2 suivi de 1:0, sans saut final : la ligne invalide conserve 3 et la suivante est acceptée, pour atteindre 4. Répète avec une ligne contenant des données supplémentaires entre deux lignes valides. Vérifie que le dernier mouvement valide n'est pas réutilisé pour compléter une opération incomplète."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence à consulter après l'essai"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare maintenant ta solution à cette référence. L'analyse utilise des variables locales, vérifie qu'aucun champ supplémentaire ne reste et n'affecte l'occupation proposée qu'à la fin. La petite énumération représente les motifs sans les convertir en nombres arbitraires. mensaje renvoie une string pour afficher les résultats, sans définir comment les lire ni les valider."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nenum class Resultado {\n    aceptada,\n    sin_datos,\n    formato_invalido,\n    adicionales,\n    fuera_de_dominio,\n    capacidad_invalida\n};\n\nResultado aplicar_linea(const std::string& texto, int& ocupadas) {\n    std::istringstream presencia{texto};\n    std::string primera;\n    if (!(presencia >> primera)) {\n        if (presencia.bad() || !presencia.eof()) {\n            return Resultado::formato_invalido;\n        }\n        return Resultado::sin_datos;\n    }\n\n    std::istringstream campos{texto};\n    int entran = 0;\n    char separador = ' ';\n    int salen = 0;\n    if (!(campos >> entran >> separador >> salen) || separador != ':') {\n        return Resultado::formato_invalido;\n    }\n\n    std::string extra;\n    if (campos >> extra) {\n        return Resultado::adicionales;\n    }\n    if (campos.bad() || !campos.eof()) {\n        return Resultado::formato_invalido;\n    }\n    if (entran < 0 || entran > 3 || salen < 0 || salen > 3) {\n        return Resultado::fuera_de_dominio;\n    }\n\n    const int candidata = ocupadas + entran - salen;\n    if (candidata < 0 || candidata > 6) {\n        return Resultado::capacidad_invalida;\n    }\n    ocupadas = candidata;\n    return Resultado::aceptada;\n}\n\nstd::string mensaje(Resultado resultado) {\n    if (resultado == Resultado::aceptada) {\n        return \"Acceptée\";\n    }\n    if (resultado == Resultado::sin_datos) {\n        return \"Aucune donnée\";\n    }\n    if (resultado == Resultado::formato_invalido) {\n        return \"Format invalide\";\n    }\n    if (resultado == Resultado::adicionales) {\n        return \"Données supplémentaires\";\n    }\n    if (resultado == Resultado::fuera_de_dominio) {\n        return \"Hors du domaine\";\n    }\n    return \"Capacité invalide\";\n}\n\nint main() {\n    int ocupadas = 3;\n    int aceptadas = 0;\n    std::string linea;\n    while (std::getline(std::cin, linea)) {\n        const Resultado resultado = aplicar_linea(linea, ocupadas);\n        if (resultado == Resultado::aceptada) {\n            ++aceptadas;\n        }\n        std::cout << mensaje(resultado) << \" | Occupées: \" << ocupadas << \"\\n\";\n    }\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cout << \"Échec de la source\\n\";\n        return 1;\n    }\n    std::cout << \"Acceptées: \" << aceptadas << \"\\n\";\n    std::cout << \"Occupées: \" << ocupadas << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence conserve le même code avec n'importe quelle Entrée préparée. presencia sert uniquement à distinguer l'absence de champs d'un format incorrect ; campos recommence au début de la même ligne. Ce sont deux flux locaux distincts, et aucun ne modifie les indicateurs de cin. L'extraction finale dans extra échoue normalement à EOF lorsqu'il n'existe aucun champ supplémentaire ; cet échec attendu n'invalide pas les trois champs complets déjà obtenus."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le calcul n'a lieu qu'après la vérification des deux quantités. Avec une occupation entre 0 et 6 et des quantités entre 0 et 3, la valeur proposée se situe entre -3 et 9 et tient dans int. L'unique affectation à ocupadas se produit après toutes les vérifications. Cette garantie couvre les rejets prévus par le contrat ; elle ne promet pas une récupération après tout problème de ressources du processus."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Critères de correction et de conservation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une solution est correcte si elle lit la véritable entrée ligne par ligne, applique le format et l'ordre des diagnostics, ne valide que des mouvements complets et autorisés, conserve l'état et le compteur lors des refus, traite les lignes suivantes et affiche exactement les étiquettes et les totaux demandés. Les noms, l'organisation des fonctions et les façons équivalentes de vérifier les résidus peuvent varier. Il n'est pas nécessaire de recopier la référence. L'éditeur permet d'exécuter et de comparer, mais ne note pas automatiquement tous ces critères."
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie également la fonction sans cin : commence avec une occupation de 6 et transmets 1:0 ; elle doit diagnostiquer la capacité et conserver 6. Commence avec 0 et transmets 0:1 ; elle conserve 0. À partir de 3, vérifie chaque famille de refus avec un autre exemple que les cas initiaux. Enfin, transmets 0:0 : il doit être accepté bien que la valeur de l'argument ne change pas. Le compteur de main augmente en cas d'acceptation, pas seulement lorsqu'une différence apparaît dans l'état."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e04",
+          "question": "Une exécution reçoit 0:0, puis 0:4. Quel récapitulatif respecte le contrat ?",
+          "options": [
+            "Acceptées: 0 et Occupées: 3, car aucune ligne ne change l'état.",
+            "Acceptées: 1 et Occupées: 3.",
+            "Acceptées: 2 et Occupées: -1."
+          ],
+          "correctIndex": 1,
+          "explanation": "0:0 est complet, appartient au domaine et préserve un résultat valide : il est accepté et compté. 0:4 ne respecte pas le domaine de sortie et ne change ni le compteur ni l'occupation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un test de frontière doit vérifier à la fois le diagnostic et l'état qui suit. Comparer seulement Occupées risque de masquer le rejet d'une ligne valide qui ne change pas l'état. Comparer uniquement le nombre d'acceptations risque de masquer une modification anticipée en présence de données supplémentaires."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La récupération conserve la frontière du format"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e05",
+          "question": "Une ligne mal formée échoue dans campos. Qu'est-ce qui permet d'analyser la suivante sans effacer l'état de cin ?",
+          "options": [
+            "clear sur cin supprime toutes les lignes incorrectes suivantes.",
+            "Affecter l'état rouvre l'entrée à son commencement.",
+            "getline a déjà consommé cette ligne et l'échec appartient à l'analyseur local désormais abandonné."
+          ],
+          "correctIndex": 2,
+          "explanation": "Le lecteur extérieur a déjà franchi la limite de cette ligne. L'analyse suivante construit un nouveau flux local ; effacer l'état de cin n'est pas nécessaire pour réparer l'échec d'un autre objet et ne supprimerait pas non plus les caractères."
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous conservons l'état des lignes acceptées même en présence d'un refus ultérieur ; nous n'annulons pas toute la session. Chaque nouvelle exécution repart de l'état initial. Nous avons construit un format organisé par lignes ; le futur interpréteur pourra utiliser une autre frontière d'opération et devra définir ses tokens avant d'effectuer la récupération jusqu'à cette frontière."
+        },
+        {
+          "type": "note",
+          "text": "Le comportement de getline a été consulté dans le brouillon de C++ (Working draft: Programming languages — C++, s. d., section [string.io]). getline délimite et obtient du texte ; la validation du mouvement et le choix de conserver l'état appartiennent au programme. Les tests de cette leçon utilisent une véritable entrée préparée ; ils ne nécessitent pas de console interactive."
+        }
+      ]
+    }
+  ]
+}

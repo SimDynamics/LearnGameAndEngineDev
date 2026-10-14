@@ -1,0 +1,188 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__tokens_con_categoria_y_valor",
+  "title": "Tokens avec catégorie et valeur",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Associer chaque catégorie à la donnée dont elle a besoin"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un token est une unité que le lecteur fournit à l'interpréteur. Dans notre langage initial, un chiffre est un token numérique ; chaque signe +, -, *, /, (, ) ou ; est un autre token. Les espaces, tabulations et sauts de ligne sont ignorés. Le point-virgule marque la fin d'une opération, ce qui est différent de la fin du texte."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reprends le struct qui associe des membres et son initialisation agrégée. Token contient clase de type char et valor de type int. L'étiquette 'n' désigne un nombre et exige que valor soit entre 0 et 9 dans cette première version. Chaque signe utilise son propre caractère comme clase et conserve 0 comme valeur qui ne sert pas aux calculs. L'étiquette 'f' représente la fin du texte et conserve aussi 0."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    const Token numero{'n', 5};\n    const Token signo{'+', 0};\n    std::cout << numero.clase << \" \" << numero.valor << \"\\n\";\n    std::cout << signo.clase;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La catégorie détermine comment interpréter valor. Un token + ne représente pas le nombre zéro simplement parce que son membre est initialisé à 0. 'n' et 'f' sont des étiquettes internes : les lettres n et f ne sont pas admises comme caractères dans l'entrée. Ce struct ne valide pas le contrat à lui seul ; la fonction de lecture doit fournir des combinaisons cohérentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Fournir une unité par appel"
+        },
+        {
+          "type": "paragraph",
+          "text": "leer_token reçoit le flux par référence modifiable, car consommer des caractères change sa position et son état. Elle ignore les séparateurs, reconnaît une unité et la renvoie. Chaque return termine l'appel ; le suivant reprend à la position laissée. La fonction utilise get pour décider explicitement quels séparateurs ignorer."
+        },
+        {
+          "type": "paragraph",
+          "text": "Reprends throw et catch de l'unité consacrée aux exceptions. std::runtime_error est un autre type d'exception standard, déclaré dans <stdexcept> ; il se construit avec un texte de diagnostic et what() permet de consulter ce texte lors de l'interception. Un caractère interdit par le langage produit un diagnostic ; l'appelant peut le traiter sans prétendre avoir obtenu un token valide. Un échec grave du flux ne doit pas être confondu avec sa fin normale."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"4+2;\"};\n    try {\n        const Token primero = leer_token(entrada);\n        const Token segundo = leer_token(entrada);\n        std::cout << primero.clase << \":\" << primero.valor << \"\\n\";\n        std::cout << segundo.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Erreur: \" << error.what();\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le lecteur fournit d'abord le nombre 4, puis le signe +. Il ne calcule pas 4+2 et ne vérifie pas que le point-virgule est placé correctement. Le lecteur de tokens reconnaît des unités ; une règle de combinaison ultérieure décidera si elles forment une opération valide."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Suivre une suite d'unités jusqu'à la fin"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"4+2;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Nombre: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signe: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Erreur: \" << error.what();\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La boucle s'arrête lorsqu'elle reçoit 'f'. Chaque appel précédent a consommé un caractère reconnu, en plus d'éventuels séparateurs. Une exception interrompt la tentative et atteint le catch extérieur ; les opérations suivantes ne sont pas encore récupérées. Le texte préparé de ces exemples comporte au maximum 64 caractères ASCII, donc le parcours est fini."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis toutes les lignes pour une entrée contenant des espaces et des parenthèses.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\" 0*(9); \"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Nombre: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signe: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Erreur: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Nombre: 0\nSigne: *\nSigne: (\nNombre: 9\nSigne: )\nSigne: ;\nFin"
+          ],
+          "explanation": "Le lecteur ignore les espaces et fournit chaque chiffre et chaque signe. Le point-virgule constitue un token ; l'appel suivant atteint la fin du texte et fournit f."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Séparer la reconnaissance de la structure"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le texte \"2**3;\" ne contient que des caractères admis par ce lecteur. Que reste-t-il à décider ?",
+          "options": [
+            "Rien : obtenir des tokens démontre que l'opération mathématique est correcte.",
+            "Si l'ordre des tokens respecte la grammaire d'une expression.",
+            "Rien d'autre si l'on supprime un astérisque : l'entrée corrigée peut être acceptée comme si l'originale était valide."
+          ],
+          "correctIndex": 1,
+          "explanation": "La reconnaissance accepte séparément les signes. La grammaire devra rejeter une multiplication sans opérande entre les deux signes. Supprimer un astérisque changerait l'entrée et ne démontrerait pas la validité de l'expression originale."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que fournit cette première version du lecteur pour \"18\" ?",
+          "options": [
+            "Deux tokens numériques de valeurs 1 et 8.",
+            "Un token numérique de valeur 18, parce que tout flux regroupe automatiquement les chiffres.",
+            "Un diagnostic parce que 8 est hors de l'intervalle d'un seul chiffre."
+          ],
+          "correctIndex": 0,
+          "explanation": "La fonction renvoie le résultat dès qu'elle reconnaît un chiffre. En réunir plusieurs exige une autre règle ; ce comportement doit rester explicite, sans lui attribuer une fonctionnalité que nous n'avons pas construite."
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette limite est intentionnelle et observable. Commencer avec une petite unité permet de vérifier les catégories avant d'ajouter les nombres à plusieurs chiffres, la conservation d'une unité anticipée et les règles des opérations."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un inspecteur et ajouter un signe"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un inspecteur respectant le contrat précédent et ajoute % aux signes admis. Le texte initial est \"7%2;\". Chaque nombre produit Nombre: N, chaque signe produit Signe: C et la fin produit Fin. Utilise une ligne par token et place Fin à la fin. Un caractère interdit doit produire Erreur: Caractère non admis et interrompre la tentative sans afficher Fin. L'inspecteur reconnaît %, mais ne calcule pas encore le reste."
+        },
+        {
+          "type": "paragraph",
+          "text": "Définis la fonction qui consomme une unité du flux par appel et renvoie Token. Conserve le struct de l'éditeur et ses étiquettes n et f ; initialise également valor pour les signes et la fin. Les textes des tests contiennent au maximum 64 caractères ASCII et les nombres restent des chiffres isolés. Choisis les conditions de reconnaissance et la boucle de l'inspecteur."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le cas initial doit fournir 7, %, 2, ;, puis la fin, avec les étiquettes demandées. La chaîne vide et \" \\t\\n\" produisent seulement Fin. \"0;\" teste la borne numérique inférieure. \"9+1;\" vérifie une autre opération reconnaissable. \"f\" doit être refusé : l'étiquette interne n'autorise pas cette lettre dans l'entrée. \"1 2\" fournit deux nombres, même si une future grammaire pouvait rejeter cette succession."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    std::istringstream entrada{\"7%2;\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Vérifie toute la sortie et assure-toi que chaque appel valide a fait avancer la lecture. Un struct qui associe catégorie et valeur de manière incohérente enfreint le contrat même s'il compile. L'éditeur ne vérifie pas automatiquement la classification ni la fin ; compare tes observations à ces critères avant de consulter la référence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer la reconnaissance étendue"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence inspecte \"8%3;\". L'ajout de % étend une catégorie existante ; il ne nécessite pas de modifier la représentation de Token ni de faire calculer le reste à l'inspecteur. Compare notamment la lettre f présente dans le texte au token de fin renvoyé lorsque l'entrée est épuisée."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"8%3;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Nombre: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signe: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Erreur: \" << error.what();\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis les lignes obtenues avant un caractère invalide, en utilisant la reconnaissance étendue.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Caractère non admis\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Échec du flux\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"6;?2;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"Fin\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Nombre: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Signe: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Erreur: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Nombre: 6\nSigne: ;\nErreur: Caractère non admis"
+          ],
+          "explanation": "Le lecteur fournit 6 et ;. Il consomme ensuite ? et lance un diagnostic. Le catch arrête l'inspecteur ; aucune politique ne permet encore de reprendre le traitement de 2;."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver le contrat des unités"
+        },
+        {
+          "type": "paragraph",
+          "text": "Explique séparément ces trois situations : un caractère n'appartient pas au langage ; les tokens appartiennent au langage mais se présentent dans un ordre invalide ; ou une opération de structure valide demande un calcul hors de son domaine. Par exemple, ? échoue à la reconnaissance ; 2**3 échoue à cause de sa structure ; et 4/0 peut avoir une structure valide, mais impose de rejeter le diviseur avant de calculer."
+        },
+        {
+          "type": "note",
+          "text": "Aucun programme de cet inspecteur n'exécute / ou %. Ces signes sont reconnus comme des données. La prochaine interface conservera un token lu par anticipation ; nous construirons ensuite les règles des expressions et leurs vérifications arithmétiques. La représentation par catégorie et valeur adapte le type Token de la lecture d'appui (Stroustrup, 2024, sections 5.3.2–5.3.3). Les étiquettes, le domaine entier, la reconnaissance caractère par caractère et les activités sont propres à ce parcours."
+        }
+      ]
+    }
+  ]
+}

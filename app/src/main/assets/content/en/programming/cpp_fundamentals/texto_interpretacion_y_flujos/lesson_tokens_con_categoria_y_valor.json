@@ -1,0 +1,188 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__tokens_con_categoria_y_valor",
+  "title": "Tokens with Category and Value",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Associate Each Category with the Data It Needs"
+        },
+        {
+          "type": "paragraph",
+          "text": "A token is a unit the reader delivers to the interpreter. In our initial language, a digit is a numeric token; each sign +, -, *, /, (, ), or ; is another token. Spaces, tabs, and newlines are skipped. The semicolon marks the end of an operation, which is different from the end of the text."
+        },
+        {
+          "type": "paragraph",
+          "text": "Revisit struct, which associates members, and its aggregate initialization. Token has a char member called clase and an int member called valor. The label 'n' identifies a number and requires valor to be between 0 and 9 in this first version. Each sign uses its own character as clase and stores 0 as a value that is not used in calculations. The label 'f' identifies the end of the text and also stores 0."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    const Token numero{'n', 5};\n    const Token signo{'+', 0};\n    std::cout << numero.clase << \" \" << numero.valor << \"\\n\";\n    std::cout << signo.clase;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The category decides how to interpret valor. A + token does not represent the number zero merely because that member is initialized to 0. 'n' and 'f' are internal labels: the letters n and f are not accepted as characters in the input. This struct does not validate the contract by itself; the reading function must return consistent combinations."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Return One Unit per Call"
+        },
+        {
+          "type": "paragraph",
+          "text": "leer_token receives the stream by modifiable reference because consuming characters changes its position and state. It skips separators, recognizes one unit, and returns it. Each return ends that call; the next call resumes at the remaining position. The function uses get to decide explicitly which separators to skip."
+        },
+        {
+          "type": "paragraph",
+          "text": "Revisit throw and catch from the exceptions unit. std::runtime_error is another standard exception type, declared in <stdexcept>; it is constructed with a diagnostic message, and what() lets us inspect that message when catching it. A character not accepted by the language produces a diagnostic; the caller can handle it without pretending a valid token was read. A serious stream failure must not be confused with a normal end of input."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Unsupported character\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Stream failure\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"4+2;\"};\n    try {\n        const Token primero = leer_token(entrada);\n        const Token segundo = leer_token(entrada);\n        std::cout << primero.clase << \":\" << primero.valor << \"\\n\";\n        std::cout << segundo.clase;\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "First the reader returns the number 4, then the + sign. The function does not calculate 4+2 or check that the semicolon is in the right place. The token reader recognizes units; a later combination rule will decide whether they form a valid operation."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Follow a Sequence of Units to the End"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Unsupported character\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Stream failure\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"4+2;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"End\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Number: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Sign: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The loop stops when it receives 'f'. Each earlier call has consumed one recognized character along with any separators. An exception abandons the attempt and reaches the outer catch; subsequent operations are not recovered yet. The prepared text in these examples contains up to 64 ASCII characters, so the traversal is finite."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict every line for input with spaces and parentheses.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Unsupported character\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Stream failure\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\" 0*(9); \"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"End\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Number: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Sign: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Number: 0\nSign: *\nSign: (\nNumber: 9\nSign: )\nSign: ;\nEnd"
+          ],
+          "explanation": "The reader skips spaces and returns each digit and sign. The semicolon is a token; the next call reaches the end of the text and returns f."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Separate Recognition from Structure"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The text \"2**3;\" uses only characters that this reader accepts. What still needs to be decided?",
+          "options": [
+            "Nothing: obtaining tokens proves that the mathematical operation is correct.",
+            "Whether the token order follows the grammar of an expression.",
+            "Nothing else if one asterisk is deleted: the repaired input can be accepted as if the original were valid."
+          ],
+          "correctIndex": 1,
+          "explanation": "Recognition accepts signs individually. The grammar will have to reject multiplication with no operand between the two signs. Removing an asterisk would change the input; it would not prove the original expression was valid."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does this first reader return for \"18\"?",
+          "options": [
+            "Two numeric tokens with values 1 and 8.",
+            "One numeric token with value 18, because every stream combines digits automatically.",
+            "A diagnostic because 8 is outside the range of a single digit."
+          ],
+          "correctIndex": 0,
+          "explanation": "The function returns as soon as it recognizes a digit. Combining several digits requires another rule; the current behavior must be explicit rather than claiming a feature we have not built."
+        },
+        {
+          "type": "paragraph",
+          "text": "This limitation is intentional and observable. Starting with a small unit lets us check categories before mixing in multi-digit parsing, storage of a lookahead unit, and rules governing operations."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build an Inspector and Add a Sign"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build an inspector using the previous contract and add % to the accepted signs. The initial text is \"7%2;\". Each number produces Number: N; each sign produces Sign: C; the end produces End. Use one line per token, placing End last. An unsupported character must produce Error: Unsupported character and stop the attempt without printing End. The inspector recognizes % but does not yet calculate a remainder."
+        },
+        {
+          "type": "paragraph",
+          "text": "Define the function that consumes one stream unit per call and returns Token. Keep the editor's struct and its n and f labels; initialize valor for signs and end of text too. Each test has up to 64 ASCII characters, and numbers are still individual digits. Choose the recognition conditions and the inspector loop."
+        },
+        {
+          "type": "paragraph",
+          "text": "The initial case must return 7, %, 2, ;, then end, with the specified labels. An empty string and \" \\t\\n\" produce only End. \"0;\" tests the lower numeric boundary. \"9+1;\" tests another recognizable operation. \"f\" must be rejected: the internal label does not make that input letter valid. \"1 2\" must return two numbers, even though a later grammar might reject that sequence."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nint main() {\n    std::istringstream entrada{\"7%2;\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Check the complete output and verify that every successful call advanced the stream. A struct with an inconsistent category-value combination violates the contract even if it compiles. The editor does not automatically check classification or the end marker; compare your observations with these criteria before opening the reference."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the Extended Recognition"
+        },
+        {
+          "type": "paragraph",
+          "text": "This reference inspects \"8%3;\". Adding % extends an existing category; it does not require changing the Token representation or asking the inspector to calculate a remainder. Pay particular attention to the input letter f versus the end token returned when the text runs out."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Unsupported character\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Stream failure\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"8%3;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"End\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Number: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Sign: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the lines produced before an invalid character, using the extended recognition.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <stdexcept>\n\nstruct Token {\n    char clase;\n    int valor;\n};\n\nToken leer_token(std::istringstream& entrada) {\n    char actual = '?';\n    while (entrada.get(actual)) {\n        if (actual == ' ' || actual == '\\t' || actual == '\\n') {\n            continue;\n        }\n        if (actual >= '0' && actual <= '9') {\n            return Token{'n', actual - '0'};\n        }\n        if (actual == '+' || actual == '-' || actual == '*'\n                || actual == '/' || actual == '(' || actual == ')'\n                || actual == ';' || actual == '%') {\n            return Token{actual, 0};\n        }\n        throw std::runtime_error(\"Unsupported character\");\n    }\n    if (entrada.bad() || !entrada.eof()) {\n        throw std::runtime_error(\"Stream failure\");\n    }\n    return Token{'f', 0};\n}\n\nint main() {\n    std::istringstream entrada{\"6;?2;\"};\n    try {\n        bool continuar = true;\n        while (continuar) {\n            const Token token = leer_token(entrada);\n            if (token.clase == 'f') {\n                std::cout << \"End\";\n                continuar = false;\n            } else if (token.clase == 'n') {\n                std::cout << \"Number: \" << token.valor << \"\\n\";\n            } else {\n                std::cout << \"Sign: \" << token.clase << \"\\n\";\n            }\n        }\n    } catch (const std::runtime_error& error) {\n        std::cout << \"Error: \" << error.what();\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Number: 6\nSign: ;\nError: Unsupported character"
+          ],
+          "explanation": "The reader returns 6 and ;. It then consumes ? and throws a diagnostic. The catch ends the inspector; there is still no policy for recovering the subsequent 2;."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revisit the Contract of Each Unit"
+        },
+        {
+          "type": "paragraph",
+          "text": "Explain three situations separately: a character does not belong to the language; the tokens belong to the language but occur in an invalid order; or a structurally valid operation requests a calculation outside its domain. For instance, ? fails during recognition; 2**3 fails on structure; and 4/0 might have valid structure but must reject the divisor before calculating."
+        },
+        {
+          "type": "note",
+          "text": "None of the inspector programs executes / or %. These signs are recognized as data. The next interface will retain a token read ahead; after that, we will build expression rules and arithmetic checks. The category-and-value representation adapts the Token type from the supporting reading (Stroustrup, 2024, sections 5.3.2–5.3.3). The labels, integer domain, character recognition, and activities are original to this learning path."
+        }
+      ]
+    }
+  ]
+}

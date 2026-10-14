@@ -1,0 +1,247 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada",
+  "title": "Build a Reader for Prepared Input",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Input Reaches cin; the Program Decides What to Accept"
+        },
+        {
+          "type": "paragraph",
+          "text": "You have used istringstream for text defined in the code and cin for prepared input. We will now combine std::cin as the outer reader with a local istringstream that validates each line. We can change the data without changing the program's source code."
+        },
+        {
+          "type": "paragraph",
+          "text": "Enter all the input before running. The execution receives that text from the beginning and encounters EOF when it runs out. This is not a console for answering questions while the program runs. Completely empty input supplies EOF; it does not require waiting for another response."
+        },
+        {
+          "type": "paragraph",
+          "text": "We will build an occupancy log for a small storage room. Each execution starts with 3 occupied spaces, receives movements line by line, and retains only accepted movements. Input is not printed automatically: the program decides all visible output."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e01",
+          "question": "You want to test two sequences of movements with the same implementation. What should you change between runs?",
+          "options": [
+            "The Prepared Input field, keeping the reader code unchanged.",
+            "Only a cout label: that replaces the data read by cin.",
+            "A string in the code; cin automatically reads that string."
+          ],
+          "correctIndex": 0,
+          "explanation": "Prepared Input is supplied to cin. Changing the output does not change those data, and a local string does not feed cin by itself. Every execution starts again from its initial state."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Define the Operation Before Reading It"
+        },
+        {
+          "type": "paragraph",
+          "text": "Exactly one line represents an operation in the form entering:leaving. Both values are read as int with >>; the separator must be the character :. Whitespace skipped by formatted extraction is allowed, such as spaces or tabs around fields. Thus 2:1, +2 : 01, and  2 : 1  represent the same values. We are not imposing the digit grammar of the future interpreter."
+        },
+        {
+          "type": "paragraph",
+          "text": "Each quantity must be from 0 through 3. New occupancy is computed as previous occupancy + entering - leaving, and must remain between 0 and 6 inclusive. This contract checks the movement's combined result; it does not require an intermediate state after entries. Only a complete, valid line commits the new occupancy and increments the accepted counter. The occupancy provided to the parser must be from 0 through 6: main initializes it to 3 and maintains this invariant by committing only valid movements."
+        },
+        {
+          "type": "paragraph",
+          "text": "Rejection reasons have an order so that an input with multiple problems receives one diagnostic: No data if no field is present; Invalid format if the complete int, :, int sequence cannot be read; Additional data if any non-whitespace text remains; Out of domain if either quantity is outside 0..3; Invalid capacity if the result is outside 0..6. A zero-character line and a whitespace-only line are different strings, but both receive No data under this contract."
+        },
+        {
+          "type": "paragraph",
+          "text": "For example, 2:1 remainder has additional data, whereas 2: lacks a required field. These are not failures of the outer reader: getline may have read both lines successfully. Preserve the previous occupancy for every diagnosed rejection."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e02",
+          "question": "Current occupancy is 5 and the input is 4:0 notice. According to the contract's order, which diagnostic and state are correct?",
+          "options": [
+            "Out of domain; occupancy 5.",
+            "Accepted; occupancy 9.",
+            "Additional data; occupancy 5."
+          ],
+          "correctIndex": 2,
+          "explanation": "The leftover notice is detected before checking the quantities' domain. The whole line is rejected; it does not commit 9 or change the previous occupancy of 5."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "End of Input and End of a Line Are Different Questions"
+        },
+        {
+          "type": "paragraph",
+          "text": "getline can obtain the final line even without a trailing newline. If it read characters before reaching EOF, that line must be analyzed. If the next attempt does not obtain a new line, do not invent an empty operation. An available newline, by contrast, can terminate a zero-character line that must be analyzed."
+        },
+        {
+          "type": "paragraph",
+          "text": "EOF does not prove that an operation's fields are complete. The following program uses a small local text to distinguish obtaining a line from extracting all three fields. The lab's real input source will be cin; the two reader objects still have independent state flags."
+        },
+        {
+          "type": "output_prediction",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e03",
+          "language": "cpp",
+          "question": "Predict the five values: line obtained, outer EOF, complete fields, local EOF, and local failure. bool values are printed as 0 or 1.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream origen{\"1:\"};\n    std::string linea;\n    const bool obtenida = static_cast<bool>(std::getline(origen, linea));\n    std::istringstream campos{linea};\n    int primero = 0;\n    char separador = ' ';\n    int segundo = 0;\n    const bool completa = static_cast<bool>(campos >> primero >> separador >> segundo);\n    std::cout << obtenida << \" \" << origen.eof() << \" \"\n              << completa << \" \" << campos.eof() << \" \" << campos.fail();\n    return 0;\n}\n",
+          "answers": [
+            "1 1 0 1 1"
+          ],
+          "explanation": "getline obtains the characters 1: before EOF, so its read evaluates to true. Local parsing cannot find the second integer: it reaches EOF and sets the failure flag. The line exists, but the operation is incomplete."
+        },
+        {
+          "type": "paragraph",
+          "text": "When the outer read stops, bad() or a failure without EOF indicates a source problem, not an incorrectly written operation. Normal EOF ends the session, even if the final getline attempt also sets fail because it obtained nothing new. First decide whether a line was obtained, then validate its contents. Do not use while (!cin.eof()) to fabricate attempts."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Independent Implementation: Accept Movements from Real Input"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write the complete reader from the minimal editor. Use cin to obtain one line per iteration, and use a local parser for that line. Separate parsing and the acceptance decision into a function receiving const std::string& and the state by reference. It may return an enum class representing the contract's results, like the alternative types you have already built. Choose the names and organize the functions; do not read from the outer stream inside the local parser."
+        },
+        {
+          "type": "paragraph",
+          "text": "Initial occupancy is 3, and the accepted counter begins at 0. For each obtained line, print the diagnostic, the exact separator  | Occupied: , and the occupancy remaining after the decision. A valid line uses Accepted as its diagnostic. On EOF, print Accepted: A followed by Occupied: N, one line per label and a space after the colon. Every output line ends with a newline."
+        },
+        {
+          "type": "paragraph",
+          "text": "Data rejections permit processing the next line, and the session exits with code 0. If the source has bad() or reading stops without EOF, print only Source failure as the final notice and exit with code 1, without the normal summary; retain everything already accepted. We will not simulate a physical failure by supplying invalid data. Test input contains up to 8 lines of up to 40 ASCII characters; written quantities range from -20 to 99. The 0..3 and 0..6 guards must precede committing the state."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prepared Input contains seven lines. The second contains a space and a tab; the last has no trailing newline. Predict the complete output before running. For the initial case, the exact output is:\nAccepted | Occupied: 4\nNo data | Occupied: 4\nInvalid format | Occupied: 4\nAdditional data | Occupied: 4\nOut of domain | Occupied: 4\nInvalid capacity | Occupied: 4\nAccepted | Occupied: 1\nAccepted: 2\nOccupied: 1"
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    return 0;\n}\n",
+          "initialStandardInput": "2:1\n \t\nx:2\n1:2 remainder\n4:0\n3:0\n0:3"
+        },
+        {
+          "type": "paragraph",
+          "text": "Do not hardcode the seven movements or their results in the source. Keep the code unchanged as you edit Prepared Input. An implementation that merely reproduces this output does not meet the goal of reading, validating, recovering, and retaining state."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Design Tests That Separate Failure Causes"
+        },
+        {
+          "type": "paragraph",
+          "text": "With empty input there is no operation diagnostic: the report contains Accepted: 0 and Occupied: 3. With a single newline, there is one No data line followed by the same summary. With 0:0 and no final newline, the operation is Accepted and counted even though occupancy stays at 3. Adding just one final newline to 0:0 does not create another line; adding two leaves a following empty line."
+        },
+        {
+          "type": "paragraph",
+          "text": "Test 2:, q:1, and 2;1 separately: they must report Invalid format. Inputs 2:1x and 2:1 0 report Additional data. Inputs -1:0 and 0:4 report Out of domain. Predict the diagnostic before each run and verify that all leave occupancy at 3. The representation +2 : 01 is allowed and leaves occupancy at 4."
+        },
+        {
+          "type": "paragraph",
+          "text": "For the occupancy boundaries, test 3:0 followed by 1:0: the first line reaches 6 and the second is rejected as Invalid capacity, retaining 6. Then start a new execution with 0:3 followed by 0:1: it reaches 0 and preserves 0 when the second movement is rejected. Do not confuse a valid boundary with the first value beyond it."
+        },
+        {
+          "type": "paragraph",
+          "text": "For recovery, test q:2 followed by 1:0, with no final newline: the invalid line preserves 3, and the next is accepted, leaving 4. Repeat with a line containing additional data between two valid lines. Check that the last valid movement is not reused to complete an incomplete one."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference After Your Attempt"
+        },
+        {
+          "type": "paragraph",
+          "text": "Now compare your solution with this reference. Parsing uses local variables, checks that no additional field remains, and assigns the proposed occupancy only at the end. The small enumeration expresses the reasons without converting them to arbitrary numbers. mensaje returns a string for displaying the results; it does not define how they are read or validated."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nenum class Resultado {\n    aceptada,\n    sin_datos,\n    formato_invalido,\n    adicionales,\n    fuera_de_dominio,\n    capacidad_invalida\n};\n\nResultado aplicar_linea(const std::string& texto, int& ocupadas) {\n    std::istringstream presencia{texto};\n    std::string primera;\n    if (!(presencia >> primera)) {\n        if (presencia.bad() || !presencia.eof()) {\n            return Resultado::formato_invalido;\n        }\n        return Resultado::sin_datos;\n    }\n\n    std::istringstream campos{texto};\n    int entran = 0;\n    char separador = ' ';\n    int salen = 0;\n    if (!(campos >> entran >> separador >> salen) || separador != ':') {\n        return Resultado::formato_invalido;\n    }\n\n    std::string extra;\n    if (campos >> extra) {\n        return Resultado::adicionales;\n    }\n    if (campos.bad() || !campos.eof()) {\n        return Resultado::formato_invalido;\n    }\n    if (entran < 0 || entran > 3 || salen < 0 || salen > 3) {\n        return Resultado::fuera_de_dominio;\n    }\n\n    const int candidata = ocupadas + entran - salen;\n    if (candidata < 0 || candidata > 6) {\n        return Resultado::capacidad_invalida;\n    }\n    ocupadas = candidata;\n    return Resultado::aceptada;\n}\n\nstd::string mensaje(Resultado resultado) {\n    if (resultado == Resultado::aceptada) {\n        return \"Accepted\";\n    }\n    if (resultado == Resultado::sin_datos) {\n        return \"No data\";\n    }\n    if (resultado == Resultado::formato_invalido) {\n        return \"Invalid format\";\n    }\n    if (resultado == Resultado::adicionales) {\n        return \"Additional data\";\n    }\n    if (resultado == Resultado::fuera_de_dominio) {\n        return \"Out of domain\";\n    }\n    return \"Invalid capacity\";\n}\n\nint main() {\n    int ocupadas = 3;\n    int aceptadas = 0;\n    std::string linea;\n    while (std::getline(std::cin, linea)) {\n        const Resultado resultado = aplicar_linea(linea, ocupadas);\n        if (resultado == Resultado::aceptada) {\n            ++aceptadas;\n        }\n        std::cout << mensaje(resultado) << \" | Occupied: \" << ocupadas << \"\\n\";\n    }\n    if (std::cin.bad() || !std::cin.eof()) {\n        std::cout << \"Source failure\\n\";\n        return 1;\n    }\n    std::cout << \"Accepted: \" << aceptadas << \"\\n\";\n    std::cout << \"Occupied: \" << ocupadas << \"\\n\";\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference keeps the same code with any Prepared Input. presencia only distinguishes a missing field from invalid formatting; campos starts over at the beginning of the same line. These are two different local streams, neither of which changes cin's state flags. The final extraction into extra normally fails at EOF when no additional field exists; this expected failure does not invalidate the three complete fields already obtained."
+        },
+        {
+          "type": "paragraph",
+          "text": "The arithmetic is performed only after checking both quantities. With occupancy between 0 and 6 and quantities between 0 and 3, the proposed value is between -3 and 9, so it fits in int. The only assignment to ocupadas happens after all the guards. This guarantee covers the contract's diagnosed rejections; it does not promise recovery from every possible resource failure in the process."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Correctness and State Preservation Criteria"
+        },
+        {
+          "type": "paragraph",
+          "text": "A solution is correct if it reads actual input line by line, applies the specified format and diagnostic order, commits only complete and valid movements, preserves both state and count on rejection, processes subsequent lines, and displays exactly the required labels and totals. Names, function organization, and equivalent ways to check trailing material may differ. Copying the reference is not required. The editor can run and compare your solution; it does not automatically grade all these criteria."
+        },
+        {
+          "type": "paragraph",
+          "text": "Also test the function without cin: start with occupancy 6 and pass 1:0; it must diagnose capacity and preserve 6. Start with 0 and pass 0:1; it preserves 0. From 3, check every rejection category using examples different from the starting cases. Finally, pass 0:0: it must be accepted although the argument retains its value. The main counter increases on acceptance, not on observing a change between states."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e04",
+          "question": "An execution receives 0:0 followed by 0:4. Which summary satisfies the contract?",
+          "options": [
+            "Accepted: 0 and Occupied: 3, because neither line changes the state.",
+            "Accepted: 1 and Occupied: 3.",
+            "Accepted: 2 and Occupied: -1."
+          ],
+          "correctIndex": 1,
+          "explanation": "0:0 is complete, within the domain, and leaves a valid result: it is accepted and counted. 0:4 violates the outgoing quantity's domain and changes neither the counter nor occupancy."
+        },
+        {
+          "type": "paragraph",
+          "text": "A boundary test must check both the diagnostic and the subsequent state. Comparing only Occupied may conceal counting an unchanged but valid line as rejected. Comparing only the accepted count may conceal an early state change when additional data is present."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recovery Preserves the Format Boundary"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "cpp_fundamentals__texto_interpretacion_y_flujos__construir_un_lector_de_entrada_preparada__e05",
+          "question": "A malformed line fails inside campos. What permits analyzing the next one without clearing cin?",
+          "options": [
+            "Calling clear on cin removes all subsequent malformed lines.",
+            "Assigning the state reopens the input from the beginning.",
+            "getline has already consumed that line, and the failure belongs to the discarded local parser."
+          ],
+          "correctIndex": 2,
+          "explanation": "The outer reader has already advanced past the line boundary. The next analysis creates a new local stream; clearing cin is unnecessary to repair another object's failure and would not itself discard characters."
+        },
+        {
+          "type": "paragraph",
+          "text": "We retain state from accepted lines even if a later line is rejected; we do not undo the entire session. Each new execution starts from its initial state. We have built a line-based format; a later interpreter may use a different operation boundary and will need to define its tokens before recovering to that boundary."
+        },
+        {
+          "type": "note",
+          "text": "The behavior of getline was consulted in the C++ working draft (Working draft: Programming languages — C++, n.d., section [string.io]). getline delimits and obtains text; validating a movement and deciding whether to preserve state belong to the program. This lesson's tests use actual prepared input; they do not require an interactive console."
+        }
+      ]
+    }
+  ]
+}
