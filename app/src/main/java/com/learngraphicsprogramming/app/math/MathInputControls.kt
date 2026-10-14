@@ -20,6 +20,7 @@ import android.widget.RadioButton
 import android.widget.TextView
 import org.json.JSONObject
 import androidx.appcompat.widget.AppCompatSpinner
+import androidx.core.widget.TextViewCompat
 import android.content.Intent
 import com.learngraphicsprogramming.app.CalculatorActivity
 import com.learngraphicsprogramming.app.LessonActivity
@@ -75,8 +76,76 @@ private class MathDropdown(context: Context) :
     var mathTextScale = 1f
         private set
 
+    private var rowWidthLimit = Int.MAX_VALUE
+
+    init {
+        // The popup follows its anchor instead of measuring long labels as one wide line.
+        dropDownWidth = ViewGroup.LayoutParams.MATCH_PARENT
+    }
+
     override fun scaleMathText(factor: Float) {
-        mathTextScale *= factor
+        if (factor.isFinite() && factor > 0) {
+            mathTextScale *= factor
+            requestLayout()
+        }
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        // Inline templates live in a HorizontalScrollView and may offer UNSPECIFIED width.
+        // Bound their natural label width by that viewport so the text still wraps.
+        var ancestor = parent as? View
+        var viewportWidth = resources.displayMetrics.widthPixels
+        val widthMode = MeasureSpec.getMode(widthMeasureSpec)
+        val widthHint = MeasureSpec.getSize(widthMeasureSpec)
+        while (ancestor != null) {
+            if (ancestor is HorizontalScrollView) {
+                // Its bounds still describe the previous layout while a resize is measured.
+                val pendingWidth = ancestor.layoutParams?.width?.takeIf { it > 0 }
+                val currentWidth = pendingWidth ?: widthHint.takeIf { it > 0 }
+                    ?: ancestor.width.takeIf { it > 0 } ?: viewportWidth
+                viewportWidth = minOf(viewportWidth,
+                    currentWidth - ancestor.paddingLeft - ancestor.paddingRight)
+                break
+            }
+            ancestor = ancestor.parent as? View
+        }
+        val offeredWidth = if (widthMode == MeasureSpec.UNSPECIFIED) {
+            widthHint.takeIf { it > 0 }?.let { minOf(it, viewportWidth) } ?: viewportWidth
+        } else {
+            minOf(widthHint, viewportWidth)
+        }.coerceAtLeast(1)
+        rowWidthLimit = (offeredWidth - paddingLeft - paddingRight).coerceAtLeast(1)
+        // Spinner may reuse the current child without asking its adapter for another row.
+        (selectedView as? TextView)?.maxWidth = rowWidthLimit
+        val boundedWidthSpec = if (widthMode == MeasureSpec.UNSPECIFIED) {
+            MeasureSpec.makeMeasureSpec(offeredWidth, MeasureSpec.AT_MOST)
+        } else widthMeasureSpec
+        super.onMeasure(boundedWidthSpec, heightMeasureSpec)
+    }
+
+    fun configureLabel(label: TextView, value: String, popup: Boolean) {
+        label.apply {
+            isSingleLine = false
+            maxLines = Int.MAX_VALUE
+            ellipsize = null
+            setHorizontallyScrolling(false)
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = MathWidgetUi.dp(context, 48)
+            val horizontalPadding = MathWidgetUi.dp(context, if (popup) 12 else 8)
+            val verticalPadding = MathWidgetUi.dp(context, 8)
+            setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding)
+            TextViewCompat.setAutoSizeTextTypeWithDefaults(this, TextViewCompat.AUTO_SIZE_TEXT_TYPE_NONE)
+            val expectedTextSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                18f * mathTextScale, resources.displayMetrics)
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, expectedTextSize)
+            if (!popup) setTextColor(MathWidgetUi.foreground)
+            maxWidth = rowWidthLimit
+            layoutParams = (layoutParams ?: ViewGroup.LayoutParams(-1, -2)).apply {
+                width = ViewGroup.LayoutParams.MATCH_PARENT
+                height = ViewGroup.LayoutParams.WRAP_CONTENT
+            }
+            MathTextRenderer.apply(this, value)
+        }
     }
 }
 
@@ -441,21 +510,11 @@ private class FieldsControl(context: Context, spec: MathResponseSpec, accent: In
                         adapter = object : ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, labels) {
                             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
                                 super.getView(position, convertView, parent).also {
-                                    (it as TextView).apply {
-                                        setTextColor(MathWidgetUi.foreground)
-                                        gravity = Gravity.CENTER_VERTICAL
-                                        minimumHeight = MathWidgetUi.dp(context, 48)
-                                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f * owner.mathTextScale)
-                                        MathTextRenderer.apply(this, labels[position])
-                                    }
+                                    owner.configureLabel(it as TextView, labels[position], popup = false)
                                 }
                             override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View =
                                 super.getDropDownView(position, convertView, parent).also {
-                                    (it as TextView).apply {
-                                        gravity = Gravity.CENTER_VERTICAL
-                                        setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f * owner.mathTextScale)
-                                        MathTextRenderer.apply(this, labels[position])
-                                    }
+                                    owner.configureLabel(it as TextView, labels[position], popup = true)
                                 }
                         }.apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
                         onItemSelectedListener = object : AdapterView.OnItemSelectedListener {

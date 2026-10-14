@@ -32,6 +32,7 @@ object MathRepresentationRenderer {
             "math_table" -> table(context, config)
             "math_coordinate_graph", "coordinate_graph" -> MathExpandableRepresentation.wrap(context, MathCartesianView(context, config, accentColor), accentColor)
             "math_number_line" -> MathExpandableRepresentation.wrap(context, MathNumberLineView(context, config, accentColor), accentColor, 2.4f)
+            "euclidean_diagram" -> MathExpandableRepresentation.wrap(context, MathEuclideanDiagramView(context, config, accentColor), accentColor, 1.4f)
             "geometry_2d_diagram" -> MathExpandableRepresentation.wrap(context, if (config.has("points")) {
                 MathCartesianView(context, JSONObject(config.toString()).put("mode", config.optString("mode", "polygon")), accentColor)
             } else GeometryDiagramView(context, config, accentColor, false), accentColor, 1.2f)

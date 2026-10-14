@@ -304,6 +304,7 @@ Para implementar controles que separen edición textual/modelo, `MathResponseCon
 | `math_table` | `headers`, `rows` de lectura. |
 | `math_number_line` | `min`, `max`, `value`, `closed`, `direction` opcional. |
 | `math_coordinate_graph` | Contrato cartesiano común. |
+| `euclidean_diagram` | Puntos y nombres, rectas, semirrectas y segmentos, sin ejes ni coordenadas visibles. Contrato y ejemplos en [MATH_EUCLIDEAN_DIAGRAMS.md](MATH_EUCLIDEAN_DIAGRAMS.md). |
 | `geometry_2d_diagram` | `points` para polígono o `shape`: rectangle, triangle, circle; `labels`. |
 | `geometry_3d_diagram` | `shape`: cube, prism, cylinder, cone, sphere; `labels`. |
 | `venn_diagram` | `leftLabel`, `rightLabel`, `leftOnly`, `intersection`, `rightOnly`, `outside`, `universeLabel`. |
