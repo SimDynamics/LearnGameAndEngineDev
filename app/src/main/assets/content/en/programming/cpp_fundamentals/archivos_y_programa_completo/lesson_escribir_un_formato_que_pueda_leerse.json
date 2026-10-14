@@ -1,0 +1,154 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__escribir_un_formato_que_pueda_leerse",
+  "title": "Write a Format That Can Be Read Back",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Human-Readable Reports and Data Text Have Different Contracts"
+        },
+        {
+          "type": "paragraph",
+          "text": "A report might say Red: two records. That text does not preserve every ID and quantity or follow the reader's grammar. To save the objects and recover them later, we must write opening markers, labels, names, records, and closing markers that the reader accepts. This operation transforms an in-memory representation into a data format."
+        },
+        {
+          "type": "paragraph",
+          "text": "We define componer_conjunto: it receives a Conjunto by const reference and a string destination by reference. If all groups and records are valid and contain no duplicates within their scopes, it produces complete text; if it returns false, it preserves the destination. The text respects group and record order, includes empty groups, and uses exact names and decimal integers without a + sign or leading zeros."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "informe_no_es_formato",
+          "question": "Which text can be read back using our grammar while preserving an empty red group?",
+          "options": [
+            "Red: 0 records",
+            "{ set { group red } }",
+            "{ set }"
+          ],
+          "correctIndex": 1,
+          "explanation": "The second text preserves that red is present and empty. The third means no groups are present."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Formatting State Also Affects Custom Types"
+        },
+        {
+          "type": "output_prediction",
+          "id": "base_prestada",
+          "question": "This counterexample leaves hexadecimal active in the output stream. Predict the text produced.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"red\", \"green\", \"blue\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nint main() {\n    std::ostringstream salida;\n    salida << std::hex;\n    salida << \"{ group red \" << 9 << Recuento{10, 0} << \" }\";\n    std::cout << salida.str();\n    return 0;\n}\n",
+          "answers": [
+            "{ group red 9[a;0] }"
+          ],
+          "explanation": "Recuento's operator<< inserts integers into the same stream, where hex remains active. The decimal reader cannot extract the quantity represented by a."
+        },
+        {
+          "type": "paragraph",
+          "text": "For this exercise, we compose data in a new ostringstream with its usual decimal format and return its string. The format of a later report using cout does not change those characters. We do not try to blindly repair every manipulator in somebody else's stream or promise to preserve formatting state that we changed."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "validar_antes_de_componer",
+          "question": "A Conjunto contains two groups with ID 0, even though one is empty. What must componer_conjunto produce?",
+          "options": [
+            "Text containing both groups because writing does not validate.",
+            "Text combining the records from both groups.",
+            "false, leaving the destination string unchanged."
+          ],
+          "correctIndex": 2,
+          "explanation": "The writer respects the reader's domain; a repeated group makes the complete set invalid."
+        },
+        {
+          "type": "paragraph",
+          "text": "The public object types do not prevent other code from constructing invalid data. Validate IDs, quantities, sizes, and duplicates before looking up a name by index or inserting counts. These domains are small, so searching for matches is sufficient here; we do not generalize its cost to enormous collections."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build the Writer from the Contract"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define grupo_valido and conjunto_valido. Check group IDs 0..2 with at most ten records, record IDs 0..9, and quantities 0..10. Every record ID present must occur exactly once within its group, and every group ID present must occur exactly once within the set. An empty group and an empty set are valid."
+        },
+        {
+          "type": "paragraph",
+          "text": "Define componer_conjunto. Validate before composing; create a new ostringstream; write { set; for each group, write a space, { group, another space, and its name; for each record, a space, its ID, and its Recuento; close each group and the set with a space before }. Assign the resulting string to the destination only after checking the stream. Preserve the order of the vectors."
+        },
+        {
+          "type": "paragraph",
+          "text": "Test a red group containing 7[0;0] and 2[3;1] and an empty blue group. Then append another empty red group and try composing again into the same string. Predict the bool and text for both attempts. Also test an empty set and a public record whose quantity is 11."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"red\", \"green\", \"blue\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"group\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nstruct Conjunto {\n    std::vector<Grupo> grupos;\n};\n\nbool contiene_grupo(const Conjunto& conjunto, int id) {\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (grupo.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_conjunto(std::istream& entrada, Conjunto& destino) {\n    char abre{0};\n    std::string etiqueta;\n    if (!(entrada >> abre >> etiqueta)\n        || abre != '{' || etiqueta != \"set\") {\n        return false;\n    }\n    Conjunto candidato{};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Grupo grupo{0, {}};\n        if (!leer_grupo(entrada, grupo)\n            || contiene_grupo(candidato, grupo.id)) {\n            return false;\n        }\n        candidato.grupos.push_back(grupo);\n    }\n}\n\nbool leer_muestra_completa(std::istream& entrada, Conjunto& destino) {\n    Conjunto candidato{};\n    if (!leer_conjunto(entrada, candidato)) { return false; }\n    entrada >> std::ws;\n    if (entrada.bad() || !entrada.eof()) { return false; }\n    destino = candidato;\n    return true;\n}\n\n// Implement validation and componer_conjunto; build the tests.\nint main() {\n    return 0;\n}\n"
+        },
+        {
+          "type": "note",
+          "text": "The reference follows this attempt. Do not omit empty groups or records with zero quantities to shorten the output."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Later Reference: Validate and Then Commit the Text"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <vector>\n\nconst std::vector<std::string> nombres_grupos{\"red\", \"green\", \"blue\"};\n\nbool buscar_grupo(const std::string& nombre, int& destino) {\n    for (int id = 0; id < 3; ++id) {\n        if (nombres_grupos.at(id) == nombre) {\n            destino = id;\n            return true;\n        }\n    }\n    return false;\n}\n\nbool nombre_grupo(int id, std::string& destino) {\n    if (id < 0 || id >= 3) {\n        return false;\n    }\n    destino = nombres_grupos.at(id);\n    return true;\n}\n\nstruct Recuento {\n    int aceptados;\n    int rechazados;\n};\n\nbool recuento_valido(const Recuento& valor) {\n    return valor.aceptados >= 0 && valor.aceptados <= 10\n        && valor.rechazados >= 0 && valor.rechazados <= 10;\n}\n\nstd::ostream& operator<<(std::ostream& destino, const Recuento& valor) {\n    return destino << '[' << valor.aceptados << ';' << valor.rechazados << ']';\n}\n\nstd::istream& operator>>(std::istream& origen, Recuento& destino) {\n    char abre{0};\n    char separador{0};\n    char cierra{0};\n    int aceptados{0};\n    int rechazados{0};\n    if (!(origen >> abre >> aceptados >> separador >> rechazados >> cierra)) {\n        return origen;\n    }\n    Recuento candidato{aceptados, rechazados};\n    if (abre != '[' || separador != ';' || cierra != ']'\n        || !recuento_valido(candidato)) {\n        origen.setstate(std::ios::failbit);\n        return origen;\n    }\n    destino = candidato;\n    return origen;\n}\n\nstruct Registro {\n    int id;\n    Recuento recuento;\n};\n\nstruct Grupo {\n    int id;\n    std::vector<Registro> registros;\n};\n\nbool contiene_registro(const Grupo& grupo, int id) {\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_grupo(std::istream& entrada, Grupo& destino) {\n    char abre{0};\n    std::string etiqueta;\n    std::string nombre;\n    if (!(entrada >> abre >> etiqueta >> nombre)\n        || abre != '{' || etiqueta != \"group\") {\n        return false;\n    }\n    int id{-1};\n    if (!buscar_grupo(nombre, id)) { return false; }\n    Grupo candidato{id, {}};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Registro registro{0, {0, 0}};\n        if (!(entrada >> registro.id >> registro.recuento)\n            || registro.id < 0 || registro.id > 9\n            || contiene_registro(candidato, registro.id)) {\n            return false;\n        }\n        candidato.registros.push_back(registro);\n    }\n}\n\nstruct Conjunto {\n    std::vector<Grupo> grupos;\n};\n\nbool contiene_grupo(const Conjunto& conjunto, int id) {\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (grupo.id == id) { return true; }\n    }\n    return false;\n}\n\nbool leer_conjunto(std::istream& entrada, Conjunto& destino) {\n    char abre{0};\n    std::string etiqueta;\n    if (!(entrada >> abre >> etiqueta)\n        || abre != '{' || etiqueta != \"set\") {\n        return false;\n    }\n    Conjunto candidato{};\n    while (true) {\n        entrada >> std::ws;\n        if (!entrada || entrada.eof()) { return false; }\n        if (entrada.peek() == '}') {\n            entrada.get();\n            if (!entrada) { return false; }\n            destino = candidato;\n            return true;\n        }\n        Grupo grupo{0, {}};\n        if (!leer_grupo(entrada, grupo)\n            || contiene_grupo(candidato, grupo.id)) {\n            return false;\n        }\n        candidato.grupos.push_back(grupo);\n    }\n}\n\nbool leer_muestra_completa(std::istream& entrada, Conjunto& destino) {\n    Conjunto candidato{};\n    if (!leer_conjunto(entrada, candidato)) { return false; }\n    entrada >> std::ws;\n    if (entrada.bad() || !entrada.eof()) { return false; }\n    destino = candidato;\n    return true;\n}\n\nbool grupo_valido(const Grupo& grupo) {\n    if (grupo.id < 0 || grupo.id >= 3 || grupo.registros.size() > 10) {\n        return false;\n    }\n    for (const Registro& registro : grupo.registros) {\n        if (registro.id < 0 || registro.id > 9\n            || !recuento_valido(registro.recuento)) {\n            return false;\n        }\n        int coincidencias{0};\n        for (const Registro& otro : grupo.registros) {\n            if (otro.id == registro.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool conjunto_valido(const Conjunto& conjunto) {\n    if (conjunto.grupos.size() > 3) { return false; }\n    for (const Grupo& grupo : conjunto.grupos) {\n        if (!grupo_valido(grupo)) { return false; }\n        int coincidencias{0};\n        for (const Grupo& otro : conjunto.grupos) {\n            if (otro.id == grupo.id) { ++coincidencias; }\n        }\n        if (coincidencias != 1) { return false; }\n    }\n    return true;\n}\n\nbool componer_conjunto(const Conjunto& conjunto, std::string& destino) {\n    if (!conjunto_valido(conjunto)) { return false; }\n    std::ostringstream salida;\n    salida << \"{ set\";\n    for (const Grupo& grupo : conjunto.grupos) {\n        std::string nombre;\n        if (!nombre_grupo(grupo.id, nombre)) { return false; }\n        salida << \" { group \" << nombre;\n        for (const Registro& registro : grupo.registros) {\n            salida << ' ' << registro.id << registro.recuento;\n        }\n        salida << \" }\";\n    }\n    salida << \" }\";\n    if (!salida) { return false; }\n    destino = salida.str();\n    return true;\n}\n\nint main() {\n    Conjunto conjunto{{Grupo{0, {{7, {0, 0}}, {2, {3, 1}}}}, Grupo{2, {}}}};\n    std::string texto{\"previous\"};\n    bool compuesto = componer_conjunto(conjunto, texto);\n    std::cout << compuesto << '\\n' << texto << '\\n';\n    conjunto.grupos.push_back(Grupo{0, {}});\n    compuesto = componer_conjunto(conjunto, texto);\n    std::cout << compuesto << '\\n' << texto;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The first attempt returns true, displayed as 1, and { set { group red 7[0;0] 2[3;1] } { group blue } }. The second returns 0 and preserves exactly that string. For an empty set the text is { set }; invalid data return false and preserve the previous destination string."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: validate the entire structure, produce compatible labels and closing markers, preserve order and associations, include empty but present groups, and compose in decimal. The internal string has a chosen, stable representation for these objects. Inserting that string later into a borrowed stream may, for example, apply that stream's configured field width; this function's guarantee concerns the string it composed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Limits of the Guarantee When Writing a File"
+        },
+        {
+          "type": "multiple_choice",
+          "id": "destino_string_y_archivo",
+          "question": "You have composed a valid string. You write it through an ofstream, but the device fails halfway through. What does componer_conjunto guarantee about that file?",
+          "options": [
+            "Nothing about restoring the file: its guarantee protects the string, not a subsequent write.",
+            "That the previous file is automatically restored when closing.",
+            "That the file is complete because the string was already valid."
+          ],
+          "correctIndex": 0,
+          "explanation": "The stream may have written only part or truncated the file. A guarantee about an in-memory object does not create an atomic filesystem operation."
+        },
+        {
+          "type": "paragraph",
+          "text": "Compose before opening a destination file so you do not replace it with data already known to be invalid. Check opening, writing, and closing. Even then, a failure at that stage may leave the file incomplete: a stronger guarantee would require another protocol and environmental capabilities beyond this exercise."
+        },
+        {
+          "type": "paragraph",
+          "text": "Transfer: first prepare a hexadecimal report of the quantities using another stream, then call the composer. The data format must still use decimal, and the Conjunto must remain unchanged. We will read back that text and compare the entire set, not just its sum."
+        },
+        {
+          "type": "note",
+          "text": "Stream types and input/output formats are covered in the primary source (Stroustrup, 2024, sections 9.5–9.6 and 9.9–9.10.1, pp. 264–278). The writing contract, guarantees, and exercise are original."
+        }
+      ]
+    }
+  ]
+}
