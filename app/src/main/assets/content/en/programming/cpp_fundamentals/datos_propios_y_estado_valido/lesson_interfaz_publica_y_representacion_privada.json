@@ -1,0 +1,235 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__interfaz_publica_y_representacion_privada",
+  "title": "Public Interface and Private Representation",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Allow Operations with Meaning"
+        },
+        {
+          "type": "paragraph",
+          "text": "The score counter in this activity allows between zero and twenty points. The goal is to add one point while there is room and to query the current count. If everyone can directly write any integer, every user of the type has to remember the rule. A class can offer the required operations while keeping its data inaccessible to direct access."
+        },
+        {
+          "type": "paragraph",
+          "text": "public: identifies members accessible to code that uses the object. private: identifies implementation details accessible to that class's member functions. In a class, members are private by default; in a struct, they are public by default. Both can define data, functions, and constructors. The choice expresses how we want to present the type."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    marcador.sumar_uno();\n    std::cout << marcador.puntos();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "puntos_ starts at zero through the initializer written in its declaration. sumar_uno() checks the upper limit before changing it. puntos() provides a query: users do not need to read or write puntos_ directly."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Data and Member Functions"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador a;\n    Marcador b;\n    a.sumar_uno();\n    a.sumar_uno();\n    b.sumar_uno();\n    std::cout << a.puntos() << \" \" << b.puntos();\n    return 0;\n}\n",
+          "answers": [
+            "2 1"
+          ],
+          "explanation": "Each call operates on the object named before the dot."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Inside a.sumar_uno(), which value does puntos_ refer to?",
+          "options": [
+            "The member of a, the object on which the function was called.",
+            "One variable shared by all objects.",
+            "Always the member of the most recently created Marcador."
+          ],
+          "correctIndex": 0,
+          "explanation": "A member function knows which object it was called on."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the name of the counter's public query.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    std::cout << marcador.___();\n    return 0;\n}\n",
+          "answers": [
+            "puntos"
+          ],
+          "explanation": "The query belongs to the object and is called with parentheses."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Privacy Rejects Direct Access"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    std::cout << marcador.puntos_; // Intentional error: this member is private.\n    return 0;\n}\n"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which fix uses the interface the type already provides?",
+          "options": [
+            "Use \"marcador.puntos_\" to obtain the same value.",
+            "Assign marcador.puntos_ first and then read it directly.",
+            "Call marcador.puntos()."
+          ],
+          "correctIndex": 2,
+          "explanation": "The public function queries the representation; the literal would only print text."
+        },
+        {
+          "type": "paragraph",
+          "text": "Privacy does not validate data by itself. A member function could still implement an update incorrectly. Its value is in limiting the places where the implementation details can be changed, making those operations easier to reason about and test."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reject an Operation While Preserving State"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador marcador;\n    for (int i = 0; i < 20; ++i) { marcador.sumar_uno(); }\n    bool aceptado = marcador.sumar_uno();\n    std::cout << aceptado << \" \" << marcador.puntos();\n    return 0;\n}\n",
+          "answers": [
+            "0 20"
+          ],
+          "explanation": "The additional operation is rejected before incrementing, leaving the count at twenty."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does false mean in the contract of sumar_uno()?",
+          "options": [
+            "That request was not applied and the counter retained its count.",
+            "The counter lost all its points.",
+            "The program could not be compiled."
+          ],
+          "correctIndex": 0,
+          "explanation": "The result communicates an operation's decision, not a new count."
+        },
+        {
+          "type": "paragraph",
+          "text": "The interface must document what its result means. Here false leaves the state unchanged; true means exactly one point was added. This distinction lets the caller report rejection without having to guess what happened."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Complete and Small Enough"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You need to add one point and query the score. Which interface supports that task while protecting the limit?",
+          "options": [
+            "Two public functions, sumar_uno and puntos, with private data.",
+            "A public function that can assign any integer to the data.",
+            "Only a query, with no way to increase the score."
+          ],
+          "correctIndex": 0,
+          "explanation": "A useful interface should provide what is needed without opening a path that breaks the rule."
+        },
+        {
+          "type": "paragraph",
+          "text": "We do not add a public function to change every implementation detail merely because we can. Any additional operation should meet a need and preserve the rules. Nor should we remove indispensable operations just to make a class small: the interface must be sufficient for its intended use."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Member Initialization and Starting Values"
+        },
+        {
+          "type": "paragraph",
+          "text": "int puntos_ = 0; inside the class establishes an initial member value. In this version, every new Marcador starts empty, which is a meaningful state. This does not mean all int members of a class automatically start at zero: the initialization is written explicitly. Next, we will study constructors for cases where initial data must be supplied when creating an object."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass Marcador {\npublic:\n    int puntos() { return puntos_; }\n    bool sumar_uno() {\n        if (puntos_ >= 20) { return false; }\n        ++puntos_;\n        return true;\n    }\nprivate:\n    int puntos_ = 0;\n};\n\nint main() {\n    Marcador original;\n    original.sumar_uno();\n    Marcador copia = original;\n    original.sumar_uno();\n    std::cout << copia.puntos() << \" \" << original.puntos();\n    return 0;\n}\n",
+          "answers": [
+            "1 2"
+          ],
+          "explanation": "The copy preserves the member value from the moment it was created; subsequent operations on the two objects are independent."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does the initializer for puntos_ guarantee in this version?",
+          "options": [
+            "No operation can ever contain an error.",
+            "All objects will share the same member.",
+            "Each object starts with the written value before its first query."
+          ],
+          "correctIndex": 2,
+          "explanation": "Initialization prepares the state; operations that change it still need to be checked."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build Your Own Interface"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define a class RegistroVisitas with private data visitas_ initially set to zero, a visitas() query, and a registrar() operation. The operation allows at most three visits: it returns true when it adds one and false when there are already three, without changing the state. Make four requests and display 1:1;1:2;1:3;0:3;. Also test a newly created object and two objects that receive different numbers of requests."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Client code should work through these two public functions. Do not change the limit by directly accessing the data, and do not reset the state when a request is rejected."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution and Comparison Criteria"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nclass RegistroVisitas {\npublic:\n    int visitas() { return visitas_; }\n    bool registrar() {\n        if (visitas_ >= 3) { return false; }\n        ++visitas_;\n        return true;\n    }\nprivate:\n    int visitas_ = 0;\n};\n\nint main() {\n    RegistroVisitas registro;\n    for (int i = 0; i < 4; ++i) {\n        bool aceptado = registro.registrar();\n        std::cout << aceptado << \":\" << registro.visitas() << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: the data remain private, each object starts with a prepared state, the query does not change the state, and rejection preserves the last valid value. The interface supports both needs. Your implementation may arrange the code differently if it satisfies these properties and produces the specified outputs."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "If a private operation leaves visitas_ at four, does privacy make that state correct?",
+          "options": [
+            "Yes: any private value satisfies the rule.",
+            "Yes: the caller cannot read it directly.",
+            "No: the implementation itself must also maintain the limit."
+          ],
+          "correctIndex": 2,
+          "explanation": "Separating access helps control the representation; it does not replace correctness."
+        }
+      ]
+    }
+  ]
+}

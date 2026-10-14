@@ -1,0 +1,264 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__nombrar_alternativas_con_enum_class",
+  "title": "Name Alternatives with enum class",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Meaningful Alternatives"
+        },
+        {
+          "type": "paragraph",
+          "text": "An order can be prepared, shipped, or canceled according to the rules of this example. Using bare numbers forces us to remember what each means; using strings allows spelling mistakes that are still valid strings. enum class Estado { preparado, enviado, cancelado }; introduces a user-defined type with names for these alternatives."
+        },
+        {
+          "type": "paragraph",
+          "text": "We write Estado::enviado because enviado belongs to the scope of the Estado type. The double colon qualifies a name within the type; it does not access an object's member with a dot. enum class is not a class with constructors and methods: it is a scoped enumeration."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = Estado::preparado;\n    if (estado == Estado::preparado) {\n        std::cout << \"Prepared\";\n    }\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Type Prevents Implicit Mixing"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which declaration uses an alternative belonging to Estado?",
+          "options": [
+            "Estado estado = \"enviado\";",
+            "Estado estado = 1;",
+            "Estado estado = Estado::enviado;"
+          ],
+          "correctIndex": 2,
+          "explanation": "The enumeration is a type distinct from strings and int; those values are not implicitly converted."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the type name that qualifies enviado.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = ___::enviado;\n    std::cout << (estado == Estado::enviado);\n    return 0;\n}\n",
+          "answers": [
+            "Estado"
+          ],
+          "explanation": "The enumerator is qualified by its type."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado a = Estado::preparado;\n    Estado b = Estado::cancelado;\n    a = Estado::enviado;\n    std::cout << (a == Estado::enviado) << \" \" << (b == Estado::enviado);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "The assignment changes one Estado variable; the comparisons produce bool values."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Numeric Representation Is Not a Business Rule"
+        },
+        {
+          "type": "paragraph",
+          "text": "If we do not assign explicit values, the first enumerator has the representation zero and each subsequent enumerator increases by one. We can inspect the representation with static_cast<int>(estado). That conversion does not mean the number is a quantity to add, nor does the numeric progression determine which state transitions are allowed."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = Estado::cancelado;\n    std::cout << static_cast<int>(estado);\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "The three enumerators without explicit values correspond to zero, one, and two."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "If you write preparado = 4 in the definition and do not assign values to the following enumerators, enviado will have the representation…",
+          "options": [
+            "0",
+            "5",
+            "4"
+          ],
+          "correctIndex": 1,
+          "explanation": "The following enumerator's representation is one greater than the preceding one."
+        },
+        {
+          "type": "paragraph",
+          "text": "We do not print an Estado directly with cout in these examples: we have not defined an output operation for this type. Instead, we use comparisons, explicit conversion, or a function that returns a display name."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "An Explicit Conversion Can Produce Another Value"
+        },
+        {
+          "type": "paragraph",
+          "text": "The scoped enumeration used here has int as its underlying type. static_cast<Estado>(9) can produce a value of that type without matching preparado, enviado, or cancelado. Thus enum class reduces accidental mixing, but it does not validate a converted number against the list of alternatives recognized by the program."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nint main() {\n    Estado estado = static_cast<Estado>(9);\n    bool reconocido = estado == Estado::preparado || estado == Estado::enviado || estado == Estado::cancelado;\n    std::cout << reconocido;\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "The converted value matches none of the named alternatives."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "You receive an integer intended to represent a state. What must still be decided before treating it as a valid alternative?",
+          "options": [
+            "Only whether the number fits in int.",
+            "Nothing: static_cast automatically checks the list.",
+            "Which representations the application accepts and how to reject the others."
+          ],
+          "correctIndex": 2,
+          "explanation": "Conversion and domain checking are separate operations."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "From a State to Display Text"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstd::string nombre(Estado estado) {\n    if (estado == Estado::preparado) { return \"Prepared\"; }\n    if (estado == Estado::enviado) { return \"Shipped\"; }\n    if (estado == Estado::cancelado) { return \"Canceled\"; }\n    return \"Unrecognized\";\n}\n\nint main() {\n    std::cout << nombre(Estado::enviado);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The function covers every path, including an unrecognized representation. Returning that text does not create a valid order: it only describes the value received. Construction of the object and transitions between order states must enforce their own rules."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstd::string nombre(Estado estado) {\n    if (estado == Estado::preparado) { return \"Prepared\"; }\n    if (estado == Estado::enviado) { return \"Shipped\"; }\n    if (estado == Estado::cancelado) { return \"Canceled\"; }\n    return \"Unrecognized\";\n}\n\nint main() {\n    Estado estado = Estado::cancelado;\n    std::cout << nombre(estado);\n    return 0;\n}\n",
+          "answers": [
+            "Canceled"
+          ],
+          "explanation": "The function converts the named alternative into display text."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reading Older Enumerations"
+        },
+        {
+          "type": "paragraph",
+          "text": "You will also encounter enum without class in older code. Its enumerators are available in the enclosing scope and their values can convert implicitly to integers. This difference may make code shorter, but also permits mixing that a scoped enumeration rejects. For our user-defined types, we choose enum class and make any necessary conversions explicit."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What distinguishes a scoped enumeration from a plain enum?",
+          "options": [
+            "Its enumerators are available without qualification in the outer scope.",
+            "Its enumerators are qualified by the type, and it does not implicitly convert to int.",
+            "Its values implicitly convert to bool."
+          ],
+          "correctIndex": 1,
+          "explanation": "The difference concerns scope and conversions, not the existence of an underlying representation."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Two enum class types named Estado and Prioridad both contain an enumerator normal. How can you distinguish them?",
+          "options": [
+            "Both names are automatically converted to the same int.",
+            "Estado::normal and Prioridad::normal belong to different types and scopes.",
+            "Both types cannot exist in the same program."
+          ],
+          "correctIndex": 1,
+          "explanation": "The type and its qualification tell us which set of alternatives we are using."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build with Your Own Alternatives"
+        },
+        {
+          "type": "paragraph",
+          "text": "Define enum class Prioridad with normal, urgente, and aplazada. Construct an urgent-priority object and a function nombre_prioridad that returns the text Normal, Urgent, or Deferred for each alternative, and Unrecognized for another explicitly converted value. Display Urgent. Test the three named alternatives and an explicit conversion from nine."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Build the program described in the instructions.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Do not assign priorities using bare numbers or strings. As a variation, define a Registro containing codigo and Prioridad, and display the priority of each record in a vector using your function."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution and Review of Associations"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad { normal, urgente, aplazada };\n\nstd::string nombre_prioridad(Prioridad prioridad) {\n    if (prioridad == Prioridad::normal) { return \"Normal\"; }\n    if (prioridad == Prioridad::urgente) { return \"Urgent\"; }\n    if (prioridad == Prioridad::aplazada) { return \"Deferred\"; }\n    return \"Unrecognized\";\n}\n\nint main() {\n    Prioridad prioridad = Prioridad::urgente;\n    std::cout << nombre_prioridad(prioridad);\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct Registro {\n    std::string codigo;\n    Estado estado;\n};\n\nint main() {\n    Registro original{\"A3\", Estado::preparado};\n    Registro copia = original;\n    original.estado = Estado::enviado;\n    std::cout << (copia.estado == Estado::preparado) << \" \" << (original.estado == Estado::preparado);\n    return 0;\n}\n",
+          "answers": [
+            "1 0"
+          ],
+          "explanation": "The copy retains the original Estado, even after another object changes."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What is still missing to model an order that disallows arbitrary state transitions?",
+          "options": [
+            "Store a public int and document what each number means.",
+            "Translate each state into text whenever it is requested.",
+            "An interface that checks and controls the operations on its state."
+          ],
+          "correctIndex": 2,
+          "explanation": "Naming alternatives is useful, but does not by itself define when a transition is permitted."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: all three alternatives belong to Prioridad and are qualified by their type; nombre_prioridad returns the corresponding text without modifying its argument; the value converted from nine produces Unrecognized; the variation keeps each record's code and priority together. No single implementation of the selection logic is required."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Prioridad { normal, urgente, aplazada };\nstruct Registro { std::string codigo; Prioridad prioridad; };\nstd::string nombre_prioridad(Prioridad prioridad) {\n    if (prioridad == Prioridad::normal) { return \"Normal\"; }\n    if (prioridad == Prioridad::urgente) { return \"Urgent\"; }\n    if (prioridad == Prioridad::aplazada) { return \"Deferred\"; }\n    return \"Unrecognized\";\n}\n\nint main() {\n    std::vector<Registro> registros{{\"R\", Prioridad::urgente}, {\"S\", Prioridad::normal}};\n    for (const auto& registro : registros) {\n        std::cout << registro.codigo << \":\" << nombre_prioridad(registro.prioridad) << \";\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This variation produces R:Urgent;S:Normal;. It keeps the code and priority together and does not need to convert the enumeration to an integer for display."
+        }
+      ]
+    }
+  ]
+}
