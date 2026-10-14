@@ -39,7 +39,7 @@ internal object FloatingReaderPlacement {
  * floating reader, a touchscreen drag must begin after a short stationary press.
  * Native mouse gestures with BUTTON_PRIMARY still drag immediately.
  */
-internal class FloatingReaderDragGate(private val touchHoldMs: Long = 180L) {
+internal class FloatingReaderDragGate(private val touchHoldMs: Long = 90L) {
     private var downAt: Long? = null
     private var startedWithMouse = false
     private var rejected = false

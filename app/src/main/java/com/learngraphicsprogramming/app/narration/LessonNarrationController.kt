@@ -135,14 +135,19 @@ class LessonNarrationController(
         waitingForExercise = armed
     }
 
-    /** Terminal state. Only a later user Play/Restart can leave this state. */
+    /** End of the page is a stable position; only Back or Restart leaves it. */
     private fun finishPage() {
+        // Keep the exact end even after releasing MediaPlayer. A later -3/-5 seek
+        // must be relative to the final audio, not a stale segment offset.
+        val finalPosition = segments.getOrNull(index)?.duration?.toLong()
+            ?: (if (playerReady) runCatching { player?.currentPosition?.toLong() }.getOrNull() else null)
+        offset = finalPosition ?: offset
         finished = true
         waitingForExercise = false
         playing = false
-        rememberPlaybackPosition()
         main.removeCallbacks(playbackCheckpoint)
         releasePlayer()
+        rememberPlaybackPosition()
         NarrationPlaybackOwner.release(this)
         foregroundPlayback?.close()
         foregroundPlayback = null
@@ -257,10 +262,13 @@ class LessonNarrationController(
         userPositionChosen = false
         val saved = resumeStore.restore(requireNotNull(resumeKey),segments.size)
         playbackGate = NarrationExerciseGate(segments.size,gates,correctBlocks,saved?.feedbackHeardThrough ?: 0)
-        val position = requireNotNull(playbackGate).clamp(NarrationGatePosition(
-            saved?.segment ?: 0, saved?.positionMs ?: 0L))
+        val restored = NarrationGatePosition(saved?.segment ?: 0, saved?.positionMs ?: 0L)
+        val position = requireNotNull(playbackGate).clamp(restored)
         index = position.segment; offset = position.positionMs
-        finished = false; waitingForExercise = false
+        // A completed bookmark is retained only while the page and its exercise
+        // permissions still match. A newly blocked answer must not be skipped.
+        finished = saved?.finished == true && position == restored && index == segments.lastIndex
+        waitingForExercise = false
         directory = File(appContext.cacheDir,"lesson-narration-" + UUID.randomUUID())
         if (selected.engine != NarrationEngine.ANDROID) preservePagePriority(prepared,selected)
         return true
@@ -291,6 +299,8 @@ class LessonNarrationController(
         }
         if (!startPage(prepared,selected,pageIdentity,
             NarrationScriptSegments.gates(texts,selected.engine,feedbackGates),correctBlocks)) return@onMain
+        // A completed page must not start new synthesis until an explicit rewind.
+        if (finished) return@onMain
         // The +2 completion chain prepares the COMPLETE page, including gated feedback.
         // It does not start a player or promote a resume bookmark.
         ensureSegment(0)
@@ -343,14 +353,11 @@ class LessonNarrationController(
 
     private fun resume() {
         if (closed || segments.isEmpty() || !NarrationSettingsRepository.get(appContext).enabled) return
+        // Play on a completed page is intentionally a no-op. The user can seek
+        // backward to replay the last words, or explicitly restart the page.
+        if (finished) return
         val key = resumeKey ?: return
         waitingForExercise = false
-        if (finished) {
-            // This method is reached by explicit Play, or a guarded answer-wait callback.
-            finished = false; userPositionChosen = true
-            releasePlayer(); index = 0; offset = 0
-            playbackGate?.restart()
-        }
         NarrationPlaybackOwner.acquire(this) { pause() }
         if (!acquireFocus()) {
             NarrationPlaybackOwner.release(this)
@@ -406,7 +413,7 @@ class LessonNarrationController(
 
     /** Offsets are measured in source audio seconds, independent of playback speed. */
     fun seekBy(seconds: Int) = onMain {
-        if (closed || segments.isEmpty() || finished) return@onMain
+        if (closed || segments.isEmpty() || (finished && seconds >= 0)) return@onMain
         val point = playbackPoint()
         var target = point.positionMs + seconds.toLong() * 1_000L
         var targetIndex = index
@@ -421,9 +428,16 @@ class LessonNarrationController(
         val requested = NarrationGatePosition(targetIndex,if(previousUnknown) target else target.coerceAtLeast(0))
         val bounded = if (previousUnknown) requested else playbackGate?.seek(from,requested) ?: requested
         if (bounded == from) return@onMain
+        val wasFinished = finished
+        if (wasFinished) finished = false
         userPositionChosen = true
         waitingForExercise = false
         selectSegment(bounded.segment,bounded.positionMs)
+        if (wasFinished) {
+            // Rewind is explicit user intent and creates a resumable bookmark.
+            // The completed bookmark's former owner was released at finish.
+            resumeKey?.let { resumeOwner = resumeStore.begin(it,playbackPoint()) }
+        }
         rememberPlaybackPosition()
     }
 

@@ -169,6 +169,90 @@ class NarrationSharedPlaybackDeviceTest {
         }
     }
 
+    @Test fun completedPageNeverReplaysOnPlayButRewindAndRestartRemainAvailable() {
+        NarrationSettingsRepository.saveEngine(context, NarrationEngine.ANDROID)
+        val page = "qa/completed-narration"
+        val current = onMain {
+            LessonNarrationController(context, { states.add(it) }, { errors.add(it) }).also {
+                controller = it
+                it.toggle(listOf(text), NarrationLanguage.SPANISH, pageIdentity = page)
+            }
+        }
+        await("The native narrator starts its audio", 60_000) {
+            ready(current) && current.isPlaying && player(current).duration > 5_000
+        }
+        val duration = onMain { player(current).duration }
+        val sourceEndMs = onMain {
+            val segment = field<List<*>>(current, "segments").last()!!
+            field<Int>(segment, "duration").toLong()
+        }
+        onMain {
+            current.pauseKeepingPosition()
+            val point = field<Long>(current, "offset")
+            val advanceSeconds = ((duration.toLong() - point - 1_300L).coerceAtLeast(0L) / 1_000L).toInt()
+            assertTrue("Enough duration remains for a near-end seek", advanceSeconds > 0)
+            current.seekBy(advanceSeconds)
+            current.toggle(listOf(text), NarrationLanguage.SPANISH, pageIdentity = page)
+        }
+        await("The real MediaPlayer finishes and releases audio focus", 12_000) {
+            field<Boolean>(current, "finished") && !current.isPlaying &&
+                field<MediaPlayer?>(current, "player") == null
+        }
+        val finishedPosition = onMain { field<Long>(current, "offset") }
+        assertEquals(sourceEndMs, finishedPosition)
+        val resumeKey = onMain { field<String>(current, "resumeKey") }
+        val store = NarrationResumeStore(context)
+        assertTrue("The bounded bookmark remembers completion",
+            requireNotNull(store.restore(resumeKey, 1)).finished)
+
+        repeat(3) {
+            onMain {
+                current.toggle(listOf(text), NarrationLanguage.SPANISH, pageIdentity = page)
+                assertTrue("Play must not reset a completed page", field<Boolean>(current, "finished"))
+                assertFalse(current.isPlaying)
+                assertEquals(sourceEndMs, field<Long>(current, "offset"))
+                assertNull(field<MediaPlayer?>(current, "player"))
+                current.seekBy(3)
+                assertTrue("Forward after completion must not restart", field<Boolean>(current, "finished"))
+            }
+        }
+
+        onMain { current.close() }
+        await("The completed controller must close", 15_000, checkErrors = false) {
+            !field<Thread>(current, "workerThread").isAlive
+        }
+        val reopened = onMain {
+            LessonNarrationController(context, { states.add(it) }, { errors.add(it) }).also {
+                controller = it
+                it.toggle(listOf(text), NarrationLanguage.SPANISH, pageIdentity = page)
+            }
+        }
+        onMain {
+            assertTrue("Returning to the page preserves its completed state",
+                field<Boolean>(reopened, "finished"))
+            assertEquals(sourceEndMs, field<Long>(reopened, "offset"))
+            assertFalse(reopened.isPlaying)
+            reopened.toggle(listOf(text), NarrationLanguage.SPANISH, pageIdentity = page)
+            assertTrue(field<Boolean>(reopened, "finished"))
+            reopened.seekBy(-3)
+            assertFalse("Back from completion returns to a paused position",
+                field<Boolean>(reopened, "finished"))
+            assertFalse(reopened.isPlaying)
+            assertEquals(sourceEndMs - 3_000L, field<Long>(reopened, "offset"))
+        }
+        assertFalse("Rewinding clears the completed bookmark",
+            requireNotNull(store.restore(resumeKey, 1)).finished)
+        onMain { reopened.toggle(listOf(text), NarrationLanguage.SPANISH, pageIdentity = page) }
+        await("Rewind followed by Play resumes near the end", 45_000) {
+            reopened.isPlaying && ready(reopened) &&
+                player(reopened).currentPosition >= sourceEndMs - 3_500
+        }
+        onMain { reopened.restart() }
+        await("Restart remains the explicit way to begin the page again", 12_000) {
+            reopened.isPlaying && ready(reopened) && player(reopened).currentPosition < 2_000
+        }
+    }
+
     @Test fun androidTtsUsesSharedPauseSeekRateResumeAndCleanup() = exercise(NarrationEngine.ANDROID)
 
     @Test fun kokoroSpanishUsesSharedPauseSeekRateResumeAndCleanup() = exercise(NarrationEngine.KOKORO)

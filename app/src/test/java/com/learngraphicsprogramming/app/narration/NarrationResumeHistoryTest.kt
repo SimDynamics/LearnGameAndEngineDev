@@ -42,12 +42,33 @@ class NarrationResumeHistoryTest {
         assertEquals(aAgain, NarrationResumePolicy.update(aAgain, "a", "owner-a", point.copy(positionMs = 1)))
     }
 
-    @Test fun finishingAudioFreesItsBookmarkButNotOtherPages() {
+    @Test fun finishingAudioPreservesEndWithoutResurrectingOldOwner() {
         val h = begin(begin(NarrationResumeHistory(), "a"), "b")
-        val done = NarrationResumePolicy.update(h, "b", "owner-b", point.copy(finished = true))
-        assertEquals(listOf("a"), done.entries.map { it.key })
+        val last = point.copy(segment = 4, positionMs = 19_700L, finished = true)
+        val done = NarrationResumePolicy.update(h, "b", "owner-b", last)
+        assertEquals(listOf("b", "a"), done.entries.map { it.key })
+        assertEquals(last, NarrationResumePolicy.restore(done, "b", 5))
         assertEquals("", done.activeOwner)
+        assertEquals("", done.activeKey)
         assertEquals(done, NarrationResumePolicy.update(done, "b", "owner-b", point))
+        val rewind = NarrationResumePolicy.begin(done, "b", "new-owner", last.copy(positionMs = 16_700L))
+        assertEquals(last.copy(positionMs = 16_700L, finished = false),
+            NarrationResumePolicy.restore(rewind, "b", 5))
+        assertNull("A finished bookmark belongs to the last segment",
+            NarrationResumePolicy.restore(done, "b", 6))
+    }
+
+    @Test fun completingManyPagesStillRespectsThreeBookmarkLimit() {
+        var history = NarrationResumeHistory()
+        repeat(200) { index ->
+            history = NarrationResumePolicy.begin(history, "page-$index", "owner-$index",
+                NarrationResumePoint(0, 0))
+            history = NarrationResumePolicy.update(history, "page-$index", "owner-$index",
+                NarrationResumePoint(0, 8_000, finished = true))
+        }
+        assertEquals(3, history.entries.size)
+        assertEquals(listOf("page-199", "page-198", "page-197"), history.entries.map { it.key })
+        assertTrue(history.entries.all { it.point.finished })
     }
 
     @Test fun pauseStoresAnExactSegmentAndMillisecondPosition() {

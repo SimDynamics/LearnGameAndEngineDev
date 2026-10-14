@@ -65,6 +65,15 @@ class FloatingInteractionPolicyTest {
         assertFalse(gate.mayDrag(1_020L,false,mouse = false,primaryPressed = false))
         assertTrue(gate.mayDrag(1_200L,true,mouse = false,primaryPressed = false))
         gate.end()
+        // The new threshold is half of 180 ms. A wheel-like gesture remains blocked
+        // at 89 ms, while deliberate touch can begin moving at 90 ms.
+        gate.begin(1_000L,mouse = false,primaryPressed = false)
+        assertFalse(gate.mayDrag(1_089L,true,mouse = false,primaryPressed = false))
+        assertTrue(gate.isRejected)
+        gate.end()
+        gate.begin(1_000L,mouse = false,primaryPressed = false)
+        assertTrue(gate.mayDrag(1_090L,true,mouse = false,primaryPressed = false))
+        gate.end()
         gate.begin(2_000L,mouse = false,primaryPressed = false)
         assertTrue(gate.canClick)
         gate.end()

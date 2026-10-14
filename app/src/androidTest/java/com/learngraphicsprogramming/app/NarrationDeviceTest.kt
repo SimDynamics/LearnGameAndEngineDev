@@ -274,7 +274,7 @@ class NarrationDeviceTest {
             }
             inject(MotionEvent.ACTION_DOWN, startX, startY)
             // A deliberate touch/LDPlayer drag is armed by a brief stationary press.
-            SystemClock.sleep(210L)
+            SystemClock.sleep(110L)
             repeat(8) { index ->
                 SystemClock.sleep(25)
                 inject(MotionEvent.ACTION_MOVE, startX - 15f * (index + 1), startY - 24f * (index + 1))
@@ -365,7 +365,7 @@ class NarrationDeviceTest {
                 val afterMouse = row.y
                 send(MotionEvent.ACTION_DOWN, 2f, 2f, mouse = false)
                 // Finger/LDPlayer-touch drag intentionally pauses before moving.
-                SystemClock.sleep(210L)
+                SystemClock.sleep(110L)
                 send(MotionEvent.ACTION_MOVE, 25f, 37f, mouse = false)
                 send(MotionEvent.ACTION_UP, 25f, 37f, mouse = false)
                 assertTrue("Finger drag still moves the bar", row.y > afterMouse + 10f)

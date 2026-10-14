@@ -40,7 +40,8 @@ internal object NarrationResumePolicy {
 
     fun restore(history: NarrationResumeHistory, key: String, segmentCount: Int): NarrationResumePoint? =
         history.entries.firstOrNull { it.key == key }?.point?.takeIf {
-            !it.finished && it.segment in 0 until segmentCount && it.positionMs >= 0
+            it.segment in 0 until segmentCount && it.positionMs >= 0 &&
+                (!it.finished || it.segment == segmentCount - 1)
         }
 
     fun owns(history: NarrationResumeHistory, key: String, owner: String?): Boolean =
@@ -61,12 +62,14 @@ internal object NarrationResumePolicy {
     fun update(history: NarrationResumeHistory, key: String, owner: String,
                point: NarrationResumePoint): NarrationResumeHistory {
         if (!owns(history, key, owner) || point.segment < 0 || point.positionMs < 0) return history
-        if (point.finished) return history.copy(entries = history.entries.filterNot { it.key == key },
-            activeKey = "", activeOwner = "")
-        // Never resurrect an evicted entry from a delayed callback.
-        return history.copy(entries = history.entries.map {
+        // Keep the final position as a bounded bookmark. A finished page must not
+        // automatically start from zero when revisited. Its ownership is released
+        // so delayed callbacks from the old player cannot overwrite the result.
+        val entries = history.entries.map {
             if (it.key == key) it.copy(point = point) else it
-        }.take(MAX_BOOKMARKS))
+        }.take(MAX_BOOKMARKS)
+        return if (point.finished) history.copy(entries = entries, activeKey = "", activeOwner = "")
+            else history.copy(entries = entries)
     }
 }
 

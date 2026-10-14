@@ -31,6 +31,7 @@ internal class NarrationResumeStore(context: Context) {
             val key = preferences.getString("key_$index", null) ?: return@mapNotNull null
             NarrationResumeEntry(key, NarrationResumePoint(
                 preferences.getInt("segment_$index", 0), preferences.getLong("position_$index", 0L),
+                finished = preferences.getBoolean("finished_$index", false),
                 feedbackHeardThrough = preferences.getInt("heard_$index", 0).coerceAtLeast(0)
             ))
         }.distinctBy { it.key }
@@ -44,10 +45,12 @@ internal class NarrationResumeStore(context: Context) {
         for (index in 0 until NarrationResumePolicy.MAX_BOOKMARKS) {
             val entry = history.entries.getOrNull(index)
             if (entry == null) {
-                editor.remove("key_$index").remove("segment_$index").remove("position_$index").remove("heard_$index")
+                editor.remove("key_$index").remove("segment_$index").remove("position_$index")
+                    .remove("finished_$index").remove("heard_$index")
             } else {
                 editor.putString("key_$index", entry.key).putInt("segment_$index", entry.point.segment)
                     .putLong("position_$index", entry.point.positionMs)
+                    .putBoolean("finished_$index", entry.point.finished)
                     .putInt("heard_$index", entry.point.feedbackHeardThrough)
             }
         }
