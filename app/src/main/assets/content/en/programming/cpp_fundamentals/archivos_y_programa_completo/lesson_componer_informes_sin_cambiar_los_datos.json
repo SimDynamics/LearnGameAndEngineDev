@@ -1,0 +1,159 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__componer_informes_sin_cambiar_los_datos",
+  "title": "Compose Reports Without Changing Data",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Bring Together the Data and Presentation Contracts"
+        },
+        {
+          "type": "paragraph",
+          "text": "Review struct, vector, functions taking const references, and local composition. Registro contains codigo as string, cantidad as int, and medida as double. For this report the caller supplies at most twenty records; ASCII codes of up to eight characters; quantities from zero to one thousand; and measurements from zero to twenty. Quantities sum to no more than twenty thousand, which fits in int. Measurements are calculated from the original data before they are formatted as text."
+        },
+        {
+          "type": "paragraph",
+          "text": "Each row must have [CODE]|[QUANTITY]|[MEASUREMENT]. The code field requests at least six positions, left-aligned, with spaces afterward. The quantity requests at least four positions, right-aligned, in decimal. The measurement uses fixed with two digits after the decimal point. Long fields are not truncated. After the rows, display Total:T;Average:M, or Total:0;No measurements when there are no records."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build Before Consulting the Reference"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write componer_fila(const Registro&) and componer_informe(const vector<Registro>&), returning string without printing or modifying records. The report has one line per row, with the summary last and no required final newline. Use {\"A\", 5, 4.3125}, {\"Room\", 7, 6.9375}, {\"Hallway\", 0, 0.0}. First compute the total and mean on paper; then predict the representations and spacing. main only decides whether to display the result."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Build the program requested by the exercise here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Also test an empty collection, one observation with quantity zero and measurement two, and a six-character label with quantity one thousand. The traversal must preserve order and associations. Each composition begins empty, and the state of cout must not determine its internal format."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference and Criteria for the Complete Report"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"No measurements\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Average:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    const std::vector<Registro> registros{{\"A\", 5, 4.3125}, {\"Room\", 7, 6.9375}, {\"Hallway\", 0, 0.0}};\n    std::cout << componer_informe(registros);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The rows are [A     ]|[   5]|[4.31], [Room  ]|[   7]|[6.94], and [Hallway]|[   0]|[0.00]; the summary is Total:12;Average:3.75. The original sum of the measurements is 11.25, and the mean of three records is 3.75. Criteria: fields preserve their association and order; each width applies to its own field; quantities use decimal; precision only formats text; an empty collection never divides; and the functions return characters while leaving their arguments unchanged. Other implementations meeting these contracts are accepted."
+        },
+        {
+          "type": "paragraph",
+          "text": "For an empty collection, the result is Total:0;No measurements. With a single record, the mean equals that record's measurement. The row for \"Studio\" with quantity one thousand adds no padding to the code or quantity: both exactly meet the minimum width."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check the Data as Well as the Characters"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"No measurements\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Average:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    std::vector<Registro> registros{{\"R\", 3, 8.8125}};\n    std::string fila = componer_fila(registros.at(0));\n    std::cout << fila << \"\\n\" << std::defaultfloat << std::setprecision(6)\n        << registros.at(0).medida * 16;\n    return 0;\n}\n",
+          "answers": [
+            "[R     ]|[   3]|[8.81]\n141"
+          ],
+          "explanation": "The row rounds for display; the member still contains 8.8125, and the calculation produces one hundred forty-one."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which data should be used to calculate the report's mean?",
+          "options": [
+            "The original measurements, before formatting the output.",
+            "Values replaced by what is displayed with two decimal places.",
+            "The lengths of the numeric strings already composed."
+          ],
+          "correctIndex": 0,
+          "explanation": "Formatting must not silently modify the data used in calculations."
+        },
+        {
+          "type": "paragraph",
+          "text": "With other data, averaging rounded quantities may produce a different result. Keeping composition separate from calculation makes it explicit which measurement is used. There is no need to parse the strings we just built."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compose a Filename with a Sequence Number"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build another function that receives numero as an int from zero through one thousand and returns muestra_NNNN.txt, with at least four decimal digits padded with leading zeros. For seven it must return muestra_0007.txt; for one thousand, muestra_1000.txt. The function only composes a filename: it does not open or write a file. Call it with seven and twenty-three and display the results on separate lines."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Build the program requested by the exercise here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Test zero and another permitted number. The .txt suffix must come immediately after the integer, without inheriting a pending field width or the previous result. A leading zero here is string padding, not octal literal notation in C++ source code."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference and Criteria for the Composed Filename"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstd::string componer_nombre(int numero) {\n    std::ostringstream texto;\n    texto << \"muestra_\" << std::dec << std::setfill('0') << std::setw(4) << numero << \".txt\";\n    return texto.str();\n}\n\nint main() {\n    std::cout << componer_nombre(7) << \"\\n\" << componer_nombre(23) << \"\\n\"\n        << componer_nombre(0) << \"\\n\" << componer_nombre(1000);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The lines are muestra_0007.txt, muestra_0023.txt, muestra_0000.txt, and muestra_1000.txt. Criteria: constant prefix and suffix; the number comes from the argument, is displayed in decimal, and is padded with zeros to four positions; each call uses a fresh composition; it neither prints nor creates the file; and the returned string preserves the complete name. Another implementation meeting the contract is valid."
+        },
+        {
+          "type": "paragraph",
+          "text": "The unit has already taught how to choose where a string goes. If this name is later used to open a file, opening, writing, and closing still need their own checks. Composing a valid name as text does not prove that the destination can be opened."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Review with a Different Format in the Caller"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nstruct Registro {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_fila(const Registro& registro) {\n    std::ostringstream texto;\n    texto << \"[\" << std::left << std::setfill(' ') << std::setw(6) << registro.codigo\n        << \"]|[\" << std::right << std::setw(4) << std::dec << registro.cantidad\n        << \"]|[\" << std::fixed << std::setprecision(2) << registro.medida << \"]\";\n    return texto.str();\n}\n\nstd::string componer_informe(const std::vector<Registro>& registros) {\n    std::ostringstream texto;\n    int total = 0;\n    double suma_medidas = 0.0;\n    for (const auto& registro : registros) {\n        texto << componer_fila(registro) << \"\\n\";\n        total += registro.cantidad;\n        suma_medidas += registro.medida;\n    }\n    texto << \"Total:\" << std::dec << total << \";\";\n    if (registros.empty()) {\n        texto << \"No measurements\";\n    } else {\n        double media = suma_medidas / static_cast<double>(registros.size());\n        texto << \"Average:\" << std::fixed << std::setprecision(2) << media;\n    }\n    return texto.str();\n}\n\nint main() {\n    std::cout << std::hex;\n    const std::vector<Registro> registros;\n    std::cout << componer_informe(registros) << \"|\" << 26;\n    return 0;\n}\n",
+          "answers": [
+            "Total:0;No measurements|1a"
+          ],
+          "explanation": "The local report displays its total in decimal. cout retains hexadecimal for the integer inserted directly into it."
+        },
+        {
+          "type": "paragraph",
+          "text": "In a later session, compose another report from your own records within this domain. Write each contract first: accepted data, calculations, format, and destination. Use the references after your attempt. Transfer criteria: unchanged data, justified calculations, an empty collection represented without inventing a mean, explicit formatting, a local stream for each new result, and separate widths and precision. This does not depend on repeating a fixed number of exercises."
+        }
+      ]
+    }
+  ]
+}

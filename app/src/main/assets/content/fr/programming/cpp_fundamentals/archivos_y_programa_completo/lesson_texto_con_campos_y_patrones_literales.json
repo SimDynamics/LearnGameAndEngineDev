@@ -1,0 +1,282 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__texto_con_campos_y_patrones_literales",
+  "title": "Texte avec champs et motifs littéraux",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un motif et ses arguments produisent une chaîne"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::format, déclaré dans <format>, compose et renvoie une std::string. Le premier argument décrit le texte et les emplacements où insérer les valeurs suivantes. Une paire d'accolades {} est un champ : elle réserve une place pour un argument. Les caractères ordinaires sont conservés. Composer la chaîne ne l'affiche pas ; main peut l'enregistrer, l'afficher ou la transmettre à une autre fonction."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string texto = std::format(\"Zone {}; quantité {}\", \"Sud\", 6);\n    std::cout << texto;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette comparaison guidée produit Zone Sud; quantité 6. Le littéral contient deux champs ; leurs valeurs sont les deux arguments qui suivent le motif. Nous n'écrivons ni Sud ni 6 dans le motif. Nous garderons les motifs sous forme de littéraux connus dans le code et changerons les données au moyen des arguments."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que reçoit l'appelant de std::format(\"Ligne {}\", 3) ?",
+          "options": [
+            "Une écriture directe dans cout.",
+            "Une chaîne qu'il pourra utiliser ensuite.",
+            "Un objet ostringstream qui conserve le motif."
+          ],
+          "correctIndex": 1,
+          "explanation": "La fonction renvoie du texte. Pour l'afficher, le programme doit choisir une opération de sortie."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les champs automatiques suivent l'ordre des arguments"
+        },
+        {
+          "type": "paragraph",
+          "text": "Lorsque tous les champs sont {}, les arguments sont utilisés dans l'ordre : le premier champ utilise le premier argument après le motif, et le deuxième utilise le deuxième. Le nombre n'appartient au champ qu'après la composition de la chaîne. Une variable utilisée comme argument conserve son type et sa valeur."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    int cantidad = 9;\n    std::string texto = std::format(\"{}:{}\", \"Est\", cantidad);\n    cantidad = 2;\n    std::cout << texto << \"|\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "Est:9|2"
+          ],
+          "explanation": "La chaîne a été composée avec neuf. Modifier ensuite la variable ne recompose pas les caractères stockés."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string primero = std::format(\"[{}]\", \"\");\n    std::string segundo = std::format(\"[{}]-[{}]\", \"N\", 0);\n    std::cout << primero << \"|\" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "[]|[N]-[0]"
+          ],
+          "explanation": "La chaîne vide occupe son champ sans fournir de caractères. Zéro fournit bien le caractère 0."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un motif contient \"{} / {}\". Les arguments 4 et 12 le suivent. D'où vient la valeur de chaque champ ?",
+          "options": [
+            "Le premier utilise 12, car c'est l'argument le plus récent.",
+            "Les deux réutilisent le premier argument.",
+            "Le premier utilise 4 et le deuxième utilise 12."
+          ],
+          "correctIndex": 2,
+          "explanation": "La sélection automatique parcourt les arguments dans leur ordre."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir et répéter un argument par son indice"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un champ {0} sélectionne le premier argument après le motif ; {1}, le deuxième. Les indices commencent à zéro, comme dans vector, mais ils sélectionnent ici les arguments de l'appel. Ils peuvent changer l'ordre d'affichage ou réutiliser une donnée. Si tu choisis cette forme, indique des indices dans tous les champs de l'appel ; ne mélange pas {0} et {}."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{1}/{0}/{1}\", \"Sol\", 8);\n    return 0;\n}\n",
+          "answers": [
+            "8/Sol/8"
+          ],
+          "explanation": "L'indice un sélectionne huit et le réutilise. L'indice zéro sélectionne Sol."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement l'indice qui sélectionne de nouveau le premier argument, sans changer les autres champs.",
+          "code": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::format(\"{1}:{0}:{___}\", \"R\", 5);\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "Le premier argument après le motif porte l'indice zéro. Le motif entier utilise la sélection manuelle."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Les arguments sont \"A\" et 7. Quel motif sélectionne deux fois seulement le deuxième argument ?",
+          "options": [
+            "\"{0}/{1}\"",
+            "\"{0}/{0}\"",
+            "\"{1}/{1}\""
+          ],
+          "correctIndex": 2,
+          "explanation": "L'indice un désigne le deuxième argument, sans le consommer ni le modifier."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguer les accolades du motif et les caractères des données"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les accolades simples du motif délimitent les champs. Pour produire une accolade littérale, écris {{ ou }} dans le motif. Chaque paire donne une seule accolade. Dans \"{{{}}}\", on combine une accolade ouvrante littérale, un champ automatique et une accolade fermante littérale. Le résultat entoure l'argument d'accolades."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{{code={}}}\", \"T\") << \"|\"\n        << std::format(\"{}\", \"{donnee}\");\n    return 0;\n}\n",
+          "answers": [
+            "{code=T}|{donnee}"
+          ],
+          "explanation": "Les accolades doublées appartiennent au motif. Les accolades déjà contenues dans l'argument sont copiées comme des données ; elles ne sont pas réinterprétées comme des champs."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "L'argument string contient \"{}\" et est passé à std::format(\"[{}]\", argument). Que deviennent ses accolades ?",
+          "options": [
+            "Elles sont insérées comme caractères de la donnée.",
+            "Elles sont supprimées, car l'argument n'est pas un motif.",
+            "Elles créent un autre champ nécessitant un argument supplémentaire."
+          ],
+          "correctIndex": 0,
+          "explanation": "Seul le premier argument est interprété comme le motif par cet appel."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le type de l'argument détermine sa présentation de base"
+        },
+        {
+          "type": "paragraph",
+          "text": "Sans spécification supplémentaire, un int s'affiche en décimal, un char comme caractère et un bool comme true ou false. Pour une chaîne, ses caractères sont copiés. Cette présentation élémentaire de bool diffère du format habituel de cout vu précédemment, qui affichait zéro ou un. Choisir une autre opération de composition ne convertit pas les données dans un autre type."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{}|{}|{}|{}\", 7, '7', true, false);\n    return 0;\n}\n",
+          "answers": [
+            "7|7|true|false"
+          ],
+          "explanation": "L'entier et le caractère produisent ici les mêmes caractères. Les valeurs booléennes s'affichent sous forme de mots."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::hex << std::format(\"{}:{}\", 31, false) << \"|\" << 31;\n    return 0;\n}\n",
+          "answers": [
+            "31:false|1f"
+          ],
+          "explanation": "format compose sa chaîne selon ses propres règles. cout conserve l'hexadécimal uniquement pour l'entier qu'il reçoit directement."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le motif n'hérite pas de hex, fixed, de la précision ni du remplissage de cout. L'insertion ultérieure de la chaîne composée s'effectue bien dans ce flux : par exemple, un setw en attente peut remplir la chaîne entière. Nous comparerons ensuite le format interne d'un champ avec le format externe de sa destination."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier que le motif correspond à ses arguments"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans ces appels C++23, le motif littéral est vérifié à la compilation selon le nombre et les types des arguments. \"{}:{}\" demande des arguments pour les deux champs ; {1} exige l'existence d'un deuxième argument. Les spécifications que nous étudierons doivent également convenir au type. Un motif mal écrit doit être corrigé : ce n'est pas une sortie de remplacement qu'il faudrait deviner."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel appel mélange la sélection automatique et la sélection manuelle et doit être corrigé avant l'exécution ?",
+          "options": [
+            "std::format(\"{1}:{0}\", 2, 5)",
+            "std::format(\"{}:{}\", 2, 5)",
+            "std::format(\"{}:{0}\", 2, 5)"
+          ],
+          "correctIndex": 2,
+          "explanation": "Le motif \"{}:{0}\" combine un champ automatique et un champ à indice explicite. Chaque motif doit employer une seule façon de sélectionner les arguments."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quel changement fournit les arguments exigés par std::format(\"{}:{}\", \"A\") ?",
+          "options": [
+            "Passer ensuite un autre argument pour le deuxième champ.",
+            "Ajouter {1} au motif pour créer automatiquement l'argument manquant.",
+            "Placer A comme texte littéral après le deuxième {} pour donner une valeur à ce champ."
+          ],
+          "correctIndex": 0,
+          "explanation": "Les caractères du motif ne fournissent pas la valeur exigée par le deuxième champ. Un indice sélectionne un argument qui doit déjà exister ; il ne le crée pas. Ajouter du texte littéral ne complète pas non plus un champ dépourvu d'argument."
+        },
+        {
+          "type": "note",
+          "text": "La bibliothèque standard dispose aussi de mécanismes pour les motifs connus pendant l'exécution. Ici, le contrat est plus restreint : des motifs littéraux et des données comme arguments. Une variable string contenant un motif ne remplace pas simplement le littéral de ces appels."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une fonction qui renvoie le message"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris resumen(const string& codigo, int unidades), qui renvoie commande {CODE}: UNITÉS unités; copie=CODE. Le code peut être une chaîne ASCII de zéro à huit caractères et le nombre d'unités va de zéro à mille. Utilise un motif littéral avec indices : le même argument codigo doit servir à ses deux emplacements. Les accolades visibles autour du code font partie du résultat. La fonction n'affiche rien et ne modifie pas les arguments. Dans main, compose des messages pour \"B\", 4 et pour \"\", 0 sur des lignes distinctes."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Construis ici le programme demandé par l'exercice.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prédis chaque chaîne avant de compiler. Vérifie ensuite un code contenant des accolades, par exemple \"{X}\", avec six unités. Cette donnée ne doit pas devenir un nouveau motif. Enregistre un message, modifie une variable d'origine et vérifie que la chaîne conservée garde le texte déjà composé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence et critères du message"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string resumen(const std::string& codigo, int unidades) {\n    return std::format(\"commande {{{0}}}: {1} unités; copie={0}\", codigo, unidades);\n}\n\nint main() {\n    std::string codigo = \"B\";\n    int cantidad = 4;\n    std::string guardado = resumen(codigo, cantidad);\n    cantidad = 9;\n    std::cout << guardado << \"\\n\" << resumen(\"\", 0) << \"\\n\" << resumen(\"{X}\", 6);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les lignes sont commande {B}: 4 unités; copie=B, commande {}: 0 unités; copie= et commande {{X}}: 6 unités; copie={X}. Critères : la fonction renvoie une chaîne complète ; réutilise le même code sans le modifier ; distingue les accolades littérales des champs du motif ; un code vide et zéro conservent les séparateurs ; les appels n'accumulent pas les résultats ; et une quantité modifiée ensuite n'altère pas guardado. D'autres implémentations respectant le contrat sont acceptées."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string dato = \"{R}\";\n    std::cout << std::format(\"{0}-{0}\", dato) << \"|\" << dato;\n    return 0;\n}\n",
+          "answers": [
+            "{R}-{R}|{R}"
+          ],
+          "explanation": "L'argument est copié dans deux champs et reste intact. Ses accolades ne sont pas réinterprétées."
+        },
+        {
+          "type": "paragraph",
+          "text": "Lors d'une autre session, revois d'abord ce que signifie renvoyer une string et l'utilisation des indices. Crée un message pour une tâche personnelle avec deux types de données, une répétition et une accolade littérale. Vérifie une chaîne vide et zéro avant de consulter cette référence."
+        }
+      ]
+    }
+  ]
+}

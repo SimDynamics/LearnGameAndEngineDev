@@ -1,0 +1,282 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__texto_con_campos_y_patrones_literales",
+  "title": "Text with Fields and Literal Patterns",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Format String and Its Arguments Produce a String"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::format, declared in <format>, composes and returns a std::string. The first argument describes the text and the places where subsequent values should be inserted. A pair of braces {} is a field: it reserves a place for an argument. Ordinary characters are preserved. Composing the string does not print it; main may store it, display it, or pass it to another function."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string texto = std::format(\"Zone {}; quantity {}\", \"South\", 6);\n    std::cout << texto;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This guided comparison produces Zone South; quantity 6. The literal contains two fields; their values are the two arguments after the format string. We do not write South or 6 inside the format string. We will keep format strings as known literals in the code and vary the data through arguments."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does the caller receive from std::format(\"Row {}\", 3)?",
+          "options": [
+            "Output written directly to cout.",
+            "A string that can be used later.",
+            "An ostringstream object that retains the format string."
+          ],
+          "correctIndex": 1,
+          "explanation": "The function returns text. Displaying it requires an output operation chosen by the program."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Automatic Fields in Argument Order"
+        },
+        {
+          "type": "paragraph",
+          "text": "When all fields are {}, they use arguments in order: the first field uses the first argument after the format string; the second uses the second. The number does not become part of the field until the string is composed. A variable supplied as an argument keeps its type and value."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    int cantidad = 9;\n    std::string texto = std::format(\"{}:{}\", \"East\", cantidad);\n    cantidad = 2;\n    std::cout << texto << \"|\" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "East:9|2"
+          ],
+          "explanation": "The string was composed using nine. Changing the variable afterward does not recompose the stored characters."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string primero = std::format(\"[{}]\", \"\");\n    std::string segundo = std::format(\"[{}]-[{}]\", \"N\", 0);\n    std::cout << primero << \"|\" << segundo;\n    return 0;\n}\n",
+          "answers": [
+            "[]|[N]-[0]"
+          ],
+          "explanation": "The empty string occupies its field without contributing any characters. Zero does contribute the character 0."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A format string contains \"{} / {}\". The arguments 4 and 12 follow it. Where does each field get its value?",
+          "options": [
+            "The first uses 12 because it is the most recent argument.",
+            "Both reuse the first argument.",
+            "The first uses 4 and the second uses 12."
+          ],
+          "correctIndex": 2,
+          "explanation": "Automatic selection traverses the arguments in order."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Select and Repeat an Argument by Index"
+        },
+        {
+          "type": "paragraph",
+          "text": "A field {0} selects the first argument after the format string; {1} selects the second. Indices begin at zero, as in vector, but here they select call arguments. They can change the display order or reuse data. If you choose this form, use indices in every field of that call; do not mix {0} with {}."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{1}/{0}/{1}\", \"Sun\", 8);\n    return 0;\n}\n",
+          "answers": [
+            "8/Sun/8"
+          ],
+          "explanation": "Index one selects eight and reuses it. Index zero selects Sun."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the index that selects the first argument again, without changing the remaining fields.",
+          "code": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::format(\"{1}:{0}:{___}\", \"R\", 5);\n    return 0;\n}\n",
+          "answers": [
+            "0"
+          ],
+          "explanation": "The first argument after the format string has index zero. The whole format string uses manual selection."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The arguments are \"A\" and 7. Which format string selects only the second argument twice?",
+          "options": [
+            "\"{0}/{1}\"",
+            "\"{0}/{0}\"",
+            "\"{1}/{1}\""
+          ],
+          "correctIndex": 2,
+          "explanation": "Index one identifies the second argument without consuming or modifying it."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguish Braces in the Format String from Characters in Data"
+        },
+        {
+          "type": "paragraph",
+          "text": "Single braces in a format string delimit fields. To produce a literal brace, write {{ or }} inside the format string. Each pair produces one brace. In \"{{{}}}\", a literal opening brace, an automatic field, and a literal closing brace are combined. The result surrounds the argument with braces."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{{code={}}}\", \"T\") << \"|\"\n        << std::format(\"{}\", \"{data}\");\n    return 0;\n}\n",
+          "answers": [
+            "{code=T}|{data}"
+          ],
+          "explanation": "Doubled braces belong to the format string. Braces already present in an argument are copied as data; they are not interpreted again as fields."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The string argument contains \"{}\" and is passed to std::format(\"[{}]\", argument). What happens to its braces?",
+          "options": [
+            "They are inserted as characters from the data.",
+            "They are removed because the argument is not a format string.",
+            "They create another field that requires an additional argument."
+          ],
+          "correctIndex": 0,
+          "explanation": "Only the first argument is interpreted as the format string by this call."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Argument Type Determines Its Basic Presentation"
+        },
+        {
+          "type": "paragraph",
+          "text": "Without an additional specification, an int is displayed in decimal, a char as a character, and a bool as true or false. A string contributes its characters. This basic representation of bool differs from the usual cout formatting in previous lessons, which displayed zero or one. Choosing another composition operation does not convert the data to another type."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{}|{}|{}|{}\", 7, '7', true, false);\n    return 0;\n}\n",
+          "answers": [
+            "7|7|true|false"
+          ],
+          "explanation": "The integer and character produce the same characters here. Boolean values are displayed as words."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::hex << std::format(\"{}:{}\", 31, false) << \"|\" << 31;\n    return 0;\n}\n",
+          "answers": [
+            "31:false|1f"
+          ],
+          "explanation": "format composes its string using its own rules. cout retains hexadecimal only for the integer inserted directly into it."
+        },
+        {
+          "type": "paragraph",
+          "text": "The format string does not inherit hex, fixed, precision, or fill from cout. The later insertion of the composed string still occurs in that stream: for instance, a pending setw can pad the entire string. Later we will compare the internal formatting of a field with the external formatting of its destination."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check That the Format String Matches Its Arguments"
+        },
+        {
+          "type": "paragraph",
+          "text": "In these C++23 calls, the literal format string is checked during compilation against the number and types of arguments. \"{}:{}\" needs arguments for both fields; {1} requires a second argument to exist. The specifications we will learn must also match the type. An incorrectly written format string must be corrected: it is not an alternative output to guess."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which call mixes automatic and manual argument selection and must be corrected before running?",
+          "options": [
+            "std::format(\"{1}:{0}\", 2, 5)",
+            "std::format(\"{}:{}\", 2, 5)",
+            "std::format(\"{}:{0}\", 2, 5)"
+          ],
+          "correctIndex": 2,
+          "explanation": "The format string \"{}:{0}\" combines an automatic field with an explicitly indexed field. Each format string must use one method of selecting arguments."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What change supplies the arguments required by std::format(\"{}:{}\", \"A\")?",
+          "options": [
+            "Pass another argument afterward for the second field.",
+            "Add {1} to the format string to create the missing argument automatically.",
+            "Put A as literal text after the second {} to give that field a value."
+          ],
+          "correctIndex": 0,
+          "explanation": "Characters in the format string do not provide the value required by the second field. An index selects an argument that must already exist; it does not create one. Adding literal text also does not fill a field that lacks an argument."
+        },
+        {
+          "type": "note",
+          "text": "The standard library also provides mechanisms for format strings known at runtime. The contract here is narrower: literal format strings and data passed as arguments. A string variable holding a format string cannot simply replace a literal in these calls."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Function That Returns the Message"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write resumen(const string& codigo, int unidades), returning order {CODE}: UNITS units; copy=CODE. The code may be an ASCII string of zero to eight characters, and units range from zero to one thousand. Use a literal format string with indices: the same codigo argument must occupy both of its places. The visible braces surrounding the code are part of the result. The function does not print or modify arguments. In main, compose messages for \"B\", 4 and \"\", 0 on separate lines."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Build the program requested by the exercise here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predict each string before compiling. Then test a code containing braces, such as \"{X}\", with six units. That data must not become another format string. Store a message, change an original variable, and check that the stored string keeps its already composed text."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference and Criteria for the Message"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string resumen(const std::string& codigo, int unidades) {\n    return std::format(\"order {{{0}}}: {1} units; copy={0}\", codigo, unidades);\n}\n\nint main() {\n    std::string codigo = \"B\";\n    int cantidad = 4;\n    std::string guardado = resumen(codigo, cantidad);\n    cantidad = 9;\n    std::cout << guardado << \"\\n\" << resumen(\"\", 0) << \"\\n\" << resumen(\"{X}\", 6);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The lines are order {B}: 4 units; copy=B, order {}: 0 units; copy=, and order {{X}}: 6 units; copy={X}. Criteria: the function returns a complete string; reuses the same code without modifying it; distinguishes literal braces in the format string from its fields; an empty code and zero preserve separators; calls do not accumulate results; and changing the quantity later does not affect guardado. Other implementations meeting the contract are accepted."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::string dato = \"{R}\";\n    std::cout << std::format(\"{0}-{0}\", dato) << \"|\" << dato;\n    return 0;\n}\n",
+          "answers": [
+            "{R}-{R}|{R}"
+          ],
+          "explanation": "The argument is copied into two fields and remains intact. Its braces are not interpreted again."
+        },
+        {
+          "type": "paragraph",
+          "text": "In another session, first review what returning string means and how indices work. Create a message for a task of your own with two data types, a repeated argument, and a literal brace. Check an empty string and zero before consulting this reference."
+        }
+      ]
+    }
+  ]
+}
