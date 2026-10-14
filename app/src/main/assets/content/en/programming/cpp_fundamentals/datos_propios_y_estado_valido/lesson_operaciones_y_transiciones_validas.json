@@ -1,0 +1,231 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__operaciones_y_transiciones_validas",
+  "title": "Operations and Valid State Transitions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Explicit Rules for Changing an Order"
+        },
+        {
+          "type": "paragraph",
+          "text": "We now define the operations in this model. Only an order in preparado may change its unit count, be shipped, or be canceled. Changing the count requires another quantity between one and twenty. Shipping changes the state to enviado, and canceling changes it to cancelado. A shipped or canceled order can no longer be changed through these operations. The code and quantity are preserved when the order is shipped or canceled."
+        },
+        {
+          "type": "paragraph",
+          "text": "Each operation returns bool: true if it applied the requested change, and false if it rejected the request without modifying any member. Here, a disallowed request is a normal outcome under the contract. Invalid construction still throws an exception: we do not replace it with a fallback order."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"P4\", 3};\n    bool cambiado = pedido.cambiar_unidades(5);\n    bool enviado = pedido.enviar();\n    std::cout << cambiado << \" \" << enviado << \" \" << pedido.unidades();\n    return 0;\n}\n"
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check Before Modifying"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"A\", 4};\n    bool aceptado = pedido.cambiar_unidades(0);\n    std::cout << aceptado << \" \" << pedido.unidades() << \" \" << (pedido.estado() == Estado::preparado);\n    return 0;\n}\n",
+          "answers": [
+            "0 4 1"
+          ],
+          "explanation": "The condition rejects zero before assignment and preserves all the order's data."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Why do we not assign nuevas first and then check whether it belonged to the allowed domain?",
+          "options": [
+            "Because nuevas already has type int and its values do not need validation.",
+            "Because returning false automatically undoes any previous assignment.",
+            "Because a rejected request could leave the value temporarily or permanently invalid, requiring a rollback."
+          ],
+          "correctIndex": 2,
+          "explanation": "Checking first provides a straightforward guarantee that rejection makes no changes."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complete only the keyword that returns the result of a rejected operation.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { ___ false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"R\", 3};\n    std::cout << pedido.enviar();\n    return 0;\n}\n",
+          "answers": [
+            "return"
+          ],
+          "explanation": "The function returns false before performing the state transition."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Same Request Can Produce Different Results"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"B\", 2};\n    bool primero = pedido.enviar();\n    bool segundo = pedido.enviar();\n    std::cout << primero << \" \" << segundo << \" \" << (pedido.estado() == Estado::enviado);\n    return 0;\n}\n",
+          "answers": [
+            "1 0 1"
+          ],
+          "explanation": "The first call changes the state; the second no longer finds an order in preparado."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Why can two identical calls to enviar produce different results?",
+          "options": [
+            "A member function may be used only once on any object.",
+            "The second call automatically copies the original state.",
+            "The first call changed the state of the object used by the second."
+          ],
+          "correctIndex": 2,
+          "explanation": "An operation is interpreted in terms of its object's current state."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Operation Order Is Part of the Contract"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"C\", 6};\n    bool cancelado = pedido.cancelar();\n    bool cambiado = pedido.cambiar_unidades(8);\n    bool enviado = pedido.enviar();\n    std::cout << cancelado << \" \" << cambiado << \" \" << enviado << \" \" << pedido.unidades();\n    return 0;\n}\n",
+          "answers": [
+            "1 0 0 6"
+          ],
+          "explanation": "Canceling first leaves the order in a state that rejects both subsequent requests."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"D\", 7};\n    bool cambiado = pedido.cambiar_unidades(8);\n    bool enviado = pedido.enviar();\n    bool cancelado = pedido.cancelar();\n    std::cout << cambiado << \" \" << enviado << \" \" << cancelado << \" \" << pedido.unidades();\n    return 0;\n}\n",
+          "answers": [
+            "1 1 0 8"
+          ],
+          "explanation": "The quantity changes while the order is in preparado; shipping prevents a subsequent cancellation."
+        },
+        {
+          "type": "paragraph",
+          "text": "The class does not carry out every request regardless of its order. A table containing the previous state, request, result, and subsequent state makes the decisions visible without attributing them merely to the operation's name."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Invariant Versus an Operation's Precondition"
+        },
+        {
+          "type": "paragraph",
+          "text": "Having between one and twenty units is part of the invariant. Being in preparado is a condition for changing the unit count, shipping, or canceling; it is not required of every existing order because an order in enviado is also valid. An operation may be rejected even while the object remains perfectly valid."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A shipped order with four units…",
+          "options": [
+            "Is valid under the invariant, but this interface no longer allows changing its unit count.",
+            "Is invalid because it is no longer in preparado.",
+            "Allows changing its unit count whenever the new quantity is valid."
+          ],
+          "correctIndex": 0,
+          "explanation": "Distinguish the validity of an object's state from whether an operation is available."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "After shipping, a rejected cambiar_unidades(5) request must leave…",
+          "options": [
+            "The same code and enviado state, but the requested five units.",
+            "The same code and quantity, but the preparado state.",
+            "The same code, quantity, and state that the object had before the request."
+          ],
+          "correctIndex": 2,
+          "explanation": "The rejection contract requires every member to remain unchanged."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Complete Every Path and Observe the Result"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"E\", 9};\n    bool primero = pedido.cambiar_unidades(20);\n    bool segundo = pedido.cambiar_unidades(21);\n    std::cout << primero << \" \" << segundo << \" \" << pedido.unidades();\n    return 0;\n}\n",
+          "answers": [
+            "1 0 20"
+          ],
+          "explanation": "Twenty is accepted; twenty-one is rejected, preserving the previous quantity."
+        },
+        {
+          "type": "paragraph",
+          "text": "The operation returns a result on every path. We do not ignore false when the task needs to report a rejection. The caller decides what message to display; the class maintains the rule and reports whether the change was applied."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Testable Sequence"
+        },
+        {
+          "type": "paragraph",
+          "text": "Implement the Pedido model with the three operations described. Construct {\"Q\", 4}; change the quantity to six; ship the order; try to change it to seven; and try to cancel it. Display the results of those four requests as 1 1 0 0 and the final quantity as six. Also test canceling before shipping, shipping twice, and changing quantities at each boundary and neighboring values."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Build the program described in the exercise.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write a state table for the variations. The criterion is not merely to end with a number within the range: rejections must also preserve the code and state, and every transition must require preparado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution and Criteria for Operations"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\n    bool cambiar_unidades(int nuevas) {\n        if (estado_ != Estado::preparado || nuevas < 1 || nuevas > 20) { return false; }\n        unidades_ = nuevas;\n        return true;\n    }\n    bool enviar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::enviado;\n        return true;\n    }\n    bool cancelar() {\n        if (estado_ != Estado::preparado) { return false; }\n        estado_ = Estado::cancelado;\n        return true;\n    }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"Q\", 4};\n    bool a = pedido.cambiar_unidades(6);\n    bool b = pedido.enviar();\n    bool c = pedido.cambiar_unidades(7);\n    bool d = pedido.cancelar();\n    std::cout << a << \" \" << b << \" \" << c << \" \" << d << \"\\n\";\n    std::cout << pedido.codigo() << \":\" << pedido.unidades() << \" \" << (pedido.estado() == Estado::enviado);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Criteria: each transition is applied only from preparado; changing units checks the quantity before assignment; false preserves every member; true performs exactly the documented change; the constructor still rejects invalid initial data. Use the const queries to observe the object after every request."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which test distinguishes this guarantee from an implementation that returns false but still changes the unit count?",
+          "options": [
+            "Repeat an accepted request without inspecting the object.",
+            "Compare the members before and after a rejected request.",
+            "Look only at the returned bool."
+          ],
+          "correctIndex": 1,
+          "explanation": "The reported result and actual side effects must satisfy the same contract."
+        }
+      ]
+    }
+  ]
+}

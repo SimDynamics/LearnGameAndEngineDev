@@ -1,0 +1,240 @@
+{
+  "id": "cpp_fundamentals__datos_propios_y_estado_valido__invariantes_y_construccion_rechazada",
+  "title": "Invariants et construction refusée",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Préciser les états qui représentent le concept"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans ce modèle, un Pedido possède un code non vide, une quantité de une à vingt unités et l'un des états preparado, enviado ou cancelado. Une nouvelle commande commence toujours dans l'état preparado. Ce sont les exigences de cet exemple, pas une règle universelle pour toutes les commandes. Les préciser permet de décider quelles données accepter et quelles opérations doivent les préserver."
+        },
+        {
+          "type": "paragraph",
+          "text": "Un invariant est une règle concernant l'état d'un objet qui doit être respectée après la fin de sa construction, ainsi qu'avant et après ses opérations publiques. La construction doit l'établir ; les données privées et les opérations doivent le préserver. Un code non vide ne garantit pas son existence réelle dans un système externe : nous vérifions uniquement la règle qui vient d'être définie."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelles données respectent les exigences initiales de cette version ?",
+          "options": [
+            "Code \"P2\" et six unités.",
+            "Code \"P2\" et zéro unité.",
+            "Code vide et six unités."
+          ],
+          "correctIndex": 0,
+          "explanation": "Les deux conditions doivent être remplies : un code non vide et une quantité comprise entre une et vingt unités."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier avant de terminer la construction"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    Pedido pedido{\"P2\", 6};\n    std::cout << pedido.codigo() << \":\" << pedido.unidades() << \" \" << (pedido.estado() == Estado::preparado);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les initialiseurs préparent les membres à partir des arguments reçus ; le corps du constructeur vérifie la règle. Si elle n'est pas respectée, throw interrompt la construction. Aucun objet Pedido dont la construction aurait réussi avec ces données invalides n'est disponible. La règle doit être respectée à la fin de la construction ; on ne suppose pas qu'elle l'est déjà avant la vérification des arguments."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Que doit-il se passer si l'on tente de construire une commande avec zéro unité ?",
+          "options": [
+            "Créer une commande invalide et demander à chaque consultation de la corriger.",
+            "Refuser la construction conformément au contrat.",
+            "Remplacer silencieusement zéro par une unité."
+          ],
+          "correctIndex": 1,
+          "explanation": "Modifier la donnée sans le signaler ne respecte ni la demande ni l'exigence de rejet."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Signaler le refus à l'appelant"
+        },
+        {
+          "type": "paragraph",
+          "text": "PedidoInvalido est un type simple utilisé comme signal de construction refusée. L'appelant place la construction dans un try et répond à l'exception grâce à catch. Le signal n'est pas la commande : on ne doit pas l'utiliser comme s'il contenait un objet correctement construit. Le mécanisme des exceptions a été développé dans l'unité précédente."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"A1\", 0};\n        std::cout << \"Créé\";\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Refusé\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Refusé"
+          ],
+          "explanation": "Le constructeur lance une exception avant de terminer ; l'instruction qui suit la construction n'est pas exécutée."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"B2\", 20};\n        std::cout << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Refusé\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "20"
+          ],
+          "explanation": "Vingt appartient au domaine autorisé ; la construction se termine normalement."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Bornes et conditions conjointes"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"\", 4};\n        std::cout << pedido.unidades();\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Code invalide\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Code invalide"
+          ],
+          "explanation": "Une quantité valide ne compense pas un code vide."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quels cas permettent de distinguer les bornes de la quantité ?",
+          "options": [
+            "Une et vingt unités acceptées ; zéro et vingt et une refusées.",
+            "Une et dix-neuf unités acceptées ; vingt refusées.",
+            "Zéro et vingt unités acceptées ; vingt et une refusées."
+          ],
+          "correctIndex": 0,
+          "explanation": "Les bornes et leurs valeurs voisines mettent les deux comparaisons à l'épreuve."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement l'opérateur qui détecte une quantité dépassant le maximum.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ ___ 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido pedido{\"R\", 21};\n        std::cout << \"Créé\";\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Refusé\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            ">"
+          ],
+          "explanation": "La condition doit rejeter les quantités supérieures à vingt."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un type correct n'implique pas des données valides"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les arguments \"A1\" et -3 possèdent les types string et int exigés par le constructeur. Pourtant, ils ne respectent pas la règle de Pedido. Le compilateur détecte les types incorrects ; la vérification du constructeur détecte les valeurs qui ne représentent pas un état autorisé. enum class présente également des limites : une conversion explicite peut produire des valeurs sans nom, elle ne remplace donc pas la validation du domaine."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle différence y a-t-il entre fournir une chaîne à la place du nombre d'unités et fournir -3 comme nombre d'unités ?",
+          "options": [
+            "Les deux sont vérifiés seulement après la construction.",
+            "Le premier cas est une incompatibilité de types ; le second exige de vérifier le domaine.",
+            "Les deux sont rejetés à la compilation à cause du type des arguments."
+          ],
+          "correctIndex": 1,
+          "explanation": "Les contrôles se complètent : vérification des types à la compilation et des valeurs lors de la construction."
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans cette version, l'état initial n'est pas un argument : le constructeur l'initialise toujours à Estado::preparado. L'interface empêche la création de commandes dans un état initial arbitraire. Si un autre modèle devait accepter un état initial, il faudrait définir et vérifier cette exigence."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La confidentialité et le constructeur se complètent"
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un constructeur vérifie unidades mais laisse ce membre public. Quel problème subsiste ?",
+          "options": [
+            "L'utilisateur pourrait ensuite le modifier et lui donner une valeur qui enfreint la règle.",
+            "Les arguments publics ne pourraient plus être vérifiés pendant la construction.",
+            "L'utilisateur ne pourrait pas le modifier puisque le constructeur l'a déjà vérifié."
+          ],
+          "correctIndex": 0,
+          "explanation": "Établir l'invariant lors de la construction ne suffit pas si un accès direct permet de l'enfreindre ensuite."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Les membres sont privés, mais le constructeur accepte toutes les données. Que manque-t-il ?",
+          "options": [
+            "Établir l'invariant avant de terminer la construction.",
+            "Vérifier chaque valeur uniquement au moment d'une consultation.",
+            "Déclarer les consultations const et accepter n'importe quel argument."
+          ],
+          "correctIndex": 0,
+          "explanation": "La confidentialité ne transforme pas des arguments invalides en un objet correct."
+        },
+        {
+          "type": "paragraph",
+          "text": "La construction et l'accès contrôlé constituent deux garanties complémentaires pour faire confiance à un Pedido construit. Nous préciserons ensuite les conditions des opérations qui modifient son état."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire avec un rejet vérifiable"
+        },
+        {
+          "type": "paragraph",
+          "text": "Définis une classe Lote avec un code string non vide et une quantité int de une à cinq. Le constructeur doit refuser les autres arguments en lançant un signal LoteInvalido, sans les modifier silencieusement. Ses consultations codigo() et cantidad() sont const et ses données privées. Teste {\"L\", 1}, {\"L\", 5}, {\"L\", 0}, {\"L\", 6}, {\"\", 2} et {\"L\", -1}. Affiche le code et la quantité en cas d'acceptation, et Refusé lorsque le signal est intercepté."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    // Construis ici le programme décrit dans la consigne.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Prédis chaque acceptation ou rejet avant la compilation. Le catch doit être placé à l'extérieur du constructeur : si celui-ci interceptait son propre signal pour terminer la construction avec d'autres données, il ne respecterait pas le rejet demandé."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Solution et critères de validité"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nstruct LoteInvalido {};\n\nclass Lote {\npublic:\n    Lote(std::string codigo, int cantidad) : codigo_{codigo}, cantidad_{cantidad} {\n        if (codigo_.empty() || cantidad_ < 1 || cantidad_ > 5) { throw LoteInvalido{}; }\n    }\n    std::string codigo() const { return codigo_; }\n    int cantidad() const { return cantidad_; }\nprivate:\n    std::string codigo_;\n    int cantidad_;\n};\n\nint main() {\n    try {\n        Lote lote{\"L\", 6};\n        std::cout << lote.codigo() << \":\" << lote.cantidad();\n    } catch (const LoteInvalido&) {\n        std::cout << \"Refusé\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Critères : les consultations ne sont utilisées qu'après une construction acceptée ; tous les arguments hors du domaine interrompent la construction ; les arguments valides sont conservés sans changement ; le code client distingue la réussite du refus ; les membres privés ne permettent pas de rompre la règle par affectation directe."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <string>\n#include <vector>\n\nenum class Estado {\n    preparado, enviado, cancelado\n};\n\nstruct PedidoInvalido {};\n\nclass Pedido {\npublic:\n    Pedido(std::string codigo, int unidades) : codigo_{codigo}, unidades_{unidades} {\n        if (codigo_.empty() || unidades_ < 1 || unidades_ > 20) {\n            throw PedidoInvalido{};\n        }\n    }\n    std::string codigo() const { return codigo_; }\n    int unidades() const { return unidades_; }\n    Estado estado() const { return estado_; }\nprivate:\n    std::string codigo_;\n    int unidades_;\n    Estado estado_ = Estado::preparado;\n};\n\nint main() {\n    try {\n        Pedido a{\"A\", 1};\n        std::cout << \"A \";\n        Pedido b{\"B\", 21};\n        std::cout << \"B\";\n    } catch (const PedidoInvalido&) {\n        std::cout << \"Refusé\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "A Refusé"
+          ],
+          "explanation": "La première construction et son affichage ont eu lieu ; la seconde lance une exception et n'exécute pas son affichage ultérieur."
+        }
+      ]
+    }
+  ]
+}
