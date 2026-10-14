@@ -1,0 +1,239 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__estado_del_formato_y_flujos_independientes",
+  "title": "Format State and Independent Streams",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Manipulator Remains Active Until Changed"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::cout << std::hex << 26 << \"|\" << 31 << \"|\" << std::dec << 31;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The guided comparison produces 1a|1f|31. The base remains part of cout's state: it does not apply only to the immediately following integer. Inserting text between integers does not switch it back to decimal. std::dec selects decimal again for subsequent operations on that same stream."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::cout << std::oct << 9 << \"|\" << 16 << \"|\" << std::dec << 16;\n    return 0;\n}\n",
+          "answers": [
+            "11|20|16"
+          ],
+          "explanation": "Octal stays active for nine and sixteen; dec affects only subsequent insertions."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the manipulator that changes integer output back to decimal.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::cout << std::hex << 20 << \"|\" << std::___ << 20;\n    return 0;\n}\n",
+          "answers": [
+            "dec"
+          ],
+          "explanation": "You must change the base of the stream itself before the second integer."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Each Stream Has Its Own Configuration"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::ostringstream a;\n    std::ostringstream b;\n    a << std::hex << 26;\n    b << 26;\n    std::cout << a.str() << \"|\" << b.str() << \"|\" << 26;\n    return 0;\n}\n",
+          "answers": [
+            "1a|26|26"
+          ],
+          "explanation": "Changing a does not change b or cout. The resulting strings already contain their characters."
+        },
+        {
+          "type": "paragraph",
+          "text": "The configuration belongs to the stream object, just like the content it accumulates or the position of a read. There is no single base automatically shared by all streams. A new local stream lets you select a format for one composition without changing the caller's output."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A function composes text in hexadecimal using a local ostringstream. What happens to the base of the caller's cout?",
+          "options": [
+            "str() automatically transfers the base to cout.",
+            "It becomes hexadecimal until another call.",
+            "The base of cout keeps its own configuration."
+          ],
+          "correctIndex": 2,
+          "explanation": "The returned string carries characters, not the configuration of the stream that produced them."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Switching Back to Decimal Does Not Change Earlier Text"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::ostringstream texto;\n    texto << std::hex << 31;\n    std::string primera = texto.str();\n    texto << \"|\" << std::dec << 31;\n    std::cout << primera << \":\" << texto.str();\n    return 0;\n}\n",
+          "answers": [
+            "1f:1f|31"
+          ],
+          "explanation": "The first string retains 1f. dec affects characters added afterward; it does not rewrite those already stored."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "After texto << hex << 31, you execute texto << dec. What changes?",
+          "options": [
+            "The contents are erased to begin a new composition.",
+            "The characters already accumulated change from 1f to 31.",
+            "The base for integers inserted afterward."
+          ],
+          "correctIndex": 2,
+          "explanation": "Changing the formatting state does not alter existing contents retroactively."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prefixes and Letters Are Also Display Controls"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::cout << std::showbase << std::hex << 26 << \"|\" << std::uppercase << 26\n        << \"|\" << std::nouppercase << std::oct << 26 << \"|\" << std::dec << 26;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The guided comparison produces 0x1a|0X1A|032|26. showbase requests a prefix for hexadecimal or octal; decimal adds no such prefix. uppercase requests uppercase letters in these formats, and nouppercase switches back to lowercase. These controls persist, and noshowbase removes the prefix request. For zero, the usual representation with showbase is simply 0 in both hexadecimal and octal."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::cout << std::showbase << std::hex << 15 << \"|\" << 16\n        << \"|\" << std::noshowbase << 16;\n    return 0;\n}\n",
+          "answers": [
+            "0xf|0x10|10"
+          ],
+          "explanation": "showbase remains active for the first two integers; noshowbase removes the prefix from the third."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose the Base for Prepared Input"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::istringstream entrada{\"2a 52 42\"};\n    int a = 0;\n    int b = 0;\n    int c = 0;\n    if (entrada >> std::hex >> a >> std::oct >> b >> std::dec >> c) {\n        std::cout << a << \"|\" << b << \"|\" << c;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This guided comparison gives 42|42|42: each extraction interprets its text according to the base selected for entrada. The base is not shared with cout. It changes how the characters being read are interpreted, not the int type of the destinations. The lab uses prepared text and does not request keyboard input."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::istringstream entrada{\"17 10\"};\n    int a = 0;\n    int b = 0;\n    if (entrada >> std::oct >> a >> b) {\n        std::cout << a << \"|\" << b;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "15|8"
+          ],
+          "explanation": "Octal remains active for both reads: one group of eight plus seven and one group of eight."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall the reading contract: a successful extraction alone does not prove that an entire line conforms to the format. Here the prepared data contain exactly the declared fields. For a complete external operation, you would still perform the content and state checks from the text unit."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reject an Incompatible Digit Before Using It"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::istringstream entrada{\"8\"};\n    int cantidad = 0;\n    if (entrada >> std::oct >> cantidad) {\n        std::cout << \"Read:\" << cantidad;\n    } else {\n        std::cout << \"Rejected\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Rejected"
+          ],
+          "explanation": "Eight is not an octal digit. The program uses a quantity as a result only when extraction succeeds."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The text \"032\" is read with dec in an istringstream. What quantity is obtained?",
+          "options": [
+            "It is always rejected because it has a leading zero.",
+            "Twenty-six, because any leading zero changes the input to octal.",
+            "Thirty-two, because the stream requests decimal."
+          ],
+          "correctIndex": 2,
+          "explanation": "Do not confuse the rule for a C++ source-code literal with the base selected for this read."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compose Without Changing the Caller's Format"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write a function that receives an int between zero and one thousand and returns dec=D;hex=H;oct=O without prefixes. It must build a local stream and must not print. In main, switch cout to hexadecimal, call the function with 10 and then with 20, display both strings, and finally display the integer 26. Predict which fields are decimal and which final integer is affected by cout."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    // Build the program requested by the exercise here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The function selects each base deliberately. Test zero and another permitted value; one call's result must not accumulate the previous one or change the caller's configuration. Use clear labels and delimiters."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference and Criteria for Local State"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nstd::string representar(int cantidad) {\n    std::ostringstream texto;\n    texto << \"dec=\" << std::dec << cantidad << \";hex=\" << std::hex << cantidad\n        << \";oct=\" << std::oct << cantidad;\n    return texto.str();\n}\n\nint main() {\n    std::cout << std::hex;\n    std::string primero = representar(10);\n    std::string segundo = representar(20);\n    std::cout << primero << \"\\n\" << segundo << \"\\n\" << 26;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The lines are dec=10;hex=a;oct=12, dec=20;hex=14;oct=24, and 1a. Criteria: every call begins with an empty stream; configures each field; returns characters without printing; preserves earlier results; and cout remains hexadecimal for its final integer. A different function name is valid if it meets the contract."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::ostringstream texto;\n    texto << std::showbase << std::hex << 0 << \"|\" << std::oct << 0;\n    std::cout << texto.str();\n    return 0;\n}\n",
+          "answers": [
+            "0|0"
+          ],
+          "explanation": "The representation of zero does not add a duplicate prefix in these formats."
+        }
+      ]
+    }
+  ]
+}

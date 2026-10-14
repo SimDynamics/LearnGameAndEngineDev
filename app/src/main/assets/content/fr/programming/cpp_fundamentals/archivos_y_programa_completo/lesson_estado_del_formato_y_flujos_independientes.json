@@ -1,0 +1,239 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__estado_del_formato_y_flujos_independientes",
+  "title": "État du format et flux indépendants",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le manipulateur reste actif jusqu'à son remplacement"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::cout << std::hex << 26 << \"|\" << 31 << \"|\" << std::dec << 31;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparaison guidée produit 1a|1f|31. La base reste dans l'état de cout : elle ne se limite pas à l'entier immédiatement suivant. Les insertions de texte entre les entiers ne le ramènent pas au décimal. std::dec sélectionne à nouveau le décimal pour les opérations suivantes sur ce même flux."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::cout << std::oct << 9 << \"|\" << 16 << \"|\" << std::dec << 16;\n    return 0;\n}\n",
+          "answers": [
+            "11|20|16"
+          ],
+          "explanation": "L'octal reste actif pour neuf et seize ; dec ne modifie que les insertions suivantes."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le manipulateur qui ramène l'affichage des entiers en décimal.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::cout << std::hex << 20 << \"|\" << std::___ << 20;\n    return 0;\n}\n",
+          "answers": [
+            "dec"
+          ],
+          "explanation": "Il faut changer la base du flux lui-même avant le deuxième entier."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Chaque flux conserve sa propre configuration"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::ostringstream a;\n    std::ostringstream b;\n    a << std::hex << 26;\n    b << 26;\n    std::cout << a.str() << \"|\" << b.str() << \"|\" << 26;\n    return 0;\n}\n",
+          "answers": [
+            "1a|26|26"
+          ],
+          "explanation": "Modifier a ne modifie ni b ni cout. Les chaînes obtenues contiennent déjà leurs caractères."
+        },
+        {
+          "type": "paragraph",
+          "text": "La configuration appartient à l'objet flux, comme le contenu qu'il accumule ou la position d'une lecture. Il n'existe aucune base unique automatiquement partagée par tous les flux. Un nouveau flux local permet de choisir un format pour une composition sans modifier l'affichage de l'appelant."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Une fonction compose du texte en hexadécimal à l'aide d'un ostringstream local. Qu'advient-il de la base du cout de l'appelant ?",
+          "options": [
+            "str() transfère automatiquement la base à cout.",
+            "Elle devient hexadécimale jusqu'au prochain appel.",
+            "La base de cout conserve sa propre configuration."
+          ],
+          "correctIndex": 2,
+          "explanation": "La chaîne renvoyée transmet des caractères, pas la configuration du flux qui les a produits."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Revenir au décimal ne modifie pas le texte précédent"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::ostringstream texto;\n    texto << std::hex << 31;\n    std::string primera = texto.str();\n    texto << \"|\" << std::dec << 31;\n    std::cout << primera << \":\" << texto.str();\n    return 0;\n}\n",
+          "answers": [
+            "1f:1f|31"
+          ],
+          "explanation": "La première chaîne conserve 1f. dec ne s'applique qu'aux caractères ajoutés ensuite ; il ne réécrit pas ceux qui sont déjà stockés."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Après texto << hex << 31, tu exécutes texto << dec. Qu'est-ce qui change ?",
+          "options": [
+            "Le contenu est effacé pour commencer une nouvelle composition.",
+            "Les caractères déjà accumulés passent de 1f à 31.",
+            "La base des entiers insérés ensuite."
+          ],
+          "correctIndex": 2,
+          "explanation": "Changer l'état du format ne modifie pas rétroactivement le contenu."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Préfixes et lettres sont aussi des réglages d'affichage"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::cout << std::showbase << std::hex << 26 << \"|\" << std::uppercase << 26\n        << \"|\" << std::nouppercase << std::oct << 26 << \"|\" << std::dec << 26;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La comparaison guidée produit 0x1a|0X1A|032|26. showbase demande un préfixe en hexadécimal ou en octal ; le décimal n'ajoute pas ce préfixe. uppercase demande des lettres majuscules dans ces formats, tandis que nouppercase rétablit les minuscules. Ces réglages persistent et noshowbase désactive la demande de préfixe. Pour zéro, la représentation usuelle avec showbase est simplement 0 en hexadécimal comme en octal."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::cout << std::showbase << std::hex << 15 << \"|\" << 16\n        << \"|\" << std::noshowbase << 16;\n    return 0;\n}\n",
+          "answers": [
+            "0xf|0x10|10"
+          ],
+          "explanation": "showbase reste actif pour les deux premiers entiers ; noshowbase retire le préfixe du troisième."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir la base d'une entrée préparée"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::istringstream entrada{\"2a 52 42\"};\n    int a = 0;\n    int b = 0;\n    int c = 0;\n    if (entrada >> std::hex >> a >> std::oct >> b >> std::dec >> c) {\n        std::cout << a << \"|\" << b << \"|\" << c;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette comparaison guidée donne 42|42|42 : chaque extraction interprète son texte selon la base sélectionnée dans entrada. Cette base n'est pas partagée avec cout. Elle change l'interprétation des caractères lus, pas le type int des destinations. Le laboratoire utilise du texte préparé et ne demande pas de saisie au clavier."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::istringstream entrada{\"17 10\"};\n    int a = 0;\n    int b = 0;\n    if (entrada >> std::oct >> a >> b) {\n        std::cout << a << \"|\" << b;\n    }\n    return 0;\n}\n",
+          "answers": [
+            "15|8"
+          ],
+          "explanation": "L'octal reste actif pour les deux lectures : un groupe de huit plus sept, puis un groupe de huit."
+        },
+        {
+          "type": "paragraph",
+          "text": "Rappelle-toi le contrat de lecture : une extraction réussie ne prouve pas à elle seule qu'une ligne entière respecte le format. Ici, les données préparées contiennent exactement les champs déclarés. Pour une opération externe complète, tu effectuerais encore les vérifications de contenu et d'état de l'unité sur le texte."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Rejeter un chiffre incompatible avant de l'utiliser"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::istringstream entrada{\"8\"};\n    int cantidad = 0;\n    if (entrada >> std::oct >> cantidad) {\n        std::cout << \"Lu :\" << cantidad;\n    } else {\n        std::cout << \"Rejeté\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Rejeté"
+          ],
+          "explanation": "Huit n'est pas un chiffre octal. Le programme n'utilise une quantité comme résultat que lorsque l'extraction a réussi."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le texte \"032\" est lu avec dec dans un istringstream. Quelle quantité obtient-on ?",
+          "options": [
+            "Il est toujours rejeté parce qu'il comporte un zéro initial.",
+            "Vingt-six, car tout zéro initial fait passer la lecture en octal.",
+            "Trente-deux, car le flux demande le décimal."
+          ],
+          "correctIndex": 2,
+          "explanation": "Ne confonds pas la règle d'un littéral dans le code source C++ avec la base sélectionnée pour cette lecture."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Composer sans changer le format de l'appelant"
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris une fonction qui reçoit un int entre zéro et mille et renvoie dec=D;hex=H;oct=O sans préfixes. Elle doit construire un flux local et ne rien afficher. Dans main, passe cout en hexadécimal, appelle la fonction avec 10 puis avec 20, affiche les deux chaînes et enfin l'entier 26. Prédis quels champs sont décimaux et quel dernier entier reste affecté par cout."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    // Construis ici le programme demandé par l'exercice.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction choisit délibérément chaque base. Vérifie zéro et une autre valeur autorisée ; le résultat d'un appel ne doit ni accumuler le précédent ni modifier la configuration de l'appelant. Utilise des étiquettes et des délimiteurs clairs."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence et critères de l'état local"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nstd::string representar(int cantidad) {\n    std::ostringstream texto;\n    texto << \"dec=\" << std::dec << cantidad << \";hex=\" << std::hex << cantidad\n        << \";oct=\" << std::oct << cantidad;\n    return texto.str();\n}\n\nint main() {\n    std::cout << std::hex;\n    std::string primero = representar(10);\n    std::string segundo = representar(20);\n    std::cout << primero << \"\\n\" << segundo << \"\\n\" << 26;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les lignes sont dec=10;hex=a;oct=12, dec=20;hex=14;oct=24 et 1a. Critères : chaque appel commence avec un flux vide ; configure chaque champ ; renvoie des caractères sans les afficher ; conserve les résultats précédents ; et cout reste en hexadécimal pour son dernier entier. Un nom de fonction différent est valable s'il respecte le contrat."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    std::ostringstream texto;\n    texto << std::showbase << std::hex << 0 << \"|\" << std::oct << 0;\n    std::cout << texto.str();\n    return 0;\n}\n",
+          "answers": [
+            "0|0"
+          ],
+          "explanation": "La représentation de zéro n'ajoute pas un préfixe en double dans ces formats."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__representar_enteros_en_distintas_bases",
+  "title": "Représenter les entiers dans différentes bases",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La valeur et les caractères qui la représentent"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un int conserve une valeur entière ; pour l'afficher, le flux produit des caractères. En décimal, nous utilisons dix chiffres, de 0 à 9. Dans 42, la position de droite compte les unités et la suivante les groupes de dix : quatre groupes de dix plus deux unités. La base indique combien d'unités d'une position forment une unité de la position suivante."
+        },
+        {
+          "type": "paragraph",
+          "text": "Changer de base ne change pas la quantité représentée. Une même quantité peut s'écrire avec d'autres chiffres et d'autres positions. Pour étudier le formatage, nous utiliserons des entiers non négatifs de zéro à mille, afin de ne pas confondre cet objectif avec la représentation des entiers négatifs ou d'avoir besoin de connaître les bits."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Dans l'écriture décimale 63, que représente le chiffre 6 ?",
+          "options": [
+            "Six unités.",
+            "Soixante-trois groupes de dix.",
+            "Six groupes de dix."
+          ],
+          "correctIndex": 2,
+          "explanation": "La position des dizaines apporte six fois dix ; le trois représente les unités."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Octal : des groupes de huit"
+        },
+        {
+          "type": "paragraph",
+          "text": "La base octale utilise huit chiffres : 0, 1, 2, 3, 4, 5, 6 et 7. La position de droite compte les unités ; la suivante, les groupes de huit ; la troisième, les groupes de huit fois huit, soit soixante-quatre. Il n'existe pas de chiffre octal 8 : après 7, on écrit 10 pour représenter huit unités."
+        },
+        {
+          "type": "paragraph",
+          "text": "L'écriture octale 52 représente cinq groupes de huit plus deux unités : quarante-deux en décimal. L'écriture octale 106 représente un groupe de soixante-quatre, zéro groupe de huit et six unités : soixante-dix en décimal."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle quantité décimale représente 23 en octal ?",
+          "options": [
+            "Deux fois seize plus trois : trente-cinq.",
+            "Deux fois huit plus trois : dix-neuf.",
+            "Vingt-trois."
+          ],
+          "correctIndex": 1,
+          "explanation": "La position de gauche représente des groupes de huit, pas des dizaines."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle écriture contient un chiffre qui n'appartient pas à l'octal ?",
+          "options": [
+            "17",
+            "80",
+            "26"
+          ],
+          "correctIndex": 1,
+          "explanation": "L'octal utilise uniquement les chiffres de zéro à sept."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Hexadécimal : seize possibilités par position"
+        },
+        {
+          "type": "paragraph",
+          "text": "La base hexadécimale utilise les chiffres de 0 à 9, puis a, b, c, d, e et f pour les quantités de dix à quinze. Les lettres A à F peuvent également représenter ces mêmes valeurs. La position après les unités compte des groupes de seize ; la troisième, des groupes de seize fois seize, soit deux cent cinquante-six."
+        },
+        {
+          "type": "paragraph",
+          "text": "En hexadécimal, 2a représente deux groupes de seize et dix unités : quarante-deux en décimal. En hexadécimal, 46 représente quatre groupes de seize et six unités : soixante-dix en décimal. Les lettres sont des chiffres de cette écriture, pas des noms de variables."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle quantité décimale représente 1f en hexadécimal ?",
+          "options": [
+            "Une fois huit plus quinze : vingt-trois.",
+            "Une fois seize plus quinze : trente et un.",
+            "Une fois seize plus six : vingt-deux."
+          ],
+          "correctIndex": 1,
+          "explanation": "f est le chiffre pour quinze ; l'autre position compte des groupes de seize."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Demander au flux de sortie d'utiliser une base"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 42;\n    std::cout << std::dec << cantidad << \"|\" << std::hex << cantidad\n        << \"|\" << std::oct << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "std::dec, std::hex et std::oct sont des manipulateurs : ils changent la base dans laquelle ce flux affichera les entiers suivants. Ils n'affichent pas à eux seuls le nom d'une base. La sortie de cette comparaison guidée est 42|2a|52 : trois représentations d'une même valeur."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 26;\n    std::cout << std::dec << cantidad << \"|\" << std::hex << cantidad\n        << \"|\" << std::oct << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "26|1a|32"
+          ],
+          "explanation": "Un groupe de seize plus dix vaut vingt-six ; trois groupes de huit plus deux valent aussi vingt-six."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Complète uniquement le manipulateur qui affiche l'entier en octal.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 17;\n    std::cout << std::___ << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "oct"
+          ],
+          "explanation": "oct sélectionne des groupes de huit ; dix-sept en décimal s'affiche sous la forme 21."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Le calcul utilise toujours la valeur"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 31;\n    std::cout << std::hex << cantidad << \"|\";\n    cantidad += 1;\n    std::cout << std::dec << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "1f|32"
+          ],
+          "explanation": "La quantité passe de trente et un à trente-deux. Le choix de l'hexadécimal ne change que les caractères affichés."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 16;\n    std::cout << std::hex << cantidad << \"|\" << \"16\" << \"|\" << std::dec << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "10|16|16"
+          ],
+          "explanation": "L'entier est formaté selon la base ; la chaîne 16 contient déjà des caractères et s'insère comme du texte."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ne confonds pas un texte contenant des chiffres avec un entier. Le manipulateur n'analyse ni ne recalcule une chaîne. Cette distinction rejoint la composition : les caractères sont produits d'abord, puis leur destination peut être choisie."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La base d'un littéral entier en C++"
+        },
+        {
+          "type": "paragraph",
+          "text": "La notation dans le code source est un autre choix. Un littéral entier sans préfixe, comme 42, est décimal. Le préfixe 0x dans 0x2a indique l'hexadécimal ; un zéro initial dans 052 indique l'octal. Ces trois littéraux produisent la même valeur int. N'ajoute pas de zéros initiaux à un littéral pour décorer une quantité décimale : 010 représente huit, pas dix."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int a = 42;\n    int b = 0x2a;\n    int c = 052;\n    std::cout << std::dec << a << \"|\" << b << \"|\" << c;\n    return 0;\n}\n"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 010;\n    std::cout << std::dec << cantidad << \"|\" << std::hex << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "8|8"
+          ],
+          "explanation": "Le littéral du code source a déjà produit la valeur huit ; le formatage de sortie ne réinterprète pas le texte 010."
+        },
+        {
+          "type": "note",
+          "text": "Les préfixes d'un littéral C++ ne signifient pas que toutes les lectures de texte suivent la même règle. Pour une entrée préparée, nous choisirons aussi la base du flux."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire une table de représentations"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour les valeurs décimales 0, 8, 15 et 64, construis une ligne par valeur au format dec=D;hex=H;oct=O, sans préfixe de base. Les trois champs doivent représenter le même entier. Tu peux utiliser un vector et une boucle ou des instructions séparées. Détermine d'abord les résultats de chaque champ à l'aide des groupes et des positions. Ensuite, teste une autre valeur entre zéro et mille."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    // Construis ici le programme demandé par l'exercice.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les étiquettes sont du texte littéral ; les valeurs sont insérées comme des entiers et chaque champ sélectionne sa base. Ne copie pas les réponses comme des chaînes fixes : la composition doit fonctionner avec d'autres valeurs du domaine."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Référence et critères d'équivalence"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::vector<int> cantidades{0, 8, 15, 64};\n    for (int cantidad : cantidades) {\n        std::cout << \"dec=\" << std::dec << cantidad\n            << \";hex=\" << std::hex << cantidad << \";oct=\" << std::oct << cantidad << \"\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Les lignes de référence sont dec=0;hex=0;oct=0, dec=8;hex=8;oct=10, dec=15;hex=f;oct=17 et dec=64;hex=40;oct=100. Critères : chaque ligne conserve une même valeur dans ses trois champs ; les étiquettes et leur ordre respectent le contrat ; les bases sont sélectionnées avant chaque entier ; le code source utilise volontairement des littéraux décimaux ; le programme fonctionne aussi avec une autre donnée autorisée. Il n'existe pas une seule organisation valable de la boucle."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Prédis la sortie exacte.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n\nint main() {\n    int cantidad = 24;\n    std::cout << std::oct << cantidad << \"|\" << std::dec << cantidad + 2;\n    return 0;\n}\n",
+          "answers": [
+            "30|26"
+          ],
+          "explanation": "Trois groupes de huit font vingt-quatre. L'addition donne vingt-six, affiché en décimal."
+        }
+      ]
+    }
+  ]
+}
