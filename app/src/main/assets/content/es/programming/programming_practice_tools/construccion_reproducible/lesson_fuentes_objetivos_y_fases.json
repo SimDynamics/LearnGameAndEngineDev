@@ -127,6 +127,393 @@
           "text": "El siguiente trabajo consistirá en preparar los archivos, fijar las herramientas y opciones, configurar y generar, construir consulta y ejecutar el resultado con casos conocidos. Guardaremos por separado las evidencias de cada fase y volveremos a construir después de un cambio. Leer esta descripción prepara esas decisiones; la práctica con el proyecto es una parte necesaria de su aprendizaje."
         }
       ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Expresar los requisitos de un objetivo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Las tres instrucciones anteriores describían el proyecto y su objetivo. Ahora añadimos dos decisiones de construcción. Este curso utiliza un perfil de C++20: la herramienta elegida debe poder proporcionar al menos las características de ese estándar. Es una elección del entorno de trabajo, aunque el pequeño programa de esta práctica no necesite todas ellas."
+        },
+        {
+          "type": "paragraph",
+          "text": "En CMake una instrucción tiene la forma nombre(argumentos). En estas descripciones, los argumentos se separan por espacios o saltos de línea; los paréntesis delimitan la lista. No copiamos las comas entre argumentos ni el punto y coma final de una llamada de C++. CMake interpreta estas instrucciones como lenguaje de construcción, mientras que el compilador C++ interpreta el programa de la fuente. Observa las palabras y el orden de los argumentos: cada instrucción les asigna una función distinta (Scott, 2025, pp. 12–15)."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\nadd_executable(consulta main.cpp)\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "target_compile_features recibe el nombre del objetivo, el alcance y las características requeridas. Aquí consulta es el objetivo ya creado por add_executable; PRIVATE aplica el requisito a su propia compilación. Esta palabra pertenece al lenguaje de CMake y no es una declaración de acceso de una clase C++. cxx_std_20 pide un estándar que proporcione como mínimo las características de C++20; no obliga a un compilador a bajar de un modo posterior que ya las proporciona (Scott, 2025, pp. 216–217)."
+        },
+        {
+          "type": "paragraph",
+          "text": "set_target_properties asigna propiedades a objetivos. En este caso PROPERTIES introduce el par nombre/valor CXX_EXTENSIONS OFF: desactivamos el modo de extensiones del compilador para consulta. Esta propiedad no demuestra que cualquier programa sea portable ni evita por sí sola utilizar una biblioteca que otro entorno no tenga. El estándar requerido y las extensiones son decisiones diferentes (Scott, 2025, pp. 214–215)."
+        },
+        {
+          "type": "paragraph",
+          "text": "cmake_minimum_required(VERSION 3.20) fija la versión mínima de CMake admitida por esta descripción y establece su marco de políticas; no selecciona C++20. El número elegido no pretende ser un mínimo universal para cualquier proyecto C++20. Mantén separadas la versión de CMake, las capacidades del compilador C++ y los requisitos del objetivo (Scott, 2025, p. 13)."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "identificar_el_requisito_del_objetivo",
+          "question": "¿Qué línea de esta descripción exige al objetivo consulta al menos las características de C++20?",
+          "options": [
+            "project(Existencias LANGUAGES CXX)",
+            "set_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)",
+            "target_compile_features(consulta PRIVATE cxx_std_20)"
+          ],
+          "correctIndex": 2,
+          "explanation": "El requisito de características se asocia al objetivo mediante target_compile_features. Revisa qué decisión expresa cada argumento antes de trasladarlo a otro proyecto."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "conservar_el_alcance_del_perfil",
+          "question": "La construcción utilizó un modo de C++ posterior a C++20 que satisface el requisito declarado. ¿Qué conclusión es válida?",
+          "options": [
+            "El requisito mínimo puede cumplirse con ese modo; no habíamos exigido exactamente C++20.",
+            "La construcción incumple el perfil, porque 20 prohíbe cualquier modo posterior.",
+            "cmake_minimum_required debe cambiar al número de ese estándar de C++."
+          ],
+          "correctIndex": 0,
+          "explanation": "cxx_std_20 expresa un mínimo. Si un proyecto necesita otras restricciones, deben declararse y comprobarse; no se deducen de este nombre."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Calcular el comportamiento antes de construir"
+        },
+        {
+          "type": "paragraph",
+          "text": "El programa decide si hay que reponer existencias. debe_reponer(disponibles, minimo) debe devolver verdadero cuando disponibles sea menor o igual que minimo. Trabajaremos con enteros 0 ≤ disponibles ≤ 40 y 1 ≤ minimo ≤ 40. La igualdad pertenece al caso de reposición: llegar al mínimo todavía exige reponer."
+        },
+        {
+          "type": "paragraph",
+          "text": "Usaremos tres llamadas en este orden: (4,5), (5,5) y (6,5). Antes de mirar una ejecución, calcula qué pide el contrato para cada pareja. std::cout muestra aquí bool como 1 o 0; los separaremos con dos puntos, sin espacios ni salto final. No se ha activado boolalpha."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "deducir_el_oraculo_de_reposicion",
+          "question": "Según el contrato, ¿qué salida deben producir las tres llamadas, en el orden indicado?",
+          "options": [
+            "1:0:0",
+            "1:1:0",
+            "0:1:1"
+          ],
+          "correctIndex": 1,
+          "explanation": "4 y 5 satisfacen la relación menor o igual respecto de 5; 6 no. El esperado procede del requisito, no de la implementación que vayamos a investigar."
+        },
+        {
+          "type": "paragraph",
+          "text": "Este resultado servirá como oráculo de estos casos: una referencia independiente con la que comparar la observación. Tres coincidencias serán evidencia sobre esas llamadas; no una prueba de todas las entradas del dominio. Conservaremos también qué fuente, descripción, herramientas y pasos produjeron cada observación."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "limitar_la_evidencia_del_caso",
+          "question": "Un ejecutable produjo el esperado en esas tres llamadas. ¿Qué queda acreditado directamente?",
+          "options": [
+            "Que cualquier entrada del dominio y cualquier revisión futura dan el resultado correcto.",
+            "Que configurar por sí solo ejecutará correctamente todas las consultas futuras.",
+            "Que ese artefacto coincide con el contrato en esas llamadas y condiciones concretas."
+          ],
+          "correctIndex": 2,
+          "explanation": "Relaciona la evidencia con los casos efectivamente observados. Para otras entradas o una fuente modificada necesitas razonamiento y comprobaciones pertinentes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construir y comprobar consulta en el laboratorio"
+        },
+        {
+          "type": "paragraph",
+          "text": "Este laboratorio conserva dos archivos editables. CMakeLists.txt contiene la descripción completa del perfil; main.cpp contiene el programa C++. El objetivo solicitado es consulta y el tipo de construcción inicial es Debug. Debug es una configuración de construcción, no una prueba de corrección ni un requisito para que la comparación sea inclusiva."
+        },
+        {
+          "type": "paragraph",
+          "text": "En el teléfono, CMake usa Ninja y el compilador Clang seleccionado para obtener un programa WebAssembly que se ejecuta con WASI. El archivo consulta.exe del ejemplo Windows anterior no es el artefacto de este entorno Android. Mira las herramientas y comandos que identifica el registro, en lugar de inferirlos del nombre de un archivo. Esta práctica necesita el perfil CMake disponible para ARM64 y Android 9 o posterior."
+        },
+        {
+          "type": "paragraph",
+          "text": "Primero pulsa Configurar / generar y lee su resultado. Después solicita Construir objetivo y, sólo cuando termine correctamente, Ejecutar objetivo. Contrasta la salida y el código de terminación con tu esperado anterior. El proyecto no necesita entrada estándar. Guarda qué fase produjo cada registro: los éxitos tienen alcances distintos."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\nadd_executable(consulta main.cpp)\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consulta",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "distinguir_la_construccion_de_la_prueba",
+          "question": "La configuración y la construcción de consulta terminaron correctamente. Todavía no lo ejecutaste. ¿Cuál es el siguiente paso para comprobar las tres llamadas?",
+          "options": [
+            "Aceptar el contrato como probado porque la construcción terminó sin errores.",
+            "Cambiar el nombre del proyecto antes de utilizar el artefacto construido.",
+            "Ejecutar el objetivo vigente y comparar su salida y terminación con el oráculo."
+          ],
+          "correctIndex": 2,
+          "explanation": "La construcción produjo el programa, pero todavía no observaste su comportamiento en esas llamadas. Mantén la relación entre artefacto y casos al ejecutarlo."
+        },
+        {
+          "type": "paragraph",
+          "text": "Para este programa de referencia, la ejecución debe mostrar 1:1:0 y terminar con código 0. Si no coincide, compara primero los archivos conservados, el objetivo, el perfil y los registros; una observación sólo puede atribuirse al proyecto que realmente se construyó y ejecutó."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un cambio pequeño exige una evidencia nueva"
+        },
+        {
+          "type": "paragraph",
+          "text": "Investigaremos una revisión que cambia únicamente <= por < en debe_reponer. La descripción CMake y las tres llamadas siguen iguales. Antes de construirla, predice lo que hará la implementación; mantén separado ese resultado del que exige el contrato."
+        },
+        {
+          "type": "output_prediction",
+          "id": "predecir_la_revision_estricta",
+          "language": "cpp",
+          "question": "¿Qué imprime esta revisión con comparación estricta? Predice su comportamiento efectivo, sin sustituirlo por el requisito.",
+          "code": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0;\n}\n",
+          "answers": [
+            "1:0:0"
+          ],
+          "explanation": "4 es menor que 5; 5 no es menor que 5 y 6 tampoco. El cambio afecta a la frontera de igualdad: esa discrepancia puede existir aunque la construcción termine correctamente."
+        },
+        {
+          "type": "paragraph",
+          "text": "El laboratorio empieza con esa revisión estricta. Configura, construye y ejecuta para observarla. Luego cambia sólo la comparación en main.cpp para que cumpla el contrato y vuelve a construir y ejecutar. Con este proyecto simple, cambiar el texto de una fuente C++ conservando sus rutas y la descripción permite reconstruir con las reglas vigentes. Cambiar CMakeLists.txt o el perfil sí requiere volver a configurar. No atribuyas el resultado anterior al borrador nuevo."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\nadd_executable(consulta main.cpp)\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles < minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consulta",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "clasificar_un_fallo_de_frontera",
+          "question": "La revisión estricta se construyó correctamente y produjo 1:0:0 en lugar del esperado. ¿Qué evidencia muestra el problema?",
+          "options": [
+            "La discrepancia funcional en la igualdad, observada en la revisión construida.",
+            "Un error de compilación, porque utilizar < no produce un programa C++ válido.",
+            "El cumplimiento del contrato, porque terminar con código 0 acredita todas las consultas."
+          ],
+          "correctIndex": 0,
+          "explanation": "Una construcción satisfactoria no decide qué relación pide el requisito. La segunda llamada permite contrastar la frontera de igualdad sin culpar a una fase que sí terminó correctamente."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reparar la relación y variar las llamadas"
+        },
+        {
+          "type": "paragraph",
+          "text": "La reparación debe conservar la frontera inclusiva del contrato. No modifica el requisito, el orden de los tres casos ni las herramientas para hacer coincidir una salida. Completa primero la función y, después de reconstruir esa revisión, comprueba que los casos iniciales vuelven a producir 1:1:0. Una vez obtenido ese resultado, varía las llamadas para examinar la reparación fuera del caso inicial."
+        },
+        {
+          "type": "fill_code",
+          "id": "recuperar_la_comparacion_inclusiva",
+          "language": "cpp",
+          "question": "Completa únicamente el operador de comparación que conserva el contrato inclusivo. No cambies los nombres ni las llamadas.",
+          "code": "bool debe_reponer(int disponibles, int minimo) {\n    return disponibles ___ minimo;\n}\n",
+          "answers": [
+            "<="
+          ],
+          "explanation": "La igualdad pertenece al conjunto que debe reponer. La expresión menor o igual representa ese requisito con los dos argumentos en su orden original."
+        },
+        {
+          "type": "paragraph",
+          "text": "En tu laboratorio reparado, sustituye después las tres parejas por (12,7), (7,7) y (3,7), manteniendo la comparación correcta. Calcula primero sus resultados desde el contrato; construye otra vez y contrasta tu observación. Puedes restaurar luego los datos iniciales. Cada revisión necesita su propia evidencia: no conserves un resultado viejo como si perteneciera a fuentes nuevas."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Localizar un fallo en la fase que lo produjo"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ahora CMakeLists.txt sigue siendo válido, pero main.cpp contiene un error sintáctico. Identifica la revisión completa antes de actuar. Configurar puede comprobar el compilador con programas auxiliares sin traducir este main.cpp; por eso no puedes dar por descartado un error del programa por el éxito de aquella fase."
+        },
+        {
+          "type": "paragraph",
+          "text": "Predice hasta dónde debería llegar este proyecto. Configura y genera; después solicita construir consulta y lee el diagnóstico de la construcción. Localiza el punto y coma ausente en la sentencia de retorno de main. Corrige sólo ese detalle, conserva los demás archivos y reconstruye antes de intentar ejecutar. El diagnóstico concreto puede variar entre compiladores; su archivo y contexto importan más que memorizar una frase."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": "cmake_minimum_required(VERSION 3.20)\nproject(Existencias LANGUAGES CXX)\nadd_executable(consulta main.cpp)\ntarget_compile_features(consulta PRIVATE cxx_std_20)\nset_target_properties(consulta PROPERTIES CXX_EXTENSIONS OFF)\n"
+            },
+            {
+              "path": "main.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool menos = debe_reponer(4, 5);\n    const bool justo = debe_reponer(5, 5);\n    const bool mas = debe_reponer(6, 5);\n    std::cout << menos << ':' << justo << ':' << mas;\n    return 0\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "consulta",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "interpretar_configuracion_y_error_cpp",
+          "question": "La configuración pasó y el registro posterior señala un error sintáctico de main.cpp al construir consulta. ¿Qué intervención mantiene la relación entre causa y fase?",
+          "options": [
+            "Repetir la configuración sin cambiar main.cpp para que CMake repare su sentencia.",
+            "Corregir la sentencia de C++ señalada y volver a construir el objetivo con esa fuente.",
+            "Usar el resultado guardado del artefacto anterior, porque la nueva configuración pasó."
+          ],
+          "correctIndex": 1,
+          "explanation": "El fallo observado pertenece a la construcción de la revisión investigada. Reparar su fuente y reconstruir permite obtener una evidencia nueva; la configuración no sustituye ese paso."
+        },
+        {
+          "type": "paragraph",
+          "text": "La reparación de referencia es return 0; al final de main. Después de construir correctamente, ejecuta y comprueba de nuevo 1:1:0 y código 0. Si una construcción falla, no presentes la ejecución de un artefacto anterior como resultado del intento fallido. Un archivo que permanece en una carpeta no demuestra que se haya actualizado."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Crear la descripción sin copiar una solución inmediata"
+        },
+        {
+          "type": "paragraph",
+          "text": "El último laboratorio conserva un inventario.cpp correcto con las llamadas (12,7), (7,7) y (3,7); CMakeLists.txt empieza vacío. Escribe una descripción que admita CMake desde 3.20, nombre el proyecto InventarioLocal, habilite C++, cree comprobar a partir de inventario.cpp y aplique a ese objetivo el requisito mínimo de C++20 con extensiones desactivadas. El objetivo solicitado ya es comprobar y el tipo Debug. La solución de referencia está en la página siguiente: intenta producirla y justificarla antes de consultarla."
+        },
+        {
+          "type": "paragraph",
+          "text": "Criterios: las herramientas deben interpretar tu descripción; el objetivo comprobar debe construirse desde la fuente indicada; el registro de ejecución debe pertenecer a ese artefacto y mostrar 0:1:1, sin salto final, con terminación 0. Explica para ti qué decisión hace cada instrucción y qué éxito esperas en cada fase. No hay una única disposición textual válida: espacios, comentarios o instrucciones adicionales coherentes no cambian por sí solos esos criterios."
+        },
+        {
+          "type": "cpp_compiler",
+          "language": "cpp",
+          "initialCode": "",
+          "projectFiles": [
+            {
+              "path": "CMakeLists.txt",
+              "initialCode": ""
+            },
+            {
+              "path": "inventario.cpp",
+              "initialCode": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool primera = debe_reponer(12, 7);\n    const bool segunda = debe_reponer(7, 7);\n    const bool tercera = debe_reponer(3, 7);\n    std::cout << primera << ':' << segunda << ':' << tercera;\n    return 0;\n}\n"
+            }
+          ],
+          "cmake": {
+            "target": "comprobar",
+            "buildType": "Debug"
+          }
+        },
+        {
+          "type": "multiple_choice",
+          "id": "recuperar_el_nombre_en_la_descripcion",
+          "question": "Tu descripción crea un objetivo llamado reserva, pero solicitas construir comprobar. ¿Qué debes revisar antes de atribuir ese fallo al C++ de inventario.cpp?",
+          "options": [
+            "Que el nombre solicitado corresponda a un objetivo creado por la descripción vigente.",
+            "Que project reciba comprobar, porque el nombre del proyecto sustituye al del objetivo.",
+            "Que inventario.cpp esté en una carpeta llamada comprobar, que determinaría el objetivo."
+          ],
+          "correctIndex": 0,
+          "explanation": "Relaciona la petición con el objetivo que add_executable realmente crea. Los nombres de variables del programa y el nombre del proyecto tienen otros papeles; no resuelven esa petición de construcción."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Contrastar una descripción y recuperar el método"
+        },
+        {
+          "type": "paragraph",
+          "text": "Esta es una solución de referencia del laboratorio libre. Compárala con tus decisiones después del intento. Se crea comprobar antes de asignarle requisitos y propiedades; inventario.cpp pertenece a la descripción de ese objetivo. Haber cambiado los tres nombres exige relacionar sus papeles, no sustituir todas las palabras por el mismo nombre."
+        },
+        {
+          "type": "code",
+          "language": "cmake",
+          "code": "cmake_minimum_required(VERSION 3.20)\nproject(InventarioLocal LANGUAGES CXX)\nadd_executable(comprobar inventario.cpp)\ntarget_compile_features(comprobar PRIVATE cxx_std_20)\nset_target_properties(comprobar PROPERTIES CXX_EXTENSIONS OFF)\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Una descripción distinta puede ser válida si respeta los mismos criterios. No basta conseguir que cualquier ejecutable imprima una cadena fija: el programa debe conservar la función que decide según sus argumentos y utilizarla en las llamadas indicadas. La práctica consiste en construir el proyecto descrito y atribuirle su comportamiento, no en copiar una salida al registro."
+        },
+        {
+          "type": "multiple_choice",
+          "id": "elegir_el_paso_tras_cambiar_la_descripcion",
+          "question": "Cambiaste CMakeLists.txt para que comprobar utilice una fuente distinta que ya existe. ¿Qué secuencia relaciona la siguiente observación con esa nueva decisión?",
+          "options": [
+            "Ejecutar sin configurar ni construir y conservar como prueba el resultado anterior.",
+            "Volver a configurar/generar, construir comprobar y ejecutar el artefacto de esa descripción.",
+            "Construir un objetivo con otro nombre sin comprobar la descripción modificada."
+          ],
+          "correctIndex": 1,
+          "explanation": "La descripción es entrada de la configuración. Después de cambiarla, genera reglas vigentes, construye el objetivo pedido y comprueba el programa obtenido."
+        },
+        {
+          "type": "output_prediction",
+          "id": "transferir_la_reposicion_a_otro_orden",
+          "language": "cpp",
+          "question": "Recupera el contrato con tres casos nuevos en los extremos permitidos. Esta implementación conserva la comparación inclusiva: ¿qué salida producen sus llamadas, en su orden?",
+          "code": "#include <iostream>\n\nbool debe_reponer(int disponibles, int minimo) {\n    return disponibles <= minimo;\n}\n\nint main() {\n    const bool primera = debe_reponer(40, 40);\n    const bool segunda = debe_reponer(0, 1);\n    const bool tercera = debe_reponer(1, 1);\n    std::cout << primera << ':' << segunda << ':' << tercera;\n    return 0;\n}\n",
+          "answers": [
+            "1:1:1"
+          ],
+          "explanation": "40 coincide con el mínimo 40; cero está por debajo de 1; 1 coincide con 1. Las tres llamadas requieren reponer. El valor 0 de existencias está permitido: no lo confundas con un mínimo 0, excluido del dominio."
+        },
+        {
+          "type": "paragraph",
+          "text": "Recupera el método sin mirar el listado: define el comportamiento y sus casos; identifica las fuentes, descripción y perfil; configura y genera; construye el objetivo; ejecuta y compara; tras un cambio, repite los pasos afectados y conserva su evidencia. Las dos lecciones anteriores ayudan a distinguir una observación antigua y una hipótesis aún no contrastada. En la continuación aplicaremos esta relación a varios archivos, dependencias y opciones de proyecto; esta práctica no da por cubiertos esos fundamentos ni el resto del curso."
+        }
+      ]
     }
   ]
 }
