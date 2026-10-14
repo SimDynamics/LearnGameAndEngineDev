@@ -1,0 +1,227 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__estados_del_flujo_y_datos_validos",
+  "title": "États du flux et données valides",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Convertir un texte en nombre peut aussi échouer"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'extraction vers un int interprète une représentation d'entier : elle peut ignorer les blancs initiaux, reconnaître un signe et rassembler des chiffres. Si elle tente de lire un entier mais rencontre x, elle n'obtient pas la donnée demandée. Même si la destination avait été initialisée, il ne faut pas l'utiliser comme résultat d'une lecture échouée."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" 8\"};\n    int cantidad = 0;\n    if (entrada >> cantidad) {\n        std::cout << \"Quantité: \" << cantidad;\n    } else {\n        std::cout << \"Aucun entier lu\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ici, la lecture obtient 8 avant d'atteindre la fin du texte. Son résultat détermine quelle branche utilise la donnée. Avec x, il faut afficher le diagnostic sans supposer que cantidad représente une entrée valide. Une lecture réussie ne prouve pas non plus que le nombre appartient au domaine du problème : cette vérification vient ensuite."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Le problème accepte des quantités de 1 à 6. Le flux lit correctement l'entier 9. Que reste-t-il à vérifier ?",
+          "options": [
+            "Que le flux ait aussi reconnu le mot neuf en plus de ses chiffres.",
+            "Que la valeur obtenue appartienne au domaine 1..6.",
+            "Rien : le succès de >> garantit toutes les règles du programme."
+          ],
+          "correctIndex": 1,
+          "explanation": "L'extraction vérifie la représentation d'un int ; le contrat du problème impose un domaine supplémentaire. Ce sont deux validations distinctes."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Les indicateurs d'état gardent la trace des opérations"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un flux conserve des indicateurs décrivant ses opérations. eof() indique qu'une opération a atteint la fin de l'entrée. fail() indique que l'opération demandée a échoué et inclut les échecs graves signalés par bad(). bad() signale un problème du flux à ne pas traiter comme une simple erreur de format. good() vaut true uniquement lorsqu'aucun indicateur d'erreur ni de fin d'entrée n'est activé."
+        },
+        {
+          "type": "paragraph",
+          "text": "Plusieurs indicateurs peuvent coexister : ce ne sont pas quatre possibilités exclusives. Dans une condition, le flux est utilisable tant que fail() est false ; eof() seul ne fait pas échouer cette condition. Ainsi, vérifier good() et vérifier le succès d'une extraction ne sont pas des questions équivalentes. eof() et fail() peuvent apparaître ensemble lorsqu'une conversion numérique atteint la fin avec une représentation incomplète, comme un signe moins sans chiffre. Ces seuls indicateurs ne distinguent pas ce cas d'une tentative effectuée après épuisement des données."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"8\"};\n    int valor = 0;\n    if (entrada >> valor) {\n        std::cout << \"Valeur: \" << valor;\n    }\n    std::cout << \"\\neof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    std::cout << \" bad: \" << entrada.bad();\n    std::cout << \" good: \" << entrada.good();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est Valeur: 8 puis, sur une autre ligne, eof: 1 fail: 0 bad: 0 good: 0. La lecture a reconnu l'entier et atteint la fin en cherchant la suite. La donnée est valide, même si good() est false. Les consultations sont affichées sous forme de 0 et de 1, car cout utilise ici sa présentation bool habituelle."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "La tentative suivante possède son propre résultat"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis toute la sortie après avoir tenté de lire un deuxième entier.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"6\"};\n    int primero = 0;\n    int segundo = 0;\n    if (entrada >> primero) {\n        std::cout << \"Premier: \" << primero << \"\\n\";\n    }\n    if (entrada >> segundo) {\n        std::cout << \"Deuxième: \" << segundo << \"\\n\";\n    } else {\n        std::cout << \"Pas de deuxième valeur\\n\";\n    }\n    std::cout << \"eof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    return 0;\n}\n",
+          "answers": [
+            "Premier: 6\nPas de deuxième valeur\neof: 1 fail: 1"
+          ],
+          "explanation": "La première lecture obtient 6 et atteint la fin. La seconde tentative ne peut obtenir un autre entier et active également l'indicateur d'échec. La branche de réussite n'utilise pas segundo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Pourquoi une boucle while (entrada >> valor) traite-t-elle le dernier entier de \"2 7\" ?",
+          "options": [
+            "La lecture de 7 réussit, même si elle atteint la fin ; la tentative suivante termine la boucle.",
+            "La boucle s'arrête avant 7 parce qu'elle connaît déjà le nombre de caractères restants.",
+            "eof() reste toujours false tant qu'il existe une destination int."
+          ],
+          "correctIndex": 0,
+          "explanation": "Une extraction réussie permet d'utiliser 7. Atteindre la fin et réussir peuvent se produire ensemble ; la tentative suivante échoue faute de données."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ne remplace pas cette condition par while (!entrada.eof()). Cela interroge un état antérieur et permet d'entrer dans la boucle avant de savoir si l'extraction suivante produira une donnée. La condition contenant la lecture place la vérification au moment où la donnée naît, avant de la traiter."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Un préfixe numérique peut être lu valablement"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"12x\"};\n    int valor = 0;\n    char resto = '?';\n    if (entrada >> valor) {\n        std::cout << \"Valeur: \" << valor << \"\\n\";\n    }\n    if (entrada.get(resto)) {\n        std::cout << \"Reste: \" << resto;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "L'extraction obtient 12 et laisse x disponible pour une opération ultérieure. >> vers int n'exige pas que tout le texte représente exclusivement un entier. Si le format demande un nombre par ligne sans résidu, il faudra aussi vérifier ce qui reste. Réussir une extraction et consommer une opération complète sont deux exigences différentes."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis les valeurs affichées par la boucle et l'état du flux lorsqu'elle s'arrête.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"4 9x 3\"};\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << valor << \"\\n\";\n    }\n    std::cout << \"eof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    return 0;\n}\n",
+          "answers": [
+            "4\n9\neof: 0 fail: 1"
+          ],
+          "explanation": "Elle obtient 4 puis le préfixe entier 9. La tentative suivante rencontre x alors qu'elle attend un entier et échoue avant d'atteindre la fin ; 3 n'a pas encore été lu."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguer un échec grave avec un test contrôlé"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec un texte stocké en mémoire, nous n'attendons pas de défaillance matérielle. Pour observer le sens d'un indicateur d'erreur grave, nous pouvons l'activer délibérément : setstate ajoute l'indicateur fourni. std::ios::badbit est le nom de cet indicateur dans la bibliothèque. Cela ne simule pas une panne physique et ne démontre pas comment réparer une source endommagée."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <ios>\n\nint main() {\n    std::istringstream entrada{\"3\"};\n    entrada.setstate(std::ios::badbit);\n    std::cout << \"bad: \" << entrada.bad();\n    std::cout << \" fail: \" << entrada.fail();\n    std::cout << \" eof: \" << entrada.eof();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie est bad: 1 fail: 1 eof: 0. fail() inclut bad() : un état grave empêche également de considérer la lecture comme réussie. Pour décider pourquoi une lecture s'est arrêtée, vérifier bad() en premier évite de masquer un problème grave par un autre indicateur éventuellement présent."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un flux signale bad(). Qu'est-ce qui justifie valablement une tentative de reprise ?",
+          "options": [
+            "Changer la destination de int à string répare tous les problèmes de la source.",
+            "Un eof() faux démontre que toutes les opérations sur le flux sont sûres.",
+            "Il faut une politique adaptée à la source et au problème ; effacer un indicateur ne prouve pas que le dommage a disparu."
+          ],
+          "correctIndex": 2,
+          "explanation": "L'indicateur signale un échec. Modifier la destination ou effacer l'indicateur ne répare pas à lui seul sa cause."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un rapport qui s'arrête selon la lecture"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un lecteur d'entiers pour \"2 7 x 4\". Affiche chaque entier obtenu avec succès sur une ligne Valeur: N. À l'arrêt, affiche une seule étiquette finale : Échec du flux si bad() vaut true ; sinon Fin si eof() vaut true ; sinon Format invalide. N'utilise pas la destination après la tentative échouée et n'essaie pas encore de sauter le texte incorrect. Ici, Fin indique seulement que eof() a été observé ; ce n'est pas une certification de la représentation entière de l'entrée. Par exemple, \"2 -\" affiche Valeur: 2 et Fin, parce que la conversion du signe moins isolé se termine avec eof et fail. Cette politique d'observation est limitée : la prochaine leçon analysera une ligne entière et rejettera aussi les représentations incomplètes."
+        },
+        {
+          "type": "paragraph",
+          "text": "Ces tests contiennent au plus huit petites unités séparées par des espaces ; les entiers écrits vont de -20 à 99 et les résidus sont de courtes suites de lettres ou de signes. Le cas initial produit Valeur: 2, Valeur: 7 et Format invalide. \"3 8\" produit les deux nombres puis Fin. Une chaîne vide produit seulement Fin. \"5 \" produit Valeur: 5 puis Fin. \"9z\" produit Valeur: 9 et Format invalide. Prédis aussi le résultat de \"x 6\" avant d'exécuter."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2 7 x 4\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour tester la branche d'erreur grave, tu peux ajouter setstate(std::ios::badbit) avant la lecture, en incluant <ios>. Seul Échec du flux doit s'afficher. C'est un test volontaire de l'indicateur et non une entrée utilisateur. Vérifie les critères et explique pourquoi la dernière tentative échouée n'ajoute aucune ligne Valeur."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer les responsabilités du rapport"
+        },
+        {
+          "type": "paragraph",
+          "text": "La référence utilise \"5 11z 2\". Le corps n'affiche que les lectures réussies ; l'état est interprété après la boucle. Ce programme ne récupère pas le texte situé après z : s'arrêter et reprendre sont deux politiques distinctes. Le prochain exercice montrera comment abandonner une opération incorrecte sans répéter le même échec."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"5 11z 2\"};\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << \"Valeur: \" << valor << \"\\n\";\n    }\n    if (entrada.bad()) {\n        std::cout << \"Échec du flux\";\n    } else if (entrada.eof()) {\n        std::cout << \"Fin\";\n    } else {\n        std::cout << \"Format invalide\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare également les cas sans séparateur final. Une implémentation exigeant good() avant de traiter la donnée risque d'omettre le dernier entier de \"3 8\". Une implémentation qui exécute le corps sans vérifier l'extraction peut afficher une valeur ne provenant pas d'une nouvelle lecture."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Un test avec \"4 10\" affiche seulement Valeur: 4, puis Fin. Quelle décision de conception faut-il revoir en premier ?",
+          "options": [
+            "Le traitement du dernier nombre exige good() au lieu de vérifier le succès de l'extraction.",
+            "Le diagnostic final devrait apparaître avant la première donnée.",
+            "Les entiers 4 et 10 ne sont pas représentables dans int sur une implémentation conforme."
+          ],
+          "correctIndex": 0,
+          "explanation": "Une extraction réussie permet de traiter le dernier entier même si eof() est déjà activé. good() est plus strict et risque de l'omettre."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir où effectuer la validation complète"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le prochain problème comprendra une opération par ligne. Nous obtiendrons d'abord la ligne entière ; un flux local essaiera ensuite d'en convertir les éléments. Cela permettra de rejeter les résidus et de récupérer l'opération suivante tout en conservant une frontière claire. Le succès de la lecture, le domaine de la valeur et l'absence de texte supplémentaire seront vérifiés séparément."
+        },
+        {
+          "type": "note",
+          "text": "Dans les programmes présentés, le masque d'exceptions du flux n'a pas été modifié : un format incorrect est signalé par l'état et la condition. Le traitement des exceptions appris dans l'unité précédente reste utile pour d'autres contrats ; ici, il ne faut pas supposer que tout fail() lance automatiquement une exception."
+        }
+      ]
+    }
+  ]
+}

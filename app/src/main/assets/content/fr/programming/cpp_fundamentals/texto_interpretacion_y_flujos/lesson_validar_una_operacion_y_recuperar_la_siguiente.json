@@ -1,0 +1,208 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__validar_una_operacion_y_recuperar_la_siguiente",
+  "title": "Valider une opération et récupérer la suivante",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Effacer l'état ne consomme pas le texte qui a provoqué l'échec"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après une extraction échouée, le flux empêche normalement de nouvelles lectures tant que son état n'a pas changé. clear() sans argument efface les indicateurs d'état. Elle ne revient pas au début, ne supprime aucun caractère et ne répare pas à elle seule un problème grave de la source. Récupérer après une erreur de format exige également de décider quel texte consommer ou conserver."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"x 4\\n7\"};\n    int valor = 0;\n    if (!(entrada >> valor)) {\n        std::cout << \"Premier échec\\n\";\n    }\n    entrada.clear();\n    if (!(entrada >> valor)) {\n        std::cout << \"Même texte, nouvel échec\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La première tentative rencontre x alors qu'elle attend un entier. clear autorise une autre tentative, mais x reste disponible : la même extraction échoue à nouveau. Répéter ce procédé en boucle sans rien consommer risquerait de ne jamais terminer. Une procédure de récupération exige une garantie de progression, en plus de la remise à zéro de l'état."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir une frontière pour abandonner une opération"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si le format établit une opération par ligne, une politique possible consiste à écarter le reste de la ligne incorrecte et à commencer la suivante. Après un échec de format, clear permet de lire ce reste et getline le consomme jusqu'au saut de ligne. Il faut d'abord distinguer ce cas d'une défaillance grave du flux ; cet exemple n'utilise que le texte préparé montré."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream entrada{\"x 4\\n7\"};\n    int valor = 0;\n    if (!(entrada >> valor)) {\n        if (entrada.bad()) {\n            std::cout << \"Échec du flux\";\n            return 0;\n        }\n        entrada.clear();\n        std::string descartado;\n        if (std::getline(entrada, descartado)) {\n            std::cout << \"Écarté:<\" << descartado << \">\\n\";\n        }\n    }\n    if (entrada >> valor) {\n        std::cout << \"Valeur: \" << valor;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "La sortie affiche Écarté:<x 4> et Valeur: 7. Cette politique abandonne volontairement le 4 de l'opération incorrecte ; le conserver constituerait un autre contrat. Elle n'annule pas les données déjà traitées. Une frontière explicite permet d'expliquer ce qu'on abandonne et quelle opération pourra être lue ensuite."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Quelle étape fait avancer cette récupération au-delà du texte ayant provoqué l'échec ?",
+          "options": [
+            "Affecter 0 à la destination int.",
+            "Effacer l'état avec clear sans rien consommer.",
+            "Lire et écarter le reste de la ligne grâce à getline."
+          ],
+          "correctIndex": 2,
+          "explanation": "clear permet de reprendre les opérations ; getline consomme le texte refusé ainsi que son délimiteur. Changer uniquement la destination ne modifie pas la position dans le flux."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Obtenir d'abord l'opération entière"
+        },
+        {
+          "type": "paragraph",
+          "text": "Nous pouvons séparer plus clairement les responsabilités : le flux extérieur obtient une ligne et un istringstream local analyse uniquement ses caractères. Un échec du flux local ne modifie pas l'état du lecteur extérieur. L'itération suivante obtient donc la ligne suivante et une opération invalide n'empêche pas l'analyse des opérations ultérieures."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour lire une quantité de 1 à 12 par ligne, le contrat pose trois questions : un int a-t-il été obtenu, appartient-il au domaine et reste-t-il du texte autre que des blancs ? Le résultat n'est fourni qu'ensuite. Cette règle autorise des espaces autour du nombre et les représentations d'entiers acceptées par >> ; elle n'exige pas un chiffre unique."
+        },
+        {
+          "type": "paragraph",
+          "text": "La fonction reçoit le texte par référence const et n'écrit dans l'int de l'appelant qu'en cas de succès. Une variable locale conserve d'abord le résultat précédent en cas d'échec d'une vérification. La lecture enchaînée vue auparavant n'était pas une transaction ; cette fonction construit délibérément une livraison complète ou aucune modification."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ne transmettre le résultat qu'à la fin"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool analizar_cantidad(const std::string& texto, int& resultado) {\n    std::istringstream campos{texto};\n    int cantidad = 0;\n    if (!(campos >> cantidad)) {\n        return false;\n    }\n    if (cantidad < 1 || cantidad > 12) {\n        return false;\n    }\n    std::string extra;\n    if (campos >> extra) {\n        return false;\n    }\n    if (campos.bad() || !campos.eof()) {\n        return false;\n    }\n    resultado = cantidad;\n    return true;\n}\n\nint main() {\n    int cantidad = 3;\n    const bool aceptada = analizar_cantidad(\" 8 \", cantidad);\n    std::cout << aceptada << \" \" << cantidad;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Après la lecture de cantidad, le programme essaie d'obtenir une string supplémentaire. S'il y parvient, la ligne contient un résidu et est refusée. Sinon, il vérifie que la fin a été atteinte sans bad() : les blancs finaux ont été ignorés pendant cette dernière tentative d'extraction. L'état d'échec de cette dernière tentative est attendu ; il n'invalide pas l'entier déjà lu."
+        },
+        {
+          "type": "paragraph",
+          "text": "resultado = cantidad est exécuté une seule fois, après toutes les vérifications. false regroupe plusieurs causes de rejet ; l'appelant ne doit pas en déduire une cause précise sans autres informations. Le contrat garantit que le résultat de l'appelant conserve sa valeur quand false est renvoyé."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis les trois lignes en suivant aussi la valeur de cantidad chez l'appelant.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool analizar_cantidad(const std::string& texto, int& resultado) {\n    std::istringstream campos{texto};\n    int cantidad = 0;\n    if (!(campos >> cantidad)) {\n        return false;\n    }\n    if (cantidad < 1 || cantidad > 12) {\n        return false;\n    }\n    std::string extra;\n    if (campos >> extra) {\n        return false;\n    }\n    if (campos.bad() || !campos.eof()) {\n        return false;\n    }\n    resultado = cantidad;\n    return true;\n}\n\nint main() {\n    int cantidad = 4;\n    const bool primera = analizar_cantidad(\"15\", cantidad);\n    std::cout << primera << \" \" << cantidad << \"\\n\";\n    const bool segunda = analizar_cantidad(\"7x\", cantidad);\n    std::cout << segunda << \" \" << cantidad << \"\\n\";\n    const bool tercera = analizar_cantidad(\" 9 \", cantidad);\n    std::cout << tercera << \" \" << cantidad;\n    return 0;\n}\n",
+          "answers": [
+            "0 4\n0 4\n1 9"
+          ],
+          "explanation": "15 enfreint le domaine ; 7x laisse un résidu. Aucun des deux refus n'affecte le résultat. La troisième opération est complète et valide, et met donc cantidad à 9."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un lecteur de niveaux indépendant par ligne"
+        },
+        {
+          "type": "paragraph",
+          "text": "Construis un programme pour le texte \"2\\nx\\n6 bruit\\n0\\n\". Chaque ligne doit contenir exactement un entier de 0 à 6, avec d'éventuels espaces autour. Une ligne valide produit Niveau: N ; toute ligne vide, sans entier, hors du domaine ou contenant un résidu produit Opération invalide. Affiche une ligne de sortie pour chaque ligne d'entrée obtenue, sans abandonner les opérations suivantes après un refus."
+        },
+        {
+          "type": "paragraph",
+          "text": "Écris une fonction qui reçoit const std::string& et un int& destiné au résultat, renvoie bool et ne modifie le résultat que pour une opération complète et valide. Choisis son nom. Le flux extérieur doit obtenir des lignes complètes et l'analyse doit utiliser un nouveau flux local par opération. Les tests portent sur six lignes de quarante caractères ASCII au maximum et des entiers écrits de -20 à 99."
+        },
+        {
+          "type": "paragraph",
+          "text": "Le cas initial doit produire Niveau: 2, Opération invalide, Opération invalide et Niveau: 0. \"6\" est valide ; \"7\" et \"-1\" sont refusés ; \"3x\" est refusé à cause du résidu ; \" 4 \" est valide. Une chaîne vide ne contient aucune opération et ne produit aucune ligne. Le texte \"\\n\" contient une opération vide et provoque un refus. Prépare aussi \"x\\n5\" pour vérifier la récupération."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n#include <string>\n\nint main() {\n    std::istringstream origen{\"2\\nx\\n6 bruit\\n0\\n\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Teste également la fonction seule : initialise le résultat à 3 et appelle-la avec une ligne invalide. Elle doit renvoyer false et conserver 3. Utilise ensuite une autre ligne valide pour vérifier qu'elle renvoie true et transmet la valeur. Examiner uniquement la sortie de main pourrait ne pas révéler qu'un refus modifie l'argument."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Comparer après avoir relié la lecture"
+        },
+        {
+          "type": "paragraph",
+          "text": "Cette référence utilise \"4\\n?\\n1 avis\\n6\\n\". Chaque ligne donne lieu à une analyse indépendante ; deux refus n'empêchent pas de lire ensuite le niveau 6. La fonction ne transmet le résultat qu'à la fin. Une autre implémentation peut remplir le contrat si elle préserve resultado lors des refus et réussit les mêmes tests."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool analizar_nivel(const std::string& texto, int& resultado) {\n    std::istringstream campos{texto};\n    int cantidad = 0;\n    if (!(campos >> cantidad)) {\n        return false;\n    }\n    if (cantidad < 0 || cantidad > 6) {\n        return false;\n    }\n    std::string extra;\n    if (campos >> extra) {\n        return false;\n    }\n    if (campos.bad() || !campos.eof()) {\n        return false;\n    }\n    resultado = cantidad;\n    return true;\n}\n\nint main() {\n    std::istringstream origen{\"4\\n?\\n1 avis\\n6\\n\"};\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        int nivel = 0;\n        if (analizar_nivel(linea, nivel)) {\n            std::cout << \"Niveau: \" << nivel << \"\\n\";\n        } else {\n            std::cout << \"Opération invalide\\n\";\n        }\n    }\n    if (origen.bad()) {\n        std::cout << \"Échec de la source\\n\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare les responsabilités : getline préserve la frontière ; la fonction convertit et valide une opération ; main choisit l'affichage. Une ligne vide correspond à une lecture extérieure réussie dont l'analyse est refusée. La fin sans nouvelle ligne termine la boucle sans fabriquer d'opération fictive."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Une ligne contenant x provoque un échec dans l'istringstream local. Pourquoi la ligne suivante peut-elle être analysée sans appeler clear sur le flux extérieur ?",
+          "options": [
+            "Parce que int accepte x après une première lecture échouée.",
+            "Parce que la ligne a déjà été obtenue du flux extérieur et que l'échec concerne un autre objet lecteur.",
+            "Parce que renvoyer false efface automatiquement l'état de tous les flux du programme."
+          ],
+          "correctIndex": 1,
+          "explanation": "Chaque objet conserve son propre état. Le flux extérieur a avancé jusqu'à la frontière de la ligne et n'a pas subi l'échec d'extraction du flux local."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Retrouver les frontières et les domaines avec d'autres données"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Prédis toute la sortie de la référence avec ces opérations différentes.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n\nbool analizar_nivel(const std::string& texto, int& resultado) {\n    std::istringstream campos{texto};\n    int cantidad = 0;\n    if (!(campos >> cantidad)) {\n        return false;\n    }\n    if (cantidad < 0 || cantidad > 6) {\n        return false;\n    }\n    std::string extra;\n    if (campos >> extra) {\n        return false;\n    }\n    if (campos.bad() || !campos.eof()) {\n        return false;\n    }\n    resultado = cantidad;\n    return true;\n}\n\nint main() {\n    std::istringstream origen{\" 5 \\n\\n-1\\n6\\n\"};\n    std::string linea;\n    while (std::getline(origen, linea)) {\n        int nivel = 0;\n        if (analizar_nivel(linea, nivel)) {\n            std::cout << \"Niveau: \" << nivel << \"\\n\";\n        } else {\n            std::cout << \"Opération invalide\\n\";\n        }\n    }\n    if (origen.bad()) {\n        std::cout << \"Échec de la source\\n\";\n    }\n    return 0;\n}\n",
+          "answers": [
+            "Niveau: 5\nOpération invalide\nOpération invalide\nNiveau: 6"
+          ],
+          "explanation": "Les espaces autour de 5 sont autorisés. La ligne vide ne contient aucun entier et -1 est hors du domaine. Ces deux refus permettent tout de même de lire 6."
+        },
+        {
+          "type": "paragraph",
+          "text": "Explique quel test distingue un nombre d'une opération complète : 3x fournit le préfixe entier 3, mais le résidu interdit d'accepter la ligne. Explique aussi quel test distingue le succès de l'extraction et la validité du domaine : 7 est un int lisible, mais le niveau maximal reste 6."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Changer la politique sans cacher la frontière"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si un futur langage autorise plusieurs opérations séparées par un point-virgule, la frontière de récupération devra changer. Écarter toute la ligne pourrait faire perdre des opérations que le contrat voulait conserver. Avant de concevoir ce lecteur, nous définirons ses tokens et le caractère ou token marquant la fin d'une opération."
+        },
+        {
+          "type": "note",
+          "text": "Toute erreur n'exige pas la même récupération. Ces fonctions renvoient false pour un petit contrat et ne transmettent leur résultat qu'à la fin. L'interpréteur progressif utilisera des diagnostics précis et reprendra jusqu'à une frontière déclarée ; il ne supposera pas qu'effacer l'état transforme une opération incorrecte en opération valide."
+        }
+      ]
+    }
+  ]
+}

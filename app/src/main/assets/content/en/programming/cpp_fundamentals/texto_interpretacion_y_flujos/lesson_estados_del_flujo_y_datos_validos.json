@@ -1,0 +1,227 @@
+{
+  "id": "cpp_fundamentals__texto_interpretacion_y_flujos__estados_del_flujo_y_datos_validos",
+  "title": "Stream States and Valid Data",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Converting Text to a Number Can Also Fail"
+        },
+        {
+          "type": "paragraph",
+          "text": "Extraction into an int interprets a representation of an integer: it may skip leading whitespace, recognize a sign, and collect digits. If it tries to read an integer but encounters x, it does not obtain the requested data. Even if the destination was initialized, do not use it as the result of a failed read."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\" 8\"};\n    int cantidad = 0;\n    if (entrada >> cantidad) {\n        std::cout << \"Quantity: \" << cantidad;\n    } else {\n        std::cout << \"No integer was read\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Here the read obtains 8 before reaching the end of the text. Its result determines which branch uses the data. With x, the diagnostic must be displayed rather than assuming cantidad represents valid input. Even a successful read does not prove the number belongs to the problem's domain: that must be checked afterward."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "The problem accepts quantities from 1 through 6. The stream successfully reads the integer 9. What is still missing?",
+          "options": [
+            "Checking that the stream also recognized the word nine along with its digits.",
+            "Checking whether the obtained value belongs to the domain 1..6.",
+            "Nothing: successful >> guarantees every requirement of the program."
+          ],
+          "correctIndex": 1,
+          "explanation": "Extraction checks the representation of an int; the problem's contract imposes an additional domain. These are distinct validations."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "State Flags Remember What Happened"
+        },
+        {
+          "type": "paragraph",
+          "text": "A stream maintains flags reflecting its operations. eof() indicates that an operation reached the end of the input. fail() indicates that the requested operation failed and includes serious failures signaled by bad(). bad() signals a stream problem that must not be treated as mere invalid formatting. good() is true only when no error or end-of-input flag is set."
+        },
+        {
+          "type": "paragraph",
+          "text": "Flags can coexist: they are not four mutually exclusive alternatives. In a condition, the stream is usable while fail() is false; eof() alone does not make that condition fail. Thus checking good() and checking whether an extraction succeeded are not equivalent questions. eof() and fail() can both be set when numeric conversion reaches the end with an incomplete representation, such as a minus sign with no digits. Flags alone do not distinguish that case from a read attempted after all data had been consumed."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"8\"};\n    int valor = 0;\n    if (entrada >> valor) {\n        std::cout << \"Value: \" << valor;\n    }\n    std::cout << \"\\neof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    std::cout << \" bad: \" << entrada.bad();\n    std::cout << \" good: \" << entrada.good();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is Value: 8 and, on another line, eof: 1 fail: 0 bad: 0 good: 0. The read recognized the integer and reached the end while looking for a continuation. The value is valid even though good() is false. The queries print 0 or 1 because cout uses its default bool formatting here."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Next Attempt Has Its Own Result"
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the entire output after trying to read a second integer.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"6\"};\n    int primero = 0;\n    int segundo = 0;\n    if (entrada >> primero) {\n        std::cout << \"First: \" << primero << \"\\n\";\n    }\n    if (entrada >> segundo) {\n        std::cout << \"Second: \" << segundo << \"\\n\";\n    } else {\n        std::cout << \"No second value\\n\";\n    }\n    std::cout << \"eof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    return 0;\n}\n",
+          "answers": [
+            "First: 6\nNo second value\neof: 1 fail: 1"
+          ],
+          "explanation": "The first read gets 6 and reaches the end. The second attempt cannot obtain another integer and also sets the failure flag. The success branch does not use segundo."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Why does a while (entrada >> valor) loop process the final integer in \"2 7\"?",
+          "options": [
+            "Reading 7 succeeds even if it reaches the end; the following attempt ends the loop.",
+            "The loop stops before 7 because it already knows how many characters remain.",
+            "eof() always stays false as long as an int destination exists."
+          ],
+          "correctIndex": 0,
+          "explanation": "A successful extraction allows us to use 7. Reaching the end and succeeding can coexist; the next attempt fails because no more data remain."
+        },
+        {
+          "type": "paragraph",
+          "text": "Do not substitute while (!entrada.eof()). That tests a previous state and can enter the loop before we know whether the next extraction will obtain a value. A condition that performs the read places the check where the data are obtained, before they are processed."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Numeric Prefix Can Be a Successful Read"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"12x\"};\n    int valor = 0;\n    char resto = '?';\n    if (entrada >> valor) {\n        std::cout << \"Value: \" << valor << \"\\n\";\n    }\n    if (entrada.get(resto)) {\n        std::cout << \"Remaining: \" << resto;\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Extraction gets 12 and leaves x for a later operation. >> into an int does not require the entire text to be exclusively one integer. If the format requires one number per line without trailing material, you must also check what remains. Successful extraction and consuming a complete operation are different requirements."
+        },
+        {
+          "type": "output_prediction",
+          "question": "Predict the values the loop displays and the state remaining when it stops.",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"4 9x 3\"};\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << valor << \"\\n\";\n    }\n    std::cout << \"eof: \" << entrada.eof();\n    std::cout << \" fail: \" << entrada.fail();\n    return 0;\n}\n",
+          "answers": [
+            "4\n9\neof: 0 fail: 1"
+          ],
+          "explanation": "It obtains 4 and then the integer prefix 9. The following attempt encounters x where an integer is expected and fails without reaching the end; 3 has not been read yet."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguish a Serious Failure with a Controlled Test"
+        },
+        {
+          "type": "paragraph",
+          "text": "For text stored in memory, we do not expect a device failure. To observe the meaning of a serious error flag, we can deliberately set it: setstate adds the flag we pass. std::ios::badbit is the library's name for that flag. This does not simulate a physical device malfunction or demonstrate how to repair a damaged input source."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <ios>\n\nint main() {\n    std::istringstream entrada{\"3\"};\n    entrada.setstate(std::ios::badbit);\n    std::cout << \"bad: \" << entrada.bad();\n    std::cout << \" fail: \" << entrada.fail();\n    std::cout << \" eof: \" << entrada.eof();\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The output is bad: 1 fail: 1 eof: 0. fail() includes bad(): a serious error also prevents treating a read as successful. When deciding why a read stopped, checking bad() first helps avoid hiding a serious problem under another flag that might coexist."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A stream signals bad(). What is a valid justification for trying to continue?",
+          "options": [
+            "Changing the destination from int to string repairs any input-source problem.",
+            "A false eof() proves the stream is safe for any operation.",
+            "A policy for the source and problem is needed; clearing a flag does not prove the damage is gone."
+          ],
+          "correctIndex": 2,
+          "explanation": "The flag reports a failure. Changing the destination or clearing it does not, by itself, repair the underlying cause."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Report That Stops According to the Read"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build an integer reader for \"2 7 x 4\". Display each successfully obtained integer on a line as Value: N. When reading stops, display exactly one final label: Stream failure if bad() is true; otherwise End if eof() is true; otherwise Invalid format. Do not use the destination after a failed attempt or try to skip the invalid text yet. Here End merely reports that eof() was observed; it does not certify that the entire input representation was correct. For example, \"2 -\" displays Value: 2 and End because the attempt to convert the standalone minus sign ends with eof and fail. This observation policy is limited: the next lesson will analyze an entire line and reject incomplete representations too."
+        },
+        {
+          "type": "paragraph",
+          "text": "These tests have up to 8 small, space-separated units; written integers are between -20 and 99, and leftover material consists of short letters or signs. The initial case produces Value: 2, Value: 7, and Invalid format. \"3 8\" produces both values and End. The empty string produces only End. \"5 \" produces Value: 5 and End. \"9z\" produces Value: 9 and Invalid format. Predict what happens for \"x 6\" before running."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"2 7 x 4\"};\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "To test the serious-error branch, you can insert setstate(std::ios::badbit) before reading, with <ios> included. Only Stream failure should appear. This deliberately tests the flag; it is not user input. Check the criteria and explain why the final unsuccessful attempt adds no Value line."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Compare the Responsibilities of the Report"
+        },
+        {
+          "type": "paragraph",
+          "text": "The reference uses \"5 11z 2\". The body displays only successful reads, and the state is interpreted after the loop. The program does not recover text after z: stopping and recovering are different policies. The next exercise will teach how to discard an incorrect operation without repeating the same failure."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n\nint main() {\n    std::istringstream entrada{\"5 11z 2\"};\n    int valor = 0;\n    while (entrada >> valor) {\n        std::cout << \"Value: \" << valor << \"\\n\";\n    }\n    if (entrada.bad()) {\n        std::cout << \"Stream failure\";\n    } else if (entrada.eof()) {\n        std::cout << \"End\";\n    } else {\n        std::cout << \"Invalid format\";\n    }\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Compare cases without a final delimiter too. An implementation requiring good() before processing the value may miss the last integer in \"3 8\". One that enters the body without checking extraction may display a value not obtained by a new read."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A test with \"4 10\" prints only Value: 4 and then End. What design choice should you inspect first?",
+          "options": [
+            "The decision to process the last value requires good() instead of successful extraction.",
+            "The final diagnostic should be printed before the first value.",
+            "The integers 4 and 10 cannot fit in int on a conforming implementation."
+          ],
+          "correctIndex": 0,
+          "explanation": "Successful extraction permits processing the last integer even if eof() is already set. good() is stricter and may omit it."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose Where Complete Validation Belongs"
+        },
+        {
+          "type": "paragraph",
+          "text": "The next problem has one operation per line. First we will obtain the complete line, then a local stream will try to convert its parts. This lets us reject trailing material and recover the next operation while keeping a clear boundary. Successful reading, the value's domain, and absence of extra text will be checked separately."
+        },
+        {
+          "type": "note",
+          "text": "The programs shown do not change the stream's exception mask: invalid formatting reports its result through stream state and the condition. The exception handling taught earlier remains useful for other contracts; here, do not assume every fail() automatically throws."
+        }
+      ]
+    }
+  ]
+}
