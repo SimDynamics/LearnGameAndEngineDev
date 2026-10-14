@@ -1,0 +1,294 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__precision_por_campo_y_resumenes_formateados",
+  "title": "Per-Field Precision and Formatted Summaries",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose the Notation for double in Its Field"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall fixed, scientific, and general notation as display choices. In format, the corresponding letters are f, e, and g within each field. Precision is written with a dot and a number: {:.2f} requests two digits after the point in fixed notation; {:.2e} requests two digits after the point in scientific notation; and {:.2g} requests two significant digits in total. Each field chooses its own rule without changing other fields or the value received."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    double medida = 8.8125;\n    std::cout << std::format(\"{0:.2f}|{0:.2e}|{0:.2g}\", medida);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This guided comparison produces 8.81|8.81e+00|8.8. The same argument appears three times under different rules. The dot in .2 denotes precision; in padding such as .>8, which you have already studied, the dot occupies a different position in the specification."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    double medida = 4.3125;\n    std::cout << std::format(\"{0:.2f}|{0:.2e}|{0:.2g}\", medida);\n    return 0;\n}\n",
+          "answers": [
+            "4.31|4.31e+00|4.3"
+          ],
+          "explanation": "The first two precision specifications count digits after the point; the third counts significant digits in total."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does {:.3e} request for a double?",
+          "options": [
+            "Three positions of width for the entire string.",
+            "Three digits after the point in the scientific part.",
+            "Three significant digits including the one before the point."
+          ],
+          "correctIndex": 1,
+          "explanation": "e chooses scientific notation, and .3 controls the digits after the point in that part."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Basic Field Does Not Inherit Stream Precision Six"
+        },
+        {
+          "type": "paragraph",
+          "text": "For double, {} with no type letter or precision chooses a compact representation that allows the same value to be recovered when converted back to double. This is not equivalent to inheriting an output stream's precision of six. With f or e but no explicit precision, six digits are used after the point; with g and no explicit precision, six significant digits are used. If your contract requires two decimal places, write that in the field."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    double medida = 6.91015625;\n    std::cout << std::defaultfloat << std::setprecision(6) << medida << \"|\"\n        << std::format(\"{}\", medida);\n    return 0;\n}\n",
+          "answers": [
+            "6.91016|6.91015625"
+          ],
+          "explanation": "The stream applies six significant digits; the basic format field produces a representation retaining more detail for this value."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{0:f}|{0:e}|{0:g}\", 6.91015625);\n    return 0;\n}\n",
+          "answers": [
+            "6.910156|6.910156e+00|6.91016"
+          ],
+          "explanation": "f and e use six digits after the point; g uses six significant digits in total."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A report always requires two digits after the decimal point. Which field expresses this choice for double?",
+          "options": [
+            "{}",
+            "{:.2f}",
+            "{:.2g}"
+          ],
+          "correctIndex": 1,
+          "explanation": "Fixed notation with precision two requests two digits after the point. General notation does not preserve that form for every value."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Formatting Neither Changes the Data nor Leaves an Active Mode"
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    double medida = 6.9375;\n    std::string corta = std::format(\"{:.2f}\", medida);\n    std::cout << corta << \"|\" << std::format(\"{}\", medida * 16);\n    return 0;\n}\n",
+          "answers": [
+            "6.94|111"
+          ],
+          "explanation": "The short string displays a rounded value. The later calculation still uses 6.9375."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::scientific << std::setprecision(1)\n        << std::format(\"{:.2f}\", 7.8125) << \"|\" << 7.8125;\n    return 0;\n}\n",
+          "answers": [
+            "7.81|7.8e+00"
+          ],
+          "explanation": "format composes fixed notation into a string. cout remains in scientific mode with one digit after the point for the double inserted directly into it."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{:.2f}|{}\", 3.5, 3.5);\n    return 0;\n}\n",
+          "answers": [
+            "3.50|3.5"
+          ],
+          "explanation": "Fixed precision belongs to the first field. The second field uses its own basic rules."
+        },
+        {
+          "type": "paragraph",
+          "text": "The examples use small, known values that let us check the representation without landing exactly halfway between two rounding results. Increasing precision shows another representation of double; it does not by itself correct an earlier approximation. Calculate before composing and preserve the original data."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Combine Width and Precision Without Confusing Them"
+        },
+        {
+          "type": "paragraph",
+          "text": "In {:8.2f}, eight is the minimum width, .2 is precision, and f is fixed notation. The numeric representation is formed first, then padding is added if it does not reach the minimum. The default alignment for this double is to the right. {:*>8.2f} adds asterisk fill and explicitly requests right alignment. A width smaller than the representation does not truncate it either."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:8.2f}]|[{:*>8.2f}]\", 3.5, 3.5);\n    return 0;\n}\n",
+          "answers": [
+            "[    3.50]|[****3.50]"
+          ],
+          "explanation": "Each representation of 3.50 takes four positions; four more are added using the selected padding."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:3.2f}]|[{:.0f}]\", 12.5, 6.9375);\n    return 0;\n}\n",
+          "answers": [
+            "[12.50]|[7]"
+          ],
+          "explanation": "12.50 exceeds the minimum of three and is preserved. Precision zero requests a rounded representation without digits after the point."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the precision number that requests two digits after the point and at least seven positions.",
+          "code": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::format(\"[{:7.___f}]\", 2.0);\n    return 0;\n}\n",
+          "answers": [
+            "2"
+          ],
+          "explanation": "Seven specifies the width. The number after the point specifies fixed precision."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "The Specification Must Match the Type"
+        },
+        {
+          "type": "paragraph",
+          "text": "Here, f and its numeric precision apply to double. An int does not become a double merely because you write f in the format string. To display an integer quantity as a value with decimal places, deliberately choose an explicit type conversion before formatting. That decision does not modify the original integer variable."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    int cantidad = 7;\n    std::cout << std::format(\"{:.2f}|{}\", static_cast<double>(cantidad), cantidad);\n    return 0;\n}\n",
+          "answers": [
+            "7.00|7"
+          ],
+          "explanation": "The conversion produces a double argument for the first field. The variable cantidad remains an int, and the second field displays seven."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Which call matches the types required by the format string and can display two decimal places?",
+          "options": [
+            "std::format(\"{:.2f}\", 3)",
+            "std::format(\"{:.2f}\", 3.5)",
+            "std::format(\"{:.2d}\", 3)"
+          ],
+          "correctIndex": 1,
+          "explanation": "The argument 3.5 is a double and matches .2f. The integer 3 does not match floating-point specification f, and numeric precision .2 does not apply to an integer d field."
+        },
+        {
+          "type": "paragraph",
+          "text": "These exercises use checked literal format strings. Examine the arguments and their types when correcting a diagnostic; do not silently change the data to reproduce a displayed result. Any conversion should reflect what the program intends to represent."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Transfer a Report to Explicit Format Strings"
+        },
+        {
+          "type": "paragraph",
+          "text": "Build Lectura with codigo as string, cantidad as int, and medida as double. The caller supplies at most twenty readings, with ASCII codes of zero to eight characters, quantities from zero to one thousand, and measurements from zero to twenty. Write componer_resumen(const vector<Lectura>&), returning a string without printing or changing the readings. Each line is [CODE]|[QUANTITY]|[MEASUREMENT]: code left-aligned in at least six positions with spaces, decimal quantity in at least four positions padded with zeros, and fixed measurement with two decimal places. Use format for the rows and the nonempty summary."
+        },
+        {
+          "type": "paragraph",
+          "text": "After the rows, append Records:N;Total:T;Average:M. N is the number of readings; T sums the quantities; M is the simple mean of the original measurements, one per reading, displayed with two decimals. Quantity does not weight that mean. For an empty collection, return Records:0;Total:0;No average without dividing. Use {\"N\", 4, 8.8125} and {\"E\", 9, 4.3125}. Display the result and then check that the first measurement multiplied by sixteen still equals one hundred forty-one."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Build the program requested by the exercise here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Predict the fields, total, and mean before compiling. Also test an empty collection, one reading with quantity zero, and a label longer than six positions. Every call must start a new result. The given bounds keep the sum of quantities within int."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference and Summary Criteria"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstruct Lectura {\n    std::string codigo;\n    int cantidad;\n    double medida;\n};\n\nstd::string componer_resumen(const std::vector<Lectura>& lecturas) {\n    std::string texto;\n    int total = 0;\n    double suma = 0.0;\n    for (const auto& lectura : lecturas) {\n        texto += std::format(\"[{:<6}]|[{:04d}]|[{:.2f}]\\n\", lectura.codigo,\n            lectura.cantidad, lectura.medida);\n        total += lectura.cantidad;\n        suma += lectura.medida;\n    }\n    if (lecturas.empty()) {\n        texto += \"Records:0;Total:0;No average\";\n    } else {\n        double media = suma / static_cast<double>(lecturas.size());\n        texto += std::format(\"Records:{};Total:{};Average:{:.2f}\", lecturas.size(), total, media);\n    }\n    return texto;\n}\n\nint main() {\n    const std::vector<Lectura> lecturas{{\"N\", 4, 8.8125}, {\"E\", 9, 4.3125}};\n    std::cout << componer_resumen(lecturas) << \"\\n\";\n    std::cout << std::format(\"{}\", lecturas.at(0).medida * 16) << \"\\n\";\n    const std::vector<Lectura> vacias;\n    std::cout << componer_resumen(vacias);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The two rows are [N     ]|[0004]|[8.81] and [E     ]|[0009]|[4.31]. The summary is Records:2;Total:13;Average:6.56: the measurements sum to 13.125, and their original mean is 6.5625. The following lines are 141 and Records:0;Total:0;No average. Criteria: associations and order preserved; each field has its own specifications; calculations use original data; an empty collection avoids division; composition is returned without printing inside the function; calls are independent; arguments are unchanged. Any other organization meeting this contract is valid."
+        },
+        {
+          "type": "paragraph",
+          "text": "With one reading, the mean equals its measurement. The code of eight characters must not be truncated. Zero padding for the quantity is part of its decimal presentation and does not affect the sum. A const collection may be read and composed but its records may not be modified."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Distinguish Internal Formatting from Its Destination"
+        },
+        {
+          "type": "paragraph",
+          "text": "format returns an already composed string. If you then insert that string into a stream with a pending setw, the entire string may be padded. The format string does not read that state; the destination acts when it receives the result. This distinction explains when to configure each operation without attributing the effects of a later insertion to format."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << \"[\" << std::setfill('.') << std::setw(9)\n        << std::format(\"[{:3d}]\", 5) << \"]|\" << 5;\n    return 0;\n}\n",
+          "answers": [
+            "[....[  5]]|5"
+          ],
+          "explanation": "The internal field produces [  5], five characters long. The destination adds four dots to reach width nine for the whole string; setw is consumed by that insertion."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "A composed filename should preserve internal zeros and have no external padding when displayed. Where do you specify the number's zeros?",
+          "options": [
+            "In that field's specification inside the format string.",
+            "By modifying the stored integer.",
+            "Using setw after inserting the whole string."
+          ],
+          "correctIndex": 0,
+          "explanation": "The number's representation is chosen inside the format string. An external width would apply to the entire string."
+        },
+        {
+          "type": "paragraph",
+          "text": "In a later session, create a summary of your own data within the specified domain. Before programming, write down what is calculated, what is displayed, and where the string goes. Review empty, single-reading, and multiple-reading cases; change precision without changing calculations, and check the data as well as the characters. Consult the reference only after trying."
+        }
+      ]
+    }
+  ]
+}

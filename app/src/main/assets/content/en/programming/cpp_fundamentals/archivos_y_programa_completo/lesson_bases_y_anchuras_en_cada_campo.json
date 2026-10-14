@@ -1,0 +1,306 @@
+{
+  "id": "cpp_fundamentals__archivos_y_programa_completo__bases_y_anchuras_en_cada_campo",
+  "title": "Bases and Widths in Each Field",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Add a Specification After a Colon"
+        },
+        {
+          "type": "paragraph",
+          "text": "Recall decimal, hexadecimal, and octal representations. Inside a format field, a colon introduces a specification: {:d} requests decimal, {:x} lowercase hexadecimal, and {:o} octal. The value remains the same integer. A field without a specification, {}, displays an int in decimal. The format belongs to that field, not to any fields that follow."
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    int numero = 26;\n    std::cout << std::format(\"{:d}|{:x}|{:o}|{}\", numero, numero, numero, numero);\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "This guided comparison produces 26|1a|32|26. The final field is still decimal even though the preceding one requested octal. With manual indices you can present the same argument in different ways: {0:d}, {0:x}, and {0:o}."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{0:x}|{0:o}|{0}\", 31);\n    return 0;\n}\n",
+          "answers": [
+            "1f|37|31"
+          ],
+          "explanation": "Thirty-one is represented in each base. There is no persistent base setting that changes the third field."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does x mean in {0:x}?",
+          "options": [
+            "Display the argument at index zero in hexadecimal.",
+            "Select the argument named x.",
+            "Multiply the first argument by sixteen."
+          ],
+          "correctIndex": 0,
+          "explanation": "Before the colon, the argument is selected; after it, the presentation is specified."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Base Two Also Has Numerical Meaning"
+        },
+        {
+          "type": "paragraph",
+          "text": "format offers {:b} for base two. You do not need to study bits to read it: its only digits are zero and one, and positions from right to left represent one, two, four, eight, sixteen, and so on, doubling each time. 1101 represents eight plus four plus one: thirteen. Positions with a zero digit contribute nothing. Binary notation is another representation of the same value."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    int numero = 21;\n    std::cout << std::format(\"{:b}|{:d}\", numero, numero);\n    return 0;\n}\n",
+          "answers": [
+            "10101|21"
+          ],
+          "explanation": "Twenty-one equals sixteen plus four plus one. The positions for eight and two contain zeros."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "In base two, what quantity does 1010 represent?",
+          "options": [
+            "Twelve: eight plus four.",
+            "Ten: eight plus two.",
+            "One thousand ten: the digits are read as decimal."
+          ],
+          "correctIndex": 1,
+          "explanation": "The four positions represent eight, four, two, and one; only eight and two contribute."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{0:b}|{0:x}|{0}\", 0);\n    return 0;\n}\n",
+          "answers": [
+            "0|0|0"
+          ],
+          "explanation": "Zero is represented by a zero digit in these bases. No field needs to invent a nonzero position."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Prefixes and Uppercase Are Display Options"
+        },
+        {
+          "type": "paragraph",
+          "text": "Capital X selects hexadecimal with uppercase A through F. The # option requests the corresponding prefix: 0x for x, 0X for X, 0b for b, and a leading zero for octal when the value is not zero. These characters are added to the result; they do not turn data into text before calculation. Decimal adds no base prefix."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{0:#x}|{0:#X}|{0:#o}|{0:#b}\", 31);\n    return 0;\n}\n",
+          "answers": [
+            "0x1f|0X1F|037|0b11111"
+          ],
+          "explanation": "The same argument is selected, and each field includes a marker for its base. Thirty-one is the sum of the first five binary positions."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"{0:#x}|{0:#o}|{0:d}\", 0);\n    return 0;\n}\n",
+          "answers": [
+            "0x0|0|0"
+          ],
+          "explanation": "Hexadecimal retains the requested prefix. Octal zero is already written as 0, without adding another prefix zero."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "What does {0:X} produce for the integer twenty-six, without #?",
+          "options": [
+            "1A",
+            "0X1A",
+            "1a"
+          ],
+          "correctIndex": 0,
+          "explanation": "X selects uppercase letters. The prefix also requires the # option."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "A Minimum Width Belongs to One Field"
+        },
+        {
+          "type": "paragraph",
+          "text": "In {:4d}, the four requests a minimum width of four positions, and d requests decimal. Each ASCII character in these examples occupies one position. By default, an integer is right-aligned with spaces. If it already occupies four or more positions, it needs no padding and is not truncated. Write the width in every field that requires it."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:4d}]|[{:4d}]|[{}]\", 7, 1000, 2);\n    return 0;\n}\n",
+          "answers": [
+            "[   7]|[1000]|[2]"
+          ],
+          "explanation": "The first integer receives three spaces. The second reaches the minimum width. The last field does not request a width."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:4d}]|[{}]\", 12345, 8);\n    return 0;\n}\n",
+          "answers": [
+            "[12345]|[8]"
+          ],
+          "explanation": "The minimum does not limit or truncate the five digits. It is not inherited by the next field either."
+        },
+        {
+          "type": "multiple_choice",
+          "question": "Two fields each need at least five positions. Which format string expresses that for two integers?",
+          "options": [
+            "\"[{}]|[{:5d}]\"",
+            "\"[{:5d}]|[{:5d}]\"",
+            "\"[{:5d}]|[{}]\""
+          ],
+          "correctIndex": 1,
+          "explanation": "Each specification applies to the argument of its own field."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose Alignment and Fill Character"
+        },
+        {
+          "type": "paragraph",
+          "text": "The < option left-aligns the content, and > right-aligns it. {:<6} requests a minimum of six positions with content on the left. If a character appears before the alignment symbol, it is used as fill: {:.>4d} means dot padding, right alignment, width four, and a decimal integer. The dot in that position is padding, not precision. Each field defines its own options."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:<6}]|[{:.>4d}]|[{}]\", \"Sun\", 12, 5);\n    return 0;\n}\n",
+          "answers": [
+            "[Sun   ]|[..12]|[5]"
+          ],
+          "explanation": "The string adds spaces afterward; the integer adds dots beforehand. The final integer inherits neither format."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:>5}]|[{:_<4}]\", \"A\", \"BC\");\n    return 0;\n}\n",
+          "answers": [
+            "[    A]|[BC__]"
+          ],
+          "explanation": "The first string is right-aligned with spaces; the second is left-aligned with underscores."
+        },
+        {
+          "type": "paragraph",
+          "text": "We continue with short ASCII labels so width predictions remain unambiguous. With Unicode text, display positions cannot be inferred by counting bytes. Nor will we use a minimum width here to truncate labels: a longer string is preserved."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Leading Zeros for a Decimal Sequence"
+        },
+        {
+          "type": "paragraph",
+          "text": "For a nonnegative integer, {:04d} requests at least four decimal positions with numeric zero padding. The 0 option precedes the width four; d explicitly chooses the base. This zero does not turn the argument into octal. Each call produces new characters and leaves no persistent formatting state."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"muestra_{:04d}.txt\", 23) << \"|\"\n        << std::format(\"{}\", 23);\n    return 0;\n}\n",
+          "answers": [
+            "muestra_0023.txt|23"
+          ],
+          "explanation": "The number is padded only within the first field. The next format string displays it without padding."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::format(\"[{:04d}]|[{:04d}]\", 0, 1000);\n    return 0;\n}\n",
+          "answers": [
+            "[0000]|[1000]"
+          ],
+          "explanation": "Zero needs four digits because of the requested padding. One thousand already occupies four positions."
+        },
+        {
+          "type": "fill_code",
+          "language": "cpp",
+          "question": "Fill in only the letter that requests decimal within the field of width four and zero padding.",
+          "code": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    std::cout << std::format(\"{:04___}\", 8);\n    return 0;\n}\n",
+          "answers": [
+            "d"
+          ],
+          "explanation": "The specification 04d separates fill and width from the choice of base."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Label Reusing the Same Value"
+        },
+        {
+          "type": "paragraph",
+          "text": "Write etiqueta(const string& codigo, int cantidad), which returns [CODE]|[DECIMAL]|[HEX]. codigo has zero to eight ASCII characters, and cantidad is between zero and one thousand. Left-align the code in at least six positions with spaces; DECIMAL uses at least four positions with zeros; HEX uses lowercase without a prefix or requested width. Use a literal format string with indices to present cantidad both ways. Do not print inside the function. In main, compose \"Sun\", 10 and \"Hallway\", 31 on separate lines."
+        },
+        {
+          "type": "cpp_compiler",
+          "initialCode": "#include <format>\n#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n\nint main() {\n    // Build the program requested by the exercise here.\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "Before compiling, predict which labels need padding and which exceeds its minimum. Add an empty code with quantity zero and a six-character code with quantity one thousand. Check that both representations come from a single value and that the value remains available for adding one afterward."
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Reference and Criteria for the Labels"
+        },
+        {
+          "type": "code",
+          "language": "cpp",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nstd::string etiqueta(const std::string& codigo, int cantidad) {\n    return std::format(\"[{0:<6}]|[{1:04d}]|[{1:x}]\", codigo, cantidad);\n}\n\nint main() {\n    int cantidad = 10;\n    std::cout << etiqueta(\"Sun\", cantidad) << \"\\n\" << etiqueta(\"Hallway\", 31) << \"\\n\"\n        << etiqueta(\"\", 0) << \"\\n\" << etiqueta(\"Studio\", 1000) << \"\\n\" << cantidad + 1;\n    return 0;\n}\n"
+        },
+        {
+          "type": "paragraph",
+          "text": "The lines are [Sun   ]|[0010]|[a], [Hallway]|[0031]|[1f], [      ]|[0000]|[0], [Studio]|[1000]|[3e8], and 11. Criteria: every field has its own options; the same quantity is reused; the function returns text without modifying its arguments or printing; empty, long, and exactly minimum-width fields retain their separators; and padding zeros do not change the base used for calculations. Other implementations meeting the contract are accepted."
+        },
+        {
+          "type": "output_prediction",
+          "language": "cpp",
+          "question": "Predict the exact output.",
+          "code": "#include <iostream>\n#include <sstream>\n#include <string>\n#include <iomanip>\n#include <vector>\n#include <format>\n\nint main() {\n    std::cout << std::hex << std::format(\"{:04d}\", 15) << \"|\" << 15;\n    return 0;\n}\n",
+          "answers": [
+            "0015|f"
+          ],
+          "explanation": "The format string displays decimal with leading zeros; cout remains hexadecimal for the integer inserted directly into it."
+        },
+        {
+          "type": "paragraph",
+          "text": "In a later session, rebuild a label using other data without looking at the reference format string. First justify the base, minimum width, and alignment of each field. Change a value while keeping the format string, then change a specification while keeping the value, to separate these two decisions."
+        }
+      ]
+    }
+  ]
+}
