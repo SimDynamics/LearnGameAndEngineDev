@@ -1,0 +1,660 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__sintesis_estructura_divisibilidad",
+  "title": "Summary: Structure, Factors, and Decisions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Read Relationships, Not Just Symbols"
+        },
+        {
+          "type": "paragraph",
+          "text": "A correctly interpreted expression preserves the relationship between quantities: groups and loose pieces, repeated changes and the starting state, factors and multiples. Interpret the grouping before calculating. Parentheses can change those relationships; operation properties allow some transformations, but not all. A valid transformation must preserve the value of the entire expression."
+        },
+        {
+          "type": "paragraph",
+          "text": "If you see \\(5\\times(12+8)\\), you can add inside the parentheses to obtain one hundred, or distribute to add sixty and forty. By contrast, \\(5\\times12+8\\) is sixty-eight: the eight is not part of five groups. Using the same numbers does not guarantee the same quantity."
+        },
+        {
+          "type": "paragraph",
+          "text": "For a power, identify its base and count its factors. For a sum involving signs, keep each sign with its term. For division, check the divisor and recover the dividend by multiplying. These actions are useful even when the situation changes and no rule is specified."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparacion_signos",
+          "prompt": "Someone changes (-3) × (8 - 2) into -24 - 6. Which assessment is correct?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparacion_signos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is correct because every number appears once.",
+                  "reviewFeedback": "Check whether retaining the same numbers means retaining the operations. Examine the sign and how the factor applies to every term inside the parentheses."
+                },
+                {
+                  "id": "b",
+                  "label": "We must account for subtracting (-3) × 2, which is -6; the result is -24 - (-6) = -18.",
+                  "reviewFeedback": "Check the products and the subtraction in your selected explanation. Distinguish subtracting a negative quantity from adding a negative quantity."
+                },
+                {
+                  "id": "c",
+                  "label": "Just remove every negative sign.",
+                  "reviewFeedback": "Consider what each negative sign means before changing it. Compare the values of the expressions to justify any proposed transformation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distributivity preserves subtraction: (-3) × 8 - [(-3) × 2] = -24 - (-6) = -18.",
+            "incorrect": "The second product is negative and is being subtracted. Merely counting digits or removing signs does not preserve the value."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Two Ways for Something to Be Common"
+        },
+        {
+          "type": "paragraph",
+          "text": "When forming identical groups, the number of groups must divide every available amount exactly. The largest possible number is a greatest common divisor (GCD). For matching cycles, a time must be a multiple of each period. The first positive time that works is a least common multiple (LCM). Do not confuse the two just because both contain the word common."
+        },
+        {
+          "type": "paragraph",
+          "text": "For example, with 16 red pieces and 24 blue pieces, we can make eight identical packs, each containing two red and three blue pieces. Eight divides both amounts. If two alerts repeat every 16 and 24 minutes and start together, they coincide after 48 minutes. That time contains three cycles of the first and two of the second."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prime factorization makes those requirements visible. Find prime factors, check how many copies of each occur, then multiply back to verify. Common factors cannot use more copies than either number has. A common multiple needs enough copies to contain all the required factors."
+        },
+        {
+          "type": "paragraph",
+          "text": "The following activities require choosing, calculating, and detecting errors. Some review material from the preceding unit. A long method is unnecessary when a simple observation justifies the answer. But one matching example does not prove that a rule always works; identify which property or representation supports your decision."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "equivalencia_sintesis",
+          "prompt": "Select every expression equivalent to 18 × 11.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "equivalencia_sintesis__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "18 × 10 + 18",
+                  "reviewFeedback": "Interpret each term as a number of copies. Check that the second factor's decomposition preserves the entire product."
+                },
+                {
+                  "id": "b",
+                  "label": "18 × 10 + 1",
+                  "reviewFeedback": "Check whether the one being added represents a whole copy of the first factor. Calculate the expression without rounding."
+                },
+                {
+                  "id": "c",
+                  "label": "11 × 18",
+                  "reviewFeedback": "Examine whether changing the order preserves the same operation and factors. Justify the equivalence using the appropriate property."
+                },
+                {
+                  "id": "d",
+                  "label": "18 + 11",
+                  "reviewFeedback": "Reconsider the difference between adding quantities and multiplying them. Relate your chosen operation to the meaning of the required product."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distributing 18 × (10 + 1) gives 180 + 18; commuting swaps the factors. Both expressions equal 198.",
+            "incorrect": "An equivalent expression must preserve the product, whether it uses distributivity or changes the order of the factors."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Expressions and Equivalence"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "expresion_integrada",
+          "prompt": "Calculate 2 × (9 - 5)² - 7.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "expresion_integrada__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "25"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9 - 5 = 4; 4² = 16; 2 × 16 = 32; 32 - 7 = 25.",
+            "incorrect": "The exponent applies to the result inside the parentheses. Multiplying 2 × 4 before squaring would change the base."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_parentesis_opuesto",
+          "prompt": "Calculate −(7 − 12) + 3 × (−2).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_parentesis_opuesto__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-1"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The group equals −5, whose opposite is 5. The product is −6; their sum is −1.",
+            "incorrect": "The outer sign applies to the entire group. Multiplication must come before adding the results."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_leyes_potencias",
+          "prompt": "Calculate (2²)³ ÷ 2³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_leyes_potencias__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "(2²)³ = 2⁶ = 64 and 2³ = 8; their quotient is 8.",
+            "incorrect": "Raising a power to a power counts six factors, not five. You can check the division by multiplying eight by eight."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Primes, Factors, and Parity"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "primos_sintesis",
+          "prompt": "Select all prime numbers in the list.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "primos_sintesis__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "1",
+                  "reviewFeedback": "Count the positive divisors of one and compare that count with the definition of prime. Do not invent a condition based on its size."
+                },
+                {
+                  "id": "b",
+                  "label": "2",
+                  "reviewFeedback": "Check the positive divisors of two. Primality depends on this count, not on a rule about parity alone."
+                },
+                {
+                  "id": "c",
+                  "label": "21",
+                  "reviewFeedback": "Determine whether twenty-one has integer factors greater than one. Justify the classification using divisibility, not merely its last digit."
+                },
+                {
+                  "id": "d",
+                  "label": "31",
+                  "reviewFeedback": "Check the possible divisors of thirty-one and justify when the search can stop. Classification must cover all possible factors."
+                },
+                {
+                  "id": "e",
+                  "label": "49",
+                  "reviewFeedback": "Check whether forty-nine can be expressed as a product of integers greater than one. Parity alone does not determine its classification."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2 and 31 are prime. One has only one positive divisor; 21 = 3 × 7 and 49 = 7 × 7 are composite.",
+            "incorrect": "Being odd does not guarantee being prime. A valid test must rule out all potential nontrivial factors, up to a justified bound."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_faltante",
+          "prompt": "Complete 84 = 2² × 3 × ? using a prime number.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_faltante__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2² × 3 = 12, and 84 ÷ 12 = 7. Seven is prime.",
+            "incorrect": "The exponent two repeats the factor two: 2² is four, not two times the missing number."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "generalizar_paridad",
+          "prompt": "Which statement is true for any even integer and any odd integer?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "generalizar_paridad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Their sum is always even.",
+                  "reviewFeedback": "Represent the even and odd integers using their general forms. Check the parity of the resulting sum."
+                },
+                {
+                  "id": "b",
+                  "label": "Their product is always odd.",
+                  "reviewFeedback": "Examine whether the selected product is divisible by two. Use the general form of the factor known to be even."
+                },
+                {
+                  "id": "c",
+                  "label": "Their sum is odd and their product is even.",
+                  "reviewFeedback": "Check the sum and product separately using general integers. The argument must establish both properties for all cases."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The sum retains the odd number's unpaired unit. The product contains the even number's factor of two, so it is even.",
+            "incorrect": "Adding an even and odd integer leaves one unpaired unit; multiplying includes a factor of two. These properties hold for any integers of the stated parities."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_paridad_cuadrados",
+          "prompt": "An integer n is odd. Which statement about n² + 1 is justified?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_paridad_cuadrados__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "It is odd because squaring preserves parity and adding one does not change it.",
+                  "reviewFeedback": "Check what adding one does to parity. Examine each step of the chosen reasoning, including what happens when squaring."
+                },
+                {
+                  "id": "b",
+                  "label": "It is even: n² is odd, and one more than an odd number is even.",
+                  "reviewFeedback": "Justify the square's parity and then add one. Verify that both steps work for any odd integer."
+                },
+                {
+                  "id": "c",
+                  "label": "We cannot know if n is negative.",
+                  "reviewFeedback": "Distinguish an integer's sign from its parity. Consider whether changing the sign affects the argument about squaring and adding."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "An odd number squared stays odd; adding one makes it even. The argument works for negative odd integers too.",
+            "incorrect": "Adding one changes parity. The sign of n does not prevent the parity rule for products of odd integers."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choose and Apply a Model"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "kits_sintesis",
+          "prompt": "There are 42 green cards and 70 orange cards. Make the greatest possible number of identical kits using all the cards. Write the number of kits and the count of each color per kit.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "kits_sintesis__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "k",
+                  "type": "numeric",
+                  "label": "Number of kits",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "v",
+                  "type": "numeric",
+                  "label": "Green cards per kit",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "n",
+                  "type": "numeric",
+                  "label": "Orange cards per kit",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "k": {
+                    "type": "numeric",
+                    "expected": "14"
+                  },
+                  "v": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "n": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "GCD(42,70) = 14; each kit contains 42 ÷ 14 = 3 green cards and 70 ÷ 14 = 5 orange cards.",
+            "incorrect": "The number of kits must divide both 42 and 70. Once found, divide each count by the number of kits. A common multiple would exceed the available amounts."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "avisos_sintesis",
+          "prompt": "Two alerts sound together initially. One repeats every 15 minutes and the other every 20. How long until their next coincidence?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "avisos_sintesis__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "60"
+              },
+              "unit": "minutes"
+            }
+          ],
+          "feedback": {
+            "correct": "LCM(15,20) = 60; there are four 15-minute cycles and three 20-minute cycles.",
+            "incorrect": "Five is a common divisor, not a duration containing full cycles of both alerts. The required time must be a multiple of each period."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coincidencia_con_divisor",
+          "prompt": "Two signals start together. One repeats every 6 minutes and the other every 24. Write the time of their next coincidence and how many complete cycles the first signal finishes.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coincidencia_con_divisor__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "t",
+                  "type": "numeric",
+                  "label": "Time (min)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Cycles of the first signal",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "t": {
+                    "type": "numeric",
+                    "expected": "24"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The signals next coincide after 24 minutes: the second period already contains four periods of six minutes.",
+            "incorrect": "Multiplying 6 × 24 gives a later coincidence, not the first. The time must contain whole cycles of both signals."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Recall Numbers, Reference Points, and Operations"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_estado",
+          "prompt": "A score starts at -8 points and receives five changes of +3 points. What is the final state?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_estado__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              },
+              "unit": "points"
+            }
+          ],
+          "feedback": {
+            "correct": "The total change is 5 × 3 = 15; the final state is -8 + 15 = 7 points.",
+            "incorrect": "Fifteen is the total change, and -8 is the starting state. The answer must combine both rather than repeat the starting state five times."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_cifras_ceros",
+          "prompt": "Write the number consisting of 8 thousands, 3 hundreds, 0 tens, and 5 ones.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_cifras_ceros__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8305"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "8000 + 300 + 0 + 5 = 8305. Zero preserves the tens place.",
+            "incorrect": "Do not omit any place when writing the digits. Five represents ones, not tens."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_referencia_nueva",
+          "prompt": "A marker has position −4 m relative to a reference. A new reference is at −7 m relative to the old one. Write the marker's position relative to the new reference and its distance from it.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_referencia_nueva__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "New position (m)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Distance (m)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "p": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The marker lies three meters above the new reference: position +3 m and distance 3 m.",
+            "incorrect": "The marker does not move. Only the origin used to express its position changes: −4 − (−7) = 3."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_estimacion_limite",
+          "prompt": "Three rolls cost 149 pesos each. You have 450 pesos. Which exact calculation shows whether you have enough money?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_estimacion_limite__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "149 + 3 = 152 pesos.",
+                  "reviewFeedback": "Give a meaning to your chosen sum: the number of rolls and price per roll are different quantities. Review how to calculate the total cost."
+                },
+                {
+                  "id": "b",
+                  "label": "3 × 149 = 447 pesos; there is enough money, with 3 left over.",
+                  "reviewFeedback": "Check the product and compare it with the budget. Distinguish the exact cost from an estimate useful for checking."
+                },
+                {
+                  "id": "c",
+                  "label": "Estimating 3 × 150 = 450 proves there is no money left.",
+                  "reviewFeedback": "Consider the limits of rounding. Determine what an estimate can establish about a budget and what requires checking the exact cost."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The exact total is 447 pesos. The estimate 450 helps anticipate the cost but does not determine the exact remainder.",
+            "incorrect": "The price applies to each of the three rolls, so multiply. A close estimate is not the exact total."
+          }
+        }
+      ]
+    }
+  ]
+}

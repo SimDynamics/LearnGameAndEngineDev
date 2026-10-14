@@ -1,0 +1,660 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__sintesis_estructura_divisibilidad",
+  "title": "Synthèse : structure, facteurs et décisions",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Lire les relations, pas seulement les symboles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Une expression correctement interprétée conserve les relations entre les quantités : groupes et objets séparés, changements répétés et état initial, facteurs et multiples. Avant de calculer, interprète le regroupement. Les parenthèses peuvent modifier la relation ; les propriétés autorisent certaines transformations, mais pas toutes. Une transformation valable doit préserver la valeur de toute l'expression."
+        },
+        {
+          "type": "paragraph",
+          "text": "Face à \\(5\\times(12+8)\\), tu peux additionner dans les parenthèses et obtenir cent, ou distribuer pour additionner soixante et quarante. En revanche, \\(5\\times12+8\\) vaut soixante-huit : le huit n'appartient pas aux cinq groupes. Avoir les mêmes nombres ne garantit pas de représenter la même quantité."
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour une puissance, identifie la base et compte les facteurs. Pour une somme avec des signes, conserve chaque signe avec son terme. Pour une division, vérifie le diviseur et retrouve le dividende par multiplication. Ces démarches restent utiles lorsque le contexte change et que la règle à utiliser n'est plus indiquée."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reparacion_signos",
+          "prompt": "Une personne transforme (-3) × (8 - 2) en -24 - 6. Quelle évaluation convient ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reparacion_signos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "C'est correct parce que chaque nombre apparaît une fois.",
+                  "reviewFeedback": "Vérifie si conserver les nombres écrits suffit à conserver les opérations. Réexamine le signe et la portée du facteur sur chaque terme de la parenthèse."
+                },
+                {
+                  "id": "b",
+                  "label": "Il faut tenir compte de la soustraction du produit (-3) × 2, soit -6 ; on obtient -24 - (-6) = -18.",
+                  "reviewFeedback": "Vérifie les produits et la soustraction présents dans l'explication choisie. Distingue soustraire une quantité négative et ajouter une quantité négative."
+                },
+                {
+                  "id": "c",
+                  "label": "Il suffit de supprimer tous les signes négatifs.",
+                  "reviewFeedback": "Réfléchis au sens de chaque signe négatif avant de le modifier. Compare les valeurs des expressions pour justifier toute transformation."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La distributivité conserve la soustraction : (-3) × 8 - [(-3) × 2] = -24 - (-6) = -18.",
+            "incorrect": "Le deuxième produit est négatif et on le soustrait. Compter les chiffres ou supprimer les signes ne conserve pas la valeur."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Deux façons d'avoir quelque chose en commun"
+        },
+        {
+          "type": "paragraph",
+          "text": "Dans les problèmes de groupes identiques, le nombre de groupes doit diviser exactement chacune des quantités disponibles. Le plus grand possible est le plus grand commun diviseur (PGCD). Dans les problèmes de cycles qui coïncident, un temps doit être un multiple de chaque période. Le premier temps positif qui convient est le plus petit commun multiple (PPCM). Ne confonds pas ces deux idées parce qu'elles contiennent toutes deux le mot commun."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par exemple, avec 16 pièces rouges et 24 bleues, nous pouvons former huit paquets identiques contenant chacun deux pièces rouges et trois bleues. Huit divise les deux quantités. Si deux alertes reviennent toutes les 16 et 24 minutes et commencent ensemble, elles coïncident de nouveau après 48 minutes : ce temps représente trois cycles de la première et deux de la deuxième."
+        },
+        {
+          "type": "paragraph",
+          "text": "La décomposition en facteurs premiers rend ces conditions visibles. Trouve les facteurs premiers, vérifie combien de fois chacun apparaît, puis multiplie-les pour vérifier. Des facteurs communs ne peuvent utiliser plus d'occurrences que n'en contient l'un ou l'autre nombre. Un multiple commun doit en contenir suffisamment pour englober les facteurs de tous."
+        },
+        {
+          "type": "paragraph",
+          "text": "Les activités suivantes demandent de choisir, de calculer et de repérer des erreurs. Certaines reprennent des notions de l'unité précédente. Il n'est pas nécessaire d'utiliser une longue méthode si une observation simple justifie le résultat. Pourtant, une concordance dans un exemple ne prouve pas qu'une règle fonctionne toujours : précise quelle propriété ou représentation appuie ta décision."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "equivalencia_sintesis",
+          "prompt": "Sélectionne toutes les expressions équivalentes à 18 × 11.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "equivalencia_sintesis__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "18 × 10 + 18",
+                  "reviewFeedback": "Interprète chaque terme comme un nombre de copies. Vérifie que décomposer le deuxième facteur conserve le produit total demandé."
+                },
+                {
+                  "id": "b",
+                  "label": "18 × 10 + 1",
+                  "reviewFeedback": "Vérifie si l'unité ajoutée représente bien une copie complète du premier facteur. Calcule l'expression sans arrondir."
+                },
+                {
+                  "id": "c",
+                  "label": "11 × 18",
+                  "reviewFeedback": "Vérifie si le changement d'ordre conserve la même opération et les mêmes facteurs. Justifie l'équivalence par la propriété correspondante."
+                },
+                {
+                  "id": "d",
+                  "label": "18 + 11",
+                  "reviewFeedback": "Revois la différence entre additionner deux quantités et les multiplier. Relie l'opération choisie au sens du produit à conserver."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Distribuer 18 × (10 + 1) donne 180 + 18 ; la commutativité intervertit les facteurs. Les deux expressions valent 198.",
+            "incorrect": "Une expression équivalente doit conserver le produit, qu'elle utilise la distributivité ou qu'elle inverse l'ordre des facteurs."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Expressions et équivalence"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "expresion_integrada",
+          "prompt": "Calcule 2 × (9 - 5)² - 7.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "expresion_integrada__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "25"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9 - 5 = 4 ; 4² = 16 ; 2 × 16 = 32 ; 32 - 7 = 25.",
+            "incorrect": "La puissance s'applique au résultat de la parenthèse. Multiplier 2 × 4 avant d'élever au carré modifierait la base."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_parentesis_opuesto",
+          "prompt": "Calcule −(7 − 12) + 3 × (−2).",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_parentesis_opuesto__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "-1"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La parenthèse vaut −5 et son opposé 5. Le produit vaut −6 ; la somme donne −1.",
+            "incorrect": "Le signe extérieur agit sur tout le groupe. La multiplication doit être effectuée avant l'addition des résultats."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_leyes_potencias",
+          "prompt": "Calcule (2²)³ ÷ 2³.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_leyes_potencias__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "(2²)³ = 2⁶ = 64 et 2³ = 8 ; leur quotient vaut 8.",
+            "incorrect": "Une puissance de puissance contient six facteurs, pas cinq. Tu peux vérifier la division en multipliant huit par huit."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Nombres premiers, facteurs et parité"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "primos_sintesis",
+          "prompt": "Sélectionne tous les nombres premiers de la liste.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "primos_sintesis__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "1",
+                  "reviewFeedback": "Compte les diviseurs positifs du nombre un et compare leur nombre à la définition de premier. N'ajoute pas de condition fondée sur sa taille."
+                },
+                {
+                  "id": "b",
+                  "label": "2",
+                  "reviewFeedback": "Vérifie les diviseurs positifs de deux. Sa classification comme premier dépend de ce nombre, pas seulement de sa parité."
+                },
+                {
+                  "id": "c",
+                  "label": "21",
+                  "reviewFeedback": "Cherche si vingt et un possède des facteurs entiers supérieurs à un. Justifie la classification par la divisibilité et non par son dernier chiffre."
+                },
+                {
+                  "id": "d",
+                  "label": "31",
+                  "reviewFeedback": "Examine les diviseurs possibles de trente et un et justifie quand la recherche peut s'arrêter. La classification doit couvrir tous les facteurs possibles."
+                },
+                {
+                  "id": "e",
+                  "label": "49",
+                  "reviewFeedback": "Vérifie si quarante-neuf se décompose en un produit d'entiers supérieurs à un. La parité seule ne permet pas de le classer."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b",
+                  "d"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2 et 31 sont premiers. Un n'a qu'un seul diviseur positif ; 21 = 3 × 7 et 49 = 7 × 7 sont composés.",
+            "incorrect": "Être impair ne garantit pas d'être premier. Il faut exclure tous les facteurs non triviaux possibles, jusqu'à une borne justifiée."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_faltante",
+          "prompt": "Complète 84 = 2² × 3 × ? avec un nombre premier.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_faltante__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2² × 3 = 12 et 84 ÷ 12 = 7. Sept est premier.",
+            "incorrect": "L'exposant deux répète le facteur deux : 2² vaut quatre, et non deux fois le nombre manquant."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "generalizar_paridad",
+          "prompt": "Quelle affirmation est vraie pour tout entier pair et tout entier impair ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "generalizar_paridad__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Leur somme est toujours paire.",
+                  "reviewFeedback": "Représente les deux entiers par leurs formes générales, l'une paire et l'autre impaire. Vérifie la parité de leur somme."
+                },
+                {
+                  "id": "b",
+                  "label": "Leur produit est toujours impair.",
+                  "reviewFeedback": "Examine la divisibilité par deux du produit. Appuie-toi sur la forme générale du facteur qui est pair."
+                },
+                {
+                  "id": "c",
+                  "label": "Leur somme est impaire et leur produit est pair.",
+                  "reviewFeedback": "Vérifie séparément la somme et le produit de ces entiers quelconques. L'argument doit justifier les deux propriétés dans tous les cas."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La somme conserve l'unité isolée du nombre impair. Le produit contient le facteur deux du nombre pair et est donc pair.",
+            "incorrect": "Additionner un pair et un impair laisse une unité isolée ; le produit conserve un facteur deux. Cela vaut pour tout entier des parités indiquées."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_paridad_cuadrados",
+          "prompt": "Un entier n est impair. Quelle affirmation à propos de n² + 1 est justifiée ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_paridad_cuadrados__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "C'est impair, car le carré conserve la parité et ajouter un ne la change pas.",
+                  "reviewFeedback": "Examine l'effet d'ajouter une unité sur la parité. Vérifie chaque étape du raisonnement choisi, y compris le carré."
+                },
+                {
+                  "id": "b",
+                  "label": "C'est pair : n² est impair et un de plus qu'un impair est pair.",
+                  "reviewFeedback": "Justifie la parité du carré, puis analyse l'ajout d'une unité. Vérifie que les deux étapes fonctionnent pour tout entier impair."
+                },
+                {
+                  "id": "c",
+                  "label": "On ne peut pas savoir si n est négatif.",
+                  "reviewFeedback": "Distingue le signe d'un entier de sa parité. Examine si changer de signe modifie le raisonnement sur le carré et l'addition."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le carré d'un impair est impair ; ajouter un donne un nombre pair. L'argument fonctionne aussi pour les entiers impairs négatifs.",
+            "incorrect": "Ajouter un modifie la parité. Le signe de n n'empêche pas d'appliquer la règle des produits de nombres impairs."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Choisir et appliquer un modèle"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "kits_sintesis",
+          "prompt": "Il y a 42 cartes vertes et 70 orange. Forme le plus grand nombre de kits identiques en utilisant toutes les cartes. Indique le nombre de kits et le nombre de cartes de chaque couleur par kit.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "kits_sintesis__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "k",
+                  "type": "numeric",
+                  "label": "Nombre de kits",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "v",
+                  "type": "numeric",
+                  "label": "Cartes vertes par kit",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "n",
+                  "type": "numeric",
+                  "label": "Cartes orange par kit",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "k": {
+                    "type": "numeric",
+                    "expected": "14"
+                  },
+                  "v": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "n": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "PGCD(42,70) = 14 ; chaque kit contient 42 ÷ 14 = 3 cartes vertes et 70 ÷ 14 = 5 orange.",
+            "incorrect": "Le nombre de kits doit diviser 42 et 70. Une fois trouvé, divise chaque quantité pour obtenir le contenu. Un multiple commun dépasserait les quantités disponibles."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "avisos_sintesis",
+          "prompt": "Deux alertes se déclenchent ensemble au départ. L'une se répète toutes les 15 minutes et l'autre toutes les 20. Combien de temps avant leur prochaine coïncidence ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "avisos_sintesis__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "60"
+              },
+              "unit": "minutes"
+            }
+          ],
+          "feedback": {
+            "correct": "PPCM(15,20) = 60 ; il y a quatre cycles de 15 minutes et trois de 20.",
+            "incorrect": "Cinq est un diviseur commun, mais pas une durée correspondant à des cycles complets des deux alertes. Le temps recherché doit être un multiple de chaque période."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "coincidencia_con_divisor",
+          "prompt": "Deux signaux commencent ensemble. L'un se répète toutes les 6 minutes et l'autre toutes les 24. Indique le temps de leur prochaine coïncidence et le nombre de cycles complets accomplis par le premier signal.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "coincidencia_con_divisor__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "t",
+                  "type": "numeric",
+                  "label": "Temps (min)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Cycles du premier signal",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "t": {
+                    "type": "numeric",
+                    "expected": "24"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "4"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La prochaine coïncidence arrive après 24 minutes : la deuxième période contient déjà quatre périodes de six minutes.",
+            "incorrect": "Multiplier 6 × 24 donnerait une coïncidence ultérieure, pas la première. Le temps doit contenir des cycles complets des deux signaux."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Réviser les nombres, les références et les opérations"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_estado",
+          "prompt": "Un score commence à -8 points et reçoit cinq changements de +3 points. Quel est l'état final ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_estado__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "7"
+              },
+              "unit": "points"
+            }
+          ],
+          "feedback": {
+            "correct": "Le changement total est 5 × 3 = 15 ; l'état final vaut -8 + 15 = 7 points.",
+            "incorrect": "Quinze est le changement total, et -8 est l'état initial. Il faut combiner les deux et non répéter cinq fois la valeur initiale."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_cifras_ceros",
+          "prompt": "Écris le nombre formé de 8 milliers, 3 centaines, 0 dizaine et 5 unités.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_cifras_ceros__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "8305"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "8000 + 300 + 0 + 5 = 8305. Le zéro conserve la position des dizaines.",
+            "incorrect": "Ne supprime pas de position en écrivant les chiffres. Le cinq représente des unités, pas des dizaines."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_referencia_nueva",
+          "prompt": "Une marque occupe la position −4 m par rapport à une référence. Une nouvelle référence se trouve à −7 m par rapport à l'ancienne. Indique la position de la marque par rapport à la nouvelle référence et sa distance à celle-ci.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_referencia_nueva__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "p",
+                  "type": "numeric",
+                  "label": "Nouvelle position (m)",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Distance (m)",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "p": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "d": {
+                    "type": "numeric",
+                    "expected": "3"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "La marque se trouve trois mètres au-dessus de la nouvelle référence : position +3 m et distance 3 m.",
+            "incorrect": "La marque ne bouge pas. Seule l'origine qui définit sa position change : −4 − (−7) = 3."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "recuperacion_estimacion_limite",
+          "prompt": "Il faut acheter trois rouleaux à 149 pesos chacun. Tu disposes de 450 pesos. Quelle vérification exacte détermine si l'argent suffit ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "recuperacion_estimacion_limite__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "149 + 3 = 152 pesos.",
+                  "reviewFeedback": "Donne un sens à la somme choisie : le nombre de rouleaux et leur prix unitaire représentent des grandeurs différentes. Réexamine le calcul du coût total."
+                },
+                {
+                  "id": "b",
+                  "label": "3 × 149 = 447 pesos ; l'argent suffit et il reste 3.",
+                  "reviewFeedback": "Vérifie le produit et compare-le au budget. Distingue le coût exact d'une estimation utile pour le contrôler."
+                },
+                {
+                  "id": "c",
+                  "label": "L'estimation 3 × 150 = 450 prouve qu'il ne reste rien.",
+                  "reviewFeedback": "Réfléchis aux limites d'un arrondi. Détermine ce qu'une estimation peut garantir sur le budget et ce qui exige le coût exact."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le total exact est de 447 pesos. L'estimation 450 donne un ordre de grandeur sans déterminer le reste exact.",
+            "incorrect": "Le prix se répète trois fois : il faut multiplier. Une estimation proche n'est pas le total exact."
+          }
+        }
+      ]
+    }
+  ]
+}
