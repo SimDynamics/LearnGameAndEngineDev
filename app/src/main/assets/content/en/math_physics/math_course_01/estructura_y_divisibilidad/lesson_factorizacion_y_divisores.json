@@ -1,0 +1,385 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__factorizacion_y_divisores",
+  "title": "Prime Factorization and Availability of Factors",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Keep Factoring Until You Reach Primes"
+        },
+        {
+          "type": "paragraph",
+          "text": "To factor 48, you can start with 6 × 8 or 3 × 16. If you continue until every factor is prime, both paths yield four twos and one three: 48 = 2⁴ × 3. Stopping at 6 × 8 preserves the value, but it is not yet a prime factorization. Multiplying the factors checks the number; verifying that each factor is prime checks that the process is complete."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factorizacion_terminada",
+          "prompt": "Which expression is a complete prime factorization of 120?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factorizacion_terminada__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "2³ × 15",
+                  "reviewFeedback": "Check the total product and the primality of each factor separately. A complete prime factorization must satisfy both conditions."
+                },
+                {
+                  "id": "b",
+                  "label": "2² × 3 × 5",
+                  "reviewFeedback": "Expand the power in this expression and calculate the product. Check that it reproduces the original number as well as using prime factors."
+                },
+                {
+                  "id": "c",
+                  "label": "2³ × 3 × 5",
+                  "reviewFeedback": "Verify both the product's value and the type of each factor. Explain what makes the prime factorization complete."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2³ × 3 × 5 = 8 × 3 × 5 = 120, and every factor is prime. The expression 2³ × 15 also equals 120, but 15 can still be factored.",
+            "incorrect": "Preserving the product is not enough for a prime factorization: 15 is composite. The second expression does use prime factors, but equals 60 and is missing one factor of two."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factorizacion_tres_primos",
+          "prompt": "Complete 90 = 2ᵃ × 3ᵇ × 5ᶜ.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factorizacion_tres_primos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Exponent of 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Exponent of 3",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Exponent of 5",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "90 = 9 × 10 = 3² × 2 × 5. The exponents are 1, 2, and 1; multiplying 2 × 9 × 5 gives back 90.",
+            "incorrect": "Exponents count copies of each prime. Do not use the prime itself as the exponent or leave out the second factor of three."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Different Order, Same Factors"
+        },
+        {
+          "type": "paragraph",
+          "text": "The factors may appear in a different order by commutativity or be regrouped by associativity. This does not produce a new prime factorization if the number of copies of each prime stays the same. For example, 2 × 3 × 2 × 5 and 3 × 5 × 2² represent the same collection of prime factors of 60."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "copias_equivalentes",
+          "prompt": "Select all expressions that are complete prime factorizations of 84.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "copias_equivalentes__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "2 × 2 × 3 × 7",
+                  "reviewFeedback": "Check that every factor is prime, then evaluate your selected product. Justify both requirements of a complete prime factorization."
+                },
+                {
+                  "id": "b",
+                  "label": "3 × 7 × 2²",
+                  "reviewFeedback": "Expand the power and examine repeated factors. Changing their order does not remove the need to check the original number."
+                },
+                {
+                  "id": "c",
+                  "label": "4 × 3 × 7",
+                  "reviewFeedback": "Examine each factor in your selection. Obtaining the required product does not prove that every factor is prime."
+                },
+                {
+                  "id": "d",
+                  "label": "2 × 3 × 7",
+                  "reviewFeedback": "Calculate the selected product and compare it with the original number. Check how many copies are needed, not merely which primes are present."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The first two expressions each contain two twos, one three, and one seven, giving 84. The third gives 84 but contains a composite factor; the fourth gives 42.",
+            "incorrect": "The order can change, but the number of copies cannot. Four can still be factored into two twos."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_primo_repetido",
+          "prompt": "The prime factorization of 49 contains only the prime 7. What is its exponent?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_primo_repetido__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "49 = 7 × 7 = 7². The same prime may occur repeatedly, which we record with an exponent.",
+            "incorrect": "An odd number is not necessarily prime. Here seven is prime, but 49 is the product of two sevens."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Build a Divisor from the Available Factors"
+        },
+        {
+          "type": "paragraph",
+          "text": "If 72 = 2³ × 3², a positive divisor can use from zero to three factors of two and from zero to two factors of three. It can use fewer copies, but not more or a prime that is missing. Choosing zero copies of a prime means leaving it out; the product of the chosen factors must divide 72 exactly."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisores_por_copias",
+          "prompt": "Select all divisors of 72 from this list, using 72 = 2³ × 3².",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisores_por_copias__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "8",
+                  "reviewFeedback": "Break eight into prime factors and compare their repetitions with those available in the original number. Justify exact division without rounding."
+                },
+                {
+                  "id": "b",
+                  "label": "9",
+                  "reviewFeedback": "Determine how many copies of each prime nine needs. Compare them with the given factorization before deciding whether it divides exactly."
+                },
+                {
+                  "id": "c",
+                  "label": "18",
+                  "reviewFeedback": "Factor eighteen and compare its factor counts with those available. Include every prime used in your check."
+                },
+                {
+                  "id": "d",
+                  "label": "16",
+                  "reviewFeedback": "Check the repeated factors required by sixteen. Having the right types of primes is not enough if extra copies are needed."
+                },
+                {
+                  "id": "e",
+                  "label": "27",
+                  "reviewFeedback": "Examine how many copies of a prime appear in twenty-seven. Compare that count with those available to decide whether the quotient is an integer."
+                },
+                {
+                  "id": "f",
+                  "label": "5",
+                  "reviewFeedback": "Examine the prime factors required by five and compare them with the original factorization. Do not decide based on its small size alone."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Eight uses three twos; nine uses two threes; eighteen uses one two and two threes. Sixteen needs four twos, twenty-seven needs three threes, and five is a missing prime.",
+            "incorrect": "A divisor cannot require more copies of a prime than the original number contains, or introduce a different prime."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencias_divisoras_maximas",
+          "prompt": "For 360 = 2³ × 3² × 5, write the greatest power of 2 that divides it and the greatest power of 3 that divides it.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencias_divisoras_maximas__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Greatest power of 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "t",
+                  "type": "numeric",
+                  "label": "Greatest power of 3",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "t": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The powers are 2³ = 8 and 3² = 9. No additional copy of either prime is available.",
+            "incorrect": "The question asks for each power, not merely its exponent. The factor five does not increase the number of twos or threes."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Check What the Product Tells Us"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "numero_primo_factorizacion",
+          "prompt": "Which statement correctly distinguishes 1, 13, and 26?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "numero_primo_factorizacion__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "One must be included as a prime factor in every list.",
+                  "reviewFeedback": "Review the definition of a prime factor and the effect of multiplying by one. Distinguish the multiplicative identity from a prime factor."
+                },
+                {
+                  "id": "b",
+                  "label": "Thirteen is already prime, and 26 factors as 2 × 13.",
+                  "reviewFeedback": "Check the proposed classification using divisors and products. Justify each number using its definition, rather than only a written expression."
+                },
+                {
+                  "id": "c",
+                  "label": "Twenty-six is prime because it contains the prime factor 13.",
+                  "reviewFeedback": "Consider the difference between having a prime factor and being a prime number. Classification of the product requires checking its proper divisors."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Thirteen is prime. Twenty-six has two factors greater than one and is composite. One is not considered prime.",
+            "incorrect": "Having a prime factor does not make the whole product prime. Multiplying by ones preserves the value but adds no prime factors."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reconstruir_factorizacion",
+          "prompt": "Reconstruct the number whose prime factorization is 2² × 3 × 11.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reconstruir_factorizacion__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "132"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2² × 3 × 11 = 4 × 3 × 11 = 132.",
+            "incorrect": "An exponent of two repeats the factor two. Do not add the primes or treat 2² as 2 times an unspecified value."
+          }
+        }
+      ]
+    }
+  ]
+}

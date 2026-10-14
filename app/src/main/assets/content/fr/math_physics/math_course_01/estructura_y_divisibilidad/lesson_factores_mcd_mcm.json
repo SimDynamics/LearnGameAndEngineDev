@@ -1,0 +1,562 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__factores_mcd_mcm",
+  "title": "PGCD et PPCM : facteurs communs et objectifs distincts",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Décomposer sans changer le produit"
+        },
+        {
+          "type": "paragraph",
+          "text": "Un nombre composé peut se décomposer en facteurs plus petits. Pour 60, un chemin est \\(60=6\\times10=(2\\times3)\\times(2\\times5)=2\\times2\\times3\\times5\\). Un autre commence par \\(60=3\\times20\\) et aboutit aux mêmes facteurs premiers. Les parenthèses et l'ordre peuvent changer grâce à l'associativité et à la commutativité."
+        },
+        {
+          "type": "paragraph",
+          "text": "La décomposition en facteurs premiers est achevée lorsque tous les facteurs sont premiers. Nous écrivons \\(60=2^2\\times3\\times5\\), où l'exposant indique que le facteur 2 apparaît deux fois. Un n'est pas considéré comme premier : multiplier par des uns ne fournit aucune nouvelle décomposition. Pour vérifier, multiplie tous les facteurs ; l'expression doit redonner 60."
+        },
+        {
+          "type": "paragraph",
+          "text": "La décomposition montre quels facteurs sont disponibles. Un diviseur se forme avec les facteurs du nombre, sans utiliser plus d'occurrences que celles disponibles. Par exemple, 12 divise 60 puisqu'il utilise deux facteurs deux et un trois ; 8 ne le divise pas parce qu'il lui faudrait trois facteurs deux alors qu'il n'y en a que deux. Cette démarche prépare la simplification des fractions sans se limiter à essayer des divisions au hasard."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factorizar_72",
+          "prompt": "Écris les exposants qui complètent 72 = 2ᵃ × 3ᵇ. Ici, a et b indiquent combien de fois chaque nombre premier apparaît.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factorizar_72__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Exposant de 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Exposant de 3",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "72 = 8 × 9 = 2³ × 3². Trois facteurs deux et deux facteurs trois donnent 72.",
+            "incorrect": "Les exposants comptent les facteurs répétés. Le produit 2 × 3 ne vaut pas 72 et l'exposant n'est pas le nombre de chiffres."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Plus grand commun diviseur"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le plus grand commun diviseur, abrégé PGCD, est le plus grand diviseur positif commun à deux nombres positifs. Pour 18 et 24, les diviseurs communs sont 1, 2, 3 et 6 ; leur PGCD est donc 6. Il est utile pour former des groupes identiques en utilisant entièrement deux quantités sans les mélanger."
+        },
+        {
+          "type": "paragraph",
+          "text": "À l'aide des facteurs premiers, \\(18=2\\times3^2\\) et \\(24=2^3\\times3\\). Un diviseur commun peut utiliser un facteur deux et un facteur trois : les deux nombres les contiennent. Il ne peut pas utiliser deux facteurs deux, car 18 n'en contient qu'un, ni deux facteurs trois, car 24 n'en contient qu'un. Le PGCD est donc \\(2\\times3=6\\). Pour chaque nombre premier commun, on prend le plus petit nombre d'occurrences disponibles."
+        },
+        {
+          "type": "paragraph",
+          "text": "Par exemple, avec 18 jetons clairs et 24 foncés, le nombre maximal de paquets identiques qui utilisent tous les jetons est six. Chaque paquet contient trois jetons clairs et quatre foncés. Le PGCD répond au nombre de paquets, pas au nombre total de jetons par paquet. La question du contexte décide de la signification du facteur commun."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mcd_28_42",
+          "prompt": "Trouve le PGCD de 28 et 42.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mcd_28_42__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "14"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "28 = 2² × 7 et 42 = 2 × 3 × 7 ; ils partagent un facteur deux et un sept. Le PGCD vaut 14.",
+            "incorrect": "N'inclus pas le 3, qui n'est pas un facteur de 28, ni deux facteurs deux, car 42 n'en possède qu'un."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Plus petit commun multiple"
+        },
+        {
+          "type": "paragraph",
+          "text": "Le plus petit commun multiple, abrégé PPCM, est le plus petit multiple positif commun. Les multiples positifs de 6 sont 6, 12, 18, 24 et ainsi de suite ; ceux de 8 sont 8, 16, 24 et ainsi de suite. Leur première coïncidence positive est 24. Zéro est un multiple des deux, mais ce n'est pas la nouvelle coïncidence recherchée."
+        },
+        {
+          "type": "paragraph",
+          "text": "À partir des facteurs, \\(6=2\\times3\\) et \\(8=2^3\\). Un multiple commun doit contenir trois facteurs deux pour être multiple de 8 et un facteur trois pour être multiple de 6. Le plus petit produit est \\(2^3\\times3=24\\). Pour le PPCM, nous utilisons toutes les occurrences nécessaires en retenant le plus grand nombre d'occurrences de chaque facteur premier ; les seuls facteurs communs ne suffisent pas."
+        },
+        {
+          "type": "paragraph",
+          "text": "Distingue les deux objectifs : le PGCD est un facteur de chacun des nombres, tandis que chacun de ces nombres est un facteur du PPCM. Pour deux cycles qui se répètent toutes les six et huit minutes, la prochaine coïncidence arrive après vingt-quatre minutes s'ils commencent ensemble. Avec les fractions, ces notions aideront à supprimer les facteurs communs et à trouver une subdivision commune."
+        },
+        {
+          "type": "note",
+          "text": "Avant de choisir entre PGCD et PPCM, explique ce qui doit être commun : un diviseur permettant de répartir, ou un multiple permettant de synchroniser des événements. Ne décide pas à partir de mots isolés."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mcm_9_12",
+          "prompt": "Trouve le PPCM de 9 et 12.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mcm_9_12__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9 = 3² et 12 = 2² × 3. Il faut deux facteurs deux et deux facteurs trois : 36.",
+            "incorrect": "3 est le PGCD, mais n'est multiple ni de 9 ni de 12. 108 est un multiple commun, mais pas le plus petit."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Des cas qui offrent un chemin plus court"
+        },
+        {
+          "type": "paragraph",
+          "text": "Il n'est pas toujours nécessaire de tout décomposer en facteurs premiers. Si un nombre divise l'autre, le plus petit est le PGCD et le plus grand est le PPCM : pour 4 et 12, ils valent 4 et 12. Si les nombres sont égaux, ce même nombre répond aux deux objectifs. S'ils n'ont aucun facteur premier commun, leur seul diviseur positif commun est un, et le PPCM doit contenir tous les facteurs de chacun : pour 4 et 9, les résultats sont 1 et 36. De tels nombres sont dits premiers entre eux ; cela ne signifie pas que chacun soit premier."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mcd_mcm_divisor_del_otro",
+          "prompt": "Trouve le PGCD et le PPCM de 9 et 27.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mcd_mcm_divisor_del_otro__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "PGCD",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "m",
+                  "type": "numeric",
+                  "label": "PPCM",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d": {
+                    "type": "numeric",
+                    "expected": "9"
+                  },
+                  "m": {
+                    "type": "numeric",
+                    "expected": "27"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Puisque 9 divise 27, le plus grand diviseur commun vaut 9 et le plus petit multiple commun positif vaut 27.",
+            "incorrect": "Le produit 243 est un multiple commun, mais pas le plus petit. Un est un diviseur commun, mais pas le plus grand."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mcd_mcm_iguales",
+          "prompt": "Trouve le PGCD et le PPCM de 12 et 12.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mcd_mcm_iguales__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "PGCD",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "m",
+                  "type": "numeric",
+                  "label": "PPCM",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "m": {
+                    "type": "numeric",
+                    "expected": "12"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les deux valent 12. Ce nombre est à la fois le plus grand diviseur commun et le plus petit multiple positif commun.",
+            "incorrect": "Ne multiplie pas automatiquement les quantités. Répéter le même nombre n'oblige pas à répéter ses facteurs pour déterminer le PPCM."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mcd_mcm_coprimos",
+          "prompt": "Trouve le PGCD et le PPCM de 8 et 15.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mcd_mcm_coprimos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "PGCD",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "m",
+                  "type": "numeric",
+                  "label": "PPCM",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "m": {
+                    "type": "numeric",
+                    "expected": "120"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "8 = 2³ et 15 = 3 × 5 n'ont aucun facteur premier commun : PGCD = 1. Le PPCM contient tous les facteurs des deux nombres et vaut 120.",
+            "incorrect": "Ne pas partager de facteurs premiers ne signifie pas ne pas avoir de diviseur commun : un divise les deux. Ici, leur produit est bien le plus petit multiple commun."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Décider quelle quantité doit être commune"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "paquetes_modelo",
+          "prompt": "Tu disposes de 20 graines d'une variété et de 30 d'une autre. Tu veux former le plus grand nombre possible de sachets identiques en utilisant toutes les graines. Quelle opération donne le nombre de sachets ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "paquetes_modelo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Chercher le PPCM de 20 et 30.",
+                  "reviewFeedback": "Interprète ce que représenterait un multiple commun dans ta proposition. Compare-le au nombre de sachets identiques demandé."
+                },
+                {
+                  "id": "b",
+                  "label": "Chercher le PGCD de 20 et 30.",
+                  "reviewFeedback": "Relie les diviseurs communs aux répartitions exactes dans des sachets. Vérifie ce que signifie maximiser leur nombre en maintenant un contenu identique dans chacun."
+                },
+                {
+                  "id": "c",
+                  "label": "Multiplier 20 par 30.",
+                  "reviewFeedback": "Explique ce que mesure le produit proposé. Vérifie s'il décrit une répartition exacte des graines disponibles ou une quantité d'une autre nature."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Le nombre de sachets doit diviser 20 et 30, et nous cherchons le plus grand : PGCD(20,30) = 10.",
+            "incorrect": "Le PPCM donne une quantité multiple des deux nombres. Ici, le nombre de groupes doit diviser exactement les deux quantités."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sobres_completos",
+          "prompt": "Forme le plus grand nombre de sachets identiques possible avec 18 graines claires et 30 foncées, en les utilisant toutes. Donne le nombre de sachets et le nombre de graines de chaque type par sachet.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sobres_completos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "s",
+                  "type": "numeric",
+                  "label": "Nombre de sachets",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Graines claires par sachet",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "o",
+                  "type": "numeric",
+                  "label": "Graines foncées par sachet",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "s": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "o": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les diviseurs communs de 18 et 30 sont 1, 2, 3 et 6 ; le plus grand est 6. Chaque sachet contient 3 graines claires et 5 foncées.",
+            "incorrect": "Le nombre de sachets doit diviser les deux quantités. Choisis le plus grand, puis répartis chaque variété : le nombre de sachets et leur contenu sont des données différentes."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ciclos",
+          "prompt": "Deux signaux s'allument ensemble au départ. L'un se répète toutes les 12 minutes et l'autre toutes les 18. Après combien de minutes se retrouveront-ils ensemble pour la première fois ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "ciclos__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              },
+              "unit": "minutes"
+            }
+          ],
+          "feedback": {
+            "correct": "PPCM(12,18) = 36 ; 36 ÷ 12 = 3 et 36 ÷ 18 = 2.",
+            "incorrect": "6 est un diviseur commun, mais ne correspond pas à des cycles entiers de 12 et de 18. Il faut le plus petit multiple commun positif."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "corte_longitud_maxima",
+          "prompt": "Deux cordes mesurent 42 cm et 56 cm. On les découpe en morceaux de même longueur entière, sans reste. Quelle est la plus grande longueur possible pour chaque morceau ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "corte_longitud_maxima__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "14"
+              },
+              "unit": "cm"
+            }
+          ],
+          "feedback": {
+            "correct": "La longueur doit diviser 42 et 56. Leur PGCD vaut 14 cm ; on obtient trois morceaux de la première corde et quatre de la deuxième.",
+            "incorrect": "Ici, le diviseur commun représente la longueur d'un morceau, pas un nombre de paquets. Un multiple commun plus long que les cordes ne sert pas à les découper."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ninguno_de_los_dos",
+          "prompt": "Une table contient 14 cartes rouges et 21 bleues. On demande uniquement combien il y a de cartes au total. Quelle opération convient ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "ninguno_de_los_dos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Chercher le PGCD de 14 et 21.",
+                  "reviewFeedback": "Examine les informations apportées par un diviseur commun des quantités. Compare-les à la question qui demande de réunir les cartes des deux couleurs."
+                },
+                {
+                  "id": "b",
+                  "label": "Chercher le PPCM de 14 et 21.",
+                  "reviewFeedback": "Revois ce que mesure un multiple commun dans cette situation. Justifie en quoi cette quantité répondrait au nombre total de cartes."
+                },
+                {
+                  "id": "c",
+                  "label": "Additionner 14 + 21.",
+                  "reviewFeedback": "Relie l'opération choisie à la réunion de deux collections distinctes. Vérifie que les cartes de chaque couleur sont comptées une seule fois."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Réunir les quantités donne 35 cartes. On ne demande ni de former des groupes sans reste ni de chercher des coïncidences.",
+            "incorrect": "La présence de deux nombres n'impose pas un PGCD ou un PPCM. La question précise demande la quantité totale."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Plus de deux quantités"
+        },
+        {
+          "type": "paragraph",
+          "text": "Avec trois quantités, un diviseur commun doit diviser les trois, et un multiple commun doit être divisible par les trois. Tu peux comparer le résultat des deux premières à la troisième. Par exemple, pour 4, 6 et 8, PGCD(4,6) = 2 et PGCD(2,8) = 2 ; PPCM(4,6) = 12 et PPCM(12,8) = 24. Vérifie toujours les trois divisibilités."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_cantidades_factores",
+          "prompt": "Trouve le PGCD et le PPCM de 12, 18 et 30.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tres_cantidades_factores__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "PGCD des trois",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "m",
+                  "type": "numeric",
+                  "label": "PPCM des trois",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "m": {
+                    "type": "numeric",
+                    "expected": "180"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12 = 2² × 3, 18 = 2 × 3² et 30 = 2 × 3 × 5. Ils partagent un facteur deux et un trois : PGCD = 6. Le PPCM nécessite deux facteurs deux, deux facteurs trois et un cinq : 180.",
+            "incorrect": "Le PPCM de 12 et 18 est 36, mais 30 ne divise pas 36. Il faut tenir compte de la troisième quantité ; le facteur cinq doit également être présent."
+          }
+        }
+      ]
+    }
+  ]
+}

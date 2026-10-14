@@ -1,0 +1,385 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__factorizacion_y_divisores",
+  "title": "Décomposition en facteurs premiers et disponibilité des facteurs",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Poursuivre jusqu'aux nombres premiers"
+        },
+        {
+          "type": "paragraph",
+          "text": "Pour décomposer 48, tu peux commencer par 6 × 8 ou par 3 × 16. Si tu continues jusqu'à ce que chaque facteur soit premier, les deux chemins donnent quatre facteurs deux et un facteur trois : 48 = 2⁴ × 3. S'arrêter à 6 × 8 conserve la valeur, mais ce n'est pas encore une décomposition en facteurs premiers. La multiplication finale vérifie le nombre ; vérifier que tous les facteurs sont premiers montre que la décomposition est achevée."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factorizacion_terminada",
+          "prompt": "Quelle écriture est une décomposition complète de 120 en facteurs premiers ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factorizacion_terminada__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "2³ × 15",
+                  "reviewFeedback": "Vérifie séparément la valeur du produit et la primalité de chaque facteur indiqué. Une décomposition complète en facteurs premiers doit satisfaire ces deux conditions."
+                },
+                {
+                  "id": "b",
+                  "label": "2² × 3 × 5",
+                  "reviewFeedback": "Développe la puissance dans cette expression et calcule le produit. Vérifie que tu retrouves le nombre de départ tout en utilisant des facteurs premiers."
+                },
+                {
+                  "id": "c",
+                  "label": "2³ × 3 × 5",
+                  "reviewFeedback": "Vérifie la valeur du produit et la nature de chaque facteur. Explique les conditions d'une décomposition complète en facteurs premiers."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2³ × 3 × 5 = 8 × 3 × 5 = 120 et tous les facteurs sont premiers. 2³ × 15 vaut également 120, mais 15 peut encore être décomposé.",
+            "incorrect": "Conserver la valeur du produit ne suffit pas : 15 est composé. La deuxième écriture n'utilise que des nombres premiers, mais elle donne 60 et il manque un facteur deux."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factorizacion_tres_primos",
+          "prompt": "Complète 90 = 2ᵃ × 3ᵇ × 5ᶜ.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factorizacion_tres_primos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Exposant de 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Exposant de 3",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Exposant de 5",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "2"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "1"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "90 = 9 × 10 = 3² × 2 × 5. Les exposants sont 1, 2 et 1 ; multiplier 2 × 9 × 5 redonne 90.",
+            "incorrect": "Les exposants comptent les occurrences de chaque nombre premier. N'utilise pas le nombre premier lui-même comme exposant et n'oublie pas le deuxième facteur trois."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Ordre différent, mêmes facteurs"
+        },
+        {
+          "type": "paragraph",
+          "text": "Grâce à la commutativité, les facteurs peuvent apparaître dans un autre ordre, et grâce à l'associativité, ils peuvent être regroupés différemment. Cela ne crée pas une nouvelle décomposition en facteurs premiers si chaque nombre premier apparaît le même nombre de fois. Par exemple, 2 × 3 × 2 × 5 et 3 × 5 × 2² représentent les mêmes facteurs premiers de 60."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "copias_equivalentes",
+          "prompt": "Sélectionne toutes les écritures qui sont des décompositions complètes de 84 en facteurs premiers.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "copias_equivalentes__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "2 × 2 × 3 × 7",
+                  "reviewFeedback": "Vérifie la primalité de chaque facteur, puis calcule la valeur du produit choisi. Justifie les deux conditions d'une décomposition complète en facteurs premiers."
+                },
+                {
+                  "id": "b",
+                  "label": "3 × 7 × 2²",
+                  "reviewFeedback": "Développe la puissance et examine les répétitions de facteurs. Changer leur ordre ne dispense pas de vérifier la valeur du nombre initial."
+                },
+                {
+                  "id": "c",
+                  "label": "4 × 3 × 7",
+                  "reviewFeedback": "Examine chaque facteur de ton choix. Obtenir la valeur du produit demandé ne prouve pas que tous les facteurs sont premiers."
+                },
+                {
+                  "id": "d",
+                  "label": "2 × 3 × 7",
+                  "reviewFeedback": "Calcule le produit des facteurs choisis et compare-le au nombre initial. Vérifie combien de fois chaque facteur doit apparaître, pas seulement quels nombres premiers sont présents."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Les deux premières écritures contiennent deux facteurs deux, un trois et un sept : leur produit vaut 84. La troisième vaut aussi 84, mais contient un facteur composé ; la quatrième vaut 42.",
+            "incorrect": "L'ordre peut changer, mais pas le nombre d'occurrences. Quatre peut encore se décomposer en deux facteurs deux."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factor_primo_repetido",
+          "prompt": "La décomposition en facteurs premiers de 49 ne contient que le nombre premier 7. Quel est son exposant ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factor_primo_repetido__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "2"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "49 = 7 × 7 = 7². Un même nombre premier peut apparaître plusieurs fois ; un exposant indique leur nombre.",
+            "incorrect": "Un nombre impair n'est pas forcément premier. Ici, sept est premier, mais 49 est le produit de deux facteurs sept."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Construire un diviseur avec les facteurs disponibles"
+        },
+        {
+          "type": "paragraph",
+          "text": "Si 72 = 2³ × 3², un diviseur positif peut utiliser de zéro à trois facteurs deux et de zéro à deux facteurs trois. Il peut en employer moins, mais pas davantage ni introduire un nombre premier absent. Choisir zéro occurrence d'un nombre premier signifie ne pas l'utiliser ; le produit des facteurs choisis doit diviser 72 exactement."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "divisores_por_copias",
+          "prompt": "Sélectionne tous les diviseurs de 72 dans cette liste, sachant que 72 = 2³ × 3².",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "divisores_por_copias__eleccion",
+              "type": "math_multiple_choice_multi",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "8",
+                  "reviewFeedback": "Décompose huit en facteurs premiers et compare leurs occurrences à celles disponibles dans le nombre initial. Justifie la division exacte sans arrondir."
+                },
+                {
+                  "id": "b",
+                  "label": "9",
+                  "reviewFeedback": "Détermine combien de fois chaque nombre premier doit apparaître pour former neuf. Compare cela avec la décomposition donnée avant de décider de la divisibilité."
+                },
+                {
+                  "id": "c",
+                  "label": "18",
+                  "reviewFeedback": "Décompose dix-huit et compare les nombres de facteurs nécessaires à ceux disponibles. La vérification doit inclure tous les facteurs premiers utilisés."
+                },
+                {
+                  "id": "d",
+                  "label": "16",
+                  "reviewFeedback": "Vérifie les répétitions de facteurs nécessaires pour former seize. Employer les mêmes nombres premiers ne suffit pas s'il faut davantage d'occurrences."
+                },
+                {
+                  "id": "e",
+                  "label": "27",
+                  "reviewFeedback": "Examine combien de fois le même nombre premier apparaît dans vingt-sept. Compare ce nombre aux facteurs disponibles pour déterminer si le quotient est entier."
+                },
+                {
+                  "id": "f",
+                  "label": "5",
+                  "reviewFeedback": "Examine les facteurs premiers nécessaires pour former cinq et compare-les avec la décomposition de départ. Sa petite taille ne suffit pas à décider."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "a",
+                  "b",
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Huit utilise trois facteurs deux, neuf utilise deux facteurs trois, dix-huit utilise un facteur deux et deux facteurs trois. Seize exige quatre facteurs deux, vingt-sept trois facteurs trois et cinq un nombre premier absent.",
+            "incorrect": "Un diviseur ne peut pas demander plus d'occurrences d'un nombre premier que n'en contient le nombre initial, ni introduire un autre nombre premier."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "potencias_divisoras_maximas",
+          "prompt": "Pour 360 = 2³ × 3² × 5, écris la plus grande puissance de 2 qui divise 360 et la plus grande puissance de 3 qui le divise.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "potencias_divisoras_maximas__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "Plus grande puissance de 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "t",
+                  "type": "numeric",
+                  "label": "Plus grande puissance de 3",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d": {
+                    "type": "numeric",
+                    "expected": "8"
+                  },
+                  "t": {
+                    "type": "numeric",
+                    "expected": "9"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Ces puissances sont 2³ = 8 et 3² = 9. Aucune occurrence supplémentaire de ces nombres premiers n'est disponible.",
+            "incorrect": "On demande la valeur de chaque puissance, pas seulement son exposant. Le facteur cinq n'augmente pas le nombre de facteurs deux ou trois."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Vérifier ce que dit le produit"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "numero_primo_factorizacion",
+          "prompt": "Quelle affirmation distingue correctement 1, 13 et 26 ?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "numero_primo_factorizacion__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Un doit toujours être ajouté comme facteur premier à toute décomposition.",
+                  "reviewFeedback": "Revois la condition définissant un facteur premier et l'effet de multiplier par un. Distingue l'élément neutre de la multiplication d'un facteur premier."
+                },
+                {
+                  "id": "b",
+                  "label": "Treize est déjà premier et 26 se décompose en 2 × 13.",
+                  "reviewFeedback": "Vérifie la classification proposée à l'aide des diviseurs et des produits. Justifie chaque nombre par sa définition, pas seulement par une écriture."
+                },
+                {
+                  "id": "c",
+                  "label": "Vingt-six est premier parce qu'il contient le facteur premier 13.",
+                  "reviewFeedback": "Analyse la différence entre contenir un facteur premier et être un nombre premier. Classer ce produit exige d'examiner ses diviseurs propres."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Treize est déjà un facteur premier. Vingt-six contient deux facteurs supérieurs à un et est composé. Le nombre un n'est pas premier.",
+            "incorrect": "Contenir un facteur premier ne rend pas le produit premier. Ajouter des facteurs un conserve la valeur, mais n'apporte aucun facteur premier."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "reconstruir_factorizacion",
+          "prompt": "Retrouve le nombre dont la décomposition en facteurs premiers est 2² × 3 × 11.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "reconstruir_factorizacion__valor",
+              "type": "math_numeric_input",
+              "label": "Résultat",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "132"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "2² × 3 × 11 = 4 × 3 × 11 = 132.",
+            "incorrect": "L'exposant deux répète le facteur deux. N'additionne pas les nombres premiers et n'interprète pas 2² comme 2 multiplié par une donnée absente."
+          }
+        }
+      ]
+    }
+  ]
+}

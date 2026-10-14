@@ -1,0 +1,562 @@
+{
+  "id": "math_course_01__estructura_y_divisibilidad__factores_mcd_mcm",
+  "title": "GCD and LCM: Common Factors and Different Goals",
+  "pages": [
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Factor Without Changing the Product"
+        },
+        {
+          "type": "paragraph",
+          "text": "A composite number can be broken into smaller factors. For 60, one route is \\(60=6\\times10=(2\\times3)\\times(2\\times5)=2\\times2\\times3\\times5\\). Another starts with \\(60=3\\times20\\) and ends with the same prime factors. Parentheses and factor order may change through associativity and commutativity."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prime factorization is complete when every factor is prime. We write \\(60=2^2\\times3\\times5\\), where the exponent records that the factor 2 occurs twice. One is not a prime factor; multiplying by ones adds no new prime decomposition. To check, multiply all the factors again: the expression must recover 60."
+        },
+        {
+          "type": "paragraph",
+          "text": "Prime factorization shows which factors are available. A divisor uses factors from the number without using more copies than it contains. For example, 12 divides 60 because it uses two twos and one three; 8 does not because it needs three twos and only two are available. This approach prepares us to simplify fractions without relying on trial divisions."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "factorizar_72",
+          "prompt": "Write the exponents completing 72 = 2ᵃ × 3ᵇ. Here a and b count the occurrences of each prime.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "factorizar_72__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "a",
+                  "type": "numeric",
+                  "label": "Exponent of 2",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "b",
+                  "type": "numeric",
+                  "label": "Exponent of 3",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "a": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "b": {
+                    "type": "numeric",
+                    "expected": "2"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "72 = 8 × 9 = 2³ × 3². Three twos and two threes give 72.",
+            "incorrect": "Exponents count repeated factors. The product 2 × 3 is not 72, and the exponent is not the number of digits."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Greatest Common Divisor"
+        },
+        {
+          "type": "paragraph",
+          "text": "The greatest common divisor, abbreviated GCD, is the largest positive divisor shared by two positive numbers. For 18 and 24, the common divisors are 1, 2, 3, and 6, so their GCD is 6. It helps when you want to form equal groups using all of two quantities without mixing them."
+        },
+        {
+          "type": "paragraph",
+          "text": "Using prime factors, \\(18=2\\times3^2\\) and \\(24=2^3\\times3\\). A common divisor can use one two and one three: both numbers contain them. It cannot use two twos because 18 has only one, or two threes because 24 has only one. Thus the GCD is \\(2\\times3=6\\). For each common prime, take the fewest available copies."
+        },
+        {
+          "type": "paragraph",
+          "text": "For example, given 18 light-colored counters and 24 dark ones, the greatest number of identical packs using all the counters is six. Each pack contains three light and four dark counters. The GCD gives the number of packs, not the total number of counters in each pack. The context determines what a common factor represents."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mcd_28_42",
+          "prompt": "Find the GCD of 28 and 42.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mcd_28_42__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "14"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "28 = 2² × 7 and 42 = 2 × 3 × 7; they share one two and one seven. The GCD is 14.",
+            "incorrect": "Do not include 3, which is not a factor of 28, or two twos, because 42 contains only one."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Least Common Multiple"
+        },
+        {
+          "type": "paragraph",
+          "text": "The least common multiple, abbreviated LCM, is the smallest positive multiple shared by two numbers. Positive multiples of 6 are 6, 12, 18, 24, and so on; those of 8 are 8, 16, 24, and so on. Their first positive match is 24. Zero is a multiple of both, but it is not the new coincidence we seek."
+        },
+        {
+          "type": "paragraph",
+          "text": "Using factors, \\(6=2\\times3\\) and \\(8=2^3\\). A multiple of both needs three twos to contain 8 and one three to contain 6. The smallest product is \\(2^3\\times3=24\\). For the LCM we use all necessary copies, taking the largest count appearing for each prime; using only shared factors is not enough."
+        },
+        {
+          "type": "paragraph",
+          "text": "Distinguish the two goals: the GCD is a factor of each number, while each number is a factor of the LCM. For cycles repeating every six and eight minutes, the next coincidence occurs after twenty-four minutes if both start together. With fractions, these concepts will help us remove common factors and find a shared subdivision."
+        },
+        {
+          "type": "note",
+          "text": "Before choosing GCD or LCM, explain what must be common: a divisor used for grouping or a multiple used to synchronize events. Do not decide from isolated keywords."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mcm_9_12",
+          "prompt": "Find the LCM of 9 and 12.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mcm_9_12__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "9 = 3² and 12 = 2² × 3. We need two twos and two threes: 36.",
+            "incorrect": "3 is the GCD, but it is not a multiple of either 9 or 12. 108 is a common multiple, but not the least."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Cases That Offer a Shorter Route"
+        },
+        {
+          "type": "paragraph",
+          "text": "You do not always need complete prime factorizations. If one number divides the other, the smaller is the GCD and the larger is the LCM: for 4 and 12, these are 4 and 12. If the numbers are equal, that number satisfies both goals. If they share no prime factor, their only common positive divisor is one, and the LCM needs every factor of both: for 4 and 9, the results are 1 and 36. Such numbers are called coprime; this does not mean each one is prime."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mcd_mcm_divisor_del_otro",
+          "prompt": "Find the GCD and LCM of 9 and 27.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mcd_mcm_divisor_del_otro__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "GCD",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "m",
+                  "type": "numeric",
+                  "label": "LCM",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d": {
+                    "type": "numeric",
+                    "expected": "9"
+                  },
+                  "m": {
+                    "type": "numeric",
+                    "expected": "27"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Since 9 divides 27, the greatest common divisor is 9 and the least positive common multiple is 27.",
+            "incorrect": "The product 243 is a common multiple but not the least. One is a common divisor, but not the greatest."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mcd_mcm_iguales",
+          "prompt": "Find the GCD and LCM of 12 and 12.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mcd_mcm_iguales__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "GCD",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "m",
+                  "type": "numeric",
+                  "label": "LCM",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d": {
+                    "type": "numeric",
+                    "expected": "12"
+                  },
+                  "m": {
+                    "type": "numeric",
+                    "expected": "12"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Both are 12. The number itself is the greatest shared divisor and the least shared positive multiple.",
+            "incorrect": "Do not automatically multiply the numbers. Repeating the same number does not mean its factors must be repeated to find the LCM."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "mcd_mcm_coprimos",
+          "prompt": "Find the GCD and LCM of 8 and 15.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "mcd_mcm_coprimos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "GCD",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "m",
+                  "type": "numeric",
+                  "label": "LCM",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d": {
+                    "type": "numeric",
+                    "expected": "1"
+                  },
+                  "m": {
+                    "type": "numeric",
+                    "expected": "120"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "8 = 2³ and 15 = 3 × 5 share no prime factors: GCD = 1. The LCM contains all factors from both and equals 120.",
+            "incorrect": "Sharing no primes does not mean having no common divisor: one divides both. Here their product is indeed the least common multiple."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "Decide Which Quantity Must Be Common"
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "paquetes_modelo",
+          "prompt": "You have 20 seeds of one variety and 30 of another. You want to make the largest possible number of identical packets using all of them. Which operation determines the number of packets?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "paquetes_modelo__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Find the LCM of 20 and 30.",
+                  "reviewFeedback": "Interpret what a common multiple represents in your proposal. Compare it with the number of identical packets the problem asks for."
+                },
+                {
+                  "id": "b",
+                  "label": "Find the GCD of 20 and 30.",
+                  "reviewFeedback": "Relate common divisors to exact distribution among packets. Check what it means to maximize their number while keeping identical contents in every packet."
+                },
+                {
+                  "id": "c",
+                  "label": "Multiply 20 by 30.",
+                  "reviewFeedback": "Explain what the proposed product measures. Check whether it represents an exact distribution of the available seeds or a different kind of quantity."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "b"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The number of packets must divide both 20 and 30, and we want the largest: GCD(20,30) = 10.",
+            "incorrect": "The LCM gives a quantity that is a multiple of both. Here the number of groups must divide both available amounts exactly."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "sobres_completos",
+          "prompt": "Make as many identical packets as possible with 18 light-colored seeds and 30 dark seeds, using all of them. Give the number of packets and the number of seeds of each type per packet.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "sobres_completos__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "s",
+                  "type": "numeric",
+                  "label": "Number of packets",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "c",
+                  "type": "numeric",
+                  "label": "Light-colored seeds per packet",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "o",
+                  "type": "numeric",
+                  "label": "Dark seeds per packet",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "s": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "c": {
+                    "type": "numeric",
+                    "expected": "3"
+                  },
+                  "o": {
+                    "type": "numeric",
+                    "expected": "5"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "The common divisors of 18 and 30 are 1, 2, 3, and 6; the largest is 6. Each packet contains 3 light and 5 dark seeds.",
+            "incorrect": "The number of packets must divide both quantities. Choose the greatest such number, then distribute each variety: the number of packets and their contents are different values."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ciclos",
+          "prompt": "Two signals turn on together initially. One repeats every 12 minutes and the other every 18. After how many minutes do they first coincide again?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "ciclos__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "36"
+              },
+              "unit": "minutes"
+            }
+          ],
+          "feedback": {
+            "correct": "LCM(12,18) = 36; 36 ÷ 12 = 3 and 36 ÷ 18 = 2.",
+            "incorrect": "6 is a common divisor but does not complete a whole cycle of 12 or 18. We need the least positive common multiple."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "corte_longitud_maxima",
+          "prompt": "Two ropes are 42 cm and 56 cm long. They will be cut into pieces of the same whole-number length, without leftovers. What is the greatest possible length of each piece?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "corte_longitud_maxima__valor",
+              "type": "math_numeric_input",
+              "label": "Result",
+              "keyboard": "NUMERIC",
+              "validator": {
+                "type": "numeric",
+                "expected": "14"
+              },
+              "unit": "cm"
+            }
+          ],
+          "feedback": {
+            "correct": "The length must divide both 42 and 56. Their GCD is 14 cm; the first rope yields three pieces and the second four.",
+            "incorrect": "Here the common divisor represents the length of a piece, not the number of packets. A common multiple longer than the ropes is no help for cutting them."
+          }
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "ninguno_de_los_dos",
+          "prompt": "A table has 14 red cards and 21 blue cards. The question asks only for the total number of cards. Which operation answers it?",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "ninguno_de_los_dos__eleccion",
+              "type": "math_multiple_choice_single",
+              "options": [
+                {
+                  "id": "a",
+                  "label": "Find the GCD of 14 and 21.",
+                  "reviewFeedback": "Consider what a common divisor tells us about the quantities. Compare it with the request to combine cards of both colors."
+                },
+                {
+                  "id": "b",
+                  "label": "Find the LCM of 14 and 21.",
+                  "reviewFeedback": "Consider what a common multiple means in this situation. Explain why it would answer the question about the total card count."
+                },
+                {
+                  "id": "c",
+                  "label": "Add 14 + 21.",
+                  "reviewFeedback": "Relate the selected operation to joining two separate collections. Check that the cards of each color are counted exactly once."
+                }
+              ],
+              "validator": {
+                "type": "choice",
+                "expected": [
+                  "c"
+                ]
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "Combining the quantities gives 35 cards. We are not being asked to group without leftovers or find a repeated coincidence.",
+            "incorrect": "Having two numbers does not automatically call for a GCD or LCM. The actual question asks for the total."
+          }
+        }
+      ]
+    },
+    {
+      "blocks": [
+        {
+          "type": "heading",
+          "text": "More Than Two Quantities"
+        },
+        {
+          "type": "paragraph",
+          "text": "With three quantities, a common divisor must divide all three, while a common multiple must be divisible by all three. You can compare the result for the first two with the third. For example, for 4, 6, and 8, GCD(4,6) = 2 and GCD(2,8) = 2; LCM(4,6) = 12 and LCM(12,8) = 24. Always check divisibility by all three numbers."
+        },
+        {
+          "type": "math_puzzle",
+          "schemaVersion": 1,
+          "id": "tres_cantidades_factores",
+          "prompt": "Find the GCD and LCM of 12, 18, and 30.",
+          "representations": [],
+          "tools": [],
+          "responses": [
+            {
+              "id": "tres_cantidades_factores__datos",
+              "type": "math_multi_input",
+              "fields": [
+                {
+                  "id": "d",
+                  "type": "numeric",
+                  "label": "GCD of all three",
+                  "keyboard": "NUMERIC"
+                },
+                {
+                  "id": "m",
+                  "type": "numeric",
+                  "label": "LCM of all three",
+                  "keyboard": "NUMERIC"
+                }
+              ],
+              "validator": {
+                "type": "fields",
+                "fields": {
+                  "d": {
+                    "type": "numeric",
+                    "expected": "6"
+                  },
+                  "m": {
+                    "type": "numeric",
+                    "expected": "180"
+                  }
+                }
+              }
+            }
+          ],
+          "feedback": {
+            "correct": "12 = 2² × 3, 18 = 2 × 3², and 30 = 2 × 3 × 5. They share one two and one three: GCD = 6. The LCM needs two twos, two threes, and one five: 180.",
+            "incorrect": "The LCM of only 12 and 18 is 36, but 30 does not divide 36. Account for the third quantity; the factor five must be available too."
+          }
+        }
+      ]
+    }
+  ]
+}
